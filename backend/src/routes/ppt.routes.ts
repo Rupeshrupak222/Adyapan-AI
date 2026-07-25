@@ -10,7 +10,8 @@ pptRouter.use(requireAuth);
 pptRouter.post("/generate", async (req, res) => {
   try {
     const { topic, slideCount, audience, style } = req.body;
-    const slides = await generatePPTContent(topic, parseInt(slideCount));
+    const enrichedTopic = [topic, audience ? `Audience: ${audience}` : "", style ? `Style: ${style}` : ""].filter(Boolean).join(". ");
+    const slides = await generatePPTContent(enrichedTopic, parseInt(slideCount));
     const userPrisma = await getUserPrismaFromRequest(req);
     
     const ppt = await userPrisma.presentation.create({

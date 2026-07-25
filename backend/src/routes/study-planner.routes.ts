@@ -383,7 +383,15 @@ studyPlannerRouter.post("/task/complete", async (req: any, res: any) => {
     const userPrisma = await getUserPrismaFromRequest(req);
     const isCompleted = status === "Completed";
 
-    const task = await userPrisma.studyTask.update({
+    const task = await userPrisma.studyTask.findFirst({
+      where: { id: taskId, studyPlan: { userId } }
+    });
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found or access denied" });
+    }
+
+    await userPrisma.studyTask.update({
       where: { id: taskId },
       data: {
         status,

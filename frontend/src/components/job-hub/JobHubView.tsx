@@ -313,12 +313,17 @@ function getStatusColor(s: string): { bg: string; text: string } {
 
 // ─── Logo Avatar ──────────────────────────────────────────────────────────
 function CompanyLogo({ company, logoUrl, size = 44 }: { company: string; logoUrl?: string; size?: number }) {
-  const c = useMemo(() => ({ primary: "#f59e0b" }), []);
-  if (logoUrl) {
+  const [imgErr, setImgErr] = useState(false);
+  const cleanCompany = (company || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const domain = `${cleanCompany}.com`;
+  const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+  const src = logoUrl || faviconUrl;
+
+  if (src && !imgErr) {
     return (
-      <div className="rounded-xl overflow-hidden shrink-0 border" style={{ width: size, height: size, borderColor: "rgba(255,255,255,0.06)" }}>
+      <div className="rounded-xl overflow-hidden shrink-0 border bg-white/5 p-1 flex items-center justify-center" style={{ width: size, height: size, borderColor: "rgba(255,255,255,0.08)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logoUrl} alt={company} width={size} height={size} style={{ objectFit: "cover", display: "block" }} />
+        <img src={src} alt={company} width={size - 8} height={size - 8} style={{ objectFit: "contain", display: "block" }} onError={() => setImgErr(true)} />
       </div>
     );
   }

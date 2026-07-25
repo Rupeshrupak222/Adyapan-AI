@@ -538,6 +538,31 @@ interviewRouter.get("/analytics/summary", async (req, res) => {
       ? Math.max(...completed.map((s: any) => s.evaluations?.[0]?.overallScore || 0))
       : 0;
 
+    // Weekly trend (last 8 weeks)
+    const now = new Date();
+    const weeklyTrend = Array.from({ length: 8 }, (_, i) => {
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - (7 * (7 - i)));
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 7);
+
+      const weekSessions = completed.filter((s: any) => {
+        const d = new Date(s.createdAt);
+        return d >= weekStart && d < weekEnd;
+      });
+
+      const weekAvg = weekSessions.length
+        ? Math.round(weekSessions.reduce((a: number, s: any) => a + (s.evaluations?.[0]?.overallScore || 0), 0) / weekSessions.length)
+        : null;
+
+      return {
+        week: `W${i + 1}`,
+        date: weekStart.toISOString().split("T")[0],
+        sessions: weekSessions.length,
+        avgScore: weekAvg,
+      };
+    });
+
     const typeBreakdown = ["technical", "behavioral", "general"].map(type => {
       const typeSessions = completed.filter((s: any) => s.type === type);
       return {
@@ -549,7 +574,7 @@ interviewRouter.get("/analytics/summary", async (req, res) => {
       };
     });
 
-    res.json({ success: true, summary: { totalSessions, completedSessions, avgScore, bestScore, typeBreakdown } });
+    res.json({ success: true, summary: { totalSessions, completedSessions, avgScore, bestScore, weeklyTrend, typeBreakdown } });
   } catch (error) {
     handleRouteError(res, error, "Interview.analytics", "Failed to fetch analytics");
   }
@@ -595,87 +620,6 @@ interviewRouter.get("/:sessionId", async (req, res) => {
     });
   } catch (error) {
     handleRouteError(res, error, "Interview.getSession", "Failed to fetch session");
-  }
-});
-
-// ─── Analytics: Summary endpoint ─────────────────────────────────────────────
-interviewRouter.get("/analytics/summary", async (req, res) => {
-  try {
-    const prisma = await getUserPrismaFromRequest(req);
-    const p = prisma as any;
-
-    const sessions = await p.interviewSession.findMany({
-      where: { userId: req.user!.userId },
-      include: {
-        evaluations: { take: 1 },
-        violations: { select: { pointsDeducted: true, severity: true } },
-        messages: { select: { createdAt: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
-
-    const completed = sessions.filter((s: any) => s.evaluations?.[0]);
-
-    const totalSessions = sessions.length;
-    const completedSessions = completed.length;
-    const avgScore = completed.length
-      ? Math.round(completed.reduce((a: number, s: any) => a + (s.evaluations?.[0]?.overallScore || 0), 0) / completed.length)
-      : 0;
-    const bestScore = completed.length
-      ? Math.max(...completed.map((s: any) => s.evaluations?.[0]?.overallScore || 0))
-      : 0;
-
-    // Weekly trend (last 8 weeks)
-    const now = new Date();
-    const weeklyTrend = Array.from({ length: 8 }, (_, i) => {
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - (7 * (7 - i)));
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 7);
-
-      const weekSessions = completed.filter((s: any) => {
-        const d = new Date(s.createdAt);
-        return d >= weekStart && d < weekEnd;
-      });
-
-      const weekAvg = weekSessions.length
-        ? Math.round(weekSessions.reduce((a: number, s: any) => a + (s.evaluations?.[0]?.overallScore || 0), 0) / weekSessions.length)
-        : null;
-
-      return {
-        week: `W${i + 1}`,
-        date: weekStart.toISOString().split("T")[0],
-        sessions: weekSessions.length,
-        avgScore: weekAvg,
-      };
-    });
-
-    // Type breakdown
-    const typeBreakdown = ["technical", "behavioral", "general"].map(type => {
-      const typeSessions = completed.filter((s: any) => s.type === type);
-      return {
-        type,
-        count: typeSessions.length,
-        avgScore: typeSessions.length
-          ? Math.round(typeSessions.reduce((a: number, s: any) => a + (s.evaluations?.[0]?.overallScore || 0), 0) / typeSessions.length)
-          : 0,
-      };
-    });
-
-    res.json({
-      success: true,
-      summary: {
-        totalSessions,
-        completedSessions,
-        avgScore,
-        bestScore,
-        weeklyTrend,
-        typeBreakdown,
-      },
-    });
-  } catch (error) {
-    handleRouteError(res, error, "Interview.analytics", "Failed to fetch analytics");
   }
 });
 

@@ -43,26 +43,9 @@ export function createApp() {
     }),
   );
 
-  app.use(
-    "/api/auth",
-    rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: 20,
-      standardHeaders: true,
-      legacyHeaders: false,
-      validate: { xForwardedForHeader: false, trustProxy: false }
-    }),
-  );
-  app.use(
-    "/api",
-    rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: 200,
-      standardHeaders: true,
-      legacyHeaders: false,
-      validate: { xForwardedForHeader: false, trustProxy: false }
-    }),
-  );
+  // Rate limiting disabled for development — re-enable for production:
+  // app.use("/api/auth", rateLimit({ windowMs: 15*60*1000, max: 20 }));
+  // app.use("/api", rateLimit({ windowMs: 15*60*1000, max: 200 }));
 
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));
