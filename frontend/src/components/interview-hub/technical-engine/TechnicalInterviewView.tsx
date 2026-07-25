@@ -1098,8 +1098,42 @@ function ActiveInterview({
                         </div>
                       )}
                       <div>
-                        <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed" style={{ background: msg.role === "candidate" ? c.candidateBubble : c.interviewerBubble, color: msg.role === "candidate" ? c.candidateText : c.interviewerText, border: `1px solid ${msg.role === "candidate" ? c.candidateBorder : c.interviewerBorder}`, borderTopRightRadius: msg.role === "candidate" ? "6px" : undefined, borderTopLeftRadius: msg.role === "interviewer" ? "6px" : undefined }}>
-                          {msg.content}
+                        <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed space-y-3" style={{ background: msg.role === "candidate" ? c.candidateBubble : c.interviewerBubble, color: msg.role === "candidate" ? c.candidateText : c.interviewerText, border: `1px solid ${msg.role === "candidate" ? c.candidateBorder : c.interviewerBorder}`, borderTopRightRadius: msg.role === "candidate" ? "6px" : undefined, borderTopLeftRadius: msg.role === "interviewer" ? "6px" : undefined }}>
+                          <p>{msg.content}</p>
+                          {msg.role === "interviewer" && currentQuestion?.codingProblem && (msg.questionNumber === questionNumber || messages[messages.length - 1]?.id === msg.id) && (
+                            <div className="p-3 rounded-xl border mt-2 space-y-2" style={{ background: isDark ? "rgba(6,182,212,0.06)" : "rgba(6,182,212,0.04)", borderColor: "rgba(6,182,212,0.2)" }}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold flex items-center gap-1.5" style={{ color: c.cyan }}>
+                                  <Code2 className="w-3.5 h-3.5" /> {currentQuestion.codingProblem.title || "Coding Challenge"}
+                                </span>
+                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: "rgba(6,182,212,0.15)", color: c.cyan }}>
+                                  {currentQuestion.difficulty || config.difficulty}
+                                </span>
+                              </div>
+                              <p className="text-xs font-medium leading-relaxed" style={{ color: c.textSec }}>
+                                {currentQuestion.codingProblem.description}
+                              </p>
+                              {currentQuestion.codingProblem.examples && currentQuestion.codingProblem.examples.length > 0 && (
+                                <div className="space-y-1 text-[11px] p-2 rounded-lg" style={{ background: c.surface, color: c.textMuted }}>
+                                  <span className="font-bold block" style={{ color: c.textSec }}>Example:</span>
+                                  <div>Input: <code>{currentQuestion.codingProblem.examples[0].input}</code></div>
+                                  <div>Output: <code>{currentQuestion.codingProblem.examples[0].output}</code></div>
+                                </div>
+                              )}
+                              {!showCoding && (
+                                <button
+                                  onClick={() => {
+                                    setCode(currentQuestion.codingProblem?.starterCode || DEFAULT_CODE[config.codingLanguage]);
+                                    setShowCoding(true);
+                                  }}
+                                  className="w-full mt-1 py-1.5 rounded-lg text-xs font-bold text-black flex items-center justify-center gap-1.5 transition-all"
+                                  style={{ background: "linear-gradient(135deg, #06b6d4, #3b82f6)" }}
+                                >
+                                  <Terminal className="w-3.5 h-3.5" /> Open Code Workspace
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className={`flex items-center gap-2 mt-1 ${msg.role === "candidate" ? "justify-end" : ""}`}>
                           {msg.questionNumber && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: c.surface, color: c.textMuted }}>Q{msg.questionNumber}</span>}

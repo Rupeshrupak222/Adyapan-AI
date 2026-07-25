@@ -227,7 +227,7 @@ ${isCodingQuestion
    - constraints: 2-4 constraints (e.g., array size, value ranges)
    - starterCode: Working starter code skeleton in ${codingLanguage} (function signature + comments)
    - testCases: 2-3 test cases with input and expectedOutput
-3. The "question" field should introduce the coding problem to the candidate (e.g., "Here is your coding challenge: ...")
+3. The "question" field MUST present the FULL problem statement and details (e.g., "Here is your coding challenge: [Title]. [Full Description]"). NEVER return a generic string like "Here is your problem" without including the full problem description in the "question" field itself.
 The coding problem MUST test the topic: ${topic}
 The problem difficulty should match: ${dynamicDifficulty}
 DO NOT return null for codingProblem. This is REQUIRED.`
@@ -242,7 +242,7 @@ INTERVIEWER BEHAVIOR & INTERACTIVE EVALUATION:
 
 Return the question as JSON with EXACTLY this structure (no extra fields, no markdown):
 {
-  "question": "Brief evaluation of previous answer (if applicable) + The next interview question text (or intro to coding challenge)",
+  "question": "Brief evaluation of previous answer (if applicable) + FULL problem statement/description or interview question text",
   "category": "specific category within ${topic}",
   "difficulty": "${dynamicDifficulty}",
   "isCodingChallenge": ${isCodingQuestion ? "true" : "false"},
@@ -284,6 +284,19 @@ ${isCodingQuestion ? `\nREMINDER: You MUST generate a complete coding problem wi
     // Post-process: if this was supposed to be a coding challenge but AI failed to set it, fix it
     if (isCodingQuestion && !result.isCodingChallenge) {
       result.isCodingChallenge = true;
+    }
+
+    // Post-process: ensure question field contains complete problem description for coding challenges
+    if (result.isCodingChallenge && result.codingProblem) {
+      const qLower = (result.question || "").toLowerCase().trim();
+      const isGeneric = qLower.length < 60 || qLower.startsWith("here is your problem") || qLower.startsWith("here's your problem") || qLower.startsWith("here is your coding challenge") || qLower.startsWith("here's your coding challenge");
+      if (isGeneric || !result.question) {
+        result.question = `Here is your coding challenge: **${result.codingProblem.title}**\n\n${result.codingProblem.description}\n\nPlease review the full problem statement, examples, and starter code in the editor workspace on the right to implement your solution!`;
+      } else if (result.codingProblem.title && !result.question.includes(result.codingProblem.title)) {
+        result.question = `${result.question}\n\n**Problem: ${result.codingProblem.title}**\n${result.codingProblem.description}`;
+      }
+    } else if (!result.question || result.question.trim().length < 20) {
+      result.question = `Let's discuss ${topic}. Could you explain the core concepts and real-world trade-offs of ${topic}?`;
     }
 
     console.log(`[TechnicalEngine] Generated Q${questionNumber} for ${topic} (${result.category}) | coding=${result.isCodingChallenge}`);
