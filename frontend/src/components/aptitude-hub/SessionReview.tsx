@@ -46,7 +46,7 @@ const scaleIn = {
   }),
 };
 
-const confettiParticle = {
+const confettiParticle: any = {
   hidden: { opacity: 0, y: 0, x: 0, rotate: 0, scale: 0 },
   visible: (i: number) => ({
     opacity: [0, 1, 1, 0],

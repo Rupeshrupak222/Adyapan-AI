@@ -45,6 +45,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  Calendar,
 } from "lucide-react";
 import type {
   PerformanceAnalytics,
@@ -1250,7 +1251,7 @@ export default function AptitudeAnalytics({
             </div>
             <div className="h-64">
               <Bar
-                data={weeklyProgressData}
+                data={weeklyProgressData as any}
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
