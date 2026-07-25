@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic, MicOff, Send, PhoneOff, Clock, Brain, Volume2, VolumeX,
   User, Bot, Loader2, Sparkles, Target, ArrowRight, MessageSquare,
-  Star, TrendingUp, ChevronDown, ChevronUp, Eye,
+  Star, TrendingUp, ChevronDown, ChevronUp, Eye, Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
@@ -58,6 +58,7 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
   const [liveSTAR, setLocalLiveSTAR] = useState<STARAnalysis | null>(null);
   const [liveComm, setLocalLiveComm] = useState<CommunicationAnalysis | null>(null);
   const [currentCompetency, setLocalCompetency] = useState("communication");
+  const [violationCount, setViolationCount] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -330,6 +331,12 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
             style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
             {questionNumber}/{totalQuestions}
           </div>
+          {violationCount > 0 && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold">
+              <Shield size={10} />
+              {violationCount}
+            </div>
+          )}
           <button
             onClick={() => setVoiceEnabled(!voiceEnabled)}
             className="w-7 h-7 rounded-lg border flex items-center justify-center"

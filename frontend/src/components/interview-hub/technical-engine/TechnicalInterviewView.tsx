@@ -20,6 +20,8 @@ import EngineAnalytics from "../engine/EngineAnalytics";
 import CompanyLogo from "../CompanyLogo";
 import InterviewIntelligence, { IntelligenceData } from "../shared/InterviewIntelligence";
 import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
+import AIAvatar from "../shared/AIAvatar";
+import { generateInterviewPDF } from "@/utils/interview-pdf";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -777,6 +779,11 @@ function ActiveInterview({
   const [liveTranscript, setLiveTranscript] = useState("");
   const [micLevel, setMicLevel] = useState(0);
   const [voiceEnabled, setVoiceEnabled] = useState(config.aiVoiceEnabled);
+  const [avatarAudioUrl, setAvatarAudioUrl] = useState<string | null>(null);
+  const [avatarVideoUrl, setAvatarVideoUrl] = useState<string | null>(null);
+  const [speechEnergy, setSpeechEnergy] = useState(0);
+  const [violationCount, setViolationCount] = useState(0);
+  const avatarPollRef = useRef<NodeJS.Timeout | null>(null);
 
   // Coding state
   const [code, setCode] = useState("");
@@ -817,8 +824,57 @@ function ActiveInterview({
       if (audioContextRef.current) audioContextRef.current.close().catch(() => {});
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
+      if (avatarPollRef.current) clearInterval(avatarPollRef.current);
     };
   }, []);
+
+  // ── Anti-Cheating & Proctoring Listener ──
+  useEffect(() => {
+    if (!sessionId) return;
+    let warningsCount = 0;
+
+    const logViolation = async (type: string, desc: string, points: number) => {
+      warningsCount++;
+      setViolationCount((prev) => prev + 1);
+      toast.warning(`⚠️ Anti-Cheating Warning (${warningsCount}): ${desc}`);
+
+      try {
+        await api.post(`/interview/${sessionId}/proctor`, {
+          eventType: type,
+          category: "anti-cheating",
+          description: desc,
+          pointsDeducted: points,
+        });
+      } catch {}
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        logViolation("tab_switch", "Tab switch or window minimized detected", 2);
+      }
+    };
+
+    const handleBlur = () => {
+      logViolation("window_blur", "Window lost focus / application switch", 1);
+    };
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const pastedText = e.clipboardData?.getData("text") || "";
+      if (pastedText.length > 30) {
+        logViolation("paste_attempt", `Large text paste detected (${pastedText.length} chars)`, 3);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+    document.addEventListener("paste", handlePaste);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+      document.removeEventListener("paste", handlePaste);
+    };
+  }, [sessionId]);
 
   // Mic level
   useEffect(() => {
@@ -851,19 +907,50 @@ function ActiveInterview({
 
   const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
-  const speak = useCallback((text: string) => {
-    if (!voiceEnabled) return;
+  const speak = useCallback(async (text: string) => {
+    setAiStatus("speaking");
     window.speechSynthesis.cancel();
     const cleaned = text.replace(/[*_#`]/g, "").replace(/\n+/g, ". ");
-    const utterance = new SpeechSynthesisUtterance(cleaned);
-    utterance.rate = config.voiceSpeed;
-    utterance.pitch = config.voicePitch;
-    utterance.lang = config.language === "hindi" ? "hi-IN" : "en-US";
-    utterance.onstart = () => setAiStatus("speaking");
-    utterance.onend = () => setAiStatus("listening");
-    utterance.onerror = () => setAiStatus("listening");
-    setAiStatus("speaking");
-    window.speechSynthesis.speak(utterance);
+
+    try {
+      const res = await api.post("/avatar/speak", { text: cleaned }, { responseType: "arraybuffer" });
+      const contentType = (res.headers as any)["content-type"] || "";
+      const mode = (res.headers as any)["x-avatar-mode"];
+
+      if (mode === "did" || (res.data as any)?.mode === "did") {
+        const json = JSON.parse(Buffer.from(res.data).toString());
+        const talkId = json.talkId;
+        if (talkId) {
+          if (avatarPollRef.current) clearInterval(avatarPollRef.current);
+          avatarPollRef.current = setInterval(async () => {
+            try {
+              const statusRes = await api.get(`/avatar/status/${talkId}`);
+              if (statusRes.data.status === "done" && statusRes.data.videoUrl) {
+                setAvatarVideoUrl(statusRes.data.videoUrl);
+                if (avatarPollRef.current) clearInterval(avatarPollRef.current);
+              }
+            } catch {}
+          }, 1500);
+        }
+      } else if (contentType.includes("audio/mpeg") || mode === "elevenlabs") {
+        const blob = new Blob([res.data], { type: "audio/mpeg" });
+        const url = URL.createObjectURL(blob);
+        setAvatarAudioUrl(url);
+        setAvatarVideoUrl(null);
+      }
+    } catch {}
+
+    if (voiceEnabled) {
+      const utterance = new SpeechSynthesisUtterance(cleaned);
+      utterance.rate = config.voiceSpeed;
+      utterance.pitch = config.voicePitch;
+      utterance.lang = config.language === "hindi" ? "hi-IN" : "en-US";
+      utterance.onend = () => setAiStatus("listening");
+      utterance.onerror = () => setAiStatus("listening");
+      window.speechSynthesis.speak(utterance);
+    } else {
+      setTimeout(() => setAiStatus("listening"), 3000);
+    }
   }, [voiceEnabled, config]);
 
   // Speak initial question on load
@@ -1062,29 +1149,65 @@ function ActiveInterview({
   const completionPct = totalQuestions > 0 ? Math.min((questionNumber / totalQuestions) * 100, 100) : 0;
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ fontFamily: "'Outfit', sans-serif", background: c.bg, minHeight: "100vh" }}>
+    <div className="relative w-full h-[calc(100vh-70px)] -m-5 flex flex-col overflow-hidden rounded-2xl border" style={{ background: isDark ? "#080710" : "#f8fafc", borderColor: isDark ? "rgba(255,255,255,0.06)" : "#e5e7eb", color: isDark ? "#ffffff" : "#0f172a", fontFamily: "'Outfit', sans-serif" }}>
       {/* Top Bar */}
-      <header className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 h-14 border-b" style={{ background: isDark ? "rgba(8,7,16,0.95)" : "rgba(255,255,255,0.95)", borderBottomColor: c.border, backdropFilter: "blur(20px)" }}>
+      <div
+        className="shrink-0 border-b px-4 py-2 flex items-center justify-between"
+        style={{
+          borderColor: isDark ? "rgba(255,255,255,0.06)" : "#e5e7eb",
+          background: isDark ? "rgba(8,7,16,0.85)" : "#ffffff",
+          backdropFilter: "blur(20px)",
+        }}
+      >
+        {/* Left: Avatar + Title */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <motion.div className="w-2.5 h-2.5 rounded-full" style={{ background: c.green }} animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />
-            <span className="text-xs font-bold tracking-wider" style={{ color: c.green }}>LIVE</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: "rgba(6,182,212,0.15)", color: c.cyan, border: "1px solid rgba(6,182,212,0.2)" }}>
-            <Code2 className="w-3 h-3" /> {TOPICS.find(t => t.id === config.topic)?.label || "Technical"}
-          </div>
-          <div className="hidden md:flex items-center gap-2">
-            <span className="text-sm font-medium" style={{ color: c.text }}>{config.role}</span>
-            {config.company && <><span style={{ color: c.textMuted }}>@</span><span className="text-sm font-medium" style={{ color: c.cyan }}>{config.company}</span></>}
+          <AIAvatar
+            aiStatus={aiStatus}
+            videoUrl={avatarVideoUrl}
+            audioUrl={avatarAudioUrl}
+            speechEnergy={speechEnergy}
+            companyName={config.company || ""}
+            size="sm"
+            theme={theme}
+          />
+          <div>
+            <div className="text-xs font-bold flex items-center gap-2">
+              <span>{config.role} Technical Interview</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-medium">
+                {TOPICS.find((t) => t.id === config.topic)?.label || "Technical"}
+              </span>
+            </div>
+            <div className="text-[10px]" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#64748b" }}>
+              {config.company ? `@ ${config.company}` : "General"} · {config.experienceLevel} · {config.mode}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 md:gap-4">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-sm font-bold" style={{ background: isTimeCritical ? "rgba(239,68,68,0.15)" : isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", color: isTimeCritical ? c.red : c.text, border: `1px solid ${isTimeCritical ? "rgba(239,68,68,0.3)" : c.border}` }}>
-            <Clock className="w-3.5 h-3.5" /> {formatTime(timeRemaining)}
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            LIVE
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", color: c.textSec, border: `1px solid ${c.border}` }}>
-            <MessageSquare className="w-3.5 h-3.5" /> Q {questionNumber}/{totalQuestions}
+
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold font-mono"
+            style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb" }}>
+            <Clock size={10} />
+            {formatTime(timeRemaining)}
           </div>
+
+          <div className="px-2.5 py-1 rounded-lg text-[10px] font-bold"
+            style={{ background: "rgba(6,182,212,0.1)", color: "#06b6d4" }}>
+            Q{questionNumber}{totalQuestions > 0 ? `/${totalQuestions}` : ""}
+          </div>
+
+          {violationCount > 0 && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold">
+              <Shield size={10} />
+              {violationCount}
+            </div>
+          )}
+
           <button
             onClick={() => {
               if (!showCoding && !code) {
@@ -1092,54 +1215,61 @@ function ActiveInterview({
               }
               setShowCoding(v => !v);
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
             style={{
               background: showCoding ? "rgba(139,92,246,0.2)" : isDark ? "rgba(255,255,255,0.06)" : "#f1f5f9",
-              color: showCoding ? c.purple : c.textSec,
-              border: `1px solid ${showCoding ? "rgba(139,92,246,0.4)" : c.border}`,
+              color: showCoding ? "#8b5cf6" : isDark ? "rgba(255,255,255,0.7)" : "#475569",
+              border: `1px solid ${showCoding ? "rgba(139,92,246,0.4)" : isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb"}`,
             }}
           >
-            <Terminal className="w-3.5 h-3.5" style={{ color: c.purple }} />
-            <span className="hidden sm:inline">{showCoding ? "Close Editor" : "Code Editor"}</span>
+            <Code2 size={12} />
+            {showCoding ? "Hide Code Editor" : "Code Editor"}
           </button>
-          <button onClick={() => setVoiceEnabled(v => !v)} className="p-2 rounded-lg transition-colors" style={{ background: voiceEnabled ? "rgba(6,182,212,0.15)" : "transparent", color: voiceEnabled ? c.cyan : c.textMuted }}>
-            {voiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+
+          <button
+            onClick={() => setVoiceEnabled(v => !v)}
+            className="w-7 h-7 rounded-lg border flex items-center justify-center transition-colors"
+            style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb" }}
+          >
+            {voiceEnabled ? <Volume2 size={12} className="text-cyan-400" /> : <VolumeX size={12} className="text-gray-400" />}
           </button>
-          <button onClick={() => setShowEndConfirm(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "rgba(239,68,68,0.12)", color: c.red, border: "1px solid rgba(239,68,68,0.2)" }}>
-            <PhoneOff className="w-3.5 h-3.5" /> <span className="hidden sm:inline">End</span>
+
+          <button
+            onClick={() => setShowEndConfirm(true)}
+            className="px-2.5 py-1 rounded-lg border flex items-center gap-1 text-[10px] font-bold text-red-400 transition-colors"
+            style={{ borderColor: "rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.08)" }}
+          >
+            <PhoneOff size={10} />
+            End
           </button>
         </div>
-      </header>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="shrink-0 h-1" style={{ background: isDark ? "rgba(255,255,255,0.04)" : "#f3f4f6" }}>
+        <motion.div
+          className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500"
+          animate={{ width: `${completionPct}%` }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        />
+      </div>
 
       {/* Main Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel: Conversation */}
         <div className={`flex-1 flex flex-col min-w-0 ${showCoding ? "max-w-[50%]" : ""}`}>
-          {/* Current Question */}
-          <div className="flex-shrink-0 px-4 md:px-8 pt-6 pb-4">
-            <div className="flex items-start gap-4">
-              <div className="relative flex-shrink-0">
-                <motion.div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #06b6d4, #3b82f6)", boxShadow: "0 0 40px rgba(6,182,212,0.3)" }} animate={aiStatus === "thinking" ? { scale: [1, 1.03, 1] } : {}} transition={{ duration: 2, repeat: Infinity }}>
-                  <Brain className="w-8 h-8 md:w-10 md:h-10 text-white" />
-                </motion.div>
-                <motion.div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: aiStatus === "speaking" ? c.green : aiStatus === "thinking" ? c.amber : aiStatus === "listening" ? c.cyan : c.textMuted, border: `2px solid ${c.bg}` }}>
-                  {aiStatus === "speaking" ? <Volume2 className="w-3 h-3 text-white" /> : aiStatus === "thinking" ? <Brain className="w-3 h-3 text-white" /> : <div className="w-2 h-2 rounded-full bg-white/60" />}
-                </motion.div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: c.cyan }}>Current Question</span>
-                  {currentQuestion?.isCodingChallenge && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(139,92,246,0.15)", color: c.purple }}>Coding Challenge</span>
-                  )}
-                </div>
-                <AnimatePresence mode="wait">
-                  <motion.p key={currentQuestion?.question || "empty"} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.4 }} className="text-base md:text-lg leading-relaxed" style={{ color: c.text }}>
-                    {currentQuestion?.question || <span style={{ color: c.textMuted }}>Waiting for interview to begin...</span>}
-                  </motion.p>
-                </AnimatePresence>
-              </div>
-            </div>
+          {/* Tip Banner */}
+          <div className="shrink-0 px-4 py-2 border-b flex items-center gap-2"
+            style={{ borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f3f4f6", background: isDark ? "rgba(6,182,212,0.03)" : "rgba(6,182,212,0.02)" }}>
+            <Target size={12} className="text-cyan-400 shrink-0" />
+            <span className="text-[10px]" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "#6b7280" }}>
+              Focus on algorithm design, time/space complexity, and clean code structure.
+            </span>
+            {currentQuestion?.isCodingChallenge && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold ml-auto shrink-0 uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                Coding Challenge
+              </span>
+            )}
           </div>
 
           <div className="mx-4 md:mx-8 h-px" style={{ background: c.border }} />
@@ -1343,6 +1473,71 @@ function ActiveInterview({
               </div>
             )}
           </motion.div>
+        )}
+
+        {/* Right Sidebar: AI Avatar + Technical Info (when code editor is hidden) */}
+        {!showCoding && (
+          <motion.aside
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="hidden lg:flex flex-col w-80 border-l overflow-y-auto p-4 gap-4"
+            style={{ borderColor: c.border, background: isDark ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.01)" }}
+          >
+            {/* ── 0. AI Avatar Presenter ── */}
+            <div
+              className="rounded-2xl p-4 flex flex-col items-center justify-center text-center relative overflow-hidden"
+              style={{
+                background: isDark
+                  ? "linear-gradient(180deg, rgba(6,182,212,0.08) 0%, rgba(255,255,255,0.02) 100%)"
+                  : "linear-gradient(180deg, rgba(6,182,212,0.05) 0%, rgba(0,0,0,0.01) 100%)",
+                border: `1px solid ${isDark ? "rgba(6,182,212,0.2)" : "rgba(6,182,212,0.12)"}`,
+              }}
+            >
+              <AIAvatar
+                aiStatus={aiStatus}
+                videoUrl={avatarVideoUrl}
+                audioUrl={avatarAudioUrl}
+                speechEnergy={speechEnergy}
+                companyName={config.company || ""}
+                size="md"
+                theme={theme}
+              />
+            </div>
+
+            {/* ── 1. Session Information ── */}
+            <div className="rounded-2xl p-4 space-y-3" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
+              <div className="text-xs font-bold uppercase tracking-wider text-cyan-400">Technical Session</div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span style={{ color: c.textMuted }}>Topic:</span>
+                  <span className="font-semibold">{TOPICS.find(t => t.id === config.topic)?.label || "Technical"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: c.textMuted }}>Difficulty:</span>
+                  <span className="font-semibold capitalize" style={{ color: c.cyan }}>{config.difficulty}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: c.textMuted }}>Coding Lang:</span>
+                  <span className="font-mono font-semibold uppercase">{config.codingLanguage}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: c.textMuted }}>Mode:</span>
+                  <span className="font-semibold">{config.mode}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setCode(currentQuestion?.codingProblem?.starterCode || DEFAULT_CODE[config.codingLanguage]);
+                  setShowCoding(true);
+                }}
+                className="w-full mt-2 py-2 rounded-xl text-xs font-bold text-black flex items-center justify-center gap-2 transition-all"
+                style={{ background: "linear-gradient(135deg, #06b6d4, #3b82f6)" }}
+              >
+                <Code2 size={14} /> Open Code Workspace
+              </button>
+            </div>
+          </motion.aside>
         )}
 
         {/* Show coding button when there's a coding challenge but panel is hidden */}
@@ -1605,6 +1800,67 @@ function ReportView({ sessionId, evaluation, config, messages, onRetry, onNewInt
             </div>
           </motion.div>
         )}
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-4 border-t" style={{ borderColor: c.border }}>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() =>
+              generateInterviewPDF({
+                sessionId,
+                role: config.role,
+                company: config.company,
+                type: "technical",
+                difficulty: config.difficulty,
+                language: config.language,
+                durationMinutes: config.durationMinutes,
+                technology: config.topic,
+                createdAt: new Date().toISOString(),
+                evaluation: {
+                  overallScore: evaluation.overallScore,
+                  communicationScore: evaluation.communication || 75,
+                  technicalScore: evaluation.technicalDepth || evaluation.overallScore,
+                  hrScore: evaluation.problemSolving || 70,
+                  confidenceScore: 80,
+                  strengths: evaluation.strengths || [],
+                  weaknesses: evaluation.weaknesses || [],
+                  improvements: evaluation.improvements || [],
+                  summary: evaluation.summary || "",
+                  hiringRecommendation: evaluation.hiringRecommendation || "recommend",
+                },
+              })
+            }
+            className="px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 text-white transition-all"
+            style={{ background: "linear-gradient(135deg, #06b6d4, #3b82f6)" }}
+          >
+            <Download size={14} /> Download PDF Report
+          </motion.button>
+
+          <button
+            onClick={onRetry}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-colors"
+            style={{ borderColor: c.border, color: c.textSec }}
+          >
+            <RefreshCw size={12} /> Retry Interview
+          </button>
+
+          <button
+            onClick={onViewAnalytics}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-colors"
+            style={{ borderColor: c.border, color: c.textSec }}
+          >
+            <BarChart3 size={12} /> View Analytics
+          </button>
+
+          <button
+            onClick={onNewInterview}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors"
+            style={{ borderColor: c.border, color: c.textMuted }}
+          >
+            New Topic
+          </button>
+        </div>
       </div>
     </div>
   );

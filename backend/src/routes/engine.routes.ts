@@ -3,6 +3,7 @@ import { requireAuth } from "../middleware/auth";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { generateEngineQuestion, generateEngineEvaluation } from "../lib/ai/engine-question.service";
 import { handleRouteError } from "../utils/routeError";
+import { logProctoringEvent, addViolationPoints } from "../services/interview-session.service";
 
 export const engineRouter = Router();
 
@@ -1109,3 +1110,46 @@ engineRouter.get("/:sessionId/intelligence", async (req, res) => {
     handleRouteError(res, error, "Engine.getIntelligence", "Failed to fetch intelligence data");
   }
 });
+
+// ─── Log proctoring event ──────────────────────────────────────────────────
+engineRouter.post("/:sessionId/proctor", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { eventType, category, description, pointsDeducted } = req.body;
+    const prisma = await getUserPrismaFromRequest(req);
+    const p = prisma as any;
+
+    const points = pointsDeducted || 1;
+    const { terminated, totalPoints } = await addViolationPoints(sessionId, points, p);
+
+    const event = await logProctoringEvent(sessionId, {
+      eventType: eventType || "proctor_alert",
+      category: category || "anti-cheating",
+      description: description || "Proctoring violation detected",
+      severity: points >= 3 ? "critical" : "warning",
+      pointsDeducted: points,
+    }, p);
+
+    res.json({ success: true, event, totalPoints, terminated });
+  } catch (error) {
+    handleRouteError(res, error, "Engine.logProctoringEvent", "Failed to log proctoring event");
+  }
+});
+
+// ─── Get proctoring events ────────────────────────────────────────────────
+engineRouter.get("/:sessionId/proctor", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const prisma = await getUserPrismaFromRequest(req);
+    const p = prisma as any;
+
+    const events = await p.proctoringEvent.findMany({
+      where: { sessionId },
+      orderBy: { createdAt: "asc" },
+    });
+    res.json({ success: true, events, totalPoints: events.length });
+  } catch (error) {
+    handleRouteError(res, error, "Engine.getProctoringEvents", "Failed to get proctoring events");
+  }
+});
+

@@ -204,6 +204,54 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
     return () => clearInterval(interval);
   }, [tips.length]);
 
+  // ── Anti-Cheating & Proctoring Listener ──
+  useEffect(() => {
+    if (!sessionId) return;
+    let warningsCount = 0;
+
+    const logViolation = async (type: string, desc: string, points: number) => {
+      warningsCount++;
+      setViolationCount((prev) => prev + 1);
+      toast.warning(`⚠️ Anti-Cheating Warning (${warningsCount}): ${desc}`);
+
+      try {
+        await api.post(`/engine/${sessionId}/proctor`, {
+          eventType: type,
+          category: "anti-cheating",
+          description: desc,
+          pointsDeducted: points,
+        });
+      } catch {}
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        logViolation("tab_switch", "Tab switch or window minimized detected", 2);
+      }
+    };
+
+    const handleBlur = () => {
+      logViolation("window_blur", "Window lost focus / application switch", 1);
+    };
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const pastedText = e.clipboardData?.getData("text") || "";
+      if (pastedText.length > 30) {
+        logViolation("paste_attempt", `Large text paste detected (${pastedText.length} chars)`, 3);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+    document.addEventListener("paste", handlePaste);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+      document.removeEventListener("paste", handlePaste);
+    };
+  }, [sessionId]);
+
   // ── Scroll to latest ──
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
