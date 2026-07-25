@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { stripMarkdown } from "@/utils/stripMarkdown";
 import {
@@ -11,6 +11,10 @@ import {
   HelpCircle, ShieldAlert, Award as BadgeIcon, Lightbulb, BookOpen, Target, Flame
 } from "lucide-react";
 import { api } from "@/services/api";
+
+const AptitudeEngineView = lazy(() =>
+  import("@/components/aptitude-hub/AptitudeEngineView").then(m => ({ default: m.AptitudeEngineView }))
+);
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -180,7 +184,7 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
 
   // Sync tab with activeModule from props
   useEffect(() => {
-    if (activeModule === "placement-aptitude") setTab("aptitude");
+    if (activeModule === "placement-aptitude" || activeModule === "aptitude-engine") setTab("aptitude");
     else if (activeModule === "placement-reasoning") setTab("reasoning");
     else if (activeModule === "placement-mcqs") setTab("mcqs");
     else if (activeModule === "placement-mocks") setTab("mocks");
@@ -389,7 +393,7 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
           <div>
             <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">Placement Workspace</p>
             <h2 className="text-base font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>
-              {tab === "aptitude" && "Aptitude Practice"}
+              {tab === "aptitude" && "AI Aptitude Engine"}
               {tab === "reasoning" && "Logical Reasoning"}
               {tab === "mcqs" && "Technical MCQs"}
               {tab === "mocks" && "Mock Tests"}
@@ -410,31 +414,23 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
         <div className="flex-1 min-h-0">
           <AnimatePresence mode="wait">
 
-            {/* TAB A: APTITUDE PRACTICE */}
+            {/* TAB A: APTITUDE ENGINE (replaces old topic grid) */}
             {tab === "aptitude" && !practiceSession && (
               <motion.div
-                key="aptitude-list"
+                key="aptitude-engine"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="grid grid-cols-2 sm:grid-cols-5 gap-4"
+                className="w-full"
               >
-                {APTITUDE_TOPICS.map((item, i) => (
-                  <motion.div
-                    key={item.name}
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    custom={i}
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    onClick={() => handleStartPractice(item.name, "aptitude")}
-                    className="p-5 border rounded-2xl text-center cursor-pointer hover:shadow-lg hover:border-amber-500/30 transition-all flex flex-col items-center justify-center gap-3"
-                    style={{ background: c.cardBg, borderColor: c.border }}
-                  >
-                    <span className="text-3xl">{item.icon}</span>
-                    <span className="text-xs font-bold font-sans" style={{ color: c.text }}>{item.name}</span>
-                  </motion.div>
-                ))}
+                <Suspense fallback={
+                  <div className="p-10 border rounded-2xl text-center" style={{ background: c.cardBg, borderColor: c.border }}>
+                    <Clock size={20} className="text-amber-500 animate-spin mx-auto mb-2" />
+                    <p className="text-xs font-bold" style={{ color: c.textMuted }}>Loading AI Aptitude Engine...</p>
+                  </div>
+                }>
+                  <AptitudeEngineView setView={setView} activeModule="aptitude-engine" theme={theme} />
+                </Suspense>
               </motion.div>
             )}
 
