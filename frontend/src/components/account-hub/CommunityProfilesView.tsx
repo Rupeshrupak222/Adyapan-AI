@@ -154,10 +154,10 @@ export function UserProfileView({ userId, onBack, onMessage }: { userId: string;
   const border = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
 
   if (loading) return <div className="p-1 space-y-4"><AnimatedSkeleton type="card" className="h-[300px] rounded-2xl" /></div>;
-  if (!data) return <EmptyState title="Profile not found" illustration={<Users className="w-8 h-8" />} />;
+  if (!data || !data.profile) return <EmptyState title="Profile not found" illustration={<Users className="w-8 h-8" />} />;
 
   const p = data.profile;
-  const name = p.user?.name || "Unknown";
+  const name = p.user?.name || p.user?.email?.split("@")[0] || p.username || "Community Member";
   const skills = p.skills || [];
   const domains = p.interestedDomains || [];
 

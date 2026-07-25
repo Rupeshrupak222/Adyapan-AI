@@ -7,14 +7,29 @@ import { generateJSON, MODELS } from "../lib/ai/openrouter";
 const router = Router();
 router.use(requireAuth);
 
+// Helper to resolve actual User ID from userId/profileId/username
+async function resolveUserId(idOrUsername: string): Promise<string> {
+  const profile = await prisma.profile.findFirst({
+    where: {
+      OR: [
+        { userId: idOrUsername },
+        { id: idOrUsername },
+        { username: idOrUsername },
+      ],
+    },
+    select: { userId: true },
+  });
+  return profile ? profile.userId : idOrUsername;
+}
+
 // Get follow stats for a user
 router.get("/stats/:userId", async (req: any, res) => {
   try {
-    const { userId } = req.params;
-    const followers = await prisma.communityFollow.count({ where: { followingId: userId } });
-    const following = await prisma.communityFollow.count({ where: { followerId: userId } });
+    const targetUserId = await resolveUserId(req.params.userId);
+    const followers = await prisma.communityFollow.count({ where: { followingId: targetUserId } });
+    const following = await prisma.communityFollow.count({ where: { followerId: targetUserId } });
     const isFollowing = await prisma.communityFollow.findUnique({
-      where: { followerId_followingId: { followerId: req.user.id, followingId: userId } },
+      where: { followerId_followingId: { followerId: req.user.id, followingId: targetUserId } },
     });
     res.json({ success: true, followers, following, isFollowing: !!isFollowing });
   } catch (error) {
@@ -25,17 +40,17 @@ router.get("/stats/:userId", async (req: any, res) => {
 // Toggle follow
 router.post("/follow/:userId", async (req: any, res) => {
   try {
-    const { userId } = req.params;
-    if (userId === req.user.id) return res.status(400).json({ error: "Cannot follow yourself" });
+    const targetUserId = await resolveUserId(req.params.userId);
+    if (targetUserId === req.user.id) return res.status(400).json({ error: "Cannot follow yourself" });
     const existing = await prisma.communityFollow.findUnique({
-      where: { followerId_followingId: { followerId: req.user.id, followingId: userId } },
+      where: { followerId_followingId: { followerId: req.user.id, followingId: targetUserId } },
     });
     if (existing) {
       await prisma.communityFollow.delete({ where: { id: existing.id } });
       res.json({ success: true, isFollowing: false });
     } else {
       await prisma.communityFollow.create({
-        data: { followerId: req.user.id, followingId: userId },
+        data: { followerId: req.user.id, followingId: targetUserId },
       });
       res.json({ success: true, isFollowing: true });
     }
@@ -208,35 +223,43 @@ router.get("/users", async (req: any, res) => {
 // Get another user's public profile
 router.get("/users/:userId", async (req: any, res) => {
   try {
-    const { userId } = req.params;
-    let profile = await prisma.profile.findUnique({
-      where: { userId },
+    const rawId = req.params.userId;
+    let profile = await prisma.profile.findFirst({
+      where: {
+        OR: [
+          { userId: rawId },
+          { id: rawId },
+          { username: rawId },
+        ],
+      },
       include: { user: { select: { id: true, name: true, email: true, role: true, createdAt: true } } },
     });
 
     if (!profile) {
       const user = await prisma.user.findUnique({
-        where: { id: userId },
+        where: { id: rawId },
         select: { id: true, name: true, email: true, role: true, createdAt: true },
       });
       if (!user) return res.status(404).json({ error: "Profile not found" });
 
       profile = await prisma.profile.create({
         data: {
-          userId,
-          username: user.name ? user.name.toLowerCase().replace(/\s+/g, "") : `user_${userId.slice(0, 6)}`,
+          userId: user.id,
+          username: user.name ? user.name.toLowerCase().replace(/\s+/g, "") : `user_${user.id.slice(0, 6)}`,
         },
         include: { user: { select: { id: true, name: true, email: true, role: true, createdAt: true } } },
       });
     }
 
+    const targetUserId = profile.userId;
+
     const [followers, following, isFollowing, projects, activities, achievements] = await Promise.all([
-      prisma.communityFollow.count({ where: { followingId: userId } }),
-      prisma.communityFollow.count({ where: { followerId: userId } }),
-      prisma.communityFollow.findUnique({ where: { followerId_followingId: { followerId: req.user.id, followingId: userId } } }).then(Boolean),
-      prisma.communityProject.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }),
-      prisma.communityActivity.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }),
-      prisma.communityAchievement.findMany({ where: { userId }, orderBy: { unlockedAt: "desc" } }),
+      prisma.communityFollow.count({ where: { followingId: targetUserId } }),
+      prisma.communityFollow.count({ where: { followerId: targetUserId } }),
+      prisma.communityFollow.findUnique({ where: { followerId_followingId: { followerId: req.user.id, followingId: targetUserId } } }).then(Boolean),
+      prisma.communityProject.findMany({ where: { userId: targetUserId }, orderBy: { createdAt: "desc" }, take: 20 }),
+      prisma.communityActivity.findMany({ where: { userId: targetUserId }, orderBy: { createdAt: "desc" }, take: 20 }),
+      prisma.communityAchievement.findMany({ where: { userId: targetUserId }, orderBy: { unlockedAt: "desc" } }),
     ]);
     res.json({ success: true, profile, followers, following, isFollowing, projects, activities, achievements });
   } catch (error) {
