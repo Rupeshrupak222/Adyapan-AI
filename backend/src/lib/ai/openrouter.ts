@@ -87,7 +87,7 @@ export async function callAIRobust(
   }
 
   // 3. Add NVIDIA NIM with 5 keys/models (tertiary) — key rotation across Nemotron, DeepSeek, Mistral, Kimi, GLM
-  if (env.nvidiaApiKeys.length > 0) {
+  if (env.nvidiaApiKeys && env.nvidiaApiKeys.length > 0) {
     for (let i = 0; i < env.nvidiaApiKeys.length; i++) {
       const key = env.nvidiaApiKeys[i];
       const nvidiaModel = NVIDIA_NIM_MODELS[i % NVIDIA_NIM_MODELS.length];
@@ -212,7 +212,7 @@ export async function callAIRobust(
     errors.push(lastError);
   }
 
-  throw new Error(`All AI providers/models failed. Tried ${providers.length} options: ${errors.join(" | ")}`);
+  throw new Error(`All AI providers failed. Tried ${providers.length} options: ${errors.join(" | ")}`);
 }
 
 // Extracts clean JSON string by finding first '{' or '[' and matching to final '}' or ']'
@@ -386,14 +386,21 @@ function enforceSchema<T>(parsed: any, fallback: T): T {
   }
   
   if (Array.isArray(fallback)) {
-    if (!Array.isArray(parsed)) {
+    let target = parsed;
+    if (!Array.isArray(target) && typeof target === "object" && target !== null) {
+      const arrayVal = Object.values(target).find((v) => Array.isArray(v));
+      if (arrayVal && Array.isArray(arrayVal)) {
+        target = arrayVal;
+      }
+    }
+    if (!Array.isArray(target)) {
       return fallback;
     }
     if (fallback.length > 0) {
       const template = fallback[0];
-      return parsed.map((item: any) => enforceSchema(item, template)) as unknown as T;
+      return target.map((item: any) => enforceSchema(item, template)) as unknown as T;
     }
-    return parsed as T;
+    return target as T;
   }
   
   if (typeof fallback === "object") {

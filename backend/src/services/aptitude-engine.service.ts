@@ -419,23 +419,25 @@ CRITICAL RULES:
 
   const userPrompt = `Generate exactly ${count} high-quality ${difficulty}-level ${topic} questions for ${category} placement preparation.
 
-Return a JSON array with this exact structure:
-[
-  {
-    "text": "question text with all necessary data",
-    "options": ["option1", "option2", "option3", "option4"],
-    "correctIdx": 0,
-    "explanation": "detailed step-by-step explanation",
-    "shortcut": "clever shortcut or trick method to solve faster",
-    "difficulty": "${difficulty}",
-    "estimatedTimeSec": 90,
-    "commonMistakes": ["mistake1 students often make", "mistake2"],
-    "companyRelevance": "why this question pattern appears in placements"
-  }
-]
+Return a JSON object with a "questions" key containing an array of questions with this exact structure:
+{
+  "questions": [
+    {
+      "text": "question text with all necessary data",
+      "options": ["option1", "option2", "option3", "option4"],
+      "correctIdx": 0,
+      "explanation": "detailed step-by-step explanation",
+      "shortcut": "clever shortcut or trick method to solve faster",
+      "difficulty": "${difficulty}",
+      "estimatedTimeSec": 90,
+      "commonMistakes": ["mistake1 students often make", "mistake2"],
+      "companyRelevance": "why this question pattern appears in placements"
+    }
+  ]
+}
 
 Rules:
-- Return ONLY the JSON array, nothing else.
+- Return ONLY valid JSON matching the structure above.
 - Make questions exam-realistic and challenging.
 - correctIdx is 0-based index of the correct option.
 - Include realistic numerical values where needed.
@@ -461,16 +463,30 @@ Rules:
   }));
 
   try {
-    const raw = await generateJSON<any[]>(
+    const raw = await generateJSON<any>(
       systemPrompt,
       userPrompt,
       { model: MODELS.BALANCED, maxTokens: 12000, responseFormat: { type: "json_object" } },
       []
     );
 
-    if (!Array.isArray(raw) || raw.length === 0) return fallback;
+    let questionsArray: any[] = [];
+    if (Array.isArray(raw)) {
+      questionsArray = raw;
+    } else if (raw && typeof raw === "object") {
+      if (Array.isArray(raw.questions)) questionsArray = raw.questions;
+      else if (Array.isArray(raw.data)) questionsArray = raw.data;
+      else if (Array.isArray(raw.items)) questionsArray = raw.items;
+      else if (Array.isArray(raw.result)) questionsArray = raw.result;
+      else {
+        const found = Object.values(raw).find((v) => Array.isArray(v));
+        if (found && Array.isArray(found)) questionsArray = found;
+      }
+    }
 
-    return raw.slice(0, count).map((q, i) => ({
+    if (!Array.isArray(questionsArray) || questionsArray.length === 0) return fallback;
+
+    return questionsArray.slice(0, count).map((q, i) => ({
       id: `ai-${topic.replace(/\s/g, "-")}-${Date.now()}-${i}`,
       text: q.text || `${topic} question ${i + 1}`,
       options: Array.isArray(q.options) && q.options.length === 4 ? q.options : ["A", "B", "C", "D"],
