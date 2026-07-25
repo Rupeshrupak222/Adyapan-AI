@@ -131,11 +131,25 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
 
     res.json({
       success: true,
-      sessionId: session.id,
-      mode: session.mode,
-      difficulty: sessionDifficulty,
-      totalQuestions: questions.length,
-      questions,
+      session: {
+        id: session.id,
+        mode: session.mode,
+        company: session.company || undefined,
+        role: session.role || undefined,
+        category: session.category || undefined,
+        topic: session.topic || undefined,
+        difficulty: sessionDifficulty,
+        questions,
+        totalQuestions: questions.length,
+        score: 0,
+        accuracy: 0,
+        totalTimeMs: 0,
+        avgTimePerQMs: 0,
+        xpEarned: 0,
+        weakTopics: [],
+        strongTopics: [],
+        startedAt: session.startedAt.toISOString(),
+      },
     });
   } catch (error) {
     next(error);
@@ -744,7 +758,25 @@ export async function getDailyChallenge(req: Request, res: Response, next: NextF
     res.json({
       success: true,
       alreadyCompleted: false,
-      sessionId: session.id,
+      session: {
+        id: session.id,
+        mode: "daily_challenge",
+        company: undefined,
+        role: undefined,
+        category: undefined,
+        topic: "Daily Challenge",
+        difficulty: "medium",
+        questions: challenge.questions,
+        totalQuestions: challenge.questions.length,
+        score: 0,
+        accuracy: 0,
+        totalTimeMs: 0,
+        avgTimePerQMs: 0,
+        xpEarned: 0,
+        weakTopics: [],
+        strongTopics: [],
+        startedAt: session.startedAt.toISOString(),
+      },
       challenge: {
         id: challenge.id,
         title: challenge.title,
@@ -753,7 +785,6 @@ export async function getDailyChallenge(req: Request, res: Response, next: NextF
         rewardPoints: challenge.rewardPoints,
         description: challenge.description,
       },
-      questions: challenge.questions,
     });
   } catch (error) {
     next(error);
