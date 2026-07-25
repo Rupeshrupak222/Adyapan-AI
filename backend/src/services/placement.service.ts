@@ -143,18 +143,32 @@ Rules:
   }));
 
   try {
-    const result = await generateJSON<AIQuestion[]>(
+    const raw = await generateJSON<any>(
       systemPrompt,
       userPrompt,
       { model: MODELS.FAST, maxTokens: 8000, responseFormat: { type: "json_object" } },
       []
     );
 
+    let result: any[] = [];
+    if (Array.isArray(raw)) {
+      result = raw;
+    } else if (raw && typeof raw === "object") {
+      if (Array.isArray(raw.questions)) result = raw.questions;
+      else if (Array.isArray(raw.data)) result = raw.data;
+      else if (Array.isArray(raw.items)) result = raw.items;
+      else if (Array.isArray(raw.result)) result = raw.result;
+      else {
+        const found = Object.values(raw).find((v) => Array.isArray(v));
+        if (found && Array.isArray(found)) result = found;
+      }
+    }
+
     if (!Array.isArray(result) || result.length === 0) return fallback;
 
     return result.slice(0, count).map((q, i) => ({
       id: `ai-${Date.now()}-${i}`,
-      text: q.text,
+      text: q.text || `${topic} question ${i + 1}`,
       options: q.options?.length === 4 ? q.options : ["A", "B", "C", "D"],
       correctIdx: typeof q.correctIdx === "number" ? q.correctIdx : 0,
       explanation: q.explanation || "No explanation available.",
