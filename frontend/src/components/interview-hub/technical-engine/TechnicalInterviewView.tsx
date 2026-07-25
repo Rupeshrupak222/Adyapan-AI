@@ -878,20 +878,82 @@ function ActiveInterview({
     }
   }, [currentQuestion?.question, voiceEnabled, speak]);
 
+  const micEnabledRef = useRef(micEnabled);
+  useEffect(() => { micEnabledRef.current = micEnabled; }, [micEnabled]);
+
+  const startListening = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Speech recognition is not supported in this browser.");
+      return;
+    }
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = config.language === "hindi" ? "hi-IN" : "en-US";
+
+    recognition.onresult = (event: any) => {
+      let currentTranscript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        currentTranscript += event.results[i][0].transcript;
+      }
+      const trimmed = currentTranscript.trim();
+      if (trimmed) {
+        setInputText(trimmed);
+      }
+    };
+
+    recognition.onerror = (err: any) => {
+      if (err.error === "no-speech" || err.error === "aborted") return;
+      if (err.error === "not-allowed") {
+        toast.error("Microphone permission denied.");
+        setMicEnabled(false);
+      }
+    };
+
+    recognition.onend = () => {
+      if (micEnabledRef.current) {
+        setTimeout(() => {
+          if (micEnabledRef.current) {
+            try { recognition.start(); } catch {}
+          }
+        }, 300);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+    } catch {}
+  }, [config.language]);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch {}
+      recognitionRef.current = null;
+    }
+  }, []);
+
   const toggleMic = useCallback(async () => {
     if (micEnabled) {
+      micEnabledRef.current = false;
       setMicEnabled(false);
-      if (recognitionRef.current) try { recognitionRef.current.stop(); } catch {}
+      stopListening();
       if (micStreamRef.current) { micStreamRef.current.getTracks().forEach(t => t.stop()); micStreamRef.current = null; }
       return;
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
+      micEnabledRef.current = true;
       setMicEnabled(true);
-      toast.success("Microphone connected");
+      startListening();
+      toast.success("Microphone active — start speaking");
     } catch { toast.error("Could not access microphone"); }
-  }, [micEnabled]);
+  }, [micEnabled, startListening, stopListening]);
 
   const handleSubmitAnswer = useCallback(async () => {
     const answer = inputText.trim();

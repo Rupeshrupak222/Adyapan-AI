@@ -146,6 +146,8 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
   const animFrameRef = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(true);
+  const micEnabledRef = useRef(micEnabled);
+  useEffect(() => { micEnabledRef.current = micEnabled; }, [micEnabled]);
 
   const totalDuration = config.durationMinutes * 60;
   const timeRemaining = Math.max(0, totalDuration - elapsedSeconds);
@@ -349,17 +351,15 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
       config.language === "hindi" ? "hi-IN" : "en-US";
 
     recognition.onresult = (event: any) => {
-      let interim = "";
-      let final = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) final += transcript;
-        else interim += transcript;
+      let currentTranscript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        currentTranscript += event.results[i][0].transcript;
       }
-      setLiveTranscript(final || interim);
-      if (final) {
-        setInputText((prev) => prev + " " + final);
-        networkRetryCount.current = 0; // Speech is working — reset counter
+      const trimmed = currentTranscript.trim();
+      if (trimmed) {
+        setLiveTranscript(trimmed);
+        setInputText(trimmed);
+        networkRetryCount.current = 0;
       }
     };
 
@@ -371,20 +371,18 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
       } else if (err === "not-allowed") {
         toast.error("Microphone access denied. Please allow permissions.");
         setMicEnabled(false);
+        setIsListening(false);
       } else if (err === "network") {
-        // Chrome fires "network" errors randomly — auto-restart silently
         networkRetryCount.current++;
         if (networkRetryCount.current < 5) {
-          // Silently retry with increasing delay (1s, 2s, 3s, 4s)
-          const delay = Math.min(networkRetryCount.current * 1000, 4000);
+          const delay = Math.min(networkRetryCount.current * 1000, 3000);
           setTimeout(() => {
-            if (isActiveRef.current && micEnabled) {
+            if (isActiveRef.current && micEnabledRef.current) {
               try { recognition.start(); } catch {}
             }
           }, delay);
-          return; // Don't show toast for recoverable network errors
+          return;
         }
-        // 5+ consecutive failures — give up and notify
         toast.error("Speech recognition lost connection. Mic disabled.");
         setMicEnabled(false);
         setIsListening(false);
@@ -395,14 +393,15 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
     };
 
     recognition.onend = () => {
-      if (isActiveRef.current && micEnabled) {
-        // Reset retry count when recognition ends normally (speech worked)
+      if (isActiveRef.current && micEnabledRef.current) {
         networkRetryCount.current = 0;
         setTimeout(() => {
-          if (isActiveRef.current && micEnabled) {
+          if (isActiveRef.current && micEnabledRef.current) {
             try { recognition.start(); } catch {}
           }
         }, 300);
+      } else {
+        setIsListening(false);
       }
     };
 
@@ -411,7 +410,7 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
       recognition.start();
       setIsListening(true);
     } catch {}
-  }, [config.language, micEnabled, setIsListening, setLiveTranscript]);
+  }, [config.language, setIsListening, setLiveTranscript]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
@@ -424,6 +423,7 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
   // ── Toggle mic ──
   const toggleMic = useCallback(async () => {
     if (micEnabled) {
+      micEnabledRef.current = false;
       setMicEnabled(false);
       stopListening();
       if (micStreamRef.current) {
@@ -436,15 +436,14 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
+      micEnabledRef.current = true;
       setMicEnabled(true);
-      if (voiceEnabled) {
-        startListening();
-      }
-      toast.success("Microphone connected");
+      startListening();
+      toast.success("Microphone active — start speaking");
     } catch {
-      toast.error("Could not access microphone");
+      toast.error("Could not access microphone. Please check permissions.");
     }
-  }, [micEnabled, voiceEnabled, startListening, stopListening]);
+  }, [micEnabled, startListening, stopListening]);
 
   // ── Speech Synthesis ──
   const speak = useCallback(

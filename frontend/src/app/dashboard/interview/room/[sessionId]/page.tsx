@@ -300,15 +300,15 @@ export default function InterviewRoomPage() {
       recognition.lang = "en-US";
 
       recognition.onresult = (event: any) => {
-        let interim = "";
-        let final = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) { final += transcript; }
-          else { interim += transcript; }
+        let currentTranscript = "";
+        for (let i = 0; i < event.results.length; i++) {
+          currentTranscript += event.results[i][0].transcript;
         }
-        setLiveTranscript(final || interim);
-        if (final) setInput(prev => prev + " " + final);
+        const trimmed = currentTranscript.trim();
+        if (trimmed) {
+          setLiveTranscript(trimmed);
+          setInput(trimmed);
+        }
       };
 
       recognition.onerror = (event: any) => {

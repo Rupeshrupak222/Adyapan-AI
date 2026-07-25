@@ -63,6 +63,8 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
   const recognitionRef = useRef<any>(null);
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const micEnabledRef = useRef(micEnabled);
+  useEffect(() => { micEnabledRef.current = micEnabled; }, [micEnabled]);
 
   const isDark = theme === "dark";
 
@@ -144,34 +146,43 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
     recognition.lang = config.language === "hindi" ? "hi-IN" : "en-US";
 
     recognition.onresult = (event: any) => {
-      let interimTranscript = "";
-      let finalTranscript = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript;
-        } else {
-          interimTranscript += transcript;
-        }
+      let currentTranscript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        currentTranscript += event.results[i][0].transcript;
       }
-      setLiveTranscript(interimTranscript || finalTranscript);
-      if (finalTranscript) {
-        setInputText((prev) => (prev ? prev + " " + finalTranscript : finalTranscript));
+      const trimmed = currentTranscript.trim();
+      if (trimmed) {
+        setLiveTranscript(trimmed);
+        setInputText(trimmed);
       }
     };
 
-    recognition.onerror = () => setAiStatus("idle");
+    recognition.onerror = (err: any) => {
+      if (err.error === "no-speech" || err.error === "aborted") return;
+      if (err.error === "not-allowed") toast.error("Microphone permission denied.");
+      setAiStatus("idle");
+    };
+
     recognition.onend = () => {
-      if (micEnabled) {
-        try { recognition.start(); } catch {}
+      if (micEnabledRef.current) {
+        setTimeout(() => {
+          if (micEnabledRef.current) {
+            try { recognition.start(); } catch {}
+          }
+        }, 300);
+      } else {
+        setIsListening(false);
+        setAiStatus("idle");
       }
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
-    setAiStatus("listening");
-  }, [config.language, micEnabled, setIsListening, setLiveTranscript]);
+    try {
+      recognition.start();
+      setIsListening(true);
+      setAiStatus("listening");
+    } catch {}
+  }, [config.language, setIsListening, setLiveTranscript]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
