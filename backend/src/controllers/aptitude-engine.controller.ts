@@ -572,20 +572,46 @@ export async function getAnalytics(req: Request, res: Response, next: NextFuncti
           level: 1,
           streak: 0,
           bestStreak: 0,
-          topicMastery: {},
-          companyReadiness: {},
+          topicMastery: [],
+          companyReadiness: [],
           categoryScores: {},
           weeklyProgress: [],
           placementReadiness: 0,
+          weakTopics: [],
+          strongTopics: [],
         },
         recentSessions: [],
       });
     }
 
-    const topicMastery = analytics.topicMastery as any;
-    const companyReadiness = analytics.companyReadiness as any;
-    const categoryScores = analytics.categoryScores as any;
-    const weeklyProgress = analytics.weeklyProgress as any[];
+    const rawTopicMastery = (analytics.topicMastery as any) || {};
+    const rawCompanyReadiness = (analytics.companyReadiness as any) || {};
+    const categoryScores = (analytics.categoryScores as any) || {};
+    const weeklyProgress = (analytics.weeklyProgress as any[]) || [];
+
+    const weakTopics: string[] = rawTopicMastery.weakTopics || [];
+    const strongTopics: string[] = rawTopicMastery.strongTopics || [];
+
+    const topicMasteryArr: any[] = Object.entries(rawTopicMastery)
+      .filter(([key]) => !["weakTopics", "strongTopics"].includes(key))
+      .map(([topic, stats]: [string, any]) => ({
+        topic,
+        accuracy: stats.accuracy || 0,
+        totalAttempted: stats.total || 0,
+        totalCorrect: stats.correct || 0,
+        avgTimeMs: stats.avgTimeMs || 0,
+        difficulty: stats.difficulty || "medium",
+        trend: stats.trend || "stable",
+        lastPracticed: stats.lastPracticed || null,
+      }));
+
+    const companyReadinessArr: any[] = Object.entries(rawCompanyReadiness).map(([company, data]: [string, any]) => ({
+      company,
+      score: data.score || 0,
+      ready: (data.score || 0) >= 60,
+      gapTopics: data.gapTopics || [],
+      recommendation: data.recommendation || "",
+    }));
 
     res.json({
       success: true,
@@ -599,12 +625,14 @@ export async function getAnalytics(req: Request, res: Response, next: NextFuncti
         level: analytics.level,
         streak: analytics.streak,
         bestStreak: analytics.bestStreak,
-        topicMastery: topicMastery || {},
-        companyReadiness: companyReadiness || {},
-        categoryScores: categoryScores || {},
-        weeklyProgress: weeklyProgress || [],
+        topicMastery: topicMasteryArr,
+        companyReadiness: companyReadinessArr,
+        categoryScores,
+        weeklyProgress,
         placementReadiness: analytics.placementReadiness,
         lastPracticedAt: analytics.lastPracticedAt,
+        weakTopics,
+        strongTopics,
       },
       recentSessions,
     });

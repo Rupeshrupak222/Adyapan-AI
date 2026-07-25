@@ -256,6 +256,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
   const submitAnswer = useCallback(async (selectedIdx: number | null) => {
     if (!session) return;
     const currentQ = session.questions[progress.currentIdx];
+    if (!currentQ) return;
     const timeTakenMs = Date.now() - questionStartTime;
     const isCorrect = selectedIdx !== null && selectedIdx === currentQ.correctIdx;
 
@@ -785,7 +786,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   )}
                 </motion.div>
 
-                {analytics && analytics.weakTopics.length > 0 && (
+                {analytics && (analytics.weakTopics?.length || 0) > 0 && (
                   <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={6} className="p-5 rounded-2xl border space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
                     <div className="flex items-center gap-2">
                       <Sparkles size={15} className="text-purple-500" />
@@ -802,7 +803,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           </p>
                         </div>
                       </div>
-                      {analytics.strongTopics.length > 0 && (
+                      {(analytics.strongTopics?.length || 0) > 0 && (
                         <div className="flex items-start gap-2.5 p-3 rounded-xl" style={{ background: "rgba(16,185,129,0.06)" }}>
                           <CheckCircle2 size={14} className="text-green-500 mt-0.5 shrink-0" />
                           <div>

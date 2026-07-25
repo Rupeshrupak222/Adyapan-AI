@@ -232,7 +232,7 @@ export default function AptitudeAnalytics({
     } else {
       lines.push("You're building your foundation. Consistent daily practice will significantly improve your scores.");
     }
-    if (analytics.weakTopics.length > 0) {
+    if ((analytics.weakTopics?.length || 0) > 0) {
       lines.push(`Priority areas: ${analytics.weakTopics.slice(0, 3).join(", ")}. Dedicate extra sessions to these.`);
     }
     if (analytics.streak >= 7) {
