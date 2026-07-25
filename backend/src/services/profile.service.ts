@@ -27,8 +27,8 @@ function normalizeStringArray(val: unknown): string[] {
   return val.map((s) => String(s).trim()).filter(Boolean);
 }
 
-export function getProfile(userId: string) {
-  return prisma.profile.findUnique({
+export async function getProfile(userId: string) {
+  let profile = await prisma.profile.findUnique({
     where: { userId },
     include: {
       user: {
@@ -36,6 +36,28 @@ export function getProfile(userId: string) {
       },
     },
   });
+
+  if (!profile && userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    });
+    if (user) {
+      profile = await prisma.profile.create({
+        data: {
+          userId,
+          username: user.name ? user.name.toLowerCase().replace(/\s+/g, "") : `user_${userId.slice(0, 6)}`,
+        },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, role: true, createdAt: true },
+          },
+        },
+      });
+    }
+  }
+
+  return profile;
 }
 
 export function upsertProfile(userId: string, input: ProfileInput) {

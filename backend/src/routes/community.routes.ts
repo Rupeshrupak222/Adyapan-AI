@@ -209,11 +209,27 @@ router.get("/users", async (req: any, res) => {
 router.get("/users/:userId", async (req: any, res) => {
   try {
     const { userId } = req.params;
-    const profile = await prisma.profile.findUnique({
+    let profile = await prisma.profile.findUnique({
       where: { userId },
       include: { user: { select: { id: true, name: true, email: true, role: true, createdAt: true } } },
     });
-    if (!profile) return res.status(404).json({ error: "Profile not found" });
+
+    if (!profile) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, email: true, role: true, createdAt: true },
+      });
+      if (!user) return res.status(404).json({ error: "Profile not found" });
+
+      profile = await prisma.profile.create({
+        data: {
+          userId,
+          username: user.name ? user.name.toLowerCase().replace(/\s+/g, "") : `user_${userId.slice(0, 6)}`,
+        },
+        include: { user: { select: { id: true, name: true, email: true, role: true, createdAt: true } } },
+      });
+    }
+
     const [followers, following, isFollowing, projects, activities, achievements] = await Promise.all([
       prisma.communityFollow.count({ where: { followingId: userId } }),
       prisma.communityFollow.count({ where: { followerId: userId } }),

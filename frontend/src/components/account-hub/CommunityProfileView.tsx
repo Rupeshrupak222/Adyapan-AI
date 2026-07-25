@@ -188,17 +188,38 @@ export function CommunityProfileView({ userId, onViewUser }: { userId?: string; 
 
   useEffect(() => {
     const fetchProfile = async () => {
+      setLoading(true);
+      setError(null);
       try {
         if (userId) {
           const res = await api.get(`/community/users/${userId}`);
-          if (res.data.success) {
-            setProfile(res.data.profile || res.data.user);
-            setIsFollowing(res.data.isFollowing);
+          if (res.data.success && res.data.profile) {
+            setProfile(res.data.profile);
+            setIsFollowing(res.data.isFollowing || false);
             setFollowStats({ followers: res.data.followers || 0, following: res.data.following || 0 });
+            if (res.data.projects) setProjects(res.data.projects);
+            if (res.data.activities) setActivities(res.data.activities);
+            if (res.data.achievements) setAchievements(res.data.achievements);
+          } else {
+            setError("Profile not found");
           }
         } else {
           const res = await api.get("/profile/me");
-          setProfile(res.data.profile);
+          if (res.data?.profile) {
+            setProfile(res.data.profile);
+          } else {
+            // If profile record isn't in DB yet, fetch auth me details as fallback
+            const userRes = await api.get("/auth/me");
+            const u = userRes.data.user;
+            setProfile({
+              id: "temp",
+              userId: u.id,
+              username: u.name ? u.name.toLowerCase().replace(/\s+/g, "") : `user_${u.id?.slice(0, 6)}`,
+              user: u,
+              skills: [],
+              interestedDomains: [],
+            } as any);
+          }
         }
       } catch (err) {
         console.error("Failed to load profile", err);
@@ -275,7 +296,7 @@ export function CommunityProfileView({ userId, onViewUser }: { userId?: string; 
     return () => { cancelled = true; };
   }, [activeTab, communitySearch]);
 
-  const displayName = profile?.user?.name ?? "";
+  const displayName = profile?.user?.name || profile?.user?.email?.split("@")[0] || profile?.username || "Community Member";
   const username = profile?.username ? `@${profile.username}` : "";
   const bio = profile?.aboutMe || profile?.careerObjective || "";
   const skills = profile?.skills ?? [];
