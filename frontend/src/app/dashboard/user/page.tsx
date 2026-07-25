@@ -131,6 +131,9 @@ const JobHubView = dynamic(() => import("@/components/job-hub/JobHubView").then(
 const PlacementHubView = dynamic(() => import("@/components/placement-hub/PlacementHubView").then(m => m.PlacementHubView), {
   loading: () => <DashboardWidgetSkeleton title="Placement Hub" />
 });
+const AptitudeEngineView = dynamic(() => import("@/components/aptitude-hub/AptitudeEngineView").then(m => m.AptitudeEngineView), {
+  loading: () => <DashboardWidgetSkeleton title="AI Aptitude Engine" />
+});
 const ProductivityHubView = dynamic(() => import("@/components/productivity-hub/ProductivityHubView").then(m => m.ProductivityHubView), {
   loading: () => <DashboardWidgetSkeleton title="Productivity Workspace" />
 });
@@ -253,6 +256,10 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Technical MCQs", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Mock Tests", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Readiness Score", viewId: "placement-hub", category: "Placement Hub" },
+  { label: "AI Aptitude Engine", viewId: "aptitude-engine", category: "Placement Hub" },
+  { label: "Aptitude Analytics", viewId: "aptitude-engine-analytics", category: "Placement Hub" },
+  { label: "Daily Challenge", viewId: "aptitude-engine", category: "Placement Hub" },
+  { label: "Company Tests", viewId: "aptitude-engine", category: "Placement Hub" },
   { label: "Email Writer", viewId: "prod-email", category: "Productivity" },
   { label: "SOP Generator", viewId: "prod-sop", category: "Productivity" },
   { label: "LinkedIn Post Generator", viewId: "prod-linkedin", category: "Productivity" },
@@ -344,7 +351,7 @@ export const sidebarItems: SidebarItem[] = [
   {
     id: "placement", label: "Placement Hub", icon: <Trophy size={18} />,
     submenu: [
-      { label: "Aptitude Practice", href: "#" }, { label: "Logical Reasoning", href: "#" },
+      { label: "AI Aptitude Engine", href: "#" }, { label: "Aptitude Practice", href: "#" }, { label: "Logical Reasoning", href: "#" },
       { label: "Technical MCQs", href: "#" }, { label: "Mock Tests", href: "#" },
       { label: "Readiness Score", href: "#" },
     ],
@@ -549,6 +556,7 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "Job Referrals") onViewTool("job-referrals");
                       else if (sub.label === "Hiring Challenges") onViewTool("job-challenges");
                       else if (sub.label === "Aptitude Practice") onViewTool("placement-aptitude");
+                      else if (sub.label === "AI Aptitude Engine") onViewTool("aptitude-engine");
                       else if (sub.label === "Logical Reasoning") onViewTool("placement-reasoning");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
                       else if (sub.label === "Mock Tests") onViewTool("placement-mocks");
@@ -2352,6 +2360,8 @@ function UserDashboardContent() {
           <HubErrorBoundary><InternshipHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "job-hub" || activeView === "job-matching" || activeView === "job-jd-match" || activeView === "job-referrals" || activeView === "job-challenges" ? (
           <HubErrorBoundary><JobHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
+        ) : activeView === "aptitude-engine" || activeView === "aptitude-engine-analytics" ? (
+          <HubErrorBoundary><AptitudeEngineView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "placement-hub" || activeView === "placement-aptitude" || activeView === "placement-reasoning" || activeView === "placement-mcqs" || activeView === "placement-mocks" || activeView === "placement-readiness" ? (
           <HubErrorBoundary><PlacementHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "productivity-hub" || activeView === "prod-email" || activeView === "prod-sop" || activeView === "prod-linkedin" || activeView === "prod-content" ? (
