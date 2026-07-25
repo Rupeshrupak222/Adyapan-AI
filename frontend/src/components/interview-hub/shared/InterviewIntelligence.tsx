@@ -38,6 +38,7 @@ import {
   PieChart,
 } from "lucide-react";
 import Link from "next/link";
+import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
 
 // ─── Intelligence Layer Types ────────────────────────────────────────────
 
@@ -916,9 +917,9 @@ export default function InterviewIntelligence({
                                 <label className="text-[10px] font-bold uppercase tracking-wider text-amber-400 block mb-1">
                                   ↓ AI Analysis
                                 </label>
-                                <p className="text-xs leading-relaxed p-2.5 rounded-lg" style={{ background: isDark ? "rgba(245,158,11,0.05)" : "rgba(245,158,11,0.03)", color: isDark ? "rgba(255,255,255,0.8)" : "#374151" }}>
-                                  {q.aiAnalysis}
-                                </p>
+                                <div className="p-2.5 rounded-lg" style={{ background: isDark ? "rgba(245,158,11,0.05)" : "rgba(245,158,11,0.03)" }}>
+                                  <FormattedMarkdown content={q.aiAnalysis} isDark={isDark} />
+                                </div>
                               </div>
 
                               {/* 4. Ideal Answer */}
@@ -926,9 +927,9 @@ export default function InterviewIntelligence({
                                 <label className="text-[10px] font-bold uppercase tracking-wider text-green-400 block mb-1">
                                   ↓ Ideal Answer
                                 </label>
-                                <p className="text-xs leading-relaxed p-2.5 rounded-lg" style={{ background: isDark ? "rgba(16,185,129,0.05)" : "rgba(16,185,129,0.03)", color: isDark ? "rgba(255,255,255,0.8)" : "#374151" }}>
-                                  {q.idealAnswer}
-                                </p>
+                                <div className="p-2.5 rounded-lg" style={{ background: isDark ? "rgba(16,185,129,0.05)" : "rgba(16,185,129,0.03)" }}>
+                                  <FormattedMarkdown content={q.idealAnswer} isDark={isDark} />
+                                </div>
                               </div>
 
                               {/* 5. Common Mistakes */}
@@ -941,7 +942,7 @@ export default function InterviewIntelligence({
                                     {q.commonMistakes.map((m, i) => (
                                       <div key={i} className="flex items-center gap-2 text-xs" style={{ color: isDark ? "rgba(255,255,255,0.7)" : "#4b5563" }}>
                                         <X size={12} className="text-red-400 shrink-0" />
-                                        <span>{m}</span>
+                                        <FormattedMarkdown content={m} isDark={isDark} />
                                       </div>
                                     ))}
                                   </div>
@@ -953,9 +954,9 @@ export default function InterviewIntelligence({
                                 <label className="text-[10px] font-bold uppercase tracking-wider text-blue-400 block mb-1">
                                   ↓ Improved Answer Rewrite
                                 </label>
-                                <p className="text-xs font-mono leading-relaxed p-2.5 rounded-lg border" style={{ background: isDark ? "rgba(59,130,246,0.06)" : "rgba(59,130,246,0.03)", borderColor: "rgba(59,130,246,0.15)", color: isDark ? "#93c5fd" : "#1d4ed8" }}>
-                                  "{q.improvedAnswer}"
-                                </p>
+                                <div className="p-2.5 rounded-lg border" style={{ background: isDark ? "rgba(59,130,246,0.06)" : "rgba(59,130,246,0.03)", borderColor: "rgba(59,130,246,0.15)" }}>
+                                  <FormattedMarkdown content={q.improvedAnswer} isDark={isDark} />
+                                </div>
                               </div>
 
                               {/* 7. Recruiter Perspective */}
@@ -963,9 +964,9 @@ export default function InterviewIntelligence({
                                 <label className="text-[10px] font-bold uppercase tracking-wider text-pink-400 block mb-1">
                                   ↓ Recruiter Perspective
                                 </label>
-                                <p className="text-xs italic p-2 rounded-lg" style={{ background: isDark ? "rgba(236,72,153,0.05)" : "rgba(236,72,153,0.03)", color: isDark ? "rgba(255,255,255,0.7)" : "#4b5563" }}>
-                                  "{q.recruiterPerspective}"
-                                </p>
+                                <div className="p-2 rounded-lg" style={{ background: isDark ? "rgba(236,72,153,0.05)" : "rgba(236,72,153,0.03)" }}>
+                                  <FormattedMarkdown content={q.recruiterPerspective} isDark={isDark} />
+                                </div>
                               </div>
                             </motion.div>
                           )}

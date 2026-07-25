@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { api } from "@/services/api";
 import type { HRConfig, HRMessage, STARAnalysis, CommunicationAnalysis } from "./HRTypes";
 import { useHRStore } from "./HRStore";
+import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
 
 interface HRInterviewActiveProps {
   sessionId: string;
@@ -397,7 +398,7 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
                   }}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="flex-1">{msg.content}</span>
+                    <FormattedMarkdown content={msg.content} isDark={isDark} className="flex-1" />
                     {msg.role === "interviewer" && (
                       <button
                         onClick={() => speakText(msg.content)}

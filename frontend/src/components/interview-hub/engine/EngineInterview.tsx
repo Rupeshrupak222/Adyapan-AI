@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
+import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
 import type {
   EngineConfig,
   EngineMessage,
@@ -1044,21 +1045,21 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
                   )}
                 </div>
                 <AnimatePresence mode="wait">
-                  <motion.p
+                  <motion.div
                     key={currentQuestionText || "empty"}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.4 }}
-                    className="text-base md:text-lg leading-relaxed"
-                    style={{ color: c.text }}
                   >
-                    {currentQuestionText || (
+                    {currentQuestionText ? (
+                      <FormattedMarkdown content={currentQuestionText} isDark={isDark} className="text-base md:text-lg leading-relaxed" />
+                    ) : (
                       <span style={{ color: c.textMuted }}>
                         Waiting for interview to begin...
                       </span>
                     )}
-                  </motion.p>
+                  </motion.div>
                 </AnimatePresence>
               </div>
             </div>

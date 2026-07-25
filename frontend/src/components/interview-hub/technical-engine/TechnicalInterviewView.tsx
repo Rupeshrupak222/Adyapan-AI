@@ -19,6 +19,7 @@ import { COMPANY_PRESETS, ROLE_PRESETS } from "../engine/EngineTypes";
 import EngineAnalytics from "../engine/EngineAnalytics";
 import CompanyLogo from "../CompanyLogo";
 import InterviewIntelligence, { IntelligenceData } from "../shared/InterviewIntelligence";
+import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -1099,7 +1100,7 @@ function ActiveInterview({
                       )}
                       <div>
                         <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed space-y-3" style={{ background: msg.role === "candidate" ? c.candidateBubble : c.interviewerBubble, color: msg.role === "candidate" ? c.candidateText : c.interviewerText, border: `1px solid ${msg.role === "candidate" ? c.candidateBorder : c.interviewerBorder}`, borderTopRightRadius: msg.role === "candidate" ? "6px" : undefined, borderTopLeftRadius: msg.role === "interviewer" ? "6px" : undefined }}>
-                          <p>{msg.content}</p>
+                          <FormattedMarkdown content={msg.content} isDark={isDark} />
                           {msg.role === "interviewer" && currentQuestion?.codingProblem && (msg.questionNumber === questionNumber || messages[messages.length - 1]?.id === msg.id) && (
                             <div className="p-3 rounded-xl border mt-2 space-y-2" style={{ background: isDark ? "rgba(6,182,212,0.06)" : "rgba(6,182,212,0.04)", borderColor: "rgba(6,182,212,0.2)" }}>
                               <div className="flex items-center justify-between">

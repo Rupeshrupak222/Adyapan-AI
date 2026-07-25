@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { generateInterviewPDF } from "@/utils/interview-pdf";
 import InterviewIntelligence from "@/components/interview-hub/shared/InterviewIntelligence";
+import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
 import type { EngineEvaluation, AnswerAnalysis, IntelligenceData } from "./EngineTypes";
 
 interface EngineReportProps {
@@ -404,9 +405,7 @@ export default function EngineReport({
               AI Summary
             </h3>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>
-            {evaluation.summary}
-          </p>
+          <FormattedMarkdown content={evaluation.summary} isDark={isDark} />
         </motion.div>
 
         {/* ═══ STRENGTHS & WEAKNESSES ═══ */}
@@ -635,9 +634,9 @@ export default function EngineReport({
                               <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: c.amber }}>
                                 AI Analysis
                               </label>
-                              <p className="text-xs leading-relaxed px-3 py-2 rounded-xl" style={{ background: isDark ? "rgba(245,158,11,0.04)" : "rgba(245,158,11,0.02)", color: c.textSec, border: `1px solid ${isDark ? "rgba(245,158,11,0.08)" : "rgba(245,158,11,0.06)"}` }}>
-                                {bd.aiAnalysis}
-                              </p>
+                              <div className="px-3 py-2 rounded-xl" style={{ background: isDark ? "rgba(245,158,11,0.04)" : "rgba(245,158,11,0.02)", border: `1px solid ${isDark ? "rgba(245,158,11,0.08)" : "rgba(245,158,11,0.06)"}` }}>
+                                <FormattedMarkdown content={bd.aiAnalysis} isDark={isDark} />
+                              </div>
                             </div>
 
                             {/* Suggested Better Answer */}
@@ -645,9 +644,9 @@ export default function EngineReport({
                               <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: c.green }}>
                                 Suggested Better Answer
                               </label>
-                              <p className="text-xs leading-relaxed px-3 py-2 rounded-xl" style={{ background: isDark ? "rgba(16,185,129,0.05)" : "rgba(16,185,129,0.03)", color: c.textSec, border: `1px solid ${isDark ? "rgba(16,185,129,0.1)" : "rgba(16,185,129,0.06)"}` }}>
-                                {bd.suggestedBetterAnswer}
-                              </p>
+                              <div className="px-3 py-2 rounded-xl" style={{ background: isDark ? "rgba(16,185,129,0.05)" : "rgba(16,185,129,0.03)", border: `1px solid ${isDark ? "rgba(16,185,129,0.1)" : "rgba(16,185,129,0.06)"}` }}>
+                                <FormattedMarkdown content={bd.suggestedBetterAnswer} isDark={isDark} />
+                              </div>
                             </div>
 
                             {/* Interviewer Perspective */}
@@ -655,9 +654,9 @@ export default function EngineReport({
                               <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: c.purple }}>
                                 Interviewer Perspective
                               </label>
-                              <p className="text-xs leading-relaxed px-3 py-2 rounded-xl" style={{ background: isDark ? "rgba(139,92,246,0.04)" : "rgba(139,92,246,0.02)", color: c.textSec, border: `1px solid ${isDark ? "rgba(139,92,246,0.08)" : "rgba(139,92,246,0.06)"}` }}>
-                                {bd.interviewerPerspective}
-                              </p>
+                              <div className="px-3 py-2 rounded-xl" style={{ background: isDark ? "rgba(139,92,246,0.04)" : "rgba(139,92,246,0.02)", border: `1px solid ${isDark ? "rgba(139,92,246,0.08)" : "rgba(139,92,246,0.06)"}` }}>
+                                <FormattedMarkdown content={bd.interviewerPerspective} isDark={isDark} />
+                              </div>
                             </div>
 
                             {/* Score + Tags */}
