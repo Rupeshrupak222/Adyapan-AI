@@ -88,6 +88,14 @@ interface CareerDashboardData {
     totalMilestones: number;
     overallAssessment: string;
   };
+  interviewSummary?: {
+    totalCompleted: number;
+    avgScore: number;
+    latestReadiness: number;
+    biggestStrength: string;
+    biggestWeakness: string;
+    improvementDelta: number;
+  };
   learningSummary: {
     topicsCompleted: number;
     studyHours: number;
@@ -1064,6 +1072,31 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
                 <p className="text-[10px] font-bold text-blue-400 uppercase mb-1">Assessment</p>
                 <p className="text-xs text-white/80">{data.careerCoach.overallAssessment}</p>
               </div>
+              {data.interviewSummary && data.interviewSummary.totalCompleted > 0 && (
+                <div className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/10">
+                  <p className="text-[10px] font-bold text-rose-400 uppercase mb-1">Interview Intelligence</p>
+                  <div className="space-y-1">
+                    <p className="text-xs text-white/80">
+                      {data.interviewSummary.totalCompleted} interviews · {data.interviewSummary.avgScore}% avg
+                      {data.interviewSummary.improvementDelta !== 0 && (
+                        <span className={data.interviewSummary.improvementDelta > 0 ? "text-emerald-400" : "text-rose-400"}>
+                          {" "}({data.interviewSummary.improvementDelta > 0 ? "+" : ""}{data.interviewSummary.improvementDelta})
+                        </span>
+                      )}
+                    </p>
+                    {data.interviewSummary.biggestStrength && (
+                      <p className="text-[10px] text-white/60">
+                        <span className="text-emerald-400 font-bold">Strength:</span> {data.interviewSummary.biggestStrength}
+                      </p>
+                    )}
+                    {data.interviewSummary.biggestWeakness && (
+                      <p className="text-[10px] text-white/60">
+                        <span className="text-rose-400 font-bold">Focus:</span> {data.interviewSummary.biggestWeakness}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </PremiumCard>
         </motion.div>

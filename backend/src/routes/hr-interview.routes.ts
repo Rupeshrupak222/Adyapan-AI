@@ -326,6 +326,51 @@ hrInterviewRouter.post("/:sessionId/evaluate", async (req, res) => {
       history
     );
 
+    let intelligenceData = null;
+    try {
+      const { generateIntelligenceLayer } = await import("../lib/ai/intelligence.service.js");
+      let previousEvaluation = null;
+      const prevSessions = await p.interviewSession.findMany({
+        where: { userId: req.user!.userId, id: { not: sessionId }, status: "completed" },
+        include: { evaluations: { take: 1 } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      });
+      if (prevSessions.length > 0 && prevSessions[0].evaluations?.[0]) {
+        previousEvaluation = {
+          overallScore: prevSessions[0].evaluations[0].overallScore,
+          strengths: prevSessions[0].evaluations[0].strengths,
+          weaknesses: prevSessions[0].evaluations[0].weaknesses,
+        };
+      }
+      intelligenceData = await generateIntelligenceLayer(
+        {
+          overallScore: evaluation.overallScore,
+          communication: evaluation.communicationScore,
+          confidence: evaluation.confidenceScore,
+          problemSolving: 0,
+          leadership: evaluation.leadershipScore || 0,
+          roleFit: evaluation.overallScore,
+          strengths: evaluation.strengths,
+          weaknesses: evaluation.weaknesses,
+          improvements: evaluation.improvements,
+          hiringRecommendation: evaluation.hiringRecommendation,
+          summary: evaluation.summary,
+        },
+        history.map((m: any) => ({ role: m.role, content: m.content })),
+        {
+          interviewType: config.interviewType || "hr",
+          targetRole: session.role,
+          targetCompany: session.company,
+          difficulty: session.difficulty,
+          experienceLevel: config.experienceLevel || "mid",
+        },
+        previousEvaluation
+      );
+    } catch (intelErr) {
+      console.warn("[HR] Intelligence generation failed:", intelErr);
+    }
+
     await p.interviewEvaluation.create({
       data: {
         sessionId,
@@ -354,6 +399,7 @@ hrInterviewRouter.post("/:sessionId/evaluate", async (req, res) => {
           competencyMatrix: evaluation.competencyMatrix,
           nextPracticeTopics: evaluation.nextPracticeTopics,
           recruiterPerspective: evaluation.recruiterPerspective,
+          intelligence: intelligenceData,
         },
       },
     });
@@ -670,5 +716,98 @@ hrInterviewRouter.get("/:sessionId/report", async (req, res) => {
     });
   } catch (error) {
     handleRouteError(res, error, "HR.report", "Failed to fetch HR report");
+  }
+});
+
+// ─── HR Intelligence coaching endpoint ─────────────────────────────────
+hrInterviewRouter.post("/:sessionId/coach", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const prisma = await getUserPrismaFromRequest(req);
+    const p = prisma as any;
+
+    const session = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+    });
+    if (!session) {
+      res.status(404).json({ success: false, error: "Session not found" });
+      return;
+    }
+
+    const evalRecord = await p.interviewEvaluation.findFirst({
+      where: { sessionId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!evalRecord) {
+      res.status(400).json({ success: false, error: "No evaluation found" });
+      return;
+    }
+
+    const detailedAnalysis = (evalRecord.detailedAnalysis as any) || {};
+    if (detailedAnalysis.intelligence) {
+      res.json({ success: true, intelligence: detailedAnalysis.intelligence });
+      return;
+    }
+
+    const messages = await p.interviewMessage.findMany({
+      where: { sessionId },
+      orderBy: { createdAt: "asc" },
+      select: { role: true, content: true },
+    });
+    const config = session.configuration || {};
+
+    let previousEvaluation = null;
+    const prevSessions = await p.interviewSession.findMany({
+      where: { userId: req.user!.userId, id: { not: sessionId }, status: "completed" },
+      include: { evaluations: { take: 1 } },
+      orderBy: { createdAt: "desc" },
+      take: 1,
+    });
+    if (prevSessions.length > 0 && prevSessions[0].evaluations?.[0]) {
+      previousEvaluation = {
+        overallScore: prevSessions[0].evaluations[0].overallScore,
+        strengths: prevSessions[0].evaluations[0].strengths,
+        weaknesses: prevSessions[0].evaluations[0].weaknesses,
+      };
+    }
+
+    const { generateIntelligenceLayer } = await import("../lib/ai/intelligence.service.js");
+    const intelligence = await generateIntelligenceLayer(
+      {
+        overallScore: evalRecord.overallScore,
+        communication: evalRecord.communicationScore,
+        confidence: evalRecord.confidenceScore,
+        leadership: detailedAnalysis.leadershipScore || 0,
+        roleFit: evalRecord.overallScore,
+        strengths: evalRecord.strengths,
+        weaknesses: evalRecord.weaknesses,
+        improvements: evalRecord.improvements,
+        hiringRecommendation: evalRecord.hiringRecommendation,
+        summary: evalRecord.summary,
+      },
+      messages,
+      {
+        interviewType: config.interviewType || session.type,
+        targetRole: session.role,
+        targetCompany: session.company,
+        difficulty: session.difficulty,
+        experienceLevel: config.experienceLevel || "mid",
+      },
+      previousEvaluation
+    );
+
+    await p.interviewEvaluation.update({
+      where: { id: evalRecord.id },
+      data: {
+        detailedAnalysis: {
+          ...detailedAnalysis,
+          intelligence,
+        },
+      },
+    });
+
+    res.json({ success: true, intelligence });
+  } catch (error) {
+    handleRouteError(res, error, "HR.coach", "Failed to generate coaching intelligence");
   }
 });

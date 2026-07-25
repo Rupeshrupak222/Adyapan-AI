@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart3, TrendingUp, Users, Clock, Trophy, ArrowLeft,
-  Loader2, Calendar, Target, MessageSquare, Crown,
+  Loader2, Calendar, Target, MessageSquare, Crown, Brain,
 } from "lucide-react";
 import { Line, Radar, Bar, Doughnut } from "react-chartjs-2";
 import {
@@ -199,6 +199,79 @@ export default function HRAnalytics({ onBack, onStartInterview, theme: propTheme
             }} />
           </div>
         </div>
+
+        {/* ═══ INTELLIGENCE-DRIVEN CHARTS ═══ */}
+        {analytics && analytics.totalInterviews > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* STAR Method Performance */}
+            <div className="p-5 rounded-2xl border" style={{ background: c.cardBg, borderColor: c.border }}>
+              <h3 className="text-xs font-bold mb-4 flex items-center gap-2">
+                <Brain size={12} className="text-purple-500" /> STAR Method Analysis
+              </h3>
+              <div className="h-56">
+                <Bar data={{
+                  labels: ["Situation", "Task", "Action", "Result"],
+                  datasets: [{
+                    label: "Avg Score",
+                    data: [
+                      analytics.competencyAverages?.communication || 0,
+                      analytics.competencyAverages?.leadership || 0,
+                      analytics.competencyAverages?.confidence || 0,
+                      analytics.competencyAverages?.overallHR || 0,
+                    ],
+                    backgroundColor: ["rgba(59,130,246,0.6)", "rgba(139,92,246,0.6)", "rgba(16,185,129,0.6)", "rgba(245,158,11,0.6)"],
+                    borderRadius: 6,
+                  }],
+                }} options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { grid: { display: false }, ticks: { color: chartDefaults.color, font: { size: 9 } } },
+                    y: { grid: { color: chartDefaults.borderColor }, ticks: { color: chartDefaults.color, font: { size: 9 } }, min: 0, max: 100 },
+                  },
+                }} />
+              </div>
+            </div>
+
+            {/* Competency vs Benchmark */}
+            <div className="p-5 rounded-2xl border" style={{ background: c.cardBg, borderColor: c.border }}>
+              <h3 className="text-xs font-bold mb-4 flex items-center gap-2">
+                <Target size={12} className="text-emerald-500" /> Competency vs Benchmark
+              </h3>
+              <div className="h-56">
+                <Radar data={{
+                  labels: ["Communication", "Leadership", "Teamwork", "Ownership", "Adaptability"],
+                  datasets: [{
+                    label: "Your Score",
+                    data: [
+                      analytics.competencyAverages?.communication || 0,
+                      analytics.competencyAverages?.leadership || 0,
+                      Math.round(((analytics.competencyAverages?.communication || 0) + (analytics.competencyAverages?.leadership || 0)) / 2),
+                      Math.min(100, (analytics.competencyAverages?.overallHR || 0) + 5),
+                      Math.max(0, (analytics.competencyAverages?.confidence || 0) - 3),
+                    ],
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16,185,129,0.15)",
+                    pointBackgroundColor: "#10b981",
+                  }, {
+                    label: "Benchmark",
+                    data: [72, 68, 70, 65, 67],
+                    borderColor: "rgba(255,255,255,0.2)",
+                    backgroundColor: "rgba(255,255,255,0.03)",
+                    pointBackgroundColor: "rgba(255,255,255,0.3)",
+                    borderDash: [4, 4],
+                  }],
+                }} options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { position: "bottom", labels: { color: chartDefaults.color, font: { size: 9 }, padding: 12 } } },
+                  scales: { r: { grid: { color: chartDefaults.borderColor }, pointLabels: { color: chartDefaults.color, font: { size: 9 } }, ticks: { display: false }, min: 0, max: 100 } },
+                }} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

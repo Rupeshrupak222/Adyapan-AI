@@ -18,6 +18,7 @@ import { api } from "@/services/api";
 import { COMPANY_PRESETS, ROLE_PRESETS } from "../engine/EngineTypes";
 import EngineAnalytics from "../engine/EngineAnalytics";
 import CompanyLogo from "../CompanyLogo";
+import InterviewIntelligence, { IntelligenceData } from "../shared/InterviewIntelligence";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -1285,6 +1286,35 @@ function ReportView({ sessionId, evaluation, config, messages, onRetry, onNewInt
 }) {
   const isDark = theme === "dark";
   const [openBreakdowns, setOpenBreakdowns] = useState<Set<number>>(new Set());
+  const [intelligence, setIntelligence] = useState<IntelligenceData | null>(null);
+  const [loadingIntelligence, setLoadingIntelligence] = useState(false);
+
+  useEffect(() => {
+    const fetchIntelligence = async () => {
+      if (!sessionId) return;
+      setLoadingIntelligence(true);
+      try {
+        const token = localStorage.getItem("adyapan-token");
+        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        const res = await fetch(`${base}/api/technical-engine/${sessionId}/coach`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        const data = await res.json();
+        if (data.success && data.intelligence) {
+          setIntelligence(data.intelligence);
+        }
+      } catch (err) {
+        console.warn("Failed to load technical intelligence data:", err);
+      } finally {
+        setLoadingIntelligence(false);
+      }
+    };
+    fetchIntelligence();
+  }, [sessionId]);
 
   const toggleBreakdown = useCallback((idx: number) => {
     setOpenBreakdowns(prev => {
@@ -1382,8 +1412,15 @@ function ReportView({ sessionId, evaluation, config, messages, onRetry, onNewInt
           </div>
         </motion.div>
 
+        {/* Intelligence Coaching Layer */}
+        {intelligence && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <InterviewIntelligence intelligence={intelligence} isDark={isDark} isTechnical={true} />
+          </motion.div>
+        )}
+
         {/* Summary */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-6 rounded-3xl border" style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.05), rgba(59,130,246,0.03))", borderColor: isDark ? "rgba(6,182,212,0.12)" : "rgba(6,182,212,0.08)" }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="p-6 rounded-3xl border" style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.05), rgba(59,130,246,0.03))", borderColor: isDark ? "rgba(6,182,212,0.12)" : "rgba(6,182,212,0.08)" }}>
           <div className="flex items-center gap-2 mb-3">
             <Brain className="w-4 h-4" style={{ color: c.cyan }} />
             <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: c.cyan }}>AI Summary</h3>
@@ -1393,7 +1430,7 @@ function ReportView({ sessionId, evaluation, config, messages, onRetry, onNewInt
 
         {/* Strengths & Weaknesses */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="p-6 rounded-3xl border" style={{ background: isDark ? "rgba(16,185,129,0.04)" : "rgba(16,185,129,0.02)", borderColor: isDark ? "rgba(16,185,129,0.15)" : "rgba(16,185,129,0.1)" }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-6 rounded-3xl border" style={{ background: isDark ? "rgba(16,185,129,0.04)" : "rgba(16,185,129,0.02)", borderColor: isDark ? "rgba(16,185,129,0.15)" : "rgba(16,185,129,0.1)" }}>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(16,185,129,0.15)" }}><TrendingUp className="w-4 h-4" style={{ color: c.green }} /></div>
               <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: c.green }}>Strengths</h3>
@@ -1408,7 +1445,7 @@ function ReportView({ sessionId, evaluation, config, messages, onRetry, onNewInt
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-6 rounded-3xl border" style={{ background: isDark ? "rgba(239,68,68,0.04)" : "rgba(239,68,68,0.02)", borderColor: isDark ? "rgba(239,68,68,0.15)" : "rgba(239,68,68,0.1)" }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="p-6 rounded-3xl border" style={{ background: isDark ? "rgba(239,68,68,0.04)" : "rgba(239,68,68,0.02)", borderColor: isDark ? "rgba(239,68,68,0.15)" : "rgba(239,68,68,0.1)" }}>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(239,68,68,0.15)" }}><TrendingDown className="w-4 h-4" style={{ color: c.red }} /></div>
               <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: c.red }}>Areas to Improve</h3>
@@ -1426,7 +1463,7 @@ function ReportView({ sessionId, evaluation, config, messages, onRetry, onNewInt
 
         {/* Answer Breakdowns */}
         {answerBreakdowns.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="space-y-3">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="space-y-3">
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" style={{ color: c.purple }} />
               <h3 className="text-sm font-bold uppercase tracking-wider">Answer Breakdowns</h3>

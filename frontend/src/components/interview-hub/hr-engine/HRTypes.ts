@@ -296,3 +296,68 @@ export const HR_BEHAVIORAL_TOPICS = [
 ] as const;
 
 export type HRBehavioralTopic = (typeof HR_BEHAVIORAL_TOPICS)[number]["id"];
+
+export interface IntelligenceData {
+  communicationInsights: {
+    confidence: number;
+    clarity: number;
+    professionalism: number;
+    answerStructure: number;
+    conciseness: number;
+    fillerWordsDetected: boolean;
+    speakingPace: string;
+    feedback: string;
+    suggestions: string[];
+  };
+  interviewFlow: Array<{
+    phase: string;
+    startTime: number;
+    endTime: number;
+    questionCount: number;
+    averageScore: number;
+    trend: "improving" | "declining" | "stable";
+    notes: string;
+  }>;
+  followUpAnalysis: {
+    questionsAnsweredConfidently: Array<{ question: string; score: number }>;
+    questionsRequiringHints: Array<{ question: string; score: number; hint: string }>;
+    questionsWithIncompleteReasoning: Array<{ question: string; score: number; issue: string }>;
+    questionsAvoided: Array<{ question: string; reason: string }>;
+    questionsAnsweredIncorrectly: Array<{ question: string; score: number; correction: string }>;
+  };
+  aiCoach: {
+    topPriorities: Array<{ priority: number; area: string; action: string; impact: string; timeframe: string }>;
+    topicsToRevise: string[];
+    codingTopics: string[];
+    behavioralTopics: string[];
+    communicationExercises: string[];
+    resumeImprovements: string[];
+    learningHubRecommendations: string[];
+    codingHubRecommendations: string[];
+    careerRoadmapUpdates: string[];
+    biggestStrength: string;
+    biggestWeakness: string;
+    interviewReadiness: number;
+    nextRecommendedInterview: string;
+    overallSummary: string;
+  };
+  practicePlan: {
+    todayGoal: string;
+    todayTasks: Array<{ task: string; category: string; estimatedMinutes: number }>;
+    thisWeek: Array<{ goal: string; tasks: string[]; deadline: string }>;
+    thisMonth: Array<{ milestone: string; targetDate: string; checkpoints: string[] }>;
+    suggestedInterviewType: string;
+    recommendedCodingProblems: string[];
+    learningModules: string[];
+    resumeTasks: string[];
+  };
+  resumeImpact: {
+    projectImprovements: string[];
+    resumeBulletRewrites: string[];
+    experienceClarifications: string[];
+    linkedInUpdates: string[];
+    overallResumeAdvice: string;
+  };
+  competencyRadar: Array<{ competency: string; score: number; benchmark: number }>;
+  improvementSinceLast: { scoreDelta: number; newStrengths: string[]; persistentWeaknesses: string[] };
+}

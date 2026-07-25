@@ -27,7 +27,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateInterviewPDF } from "@/utils/interview-pdf";
-import type { EngineEvaluation, AnswerAnalysis } from "./EngineTypes";
+import InterviewIntelligence from "@/components/interview-hub/shared/InterviewIntelligence";
+import type { EngineEvaluation, AnswerAnalysis, IntelligenceData } from "./EngineTypes";
 
 interface EngineReportProps {
   sessionId: string;
@@ -119,6 +120,8 @@ export default function EngineReport({
   const theme = propTheme || (typeof window !== "undefined" ? (localStorage.getItem("adyapan-theme") || "dark") : "dark");
   const [openBreakdowns, setOpenBreakdowns] = useState<Set<number>>(new Set());
   const [showAllBreakdowns, setShowAllBreakdowns] = useState(false);
+  const [intelligence, setIntelligence] = useState<IntelligenceData | null>(null);
+  const [loadingIntelligence, setLoadingIntelligence] = useState(false);
 
   const isDark = theme === "dark";
   const c = useMemo(
@@ -183,6 +186,33 @@ export default function EngineReport({
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    const fetchIntelligence = async () => {
+      if (!sessionId) return;
+      setLoadingIntelligence(true);
+      try {
+        const token = localStorage.getItem("adyapan-token");
+        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        const res = await fetch(`${base}/api/engine/${sessionId}/coach`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        const data = await res.json();
+        if (data.success && data.intelligence) {
+          setIntelligence(data.intelligence);
+        }
+      } catch (err) {
+        console.warn("Failed to load intelligence data:", err);
+      } finally {
+        setLoadingIntelligence(false);
+      }
+    };
+    fetchIntelligence();
+  }, [sessionId]);
 
   const handleDownloadPDF = useCallback(() => {
     try {
@@ -759,6 +789,24 @@ export default function EngineReport({
             </div>
           )}
         </motion.div>
+
+        {/* ═══ INTELLIGENCE LAYER ═══ */}
+        {(intelligence || loadingIntelligence) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45, duration: 0.5 }}
+          >
+            {loadingIntelligence && !intelligence ? (
+              <div className="p-8 rounded-3xl border text-center" style={{ background: c.cardBg, borderColor: c.border }}>
+                <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin mx-auto mb-3" style={{ borderColor: c.purple, borderTopColor: "transparent" }} />
+                <p className="text-xs" style={{ color: c.textMuted }}>Generating AI coaching intelligence...</p>
+              </div>
+            ) : intelligence ? (
+              <InterviewIntelligence intelligence={intelligence} isDark={isDark} />
+            ) : null}
+          </motion.div>
+        )}
 
         {/* ═══ ACTION BUTTONS ═══ */}
         <motion.div

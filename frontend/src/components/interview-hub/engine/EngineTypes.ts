@@ -114,6 +114,90 @@ export interface EngineHistoryEntry {
   score: number | null;
   status: string;
   date: string;
+  improvement?: { scoreDelta: number; newStrengths: string[]; persistentWeaknesses: string[] };
+}
+
+export interface CommunicationInsight {
+  confidence: number;
+  clarity: number;
+  professionalism: number;
+  answerStructure: number;
+  conciseness: number;
+  fillerWordsDetected: boolean;
+  speakingPace: string;
+  feedback: string;
+  suggestions: string[];
+}
+
+export interface InterviewFlowPhase {
+  phase: string;
+  startTime: number;
+  endTime: number;
+  questionCount: number;
+  averageScore: number;
+  trend: "improving" | "declining" | "stable";
+  notes: string;
+}
+
+export interface FollowUpAnalysis {
+  questionsAnsweredConfidently: Array<{ question: string; score: number }>;
+  questionsRequiringHints: Array<{ question: string; score: number; hint: string }>;
+  questionsWithIncompleteReasoning: Array<{ question: string; score: number; issue: string }>;
+  questionsAvoided: Array<{ question: string; reason: string }>;
+  questionsAnsweredIncorrectly: Array<{ question: string; score: number; correction: string }>;
+}
+
+export interface AICoachOutput {
+  topPriorities: Array<{ priority: number; area: string; action: string; impact: string; timeframe: string }>;
+  topicsToRevise: string[];
+  codingTopics: string[];
+  behavioralTopics: string[];
+  communicationExercises: string[];
+  resumeImprovements: string[];
+  learningHubRecommendations: string[];
+  codingHubRecommendations: string[];
+  careerRoadmapUpdates: string[];
+  biggestStrength: string;
+  biggestWeakness: string;
+  interviewReadiness: number;
+  nextRecommendedInterview: string;
+  overallSummary: string;
+}
+
+export interface PracticePlan {
+  todayGoal: string;
+  todayTasks: Array<{ task: string; category: string; estimatedMinutes: number }>;
+  thisWeek: Array<{ goal: string; tasks: string[]; deadline: string }>;
+  thisMonth: Array<{ milestone: string; targetDate: string; checkpoints: string[] }>;
+  suggestedInterviewType: string;
+  recommendedCodingProblems: string[];
+  learningModules: string[];
+  resumeTasks: string[];
+}
+
+export interface ResumeImpact {
+  projectImprovements: string[];
+  resumeBulletRewrites: string[];
+  experienceClarifications: string[];
+  linkedInUpdates: string[];
+  overallResumeAdvice: string;
+}
+
+export interface CompetencyRadarItem {
+  competency: string;
+  score: number;
+  benchmark: number;
+}
+
+export interface IntelligenceData {
+  communicationInsights: CommunicationInsight;
+  interviewFlow: InterviewFlowPhase[];
+  followUpAnalysis: FollowUpAnalysis;
+  aiCoach: AICoachOutput;
+  practicePlan: PracticePlan;
+  resumeImpact: ResumeImpact;
+  competencyRadar: CompetencyRadarItem[];
+  improvementSinceLast: { scoreDelta: number; newStrengths: string[]; persistentWeaknesses: string[] };
 }
 
 export interface TranscriptEntry {

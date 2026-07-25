@@ -7,9 +7,10 @@ import {
   Brain, Heart, Globe, Flame, Target, Award, ChevronDown, ChevronUp,
   Download, RotateCcw, BarChart3, Eye, Check, X, ArrowRight,
 } from "lucide-react";
-import type { HREvaluation, HRAnswerBreakdown } from "./HRTypes";
+import type { HREvaluation, HRAnswerBreakdown, IntelligenceData } from "./HRTypes";
 import { HR_COMPETENCY_CONFIG } from "./HRTypes";
 import { generateInterviewPDF } from "@/utils/interview-pdf";
+import InterviewIntelligence from "@/components/interview-hub/shared/InterviewIntelligence";
 
 interface HRReportProps {
   sessionId: string;
@@ -71,6 +72,8 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
   const theme = propTheme || (typeof window !== "undefined" ? (localStorage.getItem("adyapan-theme") || "dark") : "dark");
   const [expandedBreakdown, setExpandedBreakdown] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "breakdown" | "competencies" | "recruiter">("overview");
+  const [intelligence, setIntelligence] = useState<IntelligenceData | null>(null);
+  const [loadingIntelligence, setLoadingIntelligence] = useState(false);
 
   const isDark = theme === "dark";
   const c = {
@@ -96,6 +99,33 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
   };
 
   const recConfig = getRecommendationConfig(evaluation.hiringRecommendation);
+
+  useEffect(() => {
+    const fetchIntelligence = async () => {
+      if (!sessionId) return;
+      setLoadingIntelligence(true);
+      try {
+        const token = localStorage.getItem("adyapan-token");
+        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        const res = await fetch(`${base}/api/hr-interview/${sessionId}/coach`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        const data = await res.json();
+        if (data.success && data.intelligence) {
+          setIntelligence(data.intelligence);
+        }
+      } catch (err) {
+        console.warn("Failed to load HR intelligence data:", err);
+      } finally {
+        setLoadingIntelligence(false);
+      }
+    };
+    fetchIntelligence();
+  }, [sessionId]);
 
   const tabs = [
     { id: "overview" as const, label: "Overview" },
@@ -402,6 +432,24 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ═══ INTELLIGENCE LAYER ═══ */}
+        {(intelligence || loadingIntelligence) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            {loadingIntelligence && !intelligence ? (
+              <div className="p-8 rounded-3xl border text-center" style={{ background: c.cardBg, borderColor: c.border }}>
+                <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin mx-auto mb-3" style={{ borderColor: "#8b5cf6", borderTopColor: "transparent" }} />
+                <p className="text-xs" style={{ color: c.textMuted }}>Generating AI coaching intelligence...</p>
+              </div>
+            ) : intelligence ? (
+              <InterviewIntelligence intelligence={intelligence} isDark={isDark} isHR />
+            ) : null}
+          </motion.div>
+        )}
 
         {/* Actions */}
         <div className="flex justify-center gap-3">

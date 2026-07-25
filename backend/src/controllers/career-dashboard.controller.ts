@@ -287,12 +287,20 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
 
   completedInterviews.forEach((i: any) => {
     const eval_ = i.evaluations?.[0];
+    const detailedAnalysis = eval_?.detailedAnalysis || {};
+    const intelligence = detailedAnalysis?.intelligence || null;
+    const scoreLabel = eval_?.overallScore ? `${eval_.overallScore}%` : "N/A";
     timelineEvents.push({
       type: "interview",
-      title: `Interview: ${i.role} ${i.company ? `at ${i.company}` : ""} - ${eval_?.overallScore || "N/A"}%`,
+      title: `Interview: ${i.role} ${i.company ? `at ${i.company}` : ""} - ${scoreLabel}`,
       date: i.createdAt,
       icon: "mic",
-      color: "#f43f5e"
+      color: "#f43f5e",
+      ...(intelligence ? {
+        aiCoachSummary: intelligence.aiCoach?.overallSummary || "",
+        interviewReadiness: intelligence.aiCoach?.interviewReadiness || 0,
+        topPriority: intelligence.aiCoach?.topPriorities?.[0]?.area || "",
+      } : {}),
     });
   });
 
@@ -592,6 +600,40 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     });
   }
 
+  // ─── Intelligence-Driven Recommendations & Actions ───────────
+  const latestInterviewWithIntelligence = completedInterviews.find((i: any) => {
+    const eval_ = i.evaluations?.[0];
+    return eval_?.detailedAnalysis?.intelligence;
+  });
+  if (latestInterviewWithIntelligence) {
+    const eval_ = latestInterviewWithIntelligence.evaluations?.[0];
+    const intelligence = eval_?.detailedAnalysis?.intelligence;
+    if (intelligence?.aiCoach?.topPriorities?.length > 0) {
+      const topArea = intelligence.aiCoach.topPriorities[0];
+      recommendations.push({
+        type: "interview",
+        title: `Improve: ${topArea.area}`,
+        description: `${topArea.action} — ${topArea.impact}. ${topArea.timeframe ? `Timeline: ${topArea.timeframe}.` : ""}`,
+        impact: "high",
+        icon: "mic",
+        color: "#f43f5e",
+        action: "interview-hub",
+      });
+    }
+    if (intelligence?.practicePlan?.suggestedInterviewType) {
+      todayActions.push({
+        title: `Practice: ${intelligence.practicePlan.suggestedInterviewType} interview`,
+        priority: "High",
+        category: "interview",
+        icon: "mic",
+        estimatedMinutes: 30,
+      });
+    }
+    if (intelligence?.aiCoach?.biggestWeakness) {
+      briefLines.push(`Your biggest interview weakness: ${intelligence.aiCoach.biggestWeakness}.`);
+    }
+  }
+
   // ─── Career Insights ──────────────────────────────────────────
   const insights: string[] = [];
 
@@ -749,6 +791,31 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       profileCompleteness: profileCompletion,
       networkingProgress: 0,
       githubConnected: !!githubProfile,
+    },
+    interviewSummary: {
+      totalCompleted: completedInterviews.length,
+      avgScore: avgInterviewScore,
+      latestReadiness: (() => {
+        const latest = completedInterviews[0];
+        const intel = latest?.evaluations?.[0]?.detailedAnalysis?.intelligence;
+        return intel?.aiCoach?.interviewReadiness || interviewReadiness;
+      })(),
+      biggestStrength: (() => {
+        const latest = completedInterviews[0];
+        const intel = latest?.evaluations?.[0]?.detailedAnalysis?.intelligence;
+        return intel?.aiCoach?.biggestStrength || "";
+      })(),
+      biggestWeakness: (() => {
+        const latest = completedInterviews[0];
+        const intel = latest?.evaluations?.[0]?.detailedAnalysis?.intelligence;
+        return intel?.aiCoach?.biggestWeakness || "";
+      })(),
+      improvementDelta: (() => {
+        if (completedInterviews.length < 2) return 0;
+        const latest = completedInterviews[0]?.evaluations?.[0]?.overallScore || 0;
+        const prev = completedInterviews[1]?.evaluations?.[0]?.overallScore || 0;
+        return latest - prev;
+      })(),
     },
     charts: {
       weeklyActivity: Object.entries(weeklyActivity).map(([date, data]) => ({ date, ...data })),

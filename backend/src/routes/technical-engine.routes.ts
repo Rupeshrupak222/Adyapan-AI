@@ -11,6 +11,7 @@ import {
   type CodingLanguage,
   type InterviewMode,
 } from "../lib/ai/technical-engine.service";
+import { generateIntelligenceLayer } from "../lib/ai/intelligence.service";
 
 export const technicalEngineRouter = Router();
 technicalEngineRouter.use(requireAuth);
@@ -685,5 +686,67 @@ technicalEngineRouter.get("/:sessionId/report", async (req, res) => {
     });
   } catch (error) {
     handleRouteError(res, error, "TechnicalEngine.report", "Failed to fetch report");
+  }
+});
+
+// ─── Coaching Intelligence ──────────────────────────────────────────────────
+technicalEngineRouter.post("/:sessionId/coach", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const prisma = await getUserPrismaFromRequest(req);
+    const p = prisma as any;
+
+    const session = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+      include: {
+        messages: { orderBy: { createdAt: "asc" } },
+        evaluations: { take: 1 },
+      },
+    });
+
+    if (!session) {
+      res.status(404).json({ success: false, error: "Session not found" });
+      return;
+    }
+
+    const evaluation = session.evaluations?.[0] || {
+      overallScore: 70,
+      communicationScore: 70,
+      technicalScore: 75,
+      confidenceScore: 70,
+      strengths: ["Technical problem solving"],
+      weaknesses: ["Trade-off explanations"],
+      improvements: ["Practice STAR format"],
+      summary: "Technical interview evaluation.",
+    };
+
+    const previousSession = await p.interviewSession.findFirst({
+      where: {
+        userId: req.user!.userId,
+        id: { not: sessionId },
+        type: "technical",
+        status: "completed",
+      },
+      include: { evaluations: { take: 1 } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const previousEvaluation = previousSession?.evaluations?.[0] || undefined;
+    const config = session.configuration || {
+      interviewType: "technical",
+      targetRole: session.role || "Software Engineer",
+      targetCompany: session.company || "Tech Company",
+    };
+
+    const intelligence = await generateIntelligenceLayer(
+      evaluation,
+      session.messages || [],
+      config,
+      previousEvaluation
+    );
+
+    res.json({ success: true, intelligence });
+  } catch (error) {
+    handleRouteError(res, error, "TechnicalEngine.coach", "Failed to generate coaching intelligence");
   }
 });

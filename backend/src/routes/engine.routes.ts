@@ -443,6 +443,52 @@ engineRouter.post("/:sessionId/evaluate", async (req, res) => {
       resumeContext: resumeContext || "",
     });
 
+    let intelligenceData = null;
+    try {
+      const { generateIntelligenceLayer } = await import("../lib/ai/intelligence.service.js");
+      let previousEvaluation = null;
+      const prevSessions = await p.interviewSession.findMany({
+        where: { userId: req.user!.userId, id: { not: sessionId }, status: "completed" },
+        include: { evaluations: { take: 1 } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      });
+      if (prevSessions.length > 0 && prevSessions[0].evaluations?.[0]) {
+        previousEvaluation = {
+          overallScore: prevSessions[0].evaluations[0].overallScore,
+          strengths: prevSessions[0].evaluations[0].strengths,
+          weaknesses: prevSessions[0].evaluations[0].weaknesses,
+        };
+      }
+      intelligenceData = await generateIntelligenceLayer(
+        {
+          overallScore: evaluation.overallScore,
+          communication: evaluation.communicationScore,
+          technical: evaluation.technicalScore,
+          confidence: evaluation.confidenceScore,
+          problemSolving: evaluation.subScores?.problemSolving || 0,
+          leadership: evaluation.subScores?.leadership || 0,
+          roleFit: evaluation.subScores?.roleFit || evaluation.overallScore,
+          strengths: evaluation.strengths,
+          weaknesses: evaluation.weaknesses,
+          improvements: evaluation.improvements,
+          hiringRecommendation: evaluation.hiringRecommendation,
+          summary: evaluation.summary,
+        },
+        history.map((m: any) => ({ role: m.role, content: m.content })),
+        {
+          interviewType: session.type,
+          targetRole: session.role,
+          targetCompany: session.company,
+          difficulty: session.difficulty,
+          experienceLevel: (session.configuration as any)?.experienceLevel || "mid",
+        },
+        previousEvaluation
+      );
+    } catch (intelErr) {
+      console.warn("[Engine] Intelligence generation failed:", intelErr);
+    }
+
     await p.interviewEvaluation.create({
       data: {
         sessionId,
@@ -467,6 +513,7 @@ engineRouter.post("/:sessionId/evaluate", async (req, res) => {
           communicationTips: evaluation.communicationTips || [],
           technicalImprovements: evaluation.technicalImprovements || [],
           nextPracticePlan: evaluation.nextPracticePlan || null,
+          intelligence: intelligenceData,
         },
       },
     });
@@ -912,5 +959,133 @@ engineRouter.get("/:sessionId/report", async (req, res) => {
     });
   } catch (error) {
     handleRouteError(res, error, "Engine.report", "Failed to fetch report data");
+  }
+});
+
+// ─── Intelligence coaching endpoint ────────────────────────────────────
+engineRouter.post("/:sessionId/coach", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const prisma = await getUserPrismaFromRequest(req);
+    const p = prisma as any;
+
+    const session = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+    });
+    if (!session) {
+      res.status(404).json({ success: false, error: "Interview session not found" });
+      return;
+    }
+
+    const existingEval = await p.interviewEvaluation.findFirst({
+      where: { sessionId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!existingEval) {
+      res.status(400).json({ success: false, error: "No evaluation found for this session" });
+      return;
+    }
+
+    const messages = await p.interviewMessage.findMany({
+      where: { sessionId },
+      orderBy: { createdAt: "asc" },
+      select: { role: true, content: true },
+    });
+
+    const config = session.configuration || {};
+
+    let previousEvaluation = null;
+    const prevSessions = await p.interviewSession.findMany({
+      where: {
+        userId: req.user!.userId,
+        id: { not: sessionId },
+        status: "completed",
+      },
+      include: { evaluations: { take: 1 } },
+      orderBy: { createdAt: "desc" },
+      take: 1,
+    });
+    if (prevSessions.length > 0 && prevSessions[0].evaluations?.[0]) {
+      previousEvaluation = {
+        overallScore: prevSessions[0].evaluations[0].overallScore,
+        strengths: prevSessions[0].evaluations[0].strengths,
+        weaknesses: prevSessions[0].evaluations[0].weaknesses,
+      };
+    }
+
+    const { generateIntelligenceLayer } = await import("../lib/ai/intelligence.service.js");
+
+    const evalFormatted = {
+      overallScore: existingEval.overallScore,
+      communication: existingEval.communicationScore,
+      technical: existingEval.technicalScore,
+      confidence: existingEval.confidenceScore,
+      problemSolving: (existingEval.detailedAnalysis as any)?.subScores?.problemSolving || 0,
+      leadership: (existingEval.detailedAnalysis as any)?.subScores?.leadership || 0,
+      roleFit: (existingEval.detailedAnalysis as any)?.subScores?.roleFit || existingEval.overallScore,
+      strengths: existingEval.strengths,
+      weaknesses: existingEval.weaknesses,
+      improvements: existingEval.improvements,
+      hiringRecommendation: existingEval.hiringRecommendation,
+      summary: existingEval.summary,
+    };
+
+    const intelligence = await generateIntelligenceLayer(
+      evalFormatted,
+      messages,
+      {
+        interviewType: config.interviewType || session.type,
+        targetRole: config.targetRole || session.role,
+        targetCompany: config.targetCompany || session.company,
+        difficulty: session.difficulty,
+        experienceLevel: config.experienceLevel || "mid",
+      },
+      previousEvaluation
+    );
+
+    res.json({ success: true, intelligence });
+  } catch (error) {
+    handleRouteError(res, error, "Engine.coach", "Failed to generate coaching intelligence");
+  }
+});
+
+// ─── Get intelligence data (cached from evaluation) ────────────────────
+engineRouter.get("/:sessionId/intelligence", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const prisma = await getUserPrismaFromRequest(req);
+    const p = prisma as any;
+
+    const session = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+    });
+    if (!session) {
+      res.status(404).json({ success: false, error: "Interview session not found" });
+      return;
+    }
+
+    const evalRecord = await p.interviewEvaluation.findFirst({
+      where: { sessionId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!evalRecord) {
+      res.status(400).json({ success: false, error: "No evaluation found" });
+      return;
+    }
+
+    const detailedAnalysis = (evalRecord.detailedAnalysis as any) || {};
+    const intelligence = detailedAnalysis.intelligence || null;
+
+    if (intelligence) {
+      res.json({ success: true, intelligence });
+      return;
+    }
+
+    res.json({ success: true, intelligence: null, message: "Intelligence data not yet generated. Call POST /:sessionId/coach to generate." });
+  } catch (error) {
+    handleRouteError(res, error, "Engine.getIntelligence", "Failed to fetch intelligence data");
   }
 });
