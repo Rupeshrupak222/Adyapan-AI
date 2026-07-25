@@ -694,331 +694,128 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
 
   return (
     <div
-      className="flex flex-col overflow-hidden"
-      style={{ fontFamily: "'Outfit', sans-serif", background: c.bg, minHeight: "calc(100vh - 70px - 2.5rem)" }}
+      className="relative w-full h-[calc(100vh-70px)] -m-5 flex flex-col overflow-hidden rounded-2xl border"
+      style={{
+        background: isDark ? "#080710" : "#f9fafb",
+        borderColor: isDark ? "rgba(255,255,255,0.06)" : "#e5e7eb",
+        color: isDark ? "#ffffff" : "#111827",
+        fontFamily: "'Outfit', sans-serif",
+      }}
     >
       {/* ════════════════ TOP BAR ════════════════ */}
-      <motion.header
-        initial={{ y: -60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 h-14 border-b"
+      <div
+        className="shrink-0 border-b px-4 py-2 flex items-center justify-between"
         style={{
-          background: isDark
-            ? "rgba(8,7,16,0.95)"
-            : "rgba(249,250,251,0.95)",
-          borderBottomColor: c.border,
+          borderColor: isDark ? "rgba(255,255,255,0.06)" : "#e5e7eb",
+          background: isDark ? "rgba(8,7,16,0.85)" : "#ffffff",
           backdropFilter: "blur(20px)",
         }}
       >
-        {/* Left section */}
-        <div className="flex items-center gap-3 min-w-0">
-          {/* Live indicator */}
-          <div className="flex items-center gap-1.5">
-            <motion.div
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ background: c.green }}
-              animate={{ opacity: [1, 0.4, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
-            <span
-              className="text-xs font-bold tracking-wider"
-              style={{ color: c.green }}
-            >
-              LIVE
-            </span>
-          </div>
-
-          {/* Interview type badge */}
-          <div
-            className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
-            style={{
-              background: isDark
-                ? "rgba(139,92,246,0.15)"
-                : "rgba(139,92,246,0.1)",
-              color: c.primaryLight,
-              border: `1px solid ${isDark ? "rgba(139,92,246,0.2)" : "rgba(139,92,246,0.15)"}`,
-            }}
-          >
-            <Zap className="w-3 h-3" />
-            {config.interviewType
-              .split("-")
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-              .join(" ")}
-          </div>
-
-          {/* Role + Company */}
-          <div className="hidden md:flex items-center gap-2 min-w-0">
-            <span
-              className="text-sm font-medium truncate"
-              style={{ color: c.text }}
-            >
-              {config.targetRole}
-            </span>
-            {config.targetCompany && (
-              <>
-                <span style={{ color: c.textMuted }}>@</span>
-                <span
-                  className="text-sm font-medium truncate"
-                  style={{ color: c.primaryLight }}
-                >
-                  {config.targetCompany}
-                </span>
-              </>
-            )}
+        {/* Left: Avatar + Title */}
+        <div className="flex items-center gap-3">
+          <AIAvatar
+            aiStatus={aiStatus}
+            videoUrl={avatarVideoUrl}
+            audioUrl={avatarAudioUrl}
+            speechEnergy={speechEnergy}
+            companyName={config.targetCompany || ""}
+            size="sm"
+            theme={theme}
+          />
+          <div>
+            <div className="text-xs font-bold flex items-center gap-2">
+              <span>{config.targetRole} Interview</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-medium">
+                {config.interviewType
+                  .split("-")
+                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                  .join(" ")}
+              </span>
+            </div>
+            <div className="text-[10px]" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>
+              {config.targetCompany ? `@ ${config.targetCompany}` : "General"} · {config.experienceLevel}
+            </div>
           </div>
         </div>
 
-        {/* Center section */}
-        <div className="flex items-center gap-4">
-          {/* Timer */}
-          <motion.div
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-sm font-bold"
-            style={{
-              background: isTimeCritical
-                ? isDark
-                  ? "rgba(239,68,68,0.15)"
-                  : "rgba(239,68,68,0.08)"
-                : isDark
-                  ? "rgba(255,255,255,0.06)"
-                  : "rgba(0,0,0,0.04)",
-              color: isTimeCritical ? c.red : c.text,
-              border: `1px solid ${isTimeCritical ? "rgba(239,68,68,0.3)" : c.border}`,
-            }}
-            animate={
-              isTimeCritical
-                ? {
-                    boxShadow: [
-                      "0 0 0 0 rgba(239,68,68,0)",
-                      "0 0 20px 2px rgba(239,68,68,0.3)",
-                      "0 0 0 0 rgba(239,68,68,0)",
-                    ],
-                  }
-                : {}
-            }
-            transition={
-              isTimeCritical ? { duration: 2, repeat: Infinity } : {}
-            }
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>{formatTime(timeRemaining)}</span>
-          </motion.div>
-
-          {/* Question counter */}
-          <div
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm"
-            style={{
-              background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-              color: c.textSec,
-              border: `1px solid ${c.border}`,
-            }}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span className="font-medium">
-              Q {questionNumber}
-              {totalQuestions > 0 ? `/${totalQuestions}` : ""}
-            </span>
-          </div>
-        </div>
-
-        {/* Right section */}
-        <div className="flex items-center gap-2">
-          {/* Violation meter */}
-          <div
-            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
-            style={{
-              background:
-                violationCount > 0
-                  ? isDark
-                    ? "rgba(245,158,11,0.12)"
-                    : "rgba(245,158,11,0.08)"
-                  : isDark
-                    ? "rgba(255,255,255,0.06)"
-                    : "rgba(0,0,0,0.04)",
-              color:
-                violationCount > 0 ? c.amber : c.textMuted,
-              border: `1px solid ${violationCount > 0 ? "rgba(245,158,11,0.25)" : c.border}`,
-            }}
-          >
-            <Shield className="w-3.5 h-3.5" />
-            <span className="font-medium">{violationCount}</span>
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            LIVE
           </div>
 
-          {/* Connection status */}
-          <div
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs"
-            style={{
-              color:
-                connectionStatus === "connected"
-                  ? c.green
-                  : connectionStatus === "reconnecting"
-                    ? c.amber
-                    : c.red,
-            }}
-          >
-            {connectionStatus === "connected" ? (
-              <Wifi className="w-3.5 h-3.5" />
-            ) : connectionStatus === "reconnecting" ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              >
-                <Wifi className="w-3.5 h-3.5" />
-              </motion.div>
-            ) : (
-              <WifiOff className="w-3.5 h-3.5" />
-            )}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold font-mono"
+            style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb" }}>
+            <Clock size={10} />
+            {formatTime(timeRemaining)}
           </div>
 
-          {/* Voice toggle */}
+          <div className="px-2.5 py-1 rounded-lg text-[10px] font-bold"
+            style={{ background: "rgba(139,92,246,0.1)", color: "#a78bfa" }}>
+            Q{questionNumber}{totalQuestions > 0 ? `/${totalQuestions}` : ""}
+          </div>
+
+          {violationCount > 0 && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold">
+              <Shield size={10} />
+              {violationCount}
+            </div>
+          )}
+
           <button
             onClick={() => setVoiceEnabled((v) => !v)}
-            className="p-2 rounded-lg transition-colors"
-            style={{
-              background: voiceEnabled
-                ? isDark
-                  ? "rgba(139,92,246,0.15)"
-                  : "rgba(139,92,246,0.08)"
-                : "transparent",
-              color: voiceEnabled ? c.primaryLight : c.textMuted,
-            }}
+            className="w-7 h-7 rounded-lg border flex items-center justify-center transition-colors"
+            style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb" }}
           >
-            {voiceEnabled ? (
-              <Volume2 className="w-4 h-4" />
-            ) : (
-              <VolumeX className="w-4 h-4" />
-            )}
+            {voiceEnabled ? <Volume2 size={12} className="text-purple-400" /> : <VolumeX size={12} className="text-gray-400" />}
           </button>
 
-          {/* End Interview */}
           <button
             onClick={() => setShowEndConfirm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-            style={{
-              background: isDark
-                ? "rgba(239,68,68,0.12)"
-                : "rgba(239,68,68,0.08)",
-              color: c.red,
-              border: `1px solid ${isDark ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`,
-            }}
+            className="px-2.5 py-1 rounded-lg border flex items-center gap-1 text-[10px] font-bold text-red-400 transition-colors"
+            style={{ borderColor: "rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.08)" }}
           >
-            <PhoneOff className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">End</span>
+            <PhoneOff size={10} />
+            End
           </button>
         </div>
-      </motion.header>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="shrink-0 h-1" style={{ background: isDark ? "rgba(255,255,255,0.04)" : "#f3f4f6" }}>
+        <motion.div
+          className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500"
+          animate={{ width: `${completionPct}%` }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        />
+      </div>
 
       {/* ════════════════ MAIN AREA ════════════════ */}
       <div className="flex-1 flex overflow-hidden">
-        {/* ── Left Panel: Conversation (70%) ── */}
-        <div
-          className="flex-1 flex flex-col min-w-0"
-          style={{ flexBasis: "70%", maxWidth: "70%" }}
-        >
-          {/* AI Interviewer Avatar + Current Question */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex-shrink-0 px-4 md:px-8 pt-6 pb-4"
-          >
-            <div className="flex items-start gap-4">
-              {/* AI Avatar */}
-              <div className="relative flex-shrink-0">
-                <AIAvatar
-                  aiStatus={aiStatus}
-                  videoUrl={avatarVideoUrl}
-                  audioUrl={avatarAudioUrl}
-                  speechEnergy={speechEnergy}
-                  companyName={config.targetCompany || ""}
-                  size="md"
-                  theme={theme}
-                />
-
-                {/* Status badge */}
-                <motion.div
-                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
-                  style={{
-                    background:
-                      aiStatus === "speaking"
-                        ? c.green
-                        : aiStatus === "thinking"
-                          ? c.amber
-                          : aiStatus === "listening"
-                            ? c.accent
-                            : c.textMuted,
-                    border: `2px solid ${c.bg}`,
-                  }}
-                  animate={
-                    aiStatus === "listening"
-                      ? { scale: [1, 1.15, 1] }
-                      : {}
-                  }
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  {aiStatus === "speaking" ? (
-                    <Volume2 className="w-3 h-3 text-white" />
-                  ) : aiStatus === "thinking" ? (
-                    <Brain className="w-3 h-3 text-white" />
-                  ) : aiStatus === "listening" ? (
-                    <Mic className="w-3 h-3 text-white" />
-                  ) : (
-                    <div className="w-2 h-2 rounded-full bg-white/60" />
-                  )}
-                </motion.div>
-              </div>
-
-              {/* Current question display */}
-              <div className="flex-1 min-w-0">
-                <div
-                  className="flex items-center gap-2 mb-2"
-                >
-                  <span
-                    className="text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: c.primaryLight }}
-                  >
-                    Current Question
-                  </span>
-                  {questionNumber > 0 && (
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full font-medium"
-                      style={{
-                        background: isDark
-                          ? "rgba(139,92,246,0.15)"
-                          : "rgba(139,92,246,0.1)",
-                        color: c.primaryLight,
-                      }}
-                    >
-                      Q{questionNumber}
-                    </span>
-                  )}
-                </div>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentQuestionText || "empty"}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    {currentQuestionText ? (
-                      <FormattedMarkdown content={currentQuestionText} isDark={isDark} className="text-base md:text-lg leading-relaxed" />
-                    ) : (
-                      <span style={{ color: c.textMuted }}>
-                        Waiting for interview to begin...
-                      </span>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Divider */}
-          <div
-            className="mx-4 md:mx-8 h-px"
-            style={{ background: c.border }}
-          />
+        {/* ── Left Panel: Conversation ── */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Tip Banner */}
+          <div className="shrink-0 px-4 py-2 border-b flex items-center gap-2"
+            style={{ borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f3f4f6", background: isDark ? "rgba(139,92,246,0.03)" : "rgba(139,92,246,0.02)" }}>
+            <Target size={12} className="text-purple-400 shrink-0" />
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={tipIndex}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="text-[10px]"
+                style={{ color: isDark ? "rgba(255,255,255,0.5)" : "#6b7280" }}
+              >
+                {getPhaseTips(config.interviewType)[tipIndex % getPhaseTips(config.interviewType).length]}
+              </motion.span>
+            </AnimatePresence>
+            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold ml-auto shrink-0 uppercase tracking-wider"
+              style={{ background: "rgba(139,92,246,0.1)", color: "#a78bfa" }}>
+              {PHASE_LABELS[phase]}
+            </span>
+          </div>
 
           {/* Message Thread */}
           <div
@@ -1449,6 +1246,27 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
               : "rgba(0,0,0,0.01)",
           }}
         >
+          {/* ── 0. AI Avatar Presenter ── */}
+          <div
+            className="rounded-2xl p-4 flex flex-col items-center justify-center text-center relative overflow-hidden"
+            style={{
+              background: isDark
+                ? "linear-gradient(180deg, rgba(139,92,246,0.08) 0%, rgba(255,255,255,0.02) 100%)"
+                : "linear-gradient(180deg, rgba(139,92,246,0.05) 0%, rgba(0,0,0,0.01) 100%)",
+              border: `1px solid ${isDark ? "rgba(139,92,246,0.2)" : "rgba(139,92,246,0.12)"}`,
+            }}
+          >
+            <AIAvatar
+              aiStatus={aiStatus}
+              videoUrl={avatarVideoUrl}
+              audioUrl={avatarAudioUrl}
+              speechEnergy={speechEnergy}
+              companyName={config.targetCompany || ""}
+              size="md"
+              theme={theme}
+            />
+          </div>
+
           {/* ── 1. Interview Progress ── */}
           <div
             className="rounded-2xl p-4"
