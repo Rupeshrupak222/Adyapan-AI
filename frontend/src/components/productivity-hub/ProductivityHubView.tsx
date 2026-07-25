@@ -158,11 +158,11 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
     setGenerating(true);
     try {
       const res = await api.post("/productivity/generate-email", {
-        category: emailCat,
-        tone: emailTone,
-        length: emailLength,
-        recipient: emailRecipient,
-        details: emailDetails
+        category: emailCat || "General",
+        tone: emailTone || "Professional",
+        length: emailLength || "Detailed",
+        recipient: emailRecipient || "Hiring Manager",
+        details: emailDetails || "Requesting an update or details regarding application status."
       });
       const data = res.data;
       setSubjectLine(data.subject || "");
@@ -181,11 +181,11 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
     setGenerating(true);
     try {
       const res = await api.post("/productivity/generate-sop", {
-        category: sopCat,
-        background: sopBackground,
-        goals: sopGoals,
-        targetUniversity: sopTargetUni,
-        course: sopCourse
+        category: sopCat || "Master's Program",
+        background: sopBackground || "Academic and professional background in software engineering and computer science.",
+        goals: sopGoals || "To achieve mastery in computer science principles and advance key technical leadership goals.",
+        targetUniversity: sopTargetUni || "Target University",
+        course: sopCourse || "Master of Science in Computer Science"
       });
       const data = res.data;
       setSubjectLine("");
@@ -204,9 +204,9 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
     setGenerating(true);
     try {
       const res = await api.post("/productivity/generate-linkedin", {
-        category: liCat,
-        format: liFormat,
-        topic: liTopic,
+        category: liCat || "Project Showcase",
+        format: liFormat || "Storytelling",
+        topic: liTopic || "Building innovative full-stack application and key engineering takeaways.",
         includeEmojis: liIncludeEmojis,
         includeHashtags: liIncludeHashtags
       });
@@ -227,10 +227,10 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
     setGenerating(true);
     try {
       const res = await api.post("/productivity/generate-content", {
-        category: contentCat,
-        style: contentStyle,
-        keywords: contentKeywords,
-        outline: contentOutline
+        category: contentCat || "Blog Article",
+        style: contentStyle || "SEO Optimized",
+        keywords: contentKeywords || "AI, Software Architecture, Web Development",
+        outline: contentOutline || "Introduction, Key Concepts, Best Practices, Practical Examples, Conclusion"
       });
       const data = res.data;
       setSubjectLine("");
@@ -276,7 +276,7 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
       <div className="flex-1 flex flex-col gap-4">
 
         {/* Compact Module Header */}
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="flex justify-between items-center border-b pb-2.5 shrink-0" style={{ borderColor: c.border }}>
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="flex flex-wrap justify-between items-center gap-3 border-b pb-2.5 shrink-0" style={{ borderColor: c.border }}>
           <div>
             <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">Productivity Workspace</p>
             <h2 className="text-base font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>
@@ -286,14 +286,38 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
               {tab === "content" && "Content Writer"}
             </h2>
           </div>
-          <motion.button
-            onClick={() => setAssistantOpen(!assistantOpen)}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20"
-          >
-            <motion.span initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 280, damping: 18 }} style={{ display: "inline-flex", verticalAlign: "middle" }}><Sparkles size={12} className="animate-pulse" /></motion.span> AI Assistant
-          </motion.button>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1 p-1 rounded-xl border" style={{ background: c.surface, borderColor: c.border }}>
+              {[
+                { id: "email", label: "Email Writer" },
+                { id: "sop", label: "SOP Generator" },
+                { id: "linkedin", label: "LinkedIn Post" },
+                { id: "content", label: "Content Writer" },
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id as any)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all ${
+                    tab === t.id
+                      ? "bg-amber-500 text-black shadow-sm"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            <motion.button
+              onClick={() => setAssistantOpen(!assistantOpen)}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20"
+            >
+              <motion.span initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 280, damping: 18 }} style={{ display: "inline-flex", verticalAlign: "middle" }}><Sparkles size={12} className="animate-pulse" /></motion.span> AI Assistant
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* ==================== 3. SPLIT PANEL: INPUT FORM & LIVE EDITOR ==================== */}
