@@ -73,35 +73,59 @@ technicalEngineRouter.post("/start", async (req, res) => {
 
     let resumeContext = null;
     if (resumeAware) {
-      const resume = await p.resume.findFirst({
-        where: { userId: req.user!.userId },
-      });
-      if (resume) {
-        resumeContext = resume.summary || resume.content || null;
+      try {
+        const resume = await p.resume.findFirst({
+          where: { userId: req.user!.userId },
+        });
+        if (resume) {
+          resumeContext = resume.summary || resume.content || null;
+        }
+      } catch (resumeErr) {
+        console.warn("[technical-engine/start] Could not load resume context (continuing):", resumeErr);
       }
     }
 
-    const firstQuestion = await generateTechnicalQuestion({
-      topic: (topic || "dsa") as TechnicalTopic,
-      role,
-      company: company || "",
+    let firstQuestionText = `Welcome to the ${role} technical interview${company ? ` for ${company}` : ""}. Let's begin with a discussion on ${topic || "DSA"}. Could you share your technical background in this area?`;
+    let firstQuestionObj: any = {
+      question: firstQuestionText,
+      category: topic || "technical",
       difficulty: difficulty || "medium",
-      experienceLevel: experienceLevel || "mid",
-      codingLanguage: (codingLanguage || "javascript") as CodingLanguage,
-      mode: (mode || "voice+coding") as InterviewMode,
-      history: [],
-      resumeContext: resumeContext || "",
-      customInstructions: customInstructions || "",
-      questionNumber: 1,
-      totalQuestions: Math.ceil((durationMinutes || 45) / 5),
-      durationMinutes: durationMinutes || 45,
-    });
+      isCodingChallenge: false,
+      codingProblem: null,
+      expectedTopics: [topic || "fundamentals"],
+      followUpHint: "Probe deeper into technical background",
+      timeEstimate: "3 minutes",
+      tips: ["Assess candidate baseline clarity"],
+    };
+
+    try {
+      const generated = await generateTechnicalQuestion({
+        topic: (topic || "dsa") as any,
+        role,
+        company: company || "",
+        difficulty: difficulty || "medium",
+        experienceLevel: experienceLevel || "mid",
+        codingLanguage: (codingLanguage || "javascript") as any,
+        mode: (mode || "voice+coding") as any,
+        history: [],
+        resumeContext: resumeContext || "",
+        customInstructions: customInstructions || "",
+        questionNumber: 1,
+        totalQuestions: Math.ceil((durationMinutes || 45) / 5),
+        durationMinutes: durationMinutes || 45,
+      });
+      if (generated && generated.question) {
+        firstQuestionObj = generated;
+      }
+    } catch (aiErr) {
+      console.warn("[technical-engine/start] Question generation error (using fallback):", aiErr);
+    }
 
     await p.interviewMessage.create({
       data: {
         sessionId: session.id,
         role: "interviewer",
-        content: firstQuestion.question,
+        content: firstQuestionObj.question,
       },
     });
 
@@ -115,7 +139,7 @@ technicalEngineRouter.post("/start", async (req, res) => {
       success: true,
       session,
       messages,
-      firstQuestion,
+      firstQuestion: firstQuestionObj,
       resumeContext,
     });
   } catch (error) {

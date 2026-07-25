@@ -63,26 +63,38 @@ engineRouter.post("/start", async (req, res) => {
 
     let resumeContext = null;
     if (resumeAware) {
-      const resume = await p.resume.findFirst({
-        where: { userId: req.user!.userId },
-      });
-      if (resume) {
-        resumeContext = resume.summary || resume.content || null;
+      try {
+        const resume = await p.resume.findFirst({
+          where: { userId: req.user!.userId },
+        });
+        if (resume) {
+          resumeContext = resume.summary || resume.content || null;
+        }
+      } catch (resumeErr) {
+        console.warn("[engine/start] Could not load resume context (continuing):", resumeErr);
       }
     }
 
-    const firstQuestion = await generateEngineQuestion({
-      role: targetRole,
-      company: targetCompany || "",
-      type: interviewType || "technical",
-      difficulty: difficulty || "medium",
-      technology: technology || "",
-      language: language || "english",
-      experienceLevel: experienceLevel || "mid",
-      history: [],
-      resumeContext: resumeContext || "",
-      customInstructions: customInstructions || "",
-    });
+    let firstQuestion = `Tell me about your background and interest in the ${targetRole} role${targetCompany ? ` at ${targetCompany}` : ""}.`;
+    try {
+      const generated = await generateEngineQuestion({
+        role: targetRole,
+        company: targetCompany || "",
+        type: interviewType || "technical",
+        difficulty: difficulty || "medium",
+        technology: technology || "",
+        language: language || "english",
+        experienceLevel: experienceLevel || "mid",
+        history: [],
+        resumeContext: resumeContext || "",
+        customInstructions: customInstructions || "",
+      });
+      if (generated && typeof generated === "string") {
+        firstQuestion = generated;
+      }
+    } catch (aiErr) {
+      console.warn("[engine/start] AI question generation error (using fallback):", aiErr);
+    }
 
     await p.interviewMessage.create({
       data: {

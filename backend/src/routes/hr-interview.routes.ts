@@ -68,35 +68,54 @@ hrInterviewRouter.post("/start", async (req, res) => {
 
     let resumeContext = null;
     if (resumeAware) {
-      const resume = await p.resume.findFirst({
-        where: { userId: req.user!.userId },
-      });
-      if (resume) {
-        resumeContext = resume.summary || resume.content || null;
+      try {
+        const resume = await p.resume.findFirst({
+          where: { userId: req.user!.userId },
+        });
+        if (resume) {
+          resumeContext = resume.summary || resume.content || null;
+        }
+      } catch (resumeErr) {
+        console.warn("[hr-interview/start] Could not load resume context (continuing):", resumeErr);
       }
     }
 
-    const firstQuestion = await generateHRQuestion(
-      {
-        interviewType: interviewType || "hr",
-        targetRole,
-        targetCompany: targetCompany || "",
-        difficulty: difficulty || "medium",
-        experienceLevel: experienceLevel || "mid",
-        durationMinutes: durationMinutes || 30,
-        language: language || "english",
-        resumeContext: resumeContext || "",
-        customInstructions: customInstructions || "",
-      },
-      [],
-      false
-    );
+    let firstQuestionText = `Welcome to the HR interview for the ${targetRole} position${targetCompany ? ` at ${targetCompany}` : ""}. Could you briefly introduce yourself and share what interests you about this opportunity?`;
+    let firstQuestionObj: any = {
+      question: firstQuestionText,
+      category: "intro",
+      competency: "communication",
+      expectedSTAR: false,
+    };
+
+    try {
+      const generated = await generateHRQuestion(
+        {
+          interviewType: interviewType || "hr",
+          targetRole,
+          targetCompany: targetCompany || "",
+          difficulty: difficulty || "medium",
+          experienceLevel: experienceLevel || "mid",
+          durationMinutes: durationMinutes || 30,
+          language: language || "english",
+          resumeContext: resumeContext || "",
+          customInstructions: customInstructions || "",
+        },
+        [],
+        false
+      );
+      if (generated && generated.question) {
+        firstQuestionObj = generated;
+      }
+    } catch (aiErr) {
+      console.warn("[hr-interview/start] Question generation error (using fallback):", aiErr);
+    }
 
     await p.interviewMessage.create({
       data: {
         sessionId: session.id,
         role: "interviewer",
-        content: firstQuestion.question,
+        content: firstQuestionObj.question,
       },
     });
 
@@ -110,12 +129,12 @@ hrInterviewRouter.post("/start", async (req, res) => {
       success: true,
       session,
       messages,
-      firstQuestion: firstQuestion.question,
+      firstQuestion: firstQuestionObj.question,
       resumeContext,
       questionMeta: {
-        category: firstQuestion.category,
-        competency: firstQuestion.competency,
-        expectedSTAR: firstQuestion.expectedSTAR,
+        category: firstQuestionObj.category || "intro",
+        competency: firstQuestionObj.competency || "communication",
+        expectedSTAR: firstQuestionObj.expectedSTAR || false,
       },
     });
   } catch (error) {
