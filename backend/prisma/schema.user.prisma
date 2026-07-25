@@ -1733,6 +1733,91 @@ model MockTestResult {
   @@map("mock_test_results")
 }
 
+// ============================================================================
+// APTITUDE ENGINE MODELS
+// ============================================================================
+
+model AptitudeSession {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  mode            String   // practice, timed_quiz, topic_test, company_test, adaptive, daily_challenge, revision
+  company         String?  // TCS, Infosys, etc.
+  role            String?  // target role
+  category        String?  // quantitative, logical, verbal, data_interpretation, analytical
+  topic           String?
+  difficulty      String   @default("medium") // easy, medium, hard, adaptive
+  questionsJson   Json     @map("questions_json")
+  totalQuestions  Int      @map("total_questions")
+  score           Int      @default(0)
+  accuracy        Float    @default(0)
+  totalTimeMs     Int      @default(0) @map("total_time_ms")
+  avgTimePerQMs   Int      @default(0) @map("avg_time_per_q_ms")
+  xpEarned        Int      @default(0) @map("xp_earned")
+  streakMaintained Boolean @default(false) @map("streak_maintained")
+  weakTopics      String[] @default([]) @map("weak_topics")
+  strongTopics    String[] @default([]) @map("strong_topics")
+  reportJson      Json?    @map("report_json")
+  startedAt       DateTime @default(now()) @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([mode])
+  @@index([company])
+  @@index([createdAt])
+  @@map("aptitude_sessions")
+}
+
+model AptitudeAnswer {
+  id              String   @id @default(cuid())
+  sessionId       String   @map("session_id")
+  userId          String   @map("user_id")
+  questionIdx     Int      @map("question_idx")
+  questionId      String?  @map("question_id")
+  topic           String?
+  category        String?
+  difficulty      String?
+  selectedIdx     Int?     @map("selected_idx")
+  correct         Boolean  @default(false)
+  timeTakenMs     Int      @default(0) @map("time_taken_ms")
+  bookmarked      Boolean  @default(false)
+  flagged         Boolean  @default(false)
+  notes           String?
+  aiExplanation   String?  @db.Text @map("ai_explanation")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([topic])
+  @@index([createdAt])
+  @@map("aptitude_answers")
+}
+
+model AptitudeAnalytics {
+  id                String   @id @default(cuid())
+  userId            String   @unique @map("user_id")
+  totalSessions     Int      @default(0) @map("total_sessions")
+  totalQuestions    Int      @default(0) @map("total_questions")
+  totalCorrect      Int      @default(0) @map("total_correct")
+  overallAccuracy   Float    @default(0) @map("overall_accuracy")
+  avgTimePerQMs     Float    @default(0) @map("avg_time_per_q_ms")
+  xp                Int      @default(0)
+  level             Int      @default(1)
+  streak            Int      @default(0)
+  bestStreak        Int      @default(0) @map("best_streak")
+  topicMastery      Json     @default("{}") @map("topic_mastery")
+  companyReadiness  Json     @default("{}") @map("company_readiness")
+  categoryScores    Json     @default("{}") @map("category_scores")
+  difficultyHistory Json     @default("[]") @map("difficulty_history")
+  weeklyProgress    Json     @default("[]") @map("weekly_progress")
+  placementReadiness Int     @default(0) @map("placement_readiness")
+  lastPracticedAt   DateTime? @map("last_practiced_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("aptitude_analytics")
+}
+
 model CareerDashboardSnapshot {
   id                String   @id @default(cuid())
   userId            String   @unique @map("user_id")
