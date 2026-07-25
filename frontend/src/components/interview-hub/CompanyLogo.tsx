@@ -32,18 +32,31 @@ const COMPANY_DOMAINS: Record<string, string> = {
 };
 
 const BRAND_SVGS: Record<string, string> = {
-  google: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg",
+  google: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg",
   microsoft: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg",
   amazon: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg",
   meta: "https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg",
-  apple: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg",
-  netflix: "https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico",
-  tcs: "https://www.google.com/s2/favicons?domain=tcs.com&sz=128",
-  infosys: "https://www.google.com/s2/favicons?domain=infosys.com&sz=128",
-  accenture: "https://www.google.com/s2/favicons?domain=accenture.com&sz=128",
-  wipro: "https://www.google.com/s2/favicons?domain=wipro.com&sz=128",
-  capgemini: "https://www.google.com/s2/favicons?domain=capgemini.com&sz=128",
-  deloitte: "https://www.google.com/s2/favicons?domain=deloitte.com&sz=128",
+  apple: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
+  netflix: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",
+  tcs: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Tata_Consultancy_Services_Logo.svg",
+  infosys: "https://upload.wikimedia.org/wikipedia/commons/9/95/Infosys_logo.svg",
+  accenture: "https://upload.wikimedia.org/wikipedia/commons/c/cd/Accenture.svg",
+  wipro: "https://upload.wikimedia.org/wikipedia/commons/a/a0/Wipro_Primary_Logo_Color_RGB.svg",
+  capgemini: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Capgemini_201x_logo.svg",
+  deloitte: "https://upload.wikimedia.org/wikipedia/commons/5/56/Deloitte.svg",
+  uber: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.svg",
+  tesla: "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
+  adobe: "https://upload.wikimedia.org/wikipedia/commons/8/8d/Adobe_Corporate_Logo.svg",
+  nvidia: "https://upload.wikimedia.org/wikipedia/commons/2/21/Nvidia_logo.svg",
+  salesforce: "https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg",
+  ibm: "https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg",
+  goldmansachs: "https://upload.wikimedia.org/wikipedia/commons/6/61/Goldman_Sachs.svg",
+  morganstanley: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg",
+  spotify: "https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg",
+  stripe: "https://upload.wikimedia.org/wikipedia/commons/ba/ba/Stripe_Logo%2C_revised_2016.svg",
+  linkedin: "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png",
+  oracle: "https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg",
+  cisco: "https://upload.wikimedia.org/wikipedia/commons/0/08/Cisco_logo_blue_2016.svg",
 };
 
 interface CompanyLogoProps {
@@ -78,6 +91,7 @@ export default function CompanyLogo({
   // Image candidate fallback chain
   const sources = [
     BRAND_SVGS[key],
+    `https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/${key}.svg`,
     `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
     `https://unavatar.io/${domain}?fallback=false`,
   ].filter(Boolean) as string[];
@@ -120,11 +134,31 @@ export default function CompanyLogo({
         <img
           src={currentSrc}
           alt={`${companyName} logo`}
-          width={size - 14}
-          height={size - 14}
+          width={size - 12}
+          height={size - 12}
           className="max-w-full max-h-full object-contain filter drop-shadow-sm"
           onError={handleImageError}
         />
+      </div>
+    );
+  }
+
+  // Specialized SVG render for TCS fallback
+  if (key === "tcs") {
+    return (
+      <div
+        className={`rounded-2xl flex items-center justify-center p-1 shrink-0 transition-transform hover:scale-105 ${className}`}
+        style={{
+          width: size,
+          height: size,
+          background: containerBg,
+          border: containerBorder,
+          boxShadow: containerShadow,
+        }}
+      >
+        <svg viewBox="0 0 100 40" className="w-full h-full object-contain">
+          <text x="50" y="26" textAnchor="middle" fill="#0066B3" fontSize="26" fontWeight="900" fontFamily="system-ui, -apple-system, sans-serif" letterSpacing="-1">TCS</text>
+        </svg>
       </div>
     );
   }
