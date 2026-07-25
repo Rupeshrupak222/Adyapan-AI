@@ -1103,7 +1103,11 @@ function ActiveInterview({
                         </div>
                         <div className={`flex items-center gap-2 mt-1 ${msg.role === "candidate" ? "justify-end" : ""}`}>
                           {msg.questionNumber && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: c.surface, color: c.textMuted }}>Q{msg.questionNumber}</span>}
-                          <span className="text-[10px]" style={{ color: c.textMuted }}>{new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                          <span className="text-[10px]" style={{ color: c.textMuted }}>{(() => {
+                            if (!msg.timestamp) return "";
+                            const d = new Date(msg.timestamp);
+                            return isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                          })()}</span>
                         </div>
                       </div>
                     </div>

@@ -484,6 +484,7 @@ interviewRouter.get("/history", async (req, res) => {
       violationThreshold: s.violationThreshold,
       overallScore: s.evaluations?.[0]?.overallScore || null,
       evaluation: s.evaluations?.[0] || null,
+      date: s.createdAt,
       createdAt: s.createdAt,
       endedAt: s.endedAt,
       duration: s.endedAt ? Math.round((new Date(s.endedAt).getTime() - new Date(s.createdAt).getTime()) / 60000) : 0,

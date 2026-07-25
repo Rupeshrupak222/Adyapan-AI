@@ -63,7 +63,9 @@ export default function HRHistory({ onBack, onSelectSession }: HRHistoryProps) {
   };
 
   const formatDate = (date: string) => {
+    if (!date) return "Recent";
     const d = new Date(date);
+    if (isNaN(d.getTime())) return "Recent";
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 

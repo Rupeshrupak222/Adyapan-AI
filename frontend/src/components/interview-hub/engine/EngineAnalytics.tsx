@@ -165,9 +165,11 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
 
   const sortedHistory = useMemo(() => {
     if (!history) return [];
-    return [...history].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    return [...history].sort((a: any, b: any) => {
+      const ta = new Date(a.date || a.createdAt || 0).getTime();
+      const tb = new Date(b.date || b.createdAt || 0).getTime();
+      return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
+    });
   }, [history]);
 
   const [sortField, setSortField] = useState<"date" | "score">("date");
@@ -176,16 +178,18 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
   const displayedHistory = useMemo(() => {
     const sorted = [...sortedHistory];
     if (sortField === "score") {
-      sorted.sort((a, b) => {
+      sorted.sort((a: any, b: any) => {
         const sa = a.score ?? -1;
         const sb = b.score ?? -1;
         return sortAsc ? sa - sb : sb - sa;
       });
     } else {
-      sorted.sort((a, b) => {
-        const da = new Date(a.date).getTime();
-        const db = new Date(b.date).getTime();
-        return sortAsc ? da - db : db - da;
+      sorted.sort((a: any, b: any) => {
+        const da = new Date(a.date || a.createdAt || 0).getTime();
+        const db = new Date(b.date || b.createdAt || 0).getTime();
+        const ta = isNaN(da) ? 0 : da;
+        const tb = isNaN(db) ? 0 : db;
+        return sortAsc ? ta - tb : tb - ta;
       });
     }
     return sorted;
@@ -1097,12 +1101,18 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                           onClick={() => {}}
                         >
                           <td className="py-3 px-4 sm:px-0 text-xs font-bold" style={{ color: c.textSec }}>
-                            {new Date(entry.date).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {(() => {
+                              const raw = (entry as any).date || (entry as any).createdAt;
+                              if (!raw) return "Recent";
+                              const d = new Date(raw);
+                              if (isNaN(d.getTime())) return "Recent";
+                              return d.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              });
+                            })()}
                           </td>
                           <td className="py-3 px-4 sm:px-0">
                             <div className="flex items-center gap-1.5">

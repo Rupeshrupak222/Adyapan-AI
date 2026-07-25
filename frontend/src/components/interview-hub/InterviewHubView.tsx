@@ -715,7 +715,12 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                         <div className="text-xs font-bold truncate">{h.role} {h.company && `@ ${h.company}`}</div>
                         <div className="text-[10px] capitalize flex items-center gap-1.5" style={{ color: c.textSec }}>
                           <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: h.type === "technical" ? "#06b6d4" : h.type === "behavioral" ? "#f59e0b" : "#10b981" }} />
-                          {h.type} · {h.difficulty} · <Calendar size={10} /> {new Date(h.createdAt).toLocaleDateString()}
+                          {h.type} · {h.difficulty} · <Calendar size={10} /> {(() => {
+                            const raw = (h as any).createdAt || (h as any).date;
+                            if (!raw) return "Recent";
+                            const d = new Date(raw);
+                            return isNaN(d.getTime()) ? "Recent" : d.toLocaleDateString();
+                          })()}
                         </div>
                         {h.status === "terminated" && <span className="text-[9px] font-bold text-red-500">Terminated</span>}
                       </div>

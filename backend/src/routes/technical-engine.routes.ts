@@ -618,6 +618,7 @@ technicalEngineRouter.get("/history/list", async (req, res) => {
       technology: s.technology,
       status: s.status,
       overallScore: s.evaluations?.[0]?.overallScore || null,
+      date: s.createdAt,
       createdAt: s.createdAt,
       endedAt: s.endedAt,
       duration: s.endedAt

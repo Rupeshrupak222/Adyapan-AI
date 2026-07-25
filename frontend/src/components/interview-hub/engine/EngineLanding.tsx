@@ -1112,7 +1112,12 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                       <div className="text-xs font-bold truncate">{h.role || "Interview"}</div>
                       <div className="text-[10px] flex items-center gap-1.5" style={{ color: c.textSec }}>
                         <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: INTERVIEW_TYPE_CONFIG[h.type as InterviewType]?.color || c.textMuted }} />
-                        {h.type} · <Clock size={9} /> {new Date(h.date).toLocaleDateString()}
+                        {h.type} · <Clock size={9} /> {(() => {
+                          const raw = (h as any).date || (h as any).createdAt;
+                          if (!raw) return "Recent";
+                          const d = new Date(raw);
+                          return isNaN(d.getTime()) ? "Recent" : d.toLocaleDateString();
+                        })()}
                       </div>
                     </div>
                     {h.score != null ? (

@@ -535,6 +535,7 @@ hrInterviewRouter.get("/history", async (req, res) => {
       communicationScore: s.evaluations?.[0]?.communicationScore || null,
       leadershipScore: s.evaluations?.[0]?.detailedAnalysis?.leadershipScore || null,
       starScore: s.evaluations?.[0]?.fluencyScore || null,
+      date: s.createdAt,
       createdAt: s.createdAt,
       endedAt: s.endedAt,
       duration: s.endedAt

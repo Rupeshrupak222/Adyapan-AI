@@ -843,6 +843,7 @@ engineRouter.get("/history", async (req, res) => {
       status: s.status,
       overallScore: s.evaluations?.[0]?.overallScore || null,
       evaluation: s.evaluations?.[0] || null,
+      date: s.createdAt,
       createdAt: s.createdAt,
       endedAt: s.endedAt,
       duration: s.endedAt
