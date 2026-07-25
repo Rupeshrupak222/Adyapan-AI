@@ -351,8 +351,10 @@ export const sidebarItems: SidebarItem[] = [
   {
     id: "placement", label: "Placement Hub", icon: <Trophy size={18} />,
     submenu: [
-      { label: "AI Aptitude Engine", href: "#" }, { label: "Aptitude Practice", href: "#" }, { label: "Logical Reasoning", href: "#" },
-      { label: "Technical MCQs", href: "#" }, { label: "Mock Tests", href: "#" },
+      { label: "AI Aptitude Engine", href: "#" },
+      { label: "Logical Reasoning", href: "#" },
+      { label: "Technical MCQs", href: "#" },
+      { label: "Mock Tests", href: "#" },
       { label: "Readiness Score", href: "#" },
     ],
   },
@@ -555,8 +557,7 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "JD Analyzer") onViewTool("job-jd-match");
                       else if (sub.label === "Job Referrals") onViewTool("job-referrals");
                       else if (sub.label === "Hiring Challenges") onViewTool("job-challenges");
-                      else if (sub.label === "Aptitude Practice") onViewTool("placement-aptitude");
-                      else if (sub.label === "AI Aptitude Engine") onViewTool("aptitude-engine");
+                      else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
                       else if (sub.label === "Logical Reasoning") onViewTool("placement-reasoning");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
                       else if (sub.label === "Mock Tests") onViewTool("placement-mocks");
