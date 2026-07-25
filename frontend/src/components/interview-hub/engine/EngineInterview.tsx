@@ -34,6 +34,7 @@ import {
 import { toast } from "sonner";
 import { api } from "@/services/api";
 import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
+import AIAvatar from "@/components/interview-hub/shared/AIAvatar";
 import type {
   EngineConfig,
   EngineMessage,
@@ -136,6 +137,9 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
   const [tipIndex, setTipIndex] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const [sessionLoaded, setSessionLoaded] = useState(false);
+  const [avatarAudioUrl, setAvatarAudioUrl] = useState<string | null>(null);
+  const [avatarVideoUrl, setAvatarVideoUrl] = useState<string | null>(null);
+  const avatarPollRef = useRef<NodeJS.Timeout | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -447,61 +451,71 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
 
   // ── Speech Synthesis ──
   const speak = useCallback(
-    (text: string) => {
-      if (!voiceEnabled) return;
+    async (text: string) => {
+      setAiStatus("speaking");
       window.speechSynthesis.cancel();
 
-      const cleaned = text
-        .replace(/[*_#`]/g, "")
-        .replace(/\n+/g, ". ");
+      const cleaned = text.replace(/[*_#`]/g, "").replace(/\n+/g, ". ");
 
-      const utterance = new SpeechSynthesisUtterance(cleaned);
-      utterance.rate = config.voiceSpeed;
-      utterance.pitch = config.voicePitch;
-      utterance.lang =
-        config.language === "hindi" ? "hi-IN" : "en-US";
+      // ── Try ElevenLabs + D-ID avatar ──────────────────────────────
+      try {
+        const res = await api.post("/avatar/speak", { text: cleaned }, { responseType: "arraybuffer" });
+        const contentType = (res.headers as any)["content-type"] || "";
+        const mode = (res.headers as any)["x-avatar-mode"];
 
-      const voices = window.speechSynthesis.getVoices();
-      if (config.voiceGender === "female") {
-        const voice = voices.find(
-          (v) =>
-            v.name.includes("Female") ||
-            v.name.includes("Samantha") ||
-            v.name.includes("Zira")
-        );
-        if (voice) utterance.voice = voice;
-      } else if (config.voiceGender === "male") {
-        const voice = voices.find(
-          (v) =>
-            v.name.includes("Male") ||
-            v.name.includes("Google UK English Male")
-        );
-        if (voice) utterance.voice = voice;
-      } else {
-        const voice = voices.find(
-          (v) => v.lang.startsWith("en") && v.name.includes("Google")
-        );
-        if (voice) utterance.voice = voice;
+        if (mode === "did" || (res.data as any)?.mode === "did") {
+          // D-ID talk created — poll for video
+          const json = JSON.parse(Buffer.from(res.data).toString());
+          const talkId = json.talkId;
+          if (talkId) {
+            if (avatarPollRef.current) clearInterval(avatarPollRef.current);
+            avatarPollRef.current = setInterval(async () => {
+              try {
+                const statusRes = await api.get(`/avatar/status/${talkId}`);
+                if (statusRes.data.status === "done" && statusRes.data.videoUrl) {
+                  setAvatarVideoUrl(statusRes.data.videoUrl);
+                  if (avatarPollRef.current) clearInterval(avatarPollRef.current);
+                }
+              } catch {}
+            }, 1500);
+          }
+        } else if (contentType.includes("audio/mpeg") || mode === "elevenlabs") {
+          // ElevenLabs audio — play via <audio> element in AIAvatar
+          const blob = new Blob([res.data], { type: "audio/mpeg" });
+          const url = URL.createObjectURL(blob);
+          setAvatarAudioUrl(url);
+          setAvatarVideoUrl(null);
+        }
+      } catch {
+        // Fallback to browser TTS
       }
 
-      utterance.onstart = () => setAiStatus("speaking");
-      utterance.onend = () => {
-        setAiStatus("listening");
-        if (isActiveRef.current && micEnabled) {
-          startListening();
-        }
-      };
-      utterance.onerror = () => {
-        setAiStatus("listening");
-        if (isActiveRef.current && micEnabled) {
-          startListening();
-        }
-      };
-
-      setAiStatus("speaking");
-      window.speechSynthesis.speak(utterance);
+      // Always play browser TTS as reliable fallback / sync
+      if (voiceEnabled) {
+        const utterance = new SpeechSynthesisUtterance(cleaned);
+        utterance.rate = config.voiceSpeed;
+        utterance.pitch = config.voicePitch;
+        utterance.lang = config.language === "hindi" ? "hi-IN" : "en-US";
+        const voices = window.speechSynthesis.getVoices();
+        const voice = voices.find((v) => v.lang.startsWith("en") && v.name.includes("Google"));
+        if (voice) utterance.voice = voice;
+        utterance.onend = () => {
+          setAiStatus("listening");
+          if (isActiveRef.current && micEnabledRef.current) startListening();
+        };
+        utterance.onerror = () => {
+          setAiStatus("listening");
+          if (isActiveRef.current && micEnabledRef.current) startListening();
+        };
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setTimeout(() => {
+          setAiStatus("listening");
+          if (isActiveRef.current && micEnabledRef.current) startListening();
+        }, 3000);
+      }
     },
-    [voiceEnabled, config, micEnabled, startListening]
+    [voiceEnabled, config, startListening]
   );
 
   // ── Submit answer ──
@@ -909,81 +923,17 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
             className="flex-shrink-0 px-4 md:px-8 pt-6 pb-4"
           >
             <div className="flex items-start gap-4">
-              {/* Avatar */}
+              {/* AI Avatar */}
               <div className="relative flex-shrink-0">
-                <motion.div
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center relative overflow-hidden"
-                  style={{
-                    background: c.gradient1,
-                    boxShadow: "0 0 40px rgba(109,40,217,0.3), 0 0 80px rgba(59,130,246,0.15)",
-                  }}
-                  animate={
-                    aiStatus === "thinking"
-                      ? { scale: [1, 1.03, 1] }
-                      : aiStatus === "speaking"
-                        ? {}
-                        : { scale: [1, 1.02, 1] }
-                  }
-                  transition={{
-                    duration: aiStatus === "speaking" ? 0 : 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  <Brain className="w-8 h-8 md:w-10 md:h-10 text-white relative z-10" />
-
-                  {/* Speaking waveform bars — driven by simulated speech energy */}
-                  {aiStatus === "speaking" && (
-                    <motion.div
-                      className="absolute inset-0 flex items-end justify-center gap-1 pb-3"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      {[...Array(7)].map((_, i) => {
-                        const center = 3;
-                        const distFromCenter = Math.abs(i - center) / center;
-                        const barFactor = 1 - distFromCenter * 0.4;
-                        const baseHeight = 3;
-                        const maxHeight = 22;
-                        const height = baseHeight + (speechEnergy / 100) * (maxHeight - baseHeight) * barFactor;
-                        return (
-                          <div
-                            key={i}
-                            className="w-1 rounded-full bg-white/50"
-                            style={{
-                              height: `${Math.max(baseHeight, height)}px`,
-                              transition: "height 0.07s ease-out",
-                            }}
-                          />
-                        );
-                      })}
-                    </motion.div>
-                  )}
-
-                  {/* Thinking dots */}
-                  {aiStatus === "thinking" && (
-                    <motion.div
-                      className="absolute inset-0 flex items-center justify-center"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      <div className="flex gap-1.5 mt-1">
-                        {[0, 1, 2].map((i) => (
-                          <motion.div
-                            key={i}
-                            className="w-1.5 h-1.5 rounded-full bg-white"
-                            animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
-                            transition={{
-                              duration: 1,
-                              repeat: Infinity,
-                              delay: i * 0.2,
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </motion.div>
+                <AIAvatar
+                  aiStatus={aiStatus}
+                  videoUrl={avatarVideoUrl}
+                  audioUrl={avatarAudioUrl}
+                  speechEnergy={speechEnergy}
+                  companyName={config.targetCompany || ""}
+                  size="md"
+                  theme={theme}
+                />
 
                 {/* Status badge */}
                 <motion.div

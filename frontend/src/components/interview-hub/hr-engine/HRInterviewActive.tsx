@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
+import AIAvatar from "@/components/interview-hub/shared/AIAvatar";
 import type { HRConfig, HRMessage, STARAnalysis, CommunicationAnalysis } from "./HRTypes";
 import { useHRStore } from "./HRStore";
 import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
@@ -65,6 +66,8 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const micEnabledRef = useRef(micEnabled);
   useEffect(() => { micEnabledRef.current = micEnabled; }, [micEnabled]);
+  const [avatarAudioUrl, setAvatarAudioUrl] = useState<string | null>(null);
+  const [avatarVideoUrl, setAvatarVideoUrl] = useState<string | null>(null);
 
   const isDark = theme === "dark";
 
@@ -301,9 +304,14 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
         }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-            <Sparkles size={14} className="text-black" />
-          </div>
+          <AIAvatar
+            aiStatus={aiStatus}
+            videoUrl={avatarVideoUrl}
+            audioUrl={avatarAudioUrl}
+            companyName={config.targetCompany || ""}
+            size="sm"
+            theme={theme}
+          />
           <div>
             <div className="text-xs font-bold">HR Interview</div>
             <div className="text-[9px]" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>

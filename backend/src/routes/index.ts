@@ -47,6 +47,7 @@ import { engineRouter } from "./engine.routes";
 import { technicalEngineRouter } from "./technical-engine.routes";
 import { hrInterviewRouter } from "./hr-interview.routes";
 import { productivityRouter } from "./productivity.routes";
+import avatarRouter from "./avatar.routes";
 
 export const apiRouter = Router();
 
@@ -132,6 +133,9 @@ apiRouter.use("/search", searchRouter);
 
 // Blog Routes
 apiRouter.use("/blog", blogRouter);
+
+// AI Avatar Routes
+apiRouter.use("/avatar", avatarRouter);
 
 
 
