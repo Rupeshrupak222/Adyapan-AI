@@ -469,7 +469,7 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                             borderColor: selected ? `${co.color}40` : c.border,
                           }}
                         >
-                          <CompanyLogo companyId={co.id} companyName={co.name} logo={co.logo} color={co.color} size={40} />
+                          <CompanyLogo companyId={co.id} companyName={co.name} logo={co.logo} color={co.color} size={48} theme={theme} />
                           <div className="text-[11px] font-bold truncate">{co.name}</div>
                           <div className="text-[9px] capitalize mt-0.5" style={{ color: c.textMuted }}>{co.difficulty}</div>
                           <div className="flex flex-wrap gap-1 mt-1.5">

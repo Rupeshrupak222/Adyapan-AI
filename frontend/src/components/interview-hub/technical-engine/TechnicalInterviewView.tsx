@@ -543,9 +543,9 @@ function TechnicalLanding({ onStart, theme, colors: c }: { onStart: (config: Tec
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
                   {filteredCompanies.slice(0, 12).map(co => (
-                    <motion.button key={co.id} whileTap={cardTap} onClick={() => setCompany(co.id)} className="p-2 rounded-xl border text-center transition-all" style={{ background: company === co.id ? `${co.color}10` : c.cardBg, borderColor: company === co.id ? `${co.color}40` : c.border }}>
-                      <CompanyLogo companyId={co.id} companyName={co.name} logo={co.logo} color={co.color} size={32} />
-                      <div className="text-[10px] font-bold truncate">{co.name}</div>
+                    <motion.button key={co.id} whileTap={cardTap} onClick={() => setCompany(co.id)} className="p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1" style={{ background: company === co.id ? `${co.color}15` : c.cardBg, borderColor: company === co.id ? `${co.color}50` : c.border }}>
+                      <CompanyLogo companyId={co.id} companyName={co.name} logo={co.logo} color={co.color} size={44} theme={theme} />
+                      <div className="text-[11px] font-extrabold truncate w-full text-center">{co.name}</div>
                     </motion.button>
                   ))}
                 </div>

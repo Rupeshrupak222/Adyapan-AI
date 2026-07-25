@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "@/hooks/useTheme";
 
 const COMPANY_DOMAINS: Record<string, string> = {
   google: "google.com",
@@ -51,6 +52,7 @@ interface CompanyLogoProps {
   logo?: string;
   color?: string;
   size?: number;
+  theme?: string;
   className?: string;
 }
 
@@ -59,16 +61,21 @@ export default function CompanyLogo({
   companyName,
   logo,
   color = "#3b82f6",
-  size = 40,
+  size = 48,
+  theme: themeProp,
   className = "",
 }: CompanyLogoProps) {
+  const currentTheme = useTheme();
+  const theme = themeProp || currentTheme;
+  const isDark = theme === "dark";
+
   const [imgError, setImgError] = useState(false);
   const [srcIndex, setSrcIndex] = useState(0);
 
   const key = (companyId || companyName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const domain = COMPANY_DOMAINS[key] || `${key}.com`;
 
-  // Image source candidate chain
+  // Image candidate fallback chain
   const sources = [
     BRAND_SVGS[key],
     `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
@@ -85,23 +92,37 @@ export default function CompanyLogo({
     }
   };
 
+  const containerBg = isDark
+    ? "rgba(255, 255, 255, 0.96)"
+    : "#ffffff";
+
+  const containerBorder = isDark
+    ? `1px solid ${color}60`
+    : `1px solid rgba(0, 0, 0, 0.12)`;
+
+  const containerShadow = isDark
+    ? `0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px ${color}30`
+    : `0 4px 14px rgba(0, 0, 0, 0.08)`;
+
   if (currentSrc && !imgError) {
     return (
       <div
-        className={`rounded-xl flex items-center justify-center mb-2 overflow-hidden bg-white/5 border p-1.5 transition-transform shrink-0 ${className}`}
+        className={`rounded-2xl flex items-center justify-center p-2 transition-all shrink-0 hover:scale-105 ${className}`}
         style={{
           width: size,
           height: size,
-          borderColor: `${color}30`,
-          boxShadow: `0 4px 12px ${color}15`,
+          background: containerBg,
+          border: containerBorder,
+          boxShadow: containerShadow,
         }}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={currentSrc}
           alt={`${companyName} logo`}
-          width={size - 10}
-          height={size - 10}
-          className="w-full h-full object-contain"
+          width={size - 14}
+          height={size - 14}
+          className="max-w-full max-h-full object-contain filter drop-shadow-sm"
           onError={handleImageError}
         />
       </div>
@@ -110,13 +131,14 @@ export default function CompanyLogo({
 
   return (
     <div
-      className={`rounded-xl flex items-center justify-center mb-2 text-sm font-extrabold shrink-0 ${className}`}
+      className={`rounded-2xl flex items-center justify-center font-black text-base shrink-0 transition-transform hover:scale-105 ${className}`}
       style={{
         width: size,
         height: size,
-        background: `linear-gradient(135deg, ${color}25, ${color}10)`,
-        color: color,
-        border: `1px solid ${color}40`,
+        background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+        color: "#ffffff",
+        border: `1px solid ${color}`,
+        boxShadow: `0 4px 14px ${color}40`,
       }}
     >
       {logo || companyName.charAt(0).toUpperCase()}

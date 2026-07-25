@@ -251,7 +251,7 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
                         }}
                         className="p-3 rounded-2xl border text-left transition-all"
                         style={{ background: selected ? `${co.color}10` : c.cardBg, borderColor: selected ? `${co.color}40` : c.border }}>
-                        <CompanyLogo companyId={co.id} companyName={co.name} logo={co.logo} color={co.color} size={40} />
+                        <CompanyLogo companyId={co.id} companyName={co.name} logo={co.logo} color={co.color} size={48} theme={theme} />
                         <div className="text-[11px] font-bold truncate">{co.name}</div>
                         <div className="text-[9px] mt-0.5" style={{ color: c.textMuted }}>{co.culture.slice(0, 30)}...</div>
                       </motion.button>
