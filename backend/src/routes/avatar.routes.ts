@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { authenticateToken } from "../middleware/auth";
+import { requireAuth } from "../middleware/auth";
 import {
   generateSpeech,
   createDIDTalk,
@@ -9,8 +9,8 @@ import {
 const router = Router();
 
 // POST /api/avatar/speak
-// Returns audio buffer (ElevenLabs) and optionally D-ID talk metadata
-router.post("/speak", authenticateToken, async (req: Request, res: Response) => {
+// Returns audio buffer (ElevenLabs) or D-ID talk metadata
+router.post("/speak", requireAuth, async (req: Request, res: Response) => {
   const { text, voiceId, avatarUrl } = req.body;
 
   if (!text || typeof text !== "string") {
@@ -60,8 +60,8 @@ router.post("/speak", authenticateToken, async (req: Request, res: Response) => 
 
 // GET /api/avatar/status/:talkId
 // Poll D-ID for video ready state
-router.get("/status/:talkId", authenticateToken, async (req: Request, res: Response) => {
-  const { talkId } = req.params;
+router.get("/status/:talkId", requireAuth, async (req: Request, res: Response) => {
+  const talkId = req.params.talkId as string;
   if (!talkId) return res.status(400).json({ success: false });
 
   try {

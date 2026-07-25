@@ -1,4 +1,4 @@
-import fetch from "node-fetch";
+// Uses native fetch (Node 18+) — no node-fetch dependency needed
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || "";
 const DID_API_KEY = process.env.DID_API_KEY || "";
@@ -23,7 +23,7 @@ export async function generateSpeech(
     .replace(/[*_#`~]/g, "")
     .replace(/\n+/g, " ")
     .trim()
-    .slice(0, 800); // ElevenLabs caps per request
+    .slice(0, 800);
 
   try {
     const res = await fetch(
@@ -57,8 +57,8 @@ export async function generateSpeech(
       return null;
     }
 
-    const buffer = await res.buffer();
-    return buffer;
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   } catch (err) {
     console.error("[avatar] ElevenLabs fetch error:", err);
     return null;
@@ -82,11 +82,14 @@ export async function createDIDTalk(
     .trim()
     .slice(0, 500);
 
+  // D-ID key is already in "email:secret" format — encode to Base64 for Basic auth
+  const authHeader = `Basic ${Buffer.from(DID_API_KEY).toString("base64")}`;
+
   try {
     const res = await fetch("https://api.d-id.com/talks", {
       method: "POST",
       headers: {
-        Authorization: `Basic ${Buffer.from(DID_API_KEY).toString("base64")}`,
+        Authorization: authHeader,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -106,11 +109,8 @@ export async function createDIDTalk(
     });
 
     if (!res.ok) {
-      console.error(
-        "[avatar] D-ID talk create error:",
-        res.status,
-        await res.text()
-      );
+      const errText = await res.text();
+      console.error("[avatar] D-ID talk create error:", res.status, errText);
       return { talkId: null, status: "error" };
     }
 
@@ -127,10 +127,12 @@ export async function getDIDTalkStatus(
 ): Promise<{ status: string; videoUrl: string | null }> {
   if (!DID_API_KEY) return { status: "no_key", videoUrl: null };
 
+  const authHeader = `Basic ${Buffer.from(DID_API_KEY).toString("base64")}`;
+
   try {
     const res = await fetch(`https://api.d-id.com/talks/${talkId}`, {
       headers: {
-        Authorization: `Basic ${Buffer.from(DID_API_KEY).toString("base64")}`,
+        Authorization: authHeader,
       },
     });
 
