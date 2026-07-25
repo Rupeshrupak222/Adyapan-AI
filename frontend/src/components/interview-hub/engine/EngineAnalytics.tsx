@@ -1113,7 +1113,7 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                                 <TypeIcon size={12} style={{ color: typeColor }} />
                               </div>
                               <span className="text-[11px] font-bold capitalize" style={{ color: c.text }}>
-                                {entry.interviewType.replace("-", " ")}
+                                {(entry?.interviewType || "general").replace("-", " ")}
                               </span>
                             </div>
                           </td>
