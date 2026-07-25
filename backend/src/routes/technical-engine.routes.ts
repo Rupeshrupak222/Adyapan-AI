@@ -609,22 +609,32 @@ technicalEngineRouter.get("/history/list", async (req, res) => {
       take: 50,
     });
 
-    const summaries = sessions.map((s: any) => ({
-      id: s.id,
-      type: s.type,
-      role: s.role,
-      company: s.company,
-      difficulty: s.difficulty,
-      technology: s.technology,
-      status: s.status,
-      overallScore: s.evaluations?.[0]?.overallScore || null,
-      date: s.createdAt,
-      createdAt: s.createdAt,
-      endedAt: s.endedAt,
-      duration: s.endedAt
+    const summaries = sessions.map((s: any) => {
+      const calcDuration = s.endedAt
         ? Math.round((new Date(s.endedAt).getTime() - new Date(s.createdAt).getTime()) / 60000)
-        : 0,
-    }));
+        : (s.durationMinutes || 0);
+      const computedScore = s.evaluations?.[0]?.overallScore ?? null;
+
+      return {
+        id: s.id,
+        type: s.type,
+        interviewType: s.type,
+        role: s.role,
+        targetRole: s.role,
+        company: s.company,
+        targetCompany: s.company,
+        difficulty: s.difficulty,
+        technology: s.technology,
+        status: s.status,
+        overallScore: computedScore,
+        score: computedScore,
+        date: s.createdAt,
+        createdAt: s.createdAt,
+        endedAt: s.endedAt,
+        duration: calcDuration,
+        durationMinutes: calcDuration,
+      };
+    });
 
     res.json({ success: true, sessions: summaries });
   } catch (error) {

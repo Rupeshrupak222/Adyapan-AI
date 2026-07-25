@@ -1083,16 +1083,22 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                     </tr>
                   </thead>
                   <tbody>
-                    {displayedHistory.slice(0, 10).map((entry, i) => {
-                      const TypeIcon = TYPE_ICONS[entry.interviewType] || Zap;
-                      const typeColor = TYPE_COLORS[entry.interviewType] || "#64748b";
-                      const scoreColor = entry.score !== null
-                        ? entry.score >= 80 ? c.green : entry.score >= 60 ? c.primary : c.red
+                    {displayedHistory.slice(0, 10).map((rawEntry: any, i) => {
+                      const itemType = rawEntry.interviewType || rawEntry.type || "general";
+                      const itemRole = rawEntry.targetRole || rawEntry.role || "Interview";
+                      const itemCompany = rawEntry.targetCompany || rawEntry.company || "—";
+                      const itemScore = rawEntry.score ?? rawEntry.overallScore ?? null;
+                      const itemDuration = rawEntry.duration ?? rawEntry.durationMinutes ?? 0;
+
+                      const TypeIcon = TYPE_ICONS[itemType] || Zap;
+                      const typeColor = TYPE_COLORS[itemType] || "#64748b";
+                      const scoreColor = itemScore !== null
+                        ? itemScore >= 80 ? c.green : itemScore >= 60 ? c.primary : c.red
                         : c.textMuted;
 
                       return (
                         <motion.tr
-                          key={entry.id}
+                          key={rawEntry.id || i}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: i * 0.03 }}
@@ -1102,7 +1108,7 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                         >
                           <td className="py-3 px-4 sm:px-0 text-xs font-bold" style={{ color: c.textSec }}>
                             {(() => {
-                              const raw = (entry as any).date || (entry as any).createdAt;
+                              const raw = rawEntry.date || rawEntry.createdAt;
                               if (!raw) return "Recent";
                               const d = new Date(raw);
                               if (isNaN(d.getTime())) return "Recent";
@@ -1123,18 +1129,18 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                                 <TypeIcon size={12} style={{ color: typeColor }} />
                               </div>
                               <span className="text-[11px] font-bold capitalize" style={{ color: c.text }}>
-                                {(entry?.interviewType || "general").replace("-", " ")}
+                                {itemType.replace("-", " ")}
                               </span>
                             </div>
                           </td>
                           <td className="py-3 px-4 sm:px-0 text-[11px] font-bold" style={{ color: c.text }}>
-                            {entry.targetRole}
+                            {itemRole}
                           </td>
                           <td className="py-3 px-4 sm:px-0 text-[11px] font-bold" style={{ color: c.textSec }}>
-                            {entry.targetCompany || "—"}
+                            {itemCompany}
                           </td>
                           <td className="py-3 px-4 sm:px-0">
-                            {entry.score !== null ? (
+                            {itemScore !== null ? (
                               <span
                                 className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-extrabold"
                                 style={{
@@ -1143,14 +1149,14 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                                   border: `1px solid ${scoreColor}25`,
                                 }}
                               >
-                                {entry.score}%
+                                {itemScore}%
                               </span>
                             ) : (
                               <span className="text-[11px] font-bold" style={{ color: c.textMuted }}>—</span>
                             )}
                           </td>
                           <td className="py-3 px-4 sm:px-0 text-[11px] font-bold" style={{ color: c.textMuted }}>
-                            {entry.duration}m
+                            {itemDuration}m
                           </td>
                         </motion.tr>
                       );
