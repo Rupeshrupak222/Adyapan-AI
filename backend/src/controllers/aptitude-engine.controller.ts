@@ -106,6 +106,15 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
       });
     }
 
+    if (!questions || questions.length === 0) {
+      throw httpError(503, "AI question generation failed. Please try again in a moment.");
+    }
+
+    const isAllFallback = questions.every((q: any) => q.text?.includes("temporarily busy"));
+    if (isAllFallback && questions.length > 0) {
+      throw httpError(503, "AI question generation service is temporarily unavailable. Please try again.");
+    }
+
     const session = await userPrisma.aptitudeSession.create({
       data: {
         userId,

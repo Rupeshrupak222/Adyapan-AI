@@ -463,43 +463,57 @@ Rules:
   }));
 
   try {
-    const raw = await generateJSON<any>(
-      systemPrompt,
-      userPrompt,
-      { model: MODELS.BALANCED, maxTokens: 12000, responseFormat: { type: "json_object" } },
-      []
-    );
+    const BATCH_SIZE = 5;
+    const allGenerated: GeneratedQuestion[] = [];
+    let remaining = count;
 
-    let questionsArray: any[] = [];
-    if (Array.isArray(raw)) {
-      questionsArray = raw;
-    } else if (raw && typeof raw === "object") {
-      if (Array.isArray(raw.questions)) questionsArray = raw.questions;
-      else if (Array.isArray(raw.data)) questionsArray = raw.data;
-      else if (Array.isArray(raw.items)) questionsArray = raw.items;
-      else if (Array.isArray(raw.result)) questionsArray = raw.result;
-      else {
-        const found = Object.values(raw).find((v) => Array.isArray(v));
-        if (found && Array.isArray(found)) questionsArray = found;
+    while (remaining > 0) {
+      const batchSize = Math.min(remaining, BATCH_SIZE);
+      const raw = await generateJSON<any>(
+        systemPrompt,
+        `Generate exactly ${batchSize} high-quality ${difficulty}-level ${topic} questions for ${category} placement preparation.\n\nReturn a JSON object with a "questions" key containing an array of questions with this exact structure:\n{\n  "questions": [\n    {\n      "text": "question text with all necessary data",\n      "options": ["option1", "option2", "option3", "option4"],\n      "correctIdx": 0,\n      "explanation": "detailed step-by-step explanation",\n      "shortcut": "clever shortcut or trick method to solve faster",\n      "difficulty": "${difficulty}",\n      "estimatedTimeSec": 90,\n      "commonMistakes": ["mistake1 students often make", "mistake2"],\n      "companyRelevance": "why this question pattern appears in placements"\n    }\n  ]\n}\n\nRules:\n- Return ONLY valid JSON matching the structure above.\n- Make questions exam-realistic and challenging.\n- correctIdx is 0-based index of the correct option.\n- Include realistic numerical values where needed.\n- Each question should test understanding, not just memorization.`,
+        { model: MODELS.BALANCED, maxTokens: 4000, responseFormat: { type: "json_object" } },
+        []
+      );
+
+      let questionsArray: any[] = [];
+      if (Array.isArray(raw)) {
+        questionsArray = raw;
+      } else if (raw && typeof raw === "object") {
+        if (Array.isArray(raw.questions)) questionsArray = raw.questions;
+        else if (Array.isArray(raw.data)) questionsArray = raw.data;
+        else if (Array.isArray(raw.items)) questionsArray = raw.items;
+        else if (Array.isArray(raw.result)) questionsArray = raw.result;
+        else {
+          const found = Object.values(raw).find((v) => Array.isArray(v));
+          if (found && Array.isArray(found)) questionsArray = found;
+        }
       }
+
+      if (!Array.isArray(questionsArray) || questionsArray.length === 0) {
+        if (allGenerated.length > 0) break;
+        return fallback;
+      }
+
+      allGenerated.push(...questionsArray.slice(0, batchSize).map((q, i) => ({
+        id: `ai-${topic.replace(/\s/g, "-")}-${Date.now()}-${allGenerated.length + i}`,
+        text: q.text || `${topic} question ${allGenerated.length + i + 1}`,
+        options: Array.isArray(q.options) && q.options.length === 4 ? q.options : ["A", "B", "C", "D"],
+        correctIdx: typeof q.correctIdx === "number" && q.correctIdx >= 0 && q.correctIdx <= 3 ? q.correctIdx : 0,
+        explanation: q.explanation || "No explanation available.",
+        shortcut: q.shortcut || undefined,
+        difficulty: (q.difficulty as Difficulty) || difficulty,
+        estimatedTimeSec: typeof q.estimatedTimeSec === "number" ? q.estimatedTimeSec : (difficulty === "easy" ? 45 : difficulty === "medium" ? 90 : 150),
+        topic,
+        category,
+        companyTags,
+        commonMistakes: Array.isArray(q.commonMistakes) ? q.commonMistakes : [],
+      })));
+
+      remaining -= batchSize;
     }
 
-    if (!Array.isArray(questionsArray) || questionsArray.length === 0) return fallback;
-
-    return questionsArray.slice(0, count).map((q, i) => ({
-      id: `ai-${topic.replace(/\s/g, "-")}-${Date.now()}-${i}`,
-      text: q.text || `${topic} question ${i + 1}`,
-      options: Array.isArray(q.options) && q.options.length === 4 ? q.options : ["A", "B", "C", "D"],
-      correctIdx: typeof q.correctIdx === "number" && q.correctIdx >= 0 && q.correctIdx <= 3 ? q.correctIdx : 0,
-      explanation: q.explanation || "No explanation available.",
-      shortcut: q.shortcut || undefined,
-      difficulty: (q.difficulty as Difficulty) || difficulty,
-      estimatedTimeSec: typeof q.estimatedTimeSec === "number" ? q.estimatedTimeSec : (difficulty === "easy" ? 45 : difficulty === "medium" ? 90 : 150),
-      topic,
-      category,
-      companyTags,
-      commonMistakes: Array.isArray(q.commonMistakes) ? q.commonMistakes : [],
-    }));
+    return allGenerated.length > 0 ? allGenerated.slice(0, count) : fallback;
   } catch (error) {
     console.warn(`[AptitudeEngine] AI question generation failed for topic="${topic}":`, error);
     return fallback;
