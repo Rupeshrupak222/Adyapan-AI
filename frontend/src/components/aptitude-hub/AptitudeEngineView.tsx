@@ -23,7 +23,7 @@ import type {
   SessionReview as SessionReviewType, AptitudeView
 } from "./types";
 import {
-  APTITUDE_CATEGORIES, TOPICS_BY_CATEGORY, TEST_MODES,
+  APTITUDE_CATEGORIES, TOPICS_BY_CATEGORY,
   COMPANY_PRESETS, DIFFICULTY_CONFIG
 } from "./types";
 
@@ -685,43 +685,6 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   </div>
                 </motion.div>
 
-                <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="space-y-3">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Test Modes</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {TEST_MODES.map((mode, i) => {
-                      const IconComp = MODE_ICON_MAP[mode.icon] || Play;
-                      return (
-                        <motion.div
-                          key={mode.id}
-                          variants={scaleIn}
-                          initial="hidden"
-                          animate="visible"
-                          custom={i}
-                          whileHover={{ y: -3, scale: 1.02 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={() => {
-                            setSelectedMode(mode.id);
-                            if (mode.id === "daily_challenge") {
-                              startDailyChallenge();
-                            } else if (mode.id === "company_test") {
-                              setViewState("company_select");
-                            } else {
-                              setViewState("topic_select");
-                            }
-                          }}
-                          className="p-4 border rounded-2xl cursor-pointer transition-all"
-                          style={{ background: c.cardBg, borderColor: c.border }}
-                        >
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2.5" style={{ background: `${mode.color}15` }}>
-                            <IconComp size={18} style={{ color: mode.color }} />
-                          </div>
-                          <p className="text-[11px] font-extrabold" style={{ color: c.text }}>{mode.name}</p>
-                          <p className="text-[9px] mt-1 leading-relaxed" style={{ color: c.textMuted }}>{mode.description}</p>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
 
                 <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4} className="p-5 rounded-2xl border relative overflow-hidden cursor-pointer" style={{
                   background: `linear-gradient(135deg, rgba(239,68,68,0.08), rgba(236,72,153,0.06))`,
