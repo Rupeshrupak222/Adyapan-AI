@@ -328,6 +328,10 @@ export async function generateJSON<T>(
       return validated;
     } catch (retryError) {
       console.error(`[AI Engine] Retry JSON generation failed too:`, retryError);
+      if (fallback !== undefined) {
+        console.warn(`[AI Engine] Returning fallback object for schema safety.`);
+        return fallback;
+      }
       console.error(`[AI Engine] All AI providers exhausted. Throwing error.`);
       throw new Error("AI extraction failed: all providers are rate-limited or unavailable. Please try again later.");
     }
