@@ -128,9 +128,6 @@ const InternshipHubView = dynamic(() => import("@/components/internship-hub/Inte
 const JobHubView = dynamic(() => import("@/components/job-hub/JobHubView").then(m => m.JobHubView), {
   loading: () => <DashboardWidgetSkeleton title="Job matching" />
 });
-const LinkedInJobScraperView = dynamic(() => import("@/components/job-hub/LinkedInJobScraperView").then(m => m.LinkedInJobScraperView), {
-  loading: () => <DashboardWidgetSkeleton title="LinkedIn Job Scraper" />
-});
 const PlacementHubView = dynamic(() => import("@/components/placement-hub/PlacementHubView").then(m => m.PlacementHubView), {
   loading: () => <DashboardWidgetSkeleton title="Placement Hub" />,
   ssr: false,
@@ -258,9 +255,7 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "JD Compatibility", viewId: "job-hub", category: "Job Hub" },
   { label: "Job Referrals", viewId: "job-hub", category: "Job Hub" },
   { label: "Hiring Challenges", viewId: "job-hub", category: "Job Hub" },
-  { label: "LinkedIn Job Scraper", viewId: "linkedin-job-scraper", category: "Job Hub" },
-  { label: "Scrape LinkedIn Jobs", viewId: "linkedin-job-scraper", category: "Job Hub" },
-  { label: "LinkedIn Jobs Search", viewId: "linkedin-job-scraper", category: "Job Hub" },
+  { label: "LinkedIn Jobs", viewId: "job-hub", category: "Job Hub" },
   { label: "Aptitude Practice", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Logical Reasoning", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Technical MCQs", viewId: "placement-hub", category: "Placement Hub" },
@@ -358,7 +353,7 @@ export const sidebarItems: SidebarItem[] = [
       { label: "JD Analyzer", href: "#" },
       { label: "Job Referrals", href: "#" },
       { label: "Hiring Challenges", href: "#" },
-      { label: "LinkedIn Job Scraper", href: "#" },
+      { label: "LinkedIn Jobs", href: "#" },
     ],
   },
   {
@@ -569,7 +564,7 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "JD Analyzer") onViewTool("job-jd-match");
                       else if (sub.label === "Job Referrals") onViewTool("job-referrals");
                       else if (sub.label === "Hiring Challenges") onViewTool("job-challenges");
-                      else if (sub.label === "LinkedIn Job Scraper") onViewTool("linkedin-job-scraper");
+                      else if (sub.label === "LinkedIn Jobs") onViewTool("job-matching");
                       else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
                       else if (sub.label === "Logical Reasoning") onViewTool("placement-reasoning");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
@@ -2408,9 +2403,7 @@ function UserDashboardContent() {
           <HubErrorBoundary><InterviewHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "internship-hub" || activeView === "internship-finder" || activeView === "internship-recommendations" || activeView === "internship-tracker" || activeView === "internship-saved" ? (
           <HubErrorBoundary><InternshipHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
-        ) : activeView === "linkedin-job-scraper" ? (
-          <HubErrorBoundary><LinkedInJobScraperView setView={setActiveView} /></HubErrorBoundary>
-        ) : activeView === "job-hub" || activeView === "job-matching" || activeView === "job-jd-match" || activeView === "job-referrals" || activeView === "job-challenges" ? (
+        ) : activeView === "job-hub" || activeView === "job-matching" || activeView === "job-jd-match" || activeView === "job-referrals" || activeView === "job-challenges" || activeView === "job-saved" || activeView === "linkedin-job-scraper" ? (
           <HubErrorBoundary><JobHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "aptitude-engine" || activeView === "aptitude-engine-analytics" ? (
           <HubErrorBoundary><AptitudeEngineView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>

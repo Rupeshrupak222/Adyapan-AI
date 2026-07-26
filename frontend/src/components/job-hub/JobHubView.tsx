@@ -53,6 +53,7 @@ interface JobListing {
   isSaved?: boolean;
   isGovernment?: boolean;
   isAdzuna?: boolean;
+  isLinkedIn?: boolean;
   matchScore?: number;
   applyUrl?: string;
   category?: string;
@@ -200,6 +201,17 @@ const MODE_OPTIONS = ["Remote", "Hybrid", "On-site"];
 const EMPLOYMENT_TYPES = ["Full-Time", "Part-Time", "Contract", "Freelance", "Government"];
 const DIFFICULTY_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"];
 const PAGE_LIMIT = 12;
+
+const LINKEDIN_QUICK_FILTERS = [
+  { label: "Internships", suffix: "&f_E=1&f_JT=I" },
+  { label: "Entry Level", suffix: "&f_E=2" },
+  { label: "Remote", suffix: "&f_WT=2" },
+  { label: "Full-time", suffix: "&f_JT=F" },
+  { label: "Last 24h", suffix: "&f_TPR=r86400" },
+  { label: "Past Week", suffix: "&f_TPR=r604800" },
+];
+
+type JobSource = "adzuna" | "linkedin";
 
 const TRACKER_COLUMNS: { id: TrackerColumn; label: string; color: string }[] = [
   { id: "saved", label: "Saved", color: "#6366f1" },
@@ -438,6 +450,15 @@ function JobCard({ job, c, onOpen, onSave }: {
         </div>
       )}
 
+      {job.isLinkedIn && (
+        <div className="absolute top-0 left-0">
+          <div className="px-2.5 py-1 text-[8px] font-black uppercase tracking-wider rounded-br-xl"
+            style={{ background: "rgba(10,102,194,0.15)", color: "#0a66c2" }}>
+            <Link2 size={8} className="inline mr-1" /> LinkedIn
+          </div>
+        </div>
+      )}
+
       {job.isAdzuna && (
         <div className="absolute top-0 left-0">
           <div className="px-2.5 py-1 text-[8px] font-black uppercase tracking-wider rounded-br-xl"
@@ -582,6 +603,16 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
 
   // ── Tab state ──
   const [activeTab, setActiveTab] = useState<"browse" | "ai-match" | "tracker" | "saved" | "referrals" | "challenges">("browse");
+
+  // ── Job source (Browse tab) ──
+  const [jobSource, setJobSource] = useState<JobSource>("adzuna");
+  const [linkedInUrl, setLinkedInUrl] = useState("https://www.linkedin.com/jobs/search/?position=1&pageNum=0");
+  const [linkedInCount, setLinkedInCount] = useState(50);
+  const [linkedInScraping, setLinkedInScraping] = useState(false);
+  const [linkedInResults, setLinkedInResults] = useState<JobListing[]>([]);
+  const [linkedInSavedIds, setLinkedInSavedIds] = useState<Set<string>>(new Set());
+  const [linkedInError, setLinkedInError] = useState<string | null>(null);
+  const [linkedInAnalyzingId, setLinkedInAnalyzingId] = useState<string | null>(null);
 
   // ── Browse state ──
   const [jobs, setJobs] = useState<JobListing[]>([]);
@@ -766,7 +797,88 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
     }
   }, []);
 
+  const fetchLinkedInSavedIds = useCallback(async () => {
+    try {
+      const res = await api.get("/linkedin-jobs/saved");
+      if (res.data.success) {
+        setLinkedInSavedIds(new Set(res.data.jobs.map((j: { link: string }) => j.link)));
+      }
+    } catch {
+      // Non-critical
+    }
+  }, []);
+
+  const handleLinkedInScrape = useCallback(async () => {
+    if (!linkedInUrl.includes("linkedin.com/jobs")) {
+      toast.error("Please provide a valid LinkedIn jobs URL");
+      return;
+    }
+    setLinkedInScraping(true);
+    setLinkedInError(null);
+    try {
+      const res = await api.post("/linkedin-jobs/search", { url: linkedInUrl, count: linkedInCount });
+      if (res.data.success) {
+        const mapped: JobListing[] = (res.data.jobs || []).map((j: any) => ({
+          id: `linkedin_${j.link}`,
+          title: j.title || "",
+          company: j.companyName || "",
+          logoUrl: j.companyLogo,
+          location: j.location || "",
+          mode: j.workplaceType || j.workRemoteAllowed ? "Remote" : "",
+          employmentType: j.employmentType || "",
+          salary: j.salaryInfo || "",
+          experience: j.seniorityLevel || "",
+          skills: [],
+          description: j.descriptionText || "",
+          postedDate: j.postedAt || new Date().toISOString(),
+          isLinkedIn: true,
+          applyUrl: j.applyUrl || j.link,
+        }));
+        setLinkedInResults(mapped);
+        toast.success(`Found ${res.data.total || mapped.length} LinkedIn jobs`);
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.error || "Scraping failed. Please try again.";
+      setLinkedInError(msg);
+      toast.error(msg);
+    } finally {
+      setLinkedInScraping(false);
+    }
+  }, [linkedInUrl, linkedInCount]);
+
+  const handleLinkedInQuickFilter = useCallback((suffix: string) => {
+    const baseUrl = linkedInUrl.split("&f_")[0];
+    setLinkedInUrl(baseUrl + suffix);
+  }, [linkedInUrl]);
+
+  const toggleLinkedInSave = useCallback(async (job: JobListing) => {
+    const rawLink = job.applyUrl || job.id.replace("linkedin_", "");
+    if (linkedInSavedIds.has(rawLink)) {
+      try {
+        await api.delete(`/linkedin-jobs/saved/${rawLink}`);
+        setLinkedInSavedIds(prev => { const next = new Set(prev); next.delete(rawLink); return next; });
+        toast.success("Job removed");
+      } catch { toast.error("Failed to remove job"); }
+    } else {
+      try {
+        const res = await api.post("/linkedin-jobs/save", {
+          link: rawLink, title: job.title, companyName: job.company,
+          location: job.location, salaryInfo: job.salary, applyUrl: job.applyUrl,
+        });
+        if (res.data.success) {
+          setLinkedInSavedIds(prev => new Set([...prev, rawLink]));
+          toast.success("Job saved!");
+        }
+      } catch { toast.error("Failed to save job"); }
+    }
+  }, [linkedInSavedIds]);
+
   const toggleSaveJob = useCallback(async (jobId: string) => {
+    if (jobId.startsWith("linkedin_")) {
+      const job = jobs.find(j => j.id === jobId) || linkedInResults.find(j => j.id === jobId);
+      if (job) await toggleLinkedInSave(job);
+      return;
+    }
     if (jobId.startsWith("adzuna_")) {
       setSavedJobs(prev => {
         const next = new Set(prev);
@@ -804,6 +916,12 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
     setSkillGap(null);
     setSimilarJobs([]);
 
+    if (job.isLinkedIn || job.id.startsWith("linkedin_")) {
+      const rawLink = job.applyUrl || job.id.replace("linkedin_", "");
+      setDetailData({ ...job, isSaved: linkedInSavedIds.has(rawLink) });
+      setDetailLoading(false);
+      return;
+    }
     if (job.isAdzuna || job.id.startsWith("adzuna_")) {
       setDetailData({ ...job, isSaved: savedJobs.has(job.id) });
       setDetailLoading(false);
@@ -955,6 +1073,10 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
   }, []);
 
   const applyToJob = useCallback(async (jobId: string) => {
+    if (jobId.startsWith("linkedin_")) {
+      toast.success("Opening LinkedIn job page...");
+      return;
+    }
     if (jobId.startsWith("adzuna_")) {
       toast.success("Opening external application page...");
       return;
@@ -1018,8 +1140,9 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
       fetchStats();
       fetchCompanies();
       fetchSavedJobs();
+      fetchLinkedInSavedIds();
     }
-  }, [activeTab, fetchJobs, fetchStats, fetchCompanies, fetchSavedJobs]);
+  }, [activeTab, fetchJobs, fetchStats, fetchCompanies, fetchSavedJobs, fetchLinkedInSavedIds]);
 
   // Fetch data for other tabs
   useEffect(() => {
@@ -1149,276 +1272,386 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
         </motion.div>
       )}
 
-      {/* Search Bar */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
-        <div className="flex-1 relative">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: c.textMuted }} />
-          <input ref={searchRef} value={filters.search} onChange={e => updateFilter("search", e.target.value)}
-            onKeyDown={e => e.key === "Enter" && applyFilters()}
-            placeholder="Search jobs, skills, companies..."
-            className="w-full pl-10 pr-4 py-3 rounded-xl text-xs font-semibold outline-none transition-all border"
-            style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
-            onFocus={e => e.currentTarget.style.borderColor = c.primary}
-            onBlur={e => e.currentTarget.style.borderColor = c.border} />
-        </div>
-        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          onClick={() => setFilterOpen(!filterOpen)}
-          className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-all border cursor-pointer"
-          style={{
-            background: filterOpen ? "rgba(245,158,11,0.08)" : c.inputBg,
-            borderColor: filterOpen ? "rgba(245,158,11,0.25)" : c.border,
-            color: filterOpen ? c.primary : c.textSec,
-          }}>
-          <SlidersHorizontal size={14} />
-          Filters {activeFilters.length > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-400">{activeFilters.length}</span>}
-        </motion.button>
-        <select value={sortValue} onChange={e => handleSort(e.target.value)}
-          className="px-3 py-3 rounded-xl text-xs font-bold border outline-none cursor-pointer"
-          style={{ background: c.inputBg, borderColor: c.border, color: c.textSec }}>
-          {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-      </motion.div>
-
-      {/* Filter Panel */}
-      <AnimatePresence>
-        {filterOpen && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden">
-            <div className="rounded-2xl border p-5 space-y-4" style={{ background: c.cardBg, borderColor: c.border }}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Advanced Filters</h3>
-                <button onClick={clearFilters} className="text-[10px] font-bold cursor-pointer bg-transparent border-none"
-                  style={{ color: c.primary }}>Clear All</button>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {/* Company */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Company</label>
-                  <select value={filters.company} onChange={e => updateFilter("company", e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none cursor-pointer"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-                    <option value="">All Companies</option>
-                    {companies.map(comp => <option key={comp} value={comp}>{comp}</option>)}
-                  </select>
-                </div>
-                {/* Category */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Category</label>
-                  <input value={filters.category} onChange={e => updateFilter("category", e.target.value)}
-                    placeholder="e.g. Engineering"
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-                </div>
-                {/* Location */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Location</label>
-                  <input value={filters.location} onChange={e => updateFilter("location", e.target.value)}
-                    placeholder="e.g. Bangalore"
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-                </div>
-                {/* Country */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Country</label>
-                  <select value={filters.country} onChange={e => updateFilter("country", e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none cursor-pointer"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-                    <option value="">All Countries</option>
-                    {ADZUNA_COUNTRIES.map(co => <option key={co.code} value={co.name}>{co.name}</option>)}
-                  </select>
-                </div>
-                {/* State */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>State</label>
-                  <input value={filters.state} onChange={e => updateFilter("state", e.target.value)}
-                    placeholder="e.g. Karnataka"
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-                </div>
-                {/* City */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>City</label>
-                  <input value={filters.city} onChange={e => updateFilter("city", e.target.value)}
-                    placeholder="e.g. Mumbai"
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-                </div>
-                {/* Mode */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Mode</label>
-                  <select value={filters.mode} onChange={e => updateFilter("mode", e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none cursor-pointer"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-                    <option value="">All Modes</option>
-                    {MODE_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                </div>
-                {/* Employment Type */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Employment Type</label>
-                  <select value={filters.employmentType} onChange={e => updateFilter("employmentType", e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none cursor-pointer"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-                    <option value="">All Types</option>
-                    {EMPLOYMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                {/* Experience */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Experience (years)</label>
-                  <input value={filters.experience} onChange={e => updateFilter("experience", e.target.value)}
-                    placeholder="e.g. 3"
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-                </div>
-                {/* Salary Min */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Min Salary</label>
-                  <input value={filters.salaryMin} onChange={e => updateFilter("salaryMin", e.target.value)}
-                    placeholder="e.g. 500000" type="number"
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-                </div>
-                {/* Salary Max */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Max Salary</label>
-                  <input value={filters.salaryMax} onChange={e => updateFilter("salaryMax", e.target.value)}
-                    placeholder="e.g. 2000000" type="number"
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-                </div>
-                {/* Skills */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Skills</label>
-                  <input value={filters.skills} onChange={e => updateFilter("skills", e.target.value)}
-                    placeholder="React, Python"
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-                </div>
-                {/* Posted Date */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Posted</label>
-                  <select value={filters.postedDate} onChange={e => updateFilter("postedDate", e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none cursor-pointer"
-                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-                    <option value="">Any time</option>
-                    <option value="1d">Last 24 hours</option>
-                    <option value="7d">Last 7 days</option>
-                    <option value="30d">Last 30 days</option>
-                    <option value="90d">Last 90 days</option>
-                  </select>
-                </div>
-                {/* Government Toggle */}
-                <div className="space-y-1 flex items-end">
-                  <label className="flex items-center gap-2 cursor-pointer px-3 py-2.5 rounded-lg border w-full transition-all"
-                    style={{
-                      background: filters.isGovernment ? "rgba(16,185,129,0.06)" : c.inputBg,
-                      borderColor: filters.isGovernment ? "rgba(16,185,129,0.25)" : c.border,
-                      color: c.text,
-                    }}>
-                    <input type="checkbox" checked={filters.isGovernment}
-                      onChange={e => updateFilter("isGovernment", e.target.checked)}
-                      className="sr-only" />
-                    <div className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
-                      style={{
-                        background: filters.isGovernment ? "#10b981" : "transparent",
-                        borderColor: filters.isGovernment ? "#10b981" : c.border,
-                      }}>
-                      {filters.isGovernment && <Check size={10} color="#fff" strokeWidth={3} />}
-                    </div>
-                    <span className="text-[11px] font-bold flex items-center gap-1"><Shield size={10} /> Government</span>
-                  </label>
-                </div>
-              </div>
-              <div className="flex justify-end pt-2">
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  onClick={applyFilters}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer"
-                  style={{ background: c.primaryGradient, color: "#000" }}>
-                  Apply Filters
-                </motion.button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Active Filter Chips */}
-      <AnimatePresence>
-        {activeFilters.length > 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="flex flex-wrap gap-2">
-            {activeFilters.map(f => (
-              <FilterChip key={f.key} label={f.label} onRemove={() => removeFilter(f.key)} c={c} />
-            ))}
-            <button onClick={clearFilters}
-              className="text-[10px] font-bold underline cursor-pointer bg-transparent border-none self-center"
-              style={{ color: c.primary }}>
-              Clear all
+      {/* Source Toggle */}
+      <div className="flex gap-1 p-1 rounded-xl border" style={{ background: c.cardBg, borderColor: c.border }}>
+        {([
+          { id: "adzuna" as const, label: "Adzuna Jobs", icon: Globe },
+          { id: "linkedin" as const, label: "LinkedIn Jobs", icon: Link2 },
+        ]).map(src => {
+          const active = jobSource === src.id;
+          return (
+            <button key={src.id} onClick={() => setJobSource(src.id)}
+              className="flex-1 py-3 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer border-none"
+              style={{
+                background: active ? "rgba(245,158,11,0.08)" : "transparent",
+                color: active ? c.primary : c.textMuted,
+              }}>
+              <src.icon size={14} />
+              {src.label}
             </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          );
+        })}
+      </div>
 
-      {/* Job Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} c={c} />)}
-        </div>
-      ) : error ? (
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-          className="rounded-2xl border p-6 text-center" style={{ background: "rgba(239,68,68,0.04)", borderColor: "rgba(239,68,68,0.15)" }}>
-          <AlertCircle size={24} className="mx-auto mb-3" style={{ color: "#ef4444" }} />
-          <p className="text-xs font-bold text-red-400 mb-1">Failed to load jobs</p>
-          <p className="text-[11px] mb-4" style={{ color: c.textMuted }}>{error}</p>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            onClick={() => { setPage(1); fetchJobs(1, false); }}
-            className="px-4 py-2 rounded-xl text-[11px] font-bold border-none cursor-pointer bg-red-500/10 text-red-400 hover:bg-red-500/20">
-            <RefreshCw size={12} className="inline mr-1.5" /> Retry
-          </motion.button>
-        </motion.div>
-      ) : jobs.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed"
-          style={{ borderColor: c.border }}>
-          <Briefcase size={40} className="mb-4 opacity-30" style={{ color: c.textMuted }} />
-          <h3 className="text-sm font-bold mb-1" style={{ color: c.text }}>No jobs found</h3>
-          <p className="text-[11px] mb-4" style={{ color: c.textMuted }}>Try adjusting your filters or search query</p>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            onClick={clearFilters}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer"
-            style={{ background: c.primaryGradient, color: "#000" }}>
-            Clear Filters
-          </motion.button>
-        </motion.div>
-      ) : (
+      {/* ── Adzuna Search + Filters ── */}
+      {jobSource === "adzuna" && (
         <>
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>
-              {jobs.length} job{jobs.length !== 1 ? "s" : ""} found
-            </span>
-          </div>
-          <motion.div variants={staggerContainer} initial="hidden" animate="visible"
-            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {jobs.map(job => (
-              <JobCard key={job.id} job={job} c={c}
-                onOpen={() => openJobDetail(job)}
-                onSave={() => toggleSaveJob(job.id)} />
-            ))}
+          {/* Search Bar */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: c.textMuted }} />
+              <input ref={searchRef} value={filters.search} onChange={e => updateFilter("search", e.target.value)}
+                onKeyDown={e => e.key === "Enter" && applyFilters()}
+                placeholder="Search jobs, skills, companies..."
+                className="w-full pl-10 pr-4 py-3 rounded-xl text-xs font-semibold outline-none transition-all border"
+                style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                onFocus={e => e.currentTarget.style.borderColor = c.primary}
+                onBlur={e => e.currentTarget.style.borderColor = c.border} />
+            </div>
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => setFilterOpen(!filterOpen)}
+              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-all border cursor-pointer"
+              style={{
+                background: filterOpen ? "rgba(245,158,11,0.08)" : c.inputBg,
+                borderColor: filterOpen ? "rgba(245,158,11,0.25)" : c.border,
+                color: filterOpen ? c.primary : c.textSec,
+              }}>
+              <SlidersHorizontal size={14} />
+              Filters {activeFilters.length > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-400">{activeFilters.length}</span>}
+            </motion.button>
+            <select value={sortValue} onChange={e => handleSort(e.target.value)}
+              className="px-3 py-3 rounded-xl text-xs font-bold border outline-none cursor-pointer"
+              style={{ background: c.inputBg, borderColor: c.border, color: c.textSec }}>
+              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
           </motion.div>
-          {/* Infinite scroll trigger */}
-          <div ref={loadMoreRef} className="h-4" />
-          {loadingMore && (
-            <div className="flex justify-center py-4">
-              <Loader2 size={20} className="animate-spin" style={{ color: c.primary }} />
+
+          {/* Filter Panel */}
+          <AnimatePresence>
+            {filterOpen && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden">
+                <div className="rounded-2xl border p-5 space-y-4" style={{ background: c.cardBg, borderColor: c.border }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Advanced Filters</h3>
+                    <button onClick={clearFilters} className="text-[10px] font-bold cursor-pointer bg-transparent border-none"
+                      style={{ color: c.primary }}>Clear All</button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {/* Company */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Company</label>
+                      <select value={filters.company} onChange={e => updateFilter("company", e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none cursor-pointer"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
+                        <option value="">All Companies</option>
+                        {companies.map(comp => <option key={comp} value={comp}>{comp}</option>)}
+                      </select>
+                    </div>
+                    {/* Category */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Category</label>
+                      <input value={filters.category} onChange={e => updateFilter("category", e.target.value)}
+                        placeholder="e.g. Engineering"
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                    </div>
+                    {/* Location */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Location</label>
+                      <input value={filters.location} onChange={e => updateFilter("location", e.target.value)}
+                        placeholder="e.g. Bangalore"
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                    </div>
+                    {/* Country */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Country</label>
+                      <select value={filters.country} onChange={e => updateFilter("country", e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none cursor-pointer"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
+                        <option value="">All Countries</option>
+                        {ADZUNA_COUNTRIES.map(co => <option key={co.code} value={co.name}>{co.name}</option>)}
+                      </select>
+                    </div>
+                    {/* State */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>State</label>
+                      <input value={filters.state} onChange={e => updateFilter("state", e.target.value)}
+                        placeholder="e.g. Karnataka"
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                    </div>
+                    {/* City */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>City</label>
+                      <input value={filters.city} onChange={e => updateFilter("city", e.target.value)}
+                        placeholder="e.g. Mumbai"
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                    </div>
+                    {/* Mode */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Mode</label>
+                      <select value={filters.mode} onChange={e => updateFilter("mode", e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none cursor-pointer"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
+                        <option value="">All Modes</option>
+                        {MODE_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                    {/* Employment Type */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Employment Type</label>
+                      <select value={filters.employmentType} onChange={e => updateFilter("employmentType", e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none cursor-pointer"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
+                        <option value="">All Types</option>
+                        {EMPLOYMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    {/* Experience */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Experience (years)</label>
+                      <input value={filters.experience} onChange={e => updateFilter("experience", e.target.value)}
+                        placeholder="e.g. 3"
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                    </div>
+                    {/* Salary Min */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Min Salary</label>
+                      <input value={filters.salaryMin} onChange={e => updateFilter("salaryMin", e.target.value)}
+                        placeholder="e.g. 500000" type="number"
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                    </div>
+                    {/* Salary Max */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Max Salary</label>
+                      <input value={filters.salaryMax} onChange={e => updateFilter("salaryMax", e.target.value)}
+                        placeholder="e.g. 2000000" type="number"
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                    </div>
+                    {/* Skills */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Skills</label>
+                      <input value={filters.skills} onChange={e => updateFilter("skills", e.target.value)}
+                        placeholder="React, Python"
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                    </div>
+                    {/* Posted Date */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Posted</label>
+                      <select value={filters.postedDate} onChange={e => updateFilter("postedDate", e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg text-[11px] font-semibold border outline-none cursor-pointer"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
+                        <option value="">Any time</option>
+                        <option value="1d">Last 24 hours</option>
+                        <option value="7d">Last 7 days</option>
+                        <option value="30d">Last 30 days</option>
+                        <option value="90d">Last 90 days</option>
+                      </select>
+                    </div>
+                    {/* Government Toggle */}
+                    <div className="space-y-1 flex items-end">
+                      <label className="flex items-center gap-2 cursor-pointer px-3 py-2.5 rounded-lg border w-full transition-all"
+                        style={{
+                          background: filters.isGovernment ? "rgba(16,185,129,0.06)" : c.inputBg,
+                          borderColor: filters.isGovernment ? "rgba(16,185,129,0.25)" : c.border,
+                          color: c.text,
+                        }}>
+                        <input type="checkbox" checked={filters.isGovernment}
+                          onChange={e => updateFilter("isGovernment", e.target.checked)}
+                          className="sr-only" />
+                        <div className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
+                          style={{
+                            background: filters.isGovernment ? "#10b981" : "transparent",
+                            borderColor: filters.isGovernment ? "#10b981" : c.border,
+                          }}>
+                          {filters.isGovernment && <Check size={10} color="#fff" strokeWidth={3} />}
+                        </div>
+                        <span className="text-[11px] font-bold flex items-center gap-1"><Shield size={10} /> Government</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-2">
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      onClick={applyFilters}
+                      className="px-5 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer"
+                      style={{ background: c.primaryGradient, color: "#000" }}>
+                      Apply Filters
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Active Filter Chips */}
+          <AnimatePresence>
+            {activeFilters.length > 0 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="flex flex-wrap gap-2">
+                {activeFilters.map(f => (
+                  <FilterChip key={f.key} label={f.label} onRemove={() => removeFilter(f.key)} c={c} />
+                ))}
+                <button onClick={clearFilters}
+                  className="text-[10px] font-bold underline cursor-pointer bg-transparent border-none self-center"
+                  style={{ color: c.primary }}>
+                  Clear all
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
+
+      {/* ── LinkedIn Search UI ── */}
+      {jobSource === "linkedin" && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border p-5 space-y-4" style={{ background: c.cardBg, borderColor: c.border }}>
+          <div className="flex items-center gap-2">
+            <Link2 size={16} style={{ color: c.primary }} />
+            <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: c.text }}>Search LinkedIn Jobs</h3>
+          </div>
+          <p className="text-[11px]" style={{ color: c.textMuted }}>
+            Paste any LinkedIn Jobs search URL to scrape results. Apply filters on LinkedIn first, then copy the URL.
+          </p>
+          <div className="flex gap-2">
+            <input value={linkedInUrl} onChange={e => setLinkedInUrl(e.target.value)}
+              placeholder="https://www.linkedin.com/jobs/search/?..."
+              className="flex-1 px-4 py-3 rounded-xl text-xs font-semibold outline-none transition-all border"
+              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+            <select value={linkedInCount} onChange={e => setLinkedInCount(Number(e.target.value))}
+              className="px-3 py-3 rounded-xl text-xs font-bold border outline-none cursor-pointer"
+              style={{ background: c.inputBg, borderColor: c.border, color: c.textSec }}>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={handleLinkedInScrape} disabled={linkedInScraping}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold border-none cursor-pointer disabled:opacity-50"
+              style={{ background: c.primaryGradient, color: "#000" }}>
+              {linkedInScraping ? <><Loader2 size={14} className="animate-spin" /> Scraping...</> : <><Search size={14} /> Scrape</>}
+            </motion.button>
+          </div>
+          {/* Quick Filters */}
+          <div className="flex flex-wrap gap-1.5">
+            {LINKEDIN_QUICK_FILTERS.map(f => (
+              <button key={f.label} onClick={() => handleLinkedInQuickFilter(f.suffix)}
+                className="text-[10px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80 cursor-pointer border"
+                style={{ background: c.inputBg, borderColor: c.border, color: c.textSec }}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+          {linkedInError && (
+            <div className="p-3 rounded-xl flex items-center gap-2" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
+              <AlertTriangle size={14} style={{ color: "#ef4444" }} />
+              <span className="text-[11px]" style={{ color: "#ef4444" }}>{linkedInError}</span>
             </div>
           )}
-          {!hasMore && jobs.length > 0 && (
-            <p className="text-center text-[10px] font-bold py-4" style={{ color: c.textMuted }}>
-              All jobs loaded
+        </motion.div>
+      )}
+
+      {/* ── Adzuna Job Grid ── */}
+      {jobSource === "adzuna" && (
+        loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} c={c} />)}
+          </div>
+        ) : error ? (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="rounded-2xl border p-6 text-center" style={{ background: "rgba(239,68,68,0.04)", borderColor: "rgba(239,68,68,0.15)" }}>
+            <AlertCircle size={24} className="mx-auto mb-3" style={{ color: "#ef4444" }} />
+            <p className="text-xs font-bold text-red-400 mb-1">Failed to load jobs</p>
+            <p className="text-[11px] mb-4" style={{ color: c.textMuted }}>{error}</p>
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => { setPage(1); fetchJobs(1, false); }}
+              className="px-4 py-2 rounded-xl text-[11px] font-bold border-none cursor-pointer bg-red-500/10 text-red-400 hover:bg-red-500/20">
+              <RefreshCw size={12} className="inline mr-1.5" /> Retry
+            </motion.button>
+          </motion.div>
+        ) : jobs.length === 0 ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed"
+            style={{ borderColor: c.border }}>
+            <Briefcase size={40} className="mb-4 opacity-30" style={{ color: c.textMuted }} />
+            <h3 className="text-sm font-bold mb-1" style={{ color: c.text }}>No jobs found</h3>
+            <p className="text-[11px] mb-4" style={{ color: c.textMuted }}>Try adjusting your filters or search query</p>
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={clearFilters}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer"
+              style={{ background: c.primaryGradient, color: "#000" }}>
+              Clear Filters
+            </motion.button>
+          </motion.div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>
+                {jobs.length} job{jobs.length !== 1 ? "s" : ""} found via Adzuna
+              </span>
+            </div>
+            <motion.div variants={staggerContainer} initial="hidden" animate="visible"
+              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {jobs.map(job => (
+                <JobCard key={job.id} job={job} c={c}
+                  onOpen={() => openJobDetail(job)}
+                  onSave={() => toggleSaveJob(job.id)} />
+              ))}
+            </motion.div>
+            <div ref={loadMoreRef} className="h-4" />
+            {loadingMore && (
+              <div className="flex justify-center py-4">
+                <Loader2 size={20} className="animate-spin" style={{ color: c.primary }} />
+              </div>
+            )}
+            {!hasMore && jobs.length > 0 && (
+              <p className="text-center text-[10px] font-bold py-4" style={{ color: c.textMuted }}>
+                All jobs loaded
+              </p>
+            )}
+          </>
+        )
+      )}
+
+      {/* ── LinkedIn Job Grid ── */}
+      {jobSource === "linkedin" && (
+        linkedInScraping ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} c={c} />)}
+          </div>
+        ) : linkedInResults.length === 0 ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed"
+            style={{ borderColor: c.border }}>
+            <Link2 size={40} className="mb-4 opacity-30" style={{ color: c.textMuted }} />
+            <h3 className="text-sm font-bold mb-1" style={{ color: c.text }}>Paste a LinkedIn Jobs URL to start</h3>
+            <p className="text-[11px] max-w-md" style={{ color: c.textMuted }}>
+              Go to LinkedIn Jobs, apply filters, copy the URL from the address bar, and paste it above. The scraper supports all LinkedIn job search filters.
             </p>
-          )}
-        </>
+          </motion.div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>
+                {linkedInResults.length} job{linkedInResults.length !== 1 ? "s" : ""} found via LinkedIn
+              </span>
+            </div>
+            <motion.div variants={staggerContainer} initial="hidden" animate="visible"
+              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {linkedInResults.map(job => (
+                <JobCard key={job.id} job={job} c={c}
+                  onOpen={() => openJobDetail(job)}
+                  onSave={() => toggleSaveJob(job.id)} />
+              ))}
+            </motion.div>
+          </>
+        )
       )}
     </div>
   );
@@ -2115,6 +2348,11 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
                       {job.isGovernment && (
                         <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase" style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
                           <Shield size={8} className="inline mr-0.5" /> Government
+                        </span>
+                      )}
+                      {job.isLinkedIn && (
+                        <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase" style={{ background: "rgba(10,102,194,0.15)", color: "#0a66c2" }}>
+                          <Link2 size={8} className="inline mr-0.5" /> LinkedIn
                         </span>
                       )}
                       {job.isAdzuna && (
