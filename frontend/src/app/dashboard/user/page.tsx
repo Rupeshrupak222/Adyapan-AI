@@ -354,6 +354,7 @@ export const sidebarItems: SidebarItem[] = [
   {
     id: "placement", label: "Placement Hub", icon: <Trophy size={18} />,
     submenu: [
+      { label: "AI Coding Assessment", href: "/dashboard/placement/coding-assessment" },
       { label: "AI Aptitude Engine", href: "#" },
       { label: "Logical Reasoning", href: "#" },
       { label: "Technical MCQs", href: "#" },
@@ -560,6 +561,7 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "JD Analyzer") onViewTool("job-jd-match");
                       else if (sub.label === "Job Referrals") onViewTool("job-referrals");
                       else if (sub.label === "Hiring Challenges") onViewTool("job-challenges");
+                      else if (sub.label === "AI Coding Assessment") onViewTool("placement-coding-assessment");
                       else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
                       else if (sub.label === "Logical Reasoning") onViewTool("placement-reasoning");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
