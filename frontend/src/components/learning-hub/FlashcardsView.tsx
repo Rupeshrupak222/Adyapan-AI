@@ -17,33 +17,33 @@ const mkColors = (theme: string) => {
   const isDark = theme === "dark";
   return {
     isDark,
-    text:         isDark ? "#e5e7eb"              : "#0f172a",
-    textSec:      isDark ? "#9ca3af"              : "#475569",
-    textMuted:    isDark ? "#828fa3"              : "#5f6368",
+    text:         isDark ? "#f3f4f6"              : "#0f172a",
+    textSec:      isDark ? "#9ca3af"              : "#334155",
+    textMuted:    isDark ? "#6b7280"              : "#64748b",
     textOnAmber:  isDark ? "#000000"              : "#000000",
     bg:           isDark ? "rgba(255,255,255,0.025)" : "#ffffff",
     bgHover:      isDark ? "rgba(255,255,255,0.04)"  : "#f8fafc",
-    surface:      isDark ? "rgba(255,255,255,0.03)"  : "rgba(0,0,0,0.02)",
-    surfaceHover: isDark ? "rgba(255,255,255,0.06)"  : "rgba(0,0,0,0.04)",
-    border:       isDark ? "rgba(255,255,255,0.07)"  : "rgba(0,0,0,0.08)",
-    borderHover:  isDark ? "rgba(255,255,255,0.15)"  : "rgba(0,0,0,0.18)",
+    surface:      isDark ? "rgba(255,255,255,0.03)"  : "rgba(0,0,0,0.03)",
+    surfaceHover: isDark ? "rgba(255,255,255,0.06)"  : "rgba(0,0,0,0.05)",
+    border:       isDark ? "rgba(255,255,255,0.08)"  : "rgba(0,0,0,0.1)",
+    borderHover:  isDark ? "rgba(255,255,255,0.15)"  : "rgba(0,0,0,0.2)",
     borderFocus:  isDark ? "rgba(245,158,11,0.45)"   : "rgba(245,158,11,0.5)",
-    inputBg:      isDark ? "rgba(0,0,0,0.35)"        : "#f1f5f9",
-    cardBg:       isDark ? "rgba(255,255,255,0.025)" : "#ffffff",
-    cardBgAlt:    isDark ? "rgba(0,0,0,0.25)"        : "#f8fafc",
-    stickyBg:     isDark ? "rgba(10,10,20,0.88)"     : "rgba(248,250,252,0.92)",
+    inputBg:      isDark ? "rgba(0,0,0,0.35)"        : "#f8fafc",
+    cardBg:       isDark ? "rgba(255,255,255,0.03)"  : "#ffffff",
+    cardBgAlt:    isDark ? "rgba(0,0,0,0.25)"        : "#f1f5f9",
+    stickyBg:     isDark ? "rgba(10,10,20,0.88)"     : "rgba(255,255,255,0.92)",
     amber:        "#f59e0b",
-    amberBg:      isDark ? "rgba(245,158,11,0.07)"   : "rgba(245,158,11,0.08)",
-    amberBorder:  isDark ? "rgba(245,158,11,0.18)"   : "rgba(245,158,11,0.25)",
-    amberActive:  isDark ? "rgba(245,158,11,0.12)"   : "rgba(245,158,11,0.1)",
+    amberBg:      isDark ? "rgba(245,158,11,0.1)"    : "rgba(245,158,11,0.1)",
+    amberBorder:  isDark ? "rgba(245,158,11,0.25)"   : "rgba(245,158,11,0.3)",
+    amberActive:  isDark ? "rgba(245,158,11,0.15)"   : "rgba(245,158,11,0.15)",
     rose:         "#f43f5e",
-    roseBg:       isDark ? "rgba(244,63,94,0.07)"    : "rgba(244,63,94,0.06)",
-    roseBorder:   isDark ? "rgba(244,63,94,0.18)"    : "rgba(244,63,94,0.2)",
-    cyanBg:       isDark ? "rgba(6,182,212,0.06)"    : "rgba(6,182,212,0.05)",
-    cyanBorder:   isDark ? "rgba(6,182,212,0.14)"    : "rgba(6,182,212,0.15)",
-    green:        "#10b981",
-    greenBg:      isDark ? "rgba(16,185,129,0.1)"    : "rgba(16,185,129,0.08)",
-    divider:      isDark ? "rgba(255,255,255,0.06)"  : "rgba(0,0,0,0.07)",
+    roseBg:       isDark ? "rgba(244,63,94,0.1)"     : "rgba(244,63,94,0.08)",
+    roseBorder:   isDark ? "rgba(244,63,94,0.25)"    : "rgba(244,63,94,0.3)",
+    cyanBg:       isDark ? "rgba(6,182,212,0.08)"    : "rgba(6,182,212,0.08)",
+    cyanBorder:   isDark ? "rgba(6,182,212,0.2)"     : "rgba(6,182,212,0.25)",
+    green:        isDark ? "#10b981"                 : "#059669",
+    greenBg:      isDark ? "rgba(16,185,129,0.12)"   : "rgba(5,150,105,0.1)",
+    divider:      isDark ? "rgba(255,255,255,0.08)"  : "rgba(0,0,0,0.08)",
     pill:         isDark ? "rgba(255,255,255,0.05)"  : "rgba(0,0,0,0.05)",
     pillBorder:   isDark ? "rgba(255,255,255,0.1)"   : "rgba(0,0,0,0.1)",
   };
@@ -989,7 +989,7 @@ function CardFace({
             <div className="inline-flex h-9 w-9 rounded-lg items-center justify-center mx-auto" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: "#f59e0b" }}>
               <Sparkles size={16} />
             </div>
-            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight leading-snug" style={{ color: "#fff" }}>
+            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight leading-snug" style={{ color: c.text }}>
               {card.front}
             </h3>
             <p className="text-xs max-w-[280px] mx-auto leading-relaxed" style={{ color: c.textMuted }}>
@@ -1012,19 +1012,19 @@ function CardFace({
           <div className="absolute -bottom-[30%] -left-[30%] w-60 h-60 rounded-full blur-[65px] pointer-events-none" style={{ background: "rgba(16,185,129,0.1)" }} />
 
           <div className="flex justify-between items-center relative z-10">
-            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border" style={{ background: "rgba(16,185,129,0.05)", borderColor: "rgba(16,185,129,0.2)", color: "#34d399" }}>
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border" style={{ background: c.isDark ? "rgba(16,185,129,0.1)" : "rgba(16,185,129,0.12)", borderColor: c.isDark ? "rgba(16,185,129,0.25)" : "rgba(16,185,129,0.3)", color: c.green }}>
               Answer Reveal
             </span>
             <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: c.textMuted }}>
-              <RefreshCw size={11} style={{ color: "#34d399" }} />
+              <RefreshCw size={11} style={{ color: c.green }} />
               <span>Tap to Flip</span>
             </div>
           </div>
 
           <div className="my-auto space-y-4 sm:space-y-5 relative z-10 overflow-y-auto max-h-[300px] pr-1">
             <div className="space-y-1.5">
-              <span className="text-[10px] uppercase font-bold tracking-wider block" style={{ color: "#34d399" }}>Core Answer</span>
-              <h4 className="text-base sm:text-lg font-bold leading-relaxed" style={{ color: "#fff" }}>{card.back}</h4>
+              <span className="text-[10px] uppercase font-bold tracking-wider block" style={{ color: c.green }}>Core Answer</span>
+              <h4 className="text-base sm:text-lg font-bold leading-relaxed" style={{ color: c.text }}>{card.back}</h4>
             </div>
 
             <div className="space-y-1">
@@ -1033,7 +1033,7 @@ function CardFace({
             </div>
 
             {card.memoryTip && (
-              <div className="rounded-xl p-3 flex gap-2.5 items-start border" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.08))", borderColor: "rgba(245,158,11,0.1)" }}>
+              <div className="rounded-xl p-3 flex gap-2.5 items-start border" style={{ background: c.amberBg, borderColor: c.amberBorder }}>
                 <div className="h-6 w-6 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: "#f59e0b" }}>
                   <Lightbulb size={13} />
                 </div>
@@ -1076,17 +1076,25 @@ function CardFace({
 
 function cardFrontStyle(c: ReturnType<typeof mkColors>): React.CSSProperties {
   return {
-    background: c.isDark ? "rgba(24,24,27,0.8)" : "#ffffff",
-    borderColor: c.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
-    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+    background: c.isDark
+      ? "linear-gradient(135deg, rgba(24, 24, 27, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)"
+      : "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+    borderColor: c.isDark ? "rgba(245,158,11,0.25)" : "rgba(245,158,11,0.3)",
+    boxShadow: c.isDark
+      ? "0 25px 50px -12px rgba(0,0,0,0.5)"
+      : "0 20px 40px -15px rgba(245,158,11,0.12)",
   };
 }
 
 function cardBackStyle(c: ReturnType<typeof mkColors>): React.CSSProperties {
   return {
-    background: c.isDark ? "rgba(24,24,27,0.85)" : "#ffffff",
-    borderColor: c.isDark ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.2)",
-    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+    background: c.isDark
+      ? "linear-gradient(135deg, rgba(24, 24, 27, 0.95) 0%, rgba(6, 35, 25, 0.95) 100%)"
+      : "linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)",
+    borderColor: c.isDark ? "rgba(16,185,129,0.25)" : "rgba(16,185,129,0.3)",
+    boxShadow: c.isDark
+      ? "0 25px 50px -12px rgba(0,0,0,0.5)"
+      : "0 20px 40px -15px rgba(16,185,129,0.12)",
   };
 }
 
