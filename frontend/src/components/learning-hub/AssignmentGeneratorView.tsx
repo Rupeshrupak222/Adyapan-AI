@@ -55,8 +55,25 @@ const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: (i = 0) => ({ opacity: 
 const scaleIn = { hidden: { opacity: 0, scale: 0.92 }, visible: (i = 0) => ({ opacity: 1, scale: 1, transition: { delay: i * 0.07, duration: 0.35 } }) };
 const slideRight = { hidden: { opacity: 0, x: -24 }, visible: (i = 0) => ({ opacity: 1, x: 0, transition: { delay: i * 0.07, duration: 0.4 } }) };
 
+function renderFormattedText(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*|`.*?`|\$\$.*?\$\$)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-bold text-amber-500/90">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return <code key={i} className="px-1.5 py-0.5 rounded text-xs bg-slate-800 text-amber-400 font-mono">{part.slice(1, -1)}</code>;
+    }
+    if (part.startsWith("$$") && part.endsWith("$$")) {
+      return <span key={i} className="my-1.5 p-2 rounded-lg bg-slate-900/60 border border-amber-500/20 font-mono text-xs text-amber-300 block text-center">{part.slice(2, -2)}</span>;
+    }
+    return part;
+  });
+}
+
 function parseAssignmentSections(result: AssignmentContent | null, c: ReturnType<typeof mkColors>) {
   if (!result) return [];
+
 
   if (result.sections && result.sections.length > 0) {
     const list = result.sections.map((s, i) => ({
@@ -830,16 +847,48 @@ export function AssignmentGeneratorView() {
                                     {s.content.split("\n\n").map((para, pi) => {
                                       const trimmed = para.trim();
                                       if (!trimmed) return null;
+
                                       if (trimmed.startsWith("#")) {
-                                        return <h4 key={pi} className="text-sm font-extrabold mt-3" style={{ color: c.amber }}>{trimmed.replace(/^#+\s*/, "")}</h4>;
+                                        const level = (trimmed.match(/^#+/)?.[0] || "#").length;
+                                        const headingText = trimmed.replace(/^#+\s*/, "");
+                                        return (
+                                          <h4 key={pi} className={`font-extrabold ${level <= 2 ? "text-base mt-4 text-amber-400" : "text-sm mt-3"}`} style={{ color: c.amber, fontFamily: "'Outfit', sans-serif" }}>
+                                            {headingText}
+                                          </h4>
+                                        );
                                       }
+
+                                      if (trimmed.startsWith(">")) {
+                                        const quoteText = trimmed.replace(/^>\s*/, "");
+                                        return (
+                                          <div key={pi} className="p-3.5 rounded-xl border-l-4 my-2 text-xs leading-relaxed" style={{ background: c.amberBg, borderColor: c.amber, color: c.text }}>
+                                            {renderFormattedText(quoteText)}
+                                          </div>
+                                        );
+                                      }
+
+                                      const lines = trimmed.split("\n");
+                                      const isList = lines.every(l => /^\s*([-*]|\d+\.)\s+/.test(l.trim()));
+                                      if (isList) {
+                                        return (
+                                          <ul key={pi} className="space-y-1.5 pl-4 list-disc text-[14px] leading-[1.8]" style={{ color: c.textSec }}>
+                                            {lines.map((line, li) => (
+                                              <li key={li}>
+                                                {renderFormattedText(line.replace(/^\s*([-*]|\d+\.)\s+/, ""))}
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        );
+                                      }
+
                                       return (
                                         <p key={pi} className="text-[14px] leading-[1.8]" style={{ color: c.textSec }}>
-                                          {stripMarkdown(trimmed)}
+                                          {renderFormattedText(trimmed)}
                                         </p>
                                       );
                                     })}
                                   </div>
+
                                 )}
                               </div>
                             </motion.div>

@@ -18,9 +18,10 @@ assignmentExportRouter.use((req, res, next) => {
 
 /**
  * Unified Assignment Export Endpoint:
- * POST /api/export/assignment or POST /api/assignment/export
+ * POST /api/export/assignment, POST /api/export/assignment/export,
+ * POST /api/assignment/export, or POST /api/assignment/export/export
  */
-assignmentExportRouter.post("/export", async (req, res) => {
+assignmentExportRouter.post(["/", "/export"], async (req, res) => {
   try {
     const {
       assignmentTitle, subject, course, semester, studentName,
@@ -83,7 +84,7 @@ assignmentExportRouter.post("/export", async (req, res) => {
 /**
  * POST /api/export/assignment/pdf or POST /api/assignment/export/pdf
  */
-assignmentExportRouter.post("/export/pdf", async (req, res) => {
+assignmentExportRouter.post(["/pdf", "/export/pdf"], async (req, res) => {
   try {
     const { assignmentTitle, subject, course, semester, studentName, registrationNumber, faculty, university, topic, academicLevel, wordCount, content, citationStyle } = req.body;
     const markdownText = typeof content === "string" 
@@ -110,7 +111,7 @@ assignmentExportRouter.post("/export/pdf", async (req, res) => {
 /**
  * POST /api/export/assignment/docx or POST /api/assignment/export/docx
  */
-assignmentExportRouter.post("/export/docx", async (req, res) => {
+assignmentExportRouter.post(["/docx", "/export/docx"], async (req, res) => {
   try {
     const { assignmentTitle, subject, course, semester, studentName, registrationNumber, faculty, university, topic, academicLevel, wordCount, content, citationStyle } = req.body;
     const markdownText = typeof content === "string" 
@@ -133,3 +134,4 @@ assignmentExportRouter.post("/export/docx", async (req, res) => {
     handleRouteError(res, error, "Assignment.export.docx", "DOCX generation failed");
   }
 });
+
