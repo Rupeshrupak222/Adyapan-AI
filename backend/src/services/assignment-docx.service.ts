@@ -175,6 +175,7 @@ export async function generateAssignmentDocx(
   // ================= PARSE MARKDOWN BODY =================
   const lines = (markdown || "").split("\n");
   let inCodeBlock = false;
+  let hasFirstH2 = false;
   let codeBuffer: string[] = [];
 
   for (const line of lines) {
@@ -240,6 +241,10 @@ export async function generateAssignmentDocx(
         })
       );
     } else if (trimmed.startsWith("## ")) {
+      if (hasFirstH2) {
+        children.push(new Paragraph({ children: [new PageBreak()] }));
+      }
+      hasFirstH2 = true;
       children.push(
         new Paragraph({
           heading: HeadingLevel.HEADING_2,

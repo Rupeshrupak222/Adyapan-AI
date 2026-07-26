@@ -44,7 +44,6 @@ export function formatAssignmentHtml(
   const academicLevel = options.academicLevel || "Undergraduate";
   const wordCount = options.wordCount || (content ? content.split(/\s+/).length : 2500);
   const readingTime = options.readingTime || `${Math.ceil(wordCount / 200)} mins`;
-  const citationStyle = options.citationStyle || "APA";
   const dateStr = options.generatedOn || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const assignmentId = options.assignmentId || `ASSIGN-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
   const fontFamily = options.fontFamily || "Inter";
@@ -59,6 +58,16 @@ export function formatAssignmentHtml(
     .replace(/<blockquote>\s*<p>\s*<strong>(Tip):?<\/strong>/gi, '<div class="callout callout-tip"><div class="callout-title">✨ Pro Tip</div><p>')
     .replace(/<blockquote>/g, '<div class="callout callout-quote"><p>')
     .replace(/<\/blockquote>/g, "</div>");
+
+  // Force EVERY section (H2) to start on a separate page
+  let isFirstH2 = true;
+  bodyHtml = bodyHtml.replace(/<h2>/g, () => {
+    if (isFirstH2) {
+      isFirstH2 = false;
+      return '<h2 class="section-title">';
+    }
+    return '<div style="page-break-before: always; break-before: page; margin-top: 2rem;"></div><h2 class="section-title">';
+  });
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -227,6 +236,13 @@ export function formatAssignmentHtml(
       margin-bottom: 0.75rem;
       border-left: 4px solid #F4B400;
       padding-left: 10px;
+      page-break-before: always;
+      break-before: page;
+    }
+
+    h2:first-of-type {
+      page-break-before: avoid;
+      break-before: avoid;
     }
 
     h3 {
@@ -401,11 +417,11 @@ export function formatAssignmentHtml(
             <span class="meta-val">${escapeXml(regNumber)}</span>
           </div>
           <div class="meta-item">
-            <span class="meta-label">Subject & Course</span>
+            <span class="meta-label">Subject &amp; Course</span>
             <span class="meta-val">${escapeXml(subject)} (${escapeXml(course)})</span>
           </div>
           <div class="meta-item">
-            <span class="meta-label">Semester & Section</span>
+            <span class="meta-label">Semester &amp; Section</span>
             <span class="meta-val">${escapeXml(semester)}</span>
           </div>
           <div class="meta-item">
