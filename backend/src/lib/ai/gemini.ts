@@ -1423,7 +1423,21 @@ Output JSON:
 /**
  * 13. Assignment Generator
  */
+export interface AssignmentSection {
+  sectionNumber: number;
+  title: string;
+  pageEstimate: string;
+  wordCount: number;
+  content: string;
+}
+
 export interface AssignmentResult {
+  title?: string;
+  academicLevel?: string;
+  targetPages?: number;
+  totalWords?: number;
+  tableOfContents?: { title: string; pages: string }[];
+  sections?: AssignmentSection[];
   introduction: string;
   body: string;
   conclusion: string;
@@ -1433,45 +1447,109 @@ export interface AssignmentResult {
 export async function generateAssignment(
   topic: string,
   level: string,
-  wordCount: number | string
+  wordCountInput: number | string
 ): Promise<AssignmentResult> {
-  const targetWords = typeof wordCount === "number" && !isNaN(wordCount) ? wordCount : (parseInt(String(wordCount)) || 4500);
-  const targetPages = Math.round(targetWords / 250); // 4500 words ≈ 18-20 academic pages
+  const parsedWords = typeof wordCountInput === "number" && !isNaN(wordCountInput)
+    ? wordCountInput
+    : (parseInt(String(wordCountInput).replace(/[^0-9]/g, "")) || 4500);
 
-  const prompt = `You are a distinguished university professor, senior scholar, and academic author. Write an exhaustive, publication-grade academic assignment on the topic: "${topic}".
+  const targetWords = Math.max(300, parsedWords);
+  const targetPages = Math.max(1, Math.round(targetWords / 250)); // ~250 words per academic page
+  const bodyChapterCount = targetPages <= 2 ? 1 : targetPages <= 6 ? 3 : targetPages <= 12 ? 5 : targetPages <= 20 ? 6 : 8;
 
-ACADEMIC CONFIGURATION:
-- Academic Level: ${level}
+  const prompt = `You are a distinguished university professor, senior scholar, and academic author. Write a publication-grade academic assignment strictly tailored to the user's input specifications.
+
+INPUT CONFIGURATION:
+- Assignment Topic: "${topic}"
+- Academic Level: ${level} (e.g., High School, Undergraduate, Master's, PhD)
 - Target Word Count: ${targetWords} words
-- Target Page Estimate: Approximately ${targetPages} pages (15-20 full academic pages)
+- Target Page Count: ${targetPages} pages (calculated at ~250 words per academic page)
+- Target Body Chapters: ${bodyChapterCount} chapters
 
-CRITICAL INSTRUCTIONS FOR 15-20 PAGE EXTENSIVE CONTENT:
-Do NOT summarize, curtail, or provide brief high-level bullet points. Write fully articulated, highly detailed, rigorous academic text across all sections.
+CRITICAL REQUIREMENTS ACCORDING TO PAGES:
+1. Academic Rigor: Adapt vocabulary, analysis depth, and citations specifically to the requested Academic Level (${level}).
+2. Page-Based Sections: Divide the assignment into exactly ${bodyChapterCount + 2} distinct sections (1 Introduction section, ${bodyChapterCount} Body chapters/sections, 1 Conclusion section).
+3. Section Metadata: Each section MUST include sectionNumber, title, pageEstimate (e.g. "Pages 1–2", "Pages 3–5"), wordCount (estimated section words), and full detailed Markdown content.
+4. Comprehensive Content: Do NOT summarize. Write thorough, fully articulated text for every section.
+5. References: Include 8-20 authentic, scholarly APA 7th edition citations in the "references" array.
 
-1. "introduction" (approx. 1,000 - 1,500 words / 3-5 pages in Markdown):
-   - Historical background, origins, and evolution of the topic.
-   - Comprehensive problem statement, research objectives, and core questions.
-   - Theoretical framework, methodology, and scope boundaries.
-   - Detailed structural overview of the chapters to follow.
-
-2. "body" (approx. 3,000 - 4,000 words / 10-14 pages in Markdown):
-   - Divided into 4 to 6 distinct, in-depth chapters (e.g. ## Chapter 1: Theoretical Foundations, ## Chapter 2: System Architecture & Mechanics, ## Chapter 3: Empirical Case Studies & Practical Applications, ## Chapter 4: Comparative Evaluation & Performance Metrics, ## Chapter 5: Security, Policy, & Ethical Considerations).
-   - Use subheadings (### 1.1 ..., ### 2.1 ...), Markdown data tables, mathematical proofs/formulas, code implementations, step-by-step algorithms, or real-world industrial case studies where applicable.
-   - Unpack every concept with deep analysis, academic rigor, and exhaustive explanations.
-
-3. "conclusion" (approx. 500 - 800 words / 2-3 pages in Markdown):
-   - Thorough synthesis of key arguments and findings across all chapters.
-   - Critical analysis of practical implications, industry adoption, and real-world impact.
-   - Identification of current limitations, unanswered research questions, and future outlook.
-
-4. "references" (array of 12-20 authentic, scholarly APA 7th Edition citations).
-
-Output MUST be a valid JSON object matching the keys: "introduction", "body", "conclusion", "references".`;
+Return ONLY a valid JSON object matching this schema:
+{
+  "title": "${topic}",
+  "academicLevel": "${level}",
+  "targetPages": ${targetPages},
+  "totalWords": ${targetWords},
+  "tableOfContents": [
+    { "title": "Section 1: Introduction & Research Background", "pages": "Pages 1–${Math.max(1, Math.round(targetPages * 0.15))}" }
+  ],
+  "sections": [
+    {
+      "sectionNumber": 1,
+      "title": "Introduction & Research Background",
+      "pageEstimate": "Pages 1–${Math.max(1, Math.round(targetPages * 0.15))}",
+      "wordCount": ${Math.round(targetWords * 0.15)},
+      "content": "Full detailed introduction text..."
+    },
+    {
+      "sectionNumber": 2,
+      "title": "Chapter 1: Theoretical Foundations",
+      "pageEstimate": "Pages ${Math.max(1, Math.round(targetPages * 0.15)) + 1}–...",
+      "wordCount": ${Math.round((targetWords * 0.7) / bodyChapterCount)},
+      "content": "Full detailed body chapter 1 text..."
+    },
+    {
+      "sectionNumber": ${bodyChapterCount + 2},
+      "title": "Conclusion & Future Research Directions",
+      "pageEstimate": "Pages ${Math.max(1, targetPages - 1)}–${targetPages}",
+      "wordCount": ${Math.round(targetWords * 0.15)},
+      "content": "Full detailed conclusion text..."
+    }
+  ],
+  "introduction": "<Combined Introduction Markdown>",
+  "body": "<Combined Body chapters Markdown>",
+  "conclusion": "<Combined Conclusion Markdown>",
+  "references": [
+    "Citation 1...",
+    "Citation 2..."
+  ]
+}`;
 
   const fallback: AssignmentResult = {
-    introduction: `## Introduction & Historical Context\n\nThis academic research assignment explores **${topic}** at the **${level}** level. Over recent years, ${topic} has emerged as a cornerstone subject requiring rigorous theoretical and empirical analysis.`,
-    body: `## Chapter 1: Theoretical Foundations\n\n### 1.1 Overview\nDetailed analysis of ${topic}...\n\n## Chapter 2: Core Mechanics & Implementation\n\n### 2.1 Systems Architecture\nIn-depth technical breakdown...`,
-    conclusion: `## Synthesis & Future Directions\n\nIn conclusion, ${topic} represents a vital field of study with far-reaching theoretical and practical implications.`,
+    title: topic,
+    academicLevel: level,
+    targetPages,
+    totalWords: targetWords,
+    tableOfContents: [
+      { title: "Section 1: Introduction & Context", pages: `Pages 1–${Math.max(1, Math.round(targetPages * 0.2))}` },
+      { title: "Section 2: Chapter 1: Core Principles & Technical Framework", pages: `Pages ${Math.max(1, Math.round(targetPages * 0.2)) + 1}–${Math.round(targetPages * 0.8)}` },
+      { title: "Section 3: Conclusion & Synthesis", pages: `Pages ${Math.round(targetPages * 0.8) + 1}–${targetPages}` }
+    ],
+    sections: [
+      {
+        sectionNumber: 1,
+        title: "Introduction & Context",
+        pageEstimate: `Pages 1–${Math.max(1, Math.round(targetPages * 0.2))}`,
+        wordCount: Math.round(targetWords * 0.2),
+        content: `## Introduction & Historical Context\n\nThis academic research assignment explores **${topic}** at the **${level}** level, covering a target length of **${targetPages} pages** (${targetWords} words).\n\n### Research Objectives\nOver recent years, ${topic} has emerged as a cornerstone subject requiring rigorous theoretical and empirical analysis. This assignment examines core mechanisms, historical background, and practical implications.`
+      },
+      {
+        sectionNumber: 2,
+        title: "Chapter 1: Core Principles & Technical Framework",
+        pageEstimate: `Pages ${Math.max(1, Math.round(targetPages * 0.2)) + 1}–${Math.round(targetPages * 0.8)}`,
+        wordCount: Math.round(targetWords * 0.6),
+        content: `## Chapter 1: Theoretical Foundations & Technical Breakdown\n\n### 1.1 Fundamental Mechanics\nA comprehensive investigation into ${topic} reveals critical architectural principles. At the ${level} academic level, understanding these foundational concepts is paramount.\n\n### 1.2 Empirical Analysis & Case Studies\nPractical implementations demonstrate substantial implications for real-world scenarios.`
+      },
+      {
+        sectionNumber: 3,
+        title: "Conclusion & Synthesis",
+        pageEstimate: `Pages ${Math.round(targetPages * 0.8) + 1}–${targetPages}`,
+        wordCount: Math.round(targetWords * 0.2),
+        content: `## Synthesis & Future Directions\n\nIn conclusion, ${topic} represents a vital field of study with far-reaching theoretical and practical implications across academic and industrial domains.`
+      }
+    ],
+    introduction: `## Introduction & Historical Context\n\nThis academic research assignment explores **${topic}** at the **${level}** level (${targetPages} pages).`,
+    body: `## Chapter 1: Theoretical Foundations\n\n### 1.1 Overview\nDetailed analysis of ${topic}...`,
+    conclusion: `## Synthesis & Future Directions\n\nIn conclusion, ${topic} represents a vital field of study.`,
     references: [
       "Smith, J., & Johnson, A. (2024). Comprehensive Studies in Academic Research. Journal of Advanced Technology, 45(2), 112-135.",
       "Vaswani, A., et al. (2023). Fundamental Principles and Modern Applications. IEEE Transactions, 30(4), 400-425.",
