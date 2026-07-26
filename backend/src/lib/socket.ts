@@ -4,15 +4,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 import { getUserPrisma } from "../config/dynamicPrisma";
-import {
-  generateNotes,
-  generateQuiz,
-  generateAssignment,
-  generateRichAssignmentSections,
-  generatePPTContent,
-  generateMindMapSchema,
-} from "./ai/gemini";
+import { generateNotes, generateQuiz, generateAssignment, generateRichAssignmentSections, generateMindMapSchema } from "./ai/gemini";
 import type { QuizGenerationResult, AssignmentResult, PptSlide, MindMapResult } from "./ai/gemini";
+import { generatePresentationSpec } from "../services/presentation-ai.service";
+
 import { formatNotesBodyHtml } from "../services/notes-formatter.service";
 import { StreakService } from "../services/streak.service";
 import { analyzeProctoringEvent, generateViolationReport } from "./ai/proctoring";
@@ -315,26 +310,39 @@ export function initSocketServer(server: HttpServer) {
           }
 
           case "ppt": {
-            emitProgress("Deconstructing topic into slide structure...");
+            emitProgress("Deconstructing topic into slide structure with Kimi AI...");
             const slideCount = parseInt(payload.slideCount) || 5;
-            const slides: PptSlide[] = await generatePPTContent(
-              payload.topic || "General",
-              slideCount
-            );
-
-            emitProgress("Polishing slide content and speaker notes...");
-            const presentation = await userPrisma.presentation.create({
-              data: {
-                userId,
-                topic: payload.topic || "General",
-                slideCount,
-                slides: slides as any,
-              },
+            const spec = await generatePresentationSpec({
+              topic: payload.topic || "General",
+              slideCount,
+              audience: payload.audience || "General",
+              themePreference: payload.themePreference || "tech-premium",
             });
 
-            socket.emit("generate:complete", { slides, presentationId: presentation.id });
+            emitProgress("Attaching visual themes, stock images, and emojis...");
+            let presentationId: string | undefined;
+            try {
+              if (userId) {
+                const presentation = await userPrisma.presentation.create({
+                  data: {
+                    userId,
+                    topic: payload.topic || "General",
+                    slideCount,
+                    audience: payload.audience || "General",
+                    style: payload.themePreference || "Tech Premium",
+                    slides: spec as any,
+                  },
+                });
+                presentationId = presentation.id;
+              }
+            } catch (dbErr) {
+              console.warn("[Socket ppt] DB save warning (proceeding with result):", dbErr);
+            }
+
+            socket.emit("generate:complete", { presentation: spec, slides: spec.slides, presentationId });
             break;
           }
+
 
           case "mindmap": {
             emitProgress("Mapping conceptual hierarchy...");

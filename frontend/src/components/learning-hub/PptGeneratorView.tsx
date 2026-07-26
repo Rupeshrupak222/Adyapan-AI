@@ -28,7 +28,40 @@ const mkColors = (theme: string) => {
   };
 };
 
-interface Slide { title: string; bullets: string[]; notes: string; }
+interface PresentationCard {
+  title: string;
+  value?: string;
+  description: string;
+  icon?: string;
+}
+
+interface PresentationImage {
+  url: string;
+  alt: string;
+  caption?: string;
+}
+
+interface Slide {
+  id?: number;
+  layout?: string;
+  title: string;
+  subtitle?: string;
+  badge?: string;
+  bullets: string[];
+  cards?: PresentationCard[];
+  images?: PresentationImage[];
+  icons?: string[];
+  notes?: string;
+  speakerNotes?: string;
+}
+
+const THEME_OPTIONS = [
+  { id: "tech-premium", label: "⚡ Tech Premium", desc: "Gold/Amber Accent, Dark Canvas" },
+  { id: "dark-glass", label: "🔮 Dark Glass", desc: "Cyan/Purple Accent, Glassmorphism" },
+  { id: "corporate-blue", label: "💼 Corporate Blue", desc: "Sapphire Blue, Executive Clean" },
+  { id: "cyberpunk-amber", label: "🔥 Cyberpunk", desc: "Neon Gold, High Tech Layout" },
+  { id: "minimal-emerald", label: "🌿 Minimal Emerald", desc: "Emerald Accent, Modern Academic" }
+];
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.4 } }) };
 const scaleIn = { hidden: { opacity: 0, scale: 0.92 }, visible: (i = 0) => ({ opacity: 1, scale: 1, transition: { delay: i * 0.07, duration: 0.35 } }) };
@@ -40,8 +73,9 @@ export function PptGeneratorView() {
 
   const [generating, setGenerating] = useState(false);
   const [slides, setSlides] = useState<Slide[] | null>(null);
-  const [topic, setTopic] = useState("EdTech Pitch Deck");
+  const [topic, setTopic] = useState("Artificial Intelligence & Neural Networks");
   const [slideCount, setSlideCount] = useState("5 Slides");
+  const [selectedTheme, setSelectedTheme] = useState("tech-premium");
   const [progress, setProgress] = useState(0);
   const [statusMsg, setStatusMsg] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
@@ -59,15 +93,19 @@ export function PptGeneratorView() {
         topic,
         presentation: {
           title: topic,
+          themeId: selectedTheme,
           slides: slides.map((s, i) => ({
             id: i + 1,
             title: s.title,
+            subtitle: s.subtitle,
+            badge: s.badge || `Slide ${i + 1}`,
             bullets: s.bullets,
-            speakerNotes: s.notes,
-            cards: [
+            speakerNotes: s.speakerNotes || s.notes,
+            cards: s.cards || [
               { title: "Module Focus", description: s.title },
               { title: "Key Metric", value: `${(i + 1) * 20}%`, description: "Performance Score" }
-            ]
+            ],
+            images: s.images || []
           }))
         }
       }, { responseType: "blob", timeout: 120000 });
@@ -98,15 +136,19 @@ export function PptGeneratorView() {
         topic,
         presentation: {
           title: topic,
+          themeId: selectedTheme,
           slides: slides.map((s, i) => ({
             id: i + 1,
             title: s.title,
+            subtitle: s.subtitle,
+            badge: s.badge || `Slide ${i + 1}`,
             bullets: s.bullets,
-            speakerNotes: s.notes,
-            cards: [
+            speakerNotes: s.speakerNotes || s.notes,
+            cards: s.cards || [
               { title: "Module Overview", description: s.title },
               { title: "Slide", value: `Slide ${i + 1}`, description: "Presentation Card" }
-            ]
+            ],
+            images: s.images || []
           }))
         }
       }, { responseType: "blob", timeout: 120000 });
@@ -128,6 +170,7 @@ export function PptGeneratorView() {
       setExportingPptx(false);
     }
   };
+
 
 
   const { socket, isConnected } = useSocket();
@@ -155,9 +198,13 @@ export function PptGeneratorView() {
   useEffect(() => {
     if (!socket) return;
     const handleProgress = ({ progress: p, statusMessage }: { progress: number; statusMessage: string }) => { setProgress(p); setStatusMsg(statusMessage); };
-    const handleComplete = ({ slides: slideList }: { slides: Slide[] }) => {
-      setGenerating(false); setSlides(slideList); setActiveSlide(0);
-      addToHistory(slideList);
+    const handleComplete = ({ slides: slideList, presentation }: { slides: Slide[]; presentation?: any }) => {
+      setGenerating(false);
+      const list = presentation?.slides || slideList;
+      setSlides(list);
+      if (presentation?.themeId) setSelectedTheme(presentation.themeId);
+      setActiveSlide(0);
+      addToHistory(list);
     };
     const handleError = ({ error }: { error: string }) => { setGenerating(false); toast.error(`Generation error: ${error}`); };
     socket.on("generate:progress", handleProgress);
@@ -167,16 +214,19 @@ export function PptGeneratorView() {
   }, [socket, addToHistory]);
 
   const handleGenerate = useCallback(async () => {
-    setGenerating(true); setProgress(0); setStatusMsg("Starting Presentation Generator...");
+    setGenerating(true); setProgress(0); setStatusMsg("Starting Presentation Generator with Kimi AI...");
     if (socket && isConnected) {
-      socket.emit("generate:start", { moduleName: "ppt", payload: { topic, slideCount: slideCount.split(" ")[0], userId: userIdRef.current } });
+      socket.emit("generate:start", { moduleName: "ppt", payload: { topic, slideCount: slideCount.split(" ")[0], themePreference: selectedTheme, userId: userIdRef.current } });
     } else {
       try {
-        setStatusMsg("Calling API directly...");
-        const res = await api.post("/ppt/generate", { topic, slideCount: slideCount.split(" ")[0] });
-        if (res.data?.success && res.data?.presentation?.slides) {
-          const slideList = res.data.presentation.slides;
-          setSlides(slideList); setActiveSlide(0);
+        setStatusMsg("Calling AI Presentation API...");
+        const res = await api.post("/ppt/generate", { topic, slideCount: slideCount.split(" ")[0], themePreference: selectedTheme });
+        if (res.data?.success && res.data?.presentation) {
+          const p = res.data.presentation;
+          const slideList = p.slides || p;
+          setSlides(slideList);
+          if (p.themeId) setSelectedTheme(p.themeId);
+          setActiveSlide(0);
           addToHistory(slideList);
         } else throw new Error("Invalid response");
       } catch (err: unknown) {
@@ -186,7 +236,8 @@ export function PptGeneratorView() {
         setGenerating(false);
       }
     }
-  }, [socket, isConnected, topic, slideCount, addToHistory]);
+  }, [socket, isConnected, topic, slideCount, selectedTheme, addToHistory]);
+
 
   const loadHistoryItem = (item: typeof history[0]) => {
     setTopic(item.name); setSlideCount(`${item.count} Slides`); setSlides(item.data); setActiveSlide(0); setShowHistory(false);
@@ -391,6 +442,17 @@ export function PptGeneratorView() {
                         <option>5 Slides</option><option>10 Slides</option><option>15 Slides</option>
                       </select>
                     </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold" style={{ color: c.textSec }}>Visual Theme</label>
+                      <select value={selectedTheme} onChange={e => setSelectedTheme(e.target.value)}
+                        className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
+                        {THEME_OPTIONS.map(th => (
+                          <option key={th.id} value={th.id}>{th.label} - {th.desc}</option>
+                        ))}
+                      </select>
+                    </div>
+
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       onClick={handleGenerate}
                       className="w-full py-2.5 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 transition-all" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>
@@ -405,12 +467,12 @@ export function PptGeneratorView() {
                 <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text }}><Zap size={15} style={{ color: c.amber }} /> Choose Slide Presets</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { title: "Startup Pitch Deck", desc: "Constructs slides maps showing introduction, market analysis, products, and financials.", icon: <Star size={18} style={{ color: c.amber }} /> },
-                    { title: "Academic Lecture Presentation", desc: "Partitions lecture modules into key concept maps, explanations, and summarization points.", icon: <Brain size={18} style={{ color: "#a78bfa" }} /> },
-                    { title: "Product Feature Slides", desc: "Focuses on detailing technical attributes, advantages, and user guides layouts.", icon: <Sparkles size={18} style={{ color: "#22d3ee" }} /> }
+                    { title: "🚀 Startup Pitch Deck", desc: "Constructs slides maps showing introduction, market analysis, products, and financials.", icon: <Star size={18} style={{ color: c.amber }} /> },
+                    { title: "🧠 Academic Lecture Presentation", desc: "Partitions lecture modules into key concept maps, explanations, and summarization points.", icon: <Brain size={18} style={{ color: "#a78bfa" }} /> },
+                    { title: "⚡ Product Feature Slides", desc: "Focuses on detailing technical attributes, advantages, and user guides layouts.", icon: <Sparkles size={18} style={{ color: "#22d3ee" }} /> }
                   ].map((item, i) => (
                     <motion.div key={item.title} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }}
-                      onClick={() => setTopic(item.title)} className="p-5 rounded-2xl relative overflow-hidden cursor-pointer group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
+                      onClick={() => setTopic(item.title.replace(/^[\s\S]*?\s+/, ""))} className="p-5 rounded-2xl relative overflow-hidden cursor-pointer group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
                         <div><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{item.title}</h4></div>
@@ -465,96 +527,37 @@ export function PptGeneratorView() {
                 <div className="absolute inset-0 flex items-center justify-center"><Brain size={28} style={{ color: c.amber }} /></div>
               </div>
               <div className="text-center space-y-1">
-                <h3 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Generating Slides...</h3>
+                <h3 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Generating Presentation Slides...</h3>
                 <p className="text-sm" style={{ color: c.textMuted }}>{statusMsg}</p>
               </div>
-              <div className="w-full max-w-lg grid grid-cols-3 gap-3">
-                {stages.map((step, idx) => {
-                  const stageIdx = progress === 0 ? -1 : Math.min(Math.floor((progress / 100) * (stages.length - 1)), stages.length - 1);
-                  const isActive = idx <= stageIdx;
-                  return (
-                    <motion.div key={step} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
-                      className="p-3 rounded-xl text-center space-y-1.5 transition-all duration-500" style={{ background: isActive ? c.amberBg : c.surface, border: `1px solid ${isActive ? c.amberBorder : c.border}` }}>
-                      <span className="text-[9px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Stage {idx + 1}</span>
-                      <span className="text-xs font-semibold block" style={{ color: c.text }}>{step}</span>
-                      {isActive && idx === stageIdx && <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 0.8, repeat: Infinity }} className="w-2 h-2 rounded-full mx-auto" style={{ background: c.amber }} />}
-                      {isActive && idx < stageIdx && <CheckCircle2 size={12} style={{ color: c.green }} className="mx-auto" />}
-                    </motion.div>
-                  );
-                })}
+              <div className="w-64 h-2 rounded-full overflow-hidden" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
+                <motion.div className="h-full rounded-full" style={{ background: "linear-gradient(90deg, #f59e0b, #d97706)" }} animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
               </div>
             </motion.div>
           )}
 
-          {/* READY — 30/70 SPLIT */}
-          {!generating && slides && (
-            <motion.div key="ready" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-0" style={{ minHeight: "600px" }}>
-              {/* LEFT PANEL 30% */}
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
-                className="pg-scroll flex flex-col gap-3 overflow-y-auto pr-3" style={{ width: "30%", minWidth: "200px", maxHeight: "80vh", position: "sticky", top: 0 }}>
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-3 rounded-2xl shrink-0" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}` }}>
-                      <Presentation size={14} style={{ color: c.amber }} />
+          {/* SLIDES PREVIEW */}
+          {slides && (
+            <motion.div key="slides" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex flex-col md:flex-row gap-4">
+              {/* LEFT METADATA & ACTIONS PANEL */}
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }} className="w-full md:w-80 shrink-0 space-y-3">
+                {/* Active Slide Summary */}
+                <div className="p-4 rounded-2xl space-y-2" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
+                  <div className="flex items-center gap-2">
+                    <Presentation size={15} style={{ color: c.amber }} />
+                    <span className="text-xs font-bold truncate" style={{ color: c.text }}>{topic}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div className="p-2 rounded-xl text-center" style={{ background: c.cardBgAlt, border: `1px solid ${c.border}` }}>
+                      <span className="text-[10px] block" style={{ color: c.textMuted }}>Total Slides</span>
+                      <span className="text-xs font-extrabold" style={{ color: c.amber }}>{slides.length}</span>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold truncate" style={{ color: c.text }}>{topic}</p>
-                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase" style={{ background: c.greenBg, color: c.green }}>Generated</span>
+                    <div className="p-2 rounded-xl text-center" style={{ background: c.cardBgAlt, border: `1px solid ${c.border}` }}>
+                      <span className="text-[10px] block" style={{ color: c.textMuted }}>Current</span>
+                      <span className="text-xs font-extrabold" style={{ color: c.text }}>{activeSlide + 1}</span>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {[
-                      { label: "Total Slides", value: slides.length },
-                      { label: "Current", value: activeSlide + 1 },
-                      { label: "With Notes", value: slides.filter(s => s.notes).length },
-                      { label: "Theme", value: "Tech Premium" }
-                    ].map(stat => (
-                      <div key={stat.label} className="p-2 rounded-lg text-center" style={{ background: c.cardBgAlt, border: `1px solid ${c.border}` }}>
-                        <span className="text-[10px] block" style={{ color: c.textMuted }}>{stat.label}</span>
-                        <span className="text-xs font-extrabold" style={{ color: c.text }}>{stat.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                {/* Slide Nav */}
-                <div className="flex-1 rounded-2xl overflow-hidden" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
-                  <div className="p-3 border-b" style={{ borderColor: c.divider, background: c.stickyBg }}>
-                    <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Slides Outline</span>
-                  </div>
-                  <div className="p-2 space-y-0.5">
-                    {slides.map((s, idx) => (
-                      <motion.button key={idx} custom={idx} variants={slideRight} initial="hidden" animate="visible"
-                        onClick={() => setActiveSlide(idx)} whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
-                        className="w-full text-left py-2.5 px-3 rounded-xl flex items-center justify-between transition-all duration-200"
-                        style={{ background: activeSlide === idx ? c.amberActive : "transparent", border: activeSlide === idx ? `1px solid ${c.amberBorder}` : "1px solid transparent" }}>
-                        <span className="text-sm font-semibold truncate" style={{ color: activeSlide === idx ? c.amber : c.textSec }}>Slide {idx + 1}: {s.title}</span>
-                        <motion.div animate={{ rotate: activeSlide === idx ? 90 : 0 }} transition={{ duration: 0.2 }}>
-                          <ChevronRight size={12} style={{ color: activeSlide === idx ? c.amber : c.textMuted }} />
-                        </motion.div>
-                      </motion.button>
-                    ))}
                   </div>
                 </div>
-
-                {/* Metadata */}
-                <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="p-3 rounded-2xl shrink-0" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}` }}>
-                  <span className="text-[10px] font-black uppercase tracking-widest block mb-2.5 flex items-center gap-1.5" style={{ color: c.amber }}><Sparkles size={11} /> Slides Metadata</span>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {[
-                      { label: "Target Topic", value: topic },
-                      { label: "Total Slides", value: slides.length },
-                      { label: "Theme Style", value: "Tech Premium" },
-                      { label: "Language", value: "English" }
-                    ].map((insight, i) => (
-                      <motion.div key={insight.label} initial={{ opacity: 0, scale: 0.88 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 + i * 0.08 }}
-                        className="p-2 rounded-xl text-center" style={{ background: c.cardBgAlt, border: `1px solid ${c.border}` }}>
-                        <span className="text-[10px] block leading-tight" style={{ color: c.textMuted }}>{insight.label}</span>
-                        <span className="text-xs font-extrabold block truncate mt-0.5" style={{ color: c.text }}>{insight.value}</span>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
 
                 {/* Actions */}
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="p-3 rounded-2xl shrink-0 space-y-2" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
@@ -582,15 +585,14 @@ export function PptGeneratorView() {
                     <span className="text-[9px] font-extrabold uppercase bg-slate-500/20 px-1.5 py-0.5 rounded">PDF</span>
                   </motion.button>
 
-
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
-                    onClick={() => { const txt = slides.map((s, i) => `Slide ${i + 1}: ${s.title}\n${s.bullets.map(b => `- ${b}`).join("\n")}\nNotes: ${s.notes}`).join("\n\n"); navigator.clipboard.writeText(txt); toast.success("Slides copied to clipboard!"); }}
+                    onClick={() => { const txt = slides.map((s, i) => `Slide ${i + 1}: ${s.title}\n${s.bullets.map(b => `- ${b}`).join("\n")}\nNotes: ${s.speakerNotes || s.notes}`).join("\n\n"); navigator.clipboard.writeText(txt); toast.success("Slides copied to clipboard!"); }}
                     className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
                     <span style={{ color: c.amber }} className="shrink-0"><Copy size={12} /></span> Copy Slides
                   </motion.button>
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
                     onClick={() => {
-                      const txt = slides.map((s, i) => `# Slide ${i + 1}: ${s.title}\n${s.bullets.map(b => `- ${b}`).join("\n")}\n\nSpeaker Notes: ${s.notes}`).join("\n\n---\n\n");
+                      const txt = slides.map((s, i) => `# Slide ${i + 1}: ${s.title}\n${s.bullets.map(b => `- ${b}`).join("\n")}\n\nSpeaker Notes: ${s.speakerNotes || s.notes}`).join("\n\n---\n\n");
                       const blob = new Blob([txt], { type: "text/markdown" });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a"); a.href = url; a.download = `${topic.replace(/\s+/g, "_")}_slides.md`; a.click();
@@ -608,26 +610,83 @@ export function PptGeneratorView() {
                 </motion.div>
               </motion.div>
 
-              {/* RIGHT PANEL 70% */}
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="flex-1 flex flex-col min-w-0 pl-4">
+              {/* RIGHT PANEL SLIDE CANVAS */}
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="flex-1 flex flex-col min-w-0">
                 <div className="space-y-3 pb-4">
-                  <motion.div key={activeSlide} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="aspect-video rounded-2xl p-6 flex flex-col justify-between" style={{ background: c.cardBg, border: `1px solid ${c.amberBorder}` }}>
-                    <div>
-                      <div className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: c.amber }}>Slide {activeSlide + 1} of {slides.length}</div>
-                      <h3 className="text-lg font-extrabold mb-3" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{slides[activeSlide]?.title}</h3>
-                      <ul className="space-y-1.5">
-                        {slides[activeSlide]?.bullets.map((b, j) => (
-                          <li key={j} className="flex items-start gap-2 text-sm" style={{ color: c.textSec }}><span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: c.amber }} />{b}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    {slides[activeSlide]?.notes && (
-                      <div className="p-3 rounded-xl" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
-                        <span className="text-[10px] uppercase tracking-widest font-black block mb-1" style={{ color: c.amber }}>Speaker Notes</span>
-                        <p className="text-xs italic" style={{ color: c.textMuted }}>&quot;{slides[activeSlide]?.notes}&quot;</p>
-                      </div>
-                    )}
-                  </motion.div>
+                  {(() => {
+                    const currentSlide = slides[activeSlide] || slides[0];
+                    return (
+                      <motion.div key={activeSlide} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                        className="rounded-2xl p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden"
+                        style={{ background: c.cardBg, border: `1px solid ${c.amberBorder}`, minHeight: "420px" }}>
+                        <div>
+                          {/* Badge & Layout Tag */}
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
+                              {currentSlide.badge || `🤖 SLIDE ${activeSlide + 1} OF ${slides.length}`}
+                            </span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                              {currentSlide.layout || "Keynote Spec"}
+                            </span>
+                          </div>
+
+                          {/* Title & Subtitle with Emojis */}
+                          <div className="mb-4">
+                            <h3 className="text-xl font-extrabold tracking-tight mb-1" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+                              {currentSlide.title}
+                            </h3>
+                            {currentSlide.subtitle && (
+                              <p className="text-xs font-medium text-amber-400/90">{currentSlide.subtitle}</p>
+                            )}
+                          </div>
+
+                          {/* Bullets with Emojis */}
+                          <div className="space-y-2 mb-4">
+                            {currentSlide.bullets?.map((bullet, j) => (
+                              <div key={j} className="flex items-start gap-2.5 text-sm leading-relaxed" style={{ color: c.textSec }}>
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: c.amber }} />
+                                <span>{bullet}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Cards Grid */}
+                          {currentSlide.cards && currentSlide.cards.length > 0 && (
+                            <div className="grid grid-cols-2 gap-3 my-3">
+                              {currentSlide.cards.map((card, ci) => (
+                                <div key={ci} className="p-3 rounded-xl border bg-slate-950/60 border-amber-500/20 flex flex-col justify-between">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-amber-400 truncate">{card.title}</span>
+                                    {card.value && <span className="text-xs font-black px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">{card.value}</span>}
+                                  </div>
+                                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{card.description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Stock Image Preview */}
+                          {currentSlide.images && currentSlide.images.length > 0 && (
+                            <div className="my-2 p-2 rounded-xl bg-slate-900/40 border border-slate-800 flex items-center gap-3">
+                              <img src={currentSlide.images[0].url} alt={currentSlide.images[0].alt} className="w-16 h-12 object-cover rounded-lg shrink-0 border border-amber-500/20" />
+                              <div>
+                                <span className="text-[10px] font-bold text-amber-400 block uppercase">Visual Asset</span>
+                                <p className="text-xs text-slate-300 line-clamp-1">{currentSlide.images[0].caption || currentSlide.images[0].alt}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Speaker Notes */}
+                        {(currentSlide.speakerNotes || currentSlide.notes) && (
+                          <div className="mt-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                            <span className="text-[10px] uppercase tracking-widest font-black block mb-1 text-amber-400">🎙️ Speaker Notes</span>
+                            <p className="text-xs italic text-slate-300">&quot;{currentSlide.speakerNotes || currentSlide.notes}&quot;</p>
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })()}
 
                   {/* Slide navigation footer */}
                   <div className="flex items-center justify-between p-2 rounded-xl" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
@@ -661,4 +720,3 @@ export function PptGeneratorView() {
     </motion.div>
   );
 }
-

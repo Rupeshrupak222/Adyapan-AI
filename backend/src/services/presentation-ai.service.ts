@@ -98,17 +98,18 @@ export async function generatePresentationSpec(
 - Audience: ${audience}
 - Language: ${language}
 
-CRITICAL DESIGN RULES:
-1. NEVER create plain text-only slides. Every slide MUST have rich cards, metrics, diagrams, or charts.
-2. Vary layouts across slides: "hero", "split", "timeline", "process", "comparison", "cards-grid", "statistics", "swot", "roadmap", "quote", "infographic", "thank-you".
-3. Include relevant royalty-free Unsplash/Pexels image search queries in the "images" array for every slide.
-4. Include Lucide icons in the "icons" array (e.g. "Cpu", "ShieldCheck", "Zap", "Layers", "BarChart", "Rocket").
-5. Include speakerNotes with key talking points and speaking time for every slide.
+CRITICAL VISUAL & EMOJI RULES:
+1. EMOJIS ARE MANDATORY: Include 1-2 expressive, contextual emojis in EVERY slide badge, title, bullet point, and card header (e.g., "🤖 KEYNOTE SLIDE", "✨ What is Artificial Intelligence?", "🧠 AI refers to computer systems...", "🚀 10x Processing Speed").
+2. NEVER create plain text-only slides. Every slide MUST have rich visual cards, metrics, diagrams, or charts.
+3. Vary layouts across slides: "hero", "split", "timeline", "process", "comparison", "cards-grid", "statistics", "swot", "roadmap", "quote", "infographic", "thank-you".
+4. Include relevant royalty-free Unsplash/Pexels image search queries in the "images" array for every slide.
+5. Include Lucide icons in the "icons" array (e.g. "Cpu", "ShieldCheck", "Zap", "Layers", "BarChart", "Rocket").
+6. Include speakerNotes with structured, engaging talking points for every slide.
 
 Return ONLY a valid JSON object matching this schema:
 {
-  "title": "${topic}",
-  "subtitle": "Comprehensive Academic Keynote Presentation",
+  "title": "✨ ${topic}",
+  "subtitle": "💡 Comprehensive Academic Keynote Presentation",
   "presentationType": "${type}",
   "targetAudience": "${audience}",
   "themeId": "${themeId}",
@@ -116,17 +117,17 @@ Return ONLY a valid JSON object matching this schema:
     {
       "id": 1,
       "layout": "hero",
-      "title": "${topic}",
-      "subtitle": "Pioneering Advances in AI & Research",
-      "badge": "Keynote Presentation",
+      "title": "✨ ${topic}",
+      "subtitle": "🚀 Pioneering Advances in AI & Technology",
+      "badge": "🤖 Keynote Presentation",
       "bullets": [
-        "Core Architectural Foundations",
-        "Empirical Performance Benchmarks",
-        "Future Industrial Roadmap"
+        "🧠 Core Architectural Foundations & Algorithmic Design",
+        "📊 Empirical Performance Benchmarks & Accuracy Metrics",
+        "⚡ Strategic Industrial Roadmap & Future Applications"
       ],
       "cards": [
-        { "title": "Target Length", "value": "${slideCount} Slides", "description": "Exhaustive Breakdown" },
-        { "title": "Fidelity Score", "value": "99.4%", "description": "Empirical Accuracy" }
+        { "title": "🎯 Target Length", "value": "${slideCount} Slides", "description": "Structured Breakdown" },
+        { "title": "⚡ Fidelity Score", "value": "99.4%", "description": "Empirical Accuracy" }
       ],
       "images": [
         { "url": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200", "alt": "${topic} Illustration", "caption": "Modern Quantum Processor Architecture" }
@@ -134,7 +135,7 @@ Return ONLY a valid JSON object matching this schema:
       "icons": ["Cpu", "Zap", "ShieldCheck"],
       "charts": [],
       "diagrams": [],
-      "speakerNotes": "Good morning. Today we present an exhaustive breakdown of ${topic} covering key theoretical and practical developments.",
+      "speakerNotes": "Welcome everyone. Today we present a comprehensive breakdown of ${topic} covering key theoretical and practical developments.",
       "speakingTimeMinutes": 2
     }
   ]
@@ -146,17 +147,17 @@ Return ONLY a valid JSON object matching this schema:
       return {
         id: 1,
         layout: "hero",
-        title: topic,
-        subtitle: "Keynote Academic & Professional Presentation",
-        badge: `${type} Presentation`,
+        title: `✨ ${topic}`,
+        subtitle: "🚀 Keynote Academic & Professional Presentation",
+        badge: `🤖 ${type} Presentation`,
         bullets: [
-          "Comprehensive Theoretical Framework",
-          "Empirical Benchmarking & Performance Data",
-          "Strategic Roadmap & Practical Applications"
+          `🧠 Comprehensive Theoretical Framework of ${topic}`,
+          "📊 Empirical Benchmarking & Performance Data",
+          "⚡ Strategic Roadmap & Practical Applications"
         ],
         cards: [
-          { title: "Presentation Length", value: `${slideCount} Slides`, description: "Structured Modules" },
-          { title: "Target Audience", value: audience, description: "Professional Level" }
+          { title: "🎯 Presentation Length", value: `${slideCount} Slides`, description: "Structured Modules" },
+          { title: "🔥 Target Audience", value: audience, description: "Professional Level" }
         ],
         images: [
           { url: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200", alt: topic, caption: "Modern Technological Infrastructure" }
@@ -173,17 +174,17 @@ Return ONLY a valid JSON object matching this schema:
       return {
         id: slideNum,
         layout: "thank-you",
-        title: "Conclusion & Thank You",
-        subtitle: "Questions & Discussion",
-        badge: "Final Slide",
+        title: "✨ Conclusion & Thank You",
+        subtitle: "💬 Questions & Discussion",
+        badge: "🎉 Final Summary Slide",
         bullets: [
-          "Summary of Key Findings",
-          "Open Q&A Session",
-          "Contact & Further References"
+          "🎯 Summary of Key Academic Findings",
+          "💡 Open Q&A Session & Discussion",
+          "🌐 Further References & Contact Details"
         ],
         cards: [
-          { title: "Email", value: "support@adyapanai.com", description: "Inquiries & Collaboration" },
-          { title: "Platform", value: "www.adyapanai.com", description: "AI Learning Hub" }
+          { title: "📧 Support Email", value: "support@adyapanai.com", description: "Inquiries & Collaboration" },
+          { title: "🚀 AI Hub Platform", value: "www.adyapanai.com", description: "AI Learning Hub" }
         ],
         images: [],
         icons: ["CheckCircle2", "Sparkles", "Rocket"],
@@ -196,21 +197,23 @@ Return ONLY a valid JSON object matching this schema:
 
     const layouts: PresentationSlideSpec["layout"][] = ["split", "cards-grid", "statistics", "timeline", "process", "comparison", "roadmap", "swot"];
     const layout = layouts[(idx - 1) % layouts.length];
+    const emojis = ["🧠", "⚡", "🔬", "📊", "🎯", "🛡️", "🌐", "💡", "🚀"];
+    const emo = emojis[idx % emojis.length];
 
     return {
       id: slideNum,
       layout,
-      title: `Slide ${slideNum}: ${topic} Analysis Module`,
-      subtitle: `Detailed Investigation & Data Insights (${type})`,
-      badge: `Module ${slideNum}`,
+      title: `${emo} Slide ${slideNum}: ${topic} Analysis`,
+      subtitle: `🔍 Detailed Investigation & Data Insights (${type})`,
+      badge: `📌 Module ${slideNum}`,
       bullets: [
-        `Key Architectural Principle ${slideNum}.1`,
-        `Empirical Performance Metric ${slideNum}.2`,
-        `Operational Best Practice ${slideNum}.3`
+        `🧠 Key Architectural Principle ${slideNum}.1`,
+        `📊 Empirical Performance Metric ${slideNum}.2`,
+        `⚡ Operational Best Practice ${slideNum}.3`
       ],
       cards: [
-        { title: "Efficiency Gain", value: `${30 + slideNum * 3}%`, description: "Measured Performance Optimization" },
-        { title: "System Reliability", value: "99.9%", description: "Fault-Tolerant Execution" }
+        { title: "🚀 Efficiency Gain", value: `${30 + slideNum * 3}%`, description: "Measured Performance Optimization" },
+        { title: "🛡️ System Reliability", value: "99.9%", description: "Fault-Tolerant Execution" }
       ],
       images: [
         { url: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200", alt: `${topic} Module ${slideNum}`, caption: `System Architecture Diagram ${slideNum}` }
@@ -219,7 +222,7 @@ Return ONLY a valid JSON object matching this schema:
       charts: slideNum % 3 === 0 ? [
         {
           type: "bar",
-          title: `Performance Benchmark Module ${slideNum}`,
+          title: `📊 Benchmark Metrics Module ${slideNum}`,
           labels: ["Metric A", "Metric B", "Metric C", "Metric D"],
           datasets: [{ label: "Fidelity Score", data: [85, 92, 98, 99.5] }]
         }
@@ -238,6 +241,7 @@ Return ONLY a valid JSON object matching this schema:
     themeId,
     theme,
     slides: defaultSlides,
+
   };
 
   try {
