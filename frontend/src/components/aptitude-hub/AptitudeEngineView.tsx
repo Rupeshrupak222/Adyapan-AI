@@ -17,6 +17,7 @@ import { api } from "@/services/api";
 import QuestionCard from "./QuestionCard";
 import SessionReviewComponent from "./SessionReview";
 import AptitudeAnalytics from "./AptitudeAnalytics";
+import CompanyLogo from "@/components/interview-hub/CompanyLogo";
 import type {
   AptitudeQuestion, AptitudeCategory, TestMode, AptitudeSession,
   AptitudeAnswer, SessionProgress, PerformanceAnalytics,
@@ -721,9 +722,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                         className="p-4 border rounded-2xl cursor-pointer transition-all"
                         style={{ background: c.cardBg, borderColor: c.border }}
                       >
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: `${company.color}20` }}>
-                          <span className="text-sm font-black" style={{ color: company.color }}>{company.logo}</span>
-                        </div>
+                        <CompanyLogo companyId={company.id} companyName={company.name} size={40} color={company.color} className="mb-2" theme={theme} />
                         <p className="text-[11px] font-extrabold" style={{ color: c.text }}>{company.name}</p>
                         <div className="flex items-center gap-1.5 mt-1.5">
                           <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
@@ -1235,9 +1234,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                       >
                         <div className="absolute top-0 right-0 w-20 h-20 rounded-bl-[40px]" style={{ background: `${company.color}10` }} />
                         <div className="relative z-10">
-                          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: `${company.color}20` }}>
-                            <span className="text-lg font-black" style={{ color: company.color }}>{company.logo}</span>
-                          </div>
+                          <CompanyLogo companyId={company.id} companyName={company.name} size={48} color={company.color} className="mb-3" theme={theme} />
                           <p className="text-sm font-extrabold" style={{ color: c.text }}>{company.name}</p>
                           <div className="flex flex-wrap items-center gap-1.5 mt-2">
                             <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
