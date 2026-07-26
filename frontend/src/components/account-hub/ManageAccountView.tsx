@@ -44,7 +44,6 @@ const NAV_ITEMS = [
   { id: "learning", label: "Learning Preferences", icon: BookOpen },
   { id: "security", label: "Security", icon: Shield },
   { id: "privacy", label: "Privacy", icon: Lock },
-  { id: "billing", label: "Billing & Subscription", icon: CreditCard },
   { id: "connected", label: "Connected Accounts", icon: Globe },
   { id: "api", label: "API Integrations", icon: Zap },
   { id: "storage", label: "Storage", icon: HardDrive },
@@ -418,7 +417,6 @@ export function ManageAccountView() {
               {activeSection === "learning" && <LearningSection c={c} language={language} setLanguage={setLanguage} learningStyle={learningStyle} setLearningStyle={setLearningStyle} dailyGoal={dailyGoal} setDailyGoal={setDailyGoal} reminderTime={reminderTime} setReminderTime={setReminderTime} difficulty={difficulty} setDifficulty={setDifficulty} noteFormat={noteFormat} setNoteFormat={setNoteFormat} quizDifficulty={quizDifficulty} setQuizDifficulty={setQuizDifficulty} tutorPersonality={tutorPersonality} setTutorPersonality={setTutorPersonality} markChanged={markChanged} />}
               {activeSection === "security" && <SecuritySection c={c} twoFactor={twoFactor} setTwoFactor={setTwoFactor} loginAlerts={loginAlerts} setLoginAlerts={setLoginAlerts} showPassword={showPassword} setShowPassword={setShowPassword} activeDevices={activeDevices} markChanged={markChanged} />}
               {activeSection === "privacy" && <PrivacySection c={c} publicProfile={publicProfile} setPublicProfile={setPublicProfile} dataCollection={dataCollection} setDataCollection={setDataCollection} personalizedAI={personalizedAI} setPersonalizedAI={setPersonalizedAI} markChanged={markChanged} />}
-              {activeSection === "billing" && <BillingSection c={c} />}
               {activeSection === "connected" && <ConnectedAccountsSection c={c} accounts={connectedAccounts} setAccounts={setConnectedAccounts} markChanged={markChanged} />}
               {activeSection === "api" && <APISection c={c} apiKeys={apiKeys} setApiKeys={setApiKeys} markChanged={markChanged} />}
               {activeSection === "storage" && <StorageSection c={c} storageUsed={storageUsed} storageTotal={storageTotal} storagePercent={storagePercent} categories={storageCategories} />}
@@ -1359,26 +1357,6 @@ function PrivacySection({
             <ChevronRight size={14} className="text-rose-500" />
           </motion.button>
         </div>
-      </motion.div>
-    </div>
-  );
-}
-
-// ─── Billing Section ─────────────────────────────────────────────────────
-function BillingSection({ c }: { c: Record<string, string> }) {
-  return (
-    <div className="space-y-5">
-      {/* Plan Overview */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
-        className="rounded-2xl border p-6 space-y-4"
-        style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
-      >
-        <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.primary }}>
-          <CreditCard size={16} /> Billing & Subscription
-        </h3>
-        <p className="text-xs" style={{ color: c.textMuted }}>
-          Manage your subscription, view invoices, and update payment methods from the dedicated Billing page.
-        </p>
       </motion.div>
     </div>
   );
