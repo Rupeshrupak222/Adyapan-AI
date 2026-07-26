@@ -1,9 +1,9 @@
 "use client";
 
 import { SocketProvider, useSocket } from "@/context/SocketContext";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { clearAuthSession } from "@/hooks/useAuth";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { api } from "@/services/api";
@@ -1920,7 +1920,9 @@ function RecommendedToday({ recommendations, onSelectAction, onRegenerate }: { r
 export default function UserDashboardPage() {
   return (
     <SocketProvider>
-      <UserDashboardContent />
+      <Suspense fallback={<DashboardWidgetSkeleton title="Loading Dashboard..." />}>
+        <UserDashboardContent />
+      </Suspense>
     </SocketProvider>
   );
 }
@@ -2066,13 +2068,37 @@ function UserDashboardContent() {
   });
   const [statsLoading, setStatsLoading] = useState(true);
 
-  useEffect(() => {
-    // Restore saved active view after mount (avoids SSR hydration mismatch)
-    try {
-      const savedView = localStorage.getItem("dashboard-active-view");
-      if (savedView) setActiveView(savedView);
-    } catch { /* localStorage unavailable */ }
+  const searchParams = useSearchParams();
 
+  // Sync activeView with URL search params on mount & popstate
+  useEffect(() => {
+    const urlView = searchParams.get("view");
+    if (urlView) {
+      setActiveView(urlView);
+    } else {
+      try {
+        const savedView = localStorage.getItem("dashboard-active-view");
+        if (savedView && savedView !== "dashboard") {
+          setActiveView(savedView);
+          const url = new URL(window.location.href);
+          url.searchParams.set("view", savedView);
+          window.history.replaceState({}, "", url.toString());
+        }
+      } catch { /* localStorage unavailable */ }
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const viewParam = params.get("view") || "dashboard";
+      setActiveView(viewParam);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
     // Load theme immediately
     const savedTheme = localStorage.getItem("adyapan-theme") || "dark";
     setTheme(savedTheme);
@@ -2255,6 +2281,16 @@ function UserDashboardContent() {
     if (view !== "community-messages") setOpenChatWith(null);
     if (view !== "community-browse") setCommunityProfileUserId(null);
     setActiveView(view);
+    try {
+      localStorage.setItem("dashboard-active-view", view);
+      const url = new URL(window.location.href);
+      if (view && view !== "dashboard") {
+        url.searchParams.set("view", view);
+      } else {
+        url.searchParams.delete("view");
+      }
+      window.history.replaceState({}, "", url.toString());
+    } catch { /* ignore */ }
   }, []);
   const handleViewProfile = () => navigateTo("profile");
   const handlePremium = () => router.push("/premium");
