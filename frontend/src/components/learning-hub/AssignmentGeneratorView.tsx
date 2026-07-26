@@ -56,20 +56,169 @@ const scaleIn = { hidden: { opacity: 0, scale: 0.92 }, visible: (i = 0) => ({ op
 const slideRight = { hidden: { opacity: 0, x: -24 }, visible: (i = 0) => ({ opacity: 1, x: 0, transition: { delay: i * 0.07, duration: 0.4 } }) };
 
 function renderFormattedText(text: string) {
-  const parts = text.split(/(\*\*.*?\*\*|`.*?`|\$\$.*?\$\$)/g);
+  if (!text) return null;
+  const cleanText = text.replace(/\\text\{([^}]+)\}/g, "$1");
+  const parts = cleanText.split(/(\*\*.*?\*\*|`.*?`|\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\])/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} className="font-bold text-amber-500/90">{part.slice(2, -2)}</strong>;
+      return <strong key={i} className="font-extrabold text-amber-400">{part.slice(2, -2)}</strong>;
     }
     if (part.startsWith("`") && part.endsWith("`")) {
-      return <code key={i} className="px-1.5 py-0.5 rounded text-xs bg-slate-800 text-amber-400 font-mono">{part.slice(1, -1)}</code>;
+      return <code key={i} className="px-1.5 py-0.5 rounded text-xs bg-slate-800/80 text-amber-300 font-mono border border-amber-500/20">{part.slice(1, -1)}</code>;
     }
-    if (part.startsWith("$$") && part.endsWith("$$")) {
-      return <span key={i} className="my-1.5 p-2 rounded-lg bg-slate-900/60 border border-amber-500/20 font-mono text-xs text-amber-300 block text-center">{part.slice(2, -2)}</span>;
+    if ((part.startsWith("$$") && part.endsWith("$$")) || (part.startsWith("\\[") && part.endsWith("\\]"))) {
+      const mathStr = part.replace(/^(\$\$|\\\[)|(\$\$|\\\])$/g, "").trim();
+      return (
+        <span key={i} className="my-3 p-3.5 rounded-xl bg-slate-950/90 border border-amber-500/30 text-amber-300 font-mono text-sm block text-center shadow-lg">
+          <span className="text-amber-500/70 font-sans text-xs block mb-1">EQUATION MODEL</span>
+          {mathStr}
+        </span>
+      );
     }
     return part;
   });
 }
+
+function renderAssignmentMarkdown(content: string, c: ReturnType<typeof mkColors>) {
+  if (!content) return null;
+
+  const rawLines = content.split("\n");
+  const blocks: Array<{ type: "heading" | "math" | "callout" | "list" | "paragraph"; lines: string[]; level?: number }> = [];
+  let currentBlock: { type: "heading" | "math" | "callout" | "list" | "paragraph"; lines: string[]; level?: number } | null = null;
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = rawLines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      if (currentBlock) {
+        blocks.push(currentBlock);
+        currentBlock = null;
+      }
+      continue;
+    }
+
+    if (trimmed.startsWith("#")) {
+      if (currentBlock) blocks.push(currentBlock);
+      const level = (trimmed.match(/^#+/)?.[0] || "#").length;
+      const headingText = trimmed.replace(/^#+\s*/, "");
+      blocks.push({ type: "heading", lines: [headingText], level });
+      currentBlock = null;
+      continue;
+    }
+
+    if (/^\d+\.\d+\s+/.test(trimmed)) {
+      if (currentBlock) blocks.push(currentBlock);
+      blocks.push({ type: "heading", lines: [trimmed], level: 3 });
+      currentBlock = null;
+      continue;
+    }
+
+    if (trimmed.startsWith("$$") || trimmed.startsWith("\\[")) {
+      if (currentBlock) blocks.push(currentBlock);
+      blocks.push({ type: "math", lines: [trimmed] });
+      currentBlock = null;
+      continue;
+    }
+
+    if (trimmed.startsWith(">")) {
+      if (currentBlock && currentBlock.type === "callout") {
+        currentBlock.lines.push(trimmed.replace(/^>\s*/, ""));
+      } else {
+        if (currentBlock) blocks.push(currentBlock);
+        currentBlock = { type: "callout", lines: [trimmed.replace(/^>\s*/, "")] };
+      }
+      continue;
+    }
+
+    if (/^\s*([-*]|\d+\.)\s+/.test(trimmed)) {
+      if (currentBlock && currentBlock.type === "list") {
+        currentBlock.lines.push(trimmed);
+      } else {
+        if (currentBlock) blocks.push(currentBlock);
+        currentBlock = { type: "list", lines: [trimmed] };
+      }
+      continue;
+    }
+
+    if (currentBlock && currentBlock.type === "paragraph") {
+      currentBlock.lines.push(trimmed);
+    } else {
+      if (currentBlock) blocks.push(currentBlock);
+      currentBlock = { type: "paragraph", lines: [trimmed] };
+    }
+  }
+
+  if (currentBlock) blocks.push(currentBlock);
+
+  return (
+    <div className="space-y-4">
+      {blocks.map((block, bi) => {
+        if (block.type === "heading") {
+          const text = block.lines.join(" ");
+          return (
+            <h4
+              key={bi}
+              className={`font-extrabold tracking-tight ${
+                (block.level || 3) <= 2
+                  ? "text-lg text-amber-400 mt-6 mb-3 pb-1 border-b border-amber-500/20"
+                  : "text-base text-amber-400 mt-5 mb-2"
+              }`}
+              style={{ fontFamily: "'Outfit', sans-serif" }}
+            >
+              {text}
+            </h4>
+          );
+        }
+
+        if (block.type === "math") {
+          const rawMath = block.lines.join(" ");
+          const cleanMath = rawMath.replace(/^(\$\$|\\\[)|(\$\$|\\\])$/g, "").replace(/\\text\{([^}]+)\}/g, "$1").trim();
+          return (
+            <div key={bi} className="my-4 p-4 rounded-2xl bg-slate-950/90 border border-amber-500/30 text-amber-300 font-mono text-sm shadow-xl flex flex-col items-center justify-center gap-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-500/60">Mathematical Model</span>
+              <div className="text-center overflow-x-auto max-w-full py-1 text-amber-300 font-bold">{cleanMath}</div>
+            </div>
+          );
+        }
+
+        if (block.type === "callout") {
+          const text = block.lines.join(" ");
+          return (
+            <div key={bi} className="p-4 rounded-xl border-l-4 my-3 text-xs leading-relaxed shadow-sm" style={{ background: c.amberBg, borderColor: c.amber, color: c.text }}>
+              <span className="font-extrabold text-amber-400 block mb-1">💡 Key Insight & Academic Note</span>
+              {renderFormattedText(text)}
+            </div>
+          );
+        }
+
+        if (block.type === "list") {
+          return (
+            <ul key={bi} className="space-y-2.5 my-3 pl-2">
+              {block.lines.map((liLine, lii) => {
+                const cleanItem = liLine.replace(/^\s*([-*]|\d+\.)\s+/, "");
+                return (
+                  <li key={lii} className="flex items-start gap-2.5 text-[14px] leading-[1.8]" style={{ color: c.textSec }}>
+                    <span className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: c.amber }} />
+                    <div className="flex-1">{renderFormattedText(cleanItem)}</div>
+                  </li>
+                );
+              })}
+            </ul>
+          );
+        }
+
+        const paraText = block.lines.join(" ");
+        return (
+          <p key={bi} className="text-[14px] leading-[1.8] my-2" style={{ color: c.textSec }}>
+            {renderFormattedText(paraText)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 
 function parseAssignmentSections(result: AssignmentContent | null, c: ReturnType<typeof mkColors>) {
   if (!result) return [];
@@ -843,53 +992,11 @@ export function AssignmentGeneratorView() {
                                     ))}
                                   </ul>
                                 ) : (
-                                  <div className="space-y-3">
-                                    {s.content.split("\n\n").map((para, pi) => {
-                                      const trimmed = para.trim();
-                                      if (!trimmed) return null;
-
-                                      if (trimmed.startsWith("#")) {
-                                        const level = (trimmed.match(/^#+/)?.[0] || "#").length;
-                                        const headingText = trimmed.replace(/^#+\s*/, "");
-                                        return (
-                                          <h4 key={pi} className={`font-extrabold ${level <= 2 ? "text-base mt-4 text-amber-400" : "text-sm mt-3"}`} style={{ color: c.amber, fontFamily: "'Outfit', sans-serif" }}>
-                                            {headingText}
-                                          </h4>
-                                        );
-                                      }
-
-                                      if (trimmed.startsWith(">")) {
-                                        const quoteText = trimmed.replace(/^>\s*/, "");
-                                        return (
-                                          <div key={pi} className="p-3.5 rounded-xl border-l-4 my-2 text-xs leading-relaxed" style={{ background: c.amberBg, borderColor: c.amber, color: c.text }}>
-                                            {renderFormattedText(quoteText)}
-                                          </div>
-                                        );
-                                      }
-
-                                      const lines = trimmed.split("\n");
-                                      const isList = lines.every(l => /^\s*([-*]|\d+\.)\s+/.test(l.trim()));
-                                      if (isList) {
-                                        return (
-                                          <ul key={pi} className="space-y-1.5 pl-4 list-disc text-[14px] leading-[1.8]" style={{ color: c.textSec }}>
-                                            {lines.map((line, li) => (
-                                              <li key={li}>
-                                                {renderFormattedText(line.replace(/^\s*([-*]|\d+\.)\s+/, ""))}
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        );
-                                      }
-
-                                      return (
-                                        <p key={pi} className="text-[14px] leading-[1.8]" style={{ color: c.textSec }}>
-                                          {renderFormattedText(trimmed)}
-                                        </p>
-                                      );
-                                    })}
+                                  <div className="pt-2">
+                                    {renderAssignmentMarkdown(s.content, c)}
                                   </div>
-
                                 )}
+
                               </div>
                             </motion.div>
                           )}
