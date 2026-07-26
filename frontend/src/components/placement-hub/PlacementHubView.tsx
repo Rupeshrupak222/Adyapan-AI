@@ -8,7 +8,7 @@ import {
   XCircle, Info, Heart, ArrowRight, Share2, Trash2, Plus, Clock,
   MessageSquare, Award, ArrowLeft, ArrowRightLeft, ChevronRight,
   AlertCircle, FileText, UserCheck, Play, PlusCircle, Check, RefreshCw,
-  HelpCircle, ShieldAlert, Award as BadgeIcon, Lightbulb, BookOpen, Target, Flame, Code2
+  HelpCircle, ShieldAlert, Award as BadgeIcon, Lightbulb, BookOpen, Target, Flame
 } from "lucide-react";
 import { api } from "@/services/api";
 
@@ -388,6 +388,27 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
       <div className="flex-1 flex flex-col gap-4">
 
+        {/* Compact Module Header */}
+        <div className="flex justify-between items-center border-b pb-2.5 shrink-0" style={{ borderColor: c.border }}>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">Placement Workspace</p>
+            <h2 className="text-base font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+              {tab === "aptitude" && "AI Aptitude Engine"}
+              {tab === "reasoning" && "Logical Reasoning"}
+              {tab === "mcqs" && "Technical MCQs"}
+              {tab === "mocks" && "Mock Tests"}
+              {tab === "readiness" && "Readiness Score"}
+            </h2>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setAssistantOpen(!assistantOpen)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20"
+          >
+            <motion.span initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 280, damping: 18 }} className="inline-flex"><Sparkles size={12} className="animate-pulse" /></motion.span> AI Assistant
+          </motion.button>
+        </div>
 
         {/* ==================== 3. CONTENT AREA ==================== */}
         <div className="flex-1 min-h-0">

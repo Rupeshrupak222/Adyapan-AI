@@ -131,9 +131,6 @@ const JobHubView = dynamic(() => import("@/components/job-hub/JobHubView").then(
 const PlacementHubView = dynamic(() => import("@/components/placement-hub/PlacementHubView").then(m => m.PlacementHubView), {
   loading: () => <DashboardWidgetSkeleton title="Placement Hub" />
 });
-const CodingAssessmentView = dynamic(() => import("@/components/placement-hub/CodingAssessmentView").then(m => m.CodingAssessmentView), {
-  loading: () => <DashboardWidgetSkeleton title="Coding Assessment" />
-});
 const AptitudeEngineView = dynamic(() => import("@/components/aptitude-hub/AptitudeEngineView").then(m => m.AptitudeEngineView), {
   loading: () => <DashboardWidgetSkeleton title="AI Aptitude Engine" />
 });
@@ -354,7 +351,6 @@ export const sidebarItems: SidebarItem[] = [
   {
     id: "placement", label: "Placement Hub", icon: <Trophy size={18} />,
     submenu: [
-      { label: "AI Coding Assessment", href: "#" },
       { label: "AI Aptitude Engine", href: "#" },
       { label: "Logical Reasoning", href: "#" },
       { label: "Technical MCQs", href: "#" },
@@ -561,7 +557,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "JD Analyzer") onViewTool("job-jd-match");
                       else if (sub.label === "Job Referrals") onViewTool("job-referrals");
                       else if (sub.label === "Hiring Challenges") onViewTool("job-challenges");
-                      else if (sub.label === "AI Coding Assessment") onViewTool("placement-coding-assessment");
                       else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
                       else if (sub.label === "Logical Reasoning") onViewTool("placement-reasoning");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
@@ -2370,8 +2365,6 @@ function UserDashboardContent() {
           <HubErrorBoundary><AptitudeEngineView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "placement-hub" || activeView === "placement-aptitude" || activeView === "placement-reasoning" || activeView === "placement-mcqs" || activeView === "placement-mocks" || activeView === "placement-readiness" ? (
           <HubErrorBoundary><PlacementHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
-        ) : activeView === "placement-coding-assessment" || activeView === "coding-assessment" ? (
-          <HubErrorBoundary><CodingAssessmentView setView={setActiveView} /></HubErrorBoundary>
         ) : activeView === "productivity-hub" || activeView === "prod-email" || activeView === "prod-sop" || activeView === "prod-linkedin" || activeView === "prod-content" ? (
           <HubErrorBoundary><ProductivityHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "analytics-hub" || activeView === "analytics-learning" || activeView === "analytics-interview" || activeView === "analytics-resume" || activeView === "analytics-skills" ? (
