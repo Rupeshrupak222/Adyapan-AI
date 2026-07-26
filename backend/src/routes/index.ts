@@ -67,6 +67,7 @@ apiRouter.use("/linkedin", linkedinRouter);
 apiRouter.use("/study", studyRouter);
 apiRouter.use("/notes", notesRouter);
 apiRouter.use("/notes/export", notesExportRouter);
+apiRouter.use("/export", notesExportRouter);
 apiRouter.use("/quiz", quizRouter);
 apiRouter.use("/assignment", assignmentRouter);
 apiRouter.use("/ppt", pptRouter);

@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer";
-import { formatNotesHtml } from "./notes-formatter.service";
+import { formatNotesHtml, NotesFormatOptions } from "./notes-formatter.service";
 
 function escapeXml(text: string): string {
   return text
@@ -17,7 +17,7 @@ function escapeXml(text: string): string {
 export async function generateNotesPdf(
   markdown: string,
   topic: string,
-  options?: { difficulty?: string; type?: string }
+  options?: NotesFormatOptions
 ): Promise<Buffer> {
   const htmlContent = formatNotesHtml(markdown, topic, options);
 

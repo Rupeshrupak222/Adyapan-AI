@@ -18,10 +18,18 @@ import { extractLegacyFromRecord } from "../utils/resume-converter";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function parsePdf(buffer: Buffer): Promise<string> {
-  const { PDFParse } = require("pdf-parse");
-  const parser = new PDFParse({ data: buffer });
-  const result = await parser.getText();
-  return typeof result === "string" ? result : result.text || "";
+  try {
+    const pdf = require("pdf-parse");
+    const parseFn = typeof pdf === "function" ? pdf : (pdf?.PDFParse || pdf?.default);
+    if (typeof parseFn === "function") {
+      const result = await parseFn(buffer);
+      return typeof result === "string" ? result : result?.text || "";
+    }
+    return buffer.toString("utf-8");
+  } catch (err: any) {
+    console.warn("[parsePdf] PDF parsing fallback:", err?.message);
+    return buffer.toString("utf-8");
+  }
 }
 
 async function extractTextFromFile(file: Express.Multer.File): Promise<string> {

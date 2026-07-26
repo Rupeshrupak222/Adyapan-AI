@@ -5,10 +5,18 @@ import { generateJSON, MODELS } from "../lib/ai/openrouter";
 import { env } from "../config/env";
 import multer from "multer";
 async function parsePdfNonBlocking(buffer: Buffer): Promise<string> {
-  const { PDFParse } = require("pdf-parse");
-  const parser = new PDFParse({ data: buffer });
-  const result = await parser.getText();
-  return typeof result === "string" ? result : result.text || "";
+  try {
+    const pdf = require("pdf-parse");
+    const parseFn = typeof pdf === "function" ? pdf : (pdf?.PDFParse || pdf?.default);
+    if (typeof parseFn === "function") {
+      const result = await parseFn(buffer);
+      return typeof result === "string" ? result : result?.text || "";
+    }
+    return buffer.toString("utf-8");
+  } catch (err: any) {
+    console.warn("[parsePdfNonBlocking] PDF parsing fallback:", err?.message);
+    return buffer.toString("utf-8");
+  }
 }
 import mammoth from "mammoth";
 import { getUserPrismaFromRequest } from "../utils/prisma";
@@ -57,15 +65,18 @@ studyRouter.use(requireAuth);
 import { httpError } from "../utils/httpError";
 
 async function extractTextFromFile(file: Express.Multer.File): Promise<string> {
-  const mimeType = file.mimetype;
+  const mimeType = file.mimetype || "";
+  const fileName = (file.originalname || "").toLowerCase();
   let rawText: string;
   
   try {
-    if (mimeType === "application/pdf") {
+    if (mimeType === "application/pdf" || fileName.endsWith(".pdf")) {
       rawText = await parsePdfNonBlocking(file.buffer);
     } else if (
       mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-      mimeType === "application/msword"
+      mimeType === "application/msword" ||
+      fileName.endsWith(".docx") ||
+      fileName.endsWith(".doc")
     ) {
       const parsed = await mammoth.extractRawText({ buffer: file.buffer });
       rawText = parsed.value;

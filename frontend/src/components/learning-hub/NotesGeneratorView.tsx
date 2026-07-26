@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { stripMarkdown } from "@/utils/stripMarkdown";
+import { stripMarkdown, cleanMarkdown } from "@/utils/stripMarkdown";
+import { FormattedText } from "@/components/ui/FormattedText";
 import {
   BookOpen, Copy, FileDown, RefreshCw, ChevronRight, Search, Plus, History,
   CheckCircle2, Sparkles, Brain, Zap, Star, X, FileText, Layers, Download, Loader2
@@ -146,6 +147,8 @@ export function NotesGeneratorView() {
     setActiveSection(prev => (prev === title ? "" : title));
   };
 
+  const [downloadingDocx, setDownloadingDocx] = useState(false);
+
   const handleDownloadPdf = useCallback(async () => {
     if (!notesData?.rawContent) {
       toast.error("No notes content available for PDF export.");
@@ -176,6 +179,40 @@ export function NotesGeneratorView() {
       toast.error(e?.response?.data?.error || "Failed to generate PDF. Please try again.");
     } finally {
       setDownloadingPdf(false);
+    }
+  }, [notesData, noteType]);
+
+  const handleDownloadDocx = useCallback(async () => {
+    if (!notesData?.rawContent) {
+      toast.error("No notes content available for DOCX export.");
+      return;
+    }
+    setDownloadingDocx(true);
+    try {
+      const res = await api.post("/export/notes", {
+        content: notesData.rawContent,
+        topic: notesData.topic,
+        difficulty: notesData.difficulty,
+        type: noteType,
+        format: "docx",
+      }, { responseType: "blob" });
+
+      const blob = new Blob([res.data], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${notesData.topic.replace(/\s+/g, "_")}_Notes.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("DOCX downloaded successfully!");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } };
+      console.error("DOCX download error:", err);
+      toast.error(e?.response?.data?.error || "Failed to generate DOCX. Please try again.");
+    } finally {
+      setDownloadingDocx(false);
     }
   }, [notesData, noteType]);
 
@@ -546,11 +583,18 @@ export function NotesGeneratorView() {
 
                 {/* Actions */}
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="p-3 rounded-2xl shrink-0 space-y-2" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
-                  <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.textMuted }}>Actions</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.textMuted }}>Export & Share</span>
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
-                    onClick={() => { const txt = notesData.sections.map(s => `## ${s.title}\n${s.content}\n${s.bulletPoints.map(b => `- ${b}`).join("\n")}`).join("\n\n"); navigator.clipboard.writeText(txt); toast.success("Notes copied to clipboard!"); }}
-                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
-                    <span style={{ color: c.amber }} className="shrink-0"><Copy size={13} /></span> Copy Notes
+                    onClick={handleDownloadPdf}
+                    disabled={downloadingPdf}
+                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all text-left" style={{ background: downloadingPdf ? c.surface : "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.1))", border: `1px solid ${downloadingPdf ? c.border : "rgba(245,158,11,0.3)"}`, color: downloadingPdf ? c.textMuted : c.amber, opacity: downloadingPdf ? 0.7 : 1 }}>
+                    <span className="shrink-0">{downloadingPdf ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}</span> {downloadingPdf ? "Generating PDF..." : "Download PDF"}
+                  </motion.button>
+                  <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
+                    onClick={handleDownloadDocx}
+                    disabled={downloadingDocx}
+                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all text-left" style={{ background: downloadingDocx ? c.surface : "linear-gradient(135deg, rgba(139,92,246,0.12), rgba(139,92,246,0.06))", border: `1px solid ${downloadingDocx ? c.border : "rgba(139,92,246,0.25)"}`, color: downloadingDocx ? c.textMuted : "#a78bfa", opacity: downloadingDocx ? 0.7 : 1 }}>
+                    <span className="shrink-0">{downloadingDocx ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}</span> {downloadingDocx ? "Generating DOCX..." : "Download DOCX"}
                   </motion.button>
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
                     onClick={() => {
@@ -561,18 +605,17 @@ export function NotesGeneratorView() {
                       URL.revokeObjectURL(url);
                       toast.success("Notes exported as Markdown!");
                     }}
-                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
+                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
                     <span style={{ color: c.amber }} className="shrink-0"><FileDown size={13} /></span> Download Markdown
                   </motion.button>
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
-                    onClick={handleDownloadPdf}
-                    disabled={downloadingPdf}
-                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all text-left" style={{ background: downloadingPdf ? c.surface : "linear-gradient(135deg, rgba(139,92,246,0.1), rgba(139,92,246,0.05))", border: `1px solid ${downloadingPdf ? c.border : "rgba(139,92,246,0.2)"}`, color: downloadingPdf ? c.textMuted : "#8b5cf6", opacity: downloadingPdf ? 0.7 : 1 }}>
-                    <span className="shrink-0">{downloadingPdf ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}</span> {downloadingPdf ? "Generating PDF..." : "Download PDF"}
+                    onClick={() => { const txt = notesData.sections.map(s => `## ${s.title}\n${s.content}\n${s.bulletPoints.map(b => `- ${b}`).join("\n")}`).join("\n\n"); navigator.clipboard.writeText(txt); toast.success("Notes copied to clipboard!"); }}
+                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
+                    <span style={{ color: c.amber }} className="shrink-0"><Copy size={13} /></span> Copy Notes
                   </motion.button>
                   <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
                     onClick={() => { setNotesData(null); setSearchQuery(""); }}
-                    className="w-full py-2 rounded-lg text-sm font-extrabold transition-all flex items-center justify-center gap-1.5" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>
+                    className="w-full py-2 mt-1 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>
                     <RefreshCw size={13} /> New Topic
                   </motion.button>
                 </motion.div>
@@ -622,18 +665,21 @@ export function NotesGeneratorView() {
                               <div className="p-5 space-y-5">
                                 <div>
                                   <span className="text-[10px] uppercase tracking-widest font-black block mb-2" style={{ color: c.amber }}>Content</span>
-                                  <p className="text-[15px] leading-[1.75]" style={{ color: c.textSec }}>{stripMarkdown(s.content)}</p>
+                                  <FormattedText content={s.content} />
                                 </div>
-                                <div className="p-4 rounded-xl" style={{ background: c.purpleBg, border: `1px solid ${c.purpleBorder}` }}>
-                                  <span className="text-[10px] uppercase tracking-widest font-black block mb-3" style={{ color: "#a78bfa" }}>✦ Key Points</span>
-                                  <ul className="space-y-1.5">
-                                    {s.bulletPoints.map((b, i) => (
-                                      <li key={i} className="flex items-start gap-2 text-[14px] leading-snug" style={{ color: c.textSec }}>
-                                        <span style={{ color: "#a78bfa" }} className="mt-1 shrink-0">▸</span>{b}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
+                                {s.bulletPoints && s.bulletPoints.length > 0 && (
+                                  <div className="p-4 rounded-xl" style={{ background: c.purpleBg, border: `1px solid ${c.purpleBorder}` }}>
+                                    <span className="text-[10px] uppercase tracking-widest font-black block mb-3" style={{ color: "#a78bfa" }}>✦ Key Takeaways & Points</span>
+                                    <ul className="space-y-2">
+                                      {s.bulletPoints.map((b, i) => (
+                                        <li key={i} className="flex items-start gap-2.5 text-xs sm:text-sm" style={{ color: c.textSec }}>
+                                          <span style={{ color: "#a78bfa" }} className="mt-1 shrink-0 font-bold">▸</span>
+                                          <span className="flex-1"><FormattedText content={b} /></span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
                             </motion.div>
                           )}
