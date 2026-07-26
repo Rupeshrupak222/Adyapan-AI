@@ -1,5 +1,7 @@
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
 import { getTheme, PresentationTheme } from "./presentation-theme.service";
+import { searchStockImage } from "./stock-image.service";
+
 
 export interface PresentationCardSpec {
   title: string;
@@ -240,15 +242,27 @@ Return ONLY a valid JSON object matching this schema:
 
   try {
     const result = await generateJSON<PresentationSpec>(
-      "You are an expert presentation designer JSON generator.",
+      "You are a world-class keynote author and presentation JSON generator.",
       prompt,
-      { model: MODELS.POWERFUL, maxTokens: 16000, temperature: 0.4 },
+      { model: "moonshotai/kimi-k2.6", maxTokens: 16000, temperature: 0.4 },
       fallback
     );
     result.theme = getTheme(result.themeId || themeId);
+
+    // Enhance images with authentic Unsplash / Pexels stock images
+    for (const slide of result.slides || []) {
+      if (!slide.images || slide.images.length === 0 || slide.images[0]?.url.includes("example")) {
+        const stock = await searchStockImage(`${topic} ${slide.title}`);
+        slide.images = [
+          { url: stock.url, alt: stock.alt, caption: `${slide.title} — ${stock.source.toUpperCase()} Visual` }
+        ];
+      }
+    }
+
     return result;
   } catch (err) {
     console.warn("[Presentation AI] Falling back to default presentation spec:", err);
     return fallback;
   }
 }
+

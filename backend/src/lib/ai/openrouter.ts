@@ -47,6 +47,18 @@ export async function callAIRobust(
 ): Promise<string> {
   const providers: { name: string; url: string; key: string; model: string }[] = [];
 
+  // 0. Moonshot / Kimi 2.6 API (Direct Kimi Provider if requested or key present)
+  const kimiKey = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
+  const isKimiRequested = (options.model?.toLowerCase() ?? "").includes("kimi");
+  if (kimiKey && (isKimiRequested || !env.geminiApiKey)) {
+    providers.push({
+      name: "Kimi 2.6 (Moonshot)",
+      url: "https://api.moonshot.cn/v1/chat/completions",
+      key: kimiKey,
+      model: "moonshot-v1-32k",
+    });
+  }
+
   // 1. Add Google Gemini with fallback models (primary)
   if (env.geminiApiKey) {
     const modelLower = options.model?.toLowerCase() ?? "";
@@ -101,15 +113,16 @@ export async function callAIRobust(
     }
   }
 
-  // 4. Add OpenRouter if key exists (quaternary)
+  // 4. Add OpenRouter if key exists (quaternary) — including moonshotai/kimi-k2.6 when requested
   if (env.openrouterApiKey) {
     providers.push({
-      name: "OpenRouter",
+      name: "OpenRouter (Kimi 2.6 / GPT)",
       url: "https://openrouter.ai/api/v1/chat/completions",
       key: env.openrouterApiKey,
-      model: options.model || "openai/gpt-4o-mini",
+      model: isKimiRequested ? "moonshotai/kimi-k2.6" : (options.model || "openai/gpt-4o-mini"),
     });
   }
+
 
   if (providers.length === 0) {
     throw new Error("No AI providers configured. Please check environment keys.");

@@ -49,6 +49,46 @@ export function PptGeneratorView() {
   const [historySearch, setHistorySearch] = useState("");
   const [history, setHistory] = useState<Array<{ name: string; date: string; count: number; data: Slide[] }>>([]);
   const [exportingPptx, setExportingPptx] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const handleExportPdf = async () => {
+    if (!slides) return;
+    setExportingPdf(true);
+    try {
+      const res = await api.post("/ppt/export/pdf", {
+        topic,
+        presentation: {
+          title: topic,
+          slides: slides.map((s, i) => ({
+            id: i + 1,
+            title: s.title,
+            bullets: s.bullets,
+            speakerNotes: s.notes,
+            cards: [
+              { title: "Module Focus", description: s.title },
+              { title: "Key Metric", value: `${(i + 1) * 20}%`, description: "Performance Score" }
+            ]
+          }))
+        }
+      }, { responseType: "blob", timeout: 120000 });
+
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${topic.replace(/\s+/g, "_")}_Presentation.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Presentation PDF downloaded successfully!");
+    } catch (err) {
+      console.error("PDF export error:", err);
+      toast.error("Failed to generate PDF file.");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   const handleExportPptx = async () => {
     if (!slides) return;
@@ -88,6 +128,7 @@ export function PptGeneratorView() {
       setExportingPptx(false);
     }
   };
+
 
   const { socket, isConnected } = useSocket();
   const userIdRef = useRef<string>("");
@@ -529,6 +570,18 @@ export function PptGeneratorView() {
                     </span>
                     <span className="text-[9px] font-extrabold uppercase bg-amber-500/20 px-1.5 py-0.5 rounded">PowerPoint</span>
                   </motion.button>
+
+                  <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
+                    disabled={exportingPdf}
+                    onClick={handleExportPdf}
+                    className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-bold transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.text }}>
+                    <span className="flex items-center gap-2">
+                      {exportingPdf ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} style={{ color: c.amber }} />}
+                      Download PDF
+                    </span>
+                    <span className="text-[9px] font-extrabold uppercase bg-slate-500/20 px-1.5 py-0.5 rounded">PDF</span>
+                  </motion.button>
+
 
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
                     onClick={() => { const txt = slides.map((s, i) => `Slide ${i + 1}: ${s.title}\n${s.bullets.map(b => `- ${b}`).join("\n")}\nNotes: ${s.notes}`).join("\n\n"); navigator.clipboard.writeText(txt); toast.success("Slides copied to clipboard!"); }}

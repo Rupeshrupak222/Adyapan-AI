@@ -3,6 +3,7 @@ import { requireAuth } from "../middleware/auth";
 import { handleRouteError } from "../utils/routeError";
 import { generatePresentationSpec } from "../services/presentation-ai.service";
 import { generatePresentationPptx } from "../services/presentation-pptx.service";
+import { generatePresentationPdf } from "../services/presentation-pdf.service";
 import { getTheme } from "../services/presentation-theme.service";
 
 export const presentationExportRouter = Router();
@@ -19,7 +20,7 @@ presentationExportRouter.use((req, res, next) => {
 /**
  * POST /api/export/ppt/generate or /api/ppt/generate
  */
-presentationExportRouter.post("/generate", async (req, res) => {
+presentationExportRouter.post(["/generate", "/export/generate"], async (req, res) => {
   try {
     const { topic, presentationType, slideCount, audience, language, themePreference } = req.body;
     const presentation = await generatePresentationSpec({
@@ -40,7 +41,7 @@ presentationExportRouter.post("/generate", async (req, res) => {
 /**
  * POST /api/export/ppt/pptx or /api/ppt/export/pptx
  */
-presentationExportRouter.post("/pptx", async (req, res) => {
+presentationExportRouter.post(["/pptx", "/export/pptx"], async (req, res) => {
   try {
     const { presentation, topic, themePreference } = req.body;
 
@@ -69,3 +70,37 @@ presentationExportRouter.post("/pptx", async (req, res) => {
     handleRouteError(res, error, "Presentation.export.pptx", "PPTX export failed");
   }
 });
+
+/**
+ * POST /api/export/ppt/pdf or /api/ppt/export/pdf
+ */
+presentationExportRouter.post(["/pdf", "/export/pdf"], async (req, res) => {
+  try {
+    const { presentation, topic, themePreference } = req.body;
+
+    let spec = presentation;
+    if (!spec || !spec.slides) {
+      spec = await generatePresentationSpec({
+        topic: topic || "Academic Presentation",
+        themePreference,
+      });
+    }
+
+    const pdfBuffer = await generatePresentationPdf(spec);
+    const safeTitle = (spec.title || "AdyapanAI_Presentation")
+      .replace(/[^a-zA-Z0-9\s-]/g, "")
+      .replace(/\s+/g, "_");
+    const filename = `${safeTitle}_Presentation.pdf`;
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Length": pdfBuffer.length.toString(),
+    });
+
+    res.send(pdfBuffer);
+  } catch (error) {
+    handleRouteError(res, error, "Presentation.export.pdf", "PDF presentation export failed");
+  }
+});
+
