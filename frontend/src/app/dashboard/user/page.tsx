@@ -246,7 +246,6 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Career Roadmap", viewId: "career-roadmap", category: "Resume Hub" },
   { label: "AI HR Interview", viewId: "interview-hub", category: "Interview Hub" },
   { label: "AI Technical Interview", viewId: "interview-hub", category: "Interview Hub" },
-  { label: "Mock Interviews", viewId: "interview-hub", category: "Interview Hub" },
   { label: "Interview Engine", viewId: "interview-engine", category: "Interview Hub" },
   { label: "Research Paper AI", viewId: "research-hub", category: "Research Hub" },
   { label: "Plagiarism Checker", viewId: "research-plagiarism", category: "Research Hub" },
@@ -333,7 +332,6 @@ export const sidebarItems: SidebarItem[] = [
       { label: "Interview Engine", href: "/dashboard/interview/engine" },
       { label: "AI HR Interview", href: "/dashboard/interview/hr" },
       { label: "AI Technical Interview", href: "/dashboard/interview/technical" },
-      { label: "Mock Interviews", href: "#" },
     ],
   },
   {
@@ -560,7 +558,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "Interview Engine") onViewTool("interview-engine");
                       else if (sub.label === "AI HR Interview") onViewTool("interview-hr");
                       else if (sub.label === "AI Technical Interview") onViewTool("interview-technical");
-                      else if (sub.label === "Mock Interviews") onViewTool("interview-mock");
                       else if (sub.label === "Research Paper AI") onViewTool("research-paper-ai");
                       else if (sub.label === "Plagiarism Checker") onViewTool("research-plagiarism");
                       else if (sub.label === "Browse Internships") onViewTool("internship-finder");

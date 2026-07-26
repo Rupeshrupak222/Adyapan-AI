@@ -67,17 +67,6 @@ const INTERVIEW_TYPES = [
     border: "rgba(245,158,11,0.2)",
     tags: ["STAR Method", "Leadership", "Culture Fit"],
   },
-  {
-    id: "general" as const,
-    title: "Mock Interview",
-    subtitle: "Custom simulation with any role or company",
-    description: "Fully customizable interview simulation. Set your target company, role, difficulty and get realistic practice.",
-    icon: Briefcase,
-    color: "#10b981",
-    bg: "rgba(16,185,129,0.08)",
-    border: "rgba(16,185,129,0.2)",
-    tags: ["Custom Role", "Company Specific", "All Topics"],
-  },
 ];
 
 import { Suspense } from "react";

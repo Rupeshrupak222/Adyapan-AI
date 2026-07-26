@@ -84,16 +84,6 @@ export function ResearchHubView({ setView, activeModule, theme: propTheme }: Res
 
   return (
     <div className="min-h-screen p-4 md:p-6 transition-colors" style={{ background: c.bg, color: c.text }}>
-      {/* Top Header */}
-      <div className="flex items-center justify-end mb-6 pb-4" style={{ borderBottom: `1px solid ${c.divider}` }}>
-        <button
-          onClick={() => setIsTemplateModalOpen(true)}
-          className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 flex items-center gap-1.5"
-        >
-          Template: <span className="text-amber-300 font-extrabold">{selectedTemplate}</span>
-        </button>
-      </div>
-
       {/* Main View Transitioning Body */}
       <AnimatePresence mode="wait">
         {viewState === "dashboard" && (
