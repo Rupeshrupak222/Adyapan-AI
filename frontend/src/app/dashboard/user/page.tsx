@@ -354,7 +354,7 @@ export const sidebarItems: SidebarItem[] = [
   {
     id: "placement", label: "Placement Hub", icon: <Trophy size={18} />,
     submenu: [
-      { label: "AI Coding Assessment", href: "/dashboard/placement/coding-assessment" },
+      { label: "AI Coding Assessment", href: "#" },
       { label: "AI Aptitude Engine", href: "#" },
       { label: "Logical Reasoning", href: "#" },
       { label: "Technical MCQs", href: "#" },
