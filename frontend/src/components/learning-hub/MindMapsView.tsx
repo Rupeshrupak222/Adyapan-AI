@@ -26,7 +26,7 @@ import {
   GitMerge, Copy, FileDown, RefreshCw, ChevronRight, Search, Plus, History,
   CheckCircle2, Sparkles, Brain, Zap, Star, X, FileText, Layers, Network,
   Download, Share2, BookOpen, HelpCircle, Settings, Eye, EyeOff, ArrowRight,
-  Loader2, AlertTriangle, Lightbulb, GitFork, Circle
+  Loader2, AlertTriangle, Lightbulb, GitFork, Circle, Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
@@ -871,7 +871,30 @@ export function MindMapsView() {
                             <p style={{ fontSize: "0.68rem", color: c.textMuted, margin: "2px 0 0" }}>{doc.date} · {doc.count} nodes</p>
                           </div>
                         </div>
-                        <ChevronRight size={14} style={{ color: c.textMuted }} />
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                          <motion.button
+                            whileHover={{ scale: 1.15, color: "#ef4444" }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const updated = history.filter(h => h.name !== doc.name);
+                              setHistory(updated);
+                              try {
+                                localStorage.setItem("adyapan-mindmap-history", JSON.stringify(updated));
+                                toast.success(`Removed "${doc.name}" from history`);
+                              } catch { /* ignore */ }
+                            }}
+                            title="Delete from history"
+                            style={{
+                              background: "transparent", border: "none", color: c.textMuted,
+                              padding: "4px 6px", borderRadius: 6, cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </motion.button>
+                          <ChevronRight size={14} style={{ color: c.textMuted }} />
+                        </div>
                       </motion.div>
                     ))}
                   </div>

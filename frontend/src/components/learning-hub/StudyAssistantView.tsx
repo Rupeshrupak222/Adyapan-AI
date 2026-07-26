@@ -267,6 +267,24 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
     }, 300);
   };
 
+  const handleDeleteDocument = (docName: string) => {
+    const updated = history.filter(h => h.name !== docName);
+    setHistory(updated);
+    try {
+      localStorage.setItem("adyapan-study-history", JSON.stringify(updated));
+      toast.success(`Removed "${docName}" from history`);
+    } catch { /* ignore */ }
+  };
+
+  const handleDeleteTopic = (index: number) => {
+    const updated = topicHistory.filter((_, i) => i !== index);
+    setTopicHistory(updated);
+    try {
+      localStorage.setItem("adyapan-topic-history", JSON.stringify(updated));
+      toast.success("Topic removed from history");
+    } catch { /* ignore */ }
+  };
+
   const handleNotesChange = (val: string) => {
     setNotesText(val);
     if (lessonData && currentTopic) {
@@ -524,6 +542,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
         history={history} topicHistory={topicHistory}
         searchQuery={searchQuery} onSearchChange={setSearchQuery}
         onLoadDocument={loadHistoryItem} onLoadTopic={handleLoadTopic}
+        onDeleteDocument={handleDeleteDocument} onDeleteTopic={handleDeleteTopic}
       />
 
       <HistorySidebar
@@ -532,6 +551,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
         history={history} topicHistory={topicHistory}
         searchQuery="" onSearchChange={() => {}}
         onLoadDocument={() => {}} onLoadTopic={handleLoadTopic}
+        onDeleteDocument={handleDeleteDocument} onDeleteTopic={handleDeleteTopic}
       />
 
       <div className="flex-1">

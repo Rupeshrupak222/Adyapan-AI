@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  History, X, Search, FileText, ChevronRight, GraduationCap,
+  History, X, Search, FileText, ChevronRight, GraduationCap, Trash2
 } from "lucide-react";
 import { mkColors } from "@/utils/themeColors";
 import type { UnifiedLesson } from "../StudyAssistantView";
@@ -21,9 +21,11 @@ type Props = {
   onSearchChange: (q: string) => void;
   onLoadDocument: (item: DocumentItem) => void;
   onLoadTopic: (item: TopicItem) => void;
+  onDeleteDocument?: (name: string) => void;
+  onDeleteTopic?: (index: number) => void;
 };
 
-export function HistorySidebar({ c, type, show, onClose, history, topicHistory, searchQuery, onSearchChange, onLoadDocument, onLoadTopic }: Props) {
+export function HistorySidebar({ c, type, show, onClose, history, topicHistory, searchQuery, onSearchChange, onLoadDocument, onLoadTopic, onDeleteDocument, onDeleteTopic }: Props) {
   if (!show) return null;
 
   const isDocument = type === "document";
@@ -149,7 +151,27 @@ export function HistorySidebar({ c, type, show, onClose, history, topicHistory, 
                           </p>
                         </div>
                       </div>
-                      <ChevronRight size={14} style={{ color: c.textMuted, flexShrink: 0 }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                        {onDeleteDocument && (
+                          <motion.button
+                            whileHover={{ scale: 1.15, color: "#ef4444" }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteDocument(doc.name);
+                            }}
+                            title="Delete from history"
+                            style={{
+                              background: "transparent", border: "none", color: c.textMuted,
+                              padding: "4px 6px", borderRadius: 6, cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </motion.button>
+                        )}
+                        <ChevronRight size={14} style={{ color: c.textMuted }} />
+                      </div>
                     </motion.div>
                   ))
                 ) : (
@@ -176,7 +198,27 @@ export function HistorySidebar({ c, type, show, onClose, history, topicHistory, 
                           <p style={{ fontSize: "0.68rem", color: c.textMuted, margin: "2px 0 0" }}>{item.date} · {item.duration} · {item.level}</p>
                         </div>
                       </div>
-                      <ChevronRight size={14} style={{ color: c.textMuted }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                        {onDeleteTopic && (
+                          <motion.button
+                            whileHover={{ scale: 1.15, color: "#ef4444" }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteTopic(i);
+                            }}
+                            title="Delete from history"
+                            style={{
+                              background: "transparent", border: "none", color: c.textMuted,
+                              padding: "4px 6px", borderRadius: 6, cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </motion.button>
+                        )}
+                        <ChevronRight size={14} style={{ color: c.textMuted }} />
+                      </div>
                     </motion.div>
                   ))
                 )}
