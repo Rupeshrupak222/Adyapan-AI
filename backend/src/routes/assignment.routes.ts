@@ -11,19 +11,26 @@ assignmentRouter.post("/generate", async (req, res) => {
   try {
     const { topic, academicLevel, wordCount } = req.body;
     const result = await generateAssignment(topic, academicLevel, wordCount);
-    const userPrisma = await getUserPrismaFromRequest(req);
     
     const parsedWordCount = parseInt(String(wordCount)) || 4500;
-    const assignment = await userPrisma.assignment.create({
-      data: {
-        userId: req.user!.userId,
-        topic,
-        academicLevel: academicLevel || "Undergraduate",
-        wordCount: parsedWordCount,
-        content: result as any,
-      },
-    });
-    res.json({ success: true, assignment });
+    try {
+      const userPrisma = await getUserPrismaFromRequest(req);
+      if (req.user?.userId) {
+        await userPrisma.assignment.create({
+          data: {
+            userId: req.user.userId,
+            topic,
+            academicLevel: academicLevel || "Undergraduate",
+            wordCount: parsedWordCount,
+            content: result as any,
+          },
+        });
+      }
+    } catch (dbErr) {
+      console.warn("[HTTP assignment] DB save warning (proceeding with result):", dbErr);
+    }
+    
+    res.json({ success: true, assignment: { content: result } });
   } catch (error) {
     handleRouteError(res, error, "Assignment.generate", "Assignment generation failed");
   }

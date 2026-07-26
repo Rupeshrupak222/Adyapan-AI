@@ -1469,8 +1469,8 @@ INPUT CONFIGURATION:
 CRITICAL REQUIREMENTS ACCORDING TO PAGES:
 1. Academic Rigor: Adapt vocabulary, analysis depth, and citations specifically to the requested Academic Level (${level}).
 2. Page-Based Sections: Divide the assignment into exactly ${bodyChapterCount + 2} distinct sections (1 Introduction section, ${bodyChapterCount} Body chapters/sections, 1 Conclusion section).
-3. Section Metadata: Each section MUST include sectionNumber, title, pageEstimate (e.g. "Pages 1–2", "Pages 3–5"), wordCount (estimated section words), and full detailed Markdown content.
-4. Comprehensive Content: Do NOT summarize. Write thorough, fully articulated text for every section.
+3. Section Metadata: Each section MUST include sectionNumber, title, pageEstimate (e.g. "Pages 1-2", "Pages 3-5"), wordCount (estimated section words), and full detailed Markdown content.
+4. Comprehensive Content: Write thorough, fully articulated text for every section.
 5. References: Include 8-20 authentic, scholarly APA 7th edition citations in the "references" array.
 
 Return ONLY a valid JSON object matching this schema:
@@ -1479,35 +1479,32 @@ Return ONLY a valid JSON object matching this schema:
   "academicLevel": "${level}",
   "targetPages": ${targetPages},
   "totalWords": ${targetWords},
-  "tableOfContents": [
-    { "title": "Section 1: Introduction & Research Background", "pages": "Pages 1–${Math.max(1, Math.round(targetPages * 0.15))}" }
-  ],
   "sections": [
     {
       "sectionNumber": 1,
       "title": "Introduction & Research Background",
-      "pageEstimate": "Pages 1–${Math.max(1, Math.round(targetPages * 0.15))}",
-      "wordCount": ${Math.round(targetWords * 0.15)},
+      "pageEstimate": "Pages 1-2",
+      "wordCount": 650,
       "content": "Full detailed introduction text..."
     },
     {
       "sectionNumber": 2,
       "title": "Chapter 1: Theoretical Foundations",
-      "pageEstimate": "Pages ${Math.max(1, Math.round(targetPages * 0.15)) + 1}–...",
-      "wordCount": ${Math.round((targetWords * 0.7) / bodyChapterCount)},
+      "pageEstimate": "Pages 3-5",
+      "wordCount": 1200,
       "content": "Full detailed body chapter 1 text..."
     },
     {
       "sectionNumber": ${bodyChapterCount + 2},
       "title": "Conclusion & Future Research Directions",
-      "pageEstimate": "Pages ${Math.max(1, targetPages - 1)}–${targetPages}",
-      "wordCount": ${Math.round(targetWords * 0.15)},
+      "pageEstimate": "Pages ${Math.max(1, targetPages - 1)}-${targetPages}",
+      "wordCount": 500,
       "content": "Full detailed conclusion text..."
     }
   ],
-  "introduction": "<Combined Introduction Markdown>",
-  "body": "<Combined Body chapters Markdown>",
-  "conclusion": "<Combined Conclusion Markdown>",
+  "introduction": "Full Introduction Markdown",
+  "body": "Full Body chapters Markdown",
+  "conclusion": "Full Conclusion Markdown",
   "references": [
     "Citation 1...",
     "Citation 2..."

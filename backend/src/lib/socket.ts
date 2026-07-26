@@ -270,17 +270,25 @@ export function initSocketServer(server: HttpServer) {
             );
 
             emitProgress("Structuring introduction, body, and conclusion...");
-            const assignment = await userPrisma.assignment.create({
-              data: {
-                userId,
-                topic: payload.topic || "General",
-                academicLevel: payload.level || "Undergraduate",
-                wordCount,
-                content: result as any,
-              },
-            });
+            let assignmentId: string | undefined;
+            try {
+              if (userId) {
+                const assignment = await userPrisma.assignment.create({
+                  data: {
+                    userId,
+                    topic: payload.topic || "General",
+                    academicLevel: level,
+                    wordCount,
+                    content: result as any,
+                  },
+                });
+                assignmentId = assignment.id;
+              }
+            } catch (dbErr) {
+              console.warn("[Socket assignment] DB save warning (proceeding with output):", dbErr);
+            }
 
-            socket.emit("generate:complete", { assignment: result, assignmentId: assignment.id });
+            socket.emit("generate:complete", { assignment: result, assignmentId });
             break;
           }
 
