@@ -141,84 +141,177 @@ Return ONLY a valid JSON object matching this schema:
   ]
 }`;
 
+  const chapterTemplates = [
+    {
+      badge: "📌 EXECUTIVE SUMMARY",
+      title: `✨ Introduction & Objectives of ${topic}`,
+      subtitle: `🚀 Strategic Context & Foundational Scope (${type})`,
+      bullets: [
+        `🧠 Core Architectural Mechanics: Deconstructing foundational principles governing ${topic}.`,
+        `📊 Empirical Benchmarking: Evaluating real-world performance metrics across operational parameters.`,
+        `⚡ Strategic Objectives: Addressing key systemic trade-offs and structural bottlenecks.`
+      ],
+      cards: [
+        { title: "🎯 Focus Domain", value: topic.slice(0, 18), description: "Target Research Scope" },
+        { title: "⚡ Fidelity Target", value: "99.4%", description: "Benchmark Accuracy" }
+      ],
+      notes: `Welcome to our presentation on ${topic}. In this opening module, we establish the strategic context and primary research objectives.`
+    },
+    {
+      badge: "🧠 THEORETICAL FOUNDATIONS",
+      title: `🔮 Architecture & Algorithmic Mechanics of ${topic}`,
+      subtitle: `🔬 Mathematical Formulations & Paradigm Synthesis`,
+      bullets: [
+        `📐 Systemic Abstraction: Formulating mathematical models for ${topic}.`,
+        `🔄 Modular Interoperability: Ensuring clean separation of concerns and protocol flexibility.`,
+        `🛡️ Fault Tolerance: Guaranteeing stability under anomalous operating workloads.`
+      ],
+      cards: [
+        { title: "🚀 System Throughput", value: "10x Speed", description: "Parallel Execution Gain" },
+        { title: "🛡️ Reliability Index", value: "99.99%", description: "Uptime Protocol" }
+      ],
+      notes: `Here we dive into the theoretical framework governing ${topic}, examining core algorithms and system models.`
+    },
+    {
+      badge: "📊 EMPIRICAL BENCHMARKS",
+      title: `⚡ Experimental Evaluation & Quantitative Metrics`,
+      subtitle: `📈 Benchmarking Performance Across Scaled Workloads`,
+      bullets: [
+        `📊 Latency Reduction: Achieving low-overhead execution across distributed nodes.`,
+        `📉 Resource Utilization: Optimizing memory footprint and processing bandwidth.`,
+        `🎯 Accuracy Score: Demonstrating empirical superiority against legacy baselines.`
+      ],
+      cards: [
+        { title: "⚡ Latency Reduction", value: "-42ms", description: "Average Overhead Savings" },
+        { title: "📊 Efficiency Score", value: "94.8/100", description: "Standard Benchmark" }
+      ],
+      notes: `This slide presents quantitative benchmark results validating the theoretical performance promises of ${topic}.`
+    },
+    {
+      badge: "🔬 WORKFLOW & PROTOCOLS",
+      title: `🛠️ Algorithmic Mechanics & Execution Lifecycle`,
+      subtitle: `⚙️ Sequential Processing & Protocol Optimization`,
+      bullets: [
+        `1️⃣ Initialization Phase: Establishing secure handshake protocols and memory allocation.`,
+        `2️⃣ Compute Execution: Running parallelized transformations across optimized kernels.`,
+        `3️⃣ Verification & Audit: Enforcing strict integrity validation prior to final output.`
+      ],
+      cards: [
+        { title: "⚙️ Pipeline Stages", value: "4 Modules", description: "End-to-End Flow" },
+        { title: "🔐 Encryption Audit", value: "Verified", description: "Zero-Trust Protocol" }
+      ],
+      notes: `We examine the step-by-step execution lifecycle, highlighting optimization checkpoints throughout the workflow.`
+    },
+    {
+      badge: "🌐 REAL-WORLD APPLICATIONS",
+      title: `🏢 Industry Integration & Deployment Case Studies`,
+      subtitle: `🚀 Practical Solutions in Enterprise & Academic Environments`,
+      bullets: [
+        `🌐 Enterprise Integration: Deploying ${topic} across high-concurrency production environments.`,
+        `💡 Academic Breakthroughs: Accelerating research discoveries with automated insights.`,
+        `🎯 Scalable Adoption: Reducing operational complexity while maintaining strict compliance.`
+      ],
+      cards: [
+        { title: "💼 Industry Adoption", value: "88%", description: "Target Sector Reach" },
+        { title: "💰 Cost Reduction", value: "35% Savings", description: "Operational Efficiency" }
+      ],
+      notes: `Real-world case studies demonstrate how ${topic} delivers tangible value across industrial and academic implementations.`
+    },
+    {
+      badge: "🛡️ SECURITY & COMPLIANCE",
+      title: `🔒 Risk Mitigation & Verification Standards`,
+      subtitle: `🛡️ Safeguarding Data Integrity & System Resilience`,
+      bullets: [
+        `🔒 Zero-Trust Framework: Enforcing end-to-end cryptographic authentication.`,
+        `🛡️ Anomaly Detection: Proactive monitoring for system drift and vulnerabilities.`,
+        `📋 Regulatory Alignment: Complying with international academic and data standards.`
+      ],
+      cards: [
+        { title: "🛡️ Compliance Status", value: "ISO 27001", description: "Certified Architecture" },
+        { title: "🔒 Security Index", value: "Tier 1", description: "Maximum Protection" }
+      ],
+      notes: `Security and verification protocols ensure that implementation of ${topic} remains resilient against threats.`
+    },
+    {
+      badge: "🎯 COMPARATIVE MODELS",
+      title: `⚖️ Benchmark Trade-Offs & Paradigm Comparison`,
+      subtitle: `🔍 Evaluating Alternative Architectures against ${topic}`,
+      bullets: [
+        `⚖️ Architectural Trade-offs: Balancing compute cost against processing fidelity.`,
+        `📊 Model Comparison: Benchmarking ${topic} against traditional alternative solutions.`,
+        `🎯 Decision Matrix: Guidelines for selecting optimal parameters per deployment.`
+      ],
+      cards: [
+        { title: "⚡ Speed Ratio", value: "3.4x Faster", description: "Vs Baseline Model" },
+        { title: "💾 Memory Efficiency", value: "48% Less", description: "RAM Footprint" }
+      ],
+      notes: `We compare ${topic} against legacy frameworks, highlighting key architectural advantages and trade-offs.`
+    },
+    {
+      badge: "🚀 SCALABILITY PARADIGMS",
+      title: `⚡ High-Concurrency & Scalable Infrastructure`,
+      subtitle: `🌐 Orchestrating Distributed Nodes & Cloud Clusters`,
+      bullets: [
+        `🌐 Distributed Scale: Expanding horizontal capacity without performance degradation.`,
+        `⚡ Dynamic Auto-Scaling: Allocating compute resources dynamically based on load.`,
+        `🔄 High Availability: Zero-downtime failover across geo-distributed nodes.`
+      ],
+      cards: [
+        { title: "🌐 Max Concurrency", value: "100k Req/s", description: "Stress Benchmark" },
+        { title: "🔄 Failover SLA", value: "99.999%", description: "Availability Assurance" }
+      ],
+      notes: `Scalability models illustrate how ${topic} handles peak concurrency workloads smoothly.`
+    },
+    {
+      badge: "🗺️ STRATEGIC ROADMAP",
+      title: `🚀 Deployment Phases & Future Developments`,
+      subtitle: `📅 Milestones for Production Rollout & Upgrades`,
+      bullets: [
+        `📅 Phase 1 (Proof of Concept): Initial validation and prototype testing.`,
+        `📅 Phase 2 (Staging & Integration): API integration and stress testing.`,
+        `📅 Phase 3 (Global Rollout): Full-scale deployment and continuous refinement.`
+      ],
+      cards: [
+        { title: "📅 Rollout Duration", value: "90 Days", description: "Phase Timeline" },
+        { title: "🚀 Next Milestone", value: "v2.0 Beta", description: "Next Generation" }
+      ],
+      notes: `Our implementation roadmap outlines the structured phases for deploying and expanding ${topic}.`
+    },
+    {
+      badge: "🎉 CONCLUSION & DISCUSSION",
+      title: `✨ Summary of Contributions & Q&A`,
+      subtitle: `💬 Key Takeaways & Open Floor for Discussion`,
+      bullets: [
+        `🎯 Primary Takeaway: ${topic} provides a robust, scalable framework for modern applications.`,
+        `💡 Strategic Value: Combining theoretical rigor with practical empirical gains.`,
+        `💬 Interactive Q&A: Opening the session to audience feedback and inquiries.`
+      ],
+      cards: [
+        { title: "📧 Support Contact", value: "support@adyapanai.com", description: "Research Collaborations" },
+        { title: "🌐 AI Platform", value: "www.adyapanai.com", description: "Explore AI Learning Hub" }
+      ],
+      notes: `Thank you for your attention. We now invite any questions or discussion points regarding ${topic}.`
+    }
+  ];
+
   const defaultSlides: PresentationSlideSpec[] = Array.from({ length: slideCount }).map((_, idx) => {
     const slideNum = idx + 1;
-    if (slideNum === 1) {
-      return {
-        id: 1,
-        layout: "hero",
-        title: `✨ ${topic}`,
-        subtitle: "🚀 Keynote Academic & Professional Presentation",
-        badge: `🤖 ${type} Presentation`,
-        bullets: [
-          `🧠 Comprehensive Theoretical Framework of ${topic}`,
-          "📊 Empirical Benchmarking & Performance Data",
-          "⚡ Strategic Roadmap & Practical Applications"
-        ],
-        cards: [
-          { title: "🎯 Presentation Length", value: `${slideCount} Slides`, description: "Structured Modules" },
-          { title: "🔥 Target Audience", value: audience, description: "Professional Level" }
-        ],
-        images: [
-          { url: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200", alt: topic, caption: "Modern Technological Infrastructure" }
-        ],
-        icons: ["Cpu", "Zap", "Layers"],
-        charts: [],
-        diagrams: [],
-        speakerNotes: `Welcome everyone. Today we examine ${topic} in detail across ${slideCount} structured slides.`,
-        speakingTimeMinutes: 2
-      };
-    }
-
-    if (slideNum === slideCount) {
-      return {
-        id: slideNum,
-        layout: "thank-you",
-        title: "✨ Conclusion & Thank You",
-        subtitle: "💬 Questions & Discussion",
-        badge: "🎉 Final Summary Slide",
-        bullets: [
-          "🎯 Summary of Key Academic Findings",
-          "💡 Open Q&A Session & Discussion",
-          "🌐 Further References & Contact Details"
-        ],
-        cards: [
-          { title: "📧 Support Email", value: "support@adyapanai.com", description: "Inquiries & Collaboration" },
-          { title: "🚀 AI Hub Platform", value: "www.adyapanai.com", description: "AI Learning Hub" }
-        ],
-        images: [],
-        icons: ["CheckCircle2", "Sparkles", "Rocket"],
-        charts: [],
-        diagrams: [],
-        speakerNotes: "Thank you for your time. I am now happy to open the floor to any questions.",
-        speakingTimeMinutes: 3
-      };
-    }
-
-    const layouts: PresentationSlideSpec["layout"][] = ["split", "cards-grid", "statistics", "timeline", "process", "comparison", "roadmap", "swot"];
-    const layout = layouts[(idx - 1) % layouts.length];
-    const emojis = ["🧠", "⚡", "🔬", "📊", "🎯", "🛡️", "🌐", "💡", "🚀"];
-    const emo = emojis[idx % emojis.length];
+    const tpl = chapterTemplates[idx % chapterTemplates.length];
+    const layouts: PresentationSlideSpec["layout"][] = ["hero", "split", "cards-grid", "statistics", "timeline", "process", "comparison", "roadmap", "swot"];
+    const layout = layouts[idx % layouts.length];
 
     return {
       id: slideNum,
       layout,
-      title: `${emo} Slide ${slideNum}: ${topic} Analysis`,
-      subtitle: `🔍 Detailed Investigation & Data Insights (${type})`,
-      badge: `📌 Module ${slideNum}`,
-      bullets: [
-        `🧠 Key Architectural Principle ${slideNum}.1`,
-        `📊 Empirical Performance Metric ${slideNum}.2`,
-        `⚡ Operational Best Practice ${slideNum}.3`
-      ],
-      cards: [
-        { title: "🚀 Efficiency Gain", value: `${30 + slideNum * 3}%`, description: "Measured Performance Optimization" },
-        { title: "🛡️ System Reliability", value: "99.9%", description: "Fault-Tolerant Execution" }
-      ],
+      title: tpl.title,
+      subtitle: tpl.subtitle,
+      badge: `SLIDE ${slideNum} OF ${slideCount} · ${tpl.badge}`,
+      bullets: tpl.bullets,
+      cards: tpl.cards,
       images: [
-        { url: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200", alt: `${topic} Module ${slideNum}`, caption: `System Architecture Diagram ${slideNum}` }
+        { url: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200", alt: topic, caption: `${topic} - Module ${slideNum} Visual` }
       ],
-      icons: ["Layers", "BarChart", "Cpu"],
+      icons: ["Cpu", "Zap", "Layers"],
       charts: slideNum % 3 === 0 ? [
         {
           type: "bar",
@@ -228,10 +321,11 @@ Return ONLY a valid JSON object matching this schema:
         }
       ] : [],
       diagrams: [],
-      speakerNotes: `In Slide ${slideNum}, we analyze the core metrics and operational parameters of ${topic}.`,
+      speakerNotes: tpl.notes,
       speakingTimeMinutes: 2
     };
   });
+
 
   const fallback: PresentationSpec = {
     title: topic,

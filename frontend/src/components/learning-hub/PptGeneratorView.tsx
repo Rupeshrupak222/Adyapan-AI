@@ -63,6 +63,116 @@ const THEME_OPTIONS = [
   { id: "minimal-emerald", label: "🌿 Minimal Emerald", desc: "Emerald Accent, Modern Academic" }
 ];
 
+const THEME_STYLES: Record<string, {
+  bgGradient: string;
+  border: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  titleAccent: string;
+  subtitleAccent: string;
+  bulletDot: string;
+  cardBg: string;
+  cardBorder: string;
+  cardTitle: string;
+  cardValBg: string;
+  cardValText: string;
+  notesBg: string;
+  notesBorder: string;
+  notesText: string;
+}> = {
+  "tech-premium": {
+    bgGradient: "linear-gradient(135deg, #1c1917 0%, #0c0a09 100%)",
+    border: "rgba(245, 158, 11, 0.3)",
+    badgeBg: "rgba(245, 158, 11, 0.12)",
+    badgeText: "#fbbf24",
+    badgeBorder: "rgba(245, 158, 11, 0.25)",
+    titleAccent: "#f59e0b",
+    subtitleAccent: "#fbbf24",
+    bulletDot: "#f59e0b",
+    cardBg: "rgba(12, 10, 9, 0.8)",
+    cardBorder: "rgba(245, 158, 11, 0.2)",
+    cardTitle: "#fbbf24",
+    cardValBg: "rgba(245, 158, 11, 0.2)",
+    cardValText: "#fef3c7",
+    notesBg: "rgba(245, 158, 11, 0.05)",
+    notesBorder: "rgba(245, 158, 11, 0.2)",
+    notesText: "#f59e0b"
+  },
+  "dark-glass": {
+    bgGradient: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
+    border: "rgba(139, 92, 246, 0.35)",
+    badgeBg: "rgba(139, 92, 246, 0.15)",
+    badgeText: "#c084fc",
+    badgeBorder: "rgba(139, 92, 246, 0.3)",
+    titleAccent: "#a855f7",
+    subtitleAccent: "#38bdf8",
+    bulletDot: "#38bdf8",
+    cardBg: "rgba(15, 23, 42, 0.75)",
+    cardBorder: "rgba(56, 189, 248, 0.25)",
+    cardTitle: "#38bdf8",
+    cardValBg: "rgba(139, 92, 246, 0.25)",
+    cardValText: "#e9d5ff",
+    notesBg: "rgba(139, 92, 246, 0.08)",
+    notesBorder: "rgba(139, 92, 246, 0.25)",
+    notesText: "#c084fc"
+  },
+  "corporate-blue": {
+    bgGradient: "linear-gradient(135deg, #0b192c 0%, #1e3e62 100%)",
+    border: "rgba(59, 130, 246, 0.35)",
+    badgeBg: "rgba(59, 130, 246, 0.15)",
+    badgeText: "#60a5fa",
+    badgeBorder: "rgba(59, 130, 246, 0.3)",
+    titleAccent: "#3b82f6",
+    subtitleAccent: "#93c5fd",
+    bulletDot: "#3b82f6",
+    cardBg: "rgba(11, 25, 44, 0.8)",
+    cardBorder: "rgba(59, 130, 246, 0.25)",
+    cardTitle: "#60a5fa",
+    cardValBg: "rgba(59, 130, 246, 0.2)",
+    cardValText: "#dbeafe",
+    notesBg: "rgba(59, 130, 246, 0.08)",
+    notesBorder: "rgba(59, 130, 246, 0.25)",
+    notesText: "#60a5fa"
+  },
+  "cyberpunk-amber": {
+    bgGradient: "linear-gradient(135deg, #180000 0%, #2a0800 100%)",
+    border: "rgba(255, 107, 0, 0.4)",
+    badgeBg: "rgba(255, 107, 0, 0.18)",
+    badgeText: "#ff8c00",
+    badgeBorder: "rgba(255, 107, 0, 0.35)",
+    titleAccent: "#ff6b00",
+    subtitleAccent: "#facc15",
+    bulletDot: "#ff6b00",
+    cardBg: "rgba(24, 0, 0, 0.85)",
+    cardBorder: "rgba(255, 107, 0, 0.3)",
+    cardTitle: "#facc15",
+    cardValBg: "rgba(255, 107, 0, 0.25)",
+    cardValText: "#fef08a",
+    notesBg: "rgba(255, 107, 0, 0.1)",
+    notesBorder: "rgba(255, 107, 0, 0.3)",
+    notesText: "#ff8c00"
+  },
+  "minimal-emerald": {
+    bgGradient: "linear-gradient(135deg, #062319 0%, #02140e 100%)",
+    border: "rgba(16, 185, 129, 0.35)",
+    badgeBg: "rgba(16, 185, 129, 0.15)",
+    badgeText: "#34d399",
+    badgeBorder: "rgba(16, 185, 129, 0.3)",
+    titleAccent: "#10b981",
+    subtitleAccent: "#6ee7b7",
+    bulletDot: "#10b981",
+    cardBg: "rgba(2, 20, 14, 0.85)",
+    cardBorder: "rgba(16, 185, 129, 0.25)",
+    cardTitle: "#34d399",
+    cardValBg: "rgba(16, 185, 129, 0.2)",
+    cardValText: "#d1fae5",
+    notesBg: "rgba(16, 185, 129, 0.08)",
+    notesBorder: "rgba(16, 185, 129, 0.25)",
+    notesText: "#34d399"
+  }
+};
+
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.4 } }) };
 const scaleIn = { hidden: { opacity: 0, scale: 0.92 }, visible: (i = 0) => ({ opacity: 1, scale: 1, transition: { delay: i * 0.07, duration: 0.35 } }) };
 const slideRight = { hidden: { opacity: 0, x: -24 }, visible: (i = 0) => ({ opacity: 1, x: 0, transition: { delay: i * 0.07, duration: 0.4 } }) };
@@ -611,40 +721,43 @@ export function PptGeneratorView() {
               </motion.div>
 
               {/* RIGHT PANEL SLIDE CANVAS */}
+
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="flex-1 flex flex-col min-w-0">
                 <div className="space-y-3 pb-4">
                   {(() => {
                     const currentSlide = slides[activeSlide] || slides[0];
+                    const tStyle = THEME_STYLES[selectedTheme] || THEME_STYLES["tech-premium"];
                     return (
                       <motion.div key={activeSlide} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                        className="rounded-2xl p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden"
-                        style={{ background: c.cardBg, border: `1px solid ${c.amberBorder}`, minHeight: "420px" }}>
+                        className="rounded-2xl p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden transition-all duration-500"
+                        style={{ background: tStyle.bgGradient, border: `1px solid ${tStyle.border}`, minHeight: "440px" }}>
                         <div>
                           {/* Badge & Layout Tag */}
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
+                            <span className="text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1.5 border"
+                              style={{ background: tStyle.badgeBg, color: tStyle.badgeText, borderColor: tStyle.badgeBorder }}>
                               {currentSlide.badge || `🤖 SLIDE ${activeSlide + 1} OF ${slides.length}`}
                             </span>
-                            <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                            <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-slate-900/80 text-slate-300 border border-slate-700">
                               {currentSlide.layout || "Keynote Spec"}
                             </span>
                           </div>
 
                           {/* Title & Subtitle with Emojis */}
                           <div className="mb-4">
-                            <h3 className="text-xl font-extrabold tracking-tight mb-1" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+                            <h3 className="text-xl font-extrabold tracking-tight mb-1 text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
                               {currentSlide.title}
                             </h3>
                             {currentSlide.subtitle && (
-                              <p className="text-xs font-medium text-amber-400/90">{currentSlide.subtitle}</p>
+                              <p className="text-xs font-semibold" style={{ color: tStyle.subtitleAccent }}>{currentSlide.subtitle}</p>
                             )}
                           </div>
 
                           {/* Bullets with Emojis */}
                           <div className="space-y-2 mb-4">
                             {currentSlide.bullets?.map((bullet, j) => (
-                              <div key={j} className="flex items-start gap-2.5 text-sm leading-relaxed" style={{ color: c.textSec }}>
-                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: c.amber }} />
+                              <div key={j} className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-200">
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: tStyle.bulletDot }} />
                                 <span>{bullet}</span>
                               </div>
                             ))}
@@ -654,12 +767,13 @@ export function PptGeneratorView() {
                           {currentSlide.cards && currentSlide.cards.length > 0 && (
                             <div className="grid grid-cols-2 gap-3 my-3">
                               {currentSlide.cards.map((card, ci) => (
-                                <div key={ci} className="p-3 rounded-xl border bg-slate-950/60 border-amber-500/20 flex flex-col justify-between">
+                                <div key={ci} className="p-3 rounded-xl border flex flex-col justify-between"
+                                  style={{ background: tStyle.cardBg, borderColor: tStyle.cardBorder }}>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-bold text-amber-400 truncate">{card.title}</span>
-                                    {card.value && <span className="text-xs font-black px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">{card.value}</span>}
+                                    <span className="text-[11px] font-bold truncate" style={{ color: tStyle.cardTitle }}>{card.title}</span>
+                                    {card.value && <span className="text-xs font-black px-1.5 py-0.5 rounded" style={{ background: tStyle.cardValBg, color: tStyle.cardValText }}>{card.value}</span>}
                                   </div>
-                                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{card.description}</p>
+                                  <p className="text-[11px] text-slate-300 mt-1 line-clamp-2">{card.description}</p>
                                 </div>
                               ))}
                             </div>
@@ -667,11 +781,11 @@ export function PptGeneratorView() {
 
                           {/* Stock Image Preview */}
                           {currentSlide.images && currentSlide.images.length > 0 && (
-                            <div className="my-2 p-2 rounded-xl bg-slate-900/40 border border-slate-800 flex items-center gap-3">
-                              <img src={currentSlide.images[0].url} alt={currentSlide.images[0].alt} className="w-16 h-12 object-cover rounded-lg shrink-0 border border-amber-500/20" />
+                            <div className="my-2 p-2 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+                              <img src={currentSlide.images[0].url} alt={currentSlide.images[0].alt} className="w-16 h-12 object-cover rounded-lg shrink-0 border" style={{ borderColor: tStyle.border }} />
                               <div>
-                                <span className="text-[10px] font-bold text-amber-400 block uppercase">Visual Asset</span>
-                                <p className="text-xs text-slate-300 line-clamp-1">{currentSlide.images[0].caption || currentSlide.images[0].alt}</p>
+                                <span className="text-[10px] font-bold block uppercase" style={{ color: tStyle.titleAccent }}>Visual Asset</span>
+                                <p className="text-xs text-slate-200 line-clamp-1">{currentSlide.images[0].caption || currentSlide.images[0].alt}</p>
                               </div>
                             </div>
                           )}
@@ -679,9 +793,9 @@ export function PptGeneratorView() {
 
                         {/* Speaker Notes */}
                         {(currentSlide.speakerNotes || currentSlide.notes) && (
-                          <div className="mt-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
-                            <span className="text-[10px] uppercase tracking-widest font-black block mb-1 text-amber-400">🎙️ Speaker Notes</span>
-                            <p className="text-xs italic text-slate-300">&quot;{currentSlide.speakerNotes || currentSlide.notes}&quot;</p>
+                          <div className="mt-4 p-3 rounded-xl border" style={{ background: tStyle.notesBg, borderColor: tStyle.notesBorder }}>
+                            <span className="text-[10px] uppercase tracking-widest font-black block mb-1" style={{ color: tStyle.notesText }}>🎙️ Speaker Notes</span>
+                            <p className="text-xs italic text-slate-200">&quot;{currentSlide.speakerNotes || currentSlide.notes}&quot;</p>
                           </div>
                         )}
                       </motion.div>
