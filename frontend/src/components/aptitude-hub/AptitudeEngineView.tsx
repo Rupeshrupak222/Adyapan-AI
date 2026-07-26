@@ -261,21 +261,24 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     const timeTakenMs = Date.now() - questionStartTime;
     const isCorrect = selectedIdx !== null && selectedIdx === currentQ.correctIdx;
 
-    const answer: AptitudeAnswer = {
-      questionIdx: progress.currentIdx,
-      questionId: currentQ.id,
-      selectedIdx,
-      correct: isCorrect,
-      timeTakenMs,
-      bookmarked: false,
-      flagged: false,
-      notes: ""
-    };
-
-    setProgress(prev => ({
-      ...prev,
-      answers: [...prev.answers, answer]
-    }));
+    setProgress(prev => {
+      const existing = prev.answers.find(a => a.questionIdx === progress.currentIdx);
+      const updatedAnswer: AptitudeAnswer = {
+        questionIdx: progress.currentIdx,
+        questionId: currentQ.id,
+        selectedIdx,
+        correct: isCorrect,
+        timeTakenMs,
+        bookmarked: existing?.bookmarked ?? false,
+        flagged: existing?.flagged ?? false,
+        notes: existing?.notes ?? ""
+      };
+      const filtered = prev.answers.filter(a => a.questionIdx !== progress.currentIdx);
+      return {
+        ...prev,
+        answers: [...filtered, updatedAnswer]
+      };
+    });
 
     try {
       await api.post("/aptitude/session/answer", {
@@ -355,38 +358,68 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
 
   const toggleBookmark = useCallback((idx: number) => {
     setProgress(prev => {
-      const newAnswers = [...prev.answers];
-      const answer = newAnswers[idx];
-      if (answer) {
-        newAnswers[idx] = { ...answer, bookmarked: !answer.bookmarked };
-      }
+      const existing = prev.answers.find(a => a.questionIdx === idx);
+      const filtered = prev.answers.filter(a => a.questionIdx !== idx);
+      const updated: AptitudeAnswer = existing
+        ? { ...existing, bookmarked: !existing.bookmarked }
+        : {
+            questionIdx: idx,
+            questionId: session?.questions[idx]?.id || "",
+            selectedIdx: null,
+            correct: false,
+            timeTakenMs: 0,
+            bookmarked: true,
+            flagged: false,
+            notes: ""
+          };
+      const newAnswers = [...filtered, updated];
       const bookmarkedCount = newAnswers.filter(a => a.bookmarked).length;
       return { ...prev, answers: newAnswers, bookmarkedCount };
     });
-  }, []);
+  }, [session]);
 
   const toggleFlag = useCallback((idx: number) => {
     setProgress(prev => {
-      const newAnswers = [...prev.answers];
-      const answer = newAnswers[idx];
-      if (answer) {
-        newAnswers[idx] = { ...answer, flagged: !answer.flagged };
-      }
+      const existing = prev.answers.find(a => a.questionIdx === idx);
+      const filtered = prev.answers.filter(a => a.questionIdx !== idx);
+      const updated: AptitudeAnswer = existing
+        ? { ...existing, flagged: !existing.flagged }
+        : {
+            questionIdx: idx,
+            questionId: session?.questions[idx]?.id || "",
+            selectedIdx: null,
+            correct: false,
+            timeTakenMs: 0,
+            bookmarked: false,
+            flagged: true,
+            notes: ""
+          };
+      const newAnswers = [...filtered, updated];
       const flaggedCount = newAnswers.filter(a => a.flagged).length;
       return { ...prev, answers: newAnswers, flaggedCount };
     });
-  }, []);
+  }, [session]);
 
   const addNote = useCallback((idx: number, note: string) => {
     setProgress(prev => {
-      const newAnswers = [...prev.answers];
-      const answer = newAnswers[idx];
-      if (answer) {
-        newAnswers[idx] = { ...answer, notes: note };
-      }
+      const existing = prev.answers.find(a => a.questionIdx === idx);
+      const filtered = prev.answers.filter(a => a.questionIdx !== idx);
+      const updated: AptitudeAnswer = existing
+        ? { ...existing, notes: note }
+        : {
+            questionIdx: idx,
+            questionId: session?.questions[idx]?.id || "",
+            selectedIdx: null,
+            correct: false,
+            timeTakenMs: 0,
+            bookmarked: false,
+            flagged: false,
+            notes: note
+          };
+      const newAnswers = [...filtered, updated];
       return { ...prev, answers: newAnswers };
     });
-  }, []);
+  }, [session]);
 
   const navigateToQuestion = useCallback((idx: number) => {
     setProgress(prev => ({ ...prev, currentIdx: idx }));
@@ -422,13 +455,13 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
   }, []);
 
   const currentQuestion = session?.questions[progress.currentIdx] || null;
-  const currentAnswer = progress.answers[progress.currentIdx] || null;
+  const currentAnswer = progress.answers.find(a => a.questionIdx === progress.currentIdx) || null;
   const isTimedMode = session?.mode === "timed_quiz" || session?.mode === "company_test";
   const progressPercent = session ? Math.round(((progress.answers.length) / session.totalQuestions) * 100) : 0;
 
   const getAnswerStatusForNav = (idx: number): "correct" | "incorrect" | "skipped" | "current" | "unanswered" => {
     if (idx === progress.currentIdx) return "current";
-    const answer = progress.answers[idx];
+    const answer = progress.answers.find(a => a.questionIdx === idx);
     if (!answer) return "unanswered";
     if (answer.selectedIdx === null) return "skipped";
     if (answer.correct) return "correct";
@@ -1035,10 +1068,11 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                     theme={theme}
                     showExplanation={showExplanation}
                     timeElapsed={Math.floor((Date.now() - questionStartTime) / 1000)}
-                    onSelectOption={(idx) => submitAnswer(idx)}
-                    onSubmit={() => {
-                      if (currentAnswer) return;
-                      submitAnswer(progress.answers[progress.currentIdx]?.selectedIdx ?? null);
+                    onSelectOption={(idx) => {
+                      // Handled locally in QuestionCard for smooth state transition
+                    }}
+                    onSubmit={(selectedIdx) => {
+                      submitAnswer(selectedIdx ?? null);
                     }}
                     onNext={handleNextQuestion}
                     onBookmark={() => toggleBookmark(progress.currentIdx)}

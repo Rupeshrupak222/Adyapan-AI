@@ -46,8 +46,8 @@ interface QuestionCardProps {
   theme?: string;
   showExplanation: boolean;
   timeElapsed: number;
-  onSelectOption: (idx: number) => void;
-  onSubmit: () => void;
+  onSelectOption?: (idx: number) => void;
+  onSubmit: (selectedIdx?: number | null) => void;
   onNext: () => void;
   onBookmark: () => void;
   onFlag: () => void;
@@ -103,11 +103,16 @@ export default function QuestionCard({
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    setSelectedIdx(null);
-    setIsSubmitted(false);
+    if (answer && answer.selectedIdx !== null) {
+      setSelectedIdx(answer.selectedIdx);
+      setIsSubmitted(true);
+    } else {
+      setSelectedIdx(null);
+      setIsSubmitted(false);
+    }
     setNotesOpen(false);
     setNotesValue(answer?.notes || "");
-  }, [question.id]);
+  }, [question.id, answer]);
 
   const isBookmarked = answer?.bookmarked ?? false;
   const isFlagged = answer?.flagged ?? false;
@@ -127,10 +132,16 @@ export default function QuestionCard({
   const isTimerLow = timeElapsed > question.estimatedTimeSec * 1.5;
   const isTimerCritical = timeElapsed > question.estimatedTimeSec * 2;
 
+  const handleSelectOption = (oIdx: number) => {
+    if (isSubmitted) return;
+    setSelectedIdx(oIdx);
+    if (onSelectOption) onSelectOption(oIdx);
+  };
+
   const handleSubmit = () => {
     if (selectedIdx === null || isSubmitted) return;
     setIsSubmitted(true);
-    onSubmit();
+    onSubmit(selectedIdx);
   };
 
   const handleNext = () => {
@@ -261,7 +272,7 @@ export default function QuestionCard({
               custom={oIdx}
               whileHover={!isSubmitted ? { y: -2, scale: 1.01 } : {}}
               whileTap={!isSubmitted ? { scale: 0.97 } : {}}
-              onClick={() => !isSubmitted && onSelectOption(oIdx)}
+              onClick={() => !isSubmitted && handleSelectOption(oIdx)}
               className="p-3.5 border rounded-xl cursor-pointer transition-all flex items-center gap-3"
               style={{ background: optBg, borderColor: optBorder, color: optText }}
             >
