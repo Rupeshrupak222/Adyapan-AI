@@ -43,6 +43,7 @@ import { configRouter } from "./config.routes";
 import { searchRouter } from "./search.routes";
 import { blogRouter } from "./blog.routes";
 import { placementRouter } from "./placement.routes";
+import { placementIntelligenceRouter } from "./placement-intelligence.routes";
 import { aptitudeEngineRouter } from "./aptitude-engine.routes";
 import { engineRouter } from "./engine.routes";
 import { technicalEngineRouter } from "./technical-engine.routes";
@@ -123,6 +124,9 @@ apiRouter.use("/interview/hr", hrInterviewRouter);
 
 // Placement Hub Routes
 apiRouter.use("/placement", placementRouter);
+
+// Placement Intelligence Routes
+apiRouter.use("/placement/intelligence", placementIntelligenceRouter);
 
 // Aptitude Engine Routes
 apiRouter.use("/aptitude", aptitudeEngineRouter);
