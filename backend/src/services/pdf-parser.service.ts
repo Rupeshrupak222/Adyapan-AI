@@ -14,28 +14,82 @@ export interface ParsedPDFResult {
   rawText: string;
 }
 
-export async function parseUploadedPDFBuffer(buffer: Buffer): Promise<ParsedPDFResult> {
-  let parsedText = "";
+/**
+ * Extract clean, readable plain text from a PDF Buffer.
+ * Guaranteed to NEVER return raw binary PDF headers (%PDF-1.5...) or unparsed byte streams.
+ */
+export async function extractPdfText(buffer: Buffer): Promise<string> {
+  if (!buffer || buffer.length === 0) return "";
+
+  // 1. Primary: Use pdf-parse v2 PDFParse class API
   try {
-    const pdf = require("pdf-parse");
-    const parseFn = typeof pdf === "function" ? pdf : (pdf.PDFParse || pdf.default);
+    const pdfModule = require("pdf-parse");
+    const PDFParseClass = pdfModule.PDFParse || (pdfModule.default && pdfModule.default.PDFParse);
+    if (typeof PDFParseClass === "function") {
+      const parser = new PDFParseClass({ data: new Uint8Array(buffer) });
+      const textResult = await parser.getText();
+      if (parser.destroy) {
+        await parser.destroy().catch(() => {});
+      }
+      const text = typeof textResult === "string" ? textResult : (textResult?.text || "");
+      if (text && text.trim().length > 0) {
+        return text;
+      }
+    }
+
+    // 2. Legacy pdf-parse function API
+    const parseFn = typeof pdfModule === "function" ? pdfModule : pdfModule.default;
     if (typeof parseFn === "function") {
       const pdfData = await parseFn(buffer);
-      parsedText = pdfData.text || "";
-    } else {
-      parsedText = buffer.toString("utf-8").slice(0, 10000);
+      const text = typeof pdfData === "string" ? pdfData : (pdfData?.text || "");
+      if (text && text.trim().length > 0) {
+        return text;
+      }
     }
   } catch (err: any) {
-    console.warn("[PDFParser] Fallback text extraction for PDF failed:", err.message);
-    parsedText = buffer.toString("utf-8").slice(0, 10000);
+    console.warn("[PDFParser] Primary pdf-parse extraction failed:", err?.message || err);
   }
 
-  // Clean raw text
-  const cleanText = parsedText.replace(/\r\n/g, "\n").replace(/\t/g, " ");
+  // 3. Fallback: Extract text tokens from uncompressed PDF streams
+  try {
+    const latin1String = buffer.toString("latin1");
+    const stringMatches: string[] = [];
+    const literalRegex = /\(([^()\\]*(?:\\.[^()\\]*)*)\)\s*(?:Tj|TJ|'|")/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = literalRegex.exec(latin1String)) !== null) {
+      if (match[1]) {
+        const decoded = match[1]
+          .replace(/\\\( /g, "(")
+          .replace(/\\\)/g, ")")
+          .replace(/\\n/g, "\n")
+          .replace(/\\r/g, "\r")
+          .replace(/\\t/g, "\t")
+          .replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+        const trimmed = decoded.trim();
+        if (trimmed.length > 0 && !/^[\x00-\x1F\x7F-\xFF]+$/.test(trimmed)) {
+          stringMatches.push(trimmed);
+        }
+      }
+    }
+
+    if (stringMatches.length > 5) {
+      return stringMatches.join(" ");
+    }
+  } catch (fallbackErr: any) {
+    console.warn("[PDFParser] Fallback stream parsing failed:", fallbackErr?.message);
+  }
+
+  // NEVER return raw binary %PDF-1.5 bytes!
+  return "";
+}
+
+export async function parseUploadedPDFBuffer(buffer: Buffer): Promise<ParsedPDFResult> {
+  const cleanText = await extractPdfText(buffer);
   const lines = cleanText.split("\n").map(l => l.trim()).filter(Boolean);
 
   // Heuristic extractions
-  const title = lines.slice(0, 3).join(" ").slice(0, 200) || "Uploaded Research Paper";
+  const title = lines.slice(0, 3).join(" ").slice(0, 200) || "Uploaded Document";
 
   // Abstract extraction
   let abstract = "";

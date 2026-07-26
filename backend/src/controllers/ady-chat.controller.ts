@@ -17,19 +17,10 @@ const uploadMemory = multer({
 
 export const uploadChatFile = uploadMemory.single("file");
 
+import { extractPdfText } from "../services/pdf-parser.service";
+
 async function parsePdf(buffer: Buffer): Promise<string> {
-  try {
-    const pdf = require("pdf-parse");
-    const parseFn = typeof pdf === "function" ? pdf : (pdf?.PDFParse || pdf?.default);
-    if (typeof parseFn === "function") {
-      const result = await parseFn(buffer);
-      return typeof result === "string" ? result : result?.text || "";
-    }
-    return buffer.toString("utf-8");
-  } catch (err: any) {
-    console.warn("[parsePdf] PDF parsing fallback:", err?.message);
-    return buffer.toString("utf-8");
-  }
+  return extractPdfText(buffer);
 }
 
 async function extractTextFromFile(file: Express.Multer.File): Promise<string> {
