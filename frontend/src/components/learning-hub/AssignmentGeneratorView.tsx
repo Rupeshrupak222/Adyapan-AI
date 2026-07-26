@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { stripMarkdown } from "@/utils/stripMarkdown";
 import {
   PenTool, Copy, FileDown, RefreshCw, ChevronRight, Search, Plus, History,
-  CheckCircle2, Sparkles, Brain, Zap, Star, X, FileText, Layers, Quote, Trash2
+  CheckCircle2, Sparkles, Brain, Zap, Star, X, FileText, Layers, Quote, Trash2, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSocket } from "@/context/SocketContext";
@@ -180,6 +180,77 @@ export function AssignmentGeneratorView() {
   const [showHistory, setShowHistory] = useState(false);
   const [historySearch, setHistorySearch] = useState("");
   const [history, setHistory] = useState<Array<{ name: string; date: string; level: string; words: string; data: AssignmentContent }>>([]);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingDocx, setExportingDocx] = useState(false);
+
+  const handleExportPdf = async () => {
+    if (!result) return;
+    setExportingPdf(true);
+    try {
+      const fullMarkdown = sections.map(s => `## ${s.title} (${s.pageEstimate || ""})\n\n${s.content}`).join("\n\n");
+      const res = await api.post("/export/assignment/pdf", {
+        assignmentTitle: result.title || topic,
+        topic: result.title || topic,
+        academicLevel: result.academicLevel || level,
+        wordCount: result.totalWords || parseInt(wordCount) || 3500,
+        content: fullMarkdown,
+        format: "pdf"
+      }, { responseType: "blob", timeout: 120000 });
+
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(result.title || topic).replace(/\s+/g, "_")}_AdyapanAI.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Assignment PDF downloaded successfully!");
+    } catch (err) {
+      console.error("PDF export error:", err);
+      toast.error("PDF export failed. Downloading Markdown fallback.");
+      const txt = `# ${result.title || topic}\n\n` + sections.map(s => `## ${s.title}\n\n${s.content}`).join("\n\n");
+      const blob = new Blob([txt], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `${(result.title || topic).replace(/\s+/g, "_")}_assignment.md`; a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const handleExportDocx = async () => {
+    if (!result) return;
+    setExportingDocx(true);
+    try {
+      const fullMarkdown = sections.map(s => `## ${s.title} (${s.pageEstimate || ""})\n\n${s.content}`).join("\n\n");
+      const res = await api.post("/export/assignment/docx", {
+        assignmentTitle: result.title || topic,
+        topic: result.title || topic,
+        academicLevel: result.academicLevel || level,
+        wordCount: result.totalWords || parseInt(wordCount) || 3500,
+        content: fullMarkdown,
+        format: "docx"
+      }, { responseType: "blob", timeout: 120000 });
+
+      const blob = new Blob([res.data], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(result.title || topic).replace(/\s+/g, "_")}_AdyapanAI.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Assignment DOCX downloaded successfully!");
+    } catch (err) {
+      console.error("DOCX export error:", err);
+      toast.error("Failed to generate DOCX. Try downloading PDF or copying content.");
+    } finally {
+      setExportingDocx(false);
+    }
+  };
 
   const { socket, isConnected } = useSocket();
   const userIdRef = useRef<string>("");
@@ -646,16 +717,40 @@ export function AssignmentGeneratorView() {
 
                 {/* Actions */}
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="p-3 rounded-2xl shrink-0 space-y-2" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
-                  <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.textMuted }}>Actions</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.textMuted }}>Export Options</span>
+                  
+                  <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
+                    disabled={exportingPdf}
+                    onClick={handleExportPdf}
+                    className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-bold transition-all text-left" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: c.amber }}>
+                    <span className="flex items-center gap-2">
+                      {exportingPdf ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
+                      Download PDF
+                    </span>
+                    <span className="text-[9px] font-extrabold uppercase bg-amber-500/20 px-1.5 py-0.5 rounded">PDF</span>
+                  </motion.button>
+
+                  <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
+                    disabled={exportingDocx}
+                    onClick={handleExportDocx}
+                    className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-bold transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.text }}>
+                    <span className="flex items-center gap-2">
+                      {exportingDocx ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} style={{ color: c.amber }} />}
+                      Download DOCX
+                    </span>
+                    <span className="text-[9px] font-extrabold uppercase bg-slate-500/10 px-1.5 py-0.5 rounded">DOCX</span>
+                  </motion.button>
+
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       const txt = `# ${result.title || topic}\n\nLevel: ${result.academicLevel || level}\nPages: ${result.targetPages || "Custom"}\n\n` + sections.map(s => `## ${s.title} (${s.pageEstimate})\n\n${s.content}`).join("\n\n");
                       navigator.clipboard.writeText(txt);
                       toast.success("Full assignment copied to clipboard!");
                     }}
-                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
-                    <span style={{ color: c.amber }} className="shrink-0"><Copy size={13} /></span> Copy Full Assignment
+                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
+                    <span style={{ color: c.amber }} className="shrink-0"><Copy size={12} /></span> Copy Full Assignment
                   </motion.button>
+
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       const txt = `# ${result.title || topic}\n\nLevel: ${result.academicLevel || level}\nPages: ${result.targetPages || "Custom"}\n\n` + sections.map(s => `## ${s.title} (${s.pageEstimate})\n\n${s.content}`).join("\n\n");
@@ -665,12 +760,13 @@ export function AssignmentGeneratorView() {
                       URL.revokeObjectURL(url);
                       toast.success("Assignment exported as Markdown!");
                     }}
-                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
-                    <span style={{ color: c.amber }} className="shrink-0"><FileDown size={13} /></span> Download Markdown
+                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
+                    <span style={{ color: c.amber }} className="shrink-0"><FileDown size={12} /></span> Download Markdown
                   </motion.button>
+
                   <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
                     onClick={() => { setResult(null); }}
-                    className="w-full py-2 rounded-lg text-sm font-extrabold transition-all flex items-center justify-center gap-1.5" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>
+                    className="w-full py-2 rounded-lg text-sm font-extrabold transition-all flex items-center justify-center gap-1.5 mt-1" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>
                     <RefreshCw size={13} /> New Topic
                   </motion.button>
                 </motion.div>
