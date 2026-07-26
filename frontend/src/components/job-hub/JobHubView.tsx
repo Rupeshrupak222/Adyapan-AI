@@ -2368,7 +2368,7 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
             className="fixed inset-0 z-[9998] bg-black/50 lg:hidden" onClick={() => setChatOpen(false)} />
           <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 250 }}
-            className="fixed right-0 top-0 bottom-0 z-[9999] w-full max-w-sm flex flex-col border-l"
+            className="fixed right-0 top-16 bottom-0 z-[9999] w-full max-w-sm flex flex-col border-l h-[calc(100vh-4rem)]"
             style={{ background: isDark ? "#0c0d16" : "#fff", borderColor: c.border }}>
 
             {/* Header */}

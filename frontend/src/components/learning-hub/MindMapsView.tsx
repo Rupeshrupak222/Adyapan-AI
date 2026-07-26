@@ -421,7 +421,7 @@ function KnowledgePanel({
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: "100%", opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full md:w-[380px] h-full border-l shadow-2xl flex flex-col z-30 fixed right-0 top-0"
+        className="w-full md:w-[380px] border-l shadow-2xl flex flex-col z-30 fixed right-0 top-16 bottom-0 h-[calc(100vh-4rem)]"
         style={{ background: isDark ? "rgba(9,9,11,0.97)" : "#fff", borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)" }}
       >
         <div className="px-5 py-4 flex justify-between items-center shrink-0" style={{ borderBottom: `1px solid ${c.divider}` }}>

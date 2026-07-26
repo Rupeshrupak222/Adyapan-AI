@@ -934,7 +934,7 @@ function AIChatSidebar({
       {isOpen && (
         <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 250 }}
-          className="fixed right-0 top-0 bottom-0 w-full sm:w-96 z-[9998] flex flex-col border-l"
+          className="fixed right-0 top-16 bottom-0 w-full sm:w-96 z-[9998] flex flex-col border-l h-[calc(100vh-4rem)]"
           style={{ background: isDark(c) ? "#0a0b12" : "#fafbfc", borderColor: c.border }}>
           {/* Header */}
           <div className="px-5 py-4 flex items-center justify-between border-b" style={{ borderColor: c.border }}>
