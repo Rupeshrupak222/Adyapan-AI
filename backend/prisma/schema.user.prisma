@@ -1939,5 +1939,37 @@ model AIResearchLog {
   @@map("ai_research_logs")
 }
 
+model LinkedInScrapedJob {
+  id                    String    @id @default(cuid())
+  userId                String    @map("user_id")
+  apifyJobId            String?   @map("apify_job_id")
+  title                 String
+  companyName           String    @map("company_name")
+  companyLogo           String?   @map("company_logo")
+  location              String?
+  salaryInfo            String?   @map("salary_info")
+  postedAt              String?   @map("posted_at")
+  descriptionHtml       String?   @map("description_html")
+  descriptionText       String?   @map("description_text")
+  applicantsCount       String?   @map("applicants_count")
+  applyUrl              String?   @map("apply_url")
+  link                  String
+  seniorityLevel        String?   @map("seniority_level")
+  employmentType        String?   @map("employment_type")
+  jobFunction           String?   @map("job_function")
+  industries            String?
+  benefits              String?
+  jobPosterName         String?   @map("job_poster_name")
+  jobPosterTitle        String?   @map("job_poster_title")
+  companyWebsite        String?   @map("company_website")
+  companyEmployeesCount Int?      @map("company_employees_count")
+  workplaceType         String?   @map("workplace_type")
+  workRemoteAllowed     Boolean?  @map("work_remote_allowed")
+  savedAt               DateTime  @default(now()) @map("saved_at")
+  aiAnalysis            Json?     @map("ai_analysis")
 
-
+  @@unique([userId, link])
+  @@index([userId])
+  @@index([savedAt])
+  @@map("linkedin_scraped_jobs")
+}
