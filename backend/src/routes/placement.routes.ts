@@ -32,3 +32,7 @@ placementRouter.post("/coach/chat", requireAuth, coachChat);
 
 // Readiness
 placementRouter.get("/readiness", requireAuth, readinessReport);
+
+// AI Coding Assessment Engine
+import { codingAssessmentRouter } from "./coding-assessment.routes";
+placementRouter.use("/coding-assessment", codingAssessmentRouter);

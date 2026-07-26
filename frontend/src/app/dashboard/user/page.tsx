@@ -131,6 +131,9 @@ const JobHubView = dynamic(() => import("@/components/job-hub/JobHubView").then(
 const PlacementHubView = dynamic(() => import("@/components/placement-hub/PlacementHubView").then(m => m.PlacementHubView), {
   loading: () => <DashboardWidgetSkeleton title="Placement Hub" />
 });
+const CodingAssessmentView = dynamic(() => import("@/components/placement-hub/CodingAssessmentView").then(m => m.CodingAssessmentView), {
+  loading: () => <DashboardWidgetSkeleton title="Coding Assessment" />
+});
 const AptitudeEngineView = dynamic(() => import("@/components/aptitude-hub/AptitudeEngineView").then(m => m.AptitudeEngineView), {
   loading: () => <DashboardWidgetSkeleton title="AI Aptitude Engine" />
 });
@@ -2365,6 +2368,8 @@ function UserDashboardContent() {
           <HubErrorBoundary><AptitudeEngineView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "placement-hub" || activeView === "placement-aptitude" || activeView === "placement-reasoning" || activeView === "placement-mcqs" || activeView === "placement-mocks" || activeView === "placement-readiness" ? (
           <HubErrorBoundary><PlacementHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
+        ) : activeView === "placement-coding-assessment" || activeView === "coding-assessment" ? (
+          <HubErrorBoundary><CodingAssessmentView setView={setActiveView} /></HubErrorBoundary>
         ) : activeView === "productivity-hub" || activeView === "prod-email" || activeView === "prod-sop" || activeView === "prod-linkedin" || activeView === "prod-content" ? (
           <HubErrorBoundary><ProductivityHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "analytics-hub" || activeView === "analytics-learning" || activeView === "analytics-interview" || activeView === "analytics-resume" || activeView === "analytics-skills" ? (

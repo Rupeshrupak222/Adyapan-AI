@@ -371,5 +371,43 @@ model CommunityProject {
   @@map("community_projects")
 }
 
+model CodingAssessment {
+  id               String             @id @default(cuid())
+  userId           String             @map("user_id")
+  assessmentType   String             @map("assessment_type")
+  company          String
+  language         String             @default("javascript")
+  score            Float              @default(0)
+  passedTestcases  Int                @default(0) @map("passed_testcases")
+  totalTestcases   Int                @default(0) @map("total_testcases")
+  status           String             @default("in_progress")
+  reportJson       Json?              @map("report_json")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
 
+  submissions      CodingSubmission[]
 
+  @@index([userId])
+  @@index([createdAt])
+  @@map("coding_assessments")
+}
+
+model CodingSubmission {
+  id           String           @id @default(cuid())
+  assessmentId String           @map("assessment_id")
+  questionId   String           @map("question_id")
+  code         String           @db.Text
+  runtime      Float            @default(0)
+  memory       Float            @default(0)
+  verdict      String           @default("Pending")
+  passedTests  Int              @default(0) @map("passed_tests")
+  totalTests   Int              @default(0) @map("total_tests")
+  aiReviewJson Json?            @map("ai_review_json")
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  assessment   CodingAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([questionId])
+  @@map("coding_submissions")
+}
