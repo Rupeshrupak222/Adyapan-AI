@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ScoreRing, MiniScoreRing } from "@/components/ui/ScoreRing";
+import { PlacementIntelligenceWidget } from "@/components/placement-hub/PlacementIntelligenceWidget";
+import { CompanyMatchWidget } from "@/components/placement-hub/CompanyMatchWidget";
 
 interface CareerDashboardData {
   scores: {
@@ -612,6 +614,9 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
         </PremiumCard>
       </motion.div>
 
+      {/* ─── Placement Intelligence (Compact) ────────────────────── */}
+      <PlacementIntelligenceWidget compact onViewChange={navigateTo} />
+
       {/* ─── AI Daily Brief ─────────────────────────────────────── */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}>
         <PremiumCard glow className="p-5 border-amber-500/15 relative overflow-hidden">
@@ -933,6 +938,9 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
           </div>
         </PremiumCard>
       </motion.div>
+
+      {/* ─── Company Match Widget ─────────────────────────────── */}
+      <CompanyMatchWidget onViewChange={navigateTo} />
 
       {/* ─── ATS History Chart + Productivity Chart ─────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

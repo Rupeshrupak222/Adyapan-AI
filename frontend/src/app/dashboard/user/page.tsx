@@ -129,7 +129,12 @@ const JobHubView = dynamic(() => import("@/components/job-hub/JobHubView").then(
   loading: () => <DashboardWidgetSkeleton title="Job matching" />
 });
 const PlacementHubView = dynamic(() => import("@/components/placement-hub/PlacementHubView").then(m => m.PlacementHubView), {
-  loading: () => <DashboardWidgetSkeleton title="Placement Hub" />
+  loading: () => <DashboardWidgetSkeleton title="Placement Hub" />,
+  ssr: false,
+});
+const PlacementIntelligenceView = dynamic(() => import("@/components/placement-hub/PlacementIntelligenceWidget").then(m => m.PlacementIntelligenceWidget), {
+  loading: () => <DashboardWidgetSkeleton title="Placement Intelligence" />,
+  ssr: false,
 });
 const AptitudeEngineView = dynamic(() => import("@/components/aptitude-hub/AptitudeEngineView").then(m => m.AptitudeEngineView), {
   loading: () => <DashboardWidgetSkeleton title="AI Aptitude Engine" />
@@ -256,6 +261,9 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Technical MCQs", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Mock Tests", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Readiness Score", viewId: "placement-hub", category: "Placement Hub" },
+  { label: "Placement Intelligence", viewId: "placement-intelligence", category: "Placement Hub" },
+  { label: "Company Match Analysis", viewId: "placement-intelligence", category: "Placement Hub" },
+  { label: "AI Placement Score", viewId: "placement-intelligence", category: "Placement Hub" },
   { label: "AI Aptitude Engine", viewId: "aptitude-engine", category: "Placement Hub" },
   { label: "Aptitude Analytics", viewId: "aptitude-engine-analytics", category: "Placement Hub" },
   { label: "Daily Challenge", viewId: "aptitude-engine", category: "Placement Hub" },
@@ -2401,6 +2409,8 @@ function UserDashboardContent() {
           <HubErrorBoundary><AptitudeEngineView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "placement-hub" || activeView === "placement-aptitude" || activeView === "placement-reasoning" || activeView === "placement-mcqs" || activeView === "placement-mocks" || activeView === "placement-readiness" ? (
           <HubErrorBoundary><PlacementHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
+        ) : activeView === "placement-intelligence" ? (
+          <HubErrorBoundary><PlacementIntelligenceView onViewChange={setActiveView} /></HubErrorBoundary>
         ) : activeView === "productivity-hub" || activeView === "prod-email" || activeView === "prod-sop" || activeView === "prod-linkedin" || activeView === "prod-content" ? (
           <HubErrorBoundary><ProductivityHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "analytics-hub" || activeView === "analytics-learning" || activeView === "analytics-interview" || activeView === "analytics-resume" || activeView === "analytics-skills" ? (

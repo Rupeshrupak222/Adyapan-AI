@@ -1833,6 +1833,28 @@ model CareerDashboardSnapshot {
   @@map("career_dashboard_snapshots")
 }
 
+model PlacementIntelligence {
+  id                String   @id @default(cuid())
+  userId            String   @unique @map("user_id")
+  placementScore    Int      @default(0) @map("placement_score")
+  subScores         Json     @default("{}") @map("sub_scores")
+  companyMatches    Json     @default("[]") @map("company_matches")
+  skillWeights      Json     @default("[]") @map("skill_weights")
+  strengths         Json     @default("[]") @map("strengths")
+  weaknesses        Json     @default("[]") @map("weaknesses")
+  recommendations   Json     @default("[]") @map("recommendations")
+  highestImpactTask Json?    @map("highest_impact_task")
+  salaryEstimate    Json?    @map("salary_estimate")
+  readinessTimeline Json     @default("[]") @map("readiness_timeline")
+  aiInsights        Json?    @map("ai_insights")
+  lastCalculatedAt  DateTime @map("last_calculated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("placement_intelligence")
+}
+
 model ResearchPaper {
   id            String   @id @default(cuid())
   userId        String   @map("user_id")

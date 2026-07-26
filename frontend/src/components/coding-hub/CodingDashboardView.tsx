@@ -24,6 +24,7 @@ import {
   CodingEmptyState,
   codingFadeUp
 } from "@/components/coding-hub/CodingHubShared";
+import { PlacementImpactCard } from "@/components/placement-hub/PlacementImpactCard";
 import {
   DashboardSidebar,
   DashboardTopNav,
@@ -293,6 +294,9 @@ export function CodingDashboardView() {
                 </div>
               </PremiumCard>
             </motion.div>
+
+            {/* ─── PLACEMENT IMPACT ─────────────────────────────── */}
+            <PlacementImpactCard accentColor="#f59e0b" onNavigate={(v) => { localStorage.setItem("dashboard-active-view", v); router.push("/dashboard/user"); }} />
 
             {/* ─── CHARTS ROW 1: Activity + Topic Mastery ──────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

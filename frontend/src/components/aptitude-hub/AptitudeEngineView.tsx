@@ -18,6 +18,7 @@ import QuestionCard from "./QuestionCard";
 import SessionReviewComponent from "./SessionReview";
 import AptitudeAnalytics from "./AptitudeAnalytics";
 import CompanyLogo from "@/components/interview-hub/CompanyLogo";
+import { PlacementImpactCard } from "@/components/placement-hub/PlacementImpactCard";
 import type {
   AptitudeQuestion, AptitudeCategory, TestMode, AptitudeSession,
   AptitudeAnswer, SessionProgress, PerformanceAnalytics,
@@ -684,6 +685,14 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                     ))}
                   </motion.div>
                 )}
+
+                {/* ─── PLACEMENT IMPACT ──────────────────────────── */}
+                <div style={{ background: "transparent" }}>
+                  <PlacementImpactCard accentColor="#8b5cf6" onNavigate={(v) => {
+                    try { localStorage.setItem("dashboard-active-view", v); } catch {}
+                    window.location.href = "/dashboard/user";
+                  }} />
+                </div>
 
                 <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="space-y-3">
                   <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Categories</h3>
