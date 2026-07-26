@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/services/api";
 import { saveAuthSession } from "@/hooks/useAuth";
@@ -28,8 +28,9 @@ const GitHubIcon = ({ color }: { color: string }) => (
   </svg>
 );
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>("login");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
@@ -52,6 +53,16 @@ export default function LoginPage() {
   const [forgotError, setForgotError] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
 
+  // Listen to searchParams tab change dynamically (Login vs Get Started)
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "register") {
+      setTab("register");
+    } else if (tabParam === "login" || !tabParam) {
+      setTab("login");
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     document.body.classList.add("landing");
     const saved = (localStorage.getItem("adyapan-theme") as "dark" | "light") || "dark";
@@ -59,7 +70,6 @@ export default function LoginPage() {
 
     // Handle GitHub OAuth callback
     const params = new URLSearchParams(window.location.search);
-    if (params.get("tab") === "register") setTab("register");
 
     const githubStatus = params.get("github");
     if (githubStatus === "success") {
@@ -104,7 +114,7 @@ export default function LoginPage() {
     }
 
     return () => { document.body.classList.remove("landing"); observer.disconnect(); };
-  }, []);
+  }, [router]);
 
   const isDark = theme === "dark";
   const cardBg    = isDark ? "rgba(18,18,30,0.92)"      : "rgba(255,255,255,0.96)";
@@ -375,3 +385,14 @@ export default function LoginPage() {
   );
 }
 
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#080710] text-amber-500 font-bold text-sm">
+        Loading Login...
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
