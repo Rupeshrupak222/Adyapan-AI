@@ -15,9 +15,10 @@ export interface OpenRouterOptions {
 
 // Gemini model fallback chain — tried in order when one is unavailable
 const GEMINI_MODEL_FALLBACKS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-3.0-flash-lite",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
 ];
 
 // Groq model fallback chain
@@ -500,8 +501,8 @@ export const CHAT_MODELS = [
   { id: "openai/gpt-4o", name: "GPT-4o", provider: "OpenAI", cheap: false },
   { id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4", provider: "Anthropic", cheap: false },
   { id: "anthropic/claude-3.5-haiku", name: "Claude 3.5 Haiku", provider: "Anthropic", cheap: true },
-  { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash", provider: "Google", cheap: true },
-  { id: "google/gemini-2.5-pro", name: "Gemini 2.5 Pro", provider: "Google", cheap: false },
+  { id: "google/gemini-2.0-flash", name: "Gemini 2.0 Flash", provider: "Google", cheap: true },
+  { id: "google/gemini-1.5-pro", name: "Gemini 1.5 Pro", provider: "Google", cheap: false },
   { id: "deepseek/deepseek-chat", name: "DeepSeek V3", provider: "DeepSeek", cheap: true },
   { id: "deepseek/deepseek-r1", name: "DeepSeek R1", provider: "DeepSeek", cheap: true },
   { id: "meta-llama/llama-3.3-70b", name: "Llama 3.3 70B", provider: "Meta", cheap: true },

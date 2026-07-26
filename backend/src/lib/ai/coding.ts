@@ -183,7 +183,7 @@ export async function streamCodingAssistant(
       name: "Gemini",
       url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       key: envGeminiKey,
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
     });
   }
 
@@ -203,7 +203,7 @@ export async function streamCodingAssistant(
       name: "OpenRouter",
       url: "https://openrouter.ai/api/v1/chat/completions",
       key: envOpenRouterKey,
-      model: "google/gemini-2.5-flash",
+      model: "google/gemini-2.0-flash",
     });
   }
 

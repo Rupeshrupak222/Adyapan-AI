@@ -271,7 +271,7 @@ Then, on the very last line, output a JSON block with ONLY the sections that cha
 Format: SUMMARY=<<<{"summary":"...","experience":[...],"projects":[...],"skills":[...]}>>>
 Only include fields that actually changed. Omit unchanged fields.`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const result = await model.generateContentStream(prompt);
 
     let fullText = "";

@@ -38,9 +38,9 @@ export async function streamChat(
 
   // 2. Add Google Gemini if key exists
   if (env.geminiApiKey) {
-    let geminiModel = "gemini-2.5-flash";
+    let geminiModel = "gemini-2.0-flash";
     if (model.includes("gemini")) {
-      geminiModel = model.split("/").pop() || "gemini-2.5-flash";
+      geminiModel = model.split("/").pop() || "gemini-2.0-flash";
     }
     providers.push({
       name: "Gemini",
