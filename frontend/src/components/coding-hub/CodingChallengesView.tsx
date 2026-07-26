@@ -317,7 +317,7 @@ export function CodingChallengesView() {
   const [statusFilter, setStatusFilter] = useState<string>("All");
 
   // ── Theme ─────────────────────────────────────────────────────────────────
-  const bg = isDark ? "#070715" : "#f0f4ff";
+  const bg = "transparent";
   const cardBg = isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.9)";
   const primaryText = isDark ? "#fff" : "#0f172a";
   const mutedText = isDark ? "rgba(255,255,255,0.5)" : "#64748b";
@@ -405,7 +405,7 @@ export function CodingChallengesView() {
       {/* Header */}
       <div
         className="relative z-20 px-6 py-4 flex items-center gap-4 border-b flex-shrink-0"
-        style={{ borderColor: borderCol, backdropFilter: "blur(16px)", background: isDark ? "rgba(7,7,21,0.8)" : "rgba(240,244,255,0.8)" }}
+        style={{ borderColor: borderCol, backdropFilter: "blur(16px)", background: "transparent" }}
       >
         {view === "challenges" && (
           <motion.button

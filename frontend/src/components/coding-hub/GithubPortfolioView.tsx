@@ -265,7 +265,7 @@ export function GithubPortfolioView() {
     <div
       className="relative flex overflow-hidden w-full h-full"
       style={{
-        background: isDark ? "#070715" : "#f0f4ff",
+        background: "transparent",
         color: primaryText,
       }}
     >

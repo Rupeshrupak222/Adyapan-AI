@@ -7,9 +7,9 @@ export const mkColors = (theme: string) => {
     textSec:       d ? "#9ca3af"                    : "#4b5563",
     textMuted:     d ? "#828fa3"                    : "#9ca3af",
     textOnAmber:   "#000000",
-    bg:            d ? "rgba(255,255,255,0.025)"    : "#f9fafb",
+    bg:            d ? "transparent"                : "#f9fafb",
     bgGradient:    d
-      ? "linear-gradient(135deg, #0a0e1a 0%, #0d1520 30%, #111827 60%, #0a0e1a 100%)"
+      ? "transparent"
       : "linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%)",
     bgHover:       d ? "rgba(255,255,255,0.04)"    : "#f3f4f6",
     surface:       d ? "rgba(255,255,255,0.03)"    : "#f9fafb",

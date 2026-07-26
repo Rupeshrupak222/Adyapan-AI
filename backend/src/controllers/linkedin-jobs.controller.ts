@@ -10,7 +10,7 @@ import {
   analyzeJobFit,
   ScrapedJob,
 } from "../services/linkedin-jobs.service";
-import { callAIRobust } from "../lib/ai/openrouter";
+import { generateText } from "../lib/ai/openrouter";
 
 export async function searchJobs(req: Request, res: Response, next: NextFunction) {
   try {
@@ -37,8 +37,9 @@ export async function searchJobs(req: Request, res: Response, next: NextFunction
 
 export async function checkRunStatus(req: Request, res: Response, next: NextFunction) {
   try {
-    const { runId } = req.params;
-    if (!runId) {
+    const runIdParam = req.params.runId;
+    const runId = Array.isArray(runIdParam) ? runIdParam[0] : runIdParam;
+    if (!runId || typeof runId !== "string") {
       res.status(400).json({ success: false, error: "Run ID is required" });
       return;
     }
@@ -51,8 +52,9 @@ export async function checkRunStatus(req: Request, res: Response, next: NextFunc
 
 export async function fetchRunResults(req: Request, res: Response, next: NextFunction) {
   try {
-    const { datasetId } = req.params;
-    if (!datasetId) {
+    const datasetIdParam = req.params.datasetId;
+    const datasetId = Array.isArray(datasetIdParam) ? datasetIdParam[0] : datasetIdParam;
+    if (!datasetId || typeof datasetId !== "string") {
       res.status(400).json({ success: false, error: "Dataset ID is required" });
       return;
     }
@@ -92,8 +94,9 @@ export async function getSavedJobsHandler(req: Request, res: Response, next: Nex
 export async function deleteSavedJobHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = requireUserId(req);
-    const { jobId } = req.params;
-    if (!jobId) {
+    const jobIdParam = req.params.jobId;
+    const jobId = Array.isArray(jobIdParam) ? jobIdParam[0] : jobIdParam;
+    if (!jobId || typeof jobId !== "string") {
       res.status(400).json({ success: false, error: "Job ID is required" });
       return;
     }
@@ -107,16 +110,18 @@ export async function deleteSavedJobHandler(req: Request, res: Response, next: N
 export async function analyzeJobFitHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = requireUserId(req);
-    const { jobId } = req.params;
-    if (!jobId) {
+    const jobIdParam = req.params.jobId;
+    const jobId = Array.isArray(jobIdParam) ? jobIdParam[0] : jobIdParam;
+    if (!jobId || typeof jobId !== "string") {
       res.status(400).json({ success: false, error: "Job ID is required" });
       return;
     }
     const analysis = await analyzeJobFit(userId, jobId, (prompt: string) =>
-      callAIRobust(prompt, {
-        role: "Career Advisor",
-        context: "Analyze job fit for a candidate",
-      })
+      generateText(
+        "You are an expert career advisor analyzing job fit for a candidate.",
+        prompt,
+        { model: "gemini-2.0-flash" }
+      )
     );
     res.json({ success: true, analysis });
   } catch (err: any) {

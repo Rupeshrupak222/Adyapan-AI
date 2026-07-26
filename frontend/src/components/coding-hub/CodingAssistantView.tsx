@@ -29,19 +29,19 @@ const ACCENT_DARK = "#d97706";
 const ACCENT_LIGHT = "#fbbf24";
 
 const C = {
-  cardBg: (d: boolean) => d ? "rgba(15,12,40,0.7)" : "rgba(255,255,255,0.85)",
-  cardBorder: (d: boolean) => d ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)",
-  inputBg: (d: boolean) => d ? "rgba(10,8,28,0.8)" : "#ffffff",
-  inputBorder: (d: boolean) => d ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)",
+  cardBg: (d: boolean) => d ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.9)",
+  cardBorder: (d: boolean) => d ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
+  inputBg: (d: boolean) => d ? "rgba(0,0,0,0.35)" : "#ffffff",
+  inputBorder: (d: boolean) => d ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)",
   textPrimary: (d: boolean) => d ? "#ffffff" : "#1a1a2e",
-  textSecondary: (d: boolean) => d ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)",
-  textMuted: (d: boolean) => d ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)",
-  divider: (d: boolean) => d ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
-  headerBg: (d: boolean) => d ? "rgba(7,7,21,0.92)" : "rgba(255,255,255,0.92)",
+  textSecondary: (d: boolean) => d ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)",
+  textMuted: (d: boolean) => d ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)",
+  divider: (d: boolean) => d ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+  headerBg: (d: boolean) => d ? "transparent" : "rgba(255,255,255,0.92)",
   btnGhost: (d: boolean) => d ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
   btnGhostBorder: (d: boolean) => d ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
-  btnGhostText: (d: boolean) => d ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.45)",
-  pageBg: (d: boolean) => d ? "#070715" : "#faf7f2",
+  btnGhostText: (d: boolean) => d ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.45)",
+  pageBg: (d: boolean) => d ? "transparent" : "transparent",
 };
 
 const MODES: {

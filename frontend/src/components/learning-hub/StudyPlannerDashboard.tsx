@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/services/api";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import jsPDF from "jspdf";
 import { 
   Calendar as CalendarIcon, BookOpen, Clock, AlertCircle, Award, 
   Sparkles, CheckCircle, RefreshCw, ChevronLeft, ChevronRight, 
@@ -283,18 +284,176 @@ export function StudyPlannerDashboard() {
     }
   };
 
-  const handleExport = (type: string) => {
+  const handleExport = (type: string = "PDF") => {
     if (!activePlan) return toast.error("No study plan to export.");
-    const lines: string[] = [`# ${activePlan.title}`, `Exam: ${activePlan.examDate ? new Date(activePlan.examDate).toLocaleDateString() : "N/A"}`, `Target: ${activePlan.targetScore}`, `Progress: ${activePlan.completionPercentage}%`, "", "## Tasks", ""];
-    tasks.forEach((t, i) => {
-      lines.push(`${t.status === "Completed" ? "✅" : "⬜"} **${i + 1}. ${t.topicName}** — ${t.priority} (${t.estimatedTime}min)`);
-    });
-    if (todayRevisions.length) { lines.push("", "## Today's Revisions", ""); todayRevisions.forEach((r: any) => lines.push(`🔄 ${r.title || r.topicName} — due ${r.scheduledDate}`)); }
-    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `${activePlan.title.replace(/\s+/g, "_")}_study_plan.md`; a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Study plan exported!");
+    try {
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const marginX = 14;
+      let y = 18;
+
+      // Top Header Accent Banner
+      doc.setFillColor(245, 158, 11);
+      doc.rect(marginX, y, 182, 8, "F");
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("ADYAPAN AI  •  STUDY PLAN REPORT", marginX + 4, y + 5.5);
+
+      y += 16;
+
+      // Plan Title
+      doc.setTextColor(15, 23, 42);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text(activePlan.title, marginX, y);
+
+      y += 7;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(71, 85, 105);
+
+      const examDateStr = activePlan.examDate
+        ? new Date(activePlan.examDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+        : "Not Set";
+      doc.text(`Study Mode: ${activePlan.studyMode}   |   Target Date: ${examDateStr}   |   Target Score: ${activePlan.targetScore}`, marginX, y);
+
+      y += 8;
+
+      // Overview Key Metrics Card
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(marginX, y, 182, 22, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(15, 23, 42);
+
+      const statY = y + 8.5;
+      doc.text(`Completion: ${activePlan.completionPercentage}%`, marginX + 6, statY);
+      doc.text(`Daily Commitment: ${activePlan.dailyHours} hrs/day`, marginX + 54, statY);
+      doc.text(`Streak: ${activePlan.streak} Days`, marginX + 114, statY);
+      doc.text(`Days Left: ${activePlan.daysRemaining}`, marginX + 152, statY);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 116, 139);
+      const subStatY = y + 16.5;
+      doc.text(`Success Rate: ${activePlan.successProbability}`, marginX + 6, subStatY);
+      if (activePlan.workloadAnalysis) {
+        doc.text(`Burnout Risk: ${activePlan.workloadAnalysis.burnoutRisk || 'Low'}`, marginX + 54, subStatY);
+        doc.text(`Daily Workload: ${activePlan.workloadAnalysis.dailyWorkload || 'Balanced'}`, marginX + 114, subStatY);
+      }
+
+      y += 28;
+
+      // Scheduled Tasks Section
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(15, 23, 42);
+      doc.text("Scheduled Study Tasks", marginX, y);
+
+      y += 3.5;
+      doc.setDrawColor(245, 158, 11);
+      doc.setLineWidth(0.6);
+      doc.line(marginX, y, marginX + 182, y);
+
+      y += 6;
+
+      if (tasks.length === 0) {
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(9.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text("No specific study tasks scheduled yet.", marginX, y);
+        y += 10;
+      } else {
+        // Table Header
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(71, 85, 105);
+
+        doc.setFillColor(241, 245, 249);
+        doc.rect(marginX, y - 3.5, 182, 6, "F");
+        doc.text("#", marginX + 2, y + 0.5);
+        doc.text("Status", marginX + 10, y + 0.5);
+        doc.text("Topic / Module", marginX + 34, y + 0.5);
+        doc.text("Priority", marginX + 132, y + 0.5);
+        doc.text("Est. Time", marginX + 160, y + 0.5);
+
+        y += 6;
+        doc.setFont("helvetica", "normal");
+
+        tasks.forEach((t, i) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          const isDone = t.status === "Completed";
+          
+          doc.setFontSize(8.5);
+          doc.setTextColor(isDone ? 16 : 15, isDone ? 185 : 23, isDone ? 129 : 42);
+          doc.text(`${i + 1}`, marginX + 2, y);
+          doc.text(isDone ? "[DONE]" : "[PENDING]", marginX + 10, y);
+
+          doc.setTextColor(15, 23, 42);
+          const topicLines = doc.splitTextToSize(t.topicName, 92);
+          doc.text(topicLines[0], marginX + 34, y);
+
+          doc.setTextColor(t.priority === "High" ? 239 : 71, t.priority === "High" ? 68 : 85, t.priority === "High" ? 68 : 105);
+          doc.text(t.priority || "Medium", marginX + 132, y);
+
+          doc.setTextColor(71, 85, 105);
+          doc.text(`${t.estimatedTime || 30} mins`, marginX + 160, y);
+
+          y += 6.5;
+          doc.setDrawColor(241, 245, 249);
+          doc.setLineWidth(0.2);
+          doc.line(marginX, y - 4.5, marginX + 182, y - 4.5);
+        });
+      }
+
+      // Today's Revisions Section
+      if (todayRevisions.length > 0) {
+        if (y > 235) { doc.addPage(); y = 20; } else { y += 6; }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11.5);
+        doc.setTextColor(15, 23, 42);
+        doc.text("Spaced Repetition & Revisions Due", marginX, y);
+
+        y += 3.5;
+        doc.setDrawColor(139, 92, 246);
+        doc.setLineWidth(0.6);
+        doc.line(marginX, y, marginX + 182, y);
+
+        y += 6;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(51, 65, 85);
+
+        todayRevisions.forEach((r: any) => {
+          if (y > 270) { doc.addPage(); y = 20; }
+          doc.text(`• ${r.title || r.topicName} — Revision due (${r.scheduledDate || 'Today'})`, marginX + 2, y);
+          y += 5.5;
+        });
+      }
+
+      // Add Page Numbers to Footer
+      const totalPages = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`Adyapan AI Study Planner  •  Page ${i} of ${totalPages}`, marginX, 287);
+      }
+
+      const fileName = `${activePlan.title.replace(/[^a-zA-Z0-9]/g, "_")}_study_plan.pdf`;
+      doc.save(fileName);
+      toast.success("Study plan exported as PDF!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate PDF export.");
+    }
   };
 
   const handleMonthChange = (direction: "prev" | "next") => {

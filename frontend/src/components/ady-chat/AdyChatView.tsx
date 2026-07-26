@@ -299,7 +299,7 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
     <div
       className="relative flex overflow-hidden w-full h-[calc(100vh-80px)] min-h-[550px]"
       style={{
-        background: isDark ? "#070715" : "#f0f4ff",
+        background: "transparent",
       }}
     >
       {/* Intro animation — absolute, stays within this container */}

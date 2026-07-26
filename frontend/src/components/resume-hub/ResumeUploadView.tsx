@@ -212,7 +212,7 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}
-      style={{ color: c.text, background: c.bgGradient || c.bg, minHeight: "calc(100vh - 120px)" }}
+      style={{ color: c.text, background: "transparent", minHeight: "calc(100vh - 120px)" }}
       className="flex flex-col antialiased"
     >
       {/* Toast */}
@@ -221,7 +221,7 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
           <motion.div initial={{ opacity: 0, y: -16, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -16, scale: 0.95 }}
             className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold shadow-2xl"
             style={{
-              background: c.d ? "#1a1a2e" : "#fff",
+              background: c.d ? "rgba(24, 24, 27, 0.95)" : "#fff",
               border: `1px solid ${toast.type === "error" ? c.redBorder : c.amberBorder}`,
               color: toast.type === "error" ? c.red : c.text,
               boxShadow: c.shadowLg,
