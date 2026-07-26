@@ -107,6 +107,21 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
       const topicStored = localStorage.getItem("adyapan-topic-history");
       setTopicHistory(topicStored ? JSON.parse(topicStored) : []);
     } catch { setTopicHistory([]); }
+
+    // Pre-fill topic mode and topic name if requested from Learn More
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlMode = params.get("studyMode");
+      const urlTopic = params.get("topic");
+      const storedPrefill = localStorage.getItem("adyapan-study-topic");
+
+      if (urlMode === "topic" || urlTopic || storedPrefill) {
+        setMode("topic");
+        const topicName = urlTopic ? decodeURIComponent(urlTopic) : storedPrefill;
+        if (topicName) setInputTopic(topicName);
+        if (storedPrefill) localStorage.removeItem("adyapan-study-topic");
+      }
+    } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {

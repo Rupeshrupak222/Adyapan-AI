@@ -30,18 +30,147 @@ const mkColors = (theme: string) => {
   };
 };
 
-interface AssignmentContent { introduction: string; body: string; conclusion: string; references: string[]; }
+interface AssignmentSection {
+  sectionNumber: number;
+  title: string;
+  pageEstimate: string;
+  wordCount: number;
+  content: string;
+}
+
+interface AssignmentContent {
+  title?: string;
+  academicLevel?: string;
+  targetPages?: number;
+  totalWords?: number;
+  tableOfContents?: { title: string; pages: string }[];
+  sections?: AssignmentSection[];
+  introduction: string;
+  body: string;
+  conclusion: string;
+  references: string[];
+}
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.4 } }) };
 const scaleIn = { hidden: { opacity: 0, scale: 0.92 }, visible: (i = 0) => ({ opacity: 1, scale: 1, transition: { delay: i * 0.07, duration: 0.35 } }) };
 const slideRight = { hidden: { opacity: 0, x: -24 }, visible: (i = 0) => ({ opacity: 1, x: 0, transition: { delay: i * 0.07, duration: 0.4 } }) };
+
+function parseAssignmentSections(result: AssignmentContent | null, c: ReturnType<typeof mkColors>) {
+  if (!result) return [];
+
+  if (result.sections && result.sections.length > 0) {
+    const list = result.sections.map((s, i) => ({
+      title: s.title,
+      content: s.content,
+      pageEstimate: s.pageEstimate || `Page ${i + 1}`,
+      wordCount: s.wordCount || (s.content ? s.content.split(/\s+/).length : 250),
+      color: i === 0 ? c.purpleBg : i === result.sections!.length - 1 ? c.amberBg : c.cyanBg,
+      border: i === 0 ? c.purpleBorder : i === result.sections!.length - 1 ? c.amberBorder : c.cyanBorder,
+      accent: i === 0 ? "#a78bfa" : i === result.sections!.length - 1 ? c.amber : "#22d3ee",
+      isRefs: false,
+    }));
+
+    if (result.references && result.references.length > 0) {
+      list.push({
+        title: "References",
+        content: result.references.join("\n\n"),
+        pageEstimate: `Page ${result.targetPages ? result.targetPages : "End"}`,
+        wordCount: result.references.length * 15,
+        color: c.surface,
+        border: c.border,
+        accent: c.textMuted,
+        isRefs: true,
+      });
+    }
+    return list;
+  }
+
+  const sectionsList: Array<{
+    title: string;
+    content: string;
+    pageEstimate: string;
+    wordCount: number;
+    color: string;
+    border: string;
+    accent: string;
+    isRefs?: boolean;
+  }> = [];
+
+  if (result.introduction) {
+    sectionsList.push({
+      title: "Introduction & Research Objectives",
+      content: result.introduction,
+      pageEstimate: "Pages 1–2",
+      wordCount: result.introduction.split(/\s+/).length,
+      color: c.purpleBg,
+      border: c.purpleBorder,
+      accent: "#a78bfa",
+    });
+  }
+
+  if (result.body) {
+    const bodyChapters = result.body.split(/(?=\n##\s+|\n#\s+)/).filter(b => b.trim().length > 20);
+    if (bodyChapters.length > 1) {
+      bodyChapters.forEach((ch, idx) => {
+        const firstLine = ch.trim().split("\n")[0].replace(/^#+\s*/, "");
+        const title = firstLine || `Chapter ${idx + 1}`;
+        sectionsList.push({
+          title,
+          content: ch.trim(),
+          pageEstimate: `Pages ${idx * 2 + 3}–${idx * 2 + 4}`,
+          wordCount: ch.split(/\s+/).length,
+          color: c.cyanBg,
+          border: c.cyanBorder,
+          accent: "#22d3ee",
+        });
+      });
+    } else {
+      sectionsList.push({
+        title: "Main Body Content",
+        content: result.body,
+        pageEstimate: "Pages 3–14",
+        wordCount: result.body.split(/\s+/).length,
+        color: c.cyanBg,
+        border: c.cyanBorder,
+        accent: "#22d3ee",
+      });
+    }
+  }
+
+  if (result.conclusion) {
+    sectionsList.push({
+      title: "Conclusion & Future Research Directions",
+      content: result.conclusion,
+      pageEstimate: "Page End",
+      wordCount: result.conclusion.split(/\s+/).length,
+      color: c.amberBg,
+      border: c.amberBorder,
+      accent: c.amber,
+    });
+  }
+
+  if (result.references && result.references.length > 0) {
+    sectionsList.push({
+      title: "References",
+      content: result.references.join("\n\n"),
+      pageEstimate: "Page End",
+      wordCount: result.references.length * 15,
+      color: c.surface,
+      border: c.border,
+      accent: c.textMuted,
+      isRefs: true,
+    });
+  }
+
+  return sectionsList;
+}
 
 export function AssignmentGeneratorView() {
   const theme = useTheme();
   const c = mkColors(theme);
 
   const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState<{ introduction: string; body: string; conclusion: string; references: string[] } | null>(null);
+  const [result, setResult] = useState<AssignmentContent | null>(null);
   const [topic, setTopic] = useState("Quantum Computing & Cryptography");
   const [level, setLevel] = useState("Undergraduate");
   const [wordCount, setWordCount] = useState("4500 words (15-20 pages)");
@@ -80,7 +209,10 @@ export function AssignmentGeneratorView() {
     if (!socket) return;
     const handleProgress = ({ progress: p, statusMessage }: { progress: number; statusMessage: string }) => { setProgress(p); setStatusMsg(statusMessage); };
     const handleComplete = ({ assignment }: { assignment: AssignmentContent }) => {
-      setGenerating(false); setResult(assignment); setActiveSection("Introduction");
+      setGenerating(false);
+      setResult(assignment);
+      const parsed = parseAssignmentSections(assignment, c);
+      if (parsed.length > 0) setActiveSection(parsed[0].title);
       addToHistory(assignment);
     };
     const handleError = ({ error }: { error: string }) => { setGenerating(false); toast.error(`Generation error: ${error}`); };
@@ -88,7 +220,7 @@ export function AssignmentGeneratorView() {
     socket.on("generate:complete", handleComplete);
     socket.on("generate:error", handleError);
     return () => { socket.off("generate:progress", handleProgress); socket.off("generate:complete", handleComplete); socket.off("generate:error", handleError); };
-  }, [socket, addToHistory]);
+  }, [socket, addToHistory, c]);
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true); setProgress(0); setStatusMsg("Initializing Assignment Generator...");
@@ -99,8 +231,10 @@ export function AssignmentGeneratorView() {
         setStatusMsg("Calling API directly...");
         const res = await api.post("/assignment/generate", { topic, academicLevel: level, wordCount: wordCount.split(" ")[0] });
         if (res.data?.success && res.data?.assignment?.content) {
-          const assignment = res.data.assignment.content;
-          setResult(assignment); setActiveSection("Introduction");
+          const assignment: AssignmentContent = res.data.assignment.content;
+          setResult(assignment);
+          const parsed = parseAssignmentSections(assignment, c);
+          if (parsed.length > 0) setActiveSection(parsed[0].title);
           addToHistory(assignment);
         } else throw new Error("Invalid response");
       } catch (err: unknown) {
@@ -110,24 +244,22 @@ export function AssignmentGeneratorView() {
         setGenerating(false);
       }
     }
-  }, [socket, isConnected, topic, level, wordCount, addToHistory]);
+  }, [socket, isConnected, topic, level, wordCount, addToHistory, c]);
 
   const handleScrollToSection = (title: string) => {
     setActiveSection(prev => (prev === title ? "" : title));
   };
 
   const loadHistoryItem = (item: typeof history[0]) => {
-    setTopic(item.name); setLevel(item.level); setWordCount(item.words); setResult(item.data); setActiveSection("Introduction"); setShowHistory(false);
+    setTopic(item.name); setLevel(item.level); setWordCount(item.words); setResult(item.data);
+    const parsed = parseAssignmentSections(item.data, c);
+    if (parsed.length > 0) setActiveSection(parsed[0].title);
+    setShowHistory(false);
   };
 
-  const sections = result ? [
-    { title: "Introduction", content: result.introduction, color: c.purpleBg, border: c.purpleBorder, accent: "#a78bfa" },
-    { title: "Main Body", content: result.body, color: c.cyanBg, border: c.cyanBorder, accent: "#22d3ee" },
-    { title: "Conclusion", content: result.conclusion, color: c.amberBg, border: c.amberBorder, accent: c.amber },
-    { title: "References", content: result.references.join("\n\n"), color: c.surface, border: c.border, accent: c.textMuted, isRefs: true }
-  ] : [];
+  const sections = parseAssignmentSections(result, c);
 
-  const stages = ["Research Topic", "Draft Introduction", "Write Body", "Add References", "Compile Output", "Completed"];
+  const stages = ["Research Topic", "Structure Pages", "Draft Sections", "Add References", "Compile Output", "Completed"];
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="flex flex-col antialiased" style={{ color: c.text }}>
@@ -302,18 +434,21 @@ export function AssignmentGeneratorView() {
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Academic Level</label>
                         <select value={level} onChange={e => setLevel(e.target.value)}
                           className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
-                          <option>High School</option><option>Undergraduate</option><option>Master&apos;s</option>
+                          <option>High School</option>
+                          <option>Undergraduate</option>
+                          <option>Master&apos;s</option>
+                          <option>PhD / Doctorate</option>
                         </select>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Target Length / Pages</label>
                         <select value={wordCount} onChange={e => setWordCount(e.target.value)}
                           className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
+                          <option>500 words (1-2 pages)</option>
+                          <option>1500 words (5-6 pages)</option>
+                          <option>3000 words (10-12 pages)</option>
                           <option>4500 words (15-20 pages)</option>
                           <option>5500 words (18-22 pages)</option>
-                          <option>3000 words (10-12 pages)</option>
-                          <option>1500 words (5-6 pages)</option>
-                          <option>500 words (1-2 pages)</option>
                         </select>
                       </div>
                     </div>
@@ -371,7 +506,7 @@ export function AssignmentGeneratorView() {
               <motion.div variants={fadeUp} custom={3} initial="hidden" animate="visible" className="p-5 rounded-2xl" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                 <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text }}><Star size={14} style={{ color: c.amber }} /> Features</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-                  {["Introduction", "Body Content", "Conclusion", "References", "Multiple Levels", "Copy & Export"].map((feat, i) => (
+                  {["Introduction", "Page-Based Sections", "Conclusion", "References", "Multiple Academic Levels", "Copy & Export"].map((feat, i) => (
                     <motion.div key={feat} custom={i} variants={scaleIn} initial="hidden" animate="visible" className="flex items-center gap-2 text-sm" style={{ color: c.textSec }}>
                       <CheckCircle2 size={14} style={{ color: c.amber }} className="shrink-0" />
                       <span>{feat}</span>
@@ -425,20 +560,20 @@ export function AssignmentGeneratorView() {
                       <FileText size={14} style={{ color: c.amber }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold truncate" style={{ color: c.text }}>{topic}</p>
+                      <p className="text-xs font-bold truncate" style={{ color: c.text }}>{result.title || topic}</p>
                       <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase" style={{ background: c.greenBg, color: c.green }}>Generated</span>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
-                      { label: "Sections", value: 4 },
-                      { label: "Level", value: level },
-                      { label: "Target Words", value: wordCount },
-                      { label: "References", value: result.references.length }
+                      { label: "Sections", value: sections.length },
+                      { label: "Level", value: result.academicLevel || level },
+                      { label: "Est. Pages", value: result.targetPages ? `${result.targetPages} Pages` : wordCount.split(" ")[1] || "15-20 pages" },
+                      { label: "References", value: result.references?.length || 0 }
                     ].map(stat => (
                       <div key={stat.label} className="p-2 rounded-lg text-center" style={{ background: c.cardBgAlt, border: `1px solid ${c.border}` }}>
                         <span className="text-[10px] block" style={{ color: c.textMuted }}>{stat.label}</span>
-                        <span className="text-xs font-extrabold" style={{ color: c.text }}>{stat.value}</span>
+                        <span className="text-xs font-extrabold truncate block" style={{ color: c.text }}>{stat.value}</span>
                       </div>
                     ))}
                   </div>
@@ -446,16 +581,19 @@ export function AssignmentGeneratorView() {
 
                 {/* Sections Nav */}
                 <div className="flex-1 rounded-2xl overflow-hidden" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
-                  <div className="p-3 border-b" style={{ borderColor: c.divider, background: c.stickyBg }}>
-                    <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Document Sections</span>
+                  <div className="p-3 border-b flex items-center justify-between" style={{ borderColor: c.divider, background: c.stickyBg }}>
+                    <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Page Sections ({sections.length})</span>
                   </div>
-                  <div className="p-2 space-y-0.5">
+                  <div className="p-2 space-y-1">
                     {sections.map((s, i) => (
                       <motion.button key={s.title} custom={i} variants={slideRight} initial="hidden" animate="visible"
                         onClick={() => handleScrollToSection(s.title)} whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
                         className="w-full text-left py-2.5 px-3 rounded-xl flex items-center justify-between transition-all duration-200"
                         style={{ background: activeSection === s.title ? c.amberActive : "transparent", border: activeSection === s.title ? `1px solid ${c.amberBorder}` : "1px solid transparent" }}>
-                        <span className="text-sm font-semibold truncate" style={{ color: activeSection === s.title ? c.amber : c.textSec }}>{s.title}</span>
+                        <div className="min-w-0 flex-1 pr-2">
+                          <span className="text-xs font-semibold block truncate" style={{ color: activeSection === s.title ? c.amber : c.textSec }}>{s.title}</span>
+                          <span className="text-[9px] font-mono block text-amber-500/80 mt-0.5">{s.pageEstimate}</span>
+                        </div>
                         <motion.div animate={{ rotate: activeSection === s.title ? 90 : 0 }} transition={{ duration: 0.2 }}>
                           <ChevronRight size={12} style={{ color: activeSection === s.title ? c.amber : c.textMuted }} />
                         </motion.div>
@@ -466,13 +604,13 @@ export function AssignmentGeneratorView() {
 
                 {/* Insights */}
                 <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="p-3 rounded-2xl shrink-0" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}` }}>
-                  <span className="text-[10px] font-black uppercase tracking-widest block mb-2.5 flex items-center gap-1.5" style={{ color: c.amber }}><Sparkles size={11} /> Document Insights</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest block mb-2.5 flex items-center gap-1.5" style={{ color: c.amber }}><Sparkles size={11} /> Document Breakdown</span>
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
-                      { label: "Academic Level", value: level },
-                      { label: "References", value: result.references.length },
-                      { label: "Sections", value: 4 },
-                      { label: "Est. Words", value: wordCount }
+                      { label: "Academic Level", value: result.academicLevel || level },
+                      { label: "References", value: result.references?.length || 0 },
+                      { label: "Page Sections", value: sections.length },
+                      { label: "Est. Words", value: result.totalWords ? `${result.totalWords} words` : wordCount }
                     ].map((insight, i) => (
                       <motion.div key={insight.label} initial={{ opacity: 0, scale: 0.88 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 + i * 0.08 }}
                         className="p-2 rounded-xl text-center" style={{ background: c.cardBgAlt, border: `1px solid ${c.border}` }}>
@@ -487,16 +625,20 @@ export function AssignmentGeneratorView() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="p-3 rounded-2xl shrink-0 space-y-2" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                   <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.textMuted }}>Actions</span>
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
-                    onClick={() => { const txt = `# ${topic}\n\n## Introduction\n${result.introduction}\n\n## Main Body\n${result.body}\n\n## Conclusion\n${result.conclusion}\n\n## References\n${result.references.map(r => `- ${r}`).join("\n")}`; navigator.clipboard.writeText(txt); toast.success("Assignment copied to clipboard!"); }}
+                    onClick={() => {
+                      const txt = `# ${result.title || topic}\n\nLevel: ${result.academicLevel || level}\nPages: ${result.targetPages || "Custom"}\n\n` + sections.map(s => `## ${s.title} (${s.pageEstimate})\n\n${s.content}`).join("\n\n");
+                      navigator.clipboard.writeText(txt);
+                      toast.success("Full assignment copied to clipboard!");
+                    }}
                     className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
-                    <span style={{ color: c.amber }} className="shrink-0"><Copy size={13} /></span> Copy Assignment
+                    <span style={{ color: c.amber }} className="shrink-0"><Copy size={13} /></span> Copy Full Assignment
                   </motion.button>
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
                     onClick={() => {
-                      const txt = `# ${topic}\n\n## Introduction\n${result.introduction}\n\n## Main Body\n${result.body}\n\n## Conclusion\n${result.conclusion}\n\n## References\n${result.references.map(r => `- ${r}`).join("\n")}`;
+                      const txt = `# ${result.title || topic}\n\nLevel: ${result.academicLevel || level}\nPages: ${result.targetPages || "Custom"}\n\n` + sections.map(s => `## ${s.title} (${s.pageEstimate})\n\n${s.content}`).join("\n\n");
                       const blob = new Blob([txt], { type: "text/markdown" });
                       const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a"); a.href = url; a.download = `${topic.replace(/\s+/g, "_")}_assignment.md`; a.click();
+                      const a = document.createElement("a"); a.href = url; a.download = `${(result.title || topic).replace(/\s+/g, "_")}_assignment.md`; a.click();
                       URL.revokeObjectURL(url);
                       toast.success("Assignment exported as Markdown!");
                     }}
@@ -526,23 +668,38 @@ export function AssignmentGeneratorView() {
                               {s.isRefs ? <Quote size={14} style={{ color: c.amber }} /> : <Layers size={14} style={{ color: c.amber }} />}
                             </div>
                             <div>
-                              <h3 className="text-base font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{s.title}</h3>
-                              {!isOpen && !s.isRefs && <p className="text-xs mt-0.5 line-clamp-1" style={{ color: c.textMuted }}>{s.content.slice(0, 80)}…</p>}
-                              {!isOpen && s.isRefs && <p className="text-xs mt-0.5 line-clamp-1" style={{ color: c.textMuted }}>{result.references.length} reference{result.references.length !== 1 ? "s" : ""}</p>}
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-base font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{s.title}</h3>
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: c.amberBg, color: c.amber, border: `1px solid ${c.amberBorder}` }}>{s.pageEstimate}</span>
+                              </div>
+                              {!isOpen && !s.isRefs && <p className="text-xs mt-0.5 line-clamp-1" style={{ color: c.textMuted }}>{stripMarkdown(s.content).slice(0, 90)}…</p>}
+                              {!isOpen && s.isRefs && <p className="text-xs mt-0.5 line-clamp-1" style={{ color: c.textMuted }}>{result.references?.length || 0} reference citations</p>}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full hidden sm:block" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textMuted }}>{String(idx + 1).padStart(2, "0")}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full hidden sm:block" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textMuted }}>{s.wordCount} words</span>
                             <motion.div animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.25 }}><ChevronRight size={16} style={{ color: isOpen ? c.amber : c.textMuted }} /></motion.div>
                           </div>
                         </motion.button>
                         <AnimatePresence initial={false}>
                           {isOpen && (
                             <motion.div key="body" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: "easeInOut" }} style={{ overflow: "hidden" }}>
-                              <div className="p-5">
+                              <div className="p-5 space-y-3">
+                                <div className="flex items-center justify-between pb-2" style={{ borderBottom: `1px solid ${c.divider}` }}>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold" style={{ color: c.textMuted }}>Section {idx + 1} of {sections.length}</span>
+                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ background: c.surface, color: c.amber }}>{s.pageEstimate}</span>
+                                  </div>
+                                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(s.content); toast.success(`Section "${s.title}" copied!`); }}
+                                    className="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
+                                    <Copy size={12} style={{ color: c.amber }} /> Copy Section
+                                  </motion.button>
+                                </div>
+
                                 {s.isRefs ? (
-                                  <ul className="space-y-2">
-                                    {result.references.map((ref, ri) => (
+                                  <ul className="space-y-2.5 pt-1">
+                                    {(result.references || []).map((ref, ri) => (
                                       <li key={ri} className="flex items-start gap-2 text-sm leading-relaxed" style={{ color: c.textSec }}>
                                         <span className="text-xs font-bold shrink-0 mt-0.5" style={{ color: c.amber }}>[{ri + 1}]</span>
                                         <span>{ref}</span>
@@ -550,7 +707,20 @@ export function AssignmentGeneratorView() {
                                     ))}
                                   </ul>
                                 ) : (
-                                  <p className="text-[15px] leading-[1.75]" style={{ color: c.textSec }}>{stripMarkdown(s.content)}</p>
+                                  <div className="space-y-3">
+                                    {s.content.split("\n\n").map((para, pi) => {
+                                      const trimmed = para.trim();
+                                      if (!trimmed) return null;
+                                      if (trimmed.startsWith("#")) {
+                                        return <h4 key={pi} className="text-sm font-extrabold mt-3" style={{ color: c.amber }}>{trimmed.replace(/^#+\s*/, "")}</h4>;
+                                      }
+                                      return (
+                                        <p key={pi} className="text-[14px] leading-[1.8]" style={{ color: c.textSec }}>
+                                          {stripMarkdown(trimmed)}
+                                        </p>
+                                      );
+                                    })}
+                                  </div>
                                 )}
                               </div>
                             </motion.div>

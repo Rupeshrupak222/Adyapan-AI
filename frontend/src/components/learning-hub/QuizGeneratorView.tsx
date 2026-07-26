@@ -471,7 +471,7 @@ function QuizSkeleton({ step, mode, topic }: { step: number; mode: QuizMode; top
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-export function QuizGeneratorView() {
+export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) => void }) {
   const theme = useTheme();
   const c = mkColors(theme);
 
@@ -1153,7 +1153,26 @@ export function QuizGeneratorView() {
                   <RotateCcw size={15} /> Retry Quiz
                 </motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                  onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(quizData.topic)}`, "_blank")}
+                  onClick={() => {
+                    const topicToLearn = quizData?.topic || topic;
+                    if (topicToLearn) {
+                      try {
+                        localStorage.setItem("adyapan-study-topic", topicToLearn);
+                      } catch { /* ignore */ }
+                    }
+                    if (onViewTool) {
+                      onViewTool("study-assistant");
+                    } else {
+                      const url = new URL(window.location.href);
+                      url.searchParams.set("view", "study-assistant");
+                      if (topicToLearn) {
+                        url.searchParams.set("studyMode", "topic");
+                        url.searchParams.set("topic", encodeURIComponent(topicToLearn));
+                      }
+                      window.history.replaceState({}, "", url.toString());
+                      window.location.href = url.toString();
+                    }
+                  }}
                   className="py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
                   style={{ background: accent.bg, border: `1px solid ${accent.border}`, color: accent.text }}>
                   <BookOpen size={15} /> Learn More

@@ -2378,7 +2378,7 @@ function UserDashboardContent() {
         ) : activeView === "notes-generator" ? (
           <HubErrorBoundary><NotesGeneratorView /></HubErrorBoundary>
         ) : activeView === "quiz-generator" ? (
-          <HubErrorBoundary><QuizGeneratorView /></HubErrorBoundary>
+          <HubErrorBoundary><QuizGeneratorView onViewTool={navigateTo} /></HubErrorBoundary>
         ) : activeView === "assignment-generator" ? (
           <HubErrorBoundary><AssignmentGeneratorView /></HubErrorBoundary>
         ) : activeView === "ppt-generator" ? (
