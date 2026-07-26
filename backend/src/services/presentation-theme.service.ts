@@ -1,0 +1,186 @@
+export interface PresentationTheme {
+  id: string;
+  name: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  cardBg: string;
+  cardBorder: string;
+  textPrimary: string;
+  textSecondary: string;
+  fontHeading: string;
+  fontBody: string;
+  borderRadius: string;
+  shadow: string;
+}
+
+export const PRESENTATION_THEMES: Record<string, PresentationTheme> = {
+  "corporate-blue": {
+    id: "corporate-blue",
+    name: "Corporate Blue",
+    primary: "#1E40AF",
+    secondary: "#0F172A",
+    accent: "#3B82F6",
+    background: "#0F172A",
+    cardBg: "#1E293B",
+    cardBorder: "#334155",
+    textPrimary: "#F8FAFC",
+    textSecondary: "#94A3B8",
+    fontHeading: "Poppins",
+    fontBody: "Inter",
+    borderRadius: "16px",
+    shadow: "0 10px 30px rgba(0,0,0,0.3)",
+  },
+  "dark-tech": {
+    id: "dark-tech",
+    name: "Dark Tech",
+    primary: "#38BDF8",
+    secondary: "#0B0F17",
+    accent: "#F59E0B",
+    background: "#0B0F17",
+    cardBg: "#161E2E",
+    cardBorder: "#1F293D",
+    textPrimary: "#F3F4F6",
+    textSecondary: "#9CA3AF",
+    fontHeading: "Inter",
+    fontBody: "Inter",
+    borderRadius: "14px",
+    shadow: "0 12px 35px rgba(0,0,0,0.4)",
+  },
+  "modern-gradient": {
+    id: "modern-gradient",
+    name: "Modern Gradient",
+    primary: "#8B5CF6",
+    secondary: "#0F172A",
+    accent: "#EC4899",
+    background: "#0F172A",
+    cardBg: "#1E1B4B",
+    cardBorder: "#312E81",
+    textPrimary: "#F5F3FF",
+    textSecondary: "#C4B5FD",
+    fontHeading: "Outfit",
+    fontBody: "Inter",
+    borderRadius: "20px",
+    shadow: "0 15px 40px rgba(139,92,246,0.25)",
+  },
+  "glassmorphism": {
+    id: "glassmorphism",
+    name: "Glassmorphism",
+    primary: "#F4B400",
+    secondary: "#090D16",
+    accent: "#38BDF8",
+    background: "#090D16",
+    cardBg: "rgba(255, 255, 255, 0.06)",
+    cardBorder: "rgba(255, 255, 255, 0.12)",
+    textPrimary: "#FFFFFF",
+    textSecondary: "#94A3B8",
+    fontHeading: "Poppins",
+    fontBody: "Inter",
+    borderRadius: "24px",
+    shadow: "0 20px 50px rgba(0,0,0,0.5)",
+  },
+  "minimal-white": {
+    id: "minimal-white",
+    name: "Minimal White",
+    primary: "#111827",
+    secondary: "#F9FAFB",
+    accent: "#F59E0B",
+    background: "#FFFFFF",
+    cardBg: "#F8FAFC",
+    cardBorder: "#E2E8F0",
+    textPrimary: "#0F172A",
+    textSecondary: "#64748B",
+    fontHeading: "Inter",
+    fontBody: "Inter",
+    borderRadius: "12px",
+    shadow: "0 4px 20px rgba(0,0,0,0.04)",
+  },
+  "startup": {
+    id: "startup",
+    name: "Startup Emerald",
+    primary: "#10B981",
+    secondary: "#064E3B",
+    accent: "#F59E0B",
+    background: "#022C22",
+    cardBg: "#064E3B",
+    cardBorder: "#047857",
+    textPrimary: "#ECFDF5",
+    textSecondary: "#A7F3D0",
+    fontHeading: "Outfit",
+    fontBody: "Inter",
+    borderRadius: "16px",
+    shadow: "0 10px 30px rgba(16,185,129,0.2)",
+  },
+  "cyberpunk": {
+    id: "cyberpunk",
+    name: "Cyberpunk Neon",
+    primary: "#00F0FF",
+    secondary: "#09090E",
+    accent: "#FF007A",
+    background: "#08080C",
+    cardBg: "#12121A",
+    cardBorder: "#00F0FF40",
+    textPrimary: "#00F0FF",
+    textSecondary: "#FF007A",
+    fontHeading: "Consolas",
+    fontBody: "Inter",
+    borderRadius: "8px",
+    shadow: "0 0 30px rgba(0,240,255,0.25)",
+  },
+  "luxury-gold": {
+    id: "luxury-gold",
+    name: "Luxury Gold",
+    primary: "#F4B400",
+    secondary: "#18181B",
+    accent: "#D97706",
+    background: "#09090B",
+    cardBg: "#18181B",
+    cardBorder: "#27272A",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    fontHeading: "Poppins",
+    fontBody: "Inter",
+    borderRadius: "18px",
+    shadow: "0 12px 35px rgba(244,180,0,0.15)",
+  },
+  "research": {
+    id: "research",
+    name: "Academic Research",
+    primary: "#0284C7",
+    secondary: "#0F172A",
+    accent: "#0D9488",
+    background: "#0F172A",
+    cardBg: "#1E293B",
+    cardBorder: "#334155",
+    textPrimary: "#F0F9FF",
+    textSecondary: "#BAE6FD",
+    fontHeading: "Georgia",
+    fontBody: "Inter",
+    borderRadius: "12px",
+    shadow: "0 8px 25px rgba(0,0,0,0.3)",
+  },
+  "education": {
+    id: "education",
+    name: "Edu Vibrant",
+    primary: "#F4B400",
+    secondary: "#1E1B4B",
+    accent: "#10B981",
+    background: "#0F172A",
+    cardBg: "#1E293B",
+    cardBorder: "#334155",
+    textPrimary: "#FFFBEB",
+    textSecondary: "#FDE68A",
+    fontHeading: "Poppins",
+    fontBody: "Inter",
+    borderRadius: "16px",
+    shadow: "0 10px 30px rgba(244,180,0,0.2)",
+  },
+};
+
+export function getTheme(themeId?: string): PresentationTheme {
+  if (themeId && PRESENTATION_THEMES[themeId]) {
+    return PRESENTATION_THEMES[themeId];
+  }
+  return PRESENTATION_THEMES["corporate-blue"];
+}

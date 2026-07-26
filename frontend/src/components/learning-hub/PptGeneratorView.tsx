@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Presentation, Copy, FileDown, RefreshCw, ChevronRight, Search, Plus, History,
-  CheckCircle2, Sparkles, Brain, Zap, Star, X, FileText, Layers, Trash2
+  CheckCircle2, Sparkles, Brain, Zap, Star, X, FileText, Layers, Trash2, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSocket } from "@/context/SocketContext";
@@ -48,6 +48,46 @@ export function PptGeneratorView() {
   const [showHistory, setShowHistory] = useState(false);
   const [historySearch, setHistorySearch] = useState("");
   const [history, setHistory] = useState<Array<{ name: string; date: string; count: number; data: Slide[] }>>([]);
+  const [exportingPptx, setExportingPptx] = useState(false);
+
+  const handleExportPptx = async () => {
+    if (!slides) return;
+    setExportingPptx(true);
+    try {
+      const res = await api.post("/ppt/export/pptx", {
+        topic,
+        presentation: {
+          title: topic,
+          slides: slides.map((s, i) => ({
+            id: i + 1,
+            title: s.title,
+            bullets: s.bullets,
+            speakerNotes: s.notes,
+            cards: [
+              { title: "Module Overview", description: s.title },
+              { title: "Slide", value: `Slide ${i + 1}`, description: "Presentation Card" }
+            ]
+          }))
+        }
+      }, { responseType: "blob", timeout: 120000 });
+
+      const blob = new Blob([res.data], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${topic.replace(/\s+/g, "_")}_Presentation.pptx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("PowerPoint (.pptx) downloaded successfully!");
+    } catch (err) {
+      console.error("PPTX export error:", err);
+      toast.error("Failed to generate PPTX file.");
+    } finally {
+      setExportingPptx(false);
+    }
+  };
 
   const { socket, isConnected } = useSocket();
   const userIdRef = useRef<string>("");
@@ -477,11 +517,23 @@ export function PptGeneratorView() {
 
                 {/* Actions */}
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="p-3 rounded-2xl shrink-0 space-y-2" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
-                  <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.textMuted }}>Actions</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.textMuted }}>Export Options</span>
+
+                  <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
+                    disabled={exportingPptx}
+                    onClick={handleExportPptx}
+                    className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-bold transition-all text-left" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: c.amber }}>
+                    <span className="flex items-center gap-2">
+                      {exportingPptx ? <Loader2 size={13} className="animate-spin" /> : <Presentation size={13} />}
+                      Download PPTX
+                    </span>
+                    <span className="text-[9px] font-extrabold uppercase bg-amber-500/20 px-1.5 py-0.5 rounded">PowerPoint</span>
+                  </motion.button>
+
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
                     onClick={() => { const txt = slides.map((s, i) => `Slide ${i + 1}: ${s.title}\n${s.bullets.map(b => `- ${b}`).join("\n")}\nNotes: ${s.notes}`).join("\n\n"); navigator.clipboard.writeText(txt); toast.success("Slides copied to clipboard!"); }}
-                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
-                    <span style={{ color: c.amber }} className="shrink-0"><Copy size={13} /></span> Copy Slides
+                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
+                    <span style={{ color: c.amber }} className="shrink-0"><Copy size={12} /></span> Copy Slides
                   </motion.button>
                   <motion.button whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }}
                     onClick={() => {
@@ -492,12 +544,12 @@ export function PptGeneratorView() {
                       URL.revokeObjectURL(url);
                       toast.success("Slides exported as Markdown!");
                     }}
-                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
-                    <span style={{ color: c.amber }} className="shrink-0"><FileDown size={13} /></span> Export Markdown
+                    className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all text-left" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>
+                    <span style={{ color: c.amber }} className="shrink-0"><FileDown size={12} /></span> Export Markdown
                   </motion.button>
                   <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
                     onClick={() => { setSlides(null); }}
-                    className="w-full py-2 rounded-lg text-sm font-extrabold transition-all flex items-center justify-center gap-1.5" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>
+                    className="w-full py-2 rounded-lg text-sm font-extrabold transition-all flex items-center justify-center gap-1.5 mt-1" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>
                     <RefreshCw size={13} /> New Topic
                   </motion.button>
                 </motion.div>
