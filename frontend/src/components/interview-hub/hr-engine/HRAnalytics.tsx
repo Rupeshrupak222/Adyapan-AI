@@ -144,7 +144,7 @@ export default function HRAnalytics({ onBack, onStartInterview, theme: propTheme
               style={{ background: c.cardBg, borderColor: c.border }}>
               <stat.icon size={14} style={{ color: stat.color }} className="mb-2" />
               <div className="text-xl font-extrabold" style={{ color: stat.color }}>{stat.value}</div>
-              <div className="text-[9px] font-bold" style={{ color: c.textMuted }}>{stat.label}</div>
+              <div className="text-[10px] font-bold" style={{ color: c.textMuted }}>{stat.label}</div>
             </div>
           ))}
         </div>
@@ -257,9 +257,9 @@ export default function HRAnalytics({ onBack, onStartInterview, theme: propTheme
                   }, {
                     label: "Benchmark",
                     data: [72, 68, 70, 65, 67],
-                    borderColor: "rgba(255,255,255,0.2)",
-                    backgroundColor: "rgba(255,255,255,0.03)",
-                    pointBackgroundColor: "rgba(255,255,255,0.3)",
+                    borderColor: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.15)",
+                    backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
+                    pointBackgroundColor: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.2)",
                     borderDash: [4, 4],
                   }],
                 }} options={{

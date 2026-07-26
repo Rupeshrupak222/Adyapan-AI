@@ -663,7 +663,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                     onClick={() => handleStartClicked(card.type)}
                   >
                     <div className="space-y-3">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 group-hover:border-amber-500/20 group-hover:bg-amber-500/5 transition-all">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:border-amber-500/20 group-hover:bg-amber-500/5 transition-all" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
                         {card.icon}
                       </div>
                       <h3 className="font-extrabold text-base" style={{ fontFamily: "'Outfit', sans-serif" }}>{card.title}</h3>
@@ -722,7 +722,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                             return isNaN(d.getTime()) ? "Recent" : d.toLocaleDateString();
                           })()}
                         </div>
-                        {h.status === "terminated" && <span className="text-[9px] font-bold text-red-500">Terminated</span>}
+                        {h.status === "terminated" && <span className="text-[10px] font-bold text-red-500">Terminated</span>}
                       </div>
                       {h.evaluation?.overallScore ? (
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-[11px] shrink-0"
@@ -730,7 +730,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                           {h.evaluation.overallScore}%
                         </div>
                       ) : (
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">In Progress</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">In Progress</span>
                       )}
                     </div>
                   ))}
@@ -1111,10 +1111,10 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                   <div key={idx} className={`flex ${isInterviewer ? "justify-start" : "justify-end"}`}>
                     <div className={`max-w-[80%] p-3.5 rounded-2xl text-xs leading-relaxed ${
                       isInterviewer
-                        ? "bg-white/5 border border-white/10 rounded-tl-sm text-left"
+                        ? "rounded-tl-sm text-left"
                         : "bg-amber-500/15 border border-amber-500/25 rounded-tr-sm text-right"
-                    }`} style={isInterviewer ? { color: c.text } : { color: c.primary }}>
-                      <div className="text-[9px] uppercase tracking-wider font-bold mb-1 opacity-60">
+                    }`} style={isInterviewer ? { background: c.surface, border: `1px solid ${c.border}`, color: c.text } : { color: c.primary }}>
+                      <div className="text-[10px] uppercase tracking-wider font-bold mb-1 opacity-60">
                         {isInterviewer ? "AI Interviewer" : "You"}
                       </div>
                       <p className="whitespace-pre-line">{stripMarkdown(m.content)}</p>
@@ -1124,7 +1124,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
               })}
               {sending && (
                 <div className="flex justify-start">
-                  <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm p-4 flex items-center gap-1.5">
+                  <div className="rounded-2xl rounded-tl-sm p-4 flex items-center gap-1.5" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
                     <Loader2 size={12} className="text-amber-500 animate-spin" />
                     <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>Evaluating...</span>
                   </div>
@@ -1144,7 +1144,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                     transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.08, ease: "easeInOut" }} />
                 ))}
               </div>
-              <span className="text-[9px] font-semibold tracking-wide uppercase ml-1" style={{ color: c.textMuted }}>
+              <span className="text-[10px] font-semibold tracking-wide uppercase ml-1" style={{ color: c.textMuted }}>
                 {sending ? "Analyzing..." : "AI Proctoring Active"}
               </span>
             </div>
@@ -1161,9 +1161,9 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
               />
               <button onClick={isVoiceMode ? stopVoiceRecording : handleVoiceInput}
                 className={`px-3 rounded-xl border flex items-center justify-center shrink-0 h-16 w-14 ${
-                  isVoiceMode ? "bg-red-500/20 border-red-500/30 text-red-500" : "border-white/10 text-amber-500"
+                  isVoiceMode ? "bg-red-500/20 border-red-500/30 text-red-500" : "text-amber-500"
                 }`}
-                style={isVoiceMode ? {} : { background: c.inputBg }}>
+                style={isVoiceMode ? {} : { background: c.inputBg, border: `1px solid ${c.border}` }}>
                 {isVoiceMode ? <XCircle size={18} /> : <Mic size={18} />}
               </button>
               <button onClick={handleSendAnswer} disabled={sending || !chatInput.trim()}
@@ -1203,7 +1203,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                     </svg>
                     <div className="absolute text-center">
                       <span className="text-3xl font-extrabold" style={{ color: c.text }}>{activeSession.evaluation?.overallScore || 0}%</span>
-                      <span className="block text-[8px] uppercase tracking-wider" style={{ color: c.textMuted }}>Overall</span>
+                      <span className="block text-[10px] uppercase tracking-wider" style={{ color: c.textMuted }}>Overall</span>
                     </div>
                   </div>
                 </div>
@@ -1222,7 +1222,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                       <div key={s.label} className="flex items-center justify-between">
                         <span className="text-[10px] font-semibold" style={{ color: c.textSec }}>{s.label}</span>
                         <div className="flex items-center gap-2">
-                          <div className="w-20 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                          <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: c.border }}>
                             <div className="h-full rounded-full transition-all" style={{ width: `${s.score}%`, background: scoreColor(s.score) }} />
                           </div>
                           <span className="text-[10px] font-bold" style={{ color: scoreColor(s.score) }}>{s.score}%</span>

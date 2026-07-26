@@ -5,6 +5,7 @@ import { motion, useInView } from "framer-motion";
 import { api } from "@/services/api";
 import { cn } from "@/lib/cn";
 import { mkColors } from "@/utils/themeColors";
+import { useThemeColors } from "@/hooks/useThemeColors";
 import {
   PremiumCard,
   PremiumButton,
@@ -201,6 +202,7 @@ function MetricCard({ icon: Icon, label, value, trend, trendValue, color, delay 
   icon: any; label: string; value: string | number; trend?: "up" | "down" | "neutral";
   trendValue?: string; color: string; delay?: number;
 }) {
+  const C = useThemeColors();
   return (
     <motion.div
       variants={fadeUp}
@@ -223,8 +225,8 @@ function MetricCard({ icon: Icon, label, value, trend, trendValue, color, delay 
             </span>
           )}
         </div>
-        <div className="text-xl font-extrabold text-white mb-1">{value}</div>
-        <div className="text-[10px] font-bold text-white/40 uppercase tracking-wider">{label}</div>
+        <div className="text-xl font-extrabold mb-1" style={{ color: C.text }}>{value}</div>
+        <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: C.textMuted }}>{label}</div>
       </PremiumCard>
     </motion.div>
   );
@@ -238,7 +240,7 @@ function ActionPriorityBadge({ priority }: { priority: string }) {
   };
   const c = config[priority] || config.Medium;
   return (
-    <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider"
+    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider"
       style={{ background: c.bg, color: c.color }}>
       {c.label}
     </span>
@@ -246,6 +248,7 @@ function ActionPriorityBadge({ priority }: { priority: string }) {
 }
 
 function TimelineItem({ event, index }: { event: CareerDashboardData["timeline"][0]; index: number }) {
+  const C = useThemeColors();
   const iconMap: Record<string, any> = {
     book: BookOpen, code: Code2, file: FileText, chart: BarChart3,
     letter: Send, linkedin: Globe, mic: Mic, trophy: Trophy,
@@ -266,17 +269,18 @@ function TimelineItem({ event, index }: { event: CareerDashboardData["timeline"]
           style={{ background: `${event.color}20`, color: event.color }}>
           <Icon size={14} />
         </div>
-        {index < 9 && <div className="w-px h-full min-h-[20px] bg-white/5 mt-1" />}
+        {index < 9 && <div className="w-px h-full min-h-[20px] mt-1" style={{ background: C.border }} />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-white/90 truncate">{event.title}</p>
-        <p className="text-[10px] text-white/40 mt-0.5">{timeStr}</p>
+        <p className="text-xs font-semibold truncate" style={{ color: C.text }}>{event.title}</p>
+        <p className="text-[10px] mt-0.5" style={{ color: C.textMuted }}>{timeStr}</p>
       </div>
     </motion.div>
   );
 }
 
 function MilestoneItem({ milestone, index }: { milestone: CareerDashboardData["milestones"][0]; index: number }) {
+  const C = useThemeColors();
   const progress = Math.min(100, Math.round((milestone.currentValue / milestone.targetValue) * 100));
 
   return (
@@ -285,33 +289,34 @@ function MilestoneItem({ milestone, index }: { milestone: CareerDashboardData["m
       initial="hidden"
       animate="visible"
       custom={index}
-      className={cn(
-        "flex items-center gap-3 p-3 rounded-xl border transition-all",
-        milestone.completed
-          ? "bg-emerald-500/5 border-emerald-500/20"
-          : "bg-white/[0.02] border-white/5 hover:border-white/10"
-      )}
+      className="flex items-center gap-3 p-3 rounded-xl border transition-all"
+      style={{
+        background: milestone.completed ? undefined : C.surface,
+        borderColor: milestone.completed ? undefined : C.border,
+      }}
     >
       <div className={cn(
         "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-        milestone.completed ? "bg-emerald-500/20" : "bg-white/5"
-      )}>
+        milestone.completed ? "bg-emerald-500/20" : ""
+      )}
+        style={!milestone.completed ? { background: C.surface } : undefined}
+      >
         {milestone.completed ? (
           <CheckCircle size={18} className="text-emerald-400" />
         ) : (
           <div className="relative">
-            <Circle size={18} className="text-white/30" />
-            <div className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white/60">
+            <Circle size={18} style={{ color: C.textMuted }} />
+            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color: C.textMuted }}>
               {Math.round(progress)}
             </div>
           </div>
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className={cn("text-xs font-semibold", milestone.completed ? "text-emerald-300" : "text-white/90")}>
+        <p className="text-xs font-semibold" style={{ color: milestone.completed ? undefined : C.text }}>
           {milestone.title}
         </p>
-        <p className="text-[10px] text-white/40 mt-0.5">{milestone.description}</p>
+        <p className="text-[10px] mt-0.5" style={{ color: C.textMuted }}>{milestone.description}</p>
       </div>
       {!milestone.completed && (
         <div className="w-16">
@@ -325,6 +330,7 @@ function MilestoneItem({ milestone, index }: { milestone: CareerDashboardData["m
 function ChartComponent({ type, data, options, height = 200 }: {
   type: string; data: any; options?: any; height?: number;
 }) {
+  const C = useThemeColors();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<any>(null);
 
@@ -344,12 +350,12 @@ function ChartComponent({ type, data, options, height = 200 }: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: data.datasets?.length > 1, labels: { color: "rgba(255,255,255,0.5)", font: { size: 10 } } },
+            legend: { display: data.datasets?.length > 1, labels: { color: C.textSec, font: { size: 10 } } },
             tooltip: {
-              backgroundColor: "rgba(0,0,0,0.8)",
-              titleColor: "#fff",
-              bodyColor: "rgba(255,255,255,0.7)",
-              borderColor: "rgba(255,255,255,0.1)",
+              backgroundColor: C.isDark ? "rgba(0,0,0,0.8)" : "#ffffff",
+              titleColor: C.text,
+              bodyColor: C.textSec,
+              borderColor: C.border,
               borderWidth: 1,
               padding: 10,
               cornerRadius: 8,
@@ -358,8 +364,8 @@ function ChartComponent({ type, data, options, height = 200 }: {
             },
           },
           scales: type !== "doughnut" && type !== "pie" && type !== "radar" ? {
-            x: { grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "rgba(255,255,255,0.4)", font: { size: 9 } } },
-            y: { grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "rgba(255,255,255,0.4)", font: { size: 9 } } },
+            x: { grid: { color: C.border }, ticks: { color: C.textMuted, font: { size: 10 } } },
+            y: { grid: { color: C.border }, ticks: { color: C.textMuted, font: { size: 10 } } },
           } : undefined,
           ...options,
         },
@@ -368,7 +374,7 @@ function ChartComponent({ type, data, options, height = 200 }: {
 
     loadChart();
     return () => { if (chartRef.current) chartRef.current.destroy(); };
-  }, [type, JSON.stringify(data), JSON.stringify(options)]);
+  }, [type, JSON.stringify(data), JSON.stringify(options), C.isDark]);
 
   return (
     <div style={{ height }}>
@@ -469,24 +475,24 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
             onClick={() => navigateTo("resume-builder")} className="text-left">
             <PremiumCard tilt glow className="p-5 hover:border-blue-500/30 transition-colors cursor-pointer">
               <FileText size={24} className="text-blue-400 mb-3" />
-              <h3 className="text-sm font-bold text-white mb-1">Build Your Resume</h3>
-              <p className="text-xs text-white/50">Create an ATS-optimized resume to get started</p>
+               <h3 className="text-sm font-bold mb-1" style={{ color: C.text }}>Build Your Resume</h3>
+              <p className="text-xs" style={{ color: C.textMuted }}>Create an ATS-optimized resume to get started</p>
             </PremiumCard>
           </motion.button>
           <motion.button variants={fadeUp} initial="hidden" animate="visible" custom={1}
             onClick={() => navigateTo("dsa-practice")} className="text-left">
             <PremiumCard tilt glow className="p-5 hover:border-amber-500/30 transition-colors cursor-pointer">
               <Code2 size={24} className="text-amber-400 mb-3" />
-              <h3 className="text-sm font-bold text-white mb-1">Start Coding Practice</h3>
-              <p className="text-xs text-white/50">Solve DSA problems to build technical readiness</p>
+               <h3 className="text-sm font-bold mb-1" style={{ color: C.text }}>Start Coding Practice</h3>
+              <p className="text-xs" style={{ color: C.textMuted }}>Solve DSA problems to build technical readiness</p>
             </PremiumCard>
           </motion.button>
           <motion.button variants={fadeUp} initial="hidden" animate="visible" custom={2}
             onClick={() => navigateTo("study-assistant")} className="text-left">
             <PremiumCard tilt glow className="p-5 hover:border-purple-500/30 transition-colors cursor-pointer">
               <GraduationCap size={24} className="text-purple-400 mb-3" />
-              <h3 className="text-sm font-bold text-white mb-1">Start Learning</h3>
-              <p className="text-xs text-white/50">Begin study sessions to build foundational knowledge</p>
+               <h3 className="text-sm font-bold mb-1" style={{ color: C.text }}>Start Learning</h3>
+              <p className="text-xs" style={{ color: C.textMuted }}>Begin study sessions to build foundational knowledge</p>
             </PremiumCard>
           </motion.button>
         </div>
@@ -566,7 +572,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-[0.2em] mb-1">CAREER COMMAND CENTER</p>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Career Dashboard</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: C.text }}>Career Dashboard</h1>
         </div>
         <PremiumButton variant="secondary" onClick={handleRefresh} icon={<RefreshCw size={12} className={cn(refreshing && "animate-spin")} />}>
           Refresh
@@ -634,10 +640,11 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.5 + i * 0.15 }}
-                    className="text-sm text-white/80 leading-relaxed"
+                    className="text-sm leading-relaxed"
+                    style={{ color: C.textSec }}
                   >
                     {i === 0 ? (
-                      <span className="font-bold text-white">{line}</span>
+                      <span className="font-bold" style={{ color: C.text }}>{line}</span>
                     ) : (
                       line
                     )}
@@ -682,15 +689,16 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * i }}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-amber-500/20 hover:bg-amber-500/[0.03] transition-all cursor-pointer group"
+                  className="flex items-center gap-3 p-3 rounded-xl border hover:border-amber-500/20 hover:bg-amber-500/[0.03] transition-all cursor-pointer group"
+                  style={{ background: C.surface, borderColor: C.border }}
                   onClick={() => navigateTo(action.category === "coding" ? "dsa-practice" : action.category === "resume" ? "ats-checker" : action.category === "career" ? "cover-letter" : action.category === "brand" ? "linkedin-optimizer" : action.category === "learning" ? "study-assistant" : "interview-hub")}
                 >
                   <ActionPriorityBadge priority={action.priority} />
-                  <span className="text-xs font-semibold text-white/90 flex-1 group-hover:text-amber-400 transition-colors">{action.title}</span>
-                  <span className="text-[10px] text-white/30 flex items-center gap-1">
+                  <span className="text-xs font-semibold flex-1 group-hover:text-amber-400 transition-colors" style={{ color: C.text }}>{action.title}</span>
+                  <span className="text-[10px] flex items-center gap-1" style={{ color: C.textMuted }}>
                     <Clock size={10} /> {action.estimatedMinutes}m
                   </span>
-                  <ChevronRight size={14} className="text-white/20 group-hover:text-amber-400 transition-colors" />
+                   <ChevronRight size={14} className="group-hover:text-amber-400 transition-colors" style={{ color: C.textMuted }} />
                 </motion.div>
               ))}
             </div>
@@ -704,15 +712,15 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
           <PremiumCard glow className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <Activity size={16} className="text-purple-400" />
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Readiness Breakdown</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: C.textSec }}>Readiness Breakdown</h3>
             </div>
             <ChartComponent type="radar" data={readinessChartData} height={260}
               options={{
                 scales: {
                   r: {
-                    angleLines: { color: "rgba(255,255,255,0.06)" },
-                    grid: { color: "rgba(255,255,255,0.06)" },
-                    pointLabels: { color: "rgba(255,255,255,0.6)", font: { size: 10 } },
+                    angleLines: { color: C.border },
+                    grid: { color: C.border },
+                    pointLabels: { color: C.textMuted, font: { size: 10 } },
                     ticks: { display: false },
                     suggestedMin: 0, suggestedMax: 100,
                   },
@@ -726,7 +734,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
           <PremiumCard glow className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <LineChart size={16} className="text-amber-400" />
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Weekly Activity</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: C.textSec }}>Weekly Activity</h3>
             </div>
             <ChartComponent type="line" data={weeklyChartData} height={260} />
           </PremiumCard>
@@ -742,43 +750,43 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
               <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center">
                 <GraduationCap size={16} className="text-purple-400" />
               </div>
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Learning</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: C.textSec }}>Learning</h3>
             </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Study Hours</span>
-                <span className="text-sm font-bold text-white">{data.learningSummary.studyHours}h</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Study Hours</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.learningSummary.studyHours}h</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Topics Completed</span>
-                <span className="text-sm font-bold text-white">{data.learningSummary.topicsCompleted}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Topics Completed</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.learningSummary.topicsCompleted}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Notes Generated</span>
-                <span className="text-sm font-bold text-white">{data.learningSummary.notesGenerated}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Notes Generated</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.learningSummary.notesGenerated}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Quizzes Created</span>
-                <span className="text-sm font-bold text-white">{data.learningSummary.quizzesCreated}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Quizzes Created</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.learningSummary.quizzesCreated}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Flashcards</span>
-                <span className="text-sm font-bold text-white">{data.learningSummary.flashcardsCreated}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Flashcards</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.learningSummary.flashcardsCreated}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Presentations</span>
-                <span className="text-sm font-bold text-white">{data.learningSummary.presentationsCreated}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Presentations</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.learningSummary.presentationsCreated}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Mind Maps</span>
-                <span className="text-sm font-bold text-white">{data.learningSummary.mindMapsCreated}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Mind Maps</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.learningSummary.mindMapsCreated}</span>
               </div>
               {data.learningSummary.weakTopics.length > 0 && (
-                <div className="pt-2 border-t border-white/5">
+                <div className="pt-2" style={{ borderTop: `1px solid ${C.border}` }}>
                   <p className="text-[10px] font-bold text-rose-400 uppercase mb-1">Weak Topics</p>
                   <div className="flex flex-wrap gap-1">
                     {data.learningSummary.weakTopics.map((t, i) => (
-                      <span key={i} className="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-medium">{t}</span>
+                      <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-medium">{t}</span>
                     ))}
                   </div>
                 </div>
@@ -797,43 +805,43 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
               <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
                 <Code2 size={16} className="text-amber-400" />
               </div>
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Coding</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: C.textSec }}>Coding</h3>
             </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Problems Solved</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Problems Solved</span>
                 <span className="text-sm font-bold text-amber-400">{data.codingSummary.problemsSolved}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Current Streak</span>
-                <span className="text-sm font-bold text-white flex items-center gap-1">
+                <span className="text-xs" style={{ color: C.textMuted }}>Current Streak</span>
+                <span className="text-sm font-bold flex items-center gap-1" style={{ color: C.text }}>
                   <Flame size={12} className="text-orange-400" /> {data.codingSummary.currentStreak} days
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Challenges Done</span>
-                <span className="text-sm font-bold text-white">{data.codingSummary.challengesCompleted}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Challenges Done</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.codingSummary.challengesCompleted}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">AI Review Avg</span>
-                <span className="text-sm font-bold text-white">{data.codingSummary.aiReviewAverage}%</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>AI Review Avg</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.codingSummary.aiReviewAverage}%</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Accuracy</span>
-                <span className="text-sm font-bold text-white">{data.codingSummary.accuracy}%</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Accuracy</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.codingSummary.accuracy}%</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Total Submissions</span>
-                <span className="text-sm font-bold text-white">{data.codingSummary.totalSubmissions}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Total Submissions</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.codingSummary.totalSubmissions}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Coding Sessions</span>
-                <span className="text-sm font-bold text-white">{data.codingSummary.codingSessions}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Coding Sessions</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.codingSummary.codingSessions}</span>
               </div>
               {data.codingSummary.roadmapProgress > 0 && (
-                <div className="pt-2 border-t border-white/5">
+                <div className="pt-2" style={{ borderTop: `1px solid ${C.border}` }}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] text-white/50">Roadmap Progress</span>
+                    <span className="text-[10px]" style={{ color: C.textMuted }}>Roadmap Progress</span>
                     <span className="text-[10px] font-bold text-amber-400">{data.codingSummary.roadmapProgress}%</span>
                   </div>
                   <PremiumProgressBar value={data.codingSummary.roadmapProgress} color="amber" height={4} />
@@ -853,32 +861,32 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
               <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center">
                 <FileText size={16} className="text-blue-400" />
               </div>
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Resume</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: C.textSec }}>Resume</h3>
             </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Resume Score</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Resume Score</span>
                 <span className="text-sm font-bold text-blue-400">{data.resumeSummary.resumeScore}%</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">ATS Score</span>
-                <span className="text-sm font-bold text-white">{data.resumeSummary.atsScore}%</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>ATS Score</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.resumeSummary.atsScore}%</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Resumes Created</span>
-                <span className="text-sm font-bold text-white">{data.resumeSummary.resumesCreated}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Resumes Created</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.resumeSummary.resumesCreated}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Cover Letters</span>
-                <span className="text-sm font-bold text-white">{data.resumeSummary.coverLettersCount}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Cover Letters</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.resumeSummary.coverLettersCount}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Resume Versions</span>
-                <span className="text-sm font-bold text-white">{data.resumeSummary.resumeVersions}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Resume Versions</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.resumeSummary.resumeVersions}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Improvements Applied</span>
-                <span className="text-sm font-bold text-white">{data.resumeSummary.resumeImprovements}</span>
+                <span className="text-xs" style={{ color: C.textMuted }}>Improvements Applied</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{data.resumeSummary.resumeImprovements}</span>
               </div>
               {data.resumeSummary.improvementSuggestionsRemaining > 0 && (
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/15">
@@ -901,28 +909,28 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
         <PremiumCard glow className="p-5">
           <div className="flex items-center gap-2 mb-4">
             <Users size={16} className="text-cyan-400" />
-            <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Professional Brand</h3>
+            <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: C.textSec }}>Professional Brand</h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="text-center">
               <div className="text-lg font-extrabold text-cyan-400">{data.professionalBrand.linkedinScore}%</div>
-              <div className="text-[10px] text-white/40 font-bold uppercase">LinkedIn Score</div>
+              <div className="text-[10px] font-bold uppercase" style={{ color: C.textMuted }}>LinkedIn Score</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-extrabold text-pink-400">{data.professionalBrand.coverLettersGenerated}</div>
-              <div className="text-[10px] text-white/40 font-bold uppercase">Cover Letters</div>
+              <div className="text-[10px] font-bold uppercase" style={{ color: C.textMuted }}>Cover Letters</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-extrabold text-purple-400">{data.professionalBrand.profileCompleteness}%</div>
-              <div className="text-[10px] text-white/40 font-bold uppercase">Profile Complete</div>
+              <div className="text-[10px] font-bold uppercase" style={{ color: C.textMuted }}>Profile Complete</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-extrabold text-emerald-400">{data.professionalBrand.githubConnected ? "Yes" : "No"}</div>
-              <div className="text-[10px] text-white/40 font-bold uppercase">GitHub Connected</div>
+              <div className="text-[10px] font-bold uppercase" style={{ color: C.textMuted }}>GitHub Connected</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-extrabold text-amber-400">{data.professionalBrand.profileCompleteness >= 70 ? "Active" : "Needed"}</div>
-              <div className="text-[10px] text-white/40 font-bold uppercase">Networking</div>
+              <div className="text-[10px] font-bold uppercase" style={{ color: C.textMuted }}>Networking</div>
             </div>
           </div>
           <div className="flex gap-2 mt-4">
@@ -949,7 +957,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
             <PremiumCard glow className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp size={16} className="text-emerald-400" />
-                <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">ATS Score History</h3>
+                <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: C.textSec }}>ATS Score History</h3>
               </div>
               <ChartComponent type="line" data={atsChartData} height={220} />
             </PremiumCard>
@@ -959,9 +967,9 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
             <PremiumCard glow className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp size={16} className="text-emerald-400" />
-                <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">ATS Score History</h3>
+                <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: C.textSec }}>ATS Score History</h3>
               </div>
-              <div className="flex items-center justify-center h-[220px] text-white/30 text-xs">
+              <div className="flex items-center justify-center h-[220px] text-xs" style={{ color: C.textMuted }}>
                 Run your first ATS analysis to see score trends
               </div>
             </PremiumCard>
@@ -972,14 +980,14 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
           <PremiumCard glow className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <PieChart size={16} className="text-pink-400" />
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Productivity Overview</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: C.textSec }}>Productivity Overview</h3>
             </div>
             <ChartComponent type="bar" data={productivityChartData} height={220}
               options={{
                 plugins: { legend: { display: false } },
                 scales: {
-                  y: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "rgba(255,255,255,0.4)", font: { size: 9 } } },
-                  x: { grid: { display: false }, ticks: { color: "rgba(255,255,255,0.4)", font: { size: 9 } } },
+                  y: { beginAtZero: true, grid: { color: C.border }, ticks: { color: C.textMuted, font: { size: 10 } } },
+                  x: { grid: { display: false }, ticks: { color: C.textMuted, font: { size: 10 } } },
                 },
               }} />
           </PremiumCard>
@@ -1001,7 +1009,8 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * i }}
-                  className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-amber-500/20 transition-all cursor-pointer group"
+                  className="p-4 rounded-xl border hover:border-amber-500/20 transition-all cursor-pointer group"
+                  style={{ background: C.surface, borderColor: C.border }}
                   onClick={() => navigateTo(rec.action)}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -1019,8 +1028,8 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
                       {rec.impact}
                     </PremiumBadge>
                   </div>
-                  <h4 className="text-xs font-bold text-white/90 mb-1 group-hover:text-amber-400 transition-colors">{rec.title}</h4>
-                  <p className="text-[10px] text-white/50 leading-relaxed">{rec.description}</p>
+                  <h4 className="text-xs font-bold mb-1 group-hover:text-amber-400 transition-colors" style={{ color: C.text }}>{rec.title}</h4>
+                  <p className="text-[10px] leading-relaxed" style={{ color: C.textMuted }}>{rec.description}</p>
                 </motion.div>
               ))}
             </div>
@@ -1048,7 +1057,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
                     className="flex items-start gap-2 p-3 rounded-lg bg-purple-500/5 border border-purple-500/10"
                   >
                     <Sparkles size={12} className="text-purple-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-white/70 leading-relaxed">{insight}</p>
+                    <p className="text-xs leading-relaxed" style={{ color: C.textSec }}>{insight}</p>
                   </motion.div>
                 ))}
               </div>
@@ -1066,25 +1075,25 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
             <div className="space-y-4">
               <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
                 <p className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Biggest Win</p>
-                <p className="text-xs text-white/80">{data.careerCoach.biggestWin}</p>
+                <p className="text-xs" style={{ color: C.textSec }}>{data.careerCoach.biggestWin}</p>
               </div>
               <div className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/10">
                 <p className="text-[10px] font-bold text-rose-400 uppercase mb-1">Biggest Risk</p>
-                <p className="text-xs text-white/80">{data.careerCoach.biggestRisk}</p>
+                <p className="text-xs" style={{ color: C.textSec }}>{data.careerCoach.biggestRisk}</p>
               </div>
               <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
                 <p className="text-[10px] font-bold text-amber-400 uppercase mb-1">Focus Area</p>
-                <p className="text-xs text-white/80">{data.careerCoach.focusArea}</p>
+                <p className="text-xs" style={{ color: C.textSec }}>{data.careerCoach.focusArea}</p>
               </div>
               <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
                 <p className="text-[10px] font-bold text-blue-400 uppercase mb-1">Assessment</p>
-                <p className="text-xs text-white/80">{data.careerCoach.overallAssessment}</p>
+                <p className="text-xs" style={{ color: C.textSec }}>{data.careerCoach.overallAssessment}</p>
               </div>
               {data.interviewSummary && data.interviewSummary.totalCompleted > 0 && (
                 <div className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/10">
                   <p className="text-[10px] font-bold text-rose-400 uppercase mb-1">Interview Intelligence</p>
                   <div className="space-y-1">
-                    <p className="text-xs text-white/80">
+                    <p className="text-xs" style={{ color: C.textSec }}>
                       {data.interviewSummary.totalCompleted} interviews · {data.interviewSummary.avgScore}% avg
                       {data.interviewSummary.improvementDelta !== 0 && (
                         <span className={data.interviewSummary.improvementDelta > 0 ? "text-emerald-400" : "text-rose-400"}>
@@ -1093,12 +1102,12 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
                       )}
                     </p>
                     {data.interviewSummary.biggestStrength && (
-                      <p className="text-[10px] text-white/60">
+                      <p className="text-[10px]" style={{ color: C.textMuted }}>
                         <span className="text-emerald-400 font-bold">Strength:</span> {data.interviewSummary.biggestStrength}
                       </p>
                     )}
                     {data.interviewSummary.biggestWeakness && (
-                      <p className="text-[10px] text-white/60">
+                      <p className="text-[10px]" style={{ color: C.textMuted }}>
                         <span className="text-rose-400 font-bold">Focus:</span> {data.interviewSummary.biggestWeakness}
                       </p>
                     )}
@@ -1118,7 +1127,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
               <Trophy size={16} className="text-amber-500" />
               <h3 className="text-xs font-extrabold text-amber-500 uppercase tracking-wider">Milestone Tracker</h3>
             </div>
-            <span className="text-[10px] font-bold text-white/40">
+            <span className="text-[10px] font-bold" style={{ color: C.textMuted }}>
               {data.careerCoach.completedMilestones}/{data.careerCoach.totalMilestones} completed
             </span>
           </div>
@@ -1138,7 +1147,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
               <Calendar size={16} className="text-cyan-400" />
               <h3 className="text-xs font-extrabold text-cyan-400 uppercase tracking-wider">Progress Timeline</h3>
             </div>
-            <div className="max-h-[400px] overflow-y-auto pr-2 space-y-0" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent" }}>
+            <div className="max-h-[400px] overflow-y-auto pr-2 space-y-0" style={{ scrollbarWidth: "thin", scrollbarColor: C.border }}>
               {data.timeline.slice(0, 20).map((event, i) => (
                 <TimelineItem key={i} event={event} index={i} />
               ))}
@@ -1159,7 +1168,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
               {data.weakTopics.map((topic, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-rose-500/5 border border-rose-500/10">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-white/90 truncate">{topic.name}</p>
+                    <p className="text-xs font-semibold truncate" style={{ color: C.text }}>{topic.name}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <PremiumProgressBar value={topic.score} color="rose" height={3} />
                       <span className="text-[10px] font-bold text-rose-400">{topic.score}%</span>
@@ -1197,13 +1206,14 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => navigateTo(action.target)}
-                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-amber-500/20 transition-all cursor-pointer group"
+                className="flex flex-col items-center gap-2 p-3 rounded-xl border hover:border-amber-500/20 transition-all cursor-pointer group"
+                style={{ background: C.surface, borderColor: C.border }}
               >
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
                   style={{ background: `${action.color}15` }}>
                   <action.icon size={18} style={{ color: action.color }} />
                 </div>
-                <span className="text-[10px] font-bold text-white/60 group-hover:text-white/90 transition-colors text-center leading-tight">
+                <span className="text-[10px] font-bold group-hover:text-amber-400 transition-colors text-center leading-tight" style={{ color: C.textMuted }}>
                   {action.label}
                 </span>
               </motion.button>

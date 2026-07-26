@@ -203,12 +203,12 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
                         </motion.div>
                       )}
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
-                        style={{ background: selected ? `${cfg.color}20` : "rgba(255,255,255,0.04)", border: `1px solid ${selected ? `${cfg.color}30` : "rgba(255,255,255,0.08)"}` }}>
+                        style={{ background: selected ? `${cfg.color}20` : isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: `1px solid ${selected ? `${cfg.color}30` : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}` }}>
                         <TypeIcon size={18} style={{ color: cfg.color }} />
                       </div>
                       <div className="text-xs font-bold mb-1">{cfg.label}</div>
                       <div className="text-[10px] leading-relaxed" style={{ color: c.textMuted }}>{cfg.description}</div>
-                      <div className="flex items-center gap-2 mt-2 text-[9px] font-bold" style={{ color: c.textMuted }}>
+                      <div className="flex items-center gap-2 mt-2 text-[10px] font-bold" style={{ color: c.textMuted }}>
                         <Clock size={10} /> {cfg.suggestedDuration}m
                       </div>
                     </motion.button>
@@ -253,7 +253,7 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
                         style={{ background: selected ? `${co.color}10` : c.cardBg, borderColor: selected ? `${co.color}40` : c.border }}>
                         <CompanyLogo companyId={co.id} companyName={co.name} logo={co.logo} color={co.color} size={48} theme={theme} />
                         <div className="text-[11px] font-bold truncate">{co.name}</div>
-                        <div className="text-[9px] mt-0.5" style={{ color: c.textMuted }}>{co.culture.slice(0, 30)}...</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: c.textMuted }}>{co.culture.slice(0, 30)}...</div>
                       </motion.button>
                     );
                   })}
@@ -383,7 +383,7 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
                             className="flex-1 py-2 rounded-lg border text-center transition-all"
                             style={{ background: selected ? "rgba(245,158,11,0.1)" : c.surface, borderColor: selected ? "rgba(245,158,11,0.3)" : c.border }}>
                             <div className="text-[11px] font-bold" style={{ color: selected ? c.primary : c.text }}>{ex.label}</div>
-                            <div className="text-[9px]" style={{ color: c.textMuted }}>{ex.description}</div>
+                            <div className="text-[10px]" style={{ color: c.textMuted }}>{ex.description}</div>
                           </motion.button>
                         );
                       })}

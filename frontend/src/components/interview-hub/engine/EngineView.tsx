@@ -146,7 +146,7 @@ export default function EngineView({ theme }: EngineViewProps) {
             </div>
             <div className="flex items-center gap-2">
               {sessionId && (
-                <span className="text-[9px] px-2 py-1 rounded-lg border font-bold" style={{ background: isDark ? "rgba(16,185,129,0.1)" : "#ecfdf5", borderColor: isDark ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.25)", color: isDark ? "#34d399" : "#059669" }}>
+                <span className="text-[10px] px-2 py-1 rounded-lg border font-bold" style={{ background: isDark ? "rgba(16,185,129,0.1)" : "#ecfdf5", borderColor: isDark ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.25)", color: isDark ? "#34d399" : "#059669" }}>
                   SESSION ACTIVE
                 </span>
               )}

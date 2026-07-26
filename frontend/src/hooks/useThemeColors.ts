@@ -1,0 +1,20 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { mkColors, type ThemeColors } from "@/utils/themeColors";
+
+export function useThemeColors(): ThemeColors {
+  const [theme, setTheme] = useState<string>("dark");
+
+  useEffect(() => {
+    const t = document.documentElement.getAttribute("data-theme") || "dark";
+    setTheme(t);
+    const obs = new MutationObserver(() => {
+      setTheme(document.documentElement.getAttribute("data-theme") || "dark");
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => obs.disconnect();
+  }, []);
+
+  return mkColors(theme);
+}

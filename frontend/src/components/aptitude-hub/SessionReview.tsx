@@ -441,12 +441,12 @@ export default function SessionReview({
                         {ts.topic}
                       </span>
                       {isStrong && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase" style={{ background: `${c.green}20`, color: c.green }}>
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black uppercase" style={{ background: `${c.green}20`, color: c.green }}>
                           Strong
                         </span>
                       )}
                       {isWeak && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase" style={{ background: `${c.red}20`, color: c.red }}>
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black uppercase" style={{ background: `${c.red}20`, color: c.red }}>
                           Needs Work
                         </span>
                       )}
@@ -579,7 +579,8 @@ export default function SessionReview({
                 {/* Collapsed header */}
                 <button
                   onClick={() => setExpandedQuestion(isExpanded ? null : idx)}
-                  className="w-full p-4 flex items-center gap-3 text-left hover:bg-white/[0.02] transition-colors"
+                  className="w-full p-4 flex items-center gap-3 text-left transition-colors"
+                  style={{ background: "transparent" }}
                 >
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -602,7 +603,7 @@ export default function SessionReview({
                     </p>
                     <div className="flex items-center gap-3 mt-1">
                       <span
-                        className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full"
+                        className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full"
                         style={{
                           background: qr.isCorrect ? `${c.green}15` : `${c.red}15`,
                           color: qr.isCorrect ? c.green : c.red,
@@ -644,38 +645,39 @@ export default function SessionReview({
                           {qr.question.options.map((opt, oIdx) => {
                             const isUserChoice = oIdx === qr.userAnswer;
                             const isCorrectChoice = oIdx === qr.question.correctIdx;
-                            let optBg = "bg-white/5 border-white/10";
-                            let optText = c.textSec;
+                            let optStyle: React.CSSProperties = {
+                              background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                              borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+                              color: c.textSec,
+                            };
 
                             if (isCorrectChoice) {
-                              optBg = "bg-emerald-500/10 border-emerald-500/30";
-                              optText = "#10b981";
+                              optStyle = { background: "rgba(16,185,129,0.1)", borderColor: "rgba(16,185,129,0.3)", color: "#10b981" };
                             } else if (isUserChoice && !isCorrectChoice) {
-                              optBg = "bg-red-500/10 border-red-500/30";
-                              optText = "#ef4444";
+                              optStyle = { background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.3)", color: "#ef4444" };
                             }
 
                             return (
                               <div
                                 key={oIdx}
-                                className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs font-semibold ${optBg}`}
-                                style={{ color: optText }}
+                                className="flex items-center gap-2 p-2.5 rounded-lg border text-xs font-semibold"
+                                style={optStyle}
                               >
                                 {isCorrectChoice && <CheckCircle2 size={12} className="shrink-0" />}
                                 {isUserChoice && !isCorrectChoice && <XCircle size={12} className="shrink-0" />}
                                 <span>{opt}</span>
                                 {isUserChoice && isCorrectChoice && (
-                                  <span className="ml-auto text-[9px] font-black uppercase" style={{ color: c.green }}>
+                                  <span className="ml-auto text-[10px] font-black uppercase" style={{ color: c.green }}>
                                     Your answer
                                   </span>
                                 )}
                                 {isUserChoice && !isCorrectChoice && (
-                                  <span className="ml-auto text-[9px] font-black uppercase" style={{ color: c.red }}>
+                                  <span className="ml-auto text-[10px] font-black uppercase" style={{ color: c.red }}>
                                     Your answer
                                   </span>
                                 )}
                                 {!isUserChoice && isCorrectChoice && (
-                                  <span className="ml-auto text-[9px] font-black uppercase" style={{ color: c.green }}>
+                                  <span className="ml-auto text-[10px] font-black uppercase" style={{ color: c.green }}>
                                     Correct
                                   </span>
                                 )}
@@ -708,7 +710,7 @@ export default function SessionReview({
                             <div className="flex items-start gap-2">
                               <Lightbulb size={12} className="text-amber-500 mt-0.5 shrink-0" />
                               <div>
-                                <p className="text-[9px] font-black uppercase tracking-wider text-amber-500 mb-0.5">Shortcut</p>
+                                <p className="text-[10px] font-black uppercase tracking-wider text-amber-500 mb-0.5">Shortcut</p>
                                 <p className="text-xs leading-relaxed" style={{ color: c.textSec }}>
                                   {qr.shortcut || qr.question.shortcut}
                                 </p>
@@ -723,7 +725,7 @@ export default function SessionReview({
                             <div className="flex items-start gap-2">
                               <Brain size={12} className="text-purple-500 mt-0.5 shrink-0" />
                               <div>
-                                <p className="text-[9px] font-black uppercase tracking-wider text-purple-500 mb-0.5">AI Explanation</p>
+                                <p className="text-[10px] font-black uppercase tracking-wider text-purple-500 mb-0.5">AI Explanation</p>
                                 <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: c.textSec }}>
                                   {qr.aiExplanation}
                                 </p>
@@ -738,7 +740,7 @@ export default function SessionReview({
                             <div className="flex items-start gap-2">
                               <AlertTriangle size={12} className="text-red-400 mt-0.5 shrink-0" />
                               <div>
-                                <p className="text-[9px] font-black uppercase tracking-wider text-red-400 mb-0.5">Common Mistakes</p>
+                                <p className="text-[10px] font-black uppercase tracking-wider text-red-400 mb-0.5">Common Mistakes</p>
                                 <ul className="text-xs leading-relaxed space-y-0.5" style={{ color: c.textSec }}>
                                   {qr.commonMistakes.map((m, mi) => (
                                     <li key={mi}>• {m}</li>

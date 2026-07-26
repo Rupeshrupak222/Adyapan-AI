@@ -217,7 +217,7 @@ export default function QuestionCard({
             {question.companyTags.map((tag) => (
               <span
                 key={tag}
-                className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase"
+                className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"
                 style={{ background: "rgba(59,130,246,0.1)", color: "#3b82f6", border: "1px solid rgba(59,130,246,0.2)" }}
               >
                 {tag}
@@ -233,8 +233,8 @@ export default function QuestionCard({
           const isSelected = selectedIdx === oIdx;
           const isCorrectAnswer = oIdx === question.correctIdx;
 
-          let optBg = "rgba(255,255,255,0.05)";
-          let optBorder = "rgba(255,255,255,0.1)";
+          let optBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
+          let optBorder = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
           let optText = c.textSec;
           let letterBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
           let letterColor = c.textMuted;
@@ -340,8 +340,8 @@ export default function QuestionCard({
           onClick={onBookmark}
           className="py-2 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 transition-colors"
           style={{
-            background: isBookmarked ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)",
-            borderColor: isBookmarked ? "rgba(245,158,11,0.3)" : "rgba(255,255,255,0.1)",
+            background: isBookmarked ? "rgba(245,158,11,0.12)" : (isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
+            borderColor: isBookmarked ? "rgba(245,158,11,0.3)" : (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"),
             color: isBookmarked ? "#f59e0b" : c.textMuted,
           }}
         >
@@ -355,8 +355,8 @@ export default function QuestionCard({
           onClick={onFlag}
           className="py-2 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 transition-colors"
           style={{
-            background: isFlagged ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.05)",
-            borderColor: isFlagged ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.1)",
+            background: isFlagged ? "rgba(239,68,68,0.12)" : (isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
+            borderColor: isFlagged ? "rgba(239,68,68,0.3)" : (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"),
             color: isFlagged ? "#ef4444" : c.textMuted,
           }}
         >
@@ -370,8 +370,8 @@ export default function QuestionCard({
           onClick={() => setNotesOpen(!notesOpen)}
           className="py-2 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 transition-colors"
           style={{
-            background: notesOpen ? "rgba(59,130,246,0.12)" : "rgba(255,255,255,0.05)",
-            borderColor: notesOpen ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.1)",
+            background: notesOpen ? "rgba(59,130,246,0.12)" : (isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
+            borderColor: notesOpen ? "rgba(59,130,246,0.3)" : (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"),
             color: notesOpen ? "#3b82f6" : c.textMuted,
           }}
         >
@@ -386,8 +386,8 @@ export default function QuestionCard({
             onClick={onToggleExplanation}
             className="py-2 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 transition-colors"
             style={{
-              background: showExplanation ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)",
-              borderColor: showExplanation ? "rgba(245,158,11,0.3)" : "rgba(255,255,255,0.1)",
+              background: showExplanation ? "rgba(245,158,11,0.12)" : (isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
+              borderColor: showExplanation ? "rgba(245,158,11,0.3)" : (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"),
               color: showExplanation ? "#f59e0b" : c.textMuted,
             }}
           >
@@ -443,7 +443,7 @@ export default function QuestionCard({
               isCorrect
                 ? "bg-emerald-500/10 border-emerald-500/25"
                 : selectedIdx === null
-                ? "bg-white/5 border-white/10"
+                ? isDark ? "bg-white/5 border-white/10" : "bg-gray-100 border-gray-200"
                 : "bg-red-500/10 border-red-500/25"
             }`}
             style={

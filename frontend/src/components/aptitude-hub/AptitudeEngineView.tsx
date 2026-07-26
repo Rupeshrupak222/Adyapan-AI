@@ -678,7 +678,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${stat.color}15` }}>
                             <stat.icon size={14} style={{ color: stat.color }} />
                           </div>
-                          <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>{stat.label}</span>
+                          <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>{stat.label}</span>
                         </div>
                         <p className="text-xl font-black" style={{ color: stat.color }}>{stat.value}</p>
                       </motion.div>
@@ -740,7 +740,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-extrabold" style={{ color: c.text }}>Daily Challenge</h3>
-                        <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>Today</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>Today</span>
                       </div>
                       <p className="text-[11px] mt-0.5" style={{ color: c.textSec }}>Mixed topics from all categories. Compete and earn bonus XP!</p>
                     </div>
@@ -767,10 +767,10 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                         <CompanyLogo companyId={company.id} companyName={company.name} size={40} color={company.color} className="mb-2" theme={theme} />
                         <p className="text-[11px] font-extrabold" style={{ color: c.text }}>{company.name}</p>
                         <div className="flex items-center gap-1.5 mt-1.5">
-                          <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
                             {company.difficulty}
                           </span>
-                          <span className="text-[8px] font-bold" style={{ color: c.textMuted }}>
+                          <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>
                             {company.questionCount}Q
                           </span>
                         </div>
@@ -850,7 +850,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                             className="flex-1 rounded-t-lg relative group"
                             style={{ background: `linear-gradient(180deg, ${c.primary}, ${c.primaryDark})` }}
                           >
-                            <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] font-black opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: c.primary }}>
+                            <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: c.primary }}>
                               {week.accuracy}%
                             </div>
                           </motion.div>
@@ -860,7 +860,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                     <div className="flex gap-2">
                       {analytics.weeklyProgress.slice(-7).map(week => (
                         <div key={week.week} className="flex-1 text-center">
-                          <span className="text-[7px] font-bold" style={{ color: c.textMuted }}>
+                          <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>
                             {week.week.split("-").pop()}
                           </span>
                         </div>
@@ -1047,7 +1047,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                                     background: topicMastery.accuracy >= 70 ? c.green : topicMastery.accuracy >= 40 ? c.primary : c.red
                                   }} />
                                 </div>
-                                <div className="flex justify-between text-[8px] font-bold" style={{ color: c.textMuted }}>
+                                <div className="flex justify-between text-[10px] font-bold" style={{ color: c.textMuted }}>
                                   <span>{topicMastery.totalCorrect}/{topicMastery.totalAttempted}</span>
                                   <span style={{ color: topicMastery.accuracy >= 70 ? c.green : topicMastery.accuracy >= 40 ? c.primary : c.red }}>
                                     {topicMastery.accuracy}%
@@ -1122,23 +1122,23 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   <div className="border-t pt-2 space-y-1.5" style={{ borderColor: c.border }}>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded" style={{ background: navColors.current.bg, border: `1px solid ${navColors.current.border}` }} />
-                      <span className="text-[8px] font-bold" style={{ color: c.textMuted }}>Current</span>
+                      <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>Current</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded" style={{ background: navColors.correct.bg, border: `1px solid ${navColors.correct.border}` }} />
-                      <span className="text-[8px] font-bold" style={{ color: c.textMuted }}>Correct</span>
+                      <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>Correct</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded" style={{ background: navColors.incorrect.bg, border: `1px solid ${navColors.incorrect.border}` }} />
-                      <span className="text-[8px] font-bold" style={{ color: c.textMuted }}>Incorrect</span>
+                      <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>Incorrect</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded" style={{ background: navColors.skipped.bg, border: `1px solid ${navColors.skipped.border}` }} />
-                      <span className="text-[8px] font-bold" style={{ color: c.textMuted }}>Skipped</span>
+                      <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>Skipped</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded" style={{ background: navColors.unanswered.bg, border: `1px solid ${navColors.unanswered.border}` }} />
-                      <span className="text-[8px] font-bold" style={{ color: c.textMuted }}>Unanswered</span>
+                      <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>Unanswered</span>
                     </div>
                   </div>
 
@@ -1280,16 +1280,16 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           <CompanyLogo companyId={company.id} companyName={company.name} size={48} color={company.color} className="mb-3" theme={theme} />
                           <p className="text-sm font-extrabold" style={{ color: c.text }}>{company.name}</p>
                           <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
                               {company.difficulty}
                             </span>
-                            <span className="text-[8px] font-bold" style={{ color: c.textMuted }}>
+                            <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>
                               {company.questionCount}Q · {company.durationMin}min
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-1 mt-2">
                             {company.focusCategories.map(cat => (
-                              <span key={cat} className="text-[7px] font-bold px-1 py-0.5 rounded" style={{ background: `${APTITUDE_CATEGORIES.find(ac => ac.id === cat)?.color || c.primary}15`, color: APTITUDE_CATEGORIES.find(ac => ac.id === cat)?.color || c.primary }}>
+                              <span key={cat} className="text-[10px] font-bold px-1 py-0.5 rounded" style={{ background: `${APTITUDE_CATEGORIES.find(ac => ac.id === cat)?.color || c.primary}15`, color: APTITUDE_CATEGORIES.find(ac => ac.id === cat)?.color || c.primary }}>
                                 {cat.replace(/_/g, " ")}
                               </span>
                             ))}
@@ -1297,7 +1297,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           {readiness && (
                             <div className="mt-2.5 pt-2 border-t" style={{ borderColor: c.border }}>
                               <div className="flex items-center justify-between">
-                                <span className="text-[8px] font-bold" style={{ color: c.textMuted }}>Readiness</span>
+                                <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>Readiness</span>
                                 <span className="text-[9px] font-black" style={{ color: readiness.ready ? c.green : c.primary }}>
                                   {readiness.score}%
                                 </span>

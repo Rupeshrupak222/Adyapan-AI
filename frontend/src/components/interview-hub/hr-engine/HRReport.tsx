@@ -34,7 +34,7 @@ const COMPETENCY_ICONS: Record<string, React.ComponentType<any>> = {
   motivation: Flame,
 };
 
-function ScoreRing({ score, size = 120, strokeWidth = 8, label }: { score: number; size?: number; strokeWidth?: number; label?: string }) {
+function ScoreRing({ score, size = 120, strokeWidth = 8, label, isDark = true }: { score: number; size?: number; strokeWidth?: number; label?: string; isDark?: boolean }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
@@ -43,7 +43,7 @@ function ScoreRing({ score, size = 120, strokeWidth = 8, label }: { score: numbe
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"} strokeWidth={strokeWidth} />
         <motion.circle
           cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth}
           strokeLinecap="round" strokeDasharray={circumference}
@@ -62,7 +62,7 @@ function ScoreRing({ score, size = 120, strokeWidth = 8, label }: { score: numbe
         >
           {score}
         </motion.span>
-        {label && <span className="text-[9px] font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</span>}
+        {label && <span className="text-[10px] font-bold" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>{label}</span>}
       </div>
     </div>
   );
@@ -148,7 +148,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
           }}
         >
           <div className="flex flex-col md:flex-row items-center gap-8">
-            <ScoreRing score={evaluation.overallScore} size={140} strokeWidth={10} label="Overall" />
+            <ScoreRing score={evaluation.overallScore} size={140} strokeWidth={10} label="Overall" isDark={isDark} />
             <div className="flex-1 text-left space-y-3">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
                 style={{ background: recConfig.bg, color: recConfig.color }}>
@@ -169,7 +169,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                     <div className="text-lg font-extrabold" style={{ color: s.score >= 70 ? c.green : s.score >= 50 ? c.amber : c.red }}>
                       {s.score}
                     </div>
-                    <div className="text-[9px] font-bold uppercase" style={{ color: c.textMuted }}>{s.label}</div>
+                    <div className="text-[10px] font-bold uppercase" style={{ color: c.textMuted }}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -213,7 +213,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                   <div key={item.label} className="p-3 rounded-xl border text-center"
                     style={{ background: c.cardBg, borderColor: c.border }}>
                     <div className="text-lg font-extrabold" style={{ color: item.color }}>{item.score}</div>
-                    <div className="text-[9px] font-bold" style={{ color: c.textMuted }}>{item.label}</div>
+                    <div className="text-[10px] font-bold" style={{ color: c.textMuted }}>{item.label}</div>
                   </div>
                 ))}
               </div>
@@ -281,7 +281,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[11px] font-bold truncate">{bd.question}</div>
-                        <div className="text-[9px] mt-0.5" style={{ color: c.textMuted }}>
+                        <div className="text-[10px] mt-0.5" style={{ color: c.textMuted }}>
                           Score: {bd.score}% · {bd.competency?.replace(/_/g, " ") || "General"}
                         </div>
                       </div>
@@ -297,23 +297,23 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                         >
                           <div className="px-4 pb-4 space-y-3 border-t" style={{ borderColor: c.border }}>
                             <div className="pt-3">
-                              <div className="text-[9px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>Your Answer</div>
+                              <div className="text-[10px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>Your Answer</div>
                               <p className="text-[11px] leading-relaxed p-3 rounded-xl" style={{ background: c.surface }}>
                                 {bd.answer}
                               </p>
                             </div>
                             <div>
-                              <div className="text-[9px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>AI Analysis</div>
+                              <div className="text-[10px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>AI Analysis</div>
                               <p className="text-[11px] leading-relaxed" style={{ color: c.textSec }}>{bd.aiAnalysis}</p>
                             </div>
                             <div>
-                              <div className="text-[9px] font-bold uppercase mb-1" style={{ color: "#10b981" }}>Suggested Better Answer</div>
+                              <div className="text-[10px] font-bold uppercase mb-1" style={{ color: "#10b981" }}>Suggested Better Answer</div>
                               <p className="text-[11px] leading-relaxed p-3 rounded-xl" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.1)" }}>
                                 {bd.suggestedBetterAnswer}
                               </p>
                             </div>
                             <div>
-                              <div className="text-[9px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>Recruiter Perspective</div>
+                              <div className="text-[10px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>Recruiter Perspective</div>
                               <p className="text-[11px] leading-relaxed italic" style={{ color: c.textSec }}>
                                 "{bd.interviewerPerspective}"
                               </p>
@@ -322,10 +322,10 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                             <div className="grid grid-cols-2 gap-3">
                               {bd.starAnalysis && (
                                 <div className="p-3 rounded-xl" style={{ background: c.surface }}>
-                                  <div className="text-[9px] font-bold mb-1.5 flex items-center gap-1">
+                                  <div className="text-[10px] font-bold mb-1.5 flex items-center gap-1">
                                     <Star size={9} className="text-amber-500" /> STAR: {bd.starAnalysis.score}%
                                   </div>
-                                  <div className="flex gap-2 text-[8px]">
+                                  <div className="flex gap-2 text-[10px]">
                                     {(["hasSituation", "hasTask", "hasAction", "hasResult"] as const).map((k) => (
                                       <span key={k} className={`px-1.5 py-0.5 rounded ${bd.starAnalysis[k] ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
                                         {k.replace("has", "")}
@@ -336,18 +336,18 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                               )}
                               {bd.communicationAnalysis && (
                                 <div className="p-3 rounded-xl" style={{ background: c.surface }}>
-                                  <div className="text-[9px] font-bold mb-1.5 flex items-center gap-1">
+                                  <div className="text-[10px] font-bold mb-1.5 flex items-center gap-1">
                                     <MessageSquare size={9} className="text-blue-500" /> Comm: {bd.communicationAnalysis.overallScore}%
                                   </div>
-                                  <p className="text-[8px]" style={{ color: c.textMuted }}>{bd.communicationAnalysis.feedback}</p>
+                                  <p className="text-[10px]" style={{ color: c.textMuted }}>{bd.communicationAnalysis.feedback}</p>
                                 </div>
                               )}
                             </div>
                             {bd.tags?.length > 0 && (
                               <div className="flex flex-wrap gap-1">
                                 {bd.tags.map((tag) => (
-                                  <span key={tag} className="text-[8px] px-1.5 py-0.5 rounded font-bold"
-                                    style={{ background: "rgba(255,255,255,0.04)", color: c.textMuted }}>
+                                  <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded font-bold"
+                                    style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", color: c.textMuted }}>
                                     {tag}
                                   </span>
                                 ))}
@@ -391,11 +391,11 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                           transition={{ duration: 1, delay: 0.2 }}
                         />
                       </div>
-                      <div className="text-[9px] mt-1" style={{ color: c.textMuted }}>{comp.evidence}</div>
+                      <div className="text-[10px] mt-1" style={{ color: c.textMuted }}>{comp.evidence}</div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-lg font-extrabold" style={{ color: config.color }}>{comp.score}</div>
-                      <div className="text-[8px] capitalize" style={{ color: comp.trend === "improving" ? "#10b981" : comp.trend === "declining" ? "#ef4444" : c.textMuted }}>
+                      <div className="text-[10px] capitalize" style={{ color: comp.trend === "improving" ? "#10b981" : comp.trend === "declining" ? "#ef4444" : c.textMuted }}>
                         {comp.trend}
                       </div>
                     </div>

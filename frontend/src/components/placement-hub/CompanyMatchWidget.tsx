@@ -7,7 +7,8 @@ import { cn } from "@/lib/cn";
 import { PremiumCard, PremiumProgressBar } from "@/components/ui/PremiumComponents";
 import { fadeUp } from "@/utils/animations";
 import { ScoreRing } from "@/components/ui/ScoreRing";
-import { Building2, Star, Target, TrendingUp } from "lucide-react";
+import { useThemeColors } from "@/hooks/useThemeColors";
+import { Building2, AlertCircle, RefreshCw } from "lucide-react";
 
 interface CompanyMatch {
   company: string;
@@ -24,15 +25,19 @@ export function CompanyMatchWidget({
 }: {
   onViewChange?: (view: string) => void;
 }) {
+  const tc = useThemeColors();
   const [matches, setMatches] = useState<CompanyMatch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchMatches = useCallback(async () => {
     try {
+      setError(null);
       const res = await api.get("/placement/intelligence/companies?top=6");
       if (res.data.success) setMatches(res.data.companyMatches);
     } catch (err) {
       console.error("Failed to load company matches:", err);
+      setError("Unable to load company matches.");
     } finally {
       setLoading(false);
     }
@@ -40,13 +45,33 @@ export function CompanyMatchWidget({
 
   useEffect(() => { fetchMatches(); }, [fetchMatches]);
 
-  if (loading || matches.length === 0) return null;
+  if (loading) return null;
+
+  if (error && matches.length === 0) {
+    return (
+      <PremiumCard className="p-5 text-center" aria-label="Company match error">
+        <div className="flex flex-col items-center gap-2">
+          <AlertCircle size={20} className="text-rose-400" />
+          <p className="text-xs font-bold" style={{ color: tc.text }}>{error}</p>
+          <button
+            onClick={fetchMatches}
+            className="text-[10px] font-bold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1"
+            aria-label="Retry loading company matches"
+          >
+            <RefreshCw size={10} /> Retry
+          </button>
+        </div>
+      </PremiumCard>
+    );
+  }
+
+  if (matches.length === 0) return null;
 
   const topMatch = matches[0];
 
   return (
     <motion.div variants={fadeUp} initial="hidden" animate="visible">
-      <PremiumCard glow className="p-5 relative overflow-hidden">
+      <PremiumCard glow className="p-5 relative overflow-hidden" aria-label="Top company match">
         <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/5 blur-[60px] rounded-full pointer-events-none" />
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-4">
@@ -56,33 +81,33 @@ export function CompanyMatchWidget({
               </div>
               <div>
                 <h3 className="text-xs font-extrabold text-purple-400 uppercase tracking-wider">Top Company Match</h3>
-                <p className="text-[10px] text-white/40">Based on your skills</p>
+                <p className="text-[10px]" style={{ color: tc.textMuted }}>Based on your skills</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4 mb-3">
             <ScoreRing score={topMatch.matchPercent} size={70} strokeWidth={5} color="#8b56d4" label="Match" />
-            <div className="flex-1">
-              <div className="text-lg font-extrabold text-white">{topMatch.company}</div>
-              <div className="text-xs text-white/50">{topMatch.avgPackage}</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-lg font-extrabold" style={{ color: tc.text }}>{topMatch.company}</div>
+              <div className="text-xs" style={{ color: tc.textSec }}>{topMatch.avgPackage}</div>
               <div className="flex items-center gap-2 mt-1">
-                <span className={cn("text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase",
+                <span className={cn("text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase",
                   topMatch.difficulty === "easy" ? "bg-emerald-500/15 text-emerald-400" :
                   topMatch.difficulty === "medium" ? "bg-amber-500/15 text-amber-400" :
                   "bg-rose-500/15 text-rose-400"
                 )}>{topMatch.difficulty}</span>
-                <span className="text-[10px] text-white/40">{topMatch.matchedSkills.length}/{topMatch.requiredSkills.length} skills matched</span>
+                <span className="text-[10px]" style={{ color: tc.textMuted }}>{topMatch.matchedSkills.length}/{topMatch.requiredSkills.length} skills matched</span>
               </div>
             </div>
           </div>
 
           {topMatch.missingSkills.length > 0 && (
             <div className="mb-3">
-              <p className="text-[9px] text-white/40 font-bold uppercase mb-1">Missing Skills</p>
+              <p className="text-[10px] font-bold uppercase mb-1" style={{ color: tc.textMuted }}>Missing Skills</p>
               <div className="flex flex-wrap gap-1">
                 {topMatch.missingSkills.map(s => (
-                  <span key={s} className="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-medium">{s}</span>
+                  <span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-medium">{s}</span>
                 ))}
               </div>
             </div>
@@ -91,7 +116,7 @@ export function CompanyMatchWidget({
           <div className="space-y-1.5">
             {matches.slice(1, 4).map(m => (
               <div key={m.company} className="flex items-center gap-2">
-                <span className="text-[10px] text-white/60 font-medium w-20 truncate">{m.company}</span>
+                <span className="text-[10px] font-medium w-20 truncate" style={{ color: tc.textSec }}>{m.company}</span>
                 <div className="flex-1">
                   <PremiumProgressBar value={m.matchPercent}
                     color={m.matchPercent >= 70 ? "green" : m.matchPercent >= 40 ? "amber" : "rose"} height={3} />
@@ -108,6 +133,7 @@ export function CompanyMatchWidget({
           <button
             onClick={() => onViewChange?.("placement-intelligence")}
             className="w-full mt-3 text-[10px] font-bold text-purple-400 hover:text-purple-300 transition-colors text-center uppercase tracking-wider"
+            aria-label="View all company matches"
           >
             View All Companies →
           </button>

@@ -859,7 +859,7 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
                 {getPhaseTips(config.interviewType)[tipIndex % getPhaseTips(config.interviewType).length]}
               </motion.span>
             </AnimatePresence>
-            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold ml-auto shrink-0 uppercase tracking-wider"
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold ml-auto shrink-0 uppercase tracking-wider"
               style={{ background: "rgba(139,92,246,0.1)", color: "#a78bfa" }}>
               {PHASE_LABELS[phase]}
             </span>

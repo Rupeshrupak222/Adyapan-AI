@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/PremiumComponents";
 import { fadeUp } from "@/utils/animations";
 import { ScoreRing } from "@/components/ui/ScoreRing";
+import { useThemeColors } from "@/hooks/useThemeColors";
 import {
   Target, TrendingUp, ArrowUpRight, ArrowDownRight,
   Zap, Clock, AlertTriangle, ChevronRight, RefreshCw,
@@ -20,7 +21,7 @@ import {
   BarChart3, Activity, Sparkles, DollarSign,
   Shield, Award, Lightbulb, Code2, FileText,
   Mic, Globe, GraduationCap, Briefcase,
-  Building2, Star,
+  Building2, Star, AlertCircle,
 } from "lucide-react";
 
 interface SubScores {
@@ -113,6 +114,7 @@ function ChartComponent({ type, data, options, height = 200 }: {
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<any>(null);
+  const tc = useThemeColors();
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -123,6 +125,10 @@ function ChartComponent({ type, data, options, height = 200 }: {
 
       if (chartRef.current) chartRef.current.destroy();
 
+      const gridColor = tc.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)";
+      const tickColor = tc.isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.5)";
+      const labelColor = tc.isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.6)";
+
       chartRef.current = new ChartJS(canvasRef.current!, {
         type: type as any,
         data,
@@ -130,20 +136,20 @@ function ChartComponent({ type, data, options, height = 200 }: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: data.datasets?.length > 1, labels: { color: "rgba(255,255,255,0.5)", font: { size: 10 } } },
+            legend: { display: data.datasets?.length > 1, labels: { color: labelColor, font: { size: 10 } } },
             tooltip: {
-              backgroundColor: "rgba(0,0,0,0.8)",
-              titleColor: "#fff",
-              bodyColor: "rgba(255,255,255,0.7)",
-              borderColor: "rgba(255,255,255,0.1)",
+              backgroundColor: tc.isDark ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.95)",
+              titleColor: tc.isDark ? "#fff" : "#111827",
+              bodyColor: tc.isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)",
+              borderColor: tc.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
               borderWidth: 1,
               padding: 10,
               cornerRadius: 8,
             },
           },
           scales: type !== "doughnut" && type !== "pie" && type !== "radar" ? {
-            x: { grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "rgba(255,255,255,0.4)", font: { size: 9 } } },
-            y: { grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "rgba(255,255,255,0.4)", font: { size: 9 } } },
+            x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 } } },
+            y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 } } },
           } : undefined,
           ...options,
         },
@@ -152,7 +158,7 @@ function ChartComponent({ type, data, options, height = 200 }: {
 
     loadChart();
     return () => { if (chartRef.current) chartRef.current.destroy(); };
-  }, [type, JSON.stringify(data), JSON.stringify(options)]);
+  }, [type, JSON.stringify(data), JSON.stringify(options), tc.isDark]);
 
   return (
     <div style={{ height }}>
@@ -169,7 +175,7 @@ function DifficultyBadge({ difficulty }: { difficulty: string }) {
   };
   const c = config[difficulty] || config.medium;
   return (
-    <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider"
+    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider"
       style={{ background: c.bg, color: c.color }}>
       {difficulty}
     </span>
@@ -184,7 +190,7 @@ function ImpactBadge({ impact }: { impact: string }) {
   };
   const c = config[impact] || config.medium;
   return (
-    <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider"
+    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider"
       style={{ background: c.bg, color: c.color }}>
       {c.label}
     </span>
@@ -203,17 +209,21 @@ export function PlacementIntelligenceWidget({
   compact?: boolean;
   onViewChange?: (view: string) => void;
 }) {
+  const tc = useThemeColors();
   const [data, setData] = useState<PlacementIntelligenceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingStep, setLoadingStep] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchIntelligence = useCallback(async () => {
     try {
+      setError(null);
       const res = await api.get("/placement/intelligence");
       if (res.data.success) setData(res.data.intelligence);
     } catch (err) {
       console.error("Failed to load placement intelligence:", err);
+      setError("Unable to load placement intelligence. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -234,10 +244,12 @@ export function PlacementIntelligenceWidget({
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
+      setError(null);
       const res = await api.post("/placement/intelligence/refresh");
       if (res.data.success) setData(res.data.intelligence);
     } catch (err) {
       console.error("Failed to refresh:", err);
+      setError("Failed to refresh. Please try again.");
     }
     setTimeout(() => setRefreshing(false), 1000);
   };
@@ -248,7 +260,7 @@ export function PlacementIntelligenceWidget({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[300px]">
+      <div className="flex items-center justify-center min-h-[300px]" aria-label="Loading placement intelligence">
         <AIThinkingScreen
           steps={LOADING_STEPS}
           currentStep={loadingStep}
@@ -259,9 +271,25 @@ export function PlacementIntelligenceWidget({
     );
   }
 
+  if (error && !data) {
+    return (
+      <PremiumCard className="p-8 text-center" aria-label="Placement intelligence error">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-rose-500/15 flex items-center justify-center">
+            <AlertCircle size={24} className="text-rose-400" />
+          </div>
+          <p className="text-sm font-bold" style={{ color: tc.text }}>{error}</p>
+          <PremiumButton variant="secondary" onClick={handleRefresh}
+            icon={<RefreshCw size={12} className={cn(refreshing && "animate-spin")} />}>
+            Retry
+          </PremiumButton>
+        </div>
+      </PremiumCard>
+    );
+  }
+
   if (!data) return null;
 
-  // Radar chart data
   const radarData = {
     labels: ["Coding", "Aptitude", "Interview", "Resume", "Learning", "Soft Skills"],
     datasets: [{
@@ -273,7 +301,7 @@ export function PlacementIntelligenceWidget({
         data.subScores.learning,
         data.subScores.softSkills,
       ],
-      backgroundColor: "rgba(245,158,11,0.2)",
+      backgroundColor: tc.isDark ? "rgba(245,158,11,0.2)" : "rgba(245,158,11,0.15)",
       borderColor: "#f59e0b",
       borderWidth: 2,
       pointBackgroundColor: "#f59e0b",
@@ -282,7 +310,6 @@ export function PlacementIntelligenceWidget({
     }],
   };
 
-  // Skill weights bar chart
   const topWeights = data.skillWeights.slice(0, 8);
   const skillBarData = {
     labels: topWeights.map(w => w.skill.length > 15 ? w.skill.slice(0, 15) + "..." : w.skill),
@@ -296,26 +323,35 @@ export function PlacementIntelligenceWidget({
     }],
   };
 
-  // Readiness timeline bar chart
   const timelineBarData = {
     labels: data.readinessTimeline.map(t => t.stage),
     datasets: [{
       data: data.readinessTimeline.map(t => t.score),
       backgroundColor: data.readinessTimeline.map(t =>
-        t.completed ? "rgba(16,185,129,0.7)" : "rgba(255,255,255,0.1)"
+        t.completed ? "rgba(16,185,129,0.7)" : (tc.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)")
       ),
       borderColor: data.readinessTimeline.map(t =>
-        t.completed ? "#10b981" : "rgba(255,255,255,0.2)"
+        t.completed ? "#10b981" : (tc.isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.15)")
       ),
       borderWidth: 1,
       borderRadius: 4,
     }],
   };
 
+  const radarScales = {
+    r: {
+      angleLines: { color: tc.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)" },
+      grid: { color: tc.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)" },
+      pointLabels: { color: tc.isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)", font: { size: 11 } },
+      ticks: { display: false },
+      suggestedMin: 0, suggestedMax: 100,
+    },
+  };
+
   if (compact) {
     return (
       <motion.div variants={fadeUp} initial="hidden" animate="visible">
-        <PremiumCard glow className="p-5 relative overflow-hidden">
+        <PremiumCard glow className="p-5 relative overflow-hidden" aria-label="Placement intelligence summary">
           <div className="absolute top-0 right-0 w-60 h-60 bg-amber-500/5 blur-[80px] rounded-full pointer-events-none" />
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
@@ -325,7 +361,7 @@ export function PlacementIntelligenceWidget({
                 </div>
                 <div>
                   <h3 className="text-xs font-extrabold text-amber-500 uppercase tracking-wider">Placement Intelligence</h3>
-                  <p className="text-[10px] text-white/40">Cross-hub analysis</p>
+                  <p className="text-[10px]" style={{ color: tc.textMuted }}>Cross-hub analysis</p>
                 </div>
               </div>
               <PremiumButton variant="secondary" onClick={handleRefresh}
@@ -347,7 +383,7 @@ export function PlacementIntelligenceWidget({
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <div className="text-sm font-extrabold" style={{ color: s.color }}>{s.score}%</div>
-                    <div className="text-[9px] text-white/40 font-bold uppercase">{s.label}</div>
+                    <div className="text-[10px] font-bold uppercase" style={{ color: tc.textMuted }}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -377,14 +413,12 @@ export function PlacementIntelligenceWidget({
     );
   }
 
-  // Full view
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-[0.2em] mb-1">PLACEMENT INTELLIGENCE</p>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Placement Readiness Engine</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: tc.text }}>Placement Readiness Engine</h1>
         </div>
         <PremiumButton variant="secondary" onClick={handleRefresh}
           icon={<RefreshCw size={12} className={cn(refreshing && "animate-spin")} />}>
@@ -392,9 +426,8 @@ export function PlacementIntelligenceWidget({
         </PremiumButton>
       </div>
 
-      {/* Hero: Overall Score + Radar */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
-        <PremiumCard glow className="p-6 md:p-8 relative overflow-hidden">
+        <PremiumCard glow className="p-6 md:p-8 relative overflow-hidden" aria-label="Placement readiness overview">
           <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/5 blur-[100px] rounded-full pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-60 h-60 bg-purple-500/5 blur-[80px] rounded-full pointer-events-none" />
           <div className="relative z-10">
@@ -418,15 +451,7 @@ export function PlacementIntelligenceWidget({
               <div className="flex-1 w-full">
                 <ChartComponent type="radar" data={radarData} height={280}
                   options={{
-                    scales: {
-                      r: {
-                        angleLines: { color: "rgba(255,255,255,0.06)" },
-                        grid: { color: "rgba(255,255,255,0.06)" },
-                        pointLabels: { color: "rgba(255,255,255,0.6)", font: { size: 11 } },
-                        ticks: { display: false },
-                        suggestedMin: 0, suggestedMax: 100,
-                      },
-                    },
+                    scales: radarScales,
                     plugins: { legend: { display: false } },
                   }} />
               </div>
@@ -435,10 +460,9 @@ export function PlacementIntelligenceWidget({
         </PremiumCard>
       </motion.div>
 
-      {/* AI Insights Brief */}
       {data.aiInsights && (
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}>
-          <PremiumCard glow className="p-5 border-amber-500/15 relative overflow-hidden">
+          <PremiumCard glow className="p-5 border-amber-500/15 relative overflow-hidden" aria-label="AI assessment">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-purple-500" />
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
@@ -446,17 +470,17 @@ export function PlacementIntelligenceWidget({
               </div>
               <div className="flex-1">
                 <h3 className="text-xs font-extrabold text-amber-500 uppercase tracking-wider mb-2">AI Assessment</h3>
-                <p className="text-sm text-white/80 leading-relaxed">{data.aiInsights.overallAssessment}</p>
+                <p className="text-sm leading-relaxed" style={{ color: tc.text }}>{data.aiInsights.overallAssessment}</p>
                 <div className="flex flex-wrap gap-3 mt-3">
                   <div className="text-center">
                     <div className="text-lg font-extrabold text-emerald-400">{data.aiInsights.estimatedWeeksToReady}w</div>
-                    <div className="text-[9px] text-white/40 font-bold uppercase">Est. to Ready</div>
+                    <div className="text-[10px] font-bold uppercase" style={{ color: tc.textMuted }}>Est. to Ready</div>
                   </div>
                   {data.aiInsights.targetCompanies?.length > 0 && (
                     <div className="flex items-center gap-1 flex-wrap">
-                      <span className="text-[9px] text-white/40 font-bold uppercase mr-1">Target:</span>
+                      <span className="text-[10px] font-bold uppercase mr-1" style={{ color: tc.textMuted }}>Target:</span>
                       {data.aiInsights.targetCompanies.slice(0, 4).map((c: string) => (
-                        <span key={c} className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 font-medium">{c}</span>
+                        <span key={c} className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 font-medium">{c}</span>
                       ))}
                     </div>
                   )}
@@ -467,7 +491,6 @@ export function PlacementIntelligenceWidget({
         </motion.div>
       )}
 
-      {/* Key Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Placement Score", value: `${data.placementScore}%`, icon: Target, color: "#f59e0b" },
@@ -482,28 +505,27 @@ export function PlacementIntelligenceWidget({
                   <m.icon size={18} />
                 </div>
               </div>
-              <div className="text-xl font-extrabold text-white mb-1 truncate">{m.value}</div>
-              <div className="text-[10px] font-bold text-white/40 uppercase tracking-wider">{m.label}</div>
+              <div className="text-xl font-extrabold mb-1 truncate" style={{ color: tc.text }}>{m.value}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: tc.textMuted }}>{m.label}</div>
             </PremiumCard>
           </motion.div>
         ))}
       </div>
 
-      {/* Skill Weights + Readiness Timeline Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4}>
           <PremiumCard glow className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <Activity size={16} className="text-emerald-400" />
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Skill Contribution</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: tc.textSec }}>Skill Contribution</h3>
             </div>
             <ChartComponent type="bar" data={skillBarData} height={260}
               options={{
                 indexAxis: "y",
                 plugins: { legend: { display: false } },
                 scales: {
-                  x: { beginAtZero: true, max: 100, grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "rgba(255,255,255,0.4)", font: { size: 9 } } },
-                  y: { grid: { display: false }, ticks: { color: "rgba(255,255,255,0.5)", font: { size: 9 } } },
+                  x: { beginAtZero: true, max: 100 },
+                  y: { grid: { display: false } },
                 },
               }} />
           </PremiumCard>
@@ -513,21 +535,20 @@ export function PlacementIntelligenceWidget({
           <PremiumCard glow className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 size={16} className="text-amber-400" />
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Readiness Timeline</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: tc.textSec }}>Readiness Timeline</h3>
             </div>
             <ChartComponent type="bar" data={timelineBarData} height={260}
               options={{
                 plugins: { legend: { display: false } },
                 scales: {
-                  y: { beginAtZero: true, max: 100, grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "rgba(255,255,255,0.4)", font: { size: 9 } } },
-                  x: { grid: { display: false }, ticks: { color: "rgba(255,255,255,0.5)", font: { size: 9 } } },
+                  y: { beginAtZero: true, max: 100 },
+                  x: { grid: { display: false } },
                 },
               }} />
           </PremiumCard>
         </motion.div>
       </div>
 
-      {/* Strengths + Weaknesses */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={6}>
           <PremiumCard glow className="p-5 h-full">
@@ -535,16 +556,16 @@ export function PlacementIntelligenceWidget({
               <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
                 <CheckCircle size={16} className="text-emerald-400" />
               </div>
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Strengths</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: tc.textSec }}>Strengths</h3>
             </div>
             <div className="space-y-2">
               {data.strengths.length > 0 ? data.strengths.map((s, i) => (
                 <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
                   <CheckCircle size={12} className="text-emerald-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-xs text-white/80">{s}</span>
+                  <span className="text-xs" style={{ color: tc.text }}>{s}</span>
                 </div>
               )) : (
-                <p className="text-xs text-white/40 italic">Complete more activities to identify strengths</p>
+                <p className="text-xs italic" style={{ color: tc.textMuted }}>Complete more activities to identify strengths</p>
               )}
             </div>
           </PremiumCard>
@@ -556,23 +577,22 @@ export function PlacementIntelligenceWidget({
               <div className="w-8 h-8 rounded-lg bg-rose-500/15 flex items-center justify-center">
                 <AlertTriangle size={16} className="text-rose-400" />
               </div>
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Areas to Improve</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: tc.textSec }}>Areas to Improve</h3>
             </div>
             <div className="space-y-2">
               {data.weaknesses.length > 0 ? data.weaknesses.map((w, i) => (
                 <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-rose-500/5 border border-rose-500/10">
                   <AlertTriangle size={12} className="text-rose-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-xs text-white/80">{w}</span>
+                  <span className="text-xs" style={{ color: tc.text }}>{w}</span>
                 </div>
               )) : (
-                <p className="text-xs text-white/40 italic">No critical weaknesses identified</p>
+                <p className="text-xs italic" style={{ color: tc.textMuted }}>No critical weaknesses identified</p>
               )}
             </div>
           </PremiumCard>
         </motion.div>
       </div>
 
-      {/* Recommendations */}
       {data.recommendations.length > 0 && (
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={8}>
           <PremiumCard glow className="p-5">
@@ -589,15 +609,20 @@ export function PlacementIntelligenceWidget({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * i }}
-                    className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-amber-500/20 transition-all cursor-pointer group"
+                    className="p-4 rounded-xl border hover:border-amber-500/20 transition-all cursor-pointer group"
+                    style={{ background: tc.surface, borderColor: tc.border }}
                     onClick={() => navigateTo(rec.action)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${rec.title}: ${rec.description}`}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigateTo(rec.action); } }}
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <Icon size={14} style={{ color: rec.color }} />
                       <ImpactBadge impact={rec.impact} />
                     </div>
-                    <h4 className="text-xs font-bold text-white mb-1 group-hover:text-amber-400 transition-colors">{rec.title}</h4>
-                    <p className="text-[10px] text-white/50 leading-relaxed">{rec.description}</p>
+                    <h4 className="text-xs font-bold mb-1 group-hover:text-amber-400 transition-colors" style={{ color: tc.text }}>{rec.title}</h4>
+                    <p className="text-[10px] leading-relaxed" style={{ color: tc.textSec }}>{rec.description}</p>
                     <div className="mt-2 text-[10px] font-bold text-emerald-400">+{rec.estimatedImprovement}% impact</div>
                   </motion.div>
                 );
@@ -607,13 +632,12 @@ export function PlacementIntelligenceWidget({
         </motion.div>
       )}
 
-      {/* Company Matches */}
       {data.companyMatches.length > 0 && (
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={9}>
           <PremiumCard glow className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <Building2 size={16} className="text-purple-400" />
-              <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">Company Match Analysis</h3>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: tc.textSec }}>Company Match Analysis</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {data.companyMatches.slice(0, 9).map((match, i) => (
@@ -622,18 +646,20 @@ export function PlacementIntelligenceWidget({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 * i }}
-                  className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-purple-500/20 transition-all"
+                  className="p-4 rounded-xl border hover:border-purple-500/20 transition-all"
+                  style={{ background: tc.surface, borderColor: tc.border }}
+                  aria-label={`${match.company} match: ${match.matchPercent}%`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Building2 size={14} className="text-purple-400" />
-                      <span className="text-xs font-bold text-white">{match.company}</span>
+                      <span className="text-xs font-bold" style={{ color: tc.text }}>{match.company}</span>
                     </div>
                     <DifficultyBadge difficulty={match.difficulty} />
                   </div>
                   <div className="mb-2">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] text-white/40 font-bold">Match</span>
+                      <span className="text-[10px] font-bold" style={{ color: tc.textMuted }}>Match</span>
                       <span className={cn("text-xs font-extrabold",
                         match.matchPercent >= 70 ? "text-emerald-400" :
                         match.matchPercent >= 40 ? "text-amber-400" :
@@ -644,13 +670,13 @@ export function PlacementIntelligenceWidget({
                       color={match.matchPercent >= 70 ? "green" : match.matchPercent >= 40 ? "amber" : "rose"} height={3} />
                   </div>
                   <div className="flex justify-between items-center text-[10px]">
-                    <span className="text-white/40">{match.avgPackage}</span>
-                    <span className="text-white/40">{match.matchedSkills.length}/{match.requiredSkills.length} skills</span>
+                    <span style={{ color: tc.textMuted }}>{match.avgPackage}</span>
+                    <span style={{ color: tc.textMuted }}>{match.matchedSkills.length}/{match.requiredSkills.length} skills</span>
                   </div>
                   {match.missingSkills.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {match.missingSkills.slice(0, 3).map(s => (
-                        <span key={s} className="text-[8px] px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-medium">{s}</span>
+                        <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-medium">{s}</span>
                       ))}
                     </div>
                   )}
@@ -661,25 +687,24 @@ export function PlacementIntelligenceWidget({
         </motion.div>
       )}
 
-      {/* Salary Estimate */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={10}>
         <PremiumCard glow className="p-5">
           <div className="flex items-center gap-2 mb-4">
             <DollarSign size={16} className="text-emerald-400" />
-            <h3 className="text-xs font-extrabold text-white/70 uppercase tracking-wider">AI Salary Estimate</h3>
+            <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: tc.textSec }}>AI Salary Estimate</h3>
           </div>
           <div className="flex items-center gap-8">
             <div className="flex flex-col items-center">
               <div className="text-3xl font-extrabold text-emerald-400">{data.salaryEstimate.median} LPA</div>
-              <div className="text-[10px] text-white/40 font-bold uppercase">Median Package</div>
+              <div className="text-[10px] font-bold uppercase" style={{ color: tc.textMuted }}>Median Package</div>
             </div>
             <div className="flex-1 space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-white/50">Range</span>
-                <span className="font-bold text-white">{data.salaryEstimate.min} - {data.salaryEstimate.max} LPA</span>
+                <span style={{ color: tc.textSec }}>Range</span>
+                <span className="font-bold" style={{ color: tc.text }}>{data.salaryEstimate.min} - {data.salaryEstimate.max} LPA</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-white/50">Confidence</span>
+                <span style={{ color: tc.textSec }}>Confidence</span>
                 <span className={cn("font-bold",
                   data.salaryEstimate.confidence === "high" ? "text-emerald-400" :
                   data.salaryEstimate.confidence === "medium" ? "text-amber-400" :
@@ -687,8 +712,8 @@ export function PlacementIntelligenceWidget({
                 )}>{data.salaryEstimate.confidence}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-white/50">Based on</span>
-                <span className="text-white/70 text-right flex-1 ml-4">{data.salaryEstimate.basedOn}</span>
+                <span style={{ color: tc.textSec }}>Based on</span>
+                <span className="text-right flex-1 ml-4" style={{ color: tc.text }}>{data.salaryEstimate.basedOn}</span>
               </div>
             </div>
           </div>

@@ -315,7 +315,7 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
           />
           <div>
             <div className="text-xs font-bold">HR Interview</div>
-            <div className="text-[9px]" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>
+            <div className="text-[10px]" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>
               {config.targetCompany || "General"} · {config.targetRole}
             </div>
           </div>
@@ -383,7 +383,7 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
                 {HR_TIPS[tipIndex]}
               </motion.span>
             </AnimatePresence>
-            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold ml-auto shrink-0"
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold ml-auto shrink-0"
               style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
               {currentCompetency.replace(/_/g, " ")}
             </span>
@@ -571,7 +571,7 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
                 <div className="flex items-center gap-2">
                   <Star size={10} className="text-amber-500" />
                   <span className="text-[10px] font-bold">STAR Method</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded ml-auto"
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto"
                     style={{
                       background: liveSTAR.score >= 70 ? "rgba(16,185,129,0.1)" : liveSTAR.score >= 40 ? "rgba(245,158,11,0.1)" : "rgba(239,68,68,0.1)",
                       color: liveSTAR.score >= 70 ? "#10b981" : liveSTAR.score >= 40 ? "#f59e0b" : "#ef4444",
@@ -581,7 +581,7 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
                   {(["hasSituation", "hasTask", "hasAction", "hasResult"] as const).map((key) => (
-                    <div key={key} className="flex items-center gap-1.5 text-[9px]">
+                    <div key={key} className="flex items-center gap-1.5 text-[10px]">
                       <div className={`w-1.5 h-1.5 rounded-full ${liveSTAR[key] ? "bg-emerald-400" : "bg-red-400"}`} />
                       <span style={{ color: isDark ? "rgba(255,255,255,0.5)" : "#6b7280" }}>
                         {key.replace("has", "")}
@@ -590,7 +590,7 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
                   ))}
                 </div>
                 {liveSTAR.feedback && (
-                  <p className="text-[9px] leading-relaxed" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>
+                  <p className="text-[10px] leading-relaxed" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>
                     {liveSTAR.feedback}
                   </p>
                 )}
@@ -604,7 +604,7 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
                 <div className="flex items-center gap-2">
                   <MessageSquare size={10} className="text-blue-500" />
                   <span className="text-[10px] font-bold">Communication</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded ml-auto"
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto"
                     style={{
                       background: liveComm.overallScore >= 70 ? "rgba(16,185,129,0.1)" : "rgba(245,158,11,0.1)",
                       color: liveComm.overallScore >= 70 ? "#10b981" : "#f59e0b",
@@ -615,7 +615,7 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
                 <div className="space-y-1">
                   {(["clarity", "confidence", "fluency", "conciseness"] as const).map((key) => (
                     <div key={key} className="flex items-center gap-2">
-                      <span className="text-[9px] w-16 capitalize" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>
+                      <span className="text-[10px] w-16 capitalize" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>
                         {key}
                       </span>
                       <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "#e5e7eb" }}>
@@ -625,7 +625,7 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
                           transition={{ duration: 0.5 }}
                         />
                       </div>
-                      <span className="text-[8px] font-bold w-6 text-right" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>
+                      <span className="text-[10px] font-bold w-6 text-right" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>
                         {liveComm[key]}
                       </span>
                     </div>

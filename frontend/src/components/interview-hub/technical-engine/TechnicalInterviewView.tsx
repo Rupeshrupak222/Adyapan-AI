@@ -336,7 +336,7 @@ export default function TechnicalInterviewView({ theme: propTheme }: { theme?: s
             </div>
             <div className="flex items-center gap-2">
               {sessionId && (
-                <span className="text-[9px] px-2 py-1 rounded-lg border font-bold"
+                <span className="text-[10px] px-2 py-1 rounded-lg border font-bold"
                   style={{ background: isDark ? "rgba(16,185,129,0.1)" : "#ecfdf5", borderColor: isDark ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.25)", color: isDark ? "#34d399" : "#059669" }}>
                   SESSION ACTIVE
                 </span>
@@ -511,7 +511,7 @@ function TechnicalLanding({ onStart, theme, colors: c }: { onStart: (config: Tec
                         const selected = topic === t.id;
                         return (
                           <motion.button key={t.id} whileHover={cardHover} whileTap={cardTap} onClick={() => setTopic(t.id)} className="p-4 rounded-2xl border text-left transition-all" style={{ background: selected ? `${t.color}10` : c.cardBg, borderColor: selected ? `${t.color}40` : c.border }}>
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: selected ? `${t.color}20` : "rgba(255,255,255,0.04)", border: `1px solid ${selected ? `${t.color}30` : "rgba(255,255,255,0.08)"}` }}>
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: selected ? `${t.color}20` : isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: `1px solid ${selected ? `${t.color}30` : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}` }}>
                               <Icon size={18} style={{ color: selected ? t.color : c.textMuted }} />
                             </div>
                             <div className="text-[11px] font-bold">{t.label}</div>
@@ -596,7 +596,7 @@ function TechnicalLanding({ onStart, theme, colors: c }: { onStart: (config: Tec
                       {EXPERIENCE_OPTIONS.map(ex => (
                         <motion.button key={ex.value} whileTap={cardTap} onClick={() => setExperienceLevel(ex.value)} className="flex-1 py-2 rounded-lg border text-center transition-all" style={{ background: experienceLevel === ex.value ? "rgba(6,182,212,0.1)" : c.surface, borderColor: experienceLevel === ex.value ? "rgba(6,182,212,0.3)" : c.border }}>
                           <div className="text-[11px] font-bold" style={{ color: experienceLevel === ex.value ? c.cyan : c.text }}>{ex.label}</div>
-                          <div className="text-[9px]" style={{ color: c.textMuted }}>{ex.description}</div>
+                          <div className="text-[10px]" style={{ color: c.textMuted }}>{ex.description}</div>
                         </motion.button>
                       ))}
                     </div>
@@ -739,7 +739,7 @@ function LoadingScreen({ config, colors: c }: { config: TechnicalConfig | null; 
             </motion.div>
           ))}
         </div>
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: c.surfaceHover }}>
           <motion.div className="h-full rounded-full" style={{ background: "linear-gradient(90deg, #06b6d4, #3b82f6)" }} animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
         </div>
       </div>
@@ -1266,7 +1266,7 @@ function ActiveInterview({
               Focus on algorithm design, time/space complexity, and clean code structure.
             </span>
             {currentQuestion?.isCodingChallenge && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold ml-auto shrink-0 uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold ml-auto shrink-0 uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20">
                 Coding Challenge
               </span>
             )}
@@ -1299,7 +1299,7 @@ function ActiveInterview({
                                 <span className="text-xs font-bold flex items-center gap-1.5" style={{ color: c.cyan }}>
                                   <Code2 className="w-3.5 h-3.5" /> {currentQuestion.codingProblem.title || "Coding Challenge"}
                                 </span>
-                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: "rgba(6,182,212,0.15)", color: c.cyan }}>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: "rgba(6,182,212,0.15)", color: c.cyan }}>
                                   {currentQuestion.difficulty || config.difficulty}
                                 </span>
                               </div>

@@ -507,7 +507,7 @@ export default function AptitudeAnalytics({
                 >
                   {animatedReadiness}%
                 </motion.span>
-                <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>
+                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>
                   Ready
                 </span>
               </div>
@@ -1053,12 +1053,12 @@ export default function AptitudeAnalytics({
                         {topic.topic}
                       </span>
                       {topic.trend === "improving" && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase" style={{ background: `${c.green}15`, color: c.green }}>
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black uppercase" style={{ background: `${c.green}15`, color: c.green }}>
                           Improving
                         </span>
                       )}
                       {topic.trend === "declining" && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase" style={{ background: `${c.red}15`, color: c.red }}>
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black uppercase" style={{ background: `${c.red}15`, color: c.red }}>
                           Declining
                         </span>
                       )}
@@ -1190,7 +1190,7 @@ export default function AptitudeAnalytics({
                       {cr.gapTopics.slice(0, 4).map((gap) => (
                         <span
                           key={gap}
-                          className="px-2 py-0.5 rounded-full text-[9px] font-bold"
+                          className="px-2 py-0.5 rounded-full text-[10px] font-bold"
                           style={{
                             background: `${c.red}10`,
                             color: c.red,
@@ -1201,7 +1201,7 @@ export default function AptitudeAnalytics({
                         </span>
                       ))}
                       {cr.gapTopics.length > 4 && (
-                        <span className="text-[9px] font-bold" style={{ color: c.textMuted }}>
+                        <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>
                           +{cr.gapTopics.length - 4} more
                         </span>
                       )}

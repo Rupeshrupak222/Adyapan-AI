@@ -126,13 +126,13 @@ export default function HRHistory({ onBack, onSelectSession }: HRHistoryProps) {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-bold truncate">{session.targetRole}</span>
                       {session.targetCompany && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-md border font-bold"
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md border font-bold"
                           style={{ background: isDark ? "rgba(245,158,11,0.1)" : "#fffbeb", borderColor: isDark ? "rgba(245,158,11,0.2)" : "#fcd34d", color: "#f59e0b" }}>
                           {session.targetCompany}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 text-[9px]" style={{ color: c.textMuted }}>
+                    <div className="flex items-center gap-3 text-[10px]" style={{ color: c.textMuted }}>
                       <span className="flex items-center gap-1"><Calendar size={9} />{formatDate(session.completedAt)}</span>
                       <span className="flex items-center gap-1"><MessageSquare size={9} />{session.messageCount} messages</span>
                       <span className="flex items-center gap-1"><Target size={9} />{session.interviewType}</span>
@@ -143,7 +143,7 @@ export default function HRHistory({ onBack, onSelectSession }: HRHistoryProps) {
                       <div className="text-lg font-extrabold" style={{ color: getScoreColor(session.overallScore) }}>
                         {session.overallScore}%
                       </div>
-                      <div className="text-[8px] font-bold" style={{ color: c.textMuted }}>
+                      <div className="text-[10px] font-bold" style={{ color: c.textMuted }}>
                         {session.passed ? "Passed" : "Needs Work"}
                       </div>
                     </div>
