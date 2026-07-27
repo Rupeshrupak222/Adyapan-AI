@@ -216,7 +216,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
 
   // Comprehensive Light & Dark Theme Tokens
   const c = {
-    bg: isDark ? "#0F172A" : "#F8FAFC",
+    bg: "transparent",
     cardBg: isDark ? "rgba(255, 255, 255, 0.03)" : "#FFFFFF",
     cardBorder: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
     textPrimary: isDark ? "#FFFFFF" : "#0F172A",
@@ -230,7 +230,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
     green: "#10B981",
     red: "#EF4444",
     heroBg: isDark
-      ? "linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.95) 60%, rgba(15, 23, 42, 1) 100%)"
+      ? "linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(18, 18, 20, 0.95) 60%, rgba(10, 10, 12, 1) 100%)"
       : "linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, #FFFFFF 60%, #FFFBEB 100%)",
   };
 
@@ -462,7 +462,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
         {/* Right Animated Hero Illustration */}
         <div
           className="relative z-10 shrink-0 w-full md:w-72 h-44 sm:h-52 rounded-2xl flex items-center justify-center border overflow-hidden group shadow-md"
-          style={{ background: isDark ? "rgba(15, 23, 42, 0.7)" : "#FFFFFF", borderColor: c.cardBorder }}
+          style={{ background: isDark ? "rgba(18, 18, 20, 0.7)" : "#FFFFFF", borderColor: c.cardBorder }}
         >
           <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-transparent pointer-events-none" />
           <motion.div
@@ -595,7 +595,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 4 }}
                 className="absolute top-full left-0 right-0 mt-2 border rounded-xl shadow-2xl overflow-hidden z-50"
-                style={{ background: isDark ? "#0F172A" : "#FFFFFF", borderColor: c.cardBorder }}
+                style={{ background: isDark ? "#0A0A0C" : "#FFFFFF", borderColor: c.cardBorder }}
               >
                 {autocompleteFiltered.map((item) => (
                   <div
@@ -1008,7 +1008,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="p-5 rounded-xl border space-y-3 text-xs leading-relaxed"
-                      style={{ background: isDark ? "rgba(15, 23, 42, 0.9)" : "#F8FAFC", borderColor: c.cardBorder }}
+                      style={{ background: isDark ? "rgba(18, 18, 20, 0.9)" : "#F8FAFC", borderColor: c.cardBorder }}
                     >
                       <div>
                         <span className="font-extrabold text-amber-600 dark:text-amber-400 text-xs uppercase tracking-wider block mb-1">
@@ -1035,7 +1035,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
             className="rounded-[20px] p-6 border relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md"
             style={{
               background: isDark
-                ? "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(15, 23, 42, 0.95) 100%)"
+                ? "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(18, 18, 20, 0.95) 100%)"
                 : "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, #FFFFFF 100%)",
               borderColor: "rgba(16, 185, 129, 0.3)",
             }}
@@ -1131,7 +1131,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
                     <YAxis stroke={isDark ? "#64748B" : "#94A3B8"} fontSize={10} tickLine={false} axisLine={false} />
                     <Tooltip
                       contentStyle={{
-                        background: isDark ? "#0F172A" : "#FFFFFF",
+                        background: isDark ? "#0A0A0C" : "#FFFFFF",
                         border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)",
                         borderRadius: "8px",
                         fontSize: "11px",
