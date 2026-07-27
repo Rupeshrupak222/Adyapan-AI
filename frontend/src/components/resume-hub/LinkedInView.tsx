@@ -551,17 +551,7 @@ export function LinkedInView({ setView }: Props) {
         {!loading && !profile && (
           <motion.div key="empty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="flex-1 flex flex-col items-center justify-center gap-6 py-8">
-            <EmptyState
-              title="LinkedIn Profile Optimizer"
-              description="Upload your resume to generate an optimized, recruiter-ready LinkedIn profile with AI-powered headlines, About sections, experience optimization, and networking templates."
-              illustration={
-                <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-20 h-20 rounded-2xl flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(0,119,181,0.15))", border: `1px solid ${c.am}30` }}>
-                  <Linkedin size={36} style={{ color: "#0077b5" }} />
-                </motion.div>
-              }
-            />
+
 
             {/* Error Banner */}
             <AnimatePresence>
