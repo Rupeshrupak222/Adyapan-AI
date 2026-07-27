@@ -133,7 +133,23 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
   const handleCopyText = () => {
     const textToCopy = subjectLine ? `Subject: ${subjectLine}\n\n${editingContent}` : editingContent;
     navigator.clipboard.writeText(textToCopy);
-    alert("📋 Copied to clipboard successfully!");
+    toast.success("📋 Copied to clipboard successfully!");
+  };
+
+  const handleDownloadText = () => {
+    if (!editingContent.trim()) return;
+    const filename = `${tab}-${Date.now()}.txt`;
+    const textToDownload = subjectLine ? `Subject: ${subjectLine}\n\n${editingContent}` : editingContent;
+    const blob = new Blob([textToDownload], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Downloaded ${filename}`);
   };
 
   const handleSaveDraft = () => {
@@ -760,17 +776,15 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
                 </motion.button>
               </div>
 
-              {tab === "sop" && (
-                <motion.button
-                  onClick={() => alert("💾 Downloading PDF Statement of Purpose.")}
-                  disabled={!editingContent.trim()}
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  className="py-1.5 px-3 rounded bg-amber-500 text-black hover:bg-amber-400 text-[10px] font-bold flex items-center gap-1.5 disabled:opacity-30 transition-colors"
-                >
-                  <motion.span initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 280, damping: 18 }} style={{ display: "inline-flex", verticalAlign: "middle" }}><Download size={12} /></motion.span> Download PDF
-                </motion.button>
-              )}
+              <motion.button
+                onClick={handleDownloadText}
+                disabled={!editingContent.trim()}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="py-1.5 px-3 rounded bg-amber-500 text-black hover:bg-amber-400 text-[10px] font-bold flex items-center gap-1.5 disabled:opacity-30 transition-colors cursor-pointer"
+              >
+                <motion.span initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 280, damping: 18 }} style={{ display: "inline-flex", verticalAlign: "middle" }}><Download size={12} /></motion.span> Download File
+              </motion.button>
             </div>
           </motion.div>
 
