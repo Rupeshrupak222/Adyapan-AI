@@ -48,6 +48,7 @@ import { blogRouter } from "./blog.routes";
 import { placementRouter } from "./placement.routes";
 import { placementIntelligenceRouter } from "./placement-intelligence.routes";
 import { aptitudeEngineRouter } from "./aptitude-engine.routes";
+import { reasoningRouter } from "./reasoning.routes";
 import { engineRouter } from "./engine.routes";
 import { technicalEngineRouter } from "./technical-engine.routes";
 import { hrInterviewRouter } from "./hr-interview.routes";
@@ -134,6 +135,10 @@ apiRouter.use("/interview/hr", hrInterviewRouter);
 
 // Placement Hub Routes
 apiRouter.use("/placement", placementRouter);
+
+// Logical Reasoning Routes
+apiRouter.use("/reasoning", reasoningRouter);
+apiRouter.use("/placement/reasoning", reasoningRouter);
 
 // Placement Intelligence Routes
 apiRouter.use("/placement/intelligence", placementIntelligenceRouter);
