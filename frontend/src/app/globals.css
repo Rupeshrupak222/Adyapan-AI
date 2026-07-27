@@ -460,10 +460,67 @@ button, input, select, textarea {
   border-color: var(--border-hover) !important;
 }
 
-/* Select dropdown option backgrounds */
-[data-theme="light"] select option {
-  background-color: #ffffff;
-  color: var(--text-primary);
+/* ── Universal Curved & High-Contrast Select Dropdown System ── */
+select {
+  cursor: pointer;
+  border-radius: 0.75rem !important; /* Curved edges (12px) */
+  font-weight: 500;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+/* Dark mode select element default styling */
+html.dark select,
+[data-theme="dark"] select,
+.dark select {
+  color-scheme: dark;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+html.dark select:focus,
+[data-theme="dark"] select:focus,
+.dark select:focus {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25) !important;
+}
+
+/* Light mode select element default styling */
+html:not(.dark) select,
+[data-theme="light"] select,
+.light select {
+  color-scheme: light;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+html:not(.dark) select:focus,
+[data-theme="light"] select:focus,
+.light select:focus {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2) !important;
+}
+
+/* Option Menu Items Styling */
+select option {
+  padding: 8px 12px;
+  border-radius: 0.5rem;
+}
+
+html.dark select option,
+[data-theme="dark"] select option,
+.dark select option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+html:not(.dark) select option,
+[data-theme="light"] select option,
+.light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 /* Prose (markdown) readability in light mode */
