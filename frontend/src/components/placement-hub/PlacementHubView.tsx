@@ -127,8 +127,8 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
     red: "#ef4444",
   };
 
-  // Tab State: "aptitude" | "reasoning" | "mcqs" | "mocks" | "readiness"
-  const [tab, setTab] = useState<"aptitude" | "reasoning" | "mcqs" | "mocks" | "readiness">("aptitude");
+  // Tab State: "aptitude" | "reasoning" | "mcqs" | "mocks"
+  const [tab, setTab] = useState<"aptitude" | "reasoning" | "mcqs" | "mocks">("aptitude");
 
   // Practice session state
   const [practiceSession, setPracticeSession] = useState<PracticeSession | null>(null);
@@ -177,26 +177,12 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
     }
   }, [tab]);
 
-  // Fetch readiness report when switching to readiness tab
-  useEffect(() => {
-    if (tab === "readiness" && !readinessReport) {
-      setReadinessLoading(true);
-      api.get("/placement/readiness")
-        .then(({ data }) => {
-          if (data.success && data.report) setReadinessReport(data.report);
-        })
-        .catch(() => {})
-        .finally(() => setReadinessLoading(false));
-    }
-  }, [tab]);
-
   // Sync tab with activeModule from props
   useEffect(() => {
     if (activeModule === "placement-aptitude" || activeModule === "aptitude-engine") setTab("aptitude");
     else if (activeModule === "placement-reasoning") setTab("reasoning");
     else if (activeModule === "placement-mcqs") setTab("mcqs");
     else if (activeModule === "placement-mocks") setTab("mocks");
-    else if (activeModule === "placement-readiness") setTab("readiness");
   }, [activeModule]);
 
   // Mock test countdown timer
@@ -777,93 +763,7 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
               </motion.div>
             )}
 
-            {/* TAB E: READINESS SCORE */}
-            {tab === "readiness" && (
-              <motion.div
-                key="readiness-dashboard"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                {readinessLoading ? (
-                  <div className="p-10 border rounded-2xl text-center" style={{ background: c.cardBg, borderColor: c.border }}>
-                    <Clock size={20} className="text-amber-500 animate-spin mx-auto mb-2" />
-                    <p className="text-xs font-bold" style={{ color: c.textMuted }}>Generating your readiness report...</p>
-                  </div>
-                ) : readinessReport ? (
-                  <>
-                    {/* Overall Score */}
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.92 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="p-8 border rounded-2xl text-center"
-                      style={{ background: c.cardBg, borderColor: c.border }}
-                    >
-                      <div className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-amber-500 flex items-center justify-center">
-                        <span className="text-3xl font-black text-amber-500">{readinessReport.overall || 0}%</span>
-                      </div>
-                      <h3 className="text-sm font-extrabold" style={{ color: c.text }}>Overall Readiness</h3>
-                      <p className="text-xs mt-1" style={{ color: c.textSec }}>{readinessReport.summary || "Keep practicing to improve your score!"}</p>
-                    </motion.div>
 
-                    {/* Category Breakdown */}
-                    {readinessReport.categories && (
-                      <div className="p-6 border rounded-2xl space-y-4" style={{ background: c.cardBg, borderColor: c.border }}>
-                        <h4 className="text-xs font-black uppercase tracking-wider text-amber-500">Category Breakdown</h4>
-                        {Object.entries(readinessReport.categories).map(([cat, score]: [string, any]) => (
-                          <div key={cat} className="space-y-1">
-                            <div className="flex justify-between text-xs">
-                              <span className="font-bold capitalize" style={{ color: c.text }}>{cat}</span>
-                              <span className="font-black text-amber-500">{score}%</span>
-                            </div>
-                            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${score}%` }}
-                                transition={{ duration: 0.8, ease: "easeOut" }}
-                                className="h-full rounded-full bg-amber-500"
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Recommendations */}
-                    {readinessReport.recommendations && readinessReport.recommendations.length > 0 && (
-                      <div className="p-6 border rounded-2xl space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
-                        <h4 className="text-xs font-black uppercase tracking-wider text-amber-500">Recommendations</h4>
-                        {readinessReport.recommendations.map((rec: string, idx: number) => (
-                          <div key={idx} className="flex items-start gap-2 text-xs leading-relaxed" style={{ color: c.textSec }}>
-                            <Lightbulb size={14} className="text-amber-500 mt-0.5 shrink-0" />
-                            <span>{rec}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-10 border rounded-2xl text-center"
-                    style={{ background: c.cardBg, borderColor: c.border }}
-                  >
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                      className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center"
-                    >
-                      <Target size={24} className="text-amber-500/60" />
-                    </motion.div>
-                    <p className="text-sm font-extrabold mb-1" style={{ color: c.text }}>No readiness data yet</p>
-                    <p className="text-xs" style={{ color: c.textMuted }}>Complete mock tests and practice sessions to generate your readiness analysis.</p>
-                  </motion.div>
-                )}
-              </motion.div>
-            )}
 
           </AnimatePresence>
         </div>

@@ -1048,7 +1048,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
                 TCS Advanced Seating Arrangement Puzzle
               </h3>
               <p className="text-xs" style={{ color: c.textSecondary }}>
-                Solve today's featured puzzle within 90 seconds to earn +50 XP and boost your placement readiness score!
+                Solve today's featured puzzle within 90 seconds to earn +50 XP and boost your placement score!
               </p>
               <div className="flex items-center gap-4 text-xs font-bold pt-1">
                 <span className="text-emerald-600 dark:text-emerald-400">+50 XP Reward</span>
