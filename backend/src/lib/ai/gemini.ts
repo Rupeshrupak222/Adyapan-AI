@@ -1560,13 +1560,133 @@ export function generateRichAssignmentSections(
     content: `## 1. Executive Summary & Research Background\n\nThis publication-grade academic research assignment explores **${topic}** tailored specifically to the **${level}** degree level. Over recent years, **${topic}** has emerged as a critical domain requiring rigorous theoretical synthesis, mathematical formulation, and empirical validation.\n\n### 1.1 Scope & Primary Research Objectives\nThe primary objectives of this comprehensive study include:\n1. Deconstructing the core architectural mechanics and foundational principles governing **${topic}**.\n2. Evaluating empirical performance benchmarks across diverse operational environments.\n3. Formulating systematic optimization models to address key trade-offs and structural bottlenecks.\n4. Providing actionable recommendations for real-world deployment and theoretical advancement.\n\n### 1.2 Theoretical Context & Literature Survey\nA broad review of modern literature reveals essential interdisciplinary connections. At the **${level}** tier, understanding these foundational principles establishes a solid platform for advanced research. Scholars have emphasized that structured methodology and rigorous verification are mandatory when evaluating complex systems.\n\n> **Key Principle**: Effective academic inquiry into ${topic} requires balancing theoretical abstraction with practical empirical validation across varied constraints.`
   });
 
-  const chapterTitles = [
-    { title: "Chapter 1: Theoretical Foundations & Core Principles", focus: "Conceptual Framework & Mathematical Foundations" },
-    { title: "Chapter 2: System Architecture & Algorithmic Design", focus: "Technical Specifications & Protocol Analysis" },
-    { title: "Chapter 3: Empirical Evaluation & Methodological Synthesis", focus: "Experimental Design & Quantitative Results" },
-    { title: "Chapter 4: Comparative Models & Performance Trade-offs", focus: "Metric Analysis & Benchmark Comparisons" },
-    { title: "Chapter 5: Advanced Optimization & Scalability Paradigms", focus: "Fault Tolerance & High-Concurrency Systems" },
-    { title: "Chapter 6: Practical Integration & Industry Standards", focus: "Production Deployment & Future Applications" }
+  const chapterTemplates = [
+    {
+      title: "Chapter 1: Theoretical Foundations & Core Principles",
+      focus: "Conceptual Framework & Mathematical Foundations",
+      getContent: (i: number) => `## Chapter 1: Theoretical Foundations & Core Principles
+
+### 1.1 Conceptual Framework & Foundational Theories
+A comprehensive study into **${topic}** requires establishing a rigorous mathematical and theoretical baseline. At the **${level}** level, analyzing underlying axioms ensures consistent structural formulation across all operational conditions.
+
+$$ \\mathcal{F}_{opt}(x) = \\sum_{i=1}^{n} w_i \\cdot \\phi_i(x) + \\lambda \\cdot \\mathcal{R}(x) $$
+
+### 1.2 Fundamental Mechanics & Key Parameters
+The core parameters governing **${topic}** under this framework include:
+- **Theoretical Modularity**: Guarantees distinct separation of conceptual layers.
+- **Parametric Stability**: Prevents variance divergence during high-load processing.
+- **Mathematical Consistency**: Ensures correctness across deterministic and stochastic models.
+
+### 1.3 Critical Analytical Evaluation
+Theoretical modeling indicates that optimizing baseline state representations significantly reduces computational overhead. Rigorous formal verification validates system guarantees under varying edge parameters.
+
+> **Key Principle**: Foundational abstraction must preserve strict mathematical bounds while supporting scalable execution.`
+    },
+    {
+      title: "Chapter 2: System Architecture & Algorithmic Mechanics",
+      focus: "Technical Specifications & Protocol Analysis",
+      getContent: (i: number) => `## Chapter 2: System Architecture & Algorithmic Mechanics
+
+### 2.1 Architectural Topology & Workflow Pipeline
+Designing robust systems for **${topic}** relies on modular data flow pipelines and decoupled architectural layers. System components communicate via standardized protocol interfaces to maintain high throughput.
+
+$$ \\text{Throughput}_{max} = \\min \\left( \\frac{\\mathcal{B}_{bandwidth}}{L_{overhead}}, \\frac{\\mathcal{C}_{cpu}}{T_{latency}} \\right) $$
+
+### 2.2 Algorithmic Execution & Data Layouts
+Key algorithmic considerations include:
+- **Data Flow Pipeline**: Asynchronous stage execution to minimize pipeline stalls.
+- **Concurrency Management**: Non-blocking lock-free state synchronization.
+- **State Persistence**: Distributed consensus mechanisms for high-availability nodes.
+
+### 2.3 Structural Performance Analysis
+Empirical tracing demonstrates that eliminating synchronization bottlenecks increases resource utilization efficiency by up to 40% under peak concurrent workloads.
+
+> **Note**: System topologies must prioritize modular component isolation to simplify auditing and maintenance.`
+    },
+    {
+      title: "Chapter 3: Empirical Evaluation & Benchmarking Synthesis",
+      focus: "Experimental Methodology & Quantitative Metrics",
+      getContent: (i: number) => `## Chapter 3: Empirical Evaluation & Benchmarking Synthesis
+
+### 3.1 Experimental Design & Measurement Metrics
+Validating **${topic}** requires empirical experimentation across simulated and real-world testbeds. Quantitative evaluation measures key performance indicators including latency distribution, memory footprint, and CPU efficiency.
+
+$$ \\text{EfficiencyRatio} = \\frac{\\text{Successful Transactions}}{\\text{Total Energy Consumption} \\times \\Delta t} $$
+
+### 3.2 Quantitative Results & Benchmarks
+Experimental observations demonstrate:
+- **Baseline Latency**: Sub-millisecond response times under nominal workload pressure.
+- **Resource Footprint**: Linear memory scaling proportional to active workload state.
+- **Throughput Saturation**: Consistent throughput stability up to 95% capacity saturation.
+
+### 3.3 Comparative Empirical Discussion
+Benchmarking against traditional baselines confirms that the proposed **${topic}** model reduces tail latency while maintaining rigorous execution correctness.
+
+> **Empirical Insight**: Rigorous statistical sampling across diverse stress conditions is mandatory for baseline validation.`
+    },
+    {
+      title: "Chapter 4: Comparative Models & Security Trade-offs",
+      focus: "Trade-off Matrix & Boundary Condition Analysis",
+      getContent: (i: number) => `## Chapter 4: Comparative Models & Security Trade-offs
+
+### 4.1 Trade-off Analysis & Paradigm Comparison
+Implementing **${topic}** involves balancing competing objectives such as execution speed vs. memory consumption and algorithmic security vs. computational complexity.
+
+$$ \\Delta \\mathcal{S} = \\alpha \\cdot \\log(1 + \\text{SecurityLevel}) - \\beta \\cdot \\text{Overhead}_{compute} $$
+
+### 4.2 Security Constraints & Failure Modes
+Key security and reliability protocols include:
+- **Cryptographic Bounds**: Enforcing strict key length and entropy requirements.
+- **Fault Containment**: Isolating failing modules to prevent cascading system degradation.
+- **Audit Traceability**: Immutable logging of state transitions for compliance verification.
+
+### 4.3 Synthesis of Architectural Paradigms
+A comparative synthesis indicates that adaptive hybrid architectures yield the optimal balance between performance overhead and operational security.
+
+> **Security Note**: Defensive validation layers must be integrated directly into primary processing loops.`
+    },
+    {
+      title: "Chapter 5: Advanced Optimization & Scalability Paradigms",
+      focus: "High-Concurrency Paradigms & Fault Tolerance",
+      getContent: (i: number) => `## Chapter 5: Advanced Optimization & Scalability Paradigms
+
+### 5.1 Optimization Strategies & High-Concurrency Scaling
+Horizontal scaling strategies for **${topic}** enable dynamic capacity expansion without compromising systemic stability. Dynamic load balancing algorithms distribute execution tasks across available compute clusters.
+
+$$ \\mathcal{P}_{scale}(k) = \\frac{P_1 \\cdot k}{1 + \\gamma \\cdot (k - 1)} $$
+
+### 5.2 Fault Tolerance & Resilience Mechanisms
+System resilience features:
+- **Adaptive Load Balancing**: Real-time traffic redistribution based on node telemetry.
+- **Self-Healing Nodes**: Automatic health probes and instant container recycling.
+- **Dynamic Sharding**: Partitioning datasets to prevent storage bottlenecking.
+
+### 5.3 Scalability Evaluation & Discussion
+Stress testing shows that dynamic sharding maintains sub-linear latency growth even under 10x spikes in concurrent user traffic.
+
+> **Optimization Rule**: Scaling mechanisms must incorporate predictive telemetry to preempt resource exhaustion.`
+    },
+    {
+      title: "Chapter 6: Practical Integration & Industry Standards",
+      focus: "Enterprise Deployment & Real-World Case Studies",
+      getContent: (i: number) => `## Chapter 6: Practical Integration & Industry Standards
+
+### 6.1 Enterprise Deployment & Integration Lifecycles
+Translating theoretical **${topic}** models into production environments requires adhering to strict software engineering standards, continuous integration pipelines, and regulatory frameworks.
+
+$$ \\text{DeploymentIndex} = \\frac{\\text{SLA Compliance Percentage}}{\\text{Mean Time To Recovery (MTTR)}} $$
+
+### 6.2 Industry Standards & Compliance Frameworks
+Deployment recommendations include:
+- **API Standardization**: Clean RESTful and gRPC interfaces for cross-platform interop.
+- **Regulatory Alignment**: Strict adherence to ISO/IEC and IEEE industry standards.
+- **CI/CD Automation**: Automated regression testing and zero-downtime rolling deployments.
+
+### 6.3 Real-World Case Study Synthesis
+Field deployments in enterprise environments demonstrate that structured integration protocols reduce deployment risk while improving operational longevity.
+
+> **Industry Best Practice**: Maintain end-to-end telemetry monitoring across all production environments.`
+    }
   ];
 
   let currentPage = introEndPage + 1;
@@ -1574,17 +1694,17 @@ export function generateRichAssignmentSections(
   const pagesPerChapter = Math.max(1, Math.floor(bodyPagesTotal / bodyChapters));
 
   for (let i = 0; i < bodyChapters; i++) {
-    const ch = chapterTitles[i % chapterTitles.length];
+    const template = chapterTemplates[i % chapterTemplates.length];
     const endPage = i === bodyChapters - 1 ? (targetPages - 2) : (currentPage + pagesPerChapter - 1);
     const pageEst = currentPage === endPage ? `Page ${currentPage}` : `Pages ${currentPage}–${endPage}`;
     const chWords = Math.round((targetWords * 0.7) / bodyChapters);
 
     sections.push({
       sectionNumber: i + 2,
-      title: ch.title,
+      title: template.title,
       pageEstimate: pageEst,
       wordCount: chWords,
-      content: `## ${ch.title}\n\n### ${i + 1}.1 ${ch.focus}\n\nA thorough investigation into **${topic}** demonstrates critical design considerations. At the **${level}** level, ensuring structural integrity, mathematical consistency, and computational efficiency is vital.\n\n$$\n\\text{EfficiencyIndex}(\\mathcal{S}) = \\sum_{k=1}^{n} \\frac{\\alpha_k \\cdot \\Psi_k(t)}{\\delta_{latency} + \\epsilon}\n$$\n\n### ${i + 1}.2 Technical Specifications & Architectural Paradigms\n\nKey parameters for evaluating **${topic}** under this framework include:\n\n- **Architectural Modularity**: Ensures clean separation of concerns and high system maintainability.\n- **Algorithmic Complexity**: Minimizes computational overhead under high-concurrency workloads.\n- **Resilience & Reliability**: Guarantees system stability during anomalous operating conditions.\n- **Data Integrity**: Enforces strict verification protocols across distributed environments.\n\n### ${i + 1}.3 Detailed Discussion & Critical Analysis\n\nAnalyzing the underlying mechanisms highlights significant trade-offs between computational overhead and throughput. Empirical evidence demonstrates that optimizing core parameters yields measurable performance improvements across both baseline and peak demand workloads.\n\n> **Note**: Implementation strategies must prioritize scalability while preserving strict adherence to security and verification standards.`
+      content: template.getContent(i)
     });
 
     currentPage = Math.max(currentPage + 1, endPage + 1);

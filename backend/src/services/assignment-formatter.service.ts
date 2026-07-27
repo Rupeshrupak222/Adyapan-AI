@@ -51,35 +51,46 @@ export function formatAssignmentHtml(
   // Process Markdown to HTML via marked
   let bodyHtml = marked.parse(content || "");
 
-  // Convert blockquotes into Callout Boxes
+  // Convert blockquotes into Clean Callout Boxes (avoiding unprintable font glyphs)
   bodyHtml = bodyHtml
-    .replace(/<blockquote>\s*<p>\s*<strong>(Info|Note):?<\/strong>/gi, '<div class="callout callout-info"><div class="callout-title">💡 Information</div><p>')
-    .replace(/<blockquote>\s*<p>\s*<strong>(Warning|Caution):?<\/strong>/gi, '<div class="callout callout-warning"><div class="callout-title">⚠️ Warning</div><p>')
-    .replace(/<blockquote>\s*<p>\s*<strong>(Tip):?<\/strong>/gi, '<div class="callout callout-tip"><div class="callout-title">✨ Pro Tip</div><p>')
+    .replace(/<blockquote>\s*<p>\s*<strong>(Info|Note):?<\/strong>/gi, '<div class="callout callout-info"><div class="callout-badge">NOTE</div><p>')
+    .replace(/<blockquote>\s*<p>\s*<strong>(Warning|Caution):?<\/strong>/gi, '<div class="callout callout-warning"><div class="callout-badge">WARNING</div><p>')
+    .replace(/<blockquote>\s*<p>\s*<strong>(Tip|Key Principle):?<\/strong>/gi, '<div class="callout callout-tip"><div class="callout-badge">KEY PRINCIPLE</div><p>')
     .replace(/<blockquote>/g, '<div class="callout callout-quote"><p>')
     .replace(/<\/blockquote>/g, "</div>");
 
-  // Force EVERY section (H2) to start on a separate page
-  let isFirstH2 = true;
-  bodyHtml = bodyHtml.replace(/<h2>/g, () => {
-    if (isFirstH2) {
-      isFirstH2 = false;
-      return '<h2 class="section-title">';
-    }
-    return '<div style="page-break-before: always; break-before: page; margin-top: 2rem;"></div><h2 class="section-title">';
-  });
+  // Clean H2 headers with proper flow (avoid forcing 95% empty blank pages)
+  bodyHtml = bodyHtml.replace(/<h2>/g, '<h2 class="section-title">');
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>${escapeXml(title)}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      if (typeof renderMathInElement === 'function') {
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "$", right: "$", display: false},
+            {left: "\\(", right: "\\)", display: false},
+            {left: "\\[", right: "\\]", display: true}
+          ],
+          throwOnError: false
+        });
+      }
+    });
+  </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap');
 
     @page {
       size: A4;
-      margin: 2.5cm 2cm 2.5cm 2cm;
+      margin: 2cm 1.8cm 2cm 1.8cm;
     }
 
     body {
@@ -87,10 +98,56 @@ export function formatAssignmentHtml(
       color: #111827;
       background: #ffffff;
       line-height: 1.75;
-      font-size: 13.5px;
+      font-size: 13px;
       margin: 0;
       padding: 0;
       -webkit-print-color-adjust: exact;
+    }
+
+    /* KaTeX Adjustments */
+    .katex-display {
+      margin: 1rem 0;
+      padding: 12px 16px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      background: #F8FAFC;
+      border-left: 4px solid #F59E0B;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 1.25rem 0;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .callout-info { border-left-color: #3B82F6; background: #EFF6FF; }
+    .callout-warning { border-left-color: #EF4444; background: #FEF2F2; }
+    .callout-tip { border-left-color: #10B981; background: #ECFDF5; }
+    .callout-badge {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #0F172A;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+
+    .section-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F172A;
+      border-left: 4px solid #F59E0B;
+      padding-left: 10px;
+      margin-top: 1.8rem;
+      margin-bottom: 0.8rem;
+      page-break-after: avoid;
+      break-after: avoid;
     }
 
     /* Watermark */
