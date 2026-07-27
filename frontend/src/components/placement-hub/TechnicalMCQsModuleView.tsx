@@ -971,11 +971,6 @@ export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMC
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {questions.length > 0 && (
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg border" style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}>
-                        Question {activeQuestionIdx + 1} of {questions.length}
-                      </span>
-                    )}
                     <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: c.textSecondary }}>
                       <Clock size={14} className="text-amber-500 dark:text-amber-400" /> {currentQuestion.estimatedTime}
                     </div>
@@ -1199,50 +1194,6 @@ export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMC
             ) : null}
           </div>
 
-          {/* DAILY CODING QUIZ CARD */}
-          <div
-            className="rounded-[20px] p-6 border relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md"
-            style={{
-              background: isDark
-                ? "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(18, 18, 20, 0.95) 100%)"
-                : "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, #FFFFFF 100%)",
-              borderColor: "rgba(16, 185, 129, 0.3)",
-            }}
-          >
-            <div className="space-y-2 max-w-md">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
-                <Flame size={12} /> Daily Technical Challenge
-              </div>
-              <h3 className="text-base font-extrabold" style={{ color: c.textPrimary }}>
-                Amazon Distributed Systems & DBMS Indexing Quiz
-              </h3>
-              <p className="text-xs" style={{ color: c.textSecondary }}>
-                Solve today's featured technical question within 60 seconds to earn +50 XP and climb the placement leaderboard!
-              </p>
-              <div className="flex items-center gap-4 text-xs font-bold pt-1">
-                <span className="text-emerald-600 dark:text-emerald-400">+50 XP Reward</span>
-                <span style={{ color: c.textMuted }}>•</span>
-                <span className="text-amber-600 dark:text-amber-400">Difficulty: Hard</span>
-                <span style={{ color: c.textMuted }}>•</span>
-                <span className="flex items-center gap-1" style={{ color: c.textSecondary }}>
-                  <Clock size={12} /> Resets in 11h 45m
-                </span>
-              </div>
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => {
-                setSelectedTech("DBMS");
-                fetchQuestions();
-                practiceRef.current?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="px-6 py-3 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 shrink-0 shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2"
-            >
-              <Play size={14} fill="currentColor" /> Start Daily Challenge
-            </motion.button>
-          </div>
         </div>
 
         {/* Right Column (1 Col): Performance Widget & Sidebar */}
