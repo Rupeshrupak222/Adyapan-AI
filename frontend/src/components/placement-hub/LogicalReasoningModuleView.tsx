@@ -191,6 +191,51 @@ const DEFAULT_COMPANIES: ReasoningCompany[] = [
   { id: "adobe", name: "Adobe", logo: "ADOBE", questionCount: 170, difficulty: "Hard", avgPackage: "18.0 - 40.0 LPA", description: "Aptitude & quantitative reasoning for software roles." },
 ];
 
+const DEFAULT_REASONING_QUESTIONS: ReasoningQuestion[] = [
+  {
+    id: "q-reasoning-1",
+    question: "If 'P + Q' means P is the father of Q, 'P - Q' means P is the sister of Q, and 'P x Q' means P is the brother of Q, then which of the following represents 'A is the aunt of B'?",
+    options: ["A - C + B", "A + C - B", "A x C + B", "A - C x B"],
+    correctAnswer: "A - C + B",
+    correctIdx: 0,
+    difficulty: "Medium",
+    topic: "Blood Relations",
+    company: "TCS",
+    explanation: "'A - C' implies A is the sister of C. 'C + B' implies C is the father of B. Since A is the sister of B's father (C), A is the aunt of B.",
+    shortcutTrick: "Aunt means female. Look for 'A - C' (A is sister) followed by 'C + B' (C is parent).",
+    hint: "Identify the gender of A first (must be female: P - Q means P is sister).",
+    estimatedTime: "45 sec",
+  },
+  {
+    id: "q-reasoning-2",
+    question: "In a certain code language, 'COMPUTER' is written as 'RFUVQNPC'. How is 'MEDICINE' written in that code language?",
+    options: ["EOJDEJFM", "EOJDJEFM", "MFEDICIN", "EOJDJEFN"],
+    correctAnswer: "EOJDJEFM",
+    correctIdx: 1,
+    difficulty: "Medium",
+    topic: "Coding-Decoding",
+    company: "Infosys",
+    explanation: "Reverse the word 'COMPUTER' -> RETUPMOC, then add +1 to each letter except the first and last which are swapped.",
+    shortcutTrick: "Swap first and last letter (M...E becomes E...M), then shift intermediate letters by +1.",
+    hint: "Notice how C and R switch positions at the ends.",
+    estimatedTime: "60 sec",
+  },
+  {
+    id: "q-reasoning-3",
+    question: "Statements: All cars are vehicles. Some vehicles are electric. Conclusions: I. Some cars are electric. II. No car is electric.",
+    options: ["Only I follows", "Only II follows", "Either I or II follows", "Neither I nor II follows"],
+    correctAnswer: "Either I or II follows",
+    correctIdx: 2,
+    difficulty: "Hard",
+    topic: "Syllogisms",
+    company: "Amazon",
+    explanation: "Since 'Some cars are electric' and 'No car is electric' form a complementary pair (A & O type), and neither conclusion is definitely true individually, Either I or II follows.",
+    shortcutTrick: "Check for complementary pairs (Some + No) with same subject and predicate.",
+    hint: "Look out for complementary pairs (Either/Or rule).",
+    estimatedTime: "50 sec",
+  }
+];
+
 const SEARCH_AUTOCOMPLETE_SUGGESTIONS = [
   "Blood Relation",
   "Coding-Decoding",
@@ -301,6 +346,12 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
   // Fetch Questions from API with fallbacks
   const fetchQuestions = async () => {
     setQuestionsLoading(true);
+    setActiveQuestionIdx(0);
+    setSelectedOptionIdx(null);
+    setSubmittedAnswer(false);
+    setShowHint(false);
+    setShowExplanation(false);
+
     try {
       const res = await api.get("/reasoning/questions", {
         params: {
@@ -312,9 +363,13 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
       });
       if (res.data?.success && Array.isArray(res.data.questions) && res.data.questions.length > 0) {
         setQuestions(res.data.questions);
+      } else {
+        // Fallback default sample reasoning questions if API returns empty
+        setQuestions(DEFAULT_REASONING_QUESTIONS);
       }
     } catch {
-      // Fallback
+      // Fallback default sample reasoning questions on API network error
+      setQuestions(DEFAULT_REASONING_QUESTIONS);
     } finally {
       setQuestionsLoading(false);
     }

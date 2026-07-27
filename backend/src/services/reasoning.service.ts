@@ -285,6 +285,17 @@ export async function getQuestions(filters: {
     );
   }
 
+  // Fallback: If filtered list is empty, map SEED_QUESTIONS to requested topic & company so student always gets practice questions
+  if (list.length === 0) {
+    list = SEED_QUESTIONS.map((q, idx) => ({
+      ...q,
+      id: `q-reasoning-auto-${idx + 1}`,
+      topic: filters.topic && filters.topic !== "All" ? filters.topic : q.topic,
+      company: filters.company && filters.company !== "All" ? filters.company : q.company,
+      difficulty: (filters.difficulty && filters.difficulty !== "All" ? filters.difficulty : q.difficulty) as "Easy" | "Medium" | "Hard",
+    }));
+  }
+
   const decorated = list.map((q) => ({
     ...q,
     isBookmarked: userState ? userState.bookmarkedQuestionIds.has(q.id) : false,
