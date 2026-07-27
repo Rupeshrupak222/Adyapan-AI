@@ -176,18 +176,18 @@ const DEFAULT_TOPICS: ReasoningTopic[] = [
 ];
 
 const DEFAULT_COMPANIES: ReasoningCompany[] = [
-  { id: "c-tcs", name: "TCS", logo: "TCS", questionCount: 240, difficulty: "Medium", avgPackage: "3.6 - 7.5 LPA", description: "NQT Foundation & Advanced reasoning questions." },
-  { id: "c-infosys", name: "Infosys", logo: "INFOSYS", questionCount: 210, difficulty: "Medium", avgPackage: "3.6 - 9.5 LPA", description: "System Engineer & Power Programmer analytical tests." },
-  { id: "c-wipro", name: "Wipro", logo: "WIPRO", questionCount: 180, difficulty: "Easy", avgPackage: "3.5 - 6.5 LPA", description: "NLTH logical and inductive reasoning rounds." },
-  { id: "c-accenture", name: "Accenture", logo: "ACCENTURE", questionCount: 220, difficulty: "Medium", avgPackage: "4.5 - 8.5 LPA", description: "Critical reasoning & abstract pattern evaluations." },
-  { id: "c-capgemini", name: "Capgemini", logo: "CAPGEMINI", questionCount: 190, difficulty: "Medium", avgPackage: "4.0 - 7.5 LPA", description: "Pseudo-code & deductive reasoning challenges." },
-  { id: "c-cognizant", name: "Cognizant", logo: "COGNIZANT", questionCount: 195, difficulty: "Medium", avgPackage: "4.0 - 8.0 LPA", description: "GenC & GenC Elevate assessment patterns." },
-  { id: "c-deloitte", name: "Deloitte", logo: "DELOITTE", questionCount: 160, difficulty: "Hard", avgPackage: "7.6 - 12.0 LPA", description: "Case-based puzzles & business logic assessments." },
-  { id: "c-ey", name: "EY", logo: "EY", questionCount: 150, difficulty: "Hard", avgPackage: "6.5 - 11.0 LPA", description: "Data interpretation & logical reasoning tests." },
-  { id: "c-amazon", name: "Amazon", logo: "AMAZON", questionCount: 280, difficulty: "Hard", avgPackage: "16.0 - 45.0 LPA", description: "Amazon Online Assessment (OA) logical puzzles & work simulation." },
-  { id: "c-google", name: "Google", logo: "GOOGLE", questionCount: 260, difficulty: "Hard", avgPackage: "25.0 - 55.0 LPA", description: "Complex algorithmic puzzles & analytical thinking problems." },
-  { id: "c-microsoft", name: "Microsoft", logo: "MICROSOFT", questionCount: 240, difficulty: "Hard", avgPackage: "20.0 - 48.0 LPA", description: "Logical reasoning & system problem-solving assessments." },
-  { id: "c-adobe", name: "Adobe", logo: "ADOBE", questionCount: 170, difficulty: "Hard", avgPackage: "18.0 - 40.0 LPA", description: "Aptitude & quantitative reasoning for software roles." },
+  { id: "tcs", name: "TCS", logo: "TCS", questionCount: 240, difficulty: "Medium", avgPackage: "3.6 - 7.5 LPA", description: "NQT Foundation & Advanced reasoning questions." },
+  { id: "infosys", name: "Infosys", logo: "INFOSYS", questionCount: 210, difficulty: "Medium", avgPackage: "3.6 - 9.5 LPA", description: "System Engineer & Power Programmer analytical tests." },
+  { id: "wipro", name: "Wipro", logo: "WIPRO", questionCount: 180, difficulty: "Easy", avgPackage: "3.5 - 6.5 LPA", description: "NLTH logical and inductive reasoning rounds." },
+  { id: "accenture", name: "Accenture", logo: "ACCENTURE", questionCount: 220, difficulty: "Medium", avgPackage: "4.5 - 8.5 LPA", description: "Critical reasoning & abstract pattern evaluations." },
+  { id: "capgemini", name: "Capgemini", logo: "CAPGEMINI", questionCount: 190, difficulty: "Medium", avgPackage: "4.0 - 7.5 LPA", description: "Pseudo-code & deductive reasoning challenges." },
+  { id: "cognizant", name: "Cognizant", logo: "COGNIZANT", questionCount: 195, difficulty: "Medium", avgPackage: "4.0 - 8.0 LPA", description: "GenC & GenC Elevate assessment patterns." },
+  { id: "deloitte", name: "Deloitte", logo: "DELOITTE", questionCount: 160, difficulty: "Hard", avgPackage: "7.6 - 12.0 LPA", description: "Case-based puzzles & business logic assessments." },
+  { id: "ey", name: "EY", logo: "EY", questionCount: 150, difficulty: "Hard", avgPackage: "6.5 - 11.0 LPA", description: "Data interpretation & logical reasoning tests." },
+  { id: "amazon", name: "Amazon", logo: "AMAZON", questionCount: 280, difficulty: "Hard", avgPackage: "16.0 - 45.0 LPA", description: "Amazon Online Assessment (OA) logical puzzles & work simulation." },
+  { id: "google", name: "Google", logo: "GOOGLE", questionCount: 260, difficulty: "Hard", avgPackage: "25.0 - 55.0 LPA", description: "Complex algorithmic puzzles & analytical thinking problems." },
+  { id: "microsoft", name: "Microsoft", logo: "MICROSOFT", questionCount: 240, difficulty: "Hard", avgPackage: "20.0 - 48.0 LPA", description: "Logical reasoning & system problem-solving assessments." },
+  { id: "adobe", name: "Adobe", logo: "ADOBE", questionCount: 170, difficulty: "Hard", avgPackage: "18.0 - 40.0 LPA", description: "Aptitude & quantitative reasoning for software roles." },
 ];
 
 const SEARCH_AUTOCOMPLETE_SUGGESTIONS = [
@@ -805,17 +805,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
           </div>
 
           {/* INTERACTIVE PRACTICE QUESTION CARD */}
-          <div ref={practiceRef} className="space-y-4 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: c.textPrimary }}>
-                <Zap size={16} className="text-amber-500 dark:text-amber-400" /> Practice Question Arena
-              </h2>
-              {questions.length > 0 && (
-                <span className="text-xs font-semibold" style={{ color: c.textSecondary }}>
-                  Question {activeQuestionIdx + 1} of {questions.length}
-                </span>
-              )}
-            </div>
+          <div ref={practiceRef} className="space-y-4 pt-2">
 
             {questionsLoading ? (
               <div className="rounded-[20px] p-12 border text-center space-y-3 shadow-sm" style={{ background: c.cardBg, borderColor: c.cardBorder }}>
@@ -847,6 +837,11 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
                   </div>
 
                   <div className="flex items-center gap-3">
+                    {questions.length > 0 && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg border" style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}>
+                        Question {activeQuestionIdx + 1} of {questions.length}
+                      </span>
+                    )}
                     <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: c.textSecondary }}>
                       <Clock size={14} className="text-amber-500 dark:text-amber-400" /> {currentQuestion.estimatedTime}
                     </div>

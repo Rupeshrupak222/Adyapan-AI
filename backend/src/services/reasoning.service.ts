@@ -103,18 +103,18 @@ export const REASONING_TOPICS_LIST: ReasoningTopic[] = [
 
 // Top Companies Bank
 export const REASONING_COMPANIES_LIST: ReasoningCompany[] = [
-  { id: "c-tcs", name: "TCS", logo: "TCS", questionCount: 240, difficulty: "Medium", avgPackage: "3.6 - 7.5 LPA", description: "NQT Foundation & Advanced reasoning questions." },
-  { id: "c-infosys", name: "Infosys", logo: "INFOSYS", questionCount: 210, difficulty: "Medium", avgPackage: "3.6 - 9.5 LPA", description: "System Engineer & Power Programmer analytical tests." },
-  { id: "c-wipro", name: "Wipro", logo: "WIPRO", questionCount: 180, difficulty: "Easy", avgPackage: "3.5 - 6.5 LPA", description: "NLTH logical and inductive reasoning rounds." },
-  { id: "c-accenture", name: "Accenture", logo: "ACCENTURE", questionCount: 220, difficulty: "Medium", avgPackage: "4.5 - 8.5 LPA", description: "Critical reasoning & abstract pattern evaluations." },
-  { id: "c-capgemini", name: "Capgemini", logo: "CAPGEMINI", questionCount: 190, difficulty: "Medium", avgPackage: "4.0 - 7.5 LPA", description: "Pseudo-code & deductive reasoning challenges." },
-  { id: "c-cognizant", name: "Cognizant", logo: "COGNIZANT", questionCount: 195, difficulty: "Medium", avgPackage: "4.0 - 8.0 LPA", description: "GenC & GenC Elevate assessment patterns." },
-  { id: "c-deloitte", name: "Deloitte", logo: "DELOITTE", questionCount: 160, difficulty: "Hard", avgPackage: "7.6 - 12.0 LPA", description: "Case-based puzzles & business logic assessments." },
-  { id: "c-ey", name: "EY", logo: "EY", questionCount: 150, difficulty: "Hard", avgPackage: "6.5 - 11.0 LPA", description: "Data interpretation & logical reasoning tests." },
-  { id: "c-amazon", name: "Amazon", logo: "AMAZON", questionCount: 280, difficulty: "Hard", avgPackage: "16.0 - 45.0 LPA", description: "Amazon Online Assessment (OA) logical puzzles & work simulation." },
-  { id: "c-google", name: "Google", logo: "GOOGLE", questionCount: 260, difficulty: "Hard", avgPackage: "25.0 - 55.0 LPA", description: "Complex algorithmic puzzles & analytical thinking problems." },
-  { id: "c-microsoft", name: "Microsoft", logo: "MICROSOFT", questionCount: 240, difficulty: "Hard", avgPackage: "20.0 - 48.0 LPA", description: "Logical reasoning & system problem-solving assessments." },
-  { id: "c-adobe", name: "Adobe", logo: "ADOBE", questionCount: 170, difficulty: "Hard", avgPackage: "18.0 - 40.0 LPA", description: "Aptitude & quantitative reasoning for software roles." },
+  { id: "tcs", name: "TCS", logo: "TCS", questionCount: 240, difficulty: "Medium", avgPackage: "3.6 - 7.5 LPA", description: "NQT Foundation & Advanced reasoning questions." },
+  { id: "infosys", name: "Infosys", logo: "INFOSYS", questionCount: 210, difficulty: "Medium", avgPackage: "3.6 - 9.5 LPA", description: "System Engineer & Power Programmer analytical tests." },
+  { id: "wipro", name: "Wipro", logo: "WIPRO", questionCount: 180, difficulty: "Easy", avgPackage: "3.5 - 6.5 LPA", description: "NLTH logical and inductive reasoning rounds." },
+  { id: "accenture", name: "Accenture", logo: "ACCENTURE", questionCount: 220, difficulty: "Medium", avgPackage: "4.5 - 8.5 LPA", description: "Critical reasoning & abstract pattern evaluations." },
+  { id: "capgemini", name: "Capgemini", logo: "CAPGEMINI", questionCount: 190, difficulty: "Medium", avgPackage: "4.0 - 7.5 LPA", description: "Pseudo-code & deductive reasoning challenges." },
+  { id: "cognizant", name: "Cognizant", logo: "COGNIZANT", questionCount: 195, difficulty: "Medium", avgPackage: "4.0 - 8.0 LPA", description: "GenC & GenC Elevate assessment patterns." },
+  { id: "deloitte", name: "Deloitte", logo: "DELOITTE", questionCount: 160, difficulty: "Hard", avgPackage: "7.6 - 12.0 LPA", description: "Case-based puzzles & business logic assessments." },
+  { id: "ey", name: "EY", logo: "EY", questionCount: 150, difficulty: "Hard", avgPackage: "6.5 - 11.0 LPA", description: "Data interpretation & logical reasoning tests." },
+  { id: "amazon", name: "Amazon", logo: "AMAZON", questionCount: 280, difficulty: "Hard", avgPackage: "16.0 - 45.0 LPA", description: "Amazon Online Assessment (OA) logical puzzles & work simulation." },
+  { id: "google", name: "Google", logo: "GOOGLE", questionCount: 260, difficulty: "Hard", avgPackage: "25.0 - 55.0 LPA", description: "Complex algorithmic puzzles & analytical thinking problems." },
+  { id: "microsoft", name: "Microsoft", logo: "MICROSOFT", questionCount: 240, difficulty: "Hard", avgPackage: "20.0 - 48.0 LPA", description: "Logical reasoning & system problem-solving assessments." },
+  { id: "adobe", name: "Adobe", logo: "ADOBE", questionCount: 170, difficulty: "Hard", avgPackage: "18.0 - 40.0 LPA", description: "Aptitude & quantitative reasoning for software roles." },
 ];
 
 // Seed Questions Bank

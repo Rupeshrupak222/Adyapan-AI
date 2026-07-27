@@ -91,7 +91,8 @@ export default function CompanyLogo({
   const [imgError, setImgError] = useState(false);
   const [srcIndex, setSrcIndex] = useState(0);
 
-  const key = (companyId || companyName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const rawId = (companyId || "").replace(/^c-/, "");
+  const key = (rawId || companyName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const domain = COMPANY_DOMAINS[key] || `${key}.com`;
 
   // Image candidate fallback chain

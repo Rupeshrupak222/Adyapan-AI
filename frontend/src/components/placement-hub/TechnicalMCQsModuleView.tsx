@@ -939,17 +939,7 @@ export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMC
           </div>
 
           {/* INTERACTIVE PRACTICE MCQ ARENA CARD */}
-          <div ref={practiceRef} className="space-y-4 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: c.textPrimary }}>
-                <Zap size={16} className="text-amber-500 dark:text-amber-400" /> Interactive Practice Arena
-              </h2>
-              {questions.length > 0 && (
-                <span className="text-xs font-semibold" style={{ color: c.textSecondary }}>
-                  Question {activeQuestionIdx + 1} of {questions.length}
-                </span>
-              )}
-            </div>
+          <div ref={practiceRef} className="space-y-4 pt-2">
 
             {questionsLoading ? (
               <div className="rounded-[20px] p-12 border text-center space-y-3 shadow-sm" style={{ background: c.cardBg, borderColor: c.cardBorder }}>
@@ -981,6 +971,11 @@ export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMC
                   </div>
 
                   <div className="flex items-center gap-3">
+                    {questions.length > 0 && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg border" style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}>
+                        Question {activeQuestionIdx + 1} of {questions.length}
+                      </span>
+                    )}
                     <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: c.textSecondary }}>
                       <Clock size={14} className="text-amber-500 dark:text-amber-400" /> {currentQuestion.estimatedTime}
                     </div>
