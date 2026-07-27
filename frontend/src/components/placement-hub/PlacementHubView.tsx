@@ -20,6 +20,10 @@ const LogicalReasoningModuleView = lazy(() =>
   import("./LogicalReasoningModuleView").then(m => ({ default: m.LogicalReasoningModuleView }))
 );
 
+const TechnicalMCQsModuleView = lazy(() =>
+  import("./TechnicalMCQsModuleView").then(m => ({ default: m.TechnicalMCQsModuleView }))
+);
+
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.4 } }),
@@ -438,31 +442,23 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
               </motion.div>
             )}
 
-            {/* TAB C: TECHNICAL MCQS */}
+            {/* TAB C: TECHNICAL MCQS (Redesigned Placement Hub Module) */}
             {tab === "mcqs" && !practiceSession && (
               <motion.div
-                key="mcqs-list"
+                key="mcqs-module"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+                className="w-full"
               >
-                {TECHNICAL_TOPICS.map((item, i) => (
-                  <motion.div
-                    key={item.name}
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    custom={i}
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    onClick={() => handleStartPractice(item.name, "mcqs")}
-                    className="p-5 border rounded-2xl text-center cursor-pointer hover:shadow-lg hover:border-amber-500/30 transition-all flex flex-col items-center justify-center gap-3"
-                    style={{ background: c.cardBg, borderColor: c.border }}
-                  >
-                    <span className="text-3xl">{item.icon}</span>
-                    <span className="text-xs font-bold font-sans" style={{ color: c.text }}>{item.name}</span>
-                  </motion.div>
-                ))}
+                <Suspense fallback={
+                  <div className="p-10 border rounded-2xl text-center" style={{ background: c.cardBg, borderColor: c.border }}>
+                    <Clock size={20} className="text-amber-500 animate-spin mx-auto mb-2" />
+                    <p className="text-xs font-bold" style={{ color: c.textMuted }}>Loading Technical MCQs Module...</p>
+                  </div>
+                }>
+                  <TechnicalMCQsModuleView setView={setView} theme={theme} />
+                </Suspense>
               </motion.div>
             )}
 
