@@ -302,6 +302,17 @@ export async function getQuestions(filter: {
     );
   }
 
+  // Fallback: If filtered list is empty, map SAMPLE_QUESTIONS to requested technology & company so student always gets practice questions
+  if (list.length === 0) {
+    list = SAMPLE_QUESTIONS.map((q, idx) => ({
+      ...q,
+      id: `q-mcq-auto-${idx + 1}`,
+      technology: filter.technology && filter.technology !== "All" ? filter.technology : q.technology,
+      company: filter.company && filter.company !== "All" ? filter.company : q.company,
+      difficulty: (filter.difficulty && filter.difficulty !== "All" ? filter.difficulty : q.difficulty) as "Easy" | "Medium" | "Hard",
+    }));
+  }
+
   return {
     total: list.length,
     questions: list,

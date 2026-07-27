@@ -112,7 +112,7 @@ interface MCQQuestion {
   correctIdx: number;
   explanation: string;
   hint: string;
-  relatedConcept: string;
+  relatedConcept?: string;
   estimatedTime: string;
   codeSnippet?: string;
   language?: string;
@@ -256,6 +256,53 @@ const DEFAULT_COMPANIES: MCQCompany[] = [
   { id: "deloitte", name: "Deloitte", logo: "Deloitte", questionCount: 240, difficulty: "Hard", avgPackage: "7.6 - 12.0 LPA", description: "Tech advisory logic, Data Analytics, Python, and SQL." },
 ];
 
+const DEFAULT_MCQ_QUESTIONS: MCQQuestion[] = [
+  {
+    id: "q-mcq-1",
+    technology: "Java",
+    company: "Amazon",
+    difficulty: "Medium",
+    question: "What will be the output of the following Java snippet regarding String immutability and memory pool allocation?",
+    codeSnippet: `public class Test {\n  public static void main(String[] args) {\n    String s1 = "Adyapan";\n    String s2 = new String("Adyapan");\n    String s3 = s2.intern();\n    System.out.println((s1 == s2) + " " + (s1 == s3));\n  }\n}`,
+    language: "java",
+    options: ["false true", "true true", "false false", "true false"],
+    correctAnswer: "false true",
+    correctIdx: 0,
+    explanation: "s1 points to the String constant pool instance. s2 creates a new object in Heap memory, so (s1 == s2) is false. s2.intern() returns the pool reference, which equals s1, so (s1 == s3) is true.",
+    hint: "Remember that '==' checks memory reference equality, whereas string.intern() returns the reference from the string pool.",
+    estimatedTime: "45 sec",
+  },
+  {
+    id: "q-mcq-2",
+    technology: "DBMS",
+    company: "Google",
+    difficulty: "Hard",
+    question: "Which of the following Isolation Levels prevents Non-Repeatable Reads but MAY still suffer from Phantom Reads in standard SQL database systems?",
+    language: "sql",
+    options: ["REPEATABLE READ", "READ COMMITTED", "SERIALIZABLE", "READ UNCOMMITTED"],
+    correctAnswer: "REPEATABLE READ",
+    correctIdx: 0,
+    explanation: "REPEATABLE READ locks existing rows preventing non-repeatable reads, but standard SQL permits phantom reads where new rows inserted by concurrent transactions can appear during a subsequent range query.",
+    hint: "Think of SQL-92 isolation levels hierarchy: Read Uncommitted < Read Committed < Repeatable Read < Serializable.",
+    estimatedTime: "60 sec",
+  },
+  {
+    id: "q-mcq-3",
+    technology: "Python",
+    company: "Microsoft",
+    difficulty: "Medium",
+    question: "What is the expected output of this Python code snippet demonstrating default mutable parameter behavior?",
+    codeSnippet: `def append_item(val, target=[]):\n    target.append(val)\n    return target\n\nprint(append_item(1))\nprint(append_item(2))`,
+    language: "python",
+    options: ["[1, 2]", "[1]\n[2]", "[1]\n[1, 2]", "[1, 2]\n[1, 2]"],
+    correctAnswer: "[1]\n[1, 2]",
+    correctIdx: 2,
+    explanation: "In Python, default arguments are evaluated ONCE when the function definition is executed. Thus, the default list 'target' is shared across all function calls.",
+    hint: "Default argument values are created at function definition time, not function execution time.",
+    estimatedTime: "40 sec",
+  }
+];
+
 const SEARCH_AUTOCOMPLETE_SUGGESTIONS = [
   "Java",
   "Python",
@@ -379,6 +426,12 @@ export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMC
   // Fetch Questions from API with fallbacks
   const fetchQuestions = async () => {
     setQuestionsLoading(true);
+    setActiveQuestionIdx(0);
+    setSelectedOptionIdx(null);
+    setSubmittedAnswer(false);
+    setShowHint(false);
+    setShowExplanation(false);
+
     try {
       const res = await api.get("/mcq/questions", {
         params: {
@@ -391,9 +444,11 @@ export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMC
       });
       if (res.data?.success && Array.isArray(res.data.questions) && res.data.questions.length > 0) {
         setQuestions(res.data.questions);
+      } else {
+        setQuestions(DEFAULT_MCQ_QUESTIONS);
       }
     } catch {
-      // Fallback
+      setQuestions(DEFAULT_MCQ_QUESTIONS);
     } finally {
       setQuestionsLoading(false);
     }
