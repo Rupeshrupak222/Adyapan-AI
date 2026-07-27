@@ -607,15 +607,23 @@ export function StudyPlannerDashboard() {
                         <div className="space-y-1">
                           <label className="text-xs font-semibold" style={{ color: c.textSec }}>Target Score</label>
                           <select value={formData.targetScore} onChange={e => setFormData({ ...formData, targetScore: e.target.value })}
-                            className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
-                            <option>95%</option><option>90%</option><option>85%</option><option>80%</option><option>75%</option>
+                            className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>95%</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>90%</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>85%</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>80%</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>75%</option>
                           </select>
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold" style={{ color: c.textSec }}>Study Mode</label>
                           <select value={formData.studyMode} onChange={e => setFormData({ ...formData, studyMode: e.target.value })}
-                            className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
-                            <option>Exam Preparation</option><option>Interview Preparation</option><option>Quick Revision</option><option>Deep Learning</option><option>Placement Preparation</option>
+                            className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Exam Preparation</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Interview Preparation</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Quick Revision</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Deep Learning</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Placement Preparation</option>
                           </select>
                         </div>
                       </div>

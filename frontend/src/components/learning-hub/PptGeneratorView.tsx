@@ -548,17 +548,19 @@ export function PptGeneratorView() {
                     <div className="space-y-1">
                       <label className="text-xs font-semibold" style={{ color: c.textSec }}>Slide Count</label>
                       <select value={slideCount} onChange={e => setSlideCount(e.target.value)}
-                        className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
-                        <option>5 Slides</option><option>10 Slides</option><option>15 Slides</option>
+                        className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
+                        <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>5 Slides</option>
+                        <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>10 Slides</option>
+                        <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>15 Slides</option>
                       </select>
                     </div>
 
                     <div className="space-y-1">
                       <label className="text-xs font-semibold" style={{ color: c.textSec }}>Visual Theme</label>
                       <select value={selectedTheme} onChange={e => setSelectedTheme(e.target.value)}
-                        className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
+                        className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
                         {THEME_OPTIONS.map(th => (
-                          <option key={th.id} value={th.id}>{th.label} - {th.desc}</option>
+                          <option key={th.id} value={th.id} style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>{th.label} - {th.desc}</option>
                         ))}
                       </select>
                     </div>

@@ -693,22 +693,22 @@ export function AssignmentGeneratorView() {
                       <div className="space-y-1">
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Academic Level</label>
                         <select value={level} onChange={e => setLevel(e.target.value)}
-                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
-                          <option>High School</option>
-                          <option>Undergraduate</option>
-                          <option>Master&apos;s</option>
-                          <option>PhD / Doctorate</option>
+                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>High School</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Undergraduate</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Master&apos;s</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>PhD / Doctorate</option>
                         </select>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Target Length / Pages</label>
                         <select value={wordCount} onChange={e => setWordCount(e.target.value)}
-                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
-                          <option>500 words (1-2 pages)</option>
-                          <option>1500 words (5-6 pages)</option>
-                          <option>3000 words (10-12 pages)</option>
-                          <option>4500 words (15-20 pages)</option>
-                          <option>5500 words (18-22 pages)</option>
+                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>500 words (1-2 pages)</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>1500 words (5-6 pages)</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>3000 words (10-12 pages)</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>4500 words (15-20 pages)</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>5500 words (18-22 pages)</option>
                         </select>
                       </div>
                     </div>

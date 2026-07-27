@@ -21,7 +21,7 @@ const mkColors = (theme: string) => {
     bg: isDark ? "rgba(255,255,255,0.025)" : "#ffffff", bgHover: isDark ? "rgba(255,255,255,0.04)" : "#f8fafc",
     surface: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", surfaceHover: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
     border: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)", borderHover: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.18)",
-    borderFocus: isDark ? "rgba(245,158,11,0.45)" : "rgba(245,158,11,0.5)", inputBg: isDark ? "rgba(0,0,0,0.35)" : "#f1f5f9",
+    borderFocus: isDark ? "rgba(245,158,11,0.45)" : "rgba(245,158,11,0.5)", inputBg: isDark ? "#121214" : "#f1f5f9",
     cardBg: isDark ? "rgba(255,255,255,0.025)" : "#ffffff", cardBgAlt: isDark ? "rgba(0,0,0,0.25)" : "#f8fafc",
     stickyBg: isDark ? "rgba(10,10,20,0.88)" : "rgba(248,250,252,0.92)",
     amber: "#f59e0b", amberBg: isDark ? "rgba(245,158,11,0.07)" : "rgba(245,158,11,0.08)", amberBorder: isDark ? "rgba(245,158,11,0.18)" : "rgba(245,158,11,0.25)", amberActive: isDark ? "rgba(245,158,11,0.12)" : "rgba(245,158,11,0.1)",
@@ -421,15 +421,20 @@ export function NotesGeneratorView() {
                       <div className="space-y-1">
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Difficulty</label>
                         <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
-                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
-                          <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
+                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Beginner</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Intermediate</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Advanced</option>
                         </select>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Note Type</label>
                         <select value={noteType} onChange={e => setNoteType(e.target.value)}
-                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}>
-                          <option>Detailed Notes</option><option>Short Revision</option><option>Formulas Only</option><option>Exam Cheat Sheet</option>
+                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Detailed Notes</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Short Revision</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Formulas Only</option>
+                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Exam Cheat Sheet</option>
                         </select>
                       </div>
                     </div>
