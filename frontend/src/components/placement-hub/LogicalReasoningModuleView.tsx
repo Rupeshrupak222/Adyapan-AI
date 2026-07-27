@@ -21,6 +21,7 @@ import {
   HelpCircle,
   Lightbulb,
   ArrowRight,
+  ArrowLeft,
   RefreshCw,
   SlidersHorizontal,
   Code2,
@@ -250,6 +251,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
   const [aiGenerating, setAiGenerating] = useState(false);
 
   // Questions List & Active Practice State
+  const [isPracticing, setIsPracticing] = useState(false);
   const [questions, setQuestions] = useState<ReasoningQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [activeQuestionIdx, setActiveQuestionIdx] = useState<number>(0);
@@ -344,7 +346,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
         setShowExplanation(false);
         toast.success(`Generated ${res.data.questions.length} AI reasoning questions!`);
         setAiPromptInput("");
-        practiceRef.current?.scrollIntoView({ behavior: "smooth" });
+        setIsPracticing(true);
       }
     } catch {
       toast.error("AI Generation failed. Displaying featured placement questions.");
@@ -398,6 +400,270 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
   };
 
   const currentQuestion = questions[activeQuestionIdx] || null;
+
+  // Render Dedicated Full Practice View when isPracticing is true
+  if (isPracticing && currentQuestion) {
+    return (
+      <div
+        className="min-h-screen p-4 sm:p-6 md:p-8 space-y-6 font-sans antialiased transition-colors duration-300"
+        style={{ background: c.bg, color: c.textPrimary }}
+      >
+        {/* Practice Top Navigation Header */}
+        <div
+          className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 rounded-[20px] border shadow-sm"
+          style={{ background: c.cardBg, borderColor: c.cardBorder }}
+        >
+          <button
+            onClick={() => setIsPracticing(false)}
+            className="px-4 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 hover:border-amber-500 transition-all"
+            style={{ background: c.surface, borderColor: c.cardBorder, color: c.textPrimary }}
+          >
+            <ArrowLeft size={16} /> Back to Dashboard
+          </button>
+
+          <div className="text-center">
+            <h2 className="text-sm font-extrabold" style={{ color: c.textPrimary }}>
+              {selectedTopic !== "All"
+                ? `${selectedTopic} Practice`
+                : selectedCompany !== "All"
+                ? `${selectedCompany} Reasoning Questions`
+                : "Logical Reasoning Arena"}
+            </h2>
+            <span className="text-xs font-semibold" style={{ color: c.textSecondary }}>
+              Question {activeQuestionIdx + 1} of {questions.length}
+            </span>
+          </div>
+
+          <button
+            onClick={() => {
+              setActiveQuestionIdx(0);
+              setSelectedOptionIdx(null);
+              setSubmittedAnswer(false);
+              setShowHint(false);
+              setShowExplanation(false);
+            }}
+            className="px-3.5 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 hover:border-amber-500 transition-all"
+            style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}
+          >
+            <RotateCcw size={14} /> Restart Practice
+          </button>
+        </div>
+
+        {/* Dedicated Practice Question Card */}
+        <div className="max-w-4xl mx-auto space-y-6">
+          <motion.div
+            key={currentQuestion.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-[20px] p-6 sm:p-8 border space-y-6 relative shadow-xl"
+            style={{ background: c.cardBg, borderColor: c.cardBorder }}
+          >
+            {/* Question Header & Badges */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+                  {currentQuestion.topic}
+                </span>
+                {currentQuestion.company && (
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold border" style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}>
+                    {currentQuestion.company}
+                  </span>
+                )}
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold border" style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}>
+                  {currentQuestion.difficulty}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: c.textSecondary }}>
+                  <Clock size={14} className="text-amber-500 dark:text-amber-400" /> {currentQuestion.estimatedTime}
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handleToggleBookmark(currentQuestion.id)}
+                  className="p-2 rounded-xl border hover:border-amber-500/40 transition-colors"
+                  style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}
+                >
+                  {userBookmarks.has(currentQuestion.id) ? (
+                    <BookmarkCheck size={16} className="text-amber-500 dark:text-amber-400" />
+                  ) : (
+                    <Bookmark size={16} />
+                  )}
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Question Statement */}
+            <div className="space-y-2">
+              <h3 className="text-base font-bold leading-relaxed font-sans" style={{ color: c.textPrimary }}>
+                {currentQuestion.question}
+              </h3>
+            </div>
+
+            {/* Options Grid */}
+            <div className="grid grid-cols-1 gap-3">
+              {currentQuestion.options.map((opt, oIdx) => {
+                const isSelected = selectedOptionIdx === oIdx;
+                const isCorrectAnswer = oIdx === currentQuestion.correctIdx;
+
+                let optStyle = {
+                  background: isDark ? "rgba(18, 18, 20, 0.6)" : "#F1F5F9",
+                  borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#CBD5E1",
+                  color: c.textPrimary,
+                };
+
+                if (isSelected) {
+                  optStyle = {
+                    background: "rgba(245, 158, 11, 0.12)",
+                    borderColor: "#F59E0B",
+                    color: "#F59E0B",
+                  };
+                }
+                if (submittedAnswer) {
+                  if (isCorrectAnswer) {
+                    optStyle = {
+                      background: "rgba(16, 185, 129, 0.12)",
+                      borderColor: "#10B981",
+                      color: "#10B981",
+                    };
+                  } else if (isSelected) {
+                    optStyle = {
+                      background: "rgba(239, 68, 68, 0.12)",
+                      borderColor: "#EF4444",
+                      color: "#EF4444",
+                    };
+                  }
+                }
+
+                return (
+                  <motion.div
+                    key={opt}
+                    whileHover={{ x: 4 }}
+                    onClick={() => !submittedAnswer && setSelectedOptionIdx(oIdx)}
+                    style={optStyle}
+                    className="p-4 rounded-xl border text-xs cursor-pointer flex items-center justify-between transition-all font-medium"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-lg bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/10 flex items-center justify-center font-bold text-[11px]">
+                        {String.fromCharCode(65 + oIdx)}
+                      </span>
+                      <span>{opt}</span>
+                    </div>
+
+                    {submittedAnswer && (
+                      <div>
+                        {isCorrectAnswer ? (
+                          <CheckCircle2 size={16} className="text-emerald-500" />
+                        ) : isSelected ? (
+                          <XCircle size={16} className="text-red-500" />
+                        ) : null}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Action Buttons Row */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowHint(!showHint)}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all"
+                  style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}
+                >
+                  <Lightbulb size={14} className="text-amber-500 dark:text-amber-400" /> {showHint ? "Hide Hint" : "Hint"}
+                </button>
+                {submittedAnswer && (
+                  <button
+                    onClick={() => setShowExplanation(!showExplanation)}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center gap-1.5 transition-all"
+                  >
+                    <Sparkles size={14} /> {showExplanation ? "Hide Explanation" : "AI Explain"}
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {!submittedAnswer ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={handleAnswerSubmit}
+                    disabled={selectedOptionIdx === null}
+                    className="px-6 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 disabled:opacity-40 transition-all shadow-md shadow-amber-500/20"
+                  >
+                    Submit Answer
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                      if (activeQuestionIdx < questions.length - 1) {
+                        setActiveQuestionIdx((prev) => prev + 1);
+                        setSelectedOptionIdx(null);
+                        setSubmittedAnswer(false);
+                        setShowHint(false);
+                        setShowExplanation(false);
+                      } else {
+                        toast.info("Completed all reasoning questions for this topic!");
+                      }
+                    }}
+                    className="px-6 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20"
+                  >
+                    Next Question <ArrowRight size={14} />
+                  </motion.button>
+                )}
+              </div>
+            </div>
+
+            {/* Hint Disclosed Block */}
+            <AnimatePresence>
+              {showHint && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-200 leading-relaxed font-medium"
+                >
+                  <span className="font-extrabold block text-amber-600 dark:text-amber-400 mb-1">💡 Hint:</span>
+                  {currentQuestion.hint}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* AI Explanation Disclosed Block */}
+            <AnimatePresence>
+              {(submittedAnswer || showExplanation) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-5 rounded-xl border space-y-3 text-xs leading-relaxed"
+                  style={{ background: isDark ? "rgba(18, 18, 20, 0.9)" : "#F8FAFC", borderColor: c.cardBorder }}
+                >
+                  <div>
+                    <span className="font-extrabold text-amber-600 dark:text-amber-400 text-xs uppercase tracking-wider block mb-1">
+                      🧠 Step-by-Step AI Explanation
+                    </span>
+                    <p className="whitespace-pre-line" style={{ color: c.textSecondary }}>{currentQuestion.explanation}</p>
+                  </div>
+
+                  {currentQuestion.shortcutTrick && (
+                    <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium">
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">⚡ Shortcut Trick: </span>
+                      {currentQuestion.shortcutTrick}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   // Filtered Auto-complete Suggestions
   const autocompleteFiltered = useMemo(() => {
@@ -692,8 +958,9 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
               whileHover={{ y: -4, scale: 1.02 }}
               onClick={() => {
                 setSelectedCompany(comp.name);
+                setSelectedTopic("All");
                 fetchQuestions();
-                practiceRef.current?.scrollIntoView({ behavior: "smooth" });
+                setIsPracticing(true);
               }}
               className="w-56 shrink-0 rounded-[20px] p-4 border cursor-pointer transition-all group shadow-sm hover:shadow-md"
               style={{ background: c.cardBg, borderColor: c.cardBorder }}
@@ -749,8 +1016,9 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
                   whileHover={{ y: -4, scale: 1.01 }}
                   onClick={() => {
                     setSelectedTopic(t.name);
+                    setSelectedCompany("All");
                     fetchQuestions();
-                    practiceRef.current?.scrollIntoView({ behavior: "smooth" });
+                    setIsPracticing(true);
                   }}
                   className="rounded-[20px] p-5 border cursor-pointer transition-all flex flex-col justify-between group hover:border-amber-500/50 shadow-sm hover:shadow-md"
                   style={{ background: c.cardBg, borderColor: c.cardBorder }}
@@ -803,230 +1071,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
               ))}
             </div>
           </div>
-
-          {/* INTERACTIVE PRACTICE QUESTION CARD */}
-          <div ref={practiceRef} className="space-y-4 pt-2">
-
-            {questionsLoading ? (
-              <div className="rounded-[20px] p-12 border text-center space-y-3 shadow-sm" style={{ background: c.cardBg, borderColor: c.cardBorder }}>
-                <RefreshCw size={24} className="animate-spin text-amber-500 mx-auto" />
-                <p className="text-xs font-bold" style={{ color: c.textSecondary }}>Loading Reasoning Questions...</p>
-              </div>
-            ) : currentQuestion ? (
-              <motion.div
-                key={currentQuestion.id}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="rounded-[20px] p-6 border space-y-6 relative shadow-md"
-                style={{ background: c.cardBg, borderColor: c.cardBorder }}
-              >
-                {/* Question Header & Badges */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-white/10">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
-                      {currentQuestion.topic}
-                    </span>
-                    {currentQuestion.company && (
-                      <span className="px-2.5 py-1 rounded-lg text-xs font-bold border" style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}>
-                        {currentQuestion.company}
-                      </span>
-                    )}
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-bold border" style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}>
-                      {currentQuestion.difficulty}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: c.textSecondary }}>
-                      <Clock size={14} className="text-amber-500 dark:text-amber-400" /> {currentQuestion.estimatedTime}
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleToggleBookmark(currentQuestion.id)}
-                      className="p-2 rounded-xl border hover:border-amber-500/40 transition-colors"
-                      style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}
-                    >
-                      {userBookmarks.has(currentQuestion.id) ? (
-                        <BookmarkCheck size={16} className="text-amber-500 dark:text-amber-400" />
-                      ) : (
-                        <Bookmark size={16} />
-                      )}
-                    </motion.button>
-                  </div>
-                </div>
-
-                {/* Question Statement */}
-                <div className="space-y-2">
-                  <h3 className="text-base font-bold leading-relaxed font-sans" style={{ color: c.textPrimary }}>
-                    {currentQuestion.question}
-                  </h3>
-                </div>
-
-                {/* Options Grid */}
-                <div className="grid grid-cols-1 gap-3">
-                  {currentQuestion.options.map((opt, oIdx) => {
-                    const isSelected = selectedOptionIdx === oIdx;
-                    const isCorrectAnswer = oIdx === currentQuestion.correctIdx;
-
-                    let optStyle = {
-                      background: isDark ? "rgba(15, 23, 42, 0.6)" : "#F1F5F9",
-                      borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#CBD5E1",
-                      color: c.textPrimary,
-                    };
-
-                    if (isSelected) {
-                      optStyle = {
-                        background: "rgba(245, 158, 11, 0.12)",
-                        borderColor: "#F59E0B",
-                        color: "#F59E0B",
-                      };
-                    }
-                    if (submittedAnswer) {
-                      if (isCorrectAnswer) {
-                        optStyle = {
-                          background: "rgba(16, 185, 129, 0.12)",
-                          borderColor: "#10B981",
-                          color: "#10B981",
-                        };
-                      } else if (isSelected) {
-                        optStyle = {
-                          background: "rgba(239, 68, 68, 0.12)",
-                          borderColor: "#EF4444",
-                          color: "#EF4444",
-                        };
-                      }
-                    }
-
-                    return (
-                      <motion.div
-                        key={opt}
-                        whileHover={{ x: 4 }}
-                        onClick={() => !submittedAnswer && setSelectedOptionIdx(oIdx)}
-                        style={optStyle}
-                        className="p-4 rounded-xl border text-xs cursor-pointer flex items-center justify-between transition-all font-medium"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 rounded-lg bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/10 flex items-center justify-center font-bold text-[11px]">
-                            {String.fromCharCode(65 + oIdx)}
-                          </span>
-                          <span>{opt}</span>
-                        </div>
-
-                        {submittedAnswer && (
-                          <div>
-                            {isCorrectAnswer ? (
-                              <CheckCircle2 size={16} className="text-emerald-500" />
-                            ) : isSelected ? (
-                              <XCircle size={16} className="text-red-500" />
-                            ) : null}
-                          </div>
-                        )}
-                      </motion.div>
-                    );
-                  })}
-                </div>
-
-                {/* Action Buttons Row */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowHint(!showHint)}
-                      className="px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all"
-                      style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}
-                    >
-                      <Lightbulb size={14} className="text-amber-500 dark:text-amber-400" /> {showHint ? "Hide Hint" : "Hint"}
-                    </button>
-                    {submittedAnswer && (
-                      <button
-                        onClick={() => setShowExplanation(!showExplanation)}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center gap-1.5 transition-all"
-                      >
-                        <Sparkles size={14} /> {showExplanation ? "Hide Explanation" : "AI Explain"}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {!submittedAnswer ? (
-                      <motion.button
-                        whileHover={{ scale: 1.04 }}
-                        whileTap={{ scale: 0.96 }}
-                        onClick={handleAnswerSubmit}
-                        disabled={selectedOptionIdx === null}
-                        className="px-6 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 disabled:opacity-40 transition-all shadow-md shadow-amber-500/20"
-                      >
-                        Submit Answer
-                      </motion.button>
-                    ) : (
-                      <motion.button
-                        whileHover={{ scale: 1.04 }}
-                        whileTap={{ scale: 0.96 }}
-                        onClick={() => {
-                          if (activeQuestionIdx < questions.length - 1) {
-                            setActiveQuestionIdx((prev) => prev + 1);
-                            setSelectedOptionIdx(null);
-                            setSubmittedAnswer(false);
-                            setShowHint(false);
-                            setShowExplanation(false);
-                          } else {
-                            toast.info("Completed all loaded questions!");
-                          }
-                        }}
-                        className="px-6 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20"
-                      >
-                        Next Question <ArrowRight size={14} />
-                      </motion.button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Hint Disclosed Block */}
-                <AnimatePresence>
-                  {showHint && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-200 leading-relaxed font-medium"
-                    >
-                      <span className="font-extrabold block text-amber-600 dark:text-amber-400 mb-1">💡 Hint:</span>
-                      {currentQuestion.hint}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* AI Explanation & Shortcut Trick Disclosed Block */}
-                <AnimatePresence>
-                  {(submittedAnswer || showExplanation) && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-5 rounded-xl border space-y-3 text-xs leading-relaxed"
-                      style={{ background: isDark ? "rgba(18, 18, 20, 0.9)" : "#F8FAFC", borderColor: c.cardBorder }}
-                    >
-                      <div>
-                        <span className="font-extrabold text-amber-600 dark:text-amber-400 text-xs uppercase tracking-wider block mb-1">
-                          🧠 Step-by-Step AI Explanation
-                        </span>
-                        <p className="whitespace-pre-line" style={{ color: c.textSecondary }}>{currentQuestion.explanation}</p>
-                      </div>
-
-                      {currentQuestion.shortcutTrick && (
-                        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 font-medium">
-                          <span className="font-bold text-amber-600 dark:text-amber-400">⚡ Shortcut Trick: </span>
-                          {currentQuestion.shortcutTrick}
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            ) : null}
-          </div>
         </div>
-
-        {/* Right Column (1 Col): Performance Widget & Sidebar */}
 
         {/* Right Column (1 Col): Performance Widget & Sidebar */}
         <div className="space-y-6">
