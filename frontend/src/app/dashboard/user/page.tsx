@@ -2324,6 +2324,7 @@ function UserDashboardContent() {
             <CommunityProfileView
               userId={communityProfileUserId}
               onViewUser={(id) => setCommunityProfileUserId(id)}
+              onBack={() => setCommunityProfileUserId(null)}
             />
           </HubErrorBoundary>
         ) : activeView === "community-profile" ? (
@@ -2332,10 +2333,10 @@ function UserDashboardContent() {
           </HubErrorBoundary>
         ) : activeView === "community-browse" && communityProfileUserId ? (
           <HubErrorBoundary>
-            <UserProfileView
+            <CommunityProfileView
               userId={communityProfileUserId}
+              onViewUser={(id) => setCommunityProfileUserId(id)}
               onBack={() => setCommunityProfileUserId(null)}
-              onMessage={(userId) => { setCommunityProfileUserId(null); setOpenChatWith(userId); setActiveView("community-messages"); }}
             />
           </HubErrorBoundary>
         ) : activeView === "community-browse" ? (

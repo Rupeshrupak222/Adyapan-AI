@@ -7,6 +7,11 @@ import { generateJSON, MODELS } from "../lib/ai/openrouter";
 const router = Router();
 router.use(requireAuth);
 
+// Helper to get authenticated User ID
+function getUserId(req: any): string {
+  return req.user?.userId || req.user?.id || "";
+}
+
 // Helper to resolve actual User ID from userId/profileId/username
 async function resolveUserId(idOrUsername: string): Promise<string> {
   const profile = await prisma.profile.findFirst({
@@ -26,10 +31,11 @@ async function resolveUserId(idOrUsername: string): Promise<string> {
 router.get("/stats/:userId", async (req: any, res) => {
   try {
     const targetUserId = await resolveUserId(req.params.userId);
+    const currentUserId = getUserId(req);
     const followers = await prisma.communityFollow.count({ where: { followingId: targetUserId } });
     const following = await prisma.communityFollow.count({ where: { followerId: targetUserId } });
     const isFollowing = await prisma.communityFollow.findUnique({
-      where: { followerId_followingId: { followerId: req.user.id, followingId: targetUserId } },
+      where: { followerId_followingId: { followerId: currentUserId, followingId: targetUserId } },
     });
     res.json({ success: true, followers, following, isFollowing: !!isFollowing });
   } catch (error) {
@@ -41,16 +47,17 @@ router.get("/stats/:userId", async (req: any, res) => {
 router.post("/follow/:userId", async (req: any, res) => {
   try {
     const targetUserId = await resolveUserId(req.params.userId);
-    if (targetUserId === req.user.id) return res.status(400).json({ error: "Cannot follow yourself" });
+    const currentUserId = getUserId(req);
+    if (targetUserId === currentUserId) return res.status(400).json({ error: "Cannot follow yourself" });
     const existing = await prisma.communityFollow.findUnique({
-      where: { followerId_followingId: { followerId: req.user.id, followingId: targetUserId } },
+      where: { followerId_followingId: { followerId: currentUserId, followingId: targetUserId } },
     });
     if (existing) {
       await prisma.communityFollow.delete({ where: { id: existing.id } });
       res.json({ success: true, isFollowing: false });
     } else {
       await prisma.communityFollow.create({
-        data: { followerId: req.user.id, followingId: targetUserId },
+        data: { followerId: currentUserId, followingId: targetUserId },
       });
       res.json({ success: true, isFollowing: true });
     }
@@ -62,10 +69,11 @@ router.post("/follow/:userId", async (req: any, res) => {
 // Send message
 router.post("/messages", async (req: any, res) => {
   try {
+    const currentUserId = getUserId(req);
     const { receiverId, content } = req.body;
     if (!receiverId || !content) return res.status(400).json({ error: "Receiver and content required" });
     const message = await prisma.communityMessage.create({
-      data: { senderId: req.user.id, receiverId, content },
+      data: { senderId: currentUserId, receiverId, content },
     });
     res.json({ success: true, message });
   } catch (error) {
@@ -76,8 +84,9 @@ router.post("/messages", async (req: any, res) => {
 // Get conversations
 router.get("/messages", async (req: any, res) => {
   try {
+    const currentUserId = getUserId(req);
     const messages = await prisma.communityMessage.findMany({
-      where: { OR: [{ senderId: req.user.id }, { receiverId: req.user.id }] },
+      where: { OR: [{ senderId: currentUserId }, { receiverId: currentUserId }] },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
@@ -90,8 +99,9 @@ router.get("/messages", async (req: any, res) => {
 // Mark messages as read
 router.put("/messages/read/:senderId", async (req: any, res) => {
   try {
+    const currentUserId = getUserId(req);
     await prisma.communityMessage.updateMany({
-      where: { senderId: req.params.senderId, receiverId: req.user.id, read: false },
+      where: { senderId: req.params.senderId, receiverId: currentUserId, read: false },
       data: { read: true },
     });
     res.json({ success: true });
@@ -103,8 +113,9 @@ router.put("/messages/read/:senderId", async (req: any, res) => {
 // Get activity feed
 router.get("/activity", async (req: any, res) => {
   try {
+    const currentUserId = getUserId(req);
     const activities = await prisma.communityActivity.findMany({
-      where: { userId: req.user.id },
+      where: { userId: currentUserId },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
@@ -117,8 +128,9 @@ router.get("/activity", async (req: any, res) => {
 // Get achievements
 router.get("/achievements", async (req: any, res) => {
   try {
+    const currentUserId = getUserId(req);
     const achievements = await prisma.communityAchievement.findMany({
-      where: { userId: req.user.id },
+      where: { userId: currentUserId },
       orderBy: { unlockedAt: "desc" },
     });
     res.json({ success: true, achievements });
@@ -130,8 +142,9 @@ router.get("/achievements", async (req: any, res) => {
 // Get projects
 router.get("/projects", async (req: any, res) => {
   try {
+    const currentUserId = getUserId(req);
     const projects = await prisma.communityProject.findMany({
-      where: { userId: req.user.id },
+      where: { userId: currentUserId },
       orderBy: { createdAt: "desc" },
     });
     res.json({ success: true, projects });
@@ -143,11 +156,12 @@ router.get("/projects", async (req: any, res) => {
 // Create project
 router.post("/projects", async (req: any, res) => {
   try {
+    const currentUserId = getUserId(req);
     const { title, description, techStack, url } = req.body;
     if (!title || !description) return res.status(400).json({ error: "Title and description required" });
     const project = await prisma.communityProject.create({
       data: {
-        userId: req.user.id,
+        userId: currentUserId,
         title,
         description,
         techStack: techStack || [],
@@ -163,7 +177,8 @@ router.post("/projects", async (req: any, res) => {
 // AI Recommendations
 router.get("/recommendations", async (req: any, res) => {
   try {
-    const profile = await prisma.profile.findUnique({ where: { userId: req.user.id } });
+    const currentUserId = getUserId(req);
+    const profile = await prisma.profile.findUnique({ where: { userId: currentUserId } });
     const skills = (profile?.skills as string[]) || [];
     
     const result = await generateJSON(
@@ -196,6 +211,25 @@ router.get("/users", async (req: any, res) => {
   try {
     const { q, page = "1", limit = "20" } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
+
+    // Auto-create profile records for any users that don't have one yet
+    const usersWithoutProfile = await prisma.user.findMany({
+      where: { profile: null },
+      select: { id: true, name: true },
+    });
+    if (usersWithoutProfile.length > 0) {
+      for (const u of usersWithoutProfile) {
+        try {
+          await prisma.profile.create({
+            data: {
+              userId: u.id,
+              username: u.name ? u.name.toLowerCase().replace(/\s+/g, "") : `user_${u.id.slice(0, 6)}`,
+            },
+          });
+        } catch { /* ignore if already created concurrently */ }
+      }
+    }
+
     const where: any = {};
     if (q) {
       where.OR = [
@@ -223,6 +257,7 @@ router.get("/users", async (req: any, res) => {
 // Get another user's public profile
 router.get("/users/:userId", async (req: any, res) => {
   try {
+    const currentUserId = getUserId(req);
     const rawId = req.params.userId;
     let profile = await prisma.profile.findFirst({
       where: {
@@ -256,7 +291,7 @@ router.get("/users/:userId", async (req: any, res) => {
     const [followers, following, isFollowing, projects, activities, achievements] = await Promise.all([
       prisma.communityFollow.count({ where: { followingId: targetUserId } }),
       prisma.communityFollow.count({ where: { followerId: targetUserId } }),
-      prisma.communityFollow.findUnique({ where: { followerId_followingId: { followerId: req.user.id, followingId: targetUserId } } }).then(Boolean),
+      prisma.communityFollow.findUnique({ where: { followerId_followingId: { followerId: currentUserId, followingId: targetUserId } } }).then(Boolean),
       prisma.communityProject.findMany({ where: { userId: targetUserId }, orderBy: { createdAt: "desc" }, take: 20 }),
       prisma.communityActivity.findMany({ where: { userId: targetUserId }, orderBy: { createdAt: "desc" }, take: 20 }),
       prisma.communityAchievement.findMany({ where: { userId: targetUserId }, orderBy: { unlockedAt: "desc" } }),
@@ -270,7 +305,7 @@ router.get("/users/:userId", async (req: any, res) => {
 // Get conversations list
 router.get("/conversations", async (req: any, res) => {
   try {
-    const userId = req.user.id;
+    const userId = getUserId(req);
     const rawMessages = await prisma.communityMessage.findMany({
       where: { OR: [{ senderId: userId }, { receiverId: userId }] },
       orderBy: { createdAt: "desc" },
@@ -308,19 +343,20 @@ router.get("/conversations", async (req: any, res) => {
 // Get messages with a specific user
 router.get("/messages/:userId", async (req: any, res) => {
   try {
+    const currentUserId = getUserId(req);
     const { userId } = req.params;
     const messages = await prisma.communityMessage.findMany({
       where: {
         OR: [
-          { senderId: req.user.id, receiverId: userId },
-          { senderId: userId, receiverId: req.user.id },
+          { senderId: currentUserId, receiverId: userId },
+          { senderId: userId, receiverId: currentUserId },
         ],
       },
       orderBy: { createdAt: "asc" },
       take: 100,
     });
     await prisma.communityMessage.updateMany({
-      where: { senderId: userId, receiverId: req.user.id, read: false },
+      where: { senderId: userId, receiverId: currentUserId, read: false },
       data: { read: true },
     });
     res.json({ success: true, messages });

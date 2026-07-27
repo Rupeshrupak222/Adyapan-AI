@@ -4,8 +4,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useInView, type Variants } from "framer-motion";
 import {
   User, Users, Globe, Share2, MessageSquare,
-  ExternalLink, BookOpen, Code2, FileText,   Trophy, Target,
-  TrendingUp, Calendar, Clock, ArrowUpRight,
+  ExternalLink, BookOpen, Code2, FileText, Trophy, Target,
+  TrendingUp, Calendar, Clock, ArrowUpRight, ArrowLeft,
   Zap, GraduationCap, Lightbulb,
   Quote, BadgeCheck, Medal,
   BarChart3, Activity, Folder, Plus, MapPin, Award, Send, ChevronRight
@@ -163,7 +163,7 @@ function SectionHeader({ icon: Icon, title, subtitle, gradient = false }: {
   );
 }
 
-export function CommunityProfileView({ userId, onViewUser }: { userId?: string; onViewUser?: (userId: string) => void }) {
+export function CommunityProfileView({ userId, onViewUser, onBack }: { userId?: string; onViewUser?: (userId: string) => void; onBack?: () => void }) {
   const theme = useTheme();
   const isDark = theme === "dark";
 
@@ -346,6 +346,20 @@ export function CommunityProfileView({ userId, onViewUser }: { userId?: string; 
       className="space-y-5 min-h-screen"
       style={{ fontFamily: "'Inter', 'Plus Jakarta Sans', sans-serif" }}
     >
+      {!isOwnProfile && (
+        <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 rounded-2xl">
+          <button
+            onClick={() => {
+              if (onBack) onBack();
+              else if (onViewUser) onViewUser("");
+            }}
+            className="flex items-center gap-2 text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={14} /> Back to Community Profile
+          </button>
+          <span className="text-[10px] font-semibold text-amber-500/80">Viewing Member Profile</span>
+        </div>
+      )}
       {/* HERO PROFILE SECTION */}
       <GlassCard glow glowColor="rgba(139,92,246,0.08)">
         <div className="h-36 sm:h-48 relative overflow-hidden rounded-t-[20px]">
@@ -713,7 +727,7 @@ function CommunityTab({ users, loading, search, onSearchChange, onSelectUser, cu
   const cardBg = isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.9)";
   const borderColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
 
-  const filtered = users.filter(u => u.id !== currentUserId);
+  const filtered = users.filter(u => u.id !== currentUserId && u.userId !== currentUserId);
 
   return (
     <div className="space-y-4">
@@ -742,34 +756,38 @@ function CommunityTab({ users, loading, search, onSearchChange, onSelectUser, cu
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {filtered.map((user: any) => (
-            <motion.button
-              key={user.id}
-              whileHover={{ y: -2, scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onSelectUser(user.id)}
-              className="p-4 rounded-2xl border text-left transition-all hover:shadow-lg cursor-pointer"
-              style={{ background: cardBg, borderColor }}
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
-                  <img src={getDiceBearUrl(user.name || user.username || "user")} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className={`text-xs font-bold truncate ${primaryText}`}>{user.name || "Anonymous"}</p>
-                  {user.username && <p className="text-[10px] truncate" style={{ color: subText }}>@{user.username}</p>}
-                  {user.aboutMe && <p className="text-[10px] mt-1 line-clamp-2" style={{ color: subText }}>{user.aboutMe}</p>}
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    {user.college && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(245,158,11,0.08)", color: "#f59e0b" }}>{user.college}</span>}
-                    {user.skills?.slice(0, 2).map((s: string) => (
-                      <span key={s} className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(59,130,246,0.08)", color: "#3b82f6" }}>{s}</span>
-                    ))}
+          {filtered.map((userItem: any) => {
+            const memberName = userItem.user?.name || userItem.name || userItem.username || userItem.user?.email?.split("@")[0] || "Community Member";
+            const targetId = userItem.userId || userItem.id;
+            return (
+              <motion.button
+                key={userItem.id || userItem.userId}
+                whileHover={{ y: -2, scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onSelectUser(targetId)}
+                className="p-4 rounded-2xl border text-left transition-all hover:shadow-lg cursor-pointer"
+                style={{ background: cardBg, borderColor }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
+                    <img src={getDiceBearUrl(memberName)} alt="" className="w-full h-full object-cover" />
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-xs font-bold truncate ${primaryText}`}>{memberName}</p>
+                    {userItem.username && <p className="text-[10px] truncate" style={{ color: subText }}>@{userItem.username}</p>}
+                    {userItem.aboutMe && <p className="text-[10px] mt-1 line-clamp-2" style={{ color: subText }}>{userItem.aboutMe}</p>}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      {userItem.college && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(245,158,11,0.08)", color: "#f59e0b" }}>{userItem.college}</span>}
+                      {userItem.skills?.slice(0, 2).map((s: string) => (
+                        <span key={s} className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(59,130,246,0.08)", color: "#3b82f6" }}>{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <ChevronRight size={14} style={{ color: subText }} className="shrink-0 mt-1" />
                 </div>
-                <ChevronRight size={14} style={{ color: subText }} className="shrink-0 mt-1" />
-              </div>
-            </motion.button>
-          ))}
+              </motion.button>
+            );
+          })}
         </div>
       )}
     </div>
