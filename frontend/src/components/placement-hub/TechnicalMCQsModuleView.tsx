@@ -486,6 +486,20 @@ export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMC
     }
   };
 
+  // Filtered Technologies by domain tab
+  const filteredTechnologies = useMemo(() => {
+    if (selectedCategoryTab === "All") return technologies;
+    return technologies.filter(t => t.category === selectedCategoryTab);
+  }, [technologies, selectedCategoryTab]);
+
+  // Filtered Autocomplete Suggestions
+  const autocompleteFiltered = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return SEARCH_AUTOCOMPLETE_SUGGESTIONS.filter((s) =>
+      s.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
+
   const currentQuestion = questions[activeQuestionIdx] || null;
 
   // Render Dedicated Full Practice View when isPracticing is true
@@ -787,19 +801,7 @@ export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMC
     );
   }
 
-  // Filtered Technologies by domain tab
-  const filteredTechnologies = useMemo(() => {
-    if (selectedCategoryTab === "All") return technologies;
-    return technologies.filter(t => t.category === selectedCategoryTab);
-  }, [technologies, selectedCategoryTab]);
 
-  // Filtered Autocomplete Suggestions
-  const autocompleteFiltered = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    return SEARCH_AUTOCOMPLETE_SUGGESTIONS.filter((s) =>
-      s.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery]);
 
   return (
     <div

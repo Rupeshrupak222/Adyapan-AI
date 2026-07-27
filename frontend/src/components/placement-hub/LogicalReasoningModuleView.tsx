@@ -399,6 +399,14 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
     }
   };
 
+  // Filtered Auto-complete Suggestions
+  const autocompleteFiltered = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return SEARCH_AUTOCOMPLETE_SUGGESTIONS.filter((s) =>
+      s.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
+
   const currentQuestion = questions[activeQuestionIdx] || null;
 
   // Render Dedicated Full Practice View when isPracticing is true
@@ -665,13 +673,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
     );
   }
 
-  // Filtered Auto-complete Suggestions
-  const autocompleteFiltered = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    return SEARCH_AUTOCOMPLETE_SUGGESTIONS.filter((s) =>
-      s.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery]);
+
 
   return (
     <div
