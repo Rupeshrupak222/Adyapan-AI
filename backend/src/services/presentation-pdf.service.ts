@@ -11,22 +11,32 @@ function escapeXml(text: string): string {
     .replace(/'/g, "&apos;");
 }
 
+function cleanText(text: string): string {
+  if (!text) return "";
+  return escapeXml(
+    text
+      .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}\u{2300}-\u{23FF}\u{2B50}\u{2B55}\u{2934}\u{2935}\u{2B05}-\u{2B07}\u{2b1b}\u{2b1c}\u{3297}\u{3299}\u{3030}\u{303d}\u{00a9}\u{00ae}\u{2122}\u{2139}\u{2194}-\u{2199}\u{21a9}-\u{21aa}\u{231a}-\u{231b}\u{2328}\u{23cf}\u{23ed}-\u{23ef}\u{23f0}\u{23f3}\u{25fd}-\u{25fe}\u{260e}\u{2611}\u{2614}-\u{2615}\u{2618}\u{261d}\u{2620}\u{2622}-\u{2623}\u{2626}\u{262a}\u{262e}-\u{262f}\u{2638}-\u{263a}\u{2640}\u{2642}\u{2648}-\u{2653}\u{2660}\u{2663}\u{2665}-\u{2666}\u{2668}\u{267b}\u{267f}\u{2692}-\u{2694}\u{2696}-\u{2697}\u{2699}\u{269b}-\u{269c}\u{26a0}-\u{26a1}\u{26aa}-\u{26ab}\u{26b0}-\u{26b1}\u{26bd}-\u{26be}\u{26c4}-\u{26c5}\u{26c8}\u{26ce}-\u{26cf}\u{26d1}\u{26d3}-\u{26d4}\u{26e9}-\u{26ea}\u{26f0}-\u{26f5}\u{26f7}-\u{26fa}\u{26fd}]/gu, "")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
+
 export async function generatePresentationPdf(spec: PresentationSpec): Promise<Buffer> {
   const theme = spec.theme || getTheme(spec.themeId || "corporate-blue");
-  const title = spec.title || "Academic Keynote Presentation";
+  const title = cleanText(spec.title || "Academic Keynote Presentation");
 
   const slidesHtml = (spec.slides || []).map((slide, idx) => {
     const layout = slide.layout || "split";
     const bulletsHtml = (slide.bullets || [])
-      .map(b => `<li class="bullet-item"><span class="bullet-dot"></span><span>${escapeXml(b)}</span></li>`)
+      .map(b => `<li class="bullet-item"><span class="bullet-dot"></span><span>${cleanText(b)}</span></li>`)
       .join("");
 
     const cardsHtml = (slide.cards || [])
       .map(c => `
         <div class="card-box">
-          ${c.value ? `<div class="card-val">${escapeXml(c.value)}</div>` : ""}
-          <div class="card-title">${escapeXml(c.title)}</div>
-          <div class="card-desc">${escapeXml(c.description)}</div>
+          ${c.value ? `<div class="card-val">${cleanText(c.value)}</div>` : ""}
+          <div class="card-title">${cleanText(c.title)}</div>
+          <div class="card-desc">${cleanText(c.description)}</div>
         </div>
       `)
       .join("");
@@ -34,20 +44,20 @@ export async function generatePresentationPdf(spec: PresentationSpec): Promise<B
     const imagesHtml = (slide.images || [])
       .map(img => `
         <div class="image-wrapper">
-          <img src="${img.url}" alt="${escapeXml(img.alt)}" class="slide-img" />
-          ${img.caption ? `<div class="image-caption">${escapeXml(img.caption)}</div>` : ""}
+          <img src="${img.url}" alt="${cleanText(img.alt)}" class="slide-img" />
+          ${img.caption ? `<div class="image-caption">${cleanText(img.caption)}</div>` : ""}
         </div>
       `)
       .join("");
 
     const iconsHtml = (slide.icons || [])
-      .map(ic => `<span class="icon-tag">${escapeXml(ic)}</span>`)
+      .map(ic => `<span class="icon-tag">${cleanText(ic)}</span>`)
       .join("");
 
     const chartHtml = (slide.charts && slide.charts.length > 0)
       ? slide.charts.map(ch => `
         <div class="chart-container">
-          <div class="chart-title">${escapeXml(ch.title)}</div>
+          <div class="chart-title">${cleanText(ch.title)}</div>
           <canvas id="chart-${idx}" class="chart-canvas" data-chart='${JSON.stringify(ch)}'></canvas>
         </div>
       `).join("")
@@ -56,8 +66,8 @@ export async function generatePresentationPdf(spec: PresentationSpec): Promise<B
     const diagramHtml = (slide.diagrams && slide.diagrams.length > 0)
       ? slide.diagrams.map(d => `
         <div class="mermaid-diagram">
-          <pre class="mermaid">${escapeXml(d.code)}</pre>
-          ${d.description ? `<p class="diagram-desc">${escapeXml(d.description)}</p>` : ""}
+          <pre class="mermaid">${cleanText(d.code)}</pre>
+          ${d.description ? `<p class="diagram-desc">${cleanText(d.description)}</p>` : ""}
         </div>
       `).join("")
       : "";
@@ -65,9 +75,9 @@ export async function generatePresentationPdf(spec: PresentationSpec): Promise<B
     return `
       <div class="slide-page">
         <div class="slide-header">
-          <div class="badge">${escapeXml(slide.badge || `SLIDE ${idx + 1} OF ${spec.slides.length}`)}</div>
-          <h2 class="slide-title">${escapeXml(slide.title)}</h2>
-          ${slide.subtitle ? `<h3 class="slide-subtitle">${escapeXml(slide.subtitle)}</h3>` : ""}
+          <div class="badge">${cleanText(slide.badge || `SLIDE ${idx + 1} OF ${spec.slides.length}`)}</div>
+          <h2 class="slide-title">${cleanText(slide.title)}</h2>
+          ${slide.subtitle ? `<h3 class="slide-subtitle">${cleanText(slide.subtitle)}</h3>` : ""}
         </div>
 
         <div class="slide-body layout-${layout}">
@@ -84,12 +94,12 @@ export async function generatePresentationPdf(spec: PresentationSpec): Promise<B
 
         ${slide.speakerNotes ? `
           <div class="speaker-notes">
-            <span class="notes-label">SPEAKER NOTES:</span> "${escapeXml(slide.speakerNotes)}"
+            <span class="notes-label">SPEAKER NOTES:</span> "${cleanText(slide.speakerNotes)}"
           </div>
         ` : ""}
 
         <div class="slide-footer">
-          <span>Adyapan AI Keynote Engine &middot; ${escapeXml(title)}</span>
+          <span>Adyapan AI Keynote Engine &middot; ${title}</span>
           <div class="icons-list">${iconsHtml}</div>
           <span>Slide ${idx + 1}</span>
         </div>
