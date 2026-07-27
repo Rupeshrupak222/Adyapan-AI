@@ -273,12 +273,8 @@ export function FlashcardsView() {
       setCurrentCardIndex((i) => i + 1);
       setIsFlipped(false);
     } else {
-      const allRated = cards.every((c) => c.userConfidence);
-      if (allRated) {
-        setPhase("results");
-      } else {
-        toast.info("Please rate all cards before viewing results.");
-      }
+      setXpEarned((prev) => prev || 50);
+      setPhase("results");
     }
   };
 
@@ -662,66 +658,33 @@ export function FlashcardsView() {
                   <button
                     onClick={handlePrev}
                     disabled={currentCardIndex === 0}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
                     style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}
                   >
-                    <ArrowLeft size={13} /> Prev
+                    <ArrowLeft size={14} /> Previous
                   </button>
                   <button
                     onClick={() => setIsFlipped((f) => !f)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer"
                     style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: "#f59e0b" }}
                   >
-                    <RotateCw size={13} /> Flip Card
+                    <RotateCw size={14} /> Flip Card
                   </button>
                   <button
                     onClick={handleNext}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                    style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer"
+                    style={
+                      currentCardIndex === cards.length - 1
+                        ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "#fff", border: "none" }
+                        : { background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }
+                    }
                   >
-                    Next <ArrowRight size={13} />
+                    {currentCardIndex === cards.length - 1 ? (
+                      <>Finish Deck 🎉</>
+                    ) : (
+                      <>Next <ArrowRight size={14} /></>
+                    )}
                   </button>
-                </div>
-
-                <div className="rounded-2xl p-3 space-y-2" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
-                  <div className="text-center text-[10px] uppercase tracking-widest font-bold" style={{ color: c.textMuted }}>
-                    How well did you recall this?
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      onClick={() => {
-                        rateCardConfidence(currentCardIndex, "easy");
-                        handleNext();
-                      }}
-                      className="py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-0.5"
-                      style={{ background: c.greenBg, border: `1px solid ${c.green}40`, color: c.green }}
-                    >
-                      <span>Easy</span>
-                      <span className="text-[8px] font-semibold" style={{ opacity: 0.7 }}>100% Recall</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        rateCardConfidence(currentCardIndex, "medium");
-                        handleNext();
-                      }}
-                      className="py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-0.5"
-                      style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: "#f59e0b" }}
-                    >
-                      <span>Medium</span>
-                      <span className="text-[8px] font-semibold" style={{ opacity: 0.7 }}>70% Recall</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        rateCardConfidence(currentCardIndex, "hard");
-                        handleNext();
-                      }}
-                      className="py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-0.5"
-                      style={{ background: c.roseBg, border: `1px solid ${c.rose}40`, color: c.rose }}
-                    >
-                      <span>Hard</span>
-                      <span className="text-[8px] font-semibold" style={{ opacity: 0.7 }}>Flag for Review</span>
-                    </button>
-                  </div>
                 </div>
               </div>
             </motion.div>
@@ -774,26 +737,43 @@ export function FlashcardsView() {
                   </span>
                 </div>
 
-                {/* Confidence Distribution */}
-                <div className="rounded-2xl p-5 flex flex-col justify-between" style={{ background: c.cardBg, border: `1px solid ${c.border}`, height: "180px" }}>
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-center block mb-2" style={{ color: c.textMuted }}>Confidence Score</span>
-                  <div className="space-y-2">
-                    {[
-                      { label: "Easy", count: easyCount, color: c.green, bg: c.greenBg },
-                      { label: "Medium", count: mediumCount, color: "#f59e0b", bg: c.amberBg },
-                      { label: "Hard", count: hardCount, color: c.rose, bg: c.roseBg },
-                    ].map((item) => (
-                      <div key={item.label} className="space-y-1">
-                        <div className="flex justify-between text-[10px] font-bold">
-                          <span style={{ color: item.color }}>{item.label} ({item.count})</span>
-                          <span style={{ color: c.textMuted }}>{Math.round((item.count / totalCardsCount) * 100) || 0}%</span>
-                        </div>
-                        <div className="h-1 rounded-full overflow-hidden" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
-                          <div className="h-full rounded-full" style={{ width: `${(item.count / totalCardsCount) * 100}%`, background: item.color }} />
-                        </div>
-                      </div>
-                    ))}
+                {/* Deck Completion Overview */}
+                <div className="rounded-2xl p-5 flex flex-col justify-between text-center relative overflow-hidden" style={{ background: c.cardBg, border: `1px solid ${c.border}`, height: "180px" }}>
+                  <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: c.textMuted }}>Deck Completion</span>
+                  <div className="my-auto space-y-1">
+                    <h4 className="text-3xl font-black" style={{ color: c.green }}>100%</h4>
+                    <p className="text-xs font-semibold" style={{ color: c.textSec }}>{cards.length} / {cards.length} Cards Parsed</p>
                   </div>
+                  <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-extrabold mx-auto" style={{ background: c.greenBg, border: `1px solid ${c.green}40`, color: c.green }}>
+                    Full Deck Mastered
+                  </span>
+                </div>
+
+                {/* Retention Ring */}
+                <div className="rounded-2xl p-5 flex flex-col items-center justify-between text-center relative overflow-hidden" style={{ background: c.cardBg, border: `1px solid ${c.border}`, height: "180px" }}>
+                  <div className="absolute top-0 right-0 h-20 w-20 rounded-full blur-xl pointer-events-none" style={{ background: `${c.green}10` }} />
+                  <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: c.textMuted }}>Estimated Retention</span>
+                  <div className="relative h-20 w-20 flex items-center justify-center mt-2">
+                    <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                      <path className="text-zinc-900" strokeWidth="2.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" style={{ color: c.surface }} />
+                      <motion.path
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        stroke="currentColor"
+                        fill="none"
+                        strokeDasharray="95, 100"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        initial={{ strokeDasharray: "0, 100" }}
+                        animate={{ strokeDasharray: "95, 100" }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        style={{ color: c.green }}
+                      />
+                    </svg>
+                    <span className="absolute text-base font-extrabold" style={{ color: c.text }}>95%</span>
+                  </div>
+                  <span className="text-[11px] font-bold mt-2" style={{ color: "#34d399" }}>
+                    High Retention Mastered
+                  </span>
                 </div>
 
                 {/* XP / Level / Streak */}
@@ -801,11 +781,11 @@ export function FlashcardsView() {
                   <div className="absolute top-0 right-0 h-20 w-20 rounded-full blur-xl pointer-events-none" style={{ background: `${c.amberBg}` }} />
                   <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: c.textMuted }}>Gamification Summary</span>
                   <div className="my-auto space-y-1">
-                    <h4 className="text-3xl font-black" style={{ color: "#f59e0b" }}>+{xpEarned} XP</h4>
-                    <p className="text-[10px] font-semibold uppercase" style={{ color: c.textMuted }}>Accumulated reward</p>
+                    <h4 className="text-3xl font-black" style={{ color: "#f59e0b" }}>+50 XP</h4>
+                    <p className="text-[10px] font-semibold uppercase" style={{ color: c.textMuted }}>Deck Completion Bonus</p>
                   </div>
                   <div className="flex justify-center gap-1.5">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: "#f59e0b" }}>Streak Saved!</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: "#f59e0b" }}>Streak Saved! 🔥</span>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}>Lv. {level}</span>
                   </div>
                 </div>
@@ -815,18 +795,18 @@ export function FlashcardsView() {
               <div className="w-full rounded-2xl p-6 space-y-4" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                 <div className="flex items-center gap-2 pb-3" style={{ borderBottom: `1px solid ${c.divider}` }}>
                   <Brain size={18} style={{ color: "#f59e0b" }} />
-                  <h3 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: c.text }}>Cognitive Analysis & Insights</h3>
+                  <h3 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: c.text }}>Cognitive Analysis & AI Insights</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed">
                   <div className="space-y-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider block" style={{ color: c.green }}>Strengths</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider block" style={{ color: c.green }}>Key Strengths</span>
                     <ul className="list-disc pl-4 space-y-1" style={{ color: c.textSec }}>
                       {strengths.map((s, i) => <li key={i}>{s}</li>)}
                     </ul>
                   </div>
                   <div className="space-y-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider block" style={{ color: c.rose }}>Focus Areas</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider block" style={{ color: c.amber }}>Recommended Focus Areas</span>
                     <ul className="list-disc pl-4 space-y-1" style={{ color: c.textSec }}>
                       {focusAreas.map((f, i) => <li key={i}>{f}</li>)}
                     </ul>
@@ -843,30 +823,32 @@ export function FlashcardsView() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => window.location.href = `/quiz?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}&autostart=true`}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all"
-                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff" }}
+                  onClick={() => {
+                    setCurrentCardIndex(0);
+                    setIsFlipped(false);
+                    setPhase("viewing");
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  style={{ background: c.greenBg, border: `1px solid ${c.green}40`, color: c.green }}
                 >
-                  <Brain size={14} /> Test My Knowledge
+                  <RotateCw size={13} /> Review Deck Again
                 </motion.button>
 
-                {memoryPackIndices.length > 0 && (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={startMemoryMode}
-                    className="flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all"
-                    style={{ background: c.greenBg, border: `1px solid ${c.green}40`, color: c.green }}
-                  >
-                    <RotateCw size={13} /> Review Pack ({memoryPackIndices.length})
-                  </motion.button>
-                )}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => window.location.href = `/quiz?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}&autostart=true`}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff" }}
+                >
+                  <Brain size={14} /> Test Knowledge
+                </motion.button>
 
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={resetFlashcards}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer"
                   style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}
                 >
                   <RefreshCw size={13} /> New Topic
@@ -906,22 +888,13 @@ function CardFace({
   const rotate = useTransform(x, [-200, 200], [-15, 15]);
   const rightOpacity = useTransform(x, [0, 120], [0, 1]);
   const leftOpacity = useTransform(x, [-120, 0], [1, 0]);
-  const upOpacity = useTransform(y, [-120, 0], [1, 0]);
-  const downOpacity = useTransform(y, [0, 120], [0, 1]);
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: { offset: { x: number; y: number }; velocity: { x: number; y: number } }) => {
     if (!isActive) return;
-    const threshold = 120;
+    const threshold = 100;
     const { offset } = info;
-    const absX = Math.abs(offset.x);
-    const absY = Math.abs(offset.y);
-    if (absX > absY) {
-      if (offset.x > threshold) onPrev();
-      else if (offset.x < -threshold) onNext();
-    } else {
-      if (offset.y < -threshold) { onRate("easy"); onNext(); }
-      else if (offset.y > threshold) { onRate("hard"); onNext(); }
-    }
+    if (offset.x > threshold) onPrev();
+    else if (offset.x < -threshold) onNext();
     x.set(0);
     y.set(0);
   };
@@ -935,14 +908,6 @@ function CardFace({
           </motion.div>
           <motion.div style={{ opacity: rightOpacity, background: "rgba(39,39,42,0.95)", color: "#d4d4d8", borderColor: "rgba(255,255,255,0.05)" }} className="absolute top-8 left-8 z-30 px-4 py-2 rounded-lg font-bold border shadow-lg pointer-events-none uppercase text-sm tracking-wider flex items-center gap-1.5">
             Prev Card
-          </motion.div>
-          <motion.div style={{ opacity: upOpacity, background: "rgba(16,185,129,0.95)", color: "#09090b", borderColor: "rgba(16,185,129,0.2)" }} className="absolute inset-x-8 top-1/3 z-30 px-5 py-3 rounded-xl font-extrabold border shadow-2xl pointer-events-none uppercase text-center text-base tracking-widest flex flex-col items-center justify-center gap-1.5">
-            <CheckCircle2 size={24} style={{ color: "#09090b" }} />
-            <span>Mark Known (+15 XP)</span>
-          </motion.div>
-          <motion.div style={{ opacity: downOpacity, background: "rgba(225,29,72,0.95)", color: "#fff", borderColor: "rgba(225,29,72,0.2)" }} className="absolute inset-x-8 bottom-1/3 z-30 px-5 py-3 rounded-xl font-extrabold border shadow-2xl pointer-events-none uppercase text-center text-base tracking-widest flex flex-col items-center justify-center gap-1.5">
-            <AlertCircle size={24} style={{ color: "#fff" }} />
-            <span>Review Again</span>
           </motion.div>
         </>
       )}
@@ -999,7 +964,7 @@ function CardFace({
 
           <div className="pt-4 text-center relative z-10" style={{ borderTop: `1px solid ${c.divider}` }}>
             <span className="text-[10px] font-semibold tracking-wide uppercase" style={{ color: c.textMuted }}>
-              Swipe Left: Skip &bull; Swipe Up: Know &bull; Swipe Down: Review
+              Swipe Left / Right to Navigate &bull; Tap to Flip Answer
             </span>
           </div>
         </div>
@@ -1045,28 +1010,8 @@ function CardFace({
             )}
           </div>
 
-          <div className="pt-3 flex justify-between items-center relative z-10" style={{ borderTop: `1px solid ${c.divider}` }}>
-            <span className="text-[9px] font-semibold uppercase" style={{ color: c.textMuted }}>Did you know this?</span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); onRate("easy"); onNext(); }}
-                className="px-2.5 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer"
-                style={{ background: c.greenBg, border: `1px solid ${c.green}30`, color: c.green }}
-              >
-                Yes, easy
-              </button>
-              <button
-                type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); onRate("hard"); onNext(); }}
-                className="px-2.5 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer"
-                style={{ background: c.roseBg, border: `1px solid ${c.rose}30`, color: c.rose }}
-              >
-                No, review
-              </button>
-            </div>
+          <div className="pt-3 text-center relative z-10" style={{ borderTop: `1px solid ${c.divider}` }}>
+            <span className="text-[9px] font-semibold uppercase" style={{ color: c.textMuted }}>Tap card or use controls below to continue</span>
           </div>
         </div>
       </motion.div>
