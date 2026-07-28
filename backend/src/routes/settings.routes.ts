@@ -2,7 +2,7 @@ import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { handleRouteError } from "../utils/routeError";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 
 export const settingsRouter = Router();
 settingsRouter.use(requireAuth);
