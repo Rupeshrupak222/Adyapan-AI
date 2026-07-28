@@ -55,13 +55,13 @@ interface Job {
 }
 
 interface Facets {
-  modes: { label: string; count: number }[];
-  employmentTypes: { label: string; count: number }[];
-  sources: { label: string; count: number }[];
-  skills: { label: string; count: number }[];
-  companies: { label: string; count: number }[];
-  industries: { label: string; count: number }[];
-  totalJobs: number;
+  workModes: { name: string; count: number }[];
+  employmentTypes: { name: string; count: number }[];
+  sources: { name: string; count: number }[];
+  skills: { name: string; count: number }[];
+  companies: { name: string; count: number }[];
+  locations: { name: string; count: number }[];
+  industries: { name: string; count: number }[];
 }
 
 interface AIMatch {
@@ -102,10 +102,10 @@ interface TrendingJob {
 
 interface AnalyticsData {
   totalJobs: number;
-  byMode: { label: string; count: number }[];
-  byType: { label: string; count: number }[];
-  topSkills: { label: string; count: number }[];
-  topCompanies: { label: string; count: number }[];
+  byLocation: { name: string; count: number }[];
+  bySkill: { name: string; count: number }[];
+  byIndustry: { name: string; count: number }[];
+  salaryRanges: Record<string, number>;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -119,10 +119,10 @@ const EMPLOYMENT_TYPES = ["Full-Time", "Part-Time", "Contract", "Internship", "F
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"];
 const SOURCES = ["LinkedIn", "Naukri", "Indeed", "Internshala", "RemoteOK", "Wellfound", "Adzuna"];
 const POSTED_WITHIN = [
-  { label: "Today", value: "1" },
-  { label: "Last 3 Days", value: "3" },
-  { label: "Last Week", value: "7" },
-  { label: "Last Month", value: "30" },
+  { label: "Today", value: "today" },
+  { label: "Last 3 Days", value: "3days" },
+  { label: "Last Week", value: "week" },
+  { label: "Last Month", value: "month" },
 ];
 
 const SORT_OPTIONS = [
@@ -255,14 +255,14 @@ function CompanyLogo({ company, logoUrl, size = 44 }: { company: string; logoUrl
 
   if (src && !imgErr) {
     return (
-      <div className="rounded-xl overflow-hidden shrink-0 border bg-white/5 p-1 flex items-center justify-center" style={{ width: size, height: size, borderColor: "rgba(255,255,255,0.08)" }}>
+      <div className="rounded-xl overflow-hidden shrink-0 border p-1 flex items-center justify-center" style={{ width: size, height: size, borderColor: "rgba(148,163,184,0.15)", background: "rgba(255,255,255,0.06)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={company} width={size - 8} height={size - 8} style={{ objectFit: "contain", display: "block" }} onError={() => setImgErr(true)} />
       </div>
     );
   }
   return (
-    <div className="rounded-xl shrink-0 flex items-center justify-center text-white font-black text-xs border" style={{ width: size, height: size, background: getLogoColor(company), borderColor: "rgba(255,255,255,0.06)" }}>
+    <div className="rounded-xl shrink-0 flex items-center justify-center text-white font-black text-xs border" style={{ width: size, height: size, background: getLogoColor(company), borderColor: "rgba(255,255,255,0.1)" }}>
       {getLogoInitials(company)}
     </div>
   );
@@ -272,20 +272,20 @@ function SkeletonCard({ c }: { c: Record<string, string> }) {
   return (
     <div className="rounded-2xl border p-5 space-y-4 animate-pulse" style={{ background: c.cardBg, borderColor: c.border }}>
       <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl shrink-0" style={{ background: "rgba(255,255,255,0.04)" }} />
+        <div className="w-11 h-11 rounded-xl shrink-0" style={{ background: c.surface }} />
         <div className="flex-1 space-y-2.5">
-          <div className="h-3.5 rounded" style={{ background: "rgba(255,255,255,0.05)", width: "70%" }} />
-          <div className="h-2.5 rounded" style={{ background: "rgba(255,255,255,0.03)", width: "45%" }} />
+          <div className="h-3.5 rounded" style={{ background: c.surface, width: "70%" }} />
+          <div className="h-2.5 rounded" style={{ background: c.surface, width: "45%" }} />
         </div>
       </div>
       <div className="space-y-2">
-        <div className="h-2.5 rounded" style={{ background: "rgba(255,255,255,0.03)", width: "90%" }} />
-        <div className="h-2.5 rounded" style={{ background: "rgba(255,255,255,0.03)", width: "75%" }} />
+        <div className="h-2.5 rounded" style={{ background: c.surface, width: "90%" }} />
+        <div className="h-2.5 rounded" style={{ background: c.surface, width: "75%" }} />
       </div>
       <div className="flex gap-2">
-        <div className="h-6 w-16 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }} />
-        <div className="h-6 w-20 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }} />
-        <div className="h-6 w-14 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }} />
+        <div className="h-6 w-16 rounded-full" style={{ background: c.surface }} />
+        <div className="h-6 w-20 rounded-full" style={{ background: c.surface }} />
+        <div className="h-6 w-14 rounded-full" style={{ background: c.surface }} />
       </div>
     </div>
   );
@@ -306,7 +306,7 @@ function ScoreCircle({ score, size = 48 }: { score: number; size?: number }) {
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90 absolute inset-0">
-        <circle cx={size / 2} cy={size / 2} r={size / 2 - 3} fill="transparent" stroke="rgba(255,255,255,0.06)" strokeWidth={3} />
+        <circle cx={size / 2} cy={size / 2} r={size / 2 - 3} fill="transparent" stroke="rgba(148,163,184,0.15)" strokeWidth={3} />
         <circle cx={size / 2} cy={size / 2} r={size / 2 - 3} fill="transparent" stroke={color} strokeWidth={3}
           strokeDasharray={2 * Math.PI * (size / 2 - 3)} strokeDashoffset={2 * Math.PI * (size / 2 - 3) * (1 - score / 100)}
           strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s ease" }} />
@@ -324,7 +324,7 @@ function ScoreBar({ label, score, c }: { label: string; score: number; c: Record
         <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>{label}</span>
         <span className="text-xs font-black" style={{ color }}>{score}%</span>
       </div>
-      <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
+      <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: "rgba(148,163,184,0.12)" }}>
         <motion.div initial={{ width: 0 }} animate={{ width: `${score}%` }} transition={{ duration: 1, ease: "easeOut" }}
           className="h-full rounded-full" style={{ background: color }} />
       </div>
@@ -358,16 +358,16 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   const isDark = theme === "dark";
 
   const c = useMemo(() => ({
-    text: isDark ? "#ffffff" : "#0f172a",
-    textSec: isDark ? "rgba(255,255,255,0.75)" : "#334155",
-    textMuted: isDark ? "rgba(255,255,255,0.45)" : "#64748b",
-    cardBg: isDark ? "rgba(15, 23, 42, 0.4)" : "rgba(255, 255, 255, 0.8)",
-    cardBgHover: isDark ? "rgba(15, 23, 42, 0.6)" : "rgba(255, 255, 255, 0.95)",
-    border: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+    text: isDark ? "#f1f5f9" : "#0f172a",
+    textSec: isDark ? "#cbd5e1" : "#334155",
+    textMuted: isDark ? "#94a3b8" : "#64748b",
+    cardBg: isDark ? "rgba(30, 41, 59, 0.85)" : "rgba(255, 255, 255, 0.85)",
+    cardBgHover: isDark ? "rgba(30, 41, 59, 1)" : "rgba(255, 255, 255, 1)",
+    border: isDark ? "rgba(148, 163, 184, 0.12)" : "rgba(0, 0, 0, 0.08)",
     primary: "#f59e0b",
-    inputBg: isDark ? "rgba(0,0,0,0.2)" : "#f8fafc",
-    surface: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
-    overlay: isDark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.4)",
+    inputBg: isDark ? "rgba(15, 23, 42, 0.6)" : "#f8fafc",
+    surface: isDark ? "rgba(51, 65, 85, 0.35)" : "rgba(0,0,0,0.03)",
+    overlay: isDark ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.4)",
   }), [isDark]);
 
   // ─── Search State ───────────────────────────────────────────────────────
@@ -459,9 +459,9 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
       const params: Record<string, string> = {
         page: String(pageNum), limit: String(PAGE_LIMIT),
-        sortBy, order: sortOrder,
+        sortBy, sortOrder: sortOrder,
       };
-      if (debouncedQuery) params.q = debouncedQuery;
+      if (debouncedQuery) params.query = debouncedQuery;
       if (filters.workMode) params.workMode = filters.workMode;
       if (filters.employmentType) params.employmentType = filters.employmentType;
       if (filters.experienceMin) params.experienceMin = filters.experienceMin;
@@ -913,9 +913,9 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           <div className="pt-2 border-t space-y-2" style={{ borderColor: c.border }}>
             <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Quick Stats</span>
             <div className="space-y-1">
-              {facets.modes?.slice(0, 3).map(m => (
-                <div key={m.label} className="flex items-center justify-between text-[11px]">
-                  <span style={{ color: c.textMuted }}>{m.label}</span>
+              {facets.workModes?.slice(0, 3).map(m => (
+                <div key={m.name} className="flex items-center justify-between text-[11px]">
+                  <span style={{ color: c.textMuted }}>{m.name}</span>
                   <span className="font-bold" style={{ color: c.text }}>{m.count}</span>
                 </div>
               ))}
@@ -1001,7 +1001,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           <div className="flex flex-wrap gap-1.5 mb-3">
             {job.skills.slice(0, 5).map((skill, i) => (
               <span key={i} className="px-2 py-0.5 rounded text-[9px] font-bold border"
-                style={{ background: "rgba(255,255,255,0.02)", color: c.textMuted, borderColor: c.border }}>{skill}</span>
+                style={{ background: c.surface, color: c.textMuted, borderColor: c.border }}>{skill}</span>
             ))}
             {job.skills.length > 5 && (
               <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ color: c.textMuted }}>+{job.skills.length - 5}</span>
@@ -1108,58 +1108,57 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                       <span className="text-[11px]" style={{ color: c.textMuted }}>Total Jobs</span>
                       <span className="text-sm font-black" style={{ color: c.primary }}>{analytics.totalJobs.toLocaleString()}</span>
                     </div>
-                    {analytics.byMode?.map(m => (
-                      <div key={m.label} className="flex items-center justify-between">
-                        <span className="text-[11px]" style={{ color: c.textMuted }}>{m.label}</span>
-                        <span className="text-[11px] font-bold" style={{ color: c.text }}>{m.count}</span>
+                    {analytics.byLocation?.slice(0, 4).map((l: any) => (
+                      <div key={l.name} className="flex items-center justify-between">
+                        <span className="text-[11px] truncate" style={{ color: c.textMuted }}>{l.name}</span>
+                        <span className="text-[11px] font-bold" style={{ color: c.text }}>{l.count}</span>
                       </div>
                     ))}
-                    {analytics.byType?.slice(0, 4).map(t => (
-                      <div key={t.label} className="flex items-center justify-between">
-                        <span className="text-[11px]" style={{ color: c.textMuted }}>{t.label}</span>
-                        <span className="text-[11px] font-bold" style={{ color: c.text }}>{t.count}</span>
+                    {analytics.byIndustry?.slice(0, 4).map((ind: any) => (
+                      <div key={ind.name} className="flex items-center justify-between">
+                        <span className="text-[11px] truncate" style={{ color: c.textMuted }}>{ind.name}</span>
+                        <span className="text-[11px] font-bold" style={{ color: c.text }}>{ind.count}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-4 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />)}</div>
+                  <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-4 rounded animate-pulse" style={{ background: c.surface }} />)}</div>
                 )}
               </div>
 
-              {analytics?.topSkills && analytics.topSkills.length > 0 && (
+              {analytics?.bySkill && analytics.bySkill.length > 0 && (
                 <div className="rounded-2xl border p-4 space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
                   <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
                     <Code2 size={14} style={{ color: c.primary }} /> Top Skills
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {analytics.topSkills.slice(0, 12).map((skill, i) => (
-                      <span key={skill.label} className="px-2 py-1 rounded-md text-[10px] font-bold border cursor-pointer transition-all hover:scale-[1.03]"
+                    {analytics.bySkill.slice(0, 12).map((skill: any, i: number) => (
+                      <span key={skill.name} className="px-2 py-1 rounded-md text-[10px] font-bold border cursor-pointer transition-all hover:scale-[1.03]"
                         style={{
                           background: i < 3 ? "rgba(245,158,11,0.08)" : c.surface,
                           color: i < 3 ? c.primary : c.textMuted,
                           borderColor: i < 3 ? "rgba(245,158,11,0.2)" : c.border,
-                        }} onClick={() => { if (!skillTags.includes(skill.label)) setSkillTags(prev => [...prev, skill.label]); }}>
-                        {skill.label} ({skill.count})
+                        }} onClick={() => { if (!skillTags.includes(skill.name)) setSkillTags(prev => [...prev, skill.name]); }}>
+                        {skill.name} ({skill.count})
                       </span>
                     ))}
                   </div>
                 </div>
               )}
 
-              {analytics?.topCompanies && analytics.topCompanies.length > 0 && (
+              {analytics?.byLocation && analytics.byLocation.length > 0 && (
                 <div className="rounded-2xl border p-4 space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
                   <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
-                    <Building2 size={14} style={{ color: c.primary }} /> Top Companies
+                    <MapPin size={14} style={{ color: c.primary }} /> Top Locations
                   </h4>
                   <div className="space-y-2">
-                    {analytics.topCompanies.slice(0, 5).map((co, i) => (
-                      <div key={co.label} className="flex items-center gap-2.5 cursor-pointer group/co" onClick={() => handleFilterChange("company", co.label)}>
+                    {analytics.byLocation.slice(0, 5).map((loc: any, i: number) => (
+                      <div key={loc.name} className="flex items-center gap-2.5 cursor-pointer group/co">
                         <span className="text-[10px] font-black w-4" style={{ color: c.textMuted }}>{i + 1}</span>
-                        <CompanyLogo company={co.label} size={24} />
                         <div className="flex-1 min-w-0">
-                          <span className="text-[11px] font-bold truncate block group-hover/co:text-amber-400 transition-colors" style={{ color: c.text }}>{co.label}</span>
+                          <span className="text-[11px] font-bold truncate block transition-colors" style={{ color: c.text }}>{loc.name}</span>
                         </div>
-                        <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>{co.count}</span>
+                        <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>{loc.count}</span>
                       </div>
                     ))}
                   </div>

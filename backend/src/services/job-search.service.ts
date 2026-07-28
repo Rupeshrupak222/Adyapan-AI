@@ -1,5 +1,4 @@
-import { createPrismaClient } from "../config/dynamicPrisma";
-import { env } from "../config/env";
+import { getMasterPrisma } from "../config/dynamicPrisma";
 // AI integration available for future use
 
 export interface SearchFilters {
@@ -49,7 +48,7 @@ export interface SearchResult {
 let _db: any = null;
 
 function getDb() {
-  if (!_db) _db = createPrismaClient(env.databaseUrl);
+  if (!_db) _db = getMasterPrisma();
   return _db;
 }
 

@@ -1,6 +1,6 @@
 import { ApifyClient } from "apify-client";
 import { env } from "../config/env";
-import { createPrismaClient } from "../config/dynamicPrisma";
+import { getMasterPrisma } from "../config/dynamicPrisma";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -638,7 +638,7 @@ export class JobDiscoveryService {
 
   static async ingestJobs(jobs: NormalizedJob[], source: string): Promise<IngestionResult> {
     const start = Date.now();
-    const prisma = createPrismaClient(env.masterDatabaseUrl || env.databaseUrl);
+    const prisma = getMasterPrisma();
 
     let jobsInserted = 0;
     let jobsUpdated = 0;
@@ -828,7 +828,7 @@ export class JobDiscoveryService {
   }
 
   static async getSourceStatuses(): Promise<any[]> {
-    const prisma = createPrismaClient(env.masterDatabaseUrl || env.databaseUrl);
+    const prisma = getMasterPrisma();
     try {
       const sources = await prisma.discoveryJobSource.findMany({
         orderBy: { createdAt: "asc" },
@@ -871,7 +871,7 @@ export class JobDiscoveryService {
   }
 
   static async getIngestionLogs(limit: number = 50): Promise<any[]> {
-    const prisma = createPrismaClient(env.masterDatabaseUrl || env.databaseUrl);
+    const prisma = getMasterPrisma();
     try {
       const logs = await prisma.discoveryIngestionLog.findMany({
         orderBy: { startedAt: "desc" },
@@ -884,7 +884,7 @@ export class JobDiscoveryService {
   }
 
   static async seedSources(): Promise<void> {
-    const prisma = createPrismaClient(env.masterDatabaseUrl || env.databaseUrl);
+    const prisma = getMasterPrisma();
     for (const [name, meta] of Object.entries(SOURCE_ACTORS)) {
       try {
         await prisma.discoveryJobSource.upsert({
@@ -907,7 +907,7 @@ export class JobDiscoveryService {
   // ─── Internal Helpers ──────────────────────────────────────────────────────
 
   private static async logIngestion(result: IngestionResult): Promise<void> {
-    const prisma = createPrismaClient(env.masterDatabaseUrl || env.databaseUrl);
+    const prisma = getMasterPrisma();
     try {
       await prisma.discoveryIngestionLog.create({
         data: {
@@ -930,7 +930,7 @@ export class JobDiscoveryService {
   }
 
   private static async updateSourceStatus(sourceName: string, result: IngestionResult): Promise<void> {
-    const prisma = createPrismaClient(env.masterDatabaseUrl || env.databaseUrl);
+    const prisma = getMasterPrisma();
     try {
       await prisma.discoveryJobSource.upsert({
         where: { name: sourceName },
