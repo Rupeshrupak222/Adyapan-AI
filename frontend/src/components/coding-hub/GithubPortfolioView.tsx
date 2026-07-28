@@ -30,7 +30,10 @@ import {
   MapPin,
   Users,
   Terminal,
-  Share2,
+  ArrowRight,
+  Upload,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
@@ -147,6 +150,9 @@ export function GithubPortfolioView() {
 
   const [theme, setTheme] = useState("dark");
   const isDark = theme === "dark";
+
+  // Amber gold gradient shorthand
+  const amberGrad = "linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)";
 
   // Sync theme with Adyapan AI theme engine
   useEffect(() => {
@@ -446,11 +452,20 @@ export function GithubPortfolioView() {
   const inputBorder = isDark ? "rgba(245,158,11,0.2)" : "rgba(245,158,11,0.3)";
 
   return (
-    <div className="relative flex overflow-hidden w-full h-full" style={{ color: primaryText }}>
+    <div className="relative flex overflow-hidden w-full h-full" style={{ color: primaryText, fontFamily: "'Inter', sans-serif" }}>
       {/* Starry background */}
       <ChatBackground isDark={isDark} />
+      {/* Amber Glow Overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: isDark
+            ? "radial-gradient(ellipse 60% 40% at 20% 50%, rgba(245,158,11,0.05) 0%, transparent 70%)"
+            : "none",
+        }}
+      />
 
-      {/* Floating Toggle for Sidebar */}
+      {/* Floating Toggle for Sidebar (when closed) */}
       <AnimatePresence>
         {!sidebarOpen && (
           <motion.button
@@ -459,7 +474,7 @@ export function GithubPortfolioView() {
             style={{
               width: 36,
               height: 36,
-              background: "linear-gradient(135deg, #f59e0b, #d97706)",
+              background: "linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)",
               color: "#000",
               boxShadow: "0 4px 16px rgba(245,158,11,0.35)",
             }}
@@ -470,11 +485,7 @@ export function GithubPortfolioView() {
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.92 }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="2" y="4" width="12" height="1.5" rx="0.75" fill="currentColor" />
-              <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor" />
-              <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="currentColor" />
-            </svg>
+            <PanelLeftOpen size={16} />
           </motion.button>
         )}
       </AnimatePresence>
@@ -486,69 +497,117 @@ export function GithubPortfolioView() {
           {sidebarOpen && (
             <motion.aside
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 400, opacity: 1 }}
+              animate={{ width: 340, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ type: "spring", stiffness: 340, damping: 32 }}
               className="flex-shrink-0 flex flex-col overflow-hidden h-full"
               style={{
                 background: sidebarBg,
                 borderRight: `1px solid ${sidebarBorder}`,
-                backdropFilter: "blur(24px)",
-                position: "relative",
+                backdropFilter: "blur(28px)",
                 zIndex: 20,
+                minWidth: 0,
               }}
             >
               {/* Header & Close Button */}
-              <div className="p-4 border-b flex items-center justify-between flex-shrink-0" style={{ borderColor: sidebarBorder }}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black font-black shadow-md shadow-amber-500/25">
-                    <Github size={18} />
+              <div
+                className="px-4 py-3.5 border-b flex items-center justify-between flex-shrink-0"
+                style={{ borderColor: sidebarBorder }}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-black shadow-lg flex-shrink-0"
+                    style={{
+                      background: "linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)",
+                      boxShadow: "0 4px 14px rgba(245,158,11,0.35)",
+                    }}
+                  >
+                    <Github size={16} />
                   </div>
-                  <div>
-                    <h2 className="font-extrabold text-sm tracking-tight text-amber-500" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                  <div className="min-w-0">
+                    <h2
+                      className="font-black text-sm truncate"
+                      style={{
+                        background: "linear-gradient(90deg, #fbbf24, #f59e0b, #d97706)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        fontFamily: "'Outfit', sans-serif",
+                      }}
+                    >
                       GitHub Portfolio Wizard
                     </h2>
-                    <p className="text-[10px] text-amber-400/80 font-semibold flex items-center gap-1">
-                      <Sparkles size={10} /> Amber Gold AI Engine
+                    <p
+                      className="text-[10px] font-semibold flex items-center gap-1"
+                      style={{ color: "rgba(251,191,36,0.7)" }}
+                    >
+                      <Sparkles size={9} /> Amber Gold AI Engine
                     </p>
                   </div>
                 </div>
-
                 <motion.button
                   onClick={() => setSidebarOpen(false)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center transition flex-shrink-0"
+                  style={{ color: isDark ? "#94a3b8" : "#64748b" }}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                    <rect x="2" y="4" width="12" height="1.5" rx="0.75" fill="currentColor" />
-                    <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor" />
-                    <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="currentColor" />
-                  </svg>
+                  <PanelLeftClose size={15} />
                 </motion.button>
               </div>
 
               {/* Wizard 4-Step Navigation Tabs */}
-              <div className="grid grid-cols-4 p-2 gap-1 border-b text-[11px] font-bold" style={{ borderColor: sidebarBorder }}>
+              <div className="flex items-center gap-1 p-2 border-b flex-shrink-0" style={{ borderColor: sidebarBorder }}>
                 {[
                   { step: 1, label: "Profile", icon: User },
                   { step: 2, label: "README", icon: FileText },
                   { step: 3, label: "Portfolio", icon: Layout },
-                  { step: 4, label: "Push", icon: GitCommit },
+                  { step: 4, label: "Deploy", icon: Upload },
                 ].map(({ step, label, icon: Icon }) => {
                   const active = activeStep === step;
+                  const done = activeStep > step;
                   return (
                     <button
                       key={step}
                       onClick={() => setActiveStep(step as any)}
-                      className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${
-                        active
-                          ? "bg-amber-500/15 text-amber-400 border border-amber-500/35 shadow-sm shadow-amber-500/10"
-                          : "text-slate-400 hover:bg-white/5"
-                      }`}
+                      className="flex-1 flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl transition-all"
+                      style={{
+                        background: active
+                          ? "rgba(245,158,11,0.14)"
+                          : done
+                          ? "rgba(245,158,11,0.06)"
+                          : "transparent",
+                        border: active
+                          ? "1px solid rgba(245,158,11,0.4)"
+                          : done
+                          ? "1px solid rgba(245,158,11,0.2)"
+                          : "1px solid transparent",
+                      }}
                     >
-                      <Icon size={14} className={active ? "text-amber-400" : "text-slate-500"} />
-                      <span>{step}. {label}</span>
+                      <div
+                        className="w-6 h-6 rounded-lg flex items-center justify-center"
+                        style={{
+                          background: active
+                            ? "linear-gradient(135deg, #fbbf24, #d97706)"
+                            : done
+                            ? "rgba(245,158,11,0.2)"
+                            : "rgba(255,255,255,0.04)",
+                        }}
+                      >
+                        <Icon
+                          size={11}
+                          style={{
+                            color: active ? "#000" : done ? "#f59e0b" : isDark ? "#94a3b8" : "#64748b",
+                          }}
+                        />
+                      </div>
+                      <span
+                        className="text-[10px] font-bold leading-none"
+                        style={{
+                          color: active ? "#f59e0b" : done ? "#f59e0b" : isDark ? "#94a3b8" : "#64748b",
+                        }}
+                      >
+                        {label}
+                      </span>
                     </button>
                   );
                 })}
@@ -984,7 +1043,7 @@ export function GithubPortfolioView() {
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
           
           {/* Top Preview Control Navigation Bar */}
-          <div className="p-3 border-b flex items-center justify-between gap-4 flex-wrap z-10" style={{ borderColor: sidebarBorder }}>
+          <div className="px-4 py-2.5 border-b flex items-center justify-between gap-3 flex-shrink-0 flex-wrap" style={{ borderColor: sidebarBorder, background: isDark ? "rgba(6,6,12,0.5)" : "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)" }}>
             <div className="flex items-center gap-2 ml-12 lg:ml-0">
               <span className="font-extrabold text-sm tracking-tight text-amber-500" style={{ fontFamily: "'Outfit', sans-serif" }}>
                 Preview Window
@@ -997,7 +1056,7 @@ export function GithubPortfolioView() {
             </div>
 
             {/* Showcase View Switcher */}
-            <div className="flex items-center gap-1.5 bg-black/30 p-1 rounded-xl border" style={{ borderColor: sidebarBorder }}>
+            <div className="flex items-center gap-0.5 p-1 rounded-xl" style={{ background: "rgba(0,0,0,0.25)", border: `1px solid ${sidebarBorder}` }}>
               <button
                 onClick={() => setActivePreviewTab("preview")}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
@@ -1087,21 +1146,89 @@ export function GithubPortfolioView() {
                   className="w-full h-full overflow-y-auto p-6 md:p-8 custom-scrollbar"
                 >
                   {readmeContent ? (
-                    <div className="max-w-3xl mx-auto p-6 rounded-2xl border bg-black/40 shadow-2xl" style={{ borderColor: sidebarBorder }}>
-                      <div className="text-sm leading-relaxed text-slate-300">
+                    <div
+                      className="max-w-3xl mx-auto p-6 rounded-2xl shadow-2xl"
+                      style={{
+                        background: isDark ? "rgba(6,6,12,0.7)" : "rgba(255,255,255,0.9)",
+                        border: `1px solid ${sidebarBorder}`,
+                      }}
+                    >
+                      <div className="text-sm leading-relaxed" style={{ color: primaryText }}>
                         {renderMarkdown(readmeContent, isDark)}
                       </div>
                     </div>
                   ) : (
-                    <div className="h-full flex flex-col justify-center items-center text-slate-400 space-y-3">
-                      <FileText className="w-12 h-12 animate-pulse text-amber-500/40" />
-                      <p className="text-sm font-semibold">Load a profile in Step 1 or enter a project in Step 2 to generate a README.md.</p>
-                      <button
-                        onClick={() => setActiveStep(1)}
-                        className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black text-xs font-extrabold rounded-xl shadow-md"
+                    <div className="h-full flex flex-col justify-center items-center space-y-5">
+                      {/* Icon */}
+                      <div
+                        className="w-20 h-20 rounded-3xl flex items-center justify-center"
+                        style={{
+                          background: "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04))",
+                          border: "1px solid rgba(245,158,11,0.2)",
+                        }}
                       >
-                        Start Wizard &rarr;
-                      </button>
+                        <FileText className="w-10 h-10" style={{ color: "rgba(245,158,11,0.4)" }} />
+                      </div>
+                      {/* Title */}
+                      <div className="text-center space-y-1.5 max-w-sm">
+                        <h3 className="text-base font-bold" style={{ color: primaryText }}>No README generated yet</h3>
+                        <p className="text-sm" style={{ color: isDark ? "#94a3b8" : "#64748b" }}>
+                          Analyze a GitHub profile in Step 1, then craft a README in Step 2.
+                        </p>
+                      </div>
+                      {/* CTAs */}
+                      <div className="flex gap-2.5">
+                        <motion.button
+                          onClick={() => setActiveStep(1)}
+                          className="px-5 py-2.5 text-black text-xs font-extrabold rounded-xl"
+                          style={{
+                            background: "linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)",
+                            boxShadow: "0 4px 14px rgba(245,158,11,0.3)",
+                          }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Start with Profile →
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setActiveStep(2)}
+                          className="px-5 py-2.5 text-xs font-bold rounded-xl transition"
+                          style={{
+                            background: "rgba(245,158,11,0.1)",
+                            border: "1px solid rgba(245,158,11,0.25)",
+                            color: "#f59e0b",
+                          }}
+                          whileHover={{ background: "rgba(245,158,11,0.18)" }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Skip to README
+                        </motion.button>
+                      </div>
+                      {/* Quick guide card */}
+                      <div
+                        className="p-4 rounded-2xl max-w-sm w-full"
+                        style={{
+                          background: "rgba(245,158,11,0.04)",
+                          border: "1px solid rgba(245,158,11,0.12)",
+                        }}
+                      >
+                        <p
+                          className="text-[10px] font-bold uppercase tracking-wider mb-2"
+                          style={{ color: "rgba(245,158,11,0.7)" }}
+                        >
+                          Quick Guide
+                        </p>
+                        {[
+                          "① Enter GitHub username → Analyze",
+                          "② Click a repo card to pre-fill README builder",
+                          "③ Choose template style → Generate AI README",
+                          "④ Export portfolio site or push directly to GitHub",
+                        ].map((step, i) => (
+                          <p key={i} className="text-[11px] py-0.5" style={{ color: isDark ? "#94a3b8" : "#64748b" }}>
+                            {step}
+                          </p>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </motion.div>
