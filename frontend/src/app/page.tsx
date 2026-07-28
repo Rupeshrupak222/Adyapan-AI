@@ -1003,7 +1003,6 @@ export default function LandingPage() {
               { icon: Briefcase, color: "amber", title: "Micro-Internships", desc: "Short-term remote engineering positions." },
               { icon: Trophy, color: "orange", title: "Hiring Drives", desc: "Direct hiring partnership opportunities." },
               { icon: Calendar, color: "yellow", title: "Hackathons", desc: "Compete globally and verify skill sets." },
-              { icon: Star, color: "amber", title: "Job Referrals", desc: "Connect with alumni and hiring mentors." },
             ].map((item, i) => {
               const Icon = item.icon;
               return (
