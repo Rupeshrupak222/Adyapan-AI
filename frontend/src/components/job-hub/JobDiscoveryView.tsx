@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -346,6 +346,105 @@ function EmptyState({ c, onClearFilters }: { c: Record<string, string>; onClearF
       <button onClick={onClearFilters} className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105"
         style={{ background: c.primary, color: "#000" }}>Clear All Filters</button>
     </motion.div>
+  );
+}
+
+interface CustomSelectOption {
+  value: string;
+  label: string;
+}
+
+function CustomSelect({
+  value,
+  options,
+  onChange,
+  placeholder = "Select...",
+  c,
+  isDark = true,
+  className = "",
+}: {
+  value: string;
+  options: CustomSelectOption[];
+  onChange: (val: string) => void;
+  placeholder?: string;
+  c: Record<string, string>;
+  isDark?: boolean;
+  className?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} className={`relative ${className}`}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(prev => !prev)}
+        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold border transition-all hover:border-amber-500/40 outline-none cursor-pointer"
+        style={{
+          background: isDark ? "rgba(15, 23, 42, 0.7)" : "#ffffff",
+          borderColor: isOpen ? c.primary : c.border,
+          color: selectedOption ? c.text : c.textMuted,
+        }}
+      >
+        <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+        <ChevronDown
+          size={14}
+          className={`transition-transform duration-200 shrink-0 ml-2 ${isOpen ? "rotate-180" : ""}`}
+          style={{ color: c.textMuted }}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-0 right-0 mt-1.5 rounded-xl border shadow-2xl z-50 overflow-hidden py-1 max-h-60 overflow-y-auto"
+            style={{
+              background: isDark ? "rgba(15, 23, 42, 0.96)" : "#ffffff",
+              borderColor: c.border,
+              backdropFilter: "blur(16px)",
+            }}
+          >
+            {options.map(opt => {
+              const isSelected = opt.value === value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className="w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between transition-colors hover:bg-amber-500/10 cursor-pointer"
+                  style={{
+                    color: isSelected ? c.primary : c.text,
+                    background: isSelected ? "rgba(245, 158, 11, 0.08)" : "transparent",
+                  }}
+                >
+                  <span className="truncate">{opt.label}</span>
+                  {isSelected && <CheckCircle2 size={12} style={{ color: c.primary }} className="shrink-0 ml-2" />}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -813,33 +912,34 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         {/* Industry */}
         <div className="space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Industry</span>
-          <div className="relative">
-            <select value={filters.industry} onChange={e => handleFilterChange("industry", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs border outline-none appearance-none cursor-pointer"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-              <option value="">All Industries</option>
-              {INDUSTRIES.map(ind => <option key={ind} value={ind}>{ind}</option>)}
-            </select>
-            <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: c.textMuted }} />
-          </div>
+          <CustomSelect
+            value={filters.industry}
+            options={[{ value: "", label: "All Industries" }, ...INDUSTRIES.map(ind => ({ value: ind, label: ind }))]}
+            onChange={val => handleFilterChange("industry", val)}
+            placeholder="All Industries"
+            c={c}
+            isDark={isDark}
+          />
         </div>
 
         {/* Education */}
         <div className="space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Education</span>
-          <div className="relative">
-            <select value={filters.education} onChange={e => handleFilterChange("education", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs border outline-none appearance-none cursor-pointer"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-              <option value="">Any Education</option>
-              <option value="High School">High School</option>
-              <option value="Diploma">Diploma</option>
-              <option value="Bachelor's">Bachelor&apos;s</option>
-              <option value="Master's">Master&apos;s</option>
-              <option value="PhD">PhD</option>
-            </select>
-            <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: c.textMuted }} />
-          </div>
+          <CustomSelect
+            value={filters.education}
+            options={[
+              { value: "", label: "Any Education" },
+              { value: "High School", label: "High School" },
+              { value: "Diploma", label: "Diploma" },
+              { value: "Bachelor's", label: "Bachelor's" },
+              { value: "Master's", label: "Master's" },
+              { value: "PhD", label: "PhD" },
+            ]}
+            onChange={val => handleFilterChange("education", val)}
+            placeholder="Any Education"
+            c={c}
+            isDark={isDark}
+          />
         </div>
 
         {/* Company Size */}
@@ -1673,17 +1773,21 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             </AnimatePresence>
           </div>
 
-          <div className="relative">
-            <select value={`${sortBy}:${sortOrder}`}
-              onChange={e => { const [newSort, newOrder] = e.target.value.split(":"); setSortBy(newSort); setSortOrder(newOrder as "asc" | "desc"); }}
-              className="pl-3 pr-8 py-3 rounded-xl text-xs font-bold border outline-none appearance-none cursor-pointer"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-              {SORT_OPTIONS.map(opt => (
-                <option key={`${opt.value}:desc`} value={`${opt.value}:desc`}>{opt.label} ↓</option>
-              ))}
-            </select>
-            <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: c.textMuted }} />
-          </div>
+          <CustomSelect
+            value={`${sortBy}:${sortOrder}`}
+            options={SORT_OPTIONS.map(opt => ({
+              value: `${opt.value}:${sortOrder}`,
+              label: `${opt.label} ${sortOrder === "desc" ? "↓" : "↑"}`,
+            }))}
+            onChange={val => {
+              const [newSort, newOrder] = val.split(":");
+              setSortBy(newSort);
+              setSortOrder(newOrder as "asc" | "desc");
+            }}
+            c={c}
+            isDark={isDark}
+            className="w-44 shrink-0"
+          />
 
           <button onClick={toggleSortOrder} className="p-3 rounded-xl border transition-all hover:scale-105"
             style={{ borderColor: c.border, color: c.textMuted }} title={`Sort ${sortOrder === "desc" ? "ascending" : "descending"}`}>
