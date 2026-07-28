@@ -250,13 +250,11 @@ export class JobSearchService {
             by: ["location"],
             where: { ...baseWhere, location: { not: "" } },
             _count: true,
-            take: 20,
           }),
           db.discoveryJob.groupBy({
             by: ["company"],
             where: baseWhere,
             _count: true,
-            take: 20,
           }),
           db.discoveryJob.groupBy({
             by: ["workMode"],
@@ -272,7 +270,6 @@ export class JobSearchService {
             by: ["industry"],
             where: { ...baseWhere, industry: { not: "" } },
             _count: true,
-            take: 20,
           }),
           db.discoveryJob.groupBy({
             by: ["source"],

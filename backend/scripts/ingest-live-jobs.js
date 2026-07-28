@@ -241,6 +241,67 @@ async function main() {
     } catch (err) {
       console.error("[IngestLiveJobs] Rapid LinkedIn ingestion error:", err.message);
     }
+
+    // 4. Fetch Indeed Jobs via Apify Cloud Actor (valig/indeed-jobs-scraper)
+    console.log("\n[IngestLiveJobs] 📌 Running Apify valig/indeed-jobs-scraper actor...");
+    try {
+      const run = await apify.actor("valig/indeed-jobs-scraper").call({
+        query: "Software Engineer",
+        location: "India",
+        maxResults: 25,
+      }, { waitSecs: 150 });
+
+      console.log(`[IngestLiveJobs] Indeed run status: ${run.status}`);
+      const { items } = await apify.dataset(run.defaultDatasetId).listItems();
+      console.log(`[IngestLiveJobs] Fetched ${items.length} live jobs from Indeed Apify actor.`);
+
+      let indeedCount = 0;
+      for (const item of items) {
+        if (!item.title && !item.jobTitle) continue;
+
+        const title = item.title || item.jobTitle || "Software Engineer";
+        const company = item.employer?.name || item.company || "Tech Employer";
+        const location = typeof item.location === "object"
+          ? [item.location?.city, item.location?.countryName].filter(Boolean).join(", ")
+          : (item.location || "India");
+        const applyUrl = item.jobUrl || item.url || "";
+        const desc = item.description?.text || item.description || `${title} position at ${company}`;
+
+        const fingerprint = simpleHash(`${company.toLowerCase()}|${title.toLowerCase()}|${location.toLowerCase()}|${applyUrl.toLowerCase()}`);
+        const skills = extractSkills(`${title} ${desc}`);
+        const workMode = normalizeWorkMode(desc, location);
+        const employmentType = normalizeEmploymentType(item.jobTypes ? Object.values(item.jobTypes).join(" ") : "");
+        const logoUrl = item.employer?.logoUrl || null;
+        const salaryMin = item.baseSalary?.min || null;
+        const salaryMax = item.baseSalary?.max || null;
+        const currency = item.baseSalary?.currencyCode || "INR";
+
+        const query = `
+          INSERT INTO discovery_jobs (
+            id, fingerprint, external_id, title, company, logo_url, location, country,
+            description, salary_min, salary_max, salary_currency, employment_type, work_mode,
+            skills, apply_url, source_url, source, posted_at, is_active, first_seen_at, last_seen_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), true, NOW(), NOW()
+          ) ON CONFLICT (fingerprint) DO UPDATE SET
+            last_seen_at = NOW(),
+            salary_min = EXCLUDED.salary_min,
+            salary_max = EXCLUDED.salary_max,
+            description = EXCLUDED.description;
+        `;
+
+        const id = `ind_${item.key || item.refNum || Math.random().toString(36).substring(2, 9)}`;
+        await pgClient.query(query, [
+          id, fingerprint, String(item.key || id), title, company, logoUrl, location, "India",
+          desc, salaryMin, salaryMax, currency, employmentType, workMode,
+          skills, applyUrl, applyUrl, "indeed"
+        ]);
+        indeedCount++;
+      }
+      console.log(`[IngestLiveJobs] ✅ Successfully stored ${indeedCount} live Indeed jobs.`);
+    } catch (err) {
+      console.error("[IngestLiveJobs] Indeed ingestion error:", err.message);
+    }
   }
 
   // 3. Update total jobs count & print status

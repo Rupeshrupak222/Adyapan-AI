@@ -68,7 +68,7 @@ const SOURCE_ACTORS: Record<string, { actorId: string; displayName: string; sche
     schedule: "6h",
   },
   indeed: {
-    actorId: "jupri/indeed-scraper",
+    actorId: "valig/indeed-jobs-scraper",
     displayName: "Indeed",
     schedule: "6h",
   },
@@ -226,32 +226,46 @@ const RAPID_LINKEDIN_CONFIG: SourceConfig = LINKEDIN_CONFIG;
 const INDEED_CONFIG: SourceConfig = {
   name: "indeed",
   displayName: "Indeed",
-  actorId: SOURCE_ACTORS.indeed.actorId,
+  actorId: "valig/indeed-jobs-scraper",
   schedule: "6h",
   buildInput: (config: any) => ({
-    searchTerms: config.keywords || ["software engineer"],
+    query: config.query || config.keywords?.[0] || "Software Engineer",
     location: config.location || "India",
-    maxResults: config.count || 50,
-    country: config.country || "us",
+    maxResults: config.count || 30,
   }),
   normalizeResult: (data: any) => {
     const items = Array.isArray(data) ? data : data?.items || [];
-    return items.map((item: any): NormalizedJob => ({
-      title: item.title || "",
-      company: item.company || "",
-      location: item.location || "",
-      description: item.description || "",
-      salaryMin: parseSalary(item.salary || item.salarySnippet?.text, "min"),
-      salaryMax: parseSalary(item.salary || item.salarySnippet?.text, "max"),
-      employmentType: mapEmploymentType(item.jobType || item.employmentType || ""),
-      workMode: normalizeWorkMode(item.description || "", item.remote || ""),
-      skills: extractSkills(`${item.title || ""} ${item.description || ""}`),
-      source: "indeed",
-      sourceUrl: item.url || item.link || "",
-      applyUrl: item.url || item.applyUrl || "",
-      postedAt: item.postedAt || item.date || undefined,
-      externalId: item.id || undefined,
-    }));
+    return items.map((item: any): NormalizedJob => {
+      const title = item.title || item.jobTitle || "";
+      const company = item.employer?.name || item.company || item.companyName || "";
+      const locStr = typeof item.location === "object"
+        ? [item.location?.city, item.location?.countryName].filter(Boolean).join(", ")
+        : (item.location || "");
+      const desc = item.description?.text || (item.description?.html ? stripHtml(item.description.html) : (item.description || ""));
+      const logoUrl = item.employer?.logoUrl || item.companyLogoUrl || undefined;
+      const salaryMin = item.baseSalary?.min || parseSalary(item.salary, "min");
+      const salaryMax = item.baseSalary?.max || parseSalary(item.salary, "max");
+      const currency = item.baseSalary?.currencyCode || "USD";
+      const empType = item.jobTypes ? Object.values(item.jobTypes).join(" ") : (item.employmentType || "");
+
+      return {
+        title,
+        company,
+        location: locStr,
+        description: desc,
+        salaryMin,
+        salaryMax,
+        employmentType: mapEmploymentType(empType),
+        workMode: normalizeWorkMode(desc, locStr),
+        skills: extractSkills(`${title} ${desc}`),
+        source: "indeed",
+        sourceUrl: item.url || item.jobUrl || "",
+        applyUrl: item.jobUrl || item.url || "",
+        postedAt: item.datePublished || item.dateOnIndeed || undefined,
+        companyLogo: logoUrl,
+        externalId: item.key || item.refNum || undefined,
+      };
+    });
   },
 };
 
