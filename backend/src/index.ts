@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { createApp } from "./app";
 import { env } from "./config/env";
 import { PerformanceMonitor } from "./utils/monitoring";
@@ -23,6 +24,10 @@ app.use((req, res, next) => {
 const server = createServer(app);
 initSocketServer(server);
 
+import { JobSchedulerService } from "./services/job-scheduler.service";
+
 server.listen(env.port, "0.0.0.0", () => {
+  console.log(`Backend server started on port ${env.port}`);
+  JobSchedulerService.start();
 });
 // Touch to reload dev server with regenerated prisma client types

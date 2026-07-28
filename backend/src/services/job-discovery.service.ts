@@ -58,8 +58,13 @@ export interface SourceConfig {
 
 const SOURCE_ACTORS: Record<string, { actorId: string; displayName: string; schedule: SourceConfig["schedule"] }> = {
   linkedin: {
-    actorId: "curious_coder/linkedin-jobs-scraper",
+    actorId: "worldunboxer/rapid-linkedin-scraper",
     displayName: "LinkedIn",
+    schedule: "6h",
+  },
+  rapid_linkedin: {
+    actorId: "worldunboxer/rapid-linkedin-scraper",
+    displayName: "Rapid LinkedIn",
     schedule: "6h",
   },
   indeed: {
@@ -176,42 +181,47 @@ function simpleHash(str: string): string {
 const LINKEDIN_CONFIG: SourceConfig = {
   name: "linkedin",
   displayName: "LinkedIn",
-  actorId: SOURCE_ACTORS.linkedin.actorId,
+  actorId: "worldunboxer/rapid-linkedin-scraper",
   schedule: "6h",
   buildInput: (config: any) => ({
-    urls: config.urls || ["https://www.linkedin.com/jobs/search/?keywords=software+engineer&location=India"],
-    count: config.count || 50,
+    jobs_titles: config.jobs_titles || ["Software Engineer", "Full Stack Developer", "Backend Engineer"],
+    location: config.location || "India",
+    jobs_entries: config.count || 30,
+    posted_within: config.posted_within || "Past 24 hours",
   }),
   normalizeResult: (data: any) => {
     const items = Array.isArray(data) ? data : data?.items || data?.defaultDatasetItems || [];
     return items.map((item: any): NormalizedJob => {
-      const workplace = item.workplaceTypes?.[0] || item.workplaceType || "";
-      const workMode = normalizeWorkMode(item.descriptionText || item.descriptionHtml || "", workplace);
-      const desc = item.descriptionText || stripHtml(item.descriptionHtml || "") || "";
+      const title = item.job_title || item.title || "";
+      const company = item.company_name || item.companyName || item.company || "";
+      const desc = item.job_description || item.descriptionText || stripHtml(item.descriptionHtml || item.job_description_raw_html || "") || "";
+      const workplace = item.work_arrangement || item.workplaceTypes?.[0] || item.workplaceType || "";
+      const workMode = normalizeWorkMode(desc, workplace);
       return {
-        title: item.title || "",
-        company: item.companyName || "",
+        title,
+        company,
         location: item.location || "",
         description: desc,
-        salaryMin: parseSalary(item.salaryInfo, "min"),
-        salaryMax: parseSalary(item.salaryInfo, "max"),
-        experienceMin: parseExperience(item.seniorityLevel),
-        experienceMax: parseExperienceMax(item.seniorityLevel),
-        employmentType: mapEmploymentType(item.employmentType || ""),
+        salaryMin: parseSalary(item.salary_range || item.salaryInfo, "min"),
+        salaryMax: parseSalary(item.salary_range || item.salaryInfo, "max"),
+        experienceMin: parseExperience(item.seniority_level || item.seniorityLevel),
+        experienceMax: parseExperienceMax(item.seniority_level || item.seniorityLevel),
+        employmentType: mapEmploymentType(item.employment_type || item.employmentType || ""),
         workMode,
-        skills: extractSkills(`${item.title || ""} ${desc}`),
+        skills: extractSkills(`${title} ${desc}`),
         source: "linkedin",
-        sourceUrl: item.link || "",
-        applyUrl: item.applyUrl || item.link || "",
-        postedAt: item.postedAt || undefined,
-        companyLogo: item.companyLogo || undefined,
-        companySize: item.companyEmployeesCount ? mapCompanySize(item.companyEmployeesCount) : undefined,
+        sourceUrl: item.job_url || item.link || item.apply_url || "",
+        applyUrl: item.apply_url || item.job_url || item.link || "",
+        postedAt: item.time_posted || item.postedAt || undefined,
+        companyLogo: item.company_logo_url || item.companyLogo || undefined,
         industry: item.industries || undefined,
-        externalId: item.id || undefined,
+        externalId: item.job_id || item.id || undefined,
       };
     });
   },
 };
+
+const RAPID_LINKEDIN_CONFIG: SourceConfig = LINKEDIN_CONFIG;
 
 const INDEED_CONFIG: SourceConfig = {
   name: "indeed",

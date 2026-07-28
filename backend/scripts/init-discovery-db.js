@@ -9,7 +9,10 @@ async function main() {
   }
 
   console.log("[InitDiscoveryDB] Connecting to PostgreSQL database...");
-  const client = new Client({ connectionString });
+  const client = new Client({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+  });
   await client.connect();
 
   console.log("[InitDiscoveryDB] Creating discovery platform tables if missing...");
@@ -149,8 +152,14 @@ async function main() {
       by_location JSONB DEFAULT '{}'::jsonb,
       by_skill JSONB DEFAULT '{}'::jsonb,
       by_company JSONB DEFAULT '{}'::jsonb,
-      by_industry JSONB DEFAULT '{}'::jsonb,
       salary_ranges JSONB DEFAULT '{}'::jsonb,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS blacklisted_tokens (
+      id TEXT PRIMARY KEY,
+      token TEXT UNIQUE NOT NULL,
+      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
   `;
