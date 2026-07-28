@@ -312,46 +312,66 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     const totalTimeMs = Date.now() - sessionStartTime;
     const answers = progress.answers;
 
+    const correctCount = answers.filter(a => a.correct).length;
+    const incorrectCount = answers.filter(a => !a.correct && a.selectedIdx !== null).length;
+    const skippedCount = session.totalQuestions - answers.length;
+    const accuracy = answers.length > 0 ? Math.round((correctCount / answers.length) * 100) : 0;
+    const avgTime = answers.length > 0 ? Math.round(answers.reduce((s, a) => s + a.timeTakenMs, 0) / answers.length) : 0;
+
+    const fallbackReview = {
+      sessionId: session.id,
+      score: correctCount,
+      accuracy,
+      totalTimeMs,
+      avgTimePerQMs: avgTime,
+      xpEarned: Math.round(accuracy * session.totalQuestions * 0.1),
+      correctCount,
+      incorrectCount,
+      skippedCount,
+      weakTopics: [] as string[],
+      strongTopics: [] as string[],
+      questionReviews: answers.map((a) => ({
+        question: session.questions[a.questionIdx],
+        userAnswer: a.selectedIdx,
+        isCorrect: a.correct,
+        timeTakenMs: a.timeTakenMs,
+        commonMistakes: session.questions[a.questionIdx]?.commonMistakes || []
+      })),
+      aiInsights: `You scored ${accuracy}% on this session. Keep practicing to improve!`,
+      studyPlan: "Focus on the topics where you scored below 60%.",
+      improvementSuggestions: ["Practice more questions daily", "Review explanations for incorrect answers"]
+    };
+
     try {
       const { data } = await api.post("/aptitude/session/complete", {
         sessionId: session.id,
         answers,
         totalTimeMs
       });
-      if (data.success && data.review) {
-        setReview(data.review);
+      if (data.success) {
+        const aiReview = data.review || {};
+        const mappedReview = {
+          sessionId: data.sessionId || session.id,
+          score: data.score ?? correctCount,
+          accuracy: data.accuracy ?? accuracy,
+          totalTimeMs: data.timeTakenMs ?? totalTimeMs,
+          avgTimePerQMs: data.avgTimePerQMs ?? avgTime,
+          xpEarned: data.xpEarned ?? fallbackReview.xpEarned,
+          correctCount: correctCount,
+          incorrectCount,
+          skippedCount,
+          weakTopics: data.weakTopics ?? [],
+          strongTopics: data.strongTopics ?? [],
+          questionReviews: fallbackReview.questionReviews,
+          aiInsights: aiReview.coachMessage || aiReview.improvementAreas?.join(". ") || fallbackReview.aiInsights,
+          studyPlan: aiReview.nextSteps?.join(". ") || fallbackReview.studyPlan,
+          improvementSuggestions: aiReview.improvementAreas || aiReview.missedConcepts || fallbackReview.improvementSuggestions
+        };
+        setReview(mappedReview);
         setViewState("session_review");
       }
     } catch {
-      const correctCount = answers.filter(a => a.correct).length;
-      const incorrectCount = answers.filter(a => !a.correct && a.selectedIdx !== null).length;
-      const skippedCount = session.totalQuestions - answers.length;
-      const accuracy = answers.length > 0 ? Math.round((correctCount / answers.length) * 100) : 0;
-      const avgTime = answers.length > 0 ? Math.round(answers.reduce((s, a) => s + a.timeTakenMs, 0) / answers.length) : 0;
-
-      setReview({
-        sessionId: session.id,
-        score: accuracy,
-        accuracy,
-        totalTimeMs,
-        avgTimePerQMs: avgTime,
-        xpEarned: Math.round(accuracy * session.totalQuestions * 0.1),
-        correctCount,
-        incorrectCount,
-        skippedCount,
-        weakTopics: [],
-        strongTopics: [],
-        questionReviews: answers.map((a, idx) => ({
-          question: session.questions[a.questionIdx],
-          userAnswer: a.selectedIdx,
-          isCorrect: a.correct,
-          timeTakenMs: a.timeTakenMs,
-          commonMistakes: session.questions[a.questionIdx]?.commonMistakes || []
-        })),
-        aiInsights: `You scored ${accuracy}% on this session. Keep practicing to improve!`,
-        studyPlan: "Focus on the topics where you scored below 60%.",
-        improvementSuggestions: ["Practice more questions daily", "Review explanations for incorrect answers"]
-      });
+      setReview(fallbackReview);
       setViewState("session_review");
     }
     setSession(null);

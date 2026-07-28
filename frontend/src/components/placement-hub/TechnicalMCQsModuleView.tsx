@@ -1,80 +1,44 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search,
-  Sparkles,
-  ChevronRight,
-  Brain,
-  Puzzle,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Bookmark,
-  BookmarkCheck,
-  TrendingUp,
-  Award,
-  Zap,
-  Target,
-  Flame,
-  HelpCircle,
-  Lightbulb,
-  ArrowRight,
-  ArrowLeft,
-  RefreshCw,
-  Code,
-  Code2,
-  Coffee,
-  FileCode,
-  FileCode2,
-  Braces,
-  Cpu,
-  Shield,
-  Database,
-  Terminal,
-  Network,
-  Layers,
-  Kanban,
-  Binary,
-  Layout,
-  Palette,
-  Component,
-  ShieldAlert,
-  Smile,
-  Server,
-  Globe,
-  Table,
-  HardDrive,
-  Cloud,
-  CloudRain,
-  CloudLightning,
-  AlertCircle,
-  Box,
-  Anchor,
-  MessageSquare,
-  Eye,
-  X,
-  Play,
-  Copy,
-  Check,
-  PlusCircle,
-  Filter,
-  BarChart2,
-  RotateCcw,
+  Sparkles, ChevronRight, Brain, CheckCircle2, XCircle,
+  Clock, Bookmark, BookmarkCheck, TrendingUp, Zap, Target, Flame,
+  Lightbulb, ArrowRight, ArrowLeft, Code, Code2,
+  Coffee, FileCode, FileCode2, Braces, Cpu, Shield, Database, Terminal,
+  Network, Layers, Kanban, Binary, Layout, Palette, Component, ShieldAlert,
+  Smile, Server, Globe, Table, HardDrive, Cloud, CloudRain, CloudLightning,
+  AlertCircle, Box, Anchor, MessageSquare, Eye, Copy, Check,
+  BarChart2, RotateCcw, Flag, Trophy,
+  CircleDot, Grid3X3, SkipForward, Home,
 } from "lucide-react";
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Cell,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
 } from "recharts";
 import { toast } from "sonner";
 import { api } from "@/services/api";
 import CompanyLogo from "@/components/interview-hub/CompanyLogo";
+
+// ─── Animation Variants (matching AptitudeEngineView) ───────────────────────
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.4 } }),
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.92 },
+  visible: (i = 0) => ({ opacity: 1, scale: 1, transition: { delay: i * 0.07, duration: 0.35 } }),
+};
+
+const LOADING_STEPS = [
+  "Preparing Questions",
+  "Loading Technology Patterns",
+  "Generating AI Insights",
+  "Building Session",
+  "Ready!"
+];
 
 // ─── Interfaces ─────────────────────────────────────────────────────────────
 
@@ -131,6 +95,27 @@ interface UserProgress {
   weeklyProgress: { day: string; solved: number; accuracy: number }[];
 }
 
+interface SessionAnswer {
+  questionIdx: number;
+  questionId: string;
+  selectedIdx: number | null;
+  correct: boolean;
+  timeTakenMs: number;
+  bookmarked: boolean;
+  flagged: boolean;
+}
+
+interface SessionProgress {
+  currentIdx: number;
+  answers: SessionAnswer[];
+  timeElapsed: number;
+  timeRemaining: number;
+  bookmarkedCount: number;
+  flaggedCount: number;
+}
+
+type MCQView = "home" | "topic_select" | "active_session" | "session_review" | "analytics";
+
 interface TechnicalMCQsModuleViewProps {
   setView?: (v: string) => void;
   theme?: string;
@@ -139,52 +124,33 @@ interface TechnicalMCQsModuleViewProps {
 // ─── Tech Icon Resolver ───────────────────────────────────────────────────
 
 const ICON_MAP: Record<string, React.ElementType> = {
-  Code,
-  Code2,
-  Coffee,
-  FileCode,
-  FileCode2,
-  Braces,
-  Cpu,
-  Shield,
-  Database,
-  Terminal,
-  Network,
-  Layers,
-  Kanban,
-  Binary,
-  Layout,
-  Palette,
-  Component,
-  ShieldAlert,
-  Smile,
-  Zap,
-  Server,
-  Globe,
-  Table,
-  HardDrive,
-  Cloud,
-  CloudRain,
-  CloudLightning,
-  AlertCircle,
-  Box,
-  Anchor,
-  Brain,
-  MessageSquare,
-  Eye,
-  TrendingUp,
-  Flame,
+  Code, Code2, Coffee, FileCode, FileCode2, Braces, Cpu, Shield, Database,
+  Terminal, Network, Layers, Kanban, Binary, Layout, Palette, Component,
+  ShieldAlert, Smile, Zap, Server, Globe, Table, HardDrive, Cloud, CloudRain,
+  CloudLightning, AlertCircle, Box, Anchor, Brain, MessageSquare, Eye,
+  TrendingUp, Flame,
 };
 
 function getTechIcon(iconName: string): React.ReactElement {
   const IconComp = (ICON_MAP[iconName] || Code2) as React.ComponentType<{ size?: number; className?: string }>;
-  return <IconComp size={20} className="text-amber-500 dark:text-amber-400" />;
+  return <IconComp size={20} className="text-amber-500" />;
 }
 
-// ─── Default Static Data ───────────────────────────────────────────────────
+// ─── Domain Categories ────────────────────────────────────────────────────
+
+const DOMAIN_CATEGORIES = [
+  { id: "All", label: "All", icon: Grid3X3, color: "#f59e0b" },
+  { id: "Programming", label: "Programming", icon: Code2, color: "#3b82f6" },
+  { id: "Core CS", label: "Core CS", icon: Cpu, color: "#8b5cf6" },
+  { id: "Web Development", label: "Web Dev", icon: Globe, color: "#10b981" },
+  { id: "Databases", label: "Databases", icon: Database, color: "#ef4444" },
+  { id: "Cloud", label: "Cloud", icon: Cloud, color: "#06b6d4" },
+  { id: "AI/ML", label: "AI/ML", icon: Brain, color: "#ec4899" },
+];
+
+// ─── Default Data ─────────────────────────────────────────────────────────
 
 const DEFAULT_TECHNOLOGIES: MCQTechnology[] = [
-  // Programming (8)
   { id: "tech-c", name: "C", slug: "c", category: "Programming", iconName: "Code", description: "Pointers, memory management, preprocessors, and struct syntax.", questionCount: 140, difficulty: "Medium", progress: 70, solved: 14 },
   { id: "tech-cpp", name: "C++", slug: "cpp", category: "Programming", iconName: "Code2", description: "STL, templates, operator overloading, smart pointers, and RAII.", questionCount: 160, difficulty: "Hard", progress: 65, solved: 13 },
   { id: "tech-java", name: "Java", slug: "java", category: "Programming", iconName: "Coffee", description: "JVM, multithreading, garbage collection, collections framework.", questionCount: 220, difficulty: "Medium", progress: 80, solved: 16 },
@@ -193,8 +159,6 @@ const DEFAULT_TECHNOLOGIES: MCQTechnology[] = [
   { id: "tech-ts", name: "TypeScript", slug: "typescript", category: "Programming", iconName: "FileCode2", description: "Generics, type guards, interfaces, utility types, and strict mode.", questionCount: 130, difficulty: "Medium", progress: 60, solved: 12 },
   { id: "tech-go", name: "Go", slug: "go", category: "Programming", iconName: "Cpu", description: "Goroutines, channels, interfaces, pointers, and memory layout.", questionCount: 90, difficulty: "Hard", progress: 45, solved: 9 },
   { id: "tech-rust", name: "Rust", slug: "rust", category: "Programming", iconName: "Shield", description: "Ownership, borrowing, lifetimes, pattern matching, and traits.", questionCount: 85, difficulty: "Hard", progress: 35, solved: 7 },
-
-  // Core CS (7)
   { id: "tech-dbms", name: "DBMS", slug: "dbms", category: "Core CS", iconName: "Database", description: "Normalization, ACID properties, indexing, transactions, and ER diagrams.", questionCount: 210, difficulty: "Medium", progress: 82, solved: 16 },
   { id: "tech-os", name: "Operating Systems", slug: "os", category: "Core CS", iconName: "Terminal", description: "Process synchronization, deadlocks, virtual memory, and page replacement.", questionCount: 190, difficulty: "Hard", progress: 55, solved: 11 },
   { id: "tech-cn", name: "Computer Networks", slug: "cn", category: "Core CS", iconName: "Network", description: "OSI model, TCP/IP, subnetting, HTTP/HTTPS, and routing protocols.", questionCount: 180, difficulty: "Medium", progress: 68, solved: 14 },
@@ -202,8 +166,6 @@ const DEFAULT_TECHNOLOGIES: MCQTechnology[] = [
   { id: "tech-se", name: "Software Engineering", slug: "se", category: "Core CS", iconName: "Kanban", description: "Agile, SDLC, design patterns, software testing, and CI/CD basics.", questionCount: 110, difficulty: "Easy", progress: 75, solved: 15 },
   { id: "tech-cd", name: "Compiler Design", slug: "cd", category: "Core CS", iconName: "Binary", description: "Lexical analysis, parsing, syntax trees, optimization, and code generation.", questionCount: 75, difficulty: "Hard", progress: 30, solved: 6 },
   { id: "tech-coa", name: "COA", slug: "coa", category: "Core CS", iconName: "Cpu", description: "Instruction sets, pipelining, cache mapping, and ALU operations.", questionCount: 85, difficulty: "Hard", progress: 40, solved: 8 },
-
-  // Web Development (8)
   { id: "tech-html", name: "HTML", slug: "html", category: "Web Development", iconName: "Layout", description: "Semantic tags, forms, accessibility (a11y), and DOM elements.", questionCount: 120, difficulty: "Easy", progress: 95, solved: 19 },
   { id: "tech-css", name: "CSS", slug: "css", category: "Web Development", iconName: "Palette", description: "Flexbox, Grid, specificity, animations, transitions, and media queries.", questionCount: 135, difficulty: "Medium", progress: 85, solved: 17 },
   { id: "tech-react", name: "React", slug: "react", category: "Web Development", iconName: "Component", description: "Virtual DOM, hooks, reconciliation, context API, and performance optimization.", questionCount: 220, difficulty: "Medium", progress: 80, solved: 16 },
@@ -212,22 +174,16 @@ const DEFAULT_TECHNOLOGIES: MCQTechnology[] = [
   { id: "tech-next", name: "Next.js", slug: "nextjs", category: "Web Development", iconName: "Zap", description: "App router, SSR, SSG, ISR, server components, and API routes.", questionCount: 140, difficulty: "Hard", progress: 70, solved: 14 },
   { id: "tech-node", name: "Node.js", slug: "nodejs", category: "Web Development", iconName: "Server", description: "Event-driven architecture, streams, buffer, cluster, and event loop.", questionCount: 180, difficulty: "Medium", progress: 75, solved: 15 },
   { id: "tech-express", name: "Express", slug: "express", category: "Web Development", iconName: "Globe", description: "Middleware pipeline, routing, error handling, and security headers.", questionCount: 110, difficulty: "Easy", progress: 88, solved: 18 },
-
-  // Databases (5)
   { id: "tech-sql", name: "SQL", slug: "sql", category: "Databases", iconName: "Table", description: "Joins, subqueries, group by, window functions, and indexing strategies.", questionCount: 250, difficulty: "Medium", progress: 88, solved: 18 },
   { id: "tech-postgres", name: "PostgreSQL", slug: "postgresql", category: "Databases", iconName: "Database", description: "JSONB columns, CTEs, PL/pgSQL, MVCC, and full-text search.", questionCount: 140, difficulty: "Hard", progress: 65, solved: 13 },
   { id: "tech-mongo", name: "MongoDB", slug: "mongodb", category: "Databases", iconName: "HardDrive", description: "Aggregation framework, indexing, sharding, replication, and BSON.", questionCount: 150, difficulty: "Medium", progress: 72, solved: 14 },
   { id: "tech-mysql", name: "MySQL", slug: "mysql", category: "Databases", iconName: "Server", description: "InnoDB storage engine, query optimizer, transaction isolation levels.", questionCount: 160, difficulty: "Medium", progress: 80, solved: 16 },
   { id: "tech-redis", name: "Redis", slug: "redis", category: "Databases", iconName: "Zap", description: "Data structures (hashes, sets, pub/sub), persistence (RDB/AOF), and caching.", questionCount: 110, difficulty: "Hard", progress: 55, solved: 11 },
-
-  // Cloud (5)
   { id: "tech-aws", name: "AWS", slug: "aws", category: "Cloud", iconName: "Cloud", description: "EC2, S3, Lambda, IAM, VPC, DynamoDB, and CloudFront.", questionCount: 210, difficulty: "Hard", progress: 60, solved: 12 },
   { id: "tech-azure", name: "Azure", slug: "azure", category: "Cloud", iconName: "CloudRain", description: "Azure VMs, Blob storage, Azure Functions, Entra ID, and AKS.", questionCount: 130, difficulty: "Hard", progress: 50, solved: 10 },
-  { id: "tech-gcp", name: "GCP", slug: "gcp", category: "Cloud", iconName: "CloudLighting", description: "BigQuery, GKE, Cloud Run, Pub/Sub, and IAM roles.", questionCount: 140, difficulty: "Hard", progress: 55, solved: 11 },
+  { id: "tech-gcp", name: "GCP", slug: "gcp", category: "Cloud", iconName: "CloudLightning", description: "BigQuery, GKE, Cloud Run, Pub/Sub, and IAM roles.", questionCount: 140, difficulty: "Hard", progress: 55, solved: 11 },
   { id: "tech-docker", name: "Docker", slug: "docker", category: "Cloud", iconName: "Box", description: "Dockerfile optimization, multi-stage builds, volumes, and networking.", questionCount: 150, difficulty: "Medium", progress: 75, solved: 15 },
   { id: "tech-k8s", name: "Kubernetes", slug: "kubernetes", category: "Cloud", iconName: "Anchor", description: "Pods, Deployments, Services, Ingress, ConfigMaps, and Helm charts.", questionCount: 120, difficulty: "Hard", progress: 40, solved: 8 },
-
-  // AI/ML (7)
   { id: "tech-ml", name: "Machine Learning", slug: "machine-learning", category: "AI/ML", iconName: "Brain", description: "Supervised/unsupervised learning, regression, decision trees, and metrics.", questionCount: 180, difficulty: "Hard", progress: 65, solved: 13 },
   { id: "tech-dl", name: "Deep Learning", slug: "deep-learning", category: "AI/ML", iconName: "Cpu", description: "CNNs, RNNs, backpropagation, activation functions, and gradient descent.", questionCount: 140, difficulty: "Hard", progress: 45, solved: 9 },
   { id: "tech-nlp", name: "NLP", slug: "nlp", category: "AI/ML", iconName: "MessageSquare", description: "Tokenization, TF-IDF, Word2Vec, Transformers, and attention mechanisms.", questionCount: 110, difficulty: "Hard", progress: 50, solved: 10 },
@@ -258,69 +214,37 @@ const DEFAULT_COMPANIES: MCQCompany[] = [
 
 const DEFAULT_MCQ_QUESTIONS: MCQQuestion[] = [
   {
-    id: "q-mcq-1",
-    technology: "Java",
-    company: "Amazon",
-    difficulty: "Medium",
+    id: "q-mcq-1", technology: "Java", company: "Amazon", difficulty: "Medium",
     question: "What will be the output of the following Java snippet regarding String immutability and memory pool allocation?",
     codeSnippet: `public class Test {\n  public static void main(String[] args) {\n    String s1 = "Adyapan";\n    String s2 = new String("Adyapan");\n    String s3 = s2.intern();\n    System.out.println((s1 == s2) + " " + (s1 == s3));\n  }\n}`,
     language: "java",
     options: ["false true", "true true", "false false", "true false"],
-    correctAnswer: "false true",
-    correctIdx: 0,
+    correctAnswer: "false true", correctIdx: 0,
     explanation: "s1 points to the String constant pool instance. s2 creates a new object in Heap memory, so (s1 == s2) is false. s2.intern() returns the pool reference, which equals s1, so (s1 == s3) is true.",
     hint: "Remember that '==' checks memory reference equality, whereas string.intern() returns the reference from the string pool.",
     estimatedTime: "45 sec",
   },
   {
-    id: "q-mcq-2",
-    technology: "DBMS",
-    company: "Google",
-    difficulty: "Hard",
+    id: "q-mcq-2", technology: "DBMS", company: "Google", difficulty: "Hard",
     question: "Which of the following Isolation Levels prevents Non-Repeatable Reads but MAY still suffer from Phantom Reads in standard SQL database systems?",
     language: "sql",
     options: ["REPEATABLE READ", "READ COMMITTED", "SERIALIZABLE", "READ UNCOMMITTED"],
-    correctAnswer: "REPEATABLE READ",
-    correctIdx: 0,
+    correctAnswer: "REPEATABLE READ", correctIdx: 0,
     explanation: "REPEATABLE READ locks existing rows preventing non-repeatable reads, but standard SQL permits phantom reads where new rows inserted by concurrent transactions can appear during a subsequent range query.",
     hint: "Think of SQL-92 isolation levels hierarchy: Read Uncommitted < Read Committed < Repeatable Read < Serializable.",
     estimatedTime: "60 sec",
   },
   {
-    id: "q-mcq-3",
-    technology: "Python",
-    company: "Microsoft",
-    difficulty: "Medium",
+    id: "q-mcq-3", technology: "Python", company: "Microsoft", difficulty: "Medium",
     question: "What is the expected output of this Python code snippet demonstrating default mutable parameter behavior?",
     codeSnippet: `def append_item(val, target=[]):\n    target.append(val)\n    return target\n\nprint(append_item(1))\nprint(append_item(2))`,
     language: "python",
     options: ["[1, 2]", "[1]\n[2]", "[1]\n[1, 2]", "[1, 2]\n[1, 2]"],
-    correctAnswer: "[1]\n[1, 2]",
-    correctIdx: 2,
+    correctAnswer: "[1]\n[1, 2]", correctIdx: 2,
     explanation: "In Python, default arguments are evaluated ONCE when the function definition is executed. Thus, the default list 'target' is shared across all function calls.",
     hint: "Default argument values are created at function definition time, not function execution time.",
     estimatedTime: "40 sec",
   }
-];
-
-const SEARCH_AUTOCOMPLETE_SUGGESTIONS = [
-  "Java",
-  "Python",
-  "C++",
-  "DBMS",
-  "Operating System",
-  "Computer Networks",
-  "SQL",
-  "OOPs",
-  "JavaScript",
-  "React",
-  "Node.js",
-  "AWS",
-  "Machine Learning",
-  "Docker",
-  "PostgreSQL",
-  "TCS NQT",
-  "Amazon OA",
 ];
 
 const PROMPT_SUGGESTION_CHIPS = [
@@ -332,73 +256,62 @@ const PROMPT_SUGGESTION_CHIPS = [
   "Generate AWS Beginner Quiz",
 ];
 
-export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMCQsModuleViewProps) {
+// ─── Main Component ───────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: TechnicalMCQsModuleViewProps) {
   const isDark = theme === "dark";
 
-  // Comprehensive Light & Dark Theme Colors
   const c = {
-    bg: "transparent",
-    cardBg: isDark ? "rgba(255, 255, 255, 0.03)" : "#FFFFFF",
-    cardBorder: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
-    textPrimary: isDark ? "#FFFFFF" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#475569",
-    textMuted: isDark ? "#64748B" : "#64748B",
-    accent: "#F59E0B",
-    accentGlow: isDark ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)",
-    surface: isDark ? "rgba(255, 255, 255, 0.02)" : "#F1F5F9",
-    inputBg: isDark ? "rgba(0, 0, 0, 0.35)" : "#FFFFFF",
-    inputBorder: isDark ? "rgba(255, 255, 255, 0.1)" : "#CBD5E1",
-    green: "#10B981",
-    red: "#EF4444",
-    heroBg: isDark
-      ? "linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(18, 18, 20, 0.95) 60%, rgba(10, 10, 12, 1) 100%)"
-      : "linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, #FFFFFF 60%, #FFFBEB 100%)",
+    bg: isDark ? "#080710" : "#f0f4ff",
+    surface: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
+    surfaceHover: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
+    border: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)",
+    text: isDark ? "#ffffff" : "#0f172a",
+    textSec: isDark ? "rgba(255,255,255,0.7)" : "#475569",
+    textMuted: isDark ? "rgba(255,255,255,0.4)" : "#94a3b8",
+    primary: "#f59e0b",
+    primaryDark: "#d97706",
+    cardBg: isDark ? "rgba(255,255,255,0.03)" : "#ffffff",
+    inputBg: isDark ? "rgba(0,0,0,0.4)" : "#ffffff",
+    green: "#10b981",
+    red: "#ef4444",
   };
 
-  // State Management
+  // ── View State ──
+  const [view, setViewState] = useState<MCQView>("home");
+  const [activeTab, setActiveTab] = useState<"home" | "analytics">("home");
+
+  // ── Data ──
   const [technologies] = useState<MCQTechnology[]>(DEFAULT_TECHNOLOGIES);
   const [companies] = useState<MCQCompany[]>(DEFAULT_COMPANIES);
 
-  // Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>("All");
-  const [selectedCompany, setSelectedCompany] = useState("All");
-  const [selectedTech, setSelectedTech] = useState("All");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("All");
-  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  // ── Filters ──
+  const [selectedDomain, setSelectedDomain] = useState("All");
+  const [searchQuery] = useState("");
+  const [selectedDifficulty] = useState("All");
 
-  // AI Prompt Generator
+  // ── AI Prompt ──
   const [aiPromptInput, setAiPromptInput] = useState("");
-  const [aiGenerating, setAiGenerating] = useState(false);
 
-  // Questions List & Active Practice State
-  const [isPracticing, setIsPracticing] = useState(false);
+  // ── Session State ──
   const [questions, setQuestions] = useState<MCQQuestion[]>([]);
-  const [questionsLoading, setQuestionsLoading] = useState(false);
-  const [activeQuestionIdx, setActiveQuestionIdx] = useState<number>(0);
-  const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
-  const [submittedAnswer, setSubmittedAnswer] = useState<boolean>(false);
-  const [showHint, setShowHint] = useState<boolean>(false);
-  const [showExplanation, setShowExplanation] = useState<boolean>(false);
-  const [copiedCode, setCopiedCode] = useState<boolean>(false);
-  const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set(["q-mcq-1", "q-mcq-4"]));
-
-  // Mock Test Modal State
-  const [mockModalOpen, setMockModalOpen] = useState(false);
-  const [mockConfig, setMockConfig] = useState({
-    tech: "Java",
-    company: "Amazon",
-    count: 20,
-    timeLimitMins: 30,
-    difficulty: "Medium",
+  const [sessionConfig, setSessionConfig] = useState<{ tech: string; company: string; domain: string }>({ tech: "", company: "", domain: "" });
+  const [progress, setProgress] = useState<SessionProgress>({
+    currentIdx: 0, answers: [], timeElapsed: 0, timeRemaining: 0, bookmarkedCount: 0, flaggedCount: 0
   });
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
 
-  // Progress State
-  const [progress, setProgress] = useState<UserProgress>({
-    questionsSolved: 24,
-    accuracy: 86,
-    avgTimeSeconds: 42,
-    streakDays: 6,
+  // ── Loading ──
+  const [aiLoading, setAiLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [, setQuestionsLoading] = useState(false);
+
+  // ── Progress ──
+  const [userProgress] = useState<UserProgress>({
+    questionsSolved: 24, accuracy: 86, avgTimeSeconds: 42, streakDays: 6,
     weakTopics: [
       { topic: "Compiler Design", accuracy: 35 },
       { topic: "Kubernetes", accuracy: 40 },
@@ -410,37 +323,102 @@ export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMC
       { topic: "JavaScript", accuracy: 88 },
     ],
     weeklyProgress: [
-      { day: "Mon", solved: 5, accuracy: 80 },
-      { day: "Tue", solved: 8, accuracy: 85 },
-      { day: "Wed", solved: 4, accuracy: 75 },
-      { day: "Thu", solved: 10, accuracy: 90 },
-      { day: "Fri", solved: 6, accuracy: 83 },
-      { day: "Sat", solved: 12, accuracy: 92 },
+      { day: "Mon", solved: 5, accuracy: 80 }, { day: "Tue", solved: 8, accuracy: 85 },
+      { day: "Wed", solved: 4, accuracy: 75 }, { day: "Thu", solved: 10, accuracy: 90 },
+      { day: "Fri", solved: 6, accuracy: 83 }, { day: "Sat", solved: 12, accuracy: 92 },
       { day: "Sun", solved: 9, accuracy: 88 },
     ],
   });
 
-  const practiceRef = useRef<HTMLDivElement>(null);
-  const techGridRef = useRef<HTMLDivElement>(null);
+  // ── Refs ──
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const questionStartTimeRef = useRef<number>(0);
 
-  // Fetch Questions from API with fallbacks
-  const fetchQuestions = async () => {
-    setQuestionsLoading(true);
-    setActiveQuestionIdx(0);
-    setSelectedOptionIdx(null);
-    setSubmittedAnswer(false);
-    setShowHint(false);
+  // ── Computed ──
+  const currentQuestion = questions[progress.currentIdx] || null;
+  const currentAnswer = progress.answers.find(a => a.questionIdx === progress.currentIdx) || null;
+  const progressPercent = questions.length > 0 ? Math.round((progress.answers.length / questions.length) * 100) : 0;
+
+  const filteredTechnologies = useMemo(() => {
+    let filtered = selectedDomain === "All" ? technologies : technologies.filter(t => t.category === selectedDomain);
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(t =>
+        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    return filtered;
+  }, [technologies, selectedDomain, searchQuery]);
+
+  const filteredCompanies = useMemo(() => {
+    if (selectedDifficulty === "All") return companies;
+    return companies.filter(c => c.difficulty === selectedDifficulty);
+  }, [companies, selectedDifficulty]);
+
+  // ── Timer ──
+  useEffect(() => {
+    if (view === "active_session") {
+      timerRef.current = setInterval(() => {
+        setProgress(prev => ({ ...prev, timeElapsed: prev.timeElapsed + 1000 }));
+      }, 1000);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [view]);
+
+  // ── Loading Overlay ──
+  useEffect(() => {
+    if (aiLoading) {
+      setLoadingStep(0);
+      loadingTimerRef.current = setInterval(() => {
+        setLoadingStep(prev => {
+          if (prev >= LOADING_STEPS.length - 1) { clearInterval(loadingTimerRef.current!); return prev; }
+          return prev + 1;
+        });
+      }, 600);
+    }
+    return () => { if (loadingTimerRef.current) clearInterval(loadingTimerRef.current); };
+  }, [aiLoading]);
+
+  // ── Session Start ──
+  const startSession = useCallback(async (tech: string, company: string, domain: string, prompt?: string) => {
+    setAiLoading(true);
     setShowExplanation(false);
+    setShowHint(false);
+    try {
+      const res = await api.post("/mcq/generate", { prompt: prompt || `Generate 15 ${tech || company || domain || "mixed"} MCQs` });
+      if (res.data?.success && Array.isArray(res.data.questions) && res.data.questions.length > 0) {
+        setQuestions(res.data.questions);
+        setSessionConfig({ tech, company, domain });
+        setProgress({ currentIdx: 0, answers: [], timeElapsed: 0, timeRemaining: 0, bookmarkedCount: 0, flaggedCount: 0 });
+        questionStartTimeRef.current = Date.now();
+        setViewState("active_session");
+        toast.success(`Loaded ${res.data.questions.length} questions!`);
+      } else {
+        setQuestions(DEFAULT_MCQ_QUESTIONS);
+        setSessionConfig({ tech, company, domain });
+        setProgress({ currentIdx: 0, answers: [], timeElapsed: 0, timeRemaining: 0, bookmarkedCount: 0, flaggedCount: 0 });
+        questionStartTimeRef.current = Date.now();
+        setViewState("active_session");
+      }
+    } catch {
+      setQuestions(DEFAULT_MCQ_QUESTIONS);
+      setSessionConfig({ tech, company, domain });
+      setProgress({ currentIdx: 0, answers: [], timeElapsed: 0, timeRemaining: 0, bookmarkedCount: 0, flaggedCount: 0 });
+      questionStartTimeRef.current = Date.now();
+      setViewState("active_session");
+      toast.info("Using sample questions");
+    } finally {
+      setAiLoading(false);
+    }
+  }, [setShowExplanation, setShowHint]);
 
+  // ── Fetch Questions ──
+  const fetchQuestions = useCallback(async () => {
+    setQuestionsLoading(true);
     try {
       const res = await api.get("/mcq/questions", {
-        params: {
-          technology: selectedTech,
-          category: selectedCategoryTab !== "All" ? selectedCategoryTab : undefined,
-          company: selectedCompany,
-          difficulty: selectedDifficulty,
-          search: searchQuery,
-        },
+        params: { technology: sessionConfig.tech, company: sessionConfig.company, difficulty: selectedDifficulty !== "All" ? selectedDifficulty : undefined, search: searchQuery || undefined },
       });
       if (res.data?.success && Array.isArray(res.data.questions) && res.data.questions.length > 0) {
         setQuestions(res.data.questions);
@@ -452,1085 +430,722 @@ export function TechnicalMCQsModuleView({ setView, theme = "dark" }: TechnicalMC
     } finally {
       setQuestionsLoading(false);
     }
-  };
+  }, [sessionConfig, selectedDifficulty, searchQuery]);
 
   useEffect(() => {
-    fetchQuestions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTech, selectedCompany, selectedDifficulty, selectedCategoryTab]);
+    if (view === "active_session" && questions.length === 0) fetchQuestions();
+  }, [view, fetchQuestions, questions.length]);
 
-  // AI Generator Handler
-  const handleGenerateAI = async (promptOverride?: string) => {
-    const pText = promptOverride || aiPromptInput;
-    if (!pText.trim()) {
-      toast.error("Please enter an AI prompt to generate questions");
-      return;
+  // ── Submit Answer ──
+  const submitAnswer = useCallback((selectedIdx: number | null) => {
+    if (!currentQuestion || selectedIdx === null) return;
+    const timeTakenMs = Date.now() - questionStartTimeRef.current;
+    const isCorrect = selectedIdx === currentQuestion.correctIdx;
+
+    setProgress(prev => {
+      const filtered = prev.answers.filter(a => a.questionIdx !== prev.currentIdx);
+      const updated: SessionAnswer = {
+        questionIdx: prev.currentIdx, questionId: currentQuestion.id, selectedIdx, correct: isCorrect,
+        timeTakenMs, bookmarked: prev.answers.find(a => a.questionIdx === prev.currentIdx)?.bookmarked ?? false,
+        flagged: prev.answers.find(a => a.questionIdx === prev.currentIdx)?.flagged ?? false,
+      };
+      return { ...prev, answers: [...filtered, updated] };
+    });
+
+    if (isCorrect) toast.success("Correct! +30 XP");
+    else toast.error("Incorrect. Read the explanation below.");
+
+    try { api.post("/mcq/submit", { questionId: currentQuestion.id, selectedIdx, timeTakenSeconds: Math.round(timeTakenMs / 1000) }); } catch {}
+  }, [currentQuestion]);
+
+  // ── Navigation ──
+  const handleCompleteSession = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setViewState("session_review");
+  }, []);
+
+  const handleNextQuestion = useCallback(() => {
+    const nextIdx = progress.currentIdx + 1;
+    if (nextIdx >= questions.length) {
+      handleCompleteSession();
+    } else {
+      setProgress(prev => ({ ...prev, currentIdx: nextIdx }));
+      questionStartTimeRef.current = Date.now();
+      setShowExplanation(false);
+      setShowHint(false);
     }
+  }, [progress.currentIdx, questions.length, handleCompleteSession, setShowExplanation, setShowHint]);
 
-    setAiGenerating(true);
-    toast.info("AI is generating custom technical MCQs...");
-    try {
-      const res = await api.post("/mcq/generate", { prompt: pText });
-      if (res.data?.success && Array.isArray(res.data.questions) && res.data.questions.length > 0) {
-        setQuestions(res.data.questions);
-        setActiveQuestionIdx(0);
-        setSelectedOptionIdx(null);
-        setSubmittedAnswer(false);
-        setShowHint(false);
-        setShowExplanation(false);
-        toast.success(`Generated ${res.data.questions.length} AI Technical MCQs!`);
-        setAiPromptInput("");
-        setIsPracticing(true);
-      }
-    } catch {
-      toast.error("AI Generation failed. Displaying sample technical MCQs.");
-    } finally {
-      setAiGenerating(false);
-    }
-  };
+  const navigateToQuestion = useCallback((idx: number) => {
+    setProgress(prev => ({ ...prev, currentIdx: idx }));
+    questionStartTimeRef.current = Date.now();
+    setShowExplanation(false);
+    setShowHint(false);
+  }, [setShowExplanation, setShowHint]);
 
-  // Submit Answer
-  const handleAnswerSubmit = async () => {
-    if (selectedOptionIdx === null || !currentQuestion) return;
-    setSubmittedAnswer(true);
+  const toggleBookmark = useCallback((idx: number) => {
+    setProgress(prev => {
+      const existing = prev.answers.find(a => a.questionIdx === idx);
+      const filtered = prev.answers.filter(a => a.questionIdx !== idx);
+      const updated: SessionAnswer = existing
+        ? { ...existing, bookmarked: !existing.bookmarked }
+        : { questionIdx: idx, questionId: questions[idx]?.id || "", selectedIdx: null, correct: false, timeTakenMs: 0, bookmarked: true, flagged: false };
+      const newAnswers = [...filtered, updated];
+      return { ...prev, answers: newAnswers, bookmarkedCount: newAnswers.filter(a => a.bookmarked).length };
+    });
+  }, [questions]);
 
-    try {
-      const res = await api.post("/mcq/submit", {
-        questionId: currentQuestion.id,
-        selectedIdx: selectedOptionIdx,
-        timeTakenSeconds: 42,
-      });
+  const toggleFlag = useCallback((idx: number) => {
+    setProgress(prev => {
+      const existing = prev.answers.find(a => a.questionIdx === idx);
+      const filtered = prev.answers.filter(a => a.questionIdx !== idx);
+      const updated: SessionAnswer = existing
+        ? { ...existing, flagged: !existing.flagged }
+        : { questionIdx: idx, questionId: questions[idx]?.id || "", selectedIdx: null, correct: false, timeTakenMs: 0, bookmarked: false, flagged: true };
+      const newAnswers = [...filtered, updated];
+      return { ...prev, answers: newAnswers, flaggedCount: newAnswers.filter(a => a.flagged).length };
+    });
+  }, [questions]);
 
-      if (res.data?.success && res.data.result) {
-        const { isCorrect } = res.data.result;
-        if (isCorrect) {
-          toast.success("Correct Answer! +30 XP");
-        } else {
-          toast.error("Incorrect answer. Read the step-by-step breakdown below.");
-        }
-      }
-    } catch {
-      // Fallback UI
-    }
-  };
-
-  // Copy Code Snippet
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(true);
-    toast.success("Code snippet copied to clipboard");
+    toast.success("Copied to clipboard");
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  // Toggle Bookmark
-  const handleToggleBookmark = async (qId: string) => {
-    const updated = new Set(userBookmarks);
-    if (updated.has(qId)) {
-      updated.delete(qId);
-      toast.success("Removed from bookmarks");
-    } else {
-      updated.add(qId);
-      toast.success("Question bookmarked!");
-    }
-    setUserBookmarks(updated);
-
-    try {
-      await api.post("/mcq/bookmark", { questionId: qId });
-    } catch {
-      // Ignored fallback
-    }
+  // ── Nav Status ──
+  const getNavStatus = (idx: number): "correct" | "incorrect" | "skipped" | "current" | "unanswered" => {
+    if (idx === progress.currentIdx) return "current";
+    const answer = progress.answers.find(a => a.questionIdx === idx);
+    if (!answer) return "unanswered";
+    if (answer.selectedIdx === null) return "skipped";
+    if (answer.correct) return "correct";
+    return "incorrect";
   };
 
-  // Filtered Technologies by domain tab
-  const filteredTechnologies = useMemo(() => {
-    if (selectedCategoryTab === "All") return technologies;
-    return technologies.filter(t => t.category === selectedCategoryTab);
-  }, [technologies, selectedCategoryTab]);
+  const navColors: Record<string, { bg: string; border: string; text: string }> = {
+    current: { bg: "rgba(245,158,11,0.2)", border: "rgba(245,158,11,0.5)", text: "#f59e0b" },
+    correct: { bg: "rgba(16,185,129,0.2)", border: "rgba(16,185,129,0.4)", text: "#10b981" },
+    incorrect: { bg: "rgba(239,68,68,0.2)", border: "rgba(239,68,68,0.4)", text: "#ef4444" },
+    skipped: { bg: "rgba(148,163,184,0.15)", border: "rgba(148,163,184,0.3)", text: "#94a3b8" },
+    unanswered: { bg: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", text: c.textMuted },
+  };
 
-  // Filtered Autocomplete Suggestions
-  const autocompleteFiltered = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    return SEARCH_AUTOCOMPLETE_SUGGESTIONS.filter((s) =>
-      s.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery]);
+  const formatTime = (ms: number) => {
+    const sec = Math.floor(ms / 1000);
+    return `${Math.floor(sec / 60).toString().padStart(2, "0")}:${(sec % 60).toString().padStart(2, "0")}`;
+  };
 
-  const currentQuestion = questions[activeQuestionIdx] || null;
+  const handleGoHome = useCallback(() => {
+    setViewState("home");
+    setActiveTab("home");
+    setQuestions([]);
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, [setActiveTab]);
 
-  // Render Dedicated Full Practice View when isPracticing is true
-  if (isPracticing && currentQuestion) {
-    return (
-      <div
-        className="min-h-screen p-4 sm:p-6 md:p-8 space-y-6 font-sans antialiased transition-colors duration-300"
-        style={{ background: c.bg, color: c.textPrimary }}
-      >
-        {/* Practice Top Navigation Header */}
-        <div
-          className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 rounded-[20px] border shadow-sm"
-          style={{ background: c.cardBg, borderColor: c.cardBorder }}
-        >
-          <button
-            onClick={() => setIsPracticing(false)}
-            className="px-4 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 hover:border-amber-500 transition-all"
-            style={{ background: c.surface, borderColor: c.cardBorder, color: c.textPrimary }}
-          >
-            <ArrowLeft size={16} /> Back to Dashboard
-          </button>
-
-          <div className="text-center">
-            <h2 className="text-sm font-extrabold" style={{ color: c.textPrimary }}>
-              {selectedTech !== "All"
-                ? `${selectedTech} Practice`
-                : selectedCompany !== "All"
-                ? `${selectedCompany} Technical MCQs`
-                : "Technical Practice Arena"}
-            </h2>
-            <span className="text-xs font-semibold" style={{ color: c.textSecondary }}>
-              Question {activeQuestionIdx + 1} of {questions.length}
-            </span>
-          </div>
-
-          <button
-            onClick={() => {
-              setActiveQuestionIdx(0);
-              setSelectedOptionIdx(null);
-              setSubmittedAnswer(false);
-              setShowHint(false);
-              setShowExplanation(false);
-            }}
-            className="px-3.5 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 hover:border-amber-500 transition-all"
-            style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}
-          >
-            <RotateCcw size={14} /> Restart Practice
-          </button>
-        </div>
-
-        {/* Dedicated Practice Question Card */}
-        <div className="max-w-4xl mx-auto space-y-6">
-          <motion.div
-            key={currentQuestion.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-[20px] p-6 sm:p-8 border space-y-6 relative shadow-xl"
-            style={{ background: c.cardBg, borderColor: c.cardBorder }}
-          >
-            {/* Question Header Badges */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-white/10">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
-                  {currentQuestion.technology}
-                </span>
-                {currentQuestion.company && (
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold border" style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}>
-                    {currentQuestion.company}
-                  </span>
-                )}
-                <span className="px-2.5 py-1 rounded-lg text-xs font-bold border" style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}>
-                  {currentQuestion.difficulty}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: c.textSecondary }}>
-                  <Clock size={14} className="text-amber-500 dark:text-amber-400" /> {currentQuestion.estimatedTime}
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => handleToggleBookmark(currentQuestion.id)}
-                  className="p-2 rounded-xl border hover:border-amber-500/40 transition-colors"
-                  style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}
-                >
-                  {userBookmarks.has(currentQuestion.id) ? (
-                    <BookmarkCheck size={16} className="text-amber-500 dark:text-amber-400" />
-                  ) : (
-                    <Bookmark size={16} />
-                  )}
-                </motion.button>
-              </div>
-            </div>
-
-            {/* Question Statement */}
-            <div className="space-y-3">
-              <h3 className="text-base font-bold leading-relaxed font-sans" style={{ color: c.textPrimary }}>
-                {currentQuestion.question}
-              </h3>
-
-              {/* Code Snippet Formatting */}
-              {currentQuestion.codeSnippet && (
-                <div className="rounded-xl overflow-hidden border border-slate-700 bg-slate-950 font-mono text-xs text-emerald-400 p-4 relative group">
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 pb-2 mb-2 border-b border-slate-800 font-sans">
-                    <span className="uppercase tracking-wider font-bold text-amber-400">{currentQuestion.language || "code"}</span>
-                    <button
-                      onClick={() => handleCopyCode(currentQuestion.codeSnippet!)}
-                      className="flex items-center gap-1 hover:text-white transition-colors"
-                    >
-                      {copiedCode ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                      <span>{copiedCode ? "Copied" : "Copy"}</span>
-                    </button>
-                  </div>
-                  <pre className="overflow-x-auto whitespace-pre-wrap leading-relaxed">
-                    <code>{currentQuestion.codeSnippet}</code>
-                  </pre>
-                </div>
-              )}
-            </div>
-
-            {/* Options Grid */}
-            <div className="grid grid-cols-1 gap-3">
-              {currentQuestion.options.map((opt, oIdx) => {
-                const isSelected = selectedOptionIdx === oIdx;
-                const isCorrectAnswer = oIdx === currentQuestion.correctIdx;
-
-                let optStyle = {
-                  background: isDark ? "rgba(18, 18, 20, 0.6)" : "#F1F5F9",
-                  borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#CBD5E1",
-                  color: c.textPrimary,
-                };
-
-                if (isSelected) {
-                  optStyle = {
-                    background: "rgba(245, 158, 11, 0.12)",
-                    borderColor: "#F59E0B",
-                    color: "#F59E0B",
-                  };
-                }
-                if (submittedAnswer) {
-                  if (isCorrectAnswer) {
-                    optStyle = {
-                      background: "rgba(16, 185, 129, 0.12)",
-                      borderColor: "#10B981",
-                      color: "#10B981",
-                    };
-                  } else if (isSelected) {
-                    optStyle = {
-                      background: "rgba(239, 68, 68, 0.12)",
-                      borderColor: "#EF4444",
-                      color: "#EF4444",
-                    };
-                  }
-                }
-
-                return (
-                  <motion.div
-                    key={opt}
-                    whileHover={{ x: 4 }}
-                    onClick={() => !submittedAnswer && setSelectedOptionIdx(oIdx)}
-                    style={optStyle}
-                    className="p-4 rounded-xl border text-xs cursor-pointer flex items-center justify-between transition-all font-medium"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-lg bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/10 flex items-center justify-center font-bold text-[11px]">
-                        {String.fromCharCode(65 + oIdx)}
-                      </span>
-                      <span>{opt}</span>
-                    </div>
-
-                    {submittedAnswer && (
-                      <div>
-                        {isCorrectAnswer ? (
-                          <CheckCircle2 size={16} className="text-emerald-500" />
-                        ) : isSelected ? (
-                          <XCircle size={16} className="text-red-500" />
-                        ) : null}
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            {/* Action Buttons Row */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowHint(!showHint)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all"
-                  style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}
-                >
-                  <Lightbulb size={14} className="text-amber-500 dark:text-amber-400" /> {showHint ? "Hide Hint" : "Hint"}
-                </button>
-                {submittedAnswer && (
-                  <button
-                    onClick={() => setShowExplanation(!showExplanation)}
-                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center gap-1.5 transition-all"
-                  >
-                    <Sparkles size={14} /> {showExplanation ? "Hide Explanation" : "AI Explain"}
-                  </button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                {!submittedAnswer ? (
-                  <motion.button
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={handleAnswerSubmit}
-                    disabled={selectedOptionIdx === null}
-                    className="px-6 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 disabled:opacity-40 transition-all shadow-md shadow-amber-500/20"
-                  >
-                    Submit Answer
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => {
-                      if (activeQuestionIdx < questions.length - 1) {
-                        setActiveQuestionIdx((prev) => prev + 1);
-                        setSelectedOptionIdx(null);
-                        setSubmittedAnswer(false);
-                        setShowHint(false);
-                        setShowExplanation(false);
-                      } else {
-                        toast.info("Completed all loaded technical questions!");
-                      }
-                    }}
-                    className="px-6 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20"
-                  >
-                    Next Question <ArrowRight size={14} />
-                  </motion.button>
-                )}
-              </div>
-            </div>
-
-            {/* Hint Disclosed Block */}
-            <AnimatePresence>
-              {showHint && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-200 leading-relaxed font-medium"
-                >
-                  <span className="font-extrabold block text-amber-600 dark:text-amber-400 mb-1">💡 Hint:</span>
-                  {currentQuestion.hint}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* AI Explanation Disclosed Block */}
-            <AnimatePresence>
-              {(submittedAnswer || showExplanation) && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-5 rounded-xl border space-y-4 text-xs leading-relaxed"
-                  style={{ background: isDark ? "rgba(18, 18, 20, 0.9)" : "#F8FAFC", borderColor: c.cardBorder }}
-                >
-                  <div>
-                    <span className="font-extrabold text-amber-600 dark:text-amber-400 text-xs uppercase tracking-wider block mb-1">
-                      🧠 Detailed Technical Explanation
-                    </span>
-                    <p className="whitespace-pre-line" style={{ color: c.textSecondary }}>{currentQuestion.explanation}</p>
-                  </div>
-
-                  {/* Option Breakdown */}
-                  {currentQuestion.optionExplanations && (
-                    <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-white/10">
-                      <span className="font-bold text-slate-400 text-[11px] block">Option Analysis:</span>
-                      {currentQuestion.optionExplanations.map((oe, oIdx) => (
-                        <div key={oIdx} className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px]">
-                          <span className={`font-bold ${oe.isCorrect ? "text-emerald-500" : "text-red-500"}`}>
-                            {oe.option}: {oe.isCorrect ? "✓ Correct" : "✗ Incorrect"}
-                          </span>
-                          <span className="block text-slate-400 mt-0.5">{oe.reason}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Interview Tip */}
-                  {currentQuestion.interviewTip && (
-                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 font-medium">
-                      <span className="font-bold text-amber-600 dark:text-amber-400">🎯 Interview Tip: </span>
-                      {currentQuestion.interviewTip}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-
+  // ══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ══════════════════════════════════════════════════════════════════════════
 
   return (
-    <div
-      className="min-h-screen p-4 sm:p-6 md:p-8 space-y-8 font-sans antialiased transition-colors duration-300"
-      style={{ background: c.bg, color: c.textPrimary }}
-    >
-      {/* ── HERO SECTION ────────────────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="relative overflow-hidden rounded-[20px] p-6 sm:p-8 border flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl"
-        style={{
-          background: c.heroBg,
-          borderColor: c.cardBorder,
-        }}
-      >
-        {/* Glow backdrop decorative orb */}
-        <div
-          className="absolute -top-24 -left-24 w-72 h-72 rounded-full blur-[100px] pointer-events-none"
-          style={{ background: c.accentGlow }}
-        />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
 
-        <div className="space-y-4 max-w-xl z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 uppercase tracking-widest">
-            <Flame size={14} className="animate-pulse text-amber-500 dark:text-amber-400" /> AI Technical Engine
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight font-sans" style={{ color: c.textPrimary }}>
-            Technical MCQs Practice
-          </h1>
-          <p className="text-xs sm:text-sm leading-relaxed font-normal" style={{ color: c.textSecondary }}>
-            Practice company-specific and topic-wise technical MCQs with AI-powered explanations, code snippet breakdowns, and personalized learning paths.
-          </p>
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => techGridRef.current?.scrollIntoView({ behavior: "smooth" })}
-              className="px-5 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all"
-            >
-              <Play size={14} fill="currentColor" /> Start Practice
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => handleGenerateAI("Generate 10 mixed Java and System Design MCQs")}
-              className="px-5 py-2.5 rounded-xl font-bold text-xs bg-slate-900/10 dark:bg-white/10 hover:bg-slate-900/20 dark:hover:bg-white/15 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white flex items-center gap-2 backdrop-blur-md transition-all"
-            >
-              <Sparkles size={14} className="text-amber-500 dark:text-amber-400" /> Generate AI Quiz
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Right Animated Hero Illustration */}
-        <div
-          className="relative z-10 shrink-0 w-full md:w-72 h-44 sm:h-52 rounded-2xl flex items-center justify-center border overflow-hidden group shadow-md"
-          style={{ background: isDark ? "rgba(18, 18, 20, 0.7)" : "#FFFFFF", borderColor: c.cardBorder }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-transparent pointer-events-none" />
-          <motion.div
-            animate={{ y: [0, -8, 0], rotate: [0, 5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-4 left-4 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-500 dark:text-amber-400"
-          >
-            <Code2 size={22} />
-          </motion.div>
-          <motion.div
-            animate={{ y: [0, 8, 0], rotate: [0, -5, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-            className="absolute bottom-4 right-4 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-500 dark:text-amber-400"
-          >
-            <Database size={22} />
-          </motion.div>
-          <motion.div
-            animate={{ scale: [1, 1.08, 1] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="text-center p-4"
-          >
-            <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 shadow-xl shadow-amber-500/25 mb-3 font-extrabold text-xl">
-              MCQ
-            </div>
-            <p className="text-xs font-bold" style={{ color: c.textPrimary }}>3,500+ Technical MCQs</p>
-            <p className="text-[10px] font-semibold mt-0.5" style={{ color: c.textSecondary }}>36 Core Technologies • 16 Companies</p>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* ── AI MCQ GENERATOR PROMPT BAR ──────────────────────────────── */}
-      <div
-        className="rounded-[20px] p-5 border space-y-3 shadow-sm"
-        style={{ background: c.cardBg, borderColor: c.cardBorder }}
-      >
-        <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-          <Sparkles size={14} /> AI Technical MCQ Generator
-        </div>
-        <div className="relative flex items-center gap-2">
-          <input
-            type="text"
-            value={aiPromptInput}
-            onChange={(e) => setAiPromptInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleGenerateAI()}
-            placeholder="e.g. 'Generate 20 Java MCQs' or 'Create Amazon DBMS questions with code snippets'..."
-            className="w-full rounded-xl px-4 py-3 text-xs border focus:outline-none focus:border-amber-500 transition-all shadow-inner"
-            style={{
-              background: c.inputBg,
-              borderColor: c.inputBorder,
-              color: c.textPrimary,
-            }}
-          />
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => handleGenerateAI()}
-            disabled={aiGenerating}
-            className="px-5 py-3 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center gap-2 shrink-0 transition-all disabled:opacity-50 shadow-md"
-          >
-            {aiGenerating ? (
-              <>
-                <RefreshCw size={14} className="animate-spin" /> Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles size={14} /> Generate
-              </>
-            )}
-          </motion.button>
-        </div>
-
-        {/* Quick Suggestion Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-[11px]">
-          <span className="font-semibold shrink-0" style={{ color: c.textMuted }}>Try:</span>
-          {PROMPT_SUGGESTION_CHIPS.map((chip) => (
-            <button
-              key={chip}
-              onClick={() => {
-                setAiPromptInput(chip);
-                handleGenerateAI(chip);
-              }}
-              className="px-3 py-1 rounded-lg border hover:border-amber-500 shrink-0 transition-all font-medium"
-              style={{
-                background: c.surface,
-                borderColor: c.cardBorder,
-                color: c.textSecondary,
-              }}
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── SEARCH & MULTI-FILTER BAR ────────────────────────────────────────── */}
-      <div
-        className="rounded-[20px] p-4 border flex flex-col md:flex-row items-center justify-between gap-4 relative z-20 shadow-sm"
-        style={{ background: c.cardBg, borderColor: c.cardBorder }}
-      >
-        {/* Search Input with Autocomplete */}
-        <div className="relative w-full md:w-72">
-          <div
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs"
-            style={{ background: c.inputBg, borderColor: c.inputBorder, color: c.textPrimary }}
-          >
-            <Search size={14} className="text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setShowAutocomplete(true);
-              }}
-              onFocus={() => setShowAutocomplete(true)}
-              onBlur={() => setTimeout(() => setShowAutocomplete(false), 200)}
-              placeholder="Search language, tech, company..."
-              className="w-full bg-transparent focus:outline-none"
-              style={{ color: c.textPrimary }}
-            />
-            {searchQuery && (
-              <X size={12} className="text-slate-400 cursor-pointer hover:text-amber-500" onClick={() => setSearchQuery("")} />
-            )}
-          </div>
-
-          {/* Autocomplete Dropdown */}
-          <AnimatePresence>
-            {showAutocomplete && autocompleteFiltered.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                className="absolute top-full left-0 right-0 mt-2 border rounded-xl shadow-2xl overflow-hidden z-50"
-                style={{ background: isDark ? "#0A0A0C" : "#FFFFFF", borderColor: c.cardBorder }}
-              >
-                {autocompleteFiltered.map((item) => (
-                  <div
-                    key={item}
-                    onMouseDown={() => {
-                      setSearchQuery(item);
-                      setShowAutocomplete(false);
-                      fetchQuestions();
-                    }}
-                    className="px-3.5 py-2 text-xs hover:bg-amber-500/10 hover:text-amber-500 cursor-pointer flex items-center justify-between transition-colors"
-                    style={{ color: c.textSecondary }}
-                  >
-                    <span>{item}</span>
-                    <ChevronRight size={12} className="text-slate-400" />
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Multi-Filter Dropdowns */}
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {/* Tech Domain Selector */}
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="font-semibold hidden sm:inline" style={{ color: c.textSecondary }}>Domain:</span>
-            <select
-              value={selectedCategoryTab}
-              onChange={(e) => setSelectedCategoryTab(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs border focus:outline-none focus:border-amber-500 font-medium"
-              style={{ background: c.inputBg, borderColor: c.inputBorder, color: c.textPrimary }}
-            >
-              <option value="All">All Domains</option>
-              <option value="Programming">Programming</option>
-              <option value="Core CS">Core CS</option>
-              <option value="Web Development">Web Development</option>
-              <option value="Databases">Databases</option>
-              <option value="Cloud">Cloud & DevOps</option>
-              <option value="AI/ML">AI / Machine Learning</option>
-            </select>
-          </div>
-
-          {/* Company Filter */}
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="font-semibold hidden sm:inline" style={{ color: c.textSecondary }}>Company:</span>
-            <select
-              value={selectedCompany}
-              onChange={(e) => setSelectedCompany(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs border focus:outline-none focus:border-amber-500 font-medium"
-              style={{ background: c.inputBg, borderColor: c.inputBorder, color: c.textPrimary }}
-            >
-              <option value="All">All Companies</option>
-              {companies.map((comp) => (
-                <option key={comp.id} value={comp.name}>
-                  {comp.name} ({comp.questionCount})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tech Filter */}
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="font-semibold hidden sm:inline" style={{ color: c.textSecondary }}>Tech:</span>
-            <select
-              value={selectedTech}
-              onChange={(e) => setSelectedTech(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs border focus:outline-none focus:border-amber-500 font-medium"
-              style={{ background: c.inputBg, borderColor: c.inputBorder, color: c.textPrimary }}
-            >
-              <option value="All">All Technologies</option>
-              {technologies.map((t) => (
-                <option key={t.id} value={t.name}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Difficulty Filter */}
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="font-semibold hidden sm:inline" style={{ color: c.textSecondary }}>Difficulty:</span>
-            <select
-              value={selectedDifficulty}
-              onChange={(e) => setSelectedDifficulty(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs border focus:outline-none focus:border-amber-500 font-medium"
-              style={{ background: c.inputBg, borderColor: c.inputBorder, color: c.textPrimary }}
-            >
-              <option value="All">All Difficulties</option>
-              <option value="Easy">Easy</option>
-              <option value="Medium">Medium</option>
-              <option value="Hard">Hard</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* ── FEATURED COMPANIES SCROLL ───────────────────────────────────────── */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: c.textPrimary }}>
-            <Target size={16} className="text-amber-500 dark:text-amber-400" /> Company-Specific Technical MCQs (16 Companies)
-          </h2>
-          <span className="text-xs font-semibold" style={{ color: c.textSecondary }}>Scroll left/right →</span>
-        </div>
-
-        <div className="flex items-center gap-4 overflow-x-auto pb-3 scrollbar-none">
-          {companies.map((comp, idx) => (
-            <motion.div
-              key={comp.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.03 }}
-              whileHover={{ y: -4, scale: 1.02 }}
-              onClick={() => {
-                setSelectedCompany(comp.name);
-                setSelectedTech("All");
-                fetchQuestions();
-                setIsPracticing(true);
-              }}
-              className="w-56 shrink-0 rounded-[20px] p-4 border cursor-pointer transition-all group shadow-sm hover:shadow-md"
-              style={{ background: c.cardBg, borderColor: c.cardBorder }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <CompanyLogo companyName={comp.name} companyId={comp.id} size={40} theme={theme} />
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                    comp.difficulty === "Easy"
-                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                      : comp.difficulty === "Medium"
-                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                      : "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
-                  }`}
-                >
-                  {comp.difficulty}
-                </span>
-              </div>
-              <h3 className="text-sm font-extrabold group-hover:text-amber-500 transition-colors" style={{ color: c.textPrimary }}>
-                {comp.name}
-              </h3>
-              <p className="text-[11px] mt-1 line-clamp-1" style={{ color: c.textSecondary }}>{comp.description}</p>
-              <div className="mt-3 flex items-center justify-between pt-3 border-t border-slate-200 dark:border-white/5 text-[11px]">
-                <span className="font-semibold" style={{ color: c.textSecondary }}>{comp.questionCount} MCQs</span>
-                <span className="font-bold text-amber-500 dark:text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                  Start Practice <ChevronRight size={12} />
-                </span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── MAIN CONTENT GRID: TECH CATEGORIES + PRACTICE + SIDEBAR ────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column (2 Cols): Tech Grid + Interactive Question Arena */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* TECHNOLOGY CATEGORIES GRID (36 TECH CARDS ACROSS 6 DOMAINS) */}
-          <div ref={techGridRef} className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <h2 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: c.textPrimary }}>
-                <Code2 size={16} className="text-amber-500 dark:text-amber-400" /> Technology Categories ({filteredTechnologies.length} Technologies)
-              </h2>
-
-              {/* Domain Category Filter Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
-                {["All", "Programming", "Core CS", "Web Development", "Databases", "Cloud", "AI/ML"].map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategoryTab(cat)}
-                    className={`px-2.5 py-1 rounded-lg border font-bold shrink-0 transition-all ${
-                      selectedCategoryTab === cat
-                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm"
-                        : "hover:border-amber-500/40"
-                    }`}
-                    style={
-                      selectedCategoryTab !== cat
-                        ? { background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }
-                        : undefined
-                    }
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {filteredTechnologies.map((t, idx) => (
-                <motion.div
-                  key={t.id}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.02 }}
-                  whileHover={{ y: -4, scale: 1.01 }}
-                  onClick={() => {
-                    setSelectedTech(t.name);
-                    setSelectedCompany("All");
-                    fetchQuestions();
-                    setIsPracticing(true);
-                  }}
-                  className="rounded-[20px] p-5 border cursor-pointer transition-all flex flex-col justify-between group hover:border-amber-500/50 shadow-sm hover:shadow-md"
-                  style={{ background: c.cardBg, borderColor: c.cardBorder }}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        {getTechIcon(t.iconName)}
-                      </div>
-                      {/* SVG Progress Ring */}
-                      <div className="relative w-9 h-9 flex items-center justify-center">
-                        <svg className="w-9 h-9 transform -rotate-90">
-                          <circle cx="18" cy="18" r="14" stroke={isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"} strokeWidth="3" fill="none" />
-                          <circle
-                            cx="18"
-                            cy="18"
-                            r="14"
-                            stroke="#F59E0B"
-                            strokeWidth="3"
-                            fill="none"
-                            strokeDasharray={88}
-                            strokeDashoffset={88 - (88 * t.progress) / 100}
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <span className="absolute text-[9px] font-black text-amber-500 dark:text-amber-400">{t.progress}%</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-extrabold group-hover:text-amber-500 transition-colors" style={{ color: c.textPrimary }}>
-                          {t.name}
-                        </h3>
-                        <span className="text-[9px] px-2 py-0.5 rounded-full border font-semibold" style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}>
-                          {t.category}
-                        </span>
-                      </div>
-                      <p className="text-[11px] mt-1 leading-relaxed" style={{ color: c.textSecondary }}>{t.description}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-200 dark:border-white/5 flex items-center justify-between text-xs font-bold">
-                    <span className="font-medium" style={{ color: c.textSecondary }}>{t.questionCount} Questions</span>
-                    <span className="text-amber-500 dark:text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                      Continue <ChevronRight size={14} />
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column (1 Col): Performance Widget & Sidebar */}
-        <div className="space-y-6">
-          {/* PERFORMANCE DASHBOARD WIDGET */}
-          <div
-            className="rounded-[20px] p-6 border space-y-6 shadow-sm"
-            style={{ background: c.cardBg, borderColor: c.cardBorder }}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: c.textPrimary }}>
-                <BarChart2 size={16} className="text-amber-500 dark:text-amber-400" /> Performance Dashboard
-              </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                Level 5 Technical Master
-              </span>
-            </div>
-
-            {/* Metrics 2x2 Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3.5 rounded-xl border space-y-1" style={{ background: c.surface, borderColor: c.cardBorder }}>
-                <span className="text-[10px] font-semibold uppercase" style={{ color: c.textMuted }}>Questions Solved</span>
-                <div className="text-xl font-extrabold" style={{ color: c.textPrimary }}>{progress.questionsSolved}</div>
-                <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold">+6 this week</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl border space-y-1" style={{ background: c.surface, borderColor: c.cardBorder }}>
-                <span className="text-[10px] font-semibold uppercase" style={{ color: c.textMuted }}>Accuracy Rate</span>
-                <div className="text-xl font-extrabold text-amber-600 dark:text-amber-400">{progress.accuracy}%</div>
-                <span className="text-[9px] font-semibold" style={{ color: c.textSecondary }}>Top 10% percentile</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl border space-y-1" style={{ background: c.surface, borderColor: c.cardBorder }}>
-                <span className="text-[10px] font-semibold uppercase" style={{ color: c.textMuted }}>Avg Time / Q</span>
-                <div className="text-xl font-extrabold" style={{ color: c.textPrimary }}>{progress.avgTimeSeconds}s</div>
-                <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold">15s faster than avg</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl border space-y-1" style={{ background: c.surface, borderColor: c.cardBorder }}>
-                <span className="text-[10px] font-semibold uppercase" style={{ color: c.textMuted }}>Daily Streak</span>
-                <div className="text-xl font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <Flame size={18} className="text-amber-500 fill-amber-500" /> {progress.streakDays}d
-                </div>
-                <span className="text-[9px] text-amber-600 dark:text-amber-400 font-semibold">On Fire!</span>
-              </div>
-            </div>
-
-            {/* Recharts Weekly Progress Bar Chart */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold block" style={{ color: c.textSecondary }}>Weekly Solved Progress</span>
-              <div className="h-36 w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={progress.weeklyProgress} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                    <XAxis dataKey="day" stroke={isDark ? "#64748B" : "#94A3B8"} fontSize={10} tickLine={false} axisLine={false} />
-                    <YAxis stroke={isDark ? "#64748B" : "#94A3B8"} fontSize={10} tickLine={false} axisLine={false} />
-                    <Tooltip
-                      contentStyle={{
-                        background: isDark ? "#0A0A0C" : "#FFFFFF",
-                        border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)",
-                        borderRadius: "8px",
-                        fontSize: "11px",
-                        color: c.textPrimary,
-                      }}
-                      itemStyle={{ color: "#F59E0B" }}
-                    />
-                    <Bar dataKey="solved" radius={[4, 4, 0, 0]}>
-                      {progress.weeklyProgress.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={index === 5 ? "#F59E0B" : "rgba(245, 158, 11, 0.4)"} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Weak vs Strong Topics */}
-            <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-white/10">
-              <div>
-                <span className="text-xs font-extrabold text-red-500 dark:text-red-400 flex items-center gap-1 mb-2">
-                  <AlertCircle size={14} /> Weak Topics (Needs Revision)
-                </span>
-                <div className="space-y-2">
-                  {progress.weakTopics.map((wt) => (
-                    <div key={wt.topic} className="flex items-center justify-between text-xs">
-                      <span className="font-medium" style={{ color: c.textSecondary }}>{wt.topic}</span>
-                      <span className="text-red-500 dark:text-red-400 font-bold">{wt.accuracy}% Accuracy</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mb-2">
-                  <CheckCircle2 size={14} /> Strong Topics
-                </span>
-                <div className="space-y-2">
-                  {progress.strongTopics.map((st) => (
-                    <div key={st.topic} className="flex items-center justify-between text-xs">
-                      <span className="font-medium" style={{ color: c.textSecondary }}>{st.topic}</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{st.accuracy}% Accuracy</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* CUSTOM MOCK TEST CREATOR BUTTON & SIDEBAR ACTIONS */}
-          <div
-            className="rounded-[20px] p-6 border space-y-4 shadow-sm"
-            style={{ background: c.cardBg, borderColor: c.cardBorder }}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: c.textPrimary }}>
-                <PlusCircle size={16} className="text-amber-500 dark:text-amber-400" /> Custom Mock Test
-              </h3>
-            </div>
-            <p className="text-xs leading-relaxed" style={{ color: c.textSecondary }}>
-              Configure timed technical mock tests customized for target companies or specific technology stacks.
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setMockModalOpen(true)}
-              className="w-full py-3 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all shadow-md flex items-center justify-center gap-2"
-            >
-              <PlusCircle size={14} /> Create Mock Test
-            </motion.button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── MOCK TEST CREATOR MODAL ────────────────────────────────────────── */}
+      {/* ── LOADING OVERLAY ────────────────────────────────────────────── */}
       <AnimatePresence>
-        {mockModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 10 }}
-              className="w-full max-w-md rounded-[20px] p-6 border space-y-5 shadow-2xl"
-              style={{ background: isDark ? "#0A0A0C" : "#FFFFFF", borderColor: c.cardBorder }}
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
-                <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: c.textPrimary }}>
-                  <PlusCircle size={16} className="text-amber-500" /> Configure Mock Test
-                </h3>
-                <X size={16} className="cursor-pointer hover:text-amber-500" onClick={() => setMockModalOpen(false)} />
+        {aiLoading && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center" style={{ background: isDark ? "rgba(8,7,16,0.92)" : "rgba(240,244,255,0.92)" }}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="p-8 rounded-3xl border max-w-sm w-full mx-4 space-y-6" style={{ background: c.cardBg, borderColor: c.border }}>
+              <div className="text-center space-y-2">
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="w-14 h-14 mx-auto rounded-full border-2 border-t-transparent flex items-center justify-center" style={{ borderColor: `${c.primary}40`, borderTopColor: "transparent" }}>
+                  <Sparkles size={22} className="text-amber-500" />
+                </motion.div>
+                <h3 className="text-sm font-extrabold" style={{ color: c.text }}>Setting Up Your Session</h3>
+                <p className="text-xs" style={{ color: c.textMuted }}>AI is crafting personalized questions...</p>
               </div>
-
-              <div className="space-y-4 text-xs">
-                <div>
-                  <label className="font-bold block mb-1" style={{ color: c.textSecondary }}>Technology Stack</label>
-                  <select
-                    value={mockConfig.tech}
-                    onChange={(e) => setMockConfig(prev => ({ ...prev, tech: e.target.value }))}
-                    className="w-full p-2.5 rounded-xl border"
-                    style={{ background: c.inputBg, borderColor: c.inputBorder, color: c.textPrimary }}
-                  >
-                    {technologies.map(t => (
-                      <option key={t.id} value={t.name}>{t.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold block mb-1" style={{ color: c.textSecondary }}>Target Company</label>
-                  <select
-                    value={mockConfig.company}
-                    onChange={(e) => setMockConfig(prev => ({ ...prev, company: e.target.value }))}
-                    className="w-full p-2.5 rounded-xl border"
-                    style={{ background: c.inputBg, borderColor: c.inputBorder, color: c.textPrimary }}
-                  >
-                    {companies.map(comp => (
-                      <option key={comp.id} value={comp.name}>{comp.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-bold block mb-1" style={{ color: c.textSecondary }}>Questions</label>
-                    <input
-                      type="number"
-                      value={mockConfig.count}
-                      onChange={(e) => setMockConfig(prev => ({ ...prev, count: Number(e.target.value) }))}
-                      className="w-full p-2.5 rounded-xl border"
-                      style={{ background: c.inputBg, borderColor: c.inputBorder, color: c.textPrimary }}
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold block mb-1" style={{ color: c.textSecondary }}>Time Limit (Mins)</label>
-                    <input
-                      type="number"
-                      value={mockConfig.timeLimitMins}
-                      onChange={(e) => setMockConfig(prev => ({ ...prev, timeLimitMins: Number(e.target.value) }))}
-                      className="w-full p-2.5 rounded-xl border"
-                      style={{ background: c.inputBg, borderColor: c.inputBorder, color: c.textPrimary }}
-                    />
-                  </div>
-                </div>
+              <div className="space-y-2">
+                {LOADING_STEPS.map((step, idx) => (
+                  <motion.div key={step} initial={{ opacity: 0, x: -10 }} animate={{ opacity: idx <= loadingStep ? 1 : 0.3, x: 0 }} transition={{ delay: idx * 0.1 }} className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: idx < loadingStep ? `${c.green}20` : idx === loadingStep ? `${c.primary}20` : "transparent", border: `1.5px solid ${idx < loadingStep ? c.green : idx === loadingStep ? c.primary : c.border}` }}>
+                      {idx < loadingStep ? <CheckCircle2 size={11} style={{ color: c.green }} /> : idx === loadingStep ? <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 0.8, repeat: Infinity }}><CircleDot size={9} style={{ color: c.primary }} /></motion.div> : <div className="w-2 h-2 rounded-full" style={{ background: c.border }} />}
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: idx <= loadingStep ? c.text : c.textMuted }}>{step}</span>
+                  </motion.div>
+                ))}
               </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200 dark:border-white/10">
-                <button
-                  onClick={() => setMockModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold border"
-                  style={{ background: c.surface, borderColor: c.cardBorder, color: c.textSecondary }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setMockModalOpen(false);
-                    toast.success(`Generated ${mockConfig.count} Question ${mockConfig.company} ${mockConfig.tech} Mock Test!`);
-                    setSelectedTech(mockConfig.tech);
-                    setSelectedCompany(mockConfig.company);
-                    fetchQuestions();
-                    practiceRef.current?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md"
-                >
-                  Start Mock Test
-                </button>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                <motion.div animate={{ width: `${((loadingStep + 1) / LOADING_STEPS.length) * 100}%` }} transition={{ duration: 0.4 }} className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${c.primary}, ${c.primaryDark})` }} />
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+
+      {/* ── HEADER ─────────────────────────────────────────────────────── */}
+      <div className="flex justify-between items-center border-b pb-2.5 shrink-0" style={{ borderColor: c.border }}>
+        <div className="flex items-center gap-3">
+          {view !== "home" && (
+            <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={handleGoHome} className="w-8 h-8 rounded-lg flex items-center justify-center border transition-colors" style={{ borderColor: c.border, color: c.textSec }}>
+              <ArrowLeft size={14} />
+            </motion.button>
+          )}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">AI Technical Engine</p>
+            <h2 className="text-base font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+              {view === "home" && activeTab === "home" && "Technical MCQs Hub"}
+              {view === "home" && activeTab === "analytics" && "Performance Analytics"}
+              {view === "topic_select" && "Select Technology"}
+              {view === "active_session" && "Practice Session"}
+              {view === "session_review" && "Session Review"}
+            </h2>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {view === "active_session" && (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold" style={{ background: "rgba(16,185,129,0.1)", borderColor: "rgba(16,185,129,0.3)", color: "#10b981" }}>
+                <Clock size={13} />{formatTime(progress.timeElapsed)}
+              </div>
+              <div className="w-24 h-2 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                <motion.div animate={{ width: `${progressPercent}%` }} className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${c.primary}, ${c.primaryDark})` }} />
+              </div>
+              <span className="text-[10px] font-black" style={{ color: c.textMuted }}>{progress.answers.length}/{questions.length}</span>
+            </div>
+          )}
+          {view !== "active_session" && (
+            <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={() => setActiveTab(activeTab === "analytics" ? "home" : "analytics")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20">
+              <BarChart2 size={12} />{activeTab === "analytics" ? "Home" : "Analytics"}
+            </motion.button>
+          )}
+        </div>
+      </div>
+
+      {/* ── VIEWS ──────────────────────────────────────────────────────── */}
+      <div className="flex-1 min-h-0">
+        <AnimatePresence mode="wait">
+
+          {/* ═══ HOME VIEW ═══ */}
+          {view === "home" && activeTab === "home" && (
+            <motion.div key="home" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 overflow-y-auto max-h-[calc(100vh-160px)] pr-1 custom-scrollbar">
+
+              {/* Hero */}
+              <motion.div variants={scaleIn} initial="hidden" animate="visible" custom={0} className="p-6 rounded-2xl border text-center relative overflow-hidden" style={{ background: `linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.04))`, borderColor: "rgba(245,158,11,0.2)" }}>
+                <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ duration: 4, repeat: Infinity }} className="w-16 h-16 mx-auto mb-3 rounded-2xl flex items-center justify-center" style={{ background: "rgba(245,158,11,0.15)" }}>
+                  <Code2 size={30} className="text-amber-500" />
+                </motion.div>
+                <h2 className="text-lg font-black" style={{ color: c.text }}>AI Technical MCQ Engine</h2>
+                <p className="text-xs mt-1 max-w-md mx-auto" style={{ color: c.textSec }}>
+                  Master technical interviews with AI-powered MCQs across 36+ technologies, company-specific tests, and personalized learning paths.
+                </p>
+              </motion.div>
+
+              {/* Stat Cards */}
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1} className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {[
+                  { label: "Solved", value: userProgress.questionsSolved, icon: CheckCircle2, color: "#10b981" },
+                  { label: "Accuracy", value: `${userProgress.accuracy}%`, icon: Target, color: "#f59e0b" },
+                  { label: "Avg Time", value: `${userProgress.avgTimeSeconds}s`, icon: Clock, color: "#3b82f6" },
+                  { label: "Streak", value: `${userProgress.streakDays}d`, icon: Flame, color: "#ef4444" },
+                  { label: "Technologies", value: technologies.length, icon: Code2, color: "#8b5cf6" },
+                ].map((stat, i) => (
+                  <motion.div key={stat.label} variants={scaleIn} initial="hidden" animate="visible" custom={i} className="p-4 border rounded-2xl" style={{ background: c.cardBg, borderColor: c.border }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${stat.color}15` }}><stat.icon size={14} style={{ color: stat.color }} /></div>
+                      <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>{stat.label}</span>
+                    </div>
+                    <p className="text-xl font-black" style={{ color: stat.color }}>{stat.value}</p>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* AI Prompt Bar */}
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="p-5 rounded-2xl border space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-500">
+                  <Sparkles size={14} /> AI MCQ Generator
+                </div>
+                <div className="relative flex items-center gap-2">
+                  <input type="text" value={aiPromptInput} onChange={(e) => setAiPromptInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && aiPromptInput.trim() && startSession("", "", "", aiPromptInput)} placeholder="e.g. 'Generate 20 Java MCQs' or 'Create Amazon DBMS questions'..." className="w-full rounded-xl px-4 py-3 text-xs border focus:outline-none focus:border-amber-500 transition-all" style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => aiPromptInput.trim() && startSession("", "", "", aiPromptInput)} className="px-5 py-3 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center gap-2 shrink-0 transition-all disabled:opacity-50 shadow-md" disabled={!aiPromptInput.trim()}>
+                    <Sparkles size={14} /> Generate
+                  </motion.button>
+                </div>
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+                  <span className="font-semibold shrink-0" style={{ color: c.textMuted }}>Try:</span>
+                  {PROMPT_SUGGESTION_CHIPS.map((chip) => (
+                    <button key={chip} onClick={() => { setAiPromptInput(chip); startSession("", "", "", chip); }} className="px-3 py-1 rounded-lg border hover:border-amber-500 shrink-0 transition-all font-medium" style={{ background: c.surface, borderColor: c.border, color: c.textSec }}>{chip}</button>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Domain Categories */}
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Technology Domains</h3>
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                    {DOMAIN_CATEGORIES.map((cat) => {
+                      const Icon = cat.icon;
+                      return (
+                        <button key={cat.id} onClick={() => setSelectedDomain(cat.id)} className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-bold shrink-0 transition-all" style={{ background: selectedDomain === cat.id ? `${cat.color}20` : "transparent", borderColor: selectedDomain === cat.id ? `${cat.color}40` : c.border, color: selectedDomain === cat.id ? cat.color : c.textMuted }}>
+                          <Icon size={10} />{cat.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {filteredTechnologies.slice(0, 12).map((t, i) => (
+                    <motion.div key={t.id} variants={scaleIn} initial="hidden" animate="visible" custom={i} whileHover={{ y: -4, scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => startSession(t.name, "", t.category)} className="p-5 border rounded-2xl cursor-pointer transition-all" style={{ background: c.cardBg, borderColor: c.border }}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">{getTechIcon(t.iconName)}</div>
+                        <div className="relative w-9 h-9 flex items-center justify-center">
+                          <svg className="w-9 h-9 transform -rotate-90"><circle cx="18" cy="18" r="14" stroke={isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"} strokeWidth="3" fill="none" /><circle cx="18" cy="18" r="14" stroke="#F59E0B" strokeWidth="3" fill="none" strokeDasharray={88} strokeDashoffset={88 - (88 * t.progress) / 100} strokeLinecap="round" /></svg>
+                          <span className="absolute text-[9px] font-black text-amber-500">{t.progress}%</span>
+                        </div>
+                      </div>
+                      <p className="text-xs font-extrabold" style={{ color: c.text }}>{t.name}</p>
+                      <p className="text-[10px] mt-1 leading-relaxed line-clamp-2" style={{ color: c.textMuted }}>{t.description}</p>
+                      <div className="mt-3 pt-2 border-t flex items-center justify-between text-[10px] font-bold" style={{ borderColor: c.border }}>
+                        <span style={{ color: c.textMuted }}>{t.questionCount}Q</span>
+                        <span className="flex items-center gap-1 text-amber-500">Start <ChevronRight size={10} /></span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                {filteredTechnologies.length > 12 && (
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setViewState("topic_select")} className="w-full p-3 border rounded-2xl text-center text-xs font-bold transition-colors" style={{ borderColor: c.border, color: c.primary, background: `${c.primary}08` }}>
+                    View All {filteredTechnologies.length} Technologies
+                  </motion.button>
+                )}
+              </motion.div>
+
+              {/* Company Tests */}
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4} className="space-y-3">
+                <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Company-Specific MCQs</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {filteredCompanies.slice(0, 8).map((comp, i) => (
+                    <motion.div key={comp.id} variants={scaleIn} initial="hidden" animate="visible" custom={i} whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => startSession("", comp.name, "")} className="p-4 border rounded-2xl cursor-pointer transition-all" style={{ background: c.cardBg, borderColor: c.border }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <CompanyLogo companyName={comp.name} companyId={comp.id} size={36} theme={theme} />
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${comp.difficulty === "Easy" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : comp.difficulty === "Medium" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}>{comp.difficulty}</span>
+                      </div>
+                      <p className="text-[11px] font-extrabold" style={{ color: c.text }}>{comp.name}</p>
+                      <p className="text-[9px] mt-1" style={{ color: c.textMuted }}>{comp.avgPackage}</p>
+                      <div className="mt-2 pt-2 border-t flex items-center justify-between text-[10px]" style={{ borderColor: c.border }}>
+                        <span className="font-bold" style={{ color: c.textMuted }}>{comp.questionCount}Q</span>
+                        <span className="font-bold text-amber-500 flex items-center gap-1">Practice <ChevronRight size={10} /></span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Performance Dashboard */}
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={5} className="p-5 rounded-2xl border space-y-4" style={{ background: c.cardBg, borderColor: c.border }}>
+                <div className="flex items-center gap-2">
+                  <BarChart2 size={15} className="text-amber-500" />
+                  <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Weekly Progress</h3>
+                </div>
+                <div className="h-36 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={userProgress.weeklyProgress} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                      <XAxis dataKey="day" stroke={isDark ? "#64748B" : "#94A3B8"} fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke={isDark ? "#64748B" : "#94A3B8"} fontSize={10} tickLine={false} axisLine={false} />
+                      <Tooltip contentStyle={{ background: isDark ? "#0A0A0C" : "#FFFFFF", border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)", borderRadius: "8px", fontSize: "11px", color: c.text }} itemStyle={{ color: "#F59E0B" }} />
+                      <Bar dataKey="solved" radius={[4, 4, 0, 0]}>{userProgress.weeklyProgress.map((_, index) => (<Cell key={`cell-${index}`} fill={index === 5 ? "#F59E0B" : "rgba(245, 158, 11, 0.4)"} />))}</Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t" style={{ borderColor: c.border }}>
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-red-500 flex items-center gap-1"><AlertCircle size={12} /> Weak Topics</span>
+                    {userProgress.weakTopics.map((wt) => (
+                      <div key={wt.topic} className="flex items-center justify-between text-[11px]">
+                        <span className="font-medium" style={{ color: c.textSec }}>{wt.topic}</span>
+                        <span className="text-red-400 font-bold">{wt.accuracy}%</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-green-500 flex items-center gap-1"><CheckCircle2 size={12} /> Strong Topics</span>
+                    {userProgress.strongTopics.map((st) => (
+                      <div key={st.topic} className="flex items-center justify-between text-[11px]">
+                        <span className="font-medium" style={{ color: c.textSec }}>{st.topic}</span>
+                        <span className="text-green-400 font-bold">{st.accuracy}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+
+              <div className="h-4" />
+            </motion.div>
+          )}
+
+          {/* ═══ TOPIC SELECT VIEW ═══ */}
+          {view === "topic_select" && (
+            <motion.div key="topic-select" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-5 overflow-y-auto max-h-[calc(100vh-160px)] pr-1 custom-scrollbar">
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(245,158,11,0.15)" }}><Code2 size={20} className="text-amber-500" /></div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>All Technologies</p>
+                  <h3 className="text-sm font-extrabold" style={{ color: c.text }}>{filteredTechnologies.length} Technologies in {selectedDomain === "All" ? "All Domains" : selectedDomain}</h3>
+                </div>
+              </motion.div>
+
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1} className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+                {DOMAIN_CATEGORIES.map((cat) => {
+                  const Icon = cat.icon;
+                  return (
+                    <button key={cat.id} onClick={() => setSelectedDomain(cat.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-full border text-[10px] font-bold shrink-0 transition-all" style={{ background: selectedDomain === cat.id ? `${cat.color}20` : "transparent", borderColor: selectedDomain === cat.id ? `${cat.color}40` : c.border, color: selectedDomain === cat.id ? cat.color : c.textMuted }}>
+                      <Icon size={10} />{cat.label}
+                    </button>
+                  );
+                })}
+              </motion.div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {filteredTechnologies.map((t, i) => (
+                  <motion.div key={t.id} variants={scaleIn} initial="hidden" animate="visible" custom={i} whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => startSession(t.name, "", t.category)} className="p-5 border rounded-2xl cursor-pointer transition-all" style={{ background: c.cardBg, borderColor: c.border }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">{getTechIcon(t.iconName)}</div>
+                      <div className="relative w-9 h-9 flex items-center justify-center">
+                        <svg className="w-9 h-9 transform -rotate-90"><circle cx="18" cy="18" r="14" stroke={isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"} strokeWidth="3" fill="none" /><circle cx="18" cy="18" r="14" stroke="#F59E0B" strokeWidth="3" fill="none" strokeDasharray={88} strokeDashoffset={88 - (88 * t.progress) / 100} strokeLinecap="round" /></svg>
+                        <span className="absolute text-[9px] font-black text-amber-500">{t.progress}%</span>
+                      </div>
+                    </div>
+                    <p className="text-xs font-extrabold" style={{ color: c.text }}>{t.name}</p>
+                    <p className="text-[10px] mt-1 leading-relaxed line-clamp-2" style={{ color: c.textMuted }}>{t.description}</p>
+                    <div className="mt-3 pt-2 border-t flex items-center justify-between text-[10px] font-bold" style={{ borderColor: c.border }}>
+                      <span style={{ color: c.textMuted }}>{t.questionCount}Q · {t.difficulty}</span>
+                      <span className="flex items-center gap-1 text-amber-500">Start <ChevronRight size={10} /></span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ═══ ACTIVE SESSION ═══ */}
+          {view === "active_session" && currentQuestion && (
+            <motion.div key="active-session" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="flex gap-4 h-[calc(100vh-160px)]">
+              {/* Question Area */}
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <motion.div key={currentQuestion.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl p-6 border space-y-5" style={{ background: c.cardBg, borderColor: c.border }}>
+
+                  {/* Question Header */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b" style={{ borderColor: c.border }}>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-amber-500/10 border border-amber-500/20 text-amber-500">{currentQuestion.technology}</span>
+                      {currentQuestion.company && <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold border" style={{ background: c.surface, borderColor: c.border, color: c.textSec }}>{currentQuestion.company}</span>}
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${currentQuestion.difficulty === "Easy" ? "text-green-500 border-green-500/20 bg-green-500/10" : currentQuestion.difficulty === "Hard" ? "text-red-500 border-red-500/20 bg-red-500/10" : "text-amber-500 border-amber-500/20 bg-amber-500/10"}`}>{currentQuestion.difficulty}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: c.textMuted }}><Clock size={12} className="text-amber-500" />{currentQuestion.estimatedTime}</div>
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => toggleBookmark(progress.currentIdx)} className="p-1.5 rounded-lg border" style={{ borderColor: c.border }}>
+                        {currentAnswer?.bookmarked ? <BookmarkCheck size={14} className="text-amber-500" /> : <Bookmark size={14} style={{ color: c.textMuted }} />}
+                      </motion.button>
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => toggleFlag(progress.currentIdx)} className="p-1.5 rounded-lg border" style={{ borderColor: c.border }}>
+                        <Flag size={14} style={{ color: currentAnswer?.flagged ? "#ef4444" : c.textMuted }} />
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  {/* Question */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-bold leading-relaxed" style={{ color: c.text }}>{currentQuestion.question}</h3>
+                    {currentQuestion.codeSnippet && (
+                      <div className="rounded-xl overflow-hidden border border-slate-700 bg-slate-950 font-mono text-xs text-emerald-400 p-4 relative">
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 pb-2 mb-2 border-b border-slate-800 font-sans">
+                          <span className="uppercase tracking-wider font-bold text-amber-400">{currentQuestion.language || "code"}</span>
+                          <button onClick={() => handleCopyCode(currentQuestion.codeSnippet!)} className="flex items-center gap-1 hover:text-white transition-colors">
+                            {copiedCode ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}{copiedCode ? "Copied" : "Copy"}
+                          </button>
+                        </div>
+                        <pre className="overflow-x-auto whitespace-pre-wrap leading-relaxed"><code>{currentQuestion.codeSnippet}</code></pre>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Options */}
+                  <div className="grid grid-cols-1 gap-3">
+                    {currentQuestion.options.map((opt, oIdx) => {
+                      const isSelected = currentAnswer?.selectedIdx === oIdx;
+                      const isCorrectAnswer = oIdx === currentQuestion.correctIdx;
+                      const isSubmitted = currentAnswer !== null;
+                      let optStyle = { background: isDark ? "rgba(255,255,255,0.03)" : "#F1F5F9", borderColor: c.border, color: c.text };
+                      if (isSelected && !isSubmitted) optStyle = { background: "rgba(245,158,11,0.12)", borderColor: "#F59E0B", color: "#F59E0B" };
+                      if (isSubmitted && isCorrectAnswer) optStyle = { background: "rgba(16,185,129,0.12)", borderColor: "#10B981", color: "#10B981" };
+                      if (isSubmitted && isSelected && !isCorrectAnswer) optStyle = { background: "rgba(239,68,68,0.12)", borderColor: "#EF4444", color: "#EF4444" };
+                      return (
+                        <motion.div key={opt} whileHover={{ x: !isSubmitted ? 4 : 0 }} onClick={() => !isSubmitted && submitAnswer(oIdx)} style={optStyle} className="p-4 rounded-xl border text-xs cursor-pointer flex items-center justify-between transition-all font-medium">
+                          <div className="flex items-center gap-3">
+                            <span className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[11px] border" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", borderColor: c.border }}>{String.fromCharCode(65 + oIdx)}</span>
+                            <span>{opt}</span>
+                          </div>
+                          {isSubmitted && (<div>{isCorrectAnswer ? <CheckCircle2 size={16} className="text-emerald-500" /> : isSelected ? <XCircle size={16} className="text-red-500" /> : null}</div>)}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setShowHint(!showHint)} className="px-3 py-2 rounded-xl text-[10px] font-bold border flex items-center gap-1.5" style={{ background: c.surface, borderColor: c.border, color: c.textSec }}>
+                        <Lightbulb size={12} className="text-amber-500" />{showHint ? "Hide Hint" : "Hint"}
+                      </button>
+                      {currentAnswer !== null && (
+                        <button onClick={() => setShowExplanation(!showExplanation)} className="px-3 py-2 rounded-xl text-[10px] font-bold bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center gap-1.5">
+                          <Sparkles size={12} />{showExplanation ? "Hide" : "Explain"}
+                        </button>
+                      )}
+                    </div>
+                    {currentAnswer !== null && (
+                      <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={handleNextQuestion} className="px-5 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20">
+                        {progress.currentIdx < questions.length - 1 ? <><span>Next</span><ArrowRight size={14} /></> : <><span>Finish</span><Check size={14} /></>}
+                      </motion.button>
+                    )}
+                  </div>
+
+                  {/* Hint */}
+                  <AnimatePresence>
+                    {showHint && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 leading-relaxed font-medium">
+                        <span className="font-extrabold block text-amber-500 mb-1">Hint:</span>{currentQuestion.hint}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Explanation */}
+                  <AnimatePresence>
+                    {showExplanation && (
+                      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="p-5 rounded-xl border space-y-3 text-xs leading-relaxed" style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC", borderColor: c.border }}>
+                        <span className="font-extrabold text-amber-500 text-[10px] uppercase tracking-wider block">Detailed Explanation</span>
+                        <p className="whitespace-pre-line" style={{ color: c.textSec }}>{currentQuestion.explanation}</p>
+                        {currentQuestion.interviewTip && (
+                          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 font-medium">
+                            <span className="font-bold text-amber-500">Interview Tip: </span>{currentQuestion.interviewTip}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </div>
+
+              {/* Navigator Sidebar */}
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="hidden lg:flex flex-col w-56 shrink-0 border rounded-2xl p-3 space-y-3 overflow-y-auto custom-scrollbar" style={{ background: c.cardBg, borderColor: c.border }}>
+                <div className="space-y-2">
+                  <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>Questions</p>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {questions.map((_, idx) => {
+                      const status = getNavStatus(idx);
+                      const colors = navColors[status];
+                      return (
+                        <motion.button key={idx} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => navigateToQuestion(idx)} className="w-full aspect-square rounded-lg text-[9px] font-black flex items-center justify-center transition-all border" style={{ background: colors.bg, borderColor: colors.border, color: colors.text }}>
+                          {idx + 1}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="border-t pt-2 space-y-1.5" style={{ borderColor: c.border }}>
+                  {(["current", "correct", "incorrect", "skipped", "unanswered"] as const).map((status) => (
+                    <div key={status} className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded" style={{ background: navColors[status].bg, border: `1px solid ${navColors[status].border}` }} />
+                      <span className="text-[10px] font-bold capitalize" style={{ color: c.textMuted }}>{status}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {progress.bookmarkedCount > 0 && (
+                  <div className="border-t pt-2 space-y-1.5" style={{ borderColor: c.border }}>
+                    <div className="flex items-center gap-1.5"><BookmarkCheck size={11} className="text-amber-500" /><span className="text-[9px] font-bold" style={{ color: c.textMuted }}>Bookmarked ({progress.bookmarkedCount})</span></div>
+                    <div className="space-y-1">
+                      {progress.answers.filter(a => a.bookmarked).map((a) => (
+                        <motion.button key={a.questionIdx} whileHover={{ scale: 1.02 }} onClick={() => navigateToQuestion(a.questionIdx)} className="w-full text-left p-1.5 rounded-lg text-[9px] font-bold truncate" style={{ background: "rgba(245,158,11,0.08)", color: c.primary }}>Q{a.questionIdx + 1}</motion.button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {progress.flaggedCount > 0 && (
+                  <div className="border-t pt-2 space-y-1.5" style={{ borderColor: c.border }}>
+                    <div className="flex items-center gap-1.5"><Flag size={11} className="text-red-500" /><span className="text-[9px] font-bold" style={{ color: c.textMuted }}>Flagged ({progress.flaggedCount})</span></div>
+                    <div className="space-y-1">
+                      {progress.answers.filter(a => a.flagged).map((a) => (
+                        <motion.button key={a.questionIdx} whileHover={{ scale: 1.02 }} onClick={() => navigateToQuestion(a.questionIdx)} className="w-full text-left p-1.5 rounded-lg text-[9px] font-bold truncate" style={{ background: "rgba(239,68,68,0.08)", color: c.red }}>Q{a.questionIdx + 1}</motion.button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t pt-2" style={{ borderColor: c.border }}>
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleCompleteSession} className="w-full py-2 px-3 rounded-xl text-[10px] font-extrabold transition-colors" style={{ background: `${c.red}15`, color: c.red, border: `1px solid ${c.red}25` }}>
+                    Submit Test
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* ═══ SESSION REVIEW ═══ */}
+          {view === "session_review" && (
+            <motion.div key="session-review" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 overflow-y-auto max-h-[calc(100vh-160px)] pr-1 custom-scrollbar">
+              {(() => {
+                const totalQ = questions.length;
+                const answered = progress.answers.length;
+                const correct = progress.answers.filter(a => a.correct).length;
+                const incorrect = answered - correct;
+                const skipped = totalQ - answered;
+                const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+                const avgTimeMs = answered > 0 ? progress.answers.reduce((s, a) => s + a.timeTakenMs, 0) / answered : 0;
+
+                return (
+                  <>
+                    <motion.div variants={scaleIn} initial="hidden" animate="visible" custom={0} className="p-8 rounded-2xl border text-center relative overflow-hidden" style={{ background: `linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.04))`, borderColor: "rgba(245,158,11,0.25)" }}>
+                      <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: accuracy >= 70 ? "rgba(16,185,129,0.15)" : accuracy >= 40 ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)" }}>
+                        {accuracy >= 70 ? <Trophy size={36} className="text-green-500" /> : accuracy >= 40 ? <Target size={36} className="text-amber-500" /> : <RotateCcw size={36} className="text-red-500" />}
+                      </motion.div>
+                      <h2 className="text-xl font-black" style={{ color: c.text }}>Session Complete!</h2>
+                      <p className="text-xs mt-1" style={{ color: c.textSec }}>{sessionConfig.tech || sessionConfig.company || "Mixed"} Technical MCQs</p>
+                      <div className="flex items-center justify-center gap-6 mt-5">
+                        <div className="text-center"><p className="text-lg font-black text-amber-500">{accuracy}%</p><p className="text-[9px] font-bold" style={{ color: c.textMuted }}>Accuracy</p></div>
+                        <div className="text-center"><p className="text-lg font-black text-green-500">{correct}</p><p className="text-[9px] font-bold" style={{ color: c.textMuted }}>Correct</p></div>
+                        <div className="text-center"><p className="text-lg font-black text-red-500">{incorrect}</p><p className="text-[9px] font-bold" style={{ color: c.textMuted }}>Incorrect</p></div>
+                        <div className="text-center"><p className="text-lg font-black" style={{ color: c.textSec }}>{skipped}</p><p className="text-[9px] font-bold" style={{ color: c.textMuted }}>Skipped</p></div>
+                      </div>
+                      <div className="flex items-center justify-center gap-6 mt-4">
+                        <div className="text-center"><p className="text-sm font-black" style={{ color: c.text }}>{formatTime(progress.timeElapsed)}</p><p className="text-[9px] font-bold" style={{ color: c.textMuted }}>Total Time</p></div>
+                        <div className="text-center"><p className="text-sm font-black text-amber-500">{Math.round(avgTimeMs / 1000)}s</p><p className="text-[9px] font-bold" style={{ color: c.textMuted }}>Avg / Q</p></div>
+                      </div>
+                    </motion.div>
+
+                    {/* Question Reviews */}
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Question Review</h3>
+                      {questions.map((q, idx) => {
+                        const answer = progress.answers.find(a => a.questionIdx === idx);
+                        const isCorrect = answer?.correct ?? false;
+                        const wasAnswered = answer !== null;
+                        return (
+                          <motion.div key={q.id} variants={fadeUp} initial="hidden" animate="visible" custom={idx} className="p-4 border rounded-2xl" style={{ background: c.cardBg, borderColor: c.border }}>
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: !wasAnswered ? `${c.textMuted}15` : isCorrect ? `${c.green}15` : `${c.red}15` }}>
+                                {!wasAnswered ? <SkipForward size={14} style={{ color: c.textMuted }} /> : isCorrect ? <CheckCircle2 size={14} className="text-green-500" /> : <XCircle size={14} className="text-red-500" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-bold leading-relaxed" style={{ color: c.text }}>{q.question.slice(0, 120)}...</p>
+                                <div className="flex items-center gap-2 mt-1.5">
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(245,158,11,0.1)", color: c.primary }}>{q.technology}</span>
+                                  <span className="text-[9px] font-bold" style={{ color: c.textMuted }}>{q.difficulty}</span>
+                                  {answer && <span className="text-[9px] font-bold" style={{ color: isCorrect ? c.green : c.red }}>{isCorrect ? "Correct" : "Incorrect"} ({Math.round(answer.timeTakenMs / 1000)}s)</span>}
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center gap-3 pb-4">
+                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleGoHome} className="flex-1 py-3 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all flex items-center justify-center gap-2">
+                        <Home size={14} /> Back to Hub
+                      </motion.button>
+                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { handleGoHome(); setActiveTab("analytics"); }} className="flex-1 py-3 rounded-xl font-bold text-xs border transition-all flex items-center justify-center gap-2" style={{ borderColor: c.border, color: c.text }}>
+                        <BarChart2 size={14} /> View Analytics
+                      </motion.button>
+                    </div>
+                  </>
+                );
+              })()}
+            </motion.div>
+          )}
+
+          {/* ═══ ANALYTICS VIEW ═══ */}
+          {view === "home" && activeTab === "analytics" && (
+            <motion.div key="analytics-tab" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 overflow-y-auto max-h-[calc(100vh-160px)] pr-1 custom-scrollbar">
+              <motion.div variants={scaleIn} initial="hidden" animate="visible" custom={0} className="p-6 rounded-2xl border" style={{ background: c.cardBg, borderColor: c.border }}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(245,158,11,0.15)" }}><BarChart2 size={20} className="text-amber-500" /></div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>Performance Overview</p>
+                    <h3 className="text-sm font-extrabold" style={{ color: c.text }}>Technical MCQ Analytics</h3>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: "Solved", value: userProgress.questionsSolved, color: c.green },
+                    { label: "Accuracy", value: `${userProgress.accuracy}%`, color: c.primary },
+                    { label: "Avg Time", value: `${userProgress.avgTimeSeconds}s`, color: "#3b82f6" },
+                    { label: "Streak", value: `${userProgress.streakDays}d`, color: c.red },
+                  ].map((s) => (
+                    <div key={s.label} className="p-4 rounded-xl border text-center" style={{ background: c.surface, borderColor: c.border }}>
+                      <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>{s.label}</p>
+                      <p className="text-xl font-black mt-1" style={{ color: s.color }}>{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1} className="p-5 rounded-2xl border space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
+                <h3 className="text-xs font-black uppercase tracking-wider text-amber-500 flex items-center gap-2"><AlertCircle size={14} /> Weak Areas</h3>
+                <div className="space-y-2">
+                  {userProgress.weakTopics.map((wt) => (
+                    <div key={wt.topic} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "rgba(239,68,68,0.06)" }}>
+                      <span className="text-xs font-bold" style={{ color: c.text }}>{wt.topic}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                          <div className="h-full rounded-full" style={{ width: `${wt.accuracy}%`, background: c.red }} />
+                        </div>
+                        <span className="text-[10px] font-black text-red-400">{wt.accuracy}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="p-5 rounded-2xl border space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
+                <h3 className="text-xs font-black uppercase tracking-wider text-green-500 flex items-center gap-2"><CheckCircle2 size={14} /> Strong Areas</h3>
+                <div className="space-y-2">
+                  {userProgress.strongTopics.map((st) => (
+                    <div key={st.topic} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "rgba(16,185,129,0.06)" }}>
+                      <span className="text-xs font-bold" style={{ color: c.text }}>{st.topic}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                          <div className="h-full rounded-full" style={{ width: `${st.accuracy}%`, background: c.green }} />
+                        </div>
+                        <span className="text-[10px] font-black text-green-400">{st.accuracy}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="p-5 rounded-2xl border space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
+                <h3 className="text-xs font-black uppercase tracking-wider text-amber-500 flex items-center gap-2"><TrendingUp size={14} /> Weekly Progress</h3>
+                <div className="flex items-end gap-2 h-24">
+                  {userProgress.weeklyProgress.map((week, idx) => {
+                    const barHeight = (week.accuracy / 100) * 100;
+                    return (
+                      <motion.div key={week.day} initial={{ height: 0 }} animate={{ height: `${barHeight}%` }} transition={{ duration: 0.5, delay: idx * 0.05 }} className="flex-1 rounded-t-lg relative group" style={{ background: `linear-gradient(180deg, ${c.primary}, ${c.primaryDark})` }}>
+                        <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: c.primary }}>{week.accuracy}%</div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2">
+                  {userProgress.weeklyProgress.map((week) => (
+                    <div key={week.day} className="flex-1 text-center"><span className="text-[10px] font-bold" style={{ color: c.textMuted }}>{week.day}</span></div>
+                  ))}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 }
