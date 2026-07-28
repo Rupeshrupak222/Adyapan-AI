@@ -122,9 +122,6 @@ const EngineView = dynamic(() => import("@/components/interview-hub/engine/Engin
 const TechnicalInterviewView = dynamic(() => import("@/components/interview-hub/technical-engine/TechnicalInterviewView").then(m => m.default), {
   loading: () => <DashboardWidgetSkeleton title="Technical Interview Engine" />
 });
-const InternshipHubView = dynamic(() => import("@/components/internship-hub/InternshipHubView").then(m => m.InternshipHubView), {
-  loading: () => <DashboardWidgetSkeleton title="Internship Finder" />
-});
 const JobDiscoveryView = dynamic(() => import("@/components/job-hub/JobDiscoveryView").then(m => m.default), {
   loading: () => <DashboardWidgetSkeleton title="Job Discovery" />,
   ssr: false,
@@ -247,10 +244,6 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Interview Engine", viewId: "interview-engine", category: "Interview Hub" },
   { label: "Research Paper AI", viewId: "research-hub", category: "Research Hub" },
   { label: "Plagiarism Checker", viewId: "research-plagiarism", category: "Research Hub" },
-  { label: "Browse Internships", viewId: "internship-hub", category: "Internship Hub" },
-  { label: "AI Internship Match", viewId: "internship-hub", category: "Internship Hub" },
-  { label: "Internship Tracker", viewId: "internship-hub", category: "Internship Hub" },
-  { label: "Saved Internships", viewId: "internship-hub", category: "Internship Hub" },
   { label: "Job Discovery", viewId: "job-discovery", category: "Job Hub" },
   { label: "Discover Jobs", viewId: "job-discovery", category: "Job Hub" },
   { label: "Search All Jobs", viewId: "job-discovery", category: "Job Hub" },
@@ -330,15 +323,6 @@ export const sidebarItems: SidebarItem[] = [
     submenu: [
       { label: "Research Paper AI", href: "#" },
       { label: "Plagiarism Checker", href: "#" },
-    ],
-  },
-  {
-    id: "internship", label: "Internship Hub", icon: <Briefcase size={18} />,
-    submenu: [
-      { label: "Browse Internships", href: "#" },
-      { label: "AI Match", href: "#" },
-      { label: "Application Tracker", href: "#" },
-      { label: "Saved Internships", href: "#" },
     ],
   },
   {
@@ -543,10 +527,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "AI Technical Interview") onViewTool("interview-technical");
                       else if (sub.label === "Research Paper AI") onViewTool("research-paper-ai");
                       else if (sub.label === "Plagiarism Checker") onViewTool("research-plagiarism");
-                      else if (sub.label === "Browse Internships") onViewTool("internship-finder");
-                      else if (sub.label === "AI Match" && sub.href === "#") onViewTool("internship-recommendations");
-                      else if (sub.label === "Application Tracker") onViewTool("internship-tracker");
-                      else if (sub.label === "Saved Internships") onViewTool("internship-saved");
                        else if (sub.label === "Job Discovery") onViewTool("job-discovery");
                       else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
@@ -925,15 +905,6 @@ export function DashboardTopNav({
           style={{ ...navBtnBase, padding: "0.45rem 0.8rem" }}
         >
           <Briefcase size={13} style={{ color: "#10b981" }} /> Jobs
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.03, borderColor: "rgba(99,102,241,0.6)", boxShadow: "0 3px 12px rgba(99,102,241,0.18)", background: isDarkTheme ? "rgba(99,102,241,0.12)" : "rgba(99,102,241,0.08)" }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ duration: 0.12 }}
-          onClick={() => onViewTool("internship-hub")}
-          style={{ ...navBtnBase, padding: "0.45rem 0.8rem" }}
-        >
-          <GraduationCap size={13} style={{ color: "#6366f1" }} /> Internships
         </motion.button>
         <span style={{ width: 1, height: 20, background: isDarkTheme ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)", margin: "0 4px" }} />
         <motion.button
@@ -2445,8 +2416,6 @@ function UserDashboardContent() {
           <HubErrorBoundary><TechnicalInterviewView theme={theme} /></HubErrorBoundary>
         ) : activeView === "interview-hub" || activeView === "interview-hr" || activeView === "interview-mock" ? (
           <HubErrorBoundary><InterviewHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
-        ) : activeView === "internship-hub" || activeView === "internship-finder" || activeView === "internship-recommendations" || activeView === "internship-tracker" || activeView === "internship-saved" ? (
-          <HubErrorBoundary><InternshipHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "job-discovery" ? (
           <HubErrorBoundary><JobDiscoveryView /></HubErrorBoundary>
         ) : activeView === "aptitude-engine" || activeView === "aptitude-engine-analytics" ? (

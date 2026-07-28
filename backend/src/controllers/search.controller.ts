@@ -43,7 +43,6 @@ export async function globalSearch(req: Request, res: Response) {
       coverLetters,
       linkedinReports,
       jobListings,
-      internships,
       jobs,
       flashcards,
       codingQuestions,
@@ -157,15 +156,6 @@ export async function globalSearch(req: Request, res: Response) {
         })
       ),
       safeQuery(() =>
-        userPrisma.internship.findMany({
-          where: {
-            OR: [{ title: opts }, { company: opts }, { category: opts }],
-          },
-          select: { id: true, title: true, company: true, category: true },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
         userPrisma.job.findMany({
           where: {
             OR: [{ role: opts }, { company: opts }, { location: opts }],
@@ -263,10 +253,6 @@ export async function globalSearch(req: Request, res: Response) {
     addItems(jobListings, (j) => ({
       id: j.id, label: `${j.title} @ ${j.company}`, category: "Job Listings", viewId: "job-hub",
       subtitle: j.location,
-    }));
-    addItems(internships, (i) => ({
-      id: i.id, label: `${i.title} @ ${i.company}`, category: "Internships", viewId: "internship-hub",
-      subtitle: i.category,
     }));
     addItems(jobs, (j) => ({
       id: j.id, label: `${j.role} @ ${j.company}`, category: "Jobs", viewId: "job-hub",
