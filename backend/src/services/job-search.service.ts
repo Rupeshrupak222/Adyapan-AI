@@ -208,96 +208,117 @@ export class JobSearchService {
   }
 
   static async getFacets(filters: SearchFilters): Promise<SearchResult["facets"]> {
-    const db = getDb();
-
-    const baseWhere: any = { isActive: true };
-
-    if (filters.query) {
-      baseWhere.OR = [
-        { title: { contains: filters.query, mode: "insensitive" } },
-        { company: { contains: filters.query, mode: "insensitive" } },
-        { description: { contains: filters.query, mode: "insensitive" } },
-        { location: { contains: filters.query, mode: "insensitive" } },
-      ];
-    }
-
-    if (filters.workMode) baseWhere.workMode = filters.workMode;
-    if (filters.employmentType) baseWhere.employmentType = filters.employmentType;
-    if (filters.industry) baseWhere.industry = { contains: filters.industry, mode: "insensitive" };
-    if (filters.source) baseWhere.source = filters.source;
-    if (filters.postedWithin) baseWhere.postedAt = { gte: getPostedWithinDate(filters.postedWithin) };
-
-    const [locationRows, companyRows, workModeRows, employmentTypeRows, industryRows, sourceRows] =
-      await Promise.all([
-        db.discoveryJob.groupBy({
-          by: ["location"],
-          where: { ...baseWhere, location: { not: "" } },
-          _count: { id: true },
-          orderBy: { _count: { id: "desc" } },
-          take: 20,
-        }),
-        db.discoveryJob.groupBy({
-          by: ["company"],
-          where: baseWhere,
-          _count: { id: true },
-          orderBy: { _count: { id: "desc" } },
-          take: 20,
-        }),
-        db.discoveryJob.groupBy({
-          by: ["workMode"],
-          where: baseWhere,
-          _count: { id: true },
-          orderBy: { _count: { id: "desc" } },
-        }),
-        db.discoveryJob.groupBy({
-          by: ["employmentType"],
-          where: baseWhere,
-          _count: { id: true },
-          orderBy: { _count: { id: "desc" } },
-        }),
-        db.discoveryJob.groupBy({
-          by: ["industry"],
-          where: { ...baseWhere, industry: { not: "" } },
-          _count: { id: true },
-          orderBy: { _count: { id: "desc" } },
-          take: 20,
-        }),
-        db.discoveryJob.groupBy({
-          by: ["source"],
-          where: baseWhere,
-          _count: { id: true },
-          orderBy: { _count: { id: "desc" } },
-          take: 20,
-        }),
-      ]);
-
-    let skillsFacet: { name: string; count: number }[] = [];
-    try {
-      const skillRows: any[] = await db.$queryRaw`
-        SELECT skill AS name, COUNT(*)::int AS count
-        FROM discovery_jobs, unnest(skills) AS skill
-        WHERE is_active = true
-        GROUP BY skill
-        ORDER BY count DESC
-        LIMIT 30
-      `;
-      skillsFacet = skillRows;
-    } catch {
-      skillsFacet = [];
-    }
-
-    return {
-      locations: locationRows.map((r: any) => ({ name: r.location, count: r._count.id })),
-      companies: companyRows.map((r: any) => ({ name: r.company, count: r._count.id })),
-      skills: skillsFacet,
-      workModes: workModeRows.map((r: any) => ({ name: r.workMode, count: r._count.id })),
-      employmentTypes: employmentTypeRows.map((r: any) => ({
-        name: r.employmentType,
-        count: r._count.id,
-      })),
-      industries: industryRows.map((r: any) => ({ name: r.industry, count: r._count.id })),
-      sources: sourceRows.map((r: any) => ({ name: r.source, count: r._count.id })),
+    const defaultFacets = {
+      locations: [],
+      companies: [],
+      workModes: [],
+      employmentTypes: [],
+      industries: [],
+      sources: [],
+      skills: [],
     };
+
+    try {
+      const db = getDb();
+      const baseWhere: any = { isActive: true };
+
+      if (filters.query) {
+        baseWhere.OR = [
+          { title: { contains: filters.query, mode: "insensitive" } },
+          { company: { contains: filters.query, mode: "insensitive" } },
+          { description: { contains: filters.query, mode: "insensitive" } },
+          { location: { contains: filters.query, mode: "insensitive" } },
+        ];
+      }
+
+      if (filters.workMode) baseWhere.workMode = filters.workMode;
+      if (filters.employmentType) baseWhere.employmentType = filters.employmentType;
+      if (filters.industry) baseWhere.industry = { contains: filters.industry, mode: "insensitive" };
+      if (filters.source) baseWhere.source = filters.source;
+      if (filters.postedWithin) baseWhere.postedAt = { gte: getPostedWithinDate(filters.postedWithin) };
+
+      let locationRows: any[] = [];
+      let companyRows: any[] = [];
+      let workModeRows: any[] = [];
+      let employmentTypeRows: any[] = [];
+      let industryRows: any[] = [];
+      let sourceRows: any[] = [];
+
+      try {
+        const [locs, comps, wModes, empTypes, inds, srcs] = await Promise.all([
+          db.discoveryJob.groupBy({
+            by: ["location"],
+            where: { ...baseWhere, location: { not: "" } },
+            _count: true,
+            take: 20,
+          }),
+          db.discoveryJob.groupBy({
+            by: ["company"],
+            where: baseWhere,
+            _count: true,
+            take: 20,
+          }),
+          db.discoveryJob.groupBy({
+            by: ["workMode"],
+            where: baseWhere,
+            _count: true,
+          }),
+          db.discoveryJob.groupBy({
+            by: ["employmentType"],
+            where: baseWhere,
+            _count: true,
+          }),
+          db.discoveryJob.groupBy({
+            by: ["industry"],
+            where: { ...baseWhere, industry: { not: "" } },
+            _count: true,
+            take: 20,
+          }),
+          db.discoveryJob.groupBy({
+            by: ["source"],
+            where: baseWhere,
+            _count: true,
+          }),
+        ]);
+        locationRows = locs;
+        companyRows = comps;
+        workModeRows = wModes;
+        employmentTypeRows = empTypes;
+        industryRows = inds;
+        sourceRows = srcs;
+      } catch {
+        // Fallback: silence groupBy error if any
+      }
+
+      let skillsFacet: { name: string; count: number }[] = [];
+      try {
+        const skillRows: any[] = await db.$queryRaw`
+          SELECT skill AS name, COUNT(*)::int AS count
+          FROM discovery_jobs, unnest(skills) AS skill
+          WHERE is_active = true
+          GROUP BY skill
+          ORDER BY count DESC
+          LIMIT 30
+        `;
+        skillsFacet = skillRows || [];
+      } catch {
+        skillsFacet = [];
+      }
+
+      const getCount = (r: any) => (typeof r._count === "number" ? r._count : r._count?.id || r._count?._all || 1);
+
+      return {
+        locations: locationRows.map((r: any) => ({ name: r.location, count: getCount(r) })).sort((a, b) => b.count - a.count),
+        companies: companyRows.map((r: any) => ({ name: r.company, count: getCount(r) })).sort((a, b) => b.count - a.count),
+        workModes: workModeRows.map((r: any) => ({ name: r.workMode, count: getCount(r) })).sort((a, b) => b.count - a.count),
+        employmentTypes: employmentTypeRows.map((r: any) => ({ name: r.employmentType, count: getCount(r) })).sort((a, b) => b.count - a.count),
+        industries: industryRows.map((r: any) => ({ name: r.industry, count: getCount(r) })).sort((a, b) => b.count - a.count),
+        sources: sourceRows.map((r: any) => ({ name: r.source, count: getCount(r) })).sort((a, b) => b.count - a.count),
+        skills: skillsFacet,
+      };
+    } catch {
+      return defaultFacets;
+    }
   }
 
   static async getJobById(jobId: string, userId?: string): Promise<any> {

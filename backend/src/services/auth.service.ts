@@ -187,14 +187,18 @@ export async function logout(token: string) {
 }
 
 export async function isTokenBlacklisted(token: string): Promise<boolean> {
-  const blacklisted = await prisma.blacklistedToken.findFirst({
-    where: {
-      token,
-      expiresAt: { gt: new Date() },
-    },
-  });
+  try {
+    const blacklisted = await prisma.blacklistedToken.findFirst({
+      where: {
+        token,
+        expiresAt: { gt: new Date() },
+      },
+    });
 
-  return !!blacklisted;
+    return !!blacklisted;
+  } catch {
+    return false;
+  }
 }
 
 export async function rateLimitAuthRequest(ip: string) {

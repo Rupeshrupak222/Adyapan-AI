@@ -134,13 +134,22 @@ const SORT_OPTIONS = [
 ];
 
 const SOURCE_COLORS: Record<string, { bg: string; text: string }> = {
-  LinkedIn: { bg: "rgba(10,102,194,0.12)", text: "#0a66c2" },
-  Naukri: { bg: "rgba(41,130,255,0.12)", text: "#2980ff" },
-  Indeed: { bg: "rgba(45,80,167,0.12)", text: "#2d50a7" },
-  Internshala: { bg: "rgba(42,112,232,0.12)", text: "#2a70e8" },
-  RemoteOK: { bg: "rgba(16,185,129,0.12)", text: "#10b981" },
-  Wellfound: { bg: "rgba(40,40,40,0.12)", text: "#94a3b8" },
-  Adzuna: { bg: "rgba(99,102,241,0.12)", text: "#6366f1" },
+  linkedin: { bg: "rgba(10,102,194,0.16)", text: "#38bdf8" },
+  LinkedIn: { bg: "rgba(10,102,194,0.16)", text: "#38bdf8" },
+  naukri: { bg: "rgba(41,130,255,0.16)", text: "#60a5fa" },
+  Naukri: { bg: "rgba(41,130,255,0.16)", text: "#60a5fa" },
+  indeed: { bg: "rgba(45,80,167,0.16)", text: "#818cf8" },
+  Indeed: { bg: "rgba(45,80,167,0.16)", text: "#818cf8" },
+  internshala: { bg: "rgba(42,112,232,0.16)", text: "#38bdf8" },
+  Internshala: { bg: "rgba(42,112,232,0.16)", text: "#38bdf8" },
+  remoteok: { bg: "rgba(16,185,129,0.16)", text: "#34d399" },
+  RemoteOK: { bg: "rgba(16,185,129,0.16)", text: "#34d399" },
+  wellfound: { bg: "rgba(168,85,247,0.16)", text: "#c084fc" },
+  Wellfound: { bg: "rgba(168,85,247,0.16)", text: "#c084fc" },
+  foundit: { bg: "rgba(236,72,153,0.16)", text: "#f472b6" },
+  Foundit: { bg: "rgba(236,72,153,0.16)", text: "#f472b6" },
+  adzuna: { bg: "rgba(99,102,241,0.16)", text: "#818cf8" },
+  Adzuna: { bg: "rgba(99,102,241,0.16)", text: "#818cf8" },
 };
 
 const MODE_COLORS: Record<string, { bg: string; text: string }> = {
