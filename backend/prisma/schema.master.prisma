@@ -51,6 +51,7 @@ model Profile {
   interestedDomains String[] @default([]) @map("interested_domains")
   location          String?
   portfolio         String?
+  photoUrl          String?  @map("photo_url")
   targetRole        String?  @map("target_role")
   username          String?
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
