@@ -708,20 +708,21 @@ export function DashboardTopNav({
   }, []);
 
   const isDarkTheme = theme === "dark";
-  const navBg = isDarkTheme ? "#060b0e" : "#ffffff";
-  const navBtnBg = isDarkTheme ? "#0d151c" : "rgba(0,0,0,0.04)";
-  const navBtnColor = isDarkTheme ? "#fff" : "#0f172a";
-  const navInputBg = isDarkTheme ? "#0d151c" : "rgba(0,0,0,0.05)";
-  const navInputColor = isDarkTheme ? "#fff" : "#0f172a";
-  const navBorder = isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
-  const dropdownBg = isDarkTheme ? "#0d151c" : "#ffffff";
+  const navBg = isDarkTheme ? "rgba(6,11,14,0.92)" : "rgba(255,255,255,0.92)";
+  const navBtnBg = isDarkTheme ? "rgba(255,255,255,0.05)" : "rgba(15,23,42,0.04)";
+  const navBtnColor = isDarkTheme ? "#f1f5f9" : "#1e293b";
+  const navInputBg = isDarkTheme ? "rgba(255,255,255,0.05)" : "rgba(15,23,42,0.035)";
+  const navInputColor = isDarkTheme ? "#f1f5f9" : "#0f172a";
+  const navBorder = isDarkTheme ? "rgba(255,255,255,0.1)" : "rgba(203,213,225,0.8)";
+  const dropdownBg = isDarkTheme ? "#0c131a" : "#ffffff";
 
   const navBtnBase: React.CSSProperties = {
     display: "inline-flex", alignItems: "center", gap: 6,
-    padding: "0.5rem 0.9rem", borderRadius: 8, fontWeight: 600,
+    padding: "0.45rem 0.85rem", borderRadius: 10, fontWeight: 600,
     fontSize: "0.8rem", cursor: "pointer", border: `1px solid ${navBorder}`,
-    background: navBtnBg, color: navBtnColor,
-    transition: "border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, color 0.12s ease",
+    background: navBtnBg, color: navBtnColor, backdropFilter: "blur(12px)",
+    boxShadow: isDarkTheme ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
+    transition: "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
   };
   const genItems = ["Notes", "Assignment", "PPT", "Quiz", "Research Paper", "Resume"];
   const evalItems = ["ATS Score", "Skill Assessment"];
@@ -731,12 +732,13 @@ export function DashboardTopNav({
       background: navBg, borderBottom: `1px solid ${navBorder}`,
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "0 1rem", zIndex: 105, boxSizing: "border-box",
+      backdropFilter: "blur(16px)",
       transition: "background 0.3s ease",
     }}>
       {/* Left */}
       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
         {/* Mobile menu trigger */}
-        <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.97}} transition={{duration:0.12}}
+        <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}} transition={{duration:0.12}}
           onClick={onMenuToggle}
           className="mobile-menu-btn"
           style={{
@@ -756,7 +758,7 @@ export function DashboardTopNav({
           animate={{width: searchFocused ? 300 : 230}}
           transition={{duration: 0.2, ease: "easeOut"}}
         >
-          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", display: "flex", color: searchFocused ? "var(--primary)" : "var(--text-muted)", transition: "color 0.15s ease", zIndex: 1 }}>
+          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", display: "flex", color: searchFocused ? "#f59e0b" : "var(--text-muted)", transition: "color 0.15s ease", zIndex: 1 }}>
             <Search size={14} />
           </span>
           <motion.input
@@ -768,23 +770,24 @@ export function DashboardTopNav({
             onBlur={() => setSearchFocused(false)}
             initial={false}
             animate={{
-              borderColor: searchFocused ? "rgba(245,158,11,0.5)" : navBorder,
-              boxShadow: searchFocused ? "0 0 0 1px rgba(245,158,11,0.08)" : "0 0 0 0px transparent",
+              borderColor: searchFocused ? "rgba(245,158,11,0.6)" : navBorder,
+              boxShadow: searchFocused ? "0 0 0 3px rgba(245,158,11,0.12)" : isDarkTheme ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
             }}
-            transition={{duration: 0.12}}
+            transition={{duration: 0.15}}
             style={{
-              width: "100%", padding: "0.5rem 2.5rem 0.5rem 2rem",
+              width: "100%", padding: "0.45rem 2.5rem 0.45rem 2rem",
               background: navInputBg, border: `1px solid ${navBorder}`,
-              borderRadius: 8, color: navInputColor, fontSize: "0.83rem", outline: "none",
-              boxSizing: "border-box",
+              borderRadius: 10, color: navInputColor, fontSize: "0.82rem", outline: "none",
+              boxSizing: "border-box", backdropFilter: "blur(8px)",
             }}
           />
           {searchOpen && searchResults.length > 0 && (
             <div style={{
               position: "absolute", top: "100%", left: 0, marginTop: 6, width: "100%", minWidth: 260,
-              background: dropdownBg, border: `1px solid ${navBorder}`,
-              borderRadius: 10, padding: "0.4rem", zIndex: 200,
-              boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+              background: dropdownBg, border: `1px solid ${isDarkTheme ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`,
+              borderRadius: 12, padding: "0.4rem", zIndex: 200,
+              boxShadow: isDarkTheme ? "0 12px 32px rgba(0,0,0,0.5)" : "0 12px 32px rgba(15,23,42,0.12)",
+              backdropFilter: "blur(16px)",
             }}>
               {(() => {
                 const grouped = searchResults.reduce<Record<string, SearchEntry[]>>((acc, entry) => {
@@ -795,12 +798,12 @@ export function DashboardTopNav({
                   <div key={cat}>
                     <div style={{ padding: "0.3rem 0.6rem", fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{cat}</div>
                     {entries.map((entry) => (
-                      <motion.button key={entry.label} whileHover={{scale:1.01}} whileTap={{scale:0.98}} transition={{duration:0.08}}
+                      <motion.button key={entry.label} whileHover={{scale:1.01, x: 2}} whileTap={{scale:0.98}} transition={{duration:0.08}}
                         onMouseDown={(e) => { e.preventDefault(); onViewTool(entry.viewId); setSearchQuery(""); setSearchOpen(false); }}
                         style={{
                           display: "block", width: "100%", textAlign: "left",
                           padding: "0.45rem 0.6rem", fontSize: "0.8rem", color: "var(--text-secondary)",
-                          background: "transparent", border: "none", cursor: "pointer", borderRadius: 6,
+                          background: "transparent", border: "none", cursor: "pointer", borderRadius: 8,
                         }}
                       >
                         {entry.label}
@@ -815,7 +818,7 @@ export function DashboardTopNav({
             <div style={{
               position: "absolute", top: "100%", left: 0, marginTop: 6, width: "100%",
               background: dropdownBg, border: `1px solid ${navBorder}`,
-              borderRadius: 10, padding: "1rem", zIndex: 200,
+              borderRadius: 12, padding: "1rem", zIndex: 200,
               boxShadow: "0 8px 32px rgba(0,0,0,0.35)", textAlign: "center",
               fontSize: "0.8rem", color: "var(--text-muted)",
             }}>
@@ -826,7 +829,7 @@ export function DashboardTopNav({
             <div style={{
               position: "absolute", top: "100%", left: 0, marginTop: 6, width: "100%",
               background: dropdownBg, border: `1px solid ${navBorder}`,
-              borderRadius: 10, padding: "1rem", zIndex: 200,
+              borderRadius: 12, padding: "1rem", zIndex: 200,
               boxShadow: "0 8px 32px rgba(0,0,0,0.35)", textAlign: "center",
               fontSize: "0.8rem", color: "var(--text-muted)",
             }}>
@@ -843,18 +846,24 @@ export function DashboardTopNav({
           onMouseEnter={() => setGenerateOpen(true)}
           onMouseLeave={() => setGenerateOpen(false)}
         >
-          <motion.button whileHover={{scale:1.02, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 0 12px rgba(245,158,11,0.15)"}} whileTap={{scale:0.97}} transition={{duration:0.12}} style={navBtnBase}>
-            <Zap size={13} /> Generate <ChevronDown size={12} />
+          <motion.button
+            whileHover={{ scale: 1.03, borderColor: "rgba(245,158,11,0.6)", boxShadow: "0 3px 12px rgba(245,158,11,0.18)", background: isDarkTheme ? "rgba(245,158,11,0.12)" : "rgba(245,158,11,0.08)" }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.12 }}
+            style={navBtnBase}
+          >
+            <Zap size={13} style={{ color: "#f59e0b" }} /> Generate <ChevronDown size={12} style={{ opacity: 0.7 }} />
           </motion.button>
           {generateOpen && (
             <div style={{
-              position: "absolute", top: "100%", left: 0, marginTop: 4, minWidth: 170,
-              background: dropdownBg, border: `1px solid ${navBorder}`,
-              borderRadius: 10, padding: "0.4rem", zIndex: 200,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+              position: "absolute", top: "100%", left: 0, marginTop: 6, minWidth: 180,
+              background: dropdownBg, border: `1px solid ${isDarkTheme ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`,
+              borderRadius: 12, padding: "0.4rem", zIndex: 200,
+              boxShadow: isDarkTheme ? "0 12px 32px rgba(0,0,0,0.5)" : "0 12px 32px rgba(15,23,42,0.12)",
+              backdropFilter: "blur(16px)",
             }}>
               {genItems.map((item) => (
-                <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.97}} transition={{duration:0.12}} key={item} onClick={() => {
+                <motion.button whileHover={{ scale: 1.02, x: 2, background: isDarkTheme ? "rgba(245,158,11,0.1)" : "rgba(245,158,11,0.08)" }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }} key={item} onClick={() => {
                   if (item === "Resume") onViewTool("resume-builder");
                   else if (item === "Notes") onViewTool("notes-generator");
                   else if (item === "Assignment") onViewTool("assignment-generator");
@@ -862,10 +871,16 @@ export function DashboardTopNav({
                   else if (item === "Quiz") onViewTool("quiz-generator");
                   else if (item === "Research Paper") onViewTool("research-paper-ai");
                 }} style={{
-                  display: "block", width: "100%", textAlign: "left",
-                  padding: "0.45rem 0.7rem", fontSize: "0.8rem", color: "var(--text-secondary)",
-                  background: "transparent", border: "none", cursor: "pointer", borderRadius: 6,
+                  display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left",
+                  padding: "0.5rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)",
+                  background: "transparent", border: "none", cursor: "pointer", borderRadius: 8,
                 }}>
+                  {item === "Notes" && <FileText size={13} style={{ color: "#f59e0b" }} />}
+                  {item === "Assignment" && <ClipboardList size={13} style={{ color: "#3b82f6" }} />}
+                  {item === "PPT" && <BookOpen size={13} style={{ color: "#ec4899" }} />}
+                  {item === "Quiz" && <Star size={13} style={{ color: "#8b5cf6" }} />}
+                  {item === "Research Paper" && <BookMarked size={13} style={{ color: "#06b6d4" }} />}
+                  {item === "Resume" && <FileText size={13} style={{ color: "#10b981" }} />}
                   {item}
                 </motion.button>
               ))}
@@ -873,8 +888,14 @@ export function DashboardTopNav({
           )}
         </div>
 
-        <motion.button whileHover={{scale:1.02, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 0 12px rgba(245,158,11,0.15)"}} whileTap={{scale:0.97}} transition={{duration:0.12}} onClick={() => onViewTool("interview-hub")} style={navBtnBase}>
-          <Mic size={13} /> AI Interview
+        <motion.button
+          whileHover={{ scale: 1.03, borderColor: "rgba(6,182,212,0.6)", boxShadow: "0 3px 12px rgba(6,182,212,0.18)", background: isDarkTheme ? "rgba(6,182,212,0.12)" : "rgba(6,182,212,0.08)" }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ duration: 0.12 }}
+          onClick={() => onViewTool("interview-hub")}
+          style={navBtnBase}
+        >
+          <Mic size={13} style={{ color: "#06b6d4" }} /> AI Interview
         </motion.button>
 
         {/* Evaluate dropdown */}
@@ -882,25 +903,33 @@ export function DashboardTopNav({
           onMouseEnter={() => setEvaluateOpen(true)}
           onMouseLeave={() => setEvaluateOpen(false)}
         >
-          <motion.button whileHover={{scale:1.02, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 0 12px rgba(245,158,11,0.15)"}} whileTap={{scale:0.97}} transition={{duration:0.12}} style={navBtnBase}>
-            <Star size={13} /> Evaluate <ChevronDown size={12} />
+          <motion.button
+            whileHover={{ scale: 1.03, borderColor: "rgba(234,179,8,0.6)", boxShadow: "0 3px 12px rgba(234,179,8,0.18)", background: isDarkTheme ? "rgba(234,179,8,0.12)" : "rgba(234,179,8,0.08)" }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.12 }}
+            style={navBtnBase}
+          >
+            <Star size={13} style={{ color: "#eab308" }} /> Evaluate <ChevronDown size={12} style={{ opacity: 0.7 }} />
           </motion.button>
           {evaluateOpen && (
             <div style={{
-              position: "absolute", top: "100%", left: 0, marginTop: 4, minWidth: 180,
-              background: dropdownBg, border: `1px solid ${navBorder}`,
-              borderRadius: 10, padding: "0.4rem", zIndex: 200,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+              position: "absolute", top: "100%", left: 0, marginTop: 6, minWidth: 185,
+              background: dropdownBg, border: `1px solid ${isDarkTheme ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`,
+              borderRadius: 12, padding: "0.4rem", zIndex: 200,
+              boxShadow: isDarkTheme ? "0 12px 32px rgba(0,0,0,0.5)" : "0 12px 32px rgba(15,23,42,0.12)",
+              backdropFilter: "blur(16px)",
             }}>
               {evalItems.map((item) => (
-                <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.97}} transition={{duration:0.12}} key={item} onClick={() => {
+                <motion.button whileHover={{ scale: 1.02, x: 2, background: isDarkTheme ? "rgba(234,179,8,0.1)" : "rgba(234,179,8,0.08)" }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }} key={item} onClick={() => {
                   if (item === "ATS Score") onViewTool("ats-checker");
                   else if (item === "Skill Assessment") onViewTool("analytics-skills");
                 }} style={{
-                  display: "block", width: "100%", textAlign: "left",
-                  padding: "0.45rem 0.7rem", fontSize: "0.8rem", color: "var(--text-secondary)",
-                  background: "transparent", border: "none", cursor: "pointer", borderRadius: 6,
+                  display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left",
+                  padding: "0.5rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)",
+                  background: "transparent", border: "none", cursor: "pointer", borderRadius: 8,
                 }}>
+                  {item === "ATS Score" && <TrendingUp size={13} style={{ color: "#10b981" }} />}
+                  {item === "Skill Assessment" && <Award size={13} style={{ color: "#f59e0b" }} />}
                   {item}
                 </motion.button>
               ))}
@@ -908,70 +937,105 @@ export function DashboardTopNav({
           )}
         </div>
 
-        <span style={{ width: 1, height: 20, background: "var(--border-color)", margin: "0 4px" }} />
-        <motion.button whileHover={{scale:1.02, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 0 12px rgba(245,158,11,0.15)"}} whileTap={{scale:0.97}} transition={{duration:0.12}} onClick={() => onViewTool("job-discovery")} style={{ ...navBtnBase, padding: "0.5rem 0.75rem" }}>Jobs</motion.button>
-        <motion.button whileHover={{scale:1.02, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 0 12px rgba(245,158,11,0.15)"}} whileTap={{scale:0.97}} transition={{duration:0.12}} onClick={() => onViewTool("internship-hub")} style={{ ...navBtnBase, padding: "0.5rem 0.75rem" }}>Internships</motion.button>
-        <span style={{ width: 1, height: 20, background: "var(--border-color)", margin: "0 4px" }} />
-        <motion.button whileHover={{scale:1.02, borderColor: "#a78bfa", boxShadow: "0 0 16px rgba(139,92,246,0.3)"}} whileTap={{scale:0.97}} transition={{duration:0.12}}
+        <span style={{ width: 1, height: 20, background: isDarkTheme ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)", margin: "0 4px" }} />
+        <motion.button
+          whileHover={{ scale: 1.03, borderColor: "rgba(16,185,129,0.6)", boxShadow: "0 3px 12px rgba(16,185,129,0.18)", background: isDarkTheme ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.08)" }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ duration: 0.12 }}
+          onClick={() => onViewTool("job-discovery")}
+          style={{ ...navBtnBase, padding: "0.45rem 0.8rem" }}
+        >
+          <Briefcase size={13} style={{ color: "#10b981" }} /> Jobs
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.03, borderColor: "rgba(99,102,241,0.6)", boxShadow: "0 3px 12px rgba(99,102,241,0.18)", background: isDarkTheme ? "rgba(99,102,241,0.12)" : "rgba(99,102,241,0.08)" }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ duration: 0.12 }}
+          onClick={() => onViewTool("internship-hub")}
+          style={{ ...navBtnBase, padding: "0.45rem 0.8rem" }}
+        >
+          <GraduationCap size={13} style={{ color: "#6366f1" }} /> Internships
+        </motion.button>
+        <span style={{ width: 1, height: 20, background: isDarkTheme ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)", margin: "0 4px" }} />
+        <motion.button
+          whileHover={{ scale: 1.04, borderColor: "rgba(168,85,247,0.7)", boxShadow: isDarkTheme ? "0 4px 20px rgba(168,85,247,0.35)" : "0 4px 16px rgba(168,85,247,0.25)" }}
+          whileTap={{ scale: 0.96 }}
+          transition={{ duration: 0.12 }}
           onClick={onAdyChat}
           style={{
             ...navBtnBase,
-            padding: "0.5rem 1rem",
-            background: "linear-gradient(135deg, rgba(139,92,246,0.25), rgba(245,158,11,0.2))",
-            border: "1px solid rgba(139,92,246,0.4)",
-            color: "#c4b5fd",
+            padding: "0.45rem 0.95rem",
+            background: isDarkTheme
+              ? "linear-gradient(135deg, rgba(147,51,234,0.28), rgba(236,72,153,0.2))"
+              : "linear-gradient(135deg, rgba(147,51,234,0.14), rgba(236,72,153,0.12))",
+            border: `1px solid ${isDarkTheme ? "rgba(168,85,247,0.5)" : "rgba(168,85,247,0.4)"}`,
+            color: isDarkTheme ? "#f3e8ff" : "#581c87",
             fontWeight: 700,
           }}
         >
-          <MessageCircle size={13} /> Ady Chat
+          <MessageCircle size={13} style={{ color: isDarkTheme ? "#c084fc" : "#7e22ce" }} /> Ady Chat
         </motion.button>
       </div>
 
       {/* Right */}
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
         <motion.button
-          whileHover={{scale:1.04, borderColor: "#f59e0b", boxShadow: "0 0 20px rgba(245,158,11,0.4)"}}
-          whileTap={{scale:0.95}}
-          animate={{borderColor: ["rgba(245,158,11,0.3)", "rgba(245,158,11,0.6)", "rgba(245,158,11,0.3)"]}}
-          transition={{duration:0.12, borderColor: {duration: 2, repeat: Infinity, ease: "easeInOut"}}}
-          className="desktop-premium" onClick={onPremium} style={{ ...navBtnBase, color: "#f59e0b", borderColor: "rgba(245,158,11,0.3)" }}>
-          <Crown size={13} /> Premium
+          whileHover={{ scale: 1.04, borderColor: "rgba(245,158,11,0.8)", boxShadow: isDarkTheme ? "0 4px 20px rgba(245,158,11,0.4)" : "0 4px 16px rgba(245,158,11,0.28)" }}
+          whileTap={{ scale: 0.95 }}
+          animate={{ borderColor: ["rgba(245,158,11,0.4)", "rgba(245,158,11,0.8)", "rgba(245,158,11,0.4)"] }}
+          transition={{ duration: 0.12, borderColor: { duration: 2, repeat: Infinity, ease: "easeInOut" } }}
+          className="desktop-premium" onClick={onPremium}
+          style={{
+            ...navBtnBase,
+            padding: "0.45rem 0.95rem",
+            background: isDarkTheme
+              ? "linear-gradient(135deg, rgba(245,158,11,0.25), rgba(234,88,12,0.18))"
+              : "linear-gradient(135deg, #fffbeb, #fef3c7)",
+            border: `1px solid ${isDarkTheme ? "rgba(245,158,11,0.5)" : "rgba(245,158,11,0.5)"}`,
+            color: isDarkTheme ? "#fef08a" : "#92400e",
+            fontWeight: 700,
+            boxShadow: isDarkTheme ? "0 2px 12px rgba(245,158,11,0.2)" : "0 2px 10px rgba(245,158,11,0.15)",
+          }}
+        >
+          <Crown size={13} style={{ color: isDarkTheme ? "#f59e0b" : "#d97706" }} /> Premium
         </motion.button>
 
         {/* Theme toggle */}
         <motion.button
-          whileHover={{scale:1.06, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 0 12px rgba(245,158,11,0.15)"}}
-          whileTap={{scale:0.9}} transition={{duration:0.12}}
+          whileHover={{ scale: 1.06, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 2px 10px rgba(245,158,11,0.18)" }}
+          whileTap={{ scale: 0.9 }} transition={{ duration: 0.12 }}
           onClick={onThemeToggle} aria-label="Toggle theme"
           style={{
-            background: navBtnBg, border: `1px solid ${navBorder}`, borderRadius: 8,
+            background: navBtnBg, border: `1px solid ${navBorder}`, borderRadius: 10,
             width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", color: "var(--text-secondary)",
+            cursor: "pointer", color: navBtnColor, boxShadow: isDarkTheme ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
           }}>
-          <motion.span key={theme} initial={{rotate: -90, opacity: 0}} animate={{rotate: 0, opacity: 1}} transition={{duration: 0.3}}>
-            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          <motion.span key={theme} initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} transition={{ duration: 0.3 }}>
+            {theme === "dark" ? <Sun size={15} style={{ color: "#f59e0b" }} /> : <Moon size={15} style={{ color: "#6366f1" }} />}
           </motion.span>
         </motion.button>
         {/* Notification bell */}
         <div ref={notificationsRef} style={{ position: "relative" }}>
           <motion.button
-            whileHover={{scale:1.1, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 0 10px rgba(245,158,11,0.12)"}}
-            whileTap={{scale:0.9}} transition={{duration:0.12}}
+            whileHover={{ scale: 1.06, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 2px 10px rgba(245,158,11,0.18)" }}
+            whileTap={{ scale: 0.9 }} transition={{ duration: 0.12 }}
             onClick={() => setNotificationsOpen(prev => !prev)}
             aria-label="Notifications"
             style={{
-              background: "transparent", border: "1px solid transparent", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              padding: 6, position: "relative", color: "var(--text-secondary)",
-              borderRadius: 8, transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+              background: navBtnBg, border: `1px solid ${navBorder}`, borderRadius: 10,
+              width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", position: "relative", color: navBtnColor,
+              boxShadow: isDarkTheme ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
+              transition: "all 0.15s ease",
             }}
           >
-            <Bell size={19} />
+            <Bell size={16} />
             {unreadCount > 0 && (
               <span style={{
-                position: "absolute", top: 0, right: 0, background: "#ef4444",
+                position: "absolute", top: 2, right: 2, background: "#ef4444",
                 color: "#fff", fontSize: "0.6rem", fontWeight: 800, width: 14, height: 14,
                 borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 0 8px rgba(239,68,68,0.7)",
               }}>
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
