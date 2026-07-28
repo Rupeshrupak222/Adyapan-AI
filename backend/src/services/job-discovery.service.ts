@@ -1,6 +1,7 @@
 import { ApifyClient } from "apify-client";
 import { env } from "../config/env";
 import { getMasterPrisma } from "../config/dynamicPrisma";
+import { autoResolveCompanyLogo } from "../utils/companyLogoResolver";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -706,7 +707,8 @@ export class JobDiscoveryService {
             if (mergedRequirements) updateData.requirements = mergedRequirements;
             if (mergedResponsibilities) updateData.responsibilities = mergedResponsibilities;
             if (mergedBenefits) updateData.benefits = mergedBenefits;
-            if (job.companyLogo) updateData.logoUrl = job.companyLogo;
+            const resolvedLogo = autoResolveCompanyLogo(job.company, job.companyLogo);
+            if (resolvedLogo) updateData.logoUrl = resolvedLogo;
             if (job.companySize) updateData.companySize = job.companySize;
             if (job.industry) updateData.industry = job.industry;
 
@@ -716,13 +718,14 @@ export class JobDiscoveryService {
             });
             jobsUpdated++;
           } else {
+            const resolvedLogo = autoResolveCompanyLogo(job.company, job.companyLogo);
             await prisma.discoveryJob.create({
               data: {
                 fingerprint,
                 externalId: job.externalId || null,
                 title: job.title,
                 company: job.company,
-                logoUrl: job.companyLogo || null,
+                logoUrl: resolvedLogo || null,
                 location: job.location || "",
                 country: job.country || loc.country,
                 state: job.state || loc.state,

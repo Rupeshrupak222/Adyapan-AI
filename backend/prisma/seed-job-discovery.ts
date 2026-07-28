@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import dotenv from "dotenv";
+import { autoResolveCompanyLogo } from "../src/utils/companyLogoResolver";
 
 dotenv.config();
 
@@ -472,10 +473,12 @@ async function main() {
   // 2. Seed Companies
   console.log("[SeedJobDiscovery] Seeding Companies...");
   for (const comp of COMPANIES) {
+    const resolvedCompLogo = autoResolveCompanyLogo(comp.name, null);
     await prisma.discoveryCompany.upsert({
       where: { name: comp.name },
       update: {
         slug: comp.slug,
+        logoUrl: resolvedCompLogo || null,
         industry: comp.industry,
         companySize: comp.companySize,
         website: comp.website,
@@ -487,6 +490,7 @@ async function main() {
       create: {
         name: comp.name,
         slug: comp.slug,
+        logoUrl: resolvedCompLogo || null,
         industry: comp.industry,
         companySize: comp.companySize,
         website: comp.website,
@@ -504,12 +508,13 @@ async function main() {
   let count = 0;
   for (const job of JOBS_DATA) {
     const fingerprint = generateFingerprint(job.company, job.title, job.location, job.applyUrl);
+    const resolvedJobLogo = autoResolveCompanyLogo(job.company, job.logoUrl);
     await prisma.discoveryJob.upsert({
       where: { fingerprint },
       update: {
         title: job.title,
         company: job.company,
-        logoUrl: job.logoUrl || null,
+        logoUrl: resolvedJobLogo || null,
         location: job.location,
         country: job.country,
         state: job.state,
@@ -539,7 +544,7 @@ async function main() {
         fingerprint,
         title: job.title,
         company: job.company,
-        logoUrl: job.logoUrl || null,
+        logoUrl: resolvedJobLogo || null,
         location: job.location,
         country: job.country,
         state: job.state,

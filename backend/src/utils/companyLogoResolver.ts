@@ -1,10 +1,11 @@
-"use client";
-
-import { useState } from "react";
-import { useTheme } from "@/hooks/useTheme";
+/**
+ * Automatic Company Logo Resolver for Backend Database Operations.
+ * Whenever a new job or company is created or updated in the database,
+ * this utility automatically resolves and populates its authentic logo URL.
+ */
 
 const COMPANY_DOMAINS: Record<string, string> = {
-  // Global FAANG+ & Major Tech
+  // Global Tech & FAANG+
   google: "google.com",
   microsoft: "microsoft.com",
   amazon: "amazon.com",
@@ -97,7 +98,6 @@ const COMPANY_DOMAINS: Record<string, string> = {
   ltts: "ltts.com",
   hexaware: "hexaware.com",
   zs: "zs.com",
-  zssociates: "zs.com",
 
   // Indian Unicorns, E-Commerce & Startups
   flipkart: "flipkart.com",
@@ -186,196 +186,53 @@ const BRAND_SVGS: Record<string, string> = {
   razorpay: "https://upload.wikimedia.org/wikipedia/commons/8/89/Razorpay_logo.svg",
   zoho: "https://upload.wikimedia.org/wikipedia/commons/6/6d/Zoho_logo.svg",
   freshworks: "https://upload.wikimedia.org/wikipedia/commons/0/07/Freshworks_Logo.svg",
-  atlassian: "https://upload.wikimedia.org/wikipedia/commons/0/00/Atlassian-logo-blue-medium.svg",
-  github: "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg",
-  gitlab: "https://upload.wikimedia.org/wikipedia/commons/e/e1/GitLab_logo.svg",
 };
 
-interface CompanyLogoProps {
-  companyId?: string;
-  companyName?: string;
-  company?: string;   // alias for companyName
-  logo?: string;
-  logoUrl?: string;  // alias for logo
-  color?: string;
-  size?: number;
-  theme?: string;
-  className?: string;
-}
-
-export function resolveCompanyInfo(rawName?: string, rawId?: string): { key: string; domain: string } {
-  const name = (rawName || "").trim();
-  const idStr = (rawId || "").replace(/^c-/, "").trim();
-
-  // 1. Direct ID match
-  const idKey = idStr.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (COMPANY_DOMAINS[idKey]) {
-    return { key: idKey, domain: COMPANY_DOMAINS[idKey] };
+/**
+ * Automatically resolves and returns an official logo URL for any company name.
+ */
+export function autoResolveCompanyLogo(companyName: string, existingLogo?: string | null): string {
+  if (existingLogo && existingLogo.trim().startsWith("http") && !existingLogo.includes("example.com")) {
+    return existingLogo.trim();
   }
 
-  // 2. Direct name match
-  const nameKey = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (COMPANY_DOMAINS[nameKey]) {
-    return { key: nameKey, domain: COMPANY_DOMAINS[nameKey] };
+  if (!companyName || !companyName.trim()) return "";
+
+  const name = companyName.trim();
+  const simpleKey = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  // 1. Direct Wikimedia brand SVG match
+  if (BRAND_SVGS[simpleKey]) {
+    return BRAND_SVGS[simpleKey];
   }
 
-  // 3. Remove legal entity fluff
+  // 2. Clean legal entity fluff
   const stripped = name
     .replace(/\b(pvt|private|ltd|limited|inc|incorporated|llc|corp|corporation|technologies|solutions|services|software|india|group|holdings|systems|labs|networks|co|company|enterprises|global)\b/gi, "")
     .trim();
-  
   const strippedKey = stripped.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (COMPANY_DOMAINS[strippedKey]) {
-    return { key: strippedKey, domain: COMPANY_DOMAINS[strippedKey] };
+
+  if (BRAND_SVGS[strippedKey]) {
+    return BRAND_SVGS[strippedKey];
   }
 
-  // 4. Partial dictionary lookup
-  for (const k of Object.keys(COMPANY_DOMAINS)) {
-    if (strippedKey && (strippedKey.startsWith(k) || k.startsWith(strippedKey))) {
-      return { key: k, domain: COMPANY_DOMAINS[k] };
+  // 3. Resolve Domain
+  let domain = COMPANY_DOMAINS[simpleKey] || COMPANY_DOMAINS[strippedKey];
+  if (!domain) {
+    for (const k of Object.keys(COMPANY_DOMAINS)) {
+      if (strippedKey && (strippedKey.startsWith(k) || k.startsWith(strippedKey))) {
+        domain = COMPANY_DOMAINS[k];
+        break;
+      }
     }
   }
-
-  const fallbackDomain = strippedKey ? `${strippedKey}.com` : (nameKey ? `${nameKey}.com` : "");
-  return { key: strippedKey || nameKey || idKey, domain: fallbackDomain };
-}
-
-export default function CompanyLogo({
-  companyId,
-  companyName,
-  company,
-  logo,
-  logoUrl,
-  color = "#3b82f6",
-  size = 44,
-  theme: themeProp,
-  className = "",
-}: CompanyLogoProps) {
-  const currentTheme = useTheme();
-  const theme = themeProp || currentTheme;
-  const isDark = theme === "dark";
-
-  const name = companyName || company || "Company";
-  const explicitLogo = logoUrl || logo;
-
-  const [imgError, setImgError] = useState(false);
-  const [srcIndex, setSrcIndex] = useState(0);
-
-  const { key, domain } = resolveCompanyInfo(name, companyId);
-
-  // Candidate sources in order of preference
-  const sources: string[] = [];
-
-  // 1. Explicit passed logo URL (if provided and valid)
-  if (explicitLogo && explicitLogo.startsWith("http")) {
-    sources.push(explicitLogo);
+  if (!domain && (strippedKey || simpleKey)) {
+    domain = `${strippedKey || simpleKey}.com`;
   }
 
-  // 2. High-res Brand SVG
-  if (BRAND_SVGS[key]) {
-    sources.push(BRAND_SVGS[key]);
-  }
-
-  // 3. Clearbit Logo API (most reliable high-res company logo API)
   if (domain) {
-    sources.push(`https://logo.clearbit.com/${domain}`);
+    return `https://logo.clearbit.com/${domain}`;
   }
 
-  // 4. Simple Icons SVG Repository
-  if (key) {
-    sources.push(`https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/${key}.svg`);
-  }
-
-  // 5. Unavatar API
-  if (domain) {
-    sources.push(`https://unavatar.io/${domain}?fallback=false`);
-  }
-
-  // 6. Google Favicons 128px API
-  if (domain) {
-    sources.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
-  }
-
-  const currentSrc = sources[srcIndex];
-
-  const handleImageError = () => {
-    if (srcIndex < sources.length - 1) {
-      setSrcIndex(prev => prev + 1);
-    } else {
-      setImgError(true);
-    }
-  };
-
-  const containerBg = isDark ? "rgba(255, 255, 255, 0.96)" : "#ffffff";
-  const containerBorder = isDark ? `1px solid ${color}50` : `1px solid rgba(0, 0, 0, 0.1)`;
-  const containerShadow = isDark ? `0 4px 16px rgba(0, 0, 0, 0.35)` : `0 2px 10px rgba(0, 0, 0, 0.06)`;
-
-  if (currentSrc && !imgError) {
-    return (
-      <div
-        className={`rounded-xl flex items-center justify-center p-1.5 transition-all shrink-0 hover:scale-105 ${className}`}
-        style={{
-          width: size,
-          height: size,
-          background: containerBg,
-          border: containerBorder,
-          boxShadow: containerShadow,
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={currentSrc}
-          alt={`${name} logo`}
-          width={size - 10}
-          height={size - 10}
-          className="max-w-full max-h-full object-contain filter drop-shadow-sm"
-          onError={handleImageError}
-        />
-      </div>
-    );
-  }
-
-  // TCS special SVG fallback
-  if (key === "tcs") {
-    return (
-      <div
-        className={`rounded-xl flex items-center justify-center p-1 shrink-0 transition-transform hover:scale-105 ${className}`}
-        style={{
-          width: size,
-          height: size,
-          background: containerBg,
-          border: containerBorder,
-          boxShadow: containerShadow,
-        }}
-      >
-        <svg viewBox="0 0 100 40" className="w-full h-full object-contain">
-          <text x="50" y="26" textAnchor="middle" fill="#0066B3" fontSize="26" fontWeight="900" fontFamily="system-ui, -apple-system, sans-serif" letterSpacing="-1">TCS</text>
-        </svg>
-      </div>
-    );
-  }
-
-  // Elegant letter badge fallback
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(w => w[0]?.toUpperCase())
-    .join("") || name.substring(0, 2).toUpperCase();
-
-  return (
-    <div
-      className={`rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-transform hover:scale-105 ${className}`}
-      style={{
-        width: size,
-        height: size,
-        background: `linear-gradient(135deg, ${color}, ${color}cc)`,
-        color: "#ffffff",
-        border: `1px solid ${color}`,
-        boxShadow: `0 4px 14px ${color}40`,
-      }}
-    >
-      {initials}
-    </div>
-  );
+  return "";
 }

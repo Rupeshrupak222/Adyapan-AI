@@ -77,54 +77,6 @@ router.post("/apply/:jobId", async (req: any, res) => {
   }
 });
 
-// JD Compatibility Analysis
-router.post("/jd-analyze", async (req: any, res) => {
-  try {
-    const { jdText, resumeText } = req.body;
-    if (!jdText) return res.status(400).json({ error: "Job description is required" });
-
-    const result = await generateJSON(
-      "You are an expert HR analyst specializing in resume-job description compatibility scoring.",
-      `Analyze the compatibility between this job description and the provided resume text.
-
-Job Description:
-${jdText}
-
-Resume Text:
-${resumeText || "No resume text provided. Analyze based on the JD alone and provide general recommendations."}
-
-Return JSON matching:
-{
-  "overallScore": 75,
-  "skillsMatch": 80,
-  "experienceMatch": 70,
-  "educationMatch": 85,
-  "atsCompatibility": 90,
-  "keywordsFound": ["list of keywords from JD found in resume"],
-  "keywordsMissing": ["important keywords from JD missing in resume"],
-  "keywordsSuggested": ["additional keywords to improve match"],
-  "suggestions": ["specific actionable suggestions to improve the resume"]
-}`,
-      { model: MODELS.FAST, temperature: 0.3 },
-      {
-        overallScore: 0,
-        skillsMatch: 0,
-        experienceMatch: 0,
-        educationMatch: 0,
-        atsCompatibility: 0,
-        keywordsFound: [],
-        keywordsMissing: [],
-        keywordsSuggested: [],
-        suggestions: [],
-      }
-    );
-
-    res.json({ success: true, report: result });
-  } catch (error) {
-    handleRouteError(res, error, "Job.jdAnalyze", "Failed to analyze JD compatibility");
-  }
-});
-
 // AI Career Assistant Chat
 router.post("/career-chat", async (req: any, res) => {
   try {
@@ -154,72 +106,6 @@ Return JSON matching:
     res.json({ success: true, response: result.response });
   } catch (error) {
     handleRouteError(res, error, "Job.careerChat", "Failed to get career advice");
-  }
-});
-
-// Get hiring challenges
-router.get("/challenges", async (req: any, res) => {
-  try {
-    const userPrisma = await getUserPrismaFromRequest(req);
-    const challenges = await userPrisma.hiringChallenge.findMany({
-      where: { isActive: true },
-      orderBy: { createdAt: "desc" },
-    });
-    res.json({ success: true, challenges });
-  } catch (error) {
-    handleRouteError(res, error, "Job.challenges", "Failed to fetch challenges");
-  }
-});
-
-// Referrals
-router.get("/referrals", async (req: any, res) => {
-  try {
-    const userPrisma = await getUserPrismaFromRequest(req);
-    const referrals = await userPrisma.referral.findMany({
-      where: { userId: req.user.id },
-      orderBy: { createdAt: "desc" },
-    });
-    res.json({ success: true, referrals });
-  } catch (error) {
-    handleRouteError(res, error, "Job.referrals", "Failed to fetch referrals");
-  }
-});
-
-router.post("/referrals", async (req: any, res) => {
-  try {
-    const userPrisma = await getUserPrismaFromRequest(req);
-    const { company, role, notes } = req.body;
-    if (!company || !role) return res.status(400).json({ error: "Company and role are required" });
-
-    const result = await generateJSON(
-      "You are a professional networking assistant. Write a polite, concise referral request outreach message.",
-      `Write a professional outreach message for a referral request:
-Company: ${company}
-Role: ${role}
-Additional notes: ${notes || "None"}
-
-Return JSON matching:
-{
-  "message": "The complete outreach message text"
-}`,
-      { model: MODELS.FAST, temperature: 0.5 },
-      { message: `Hi, I'm interested in the ${role} position at ${company}. Would you be able to provide a referral?` }
-    );
-
-    const referral = await userPrisma.referral.create({
-      data: {
-        userId: req.user.id,
-        company,
-        role,
-        notes: notes || "",
-        outreachMsg: result.message,
-        status: "Requested",
-      },
-    });
-
-    res.json({ success: true, referral });
-  } catch (error) {
-    handleRouteError(res, error, "Job.createReferral", "Failed to create referral request");
   }
 });
 

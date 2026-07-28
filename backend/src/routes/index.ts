@@ -8,7 +8,6 @@ import { atsRouter } from "./ats.routes";
 import { resumeAnalysisRouter } from "./resume-analysis.routes";
 import { coverLetterRouter } from "./cover-letter.routes";
 import { linkedinRouter } from "./linkedin.routes";
-import { linkedinJobsRouter } from "./linkedin-jobs.routes";
 import { studyRouter } from "./study.routes";
 import { notesRouter } from "./notes.routes";
 import { notesExportRouter } from "./notes-export.routes";
@@ -70,9 +69,6 @@ apiRouter.use("/ats", atsRouter);
 apiRouter.use("/resume-analysis", resumeAnalysisRouter);
 apiRouter.use("/cover-letter", coverLetterRouter);
 apiRouter.use("/linkedin", linkedinRouter);
-
-// LinkedIn Job Scraper Routes
-apiRouter.use("/linkedin-jobs", linkedinJobsRouter);
 
 // Learning Hub Routes
 apiRouter.use("/study", studyRouter);
