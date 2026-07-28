@@ -125,9 +125,6 @@ const TechnicalInterviewView = dynamic(() => import("@/components/interview-hub/
 const InternshipHubView = dynamic(() => import("@/components/internship-hub/InternshipHubView").then(m => m.InternshipHubView), {
   loading: () => <DashboardWidgetSkeleton title="Internship Finder" />
 });
-const JobHubView = dynamic(() => import("@/components/job-hub/JobHubView").then(m => m.JobHubView), {
-  loading: () => <DashboardWidgetSkeleton title="Job matching" />
-});
 const JobDiscoveryView = dynamic(() => import("@/components/job-hub/JobDiscoveryView").then(m => m.default), {
   loading: () => <DashboardWidgetSkeleton title="Job Discovery" />,
   ssr: false,
@@ -254,12 +251,6 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "AI Internship Match", viewId: "internship-hub", category: "Internship Hub" },
   { label: "Internship Tracker", viewId: "internship-hub", category: "Internship Hub" },
   { label: "Saved Internships", viewId: "internship-hub", category: "Internship Hub" },
-  { label: "Browse Jobs", viewId: "job-hub", category: "Job Hub" },
-  { label: "AI Job Match", viewId: "job-hub", category: "Job Hub" },
-  { label: "JD Compatibility", viewId: "job-hub", category: "Job Hub" },
-  { label: "Job Referrals", viewId: "job-hub", category: "Job Hub" },
-  { label: "Hiring Challenges", viewId: "job-hub", category: "Job Hub" },
-  { label: "LinkedIn Jobs", viewId: "job-hub", category: "Job Hub" },
   { label: "Job Discovery", viewId: "job-discovery", category: "Job Hub" },
   { label: "Discover Jobs", viewId: "job-discovery", category: "Job Hub" },
   { label: "Search All Jobs", viewId: "job-discovery", category: "Job Hub" },
@@ -354,12 +345,6 @@ export const sidebarItems: SidebarItem[] = [
     id: "job", label: "Job Hub", icon: <UserCircle size={18} />,
     submenu: [
       { label: "Job Discovery", href: "#" },
-      { label: "Browse Jobs", href: "#" },
-      { label: "AI Job Match", href: "#" },
-      { label: "JD Analyzer", href: "#" },
-      { label: "Job Referrals", href: "#" },
-      { label: "Hiring Challenges", href: "#" },
-      { label: "LinkedIn Jobs", href: "#" },
     ],
   },
   {
@@ -562,12 +547,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "AI Match" && sub.href === "#") onViewTool("internship-recommendations");
                       else if (sub.label === "Application Tracker") onViewTool("internship-tracker");
                       else if (sub.label === "Saved Internships") onViewTool("internship-saved");
-                      else if (sub.label === "Browse Jobs") onViewTool("job-matching");
-                      else if (sub.label === "AI Job Match") onViewTool("job-jd-match");
-                      else if (sub.label === "JD Analyzer") onViewTool("job-jd-match");
-                       else if (sub.label === "Job Referrals") onViewTool("job-referrals");
-                       else if (sub.label === "Hiring Challenges") onViewTool("job-challenges");
-                       else if (sub.label === "LinkedIn Jobs") onViewTool("job-matching");
                        else if (sub.label === "Job Discovery") onViewTool("job-discovery");
                       else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
@@ -2468,8 +2447,6 @@ function UserDashboardContent() {
           <HubErrorBoundary><InterviewHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "internship-hub" || activeView === "internship-finder" || activeView === "internship-recommendations" || activeView === "internship-tracker" || activeView === "internship-saved" ? (
           <HubErrorBoundary><InternshipHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
-        ) : activeView === "job-hub" || activeView === "job-matching" || activeView === "job-jd-match" || activeView === "job-referrals" || activeView === "job-challenges" || activeView === "job-saved" || activeView === "linkedin-job-scraper" ? (
-          <HubErrorBoundary><JobHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "job-discovery" ? (
           <HubErrorBoundary><JobDiscoveryView /></HubErrorBoundary>
         ) : activeView === "aptitude-engine" || activeView === "aptitude-engine-analytics" ? (
