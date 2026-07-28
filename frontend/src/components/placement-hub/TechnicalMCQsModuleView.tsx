@@ -309,26 +309,39 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
   const [loadingStep, setLoadingStep] = useState(0);
   const [, setQuestionsLoading] = useState(false);
 
-  // ── Progress ──
-  const [userProgress] = useState<UserProgress>({
-    questionsSolved: 24, accuracy: 86, avgTimeSeconds: 42, streakDays: 6,
-    weakTopics: [
-      { topic: "Compiler Design", accuracy: 35 },
-      { topic: "Kubernetes", accuracy: 40 },
-      { topic: "Deep Learning", accuracy: 50 },
-    ],
-    strongTopics: [
-      { topic: "SQL", accuracy: 94 },
-      { topic: "Java", accuracy: 90 },
-      { topic: "JavaScript", accuracy: 88 },
-    ],
-    weeklyProgress: [
-      { day: "Mon", solved: 5, accuracy: 80 }, { day: "Tue", solved: 8, accuracy: 85 },
-      { day: "Wed", solved: 4, accuracy: 75 }, { day: "Thu", solved: 10, accuracy: 90 },
-      { day: "Fri", solved: 6, accuracy: 83 }, { day: "Sat", solved: 12, accuracy: 92 },
-      { day: "Sun", solved: 9, accuracy: 88 },
-    ],
+  // ── Progress (real data from analytics API) ──
+  const [userProgress, setUserProgress] = useState<UserProgress>({
+    questionsSolved: 0, accuracy: 0, avgTimeSeconds: 0, streakDays: 0,
+    weakTopics: [], strongTopics: [], weeklyProgress: [],
   });
+
+  useEffect(() => {
+    api.get("/aptitude/analytics").then(({ data }) => {
+      if (!data?.success || !data.analytics) return;
+      const a = data.analytics;
+      const mastery: { topic: string; accuracy: number; totalAttempted: number }[] = Array.isArray(a.topicMastery) ? a.topicMastery : [];
+      const weakNames: string[] = Array.isArray(a.weakTopics) ? a.weakTopics : [];
+      const strongNames: string[] = Array.isArray(a.strongTopics) ? a.strongTopics : [];
+      const weakTopics = weakNames.map(name => {
+        const m = mastery.find((t: { topic: string }) => t.topic === name);
+        return { topic: name, accuracy: m ? Math.round(m.accuracy) : 0 };
+      });
+      const strongTopics = strongNames.map(name => {
+        const m = mastery.find((t: { topic: string }) => t.topic === name);
+        return { topic: name, accuracy: m ? Math.round(m.accuracy) : 0 };
+      });
+      const weeklyProgress = (Array.isArray(a.weeklyProgress) ? a.weeklyProgress : []).slice(-7).map((w: { week: string; sessionsCompleted: number; accuracy: number }) => ({
+        day: w.week, solved: w.sessionsCompleted, accuracy: Math.round(w.accuracy),
+      }));
+      setUserProgress({
+        questionsSolved: a.totalQuestions ?? 0,
+        accuracy: Math.round(a.overallAccuracy ?? 0),
+        avgTimeSeconds: Math.round((a.avgTimePerQMs ?? 0) / 1000),
+        streakDays: a.streak ?? 0,
+        weakTopics, strongTopics, weeklyProgress,
+      });
+    }).catch(() => {});
+  }, []);
 
   // ── Refs ──
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);

@@ -79,6 +79,12 @@ export function AnalyticsHubView({ setView, activeModule = "analytics-hub", them
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [resumeStats, setResumeStats] = useState<any>(null);
 
+  // Placement intelligence data (for Resume Score tab)
+  const [placementData, setPlacementData] = useState<any>(null);
+
+  // Aptitude analytics data (for Skill Growth tab)
+  const [aptitudeAnalytics, setAptitudeAnalytics] = useState<any>(null);
+
   // Sync tab with activeModule from props
   useEffect(() => {
     if (activeModule === "analytics-learning") setTab("learning");
@@ -117,8 +123,26 @@ export function AnalyticsHubView({ setView, activeModule = "analytics-hub", them
     if (tab === "resume") {
       (async () => {
         try {
-          const res = await api.get("/ats/latest");
-          if (res.data?.success && res.data.report) setResumeStats(res.data.report);
+          const [atsRes, intelRes] = await Promise.allSettled([
+            api.get("/ats/latest"),
+            api.get("/placement/intelligence/score"),
+          ]);
+          if (atsRes.status === "fulfilled" && atsRes.value.data?.success && atsRes.value.data.report) setResumeStats(atsRes.value.data.report);
+          if (intelRes.status === "fulfilled" && intelRes.value.data?.success) setPlacementData(intelRes.value.data);
+        } catch { /* ignore */ }
+      })();
+    }
+    if (tab === "skills") {
+      (async () => {
+        try {
+          const [aptRes, progressRes] = await Promise.allSettled([
+            api.get("/aptitude/analytics"),
+            api.get("/progress/dashboard"),
+          ]);
+          if (aptRes.status === "fulfilled" && aptRes.value.data?.success) setAptitudeAnalytics(aptRes.value.data.analytics);
+          if (progressRes.status === "fulfilled" && progressRes.value.data?.success) {
+            setAptitudeAnalytics((prev: any) => ({ ...prev, ...progressRes.value.data }));
+          }
         } catch { /* ignore */ }
       })();
     }
@@ -530,100 +554,92 @@ export function AnalyticsHubView({ setView, activeModule = "analytics-hub", them
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
+                className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] pr-1 custom-scrollbar"
               >
-                {/* Scoring metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Detailed Scores */}
-                  <motion.div
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    custom={0}
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    className="p-5 border rounded-2xl space-y-4 bg-white/[0.01]"
-                    style={{ borderColor: c.border }}
-                  >
-                    <h4 className="text-xs font-bold uppercase tracking-wider">Resume Quality Metrics</h4>
-                    {[
-                      { label: "Overall ATS Score", score: resumeStats?.overallScore ?? 0, color: "#10b981" },
-                      { label: "Summary Quality", score: resumeStats?.sectionScores?.summary ?? 0, color: "#06b6d4" },
-                      { label: "Skills Coverage", score: resumeStats?.sectionScores?.skills ?? 0, color: "#8b5cf6" },
-                      { label: "Experience Alignment", score: resumeStats?.sectionScores?.experience ?? 0, color: "#ec4899" }
-                    ].map((m, i) => (
-                      <motion.div
-                        key={m.label}
-                        variants={fadeUp}
-                        initial="hidden"
-                        animate="visible"
-                        custom={i}
-                        className="space-y-1.5"
-                      >
-                        <div className="flex justify-between text-[11px] font-bold" style={{ color: c.textSec }}>
-                          <span>{m.label}</span>
-                          <span>{m.score}%</span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-white/5 border overflow-hidden" style={{ borderColor: c.border }}>
-                          <div className="h-full rounded-full" style={{ width: `${m.score}%`, background: m.color }} />
-                        </div>
-                      </motion.div>
-                    ))}
+                {/* Overall Score + Placement Score */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="p-6 border rounded-2xl text-center space-y-2" style={{ borderColor: c.border, background: "linear-gradient(135deg, rgba(16,185,129,0.08), rgba(6,182,212,0.04))" }}>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-emerald-500">ATS Score</p>
+                    <p className="text-4xl font-black text-emerald-500">{resumeStats?.overallScore ?? resumeStats?.score ?? 0}</p>
+                    <p className="text-[10px]" style={{ color: c.textMuted }}>{resumeStats?.resume?.title || "Latest Resume"}</p>
                   </motion.div>
-
-                  {/* Highlights & missing blocks */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <motion.div
-                      variants={fadeUp}
-                      initial="hidden"
-                      animate="visible"
-                      custom={0}
-                      whileHover={{ y: -4, scale: 1.01 }}
-                      className="p-5 border rounded-2xl space-y-3 bg-white/[0.01]"
-                      style={{ borderColor: c.border }}
-                    >
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1">
-                        <motion.div
-                          initial={{ scale: 0, rotate: -20 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          transition={{ type: "spring", stiffness: 280, damping: 18 }}
-                        >
-                          <CheckCircle2 size={14} />
-                        </motion.div> Section Completions
-                      </h4>
-                      <ul className="space-y-1.5 text-xs font-semibold" style={{ color: c.textSec }}>
-                        <li>✓ Summary Statement</li>
-                        <li>✓ Projects Section</li>
-                        <li>✓ Education Details</li>
-                        <li>✓ Contact Details</li>
-                      </ul>
-                    </motion.div>
-
-                    <motion.div
-                      variants={fadeUp}
-                      initial="hidden"
-                      animate="visible"
-                      custom={1}
-                      whileHover={{ y: -4, scale: 1.01 }}
-                      className="p-5 border rounded-2xl space-y-3 bg-white/[0.01]"
-                      style={{ borderColor: c.border }}
-                    >
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1">
-                        <motion.div
-                          initial={{ scale: 0, rotate: -20 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          transition={{ type: "spring", stiffness: 280, damping: 18 }}
-                        >
-                          <Info size={14} />
-                        </motion.div> Missing Areas
-                      </h4>
-                      <ul className="space-y-1.5 text-xs font-semibold" style={{ color: c.textSec }}>
-                        <li>• Custom Hobbies</li>
-                        <li>• Certifications</li>
-                        <li>• LinkedIn Outreach URL</li>
-                      </ul>
-                    </motion.div>
-                  </div>
+                  <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1} className="p-6 border rounded-2xl text-center space-y-2" style={{ borderColor: c.border, background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(234,88,12,0.04))" }}>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">Placement Score</p>
+                    <p className="text-4xl font-black" style={{ color: c.primary }}>{placementData?.placementScore ?? 0}</p>
+                    <p className="text-[10px]" style={{ color: c.textMuted }}>Overall Readiness</p>
+                  </motion.div>
+                  <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="p-5 border rounded-2xl space-y-3" style={{ borderColor: c.border }}>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">Sub-Scores</p>
+                    {placementData?.subScores && typeof placementData.subScores === "object" ? Object.entries(placementData.subScores).map(([k, v]: [string, any], i: number) => (
+                      <div key={k} className="space-y-1">
+                        <div className="flex justify-between text-[11px] font-bold" style={{ color: c.textSec }}>
+                          <span className="capitalize">{k.replace(/([A-Z])/g, " $1").trim()}</span>
+                          <span>{v}%</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                          <div className="h-full rounded-full" style={{ width: `${v}%`, background: `hsl(${i * 45}, 70%, 55%)` }} />
+                        </div>
+                      </div>
+                    )) : <p className="text-xs" style={{ color: c.textMuted }}>Complete an ATS scan to see sub-scores</p>}
+                  </motion.div>
                 </div>
+
+                {/* Radar chart for section scores */}
+                {resumeStats && (
+                  <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1} className="p-5 border rounded-2xl" style={{ borderColor: c.border, background: c.cardBg }}>
+                    <h4 className="text-xs font-bold uppercase tracking-wider mb-4">Section Score Breakdown</h4>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <RadarChart data={[
+                        { subject: "Formatting", score: resumeStats.formattingScore ?? 0 },
+                        { subject: "Keywords", score: resumeStats.keywordScore ?? 0 },
+                        { subject: "Experience", score: resumeStats.experienceScore ?? 0 },
+                        { subject: "Projects", score: resumeStats.projectScore ?? 0 },
+                        { subject: "Skills", score: resumeStats.skillsScore ?? 0 },
+                        { subject: "Education", score: resumeStats.educationScore ?? 0 },
+                        { subject: "Readability", score: resumeStats.readabilityScore ?? 0 },
+                      ]}>
+                        <PolarGrid stroke={c.border} />
+                        <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: c.textSec }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 9, fill: c.textMuted }} />
+                        <Radar name="Score" dataKey="score" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={2} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </motion.div>
+                )}
+
+                {/* Section completions & Missing areas from reportJson */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="p-5 border rounded-2xl space-y-3" style={{ borderColor: c.border, background: c.cardBg }}>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1"><CheckCircle2 size={14} /> Strengths</h4>
+                    <ul className="space-y-1.5 text-xs font-semibold" style={{ color: c.textSec }}>
+                      {resumeStats?.reportJson?.strengths?.length > 0
+                        ? resumeStats.reportJson.strengths.slice(0, 6).map((s: string, i: number) => <li key={i}>✓ {s}</li>)
+                        : resumeStats?.score >= 70
+                          ? ["✓ Strong keyword coverage", "✓ Professional formatting", "✓ Relevant experience"]
+                          : [<li key="na">Upload a resume to see strengths</li>]
+                      }
+                    </ul>
+                  </motion.div>
+                  <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="p-5 border rounded-2xl space-y-3" style={{ borderColor: c.border, background: c.cardBg }}>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1"><AlertCircle size={14} /> Missing Areas</h4>
+                    <ul className="space-y-1.5 text-xs font-semibold" style={{ color: c.textSec }}>
+                      {resumeStats?.missingKeywords && Array.isArray(resumeStats.missingKeywords) && resumeStats.missingKeywords.length > 0
+                        ? resumeStats.missingKeywords.slice(0, 6).map((kw: string, i: number) => <li key={i}>• {kw}</li>)
+                        : resumeStats?.reportJson?.missing?.length > 0
+                          ? resumeStats.reportJson.missing.slice(0, 6).map((m: string, i: number) => <li key={i}>• {m}</li>)
+                          : [<li key="na">Upload a resume to see missing areas</li>]
+                      }
+                    </ul>
+                  </motion.div>
+                </div>
+
+                {!resumeStats && (
+                  <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="p-8 border rounded-2xl text-center space-y-3" style={{ borderColor: c.border }}>
+                    <p className="text-sm font-bold" style={{ color: c.text }}>No resume data available</p>
+                    <p className="text-xs" style={{ color: c.textMuted }}>Upload or build a resume and run an ATS scan to see your score analytics.</p>
+                    <motion.button onClick={() => setView("resume-hub")} className="px-4 py-2 rounded-lg bg-amber-500 text-black text-xs font-bold" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>Go to Resume Hub</motion.button>
+                  </motion.div>
+                )}
               </motion.div>
             )}
 
@@ -634,83 +650,151 @@ export function AnalyticsHubView({ setView, activeModule = "analytics-hub", them
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
+                className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] pr-1 custom-scrollbar"
               >
-                {/* Growth stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Category level */}
-                  <motion.div
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    custom={0}
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    className="p-5 border rounded-2xl space-y-4 bg-white/[0.01]"
-                    style={{ borderColor: c.border }}
-                  >
-                    <h4 className="text-xs font-bold uppercase tracking-wider">Skill Mastery Levels</h4>
-                    {[
-                      { label: "Programming Languages (Python, Java)", val: 90, color: "#10b981" },
-                      { label: "Web Development (React, Next)", val: 85, color: "#06b6d4" },
-                      { label: "Database Management (SQL, Postgres)", val: 80, color: "#8b5cf6" },
-                      { label: "Machine Learning Concepts", val: 70, color: "#f59e0b" },
-                      { label: "Cloud Computing (AWS, GCP)", val: 60, color: "#ec4899" }
-                    ].map((skill, i) => (
-                      <motion.div
-                        key={skill.label}
-                        variants={fadeUp}
-                        initial="hidden"
-                        animate="visible"
-                        custom={i}
-                        className="space-y-1.5"
-                      >
-                        <div className="flex justify-between text-[11px] font-bold" style={{ color: c.textSec }}>
-                          <span>{skill.label}</span>
-                          <span>{skill.val}%</span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-white/5 border overflow-hidden" style={{ borderColor: c.border }}>
-                          <div className="h-full rounded-full" style={{ width: `${skill.val}%`, background: skill.color }} />
+                {/* Top Stats Row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { label: "Topics Mastered", value: (aptitudeAnalytics?.topicMastery ?? []).filter((t: any) => t.accuracy >= 80).length, color: "#10b981" },
+                    { label: "Overall Accuracy", value: `${Math.round(aptitudeAnalytics?.overallAccuracy ?? 0)}%`, color: "#f59e0b" },
+                    { label: "Questions Solved", value: aptitudeAnalytics?.totalQuestions ?? 0, color: "#3b82f6" },
+                    { label: "Placement Readiness", value: `${aptitudeAnalytics?.placementReadiness ?? 0}%`, color: "#8b5cf6" },
+                  ].map((s, i) => (
+                    <motion.div key={s.label} variants={fadeUp} initial="hidden" animate="visible" custom={i} className="p-4 rounded-2xl border text-center" style={{ borderColor: c.border, background: c.cardBg }}>
+                      <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>{s.label}</p>
+                      <p className="text-xl font-black mt-1" style={{ color: s.color }}>{s.value}</p>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Topic Mastery Radar */}
+                  {aptitudeAnalytics?.topicMastery?.length > 0 && (
+                    <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="p-5 border rounded-2xl" style={{ borderColor: c.border, background: c.cardBg }}>
+                      <h4 className="text-xs font-bold uppercase tracking-wider mb-3">Skill Mastery Radar</h4>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <RadarChart data={aptitudeAnalytics.topicMastery.slice(0, 8).map((t: any) => ({ subject: t.topic.length > 12 ? t.topic.slice(0, 12) + "…" : t.topic, score: Math.round(t.accuracy) }))}>
+                          <PolarGrid stroke={c.border} />
+                          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fill: c.textSec }} />
+                          <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 8, fill: c.textMuted }} />
+                          <Radar name="Accuracy" dataKey="score" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} strokeWidth={2} />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </motion.div>
+                  )}
+
+                  {/* Category Scores Bar Chart */}
+                  {aptitudeAnalytics?.categoryScores && Object.keys(aptitudeAnalytics.categoryScores).length > 0 && (
+                    <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1} className="p-5 border rounded-2xl" style={{ borderColor: c.border, background: c.cardBg }}>
+                      <h4 className="text-xs font-bold uppercase tracking-wider mb-3">Category Performance</h4>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={Object.entries(aptitudeAnalytics.categoryScores).map(([cat, score]: [string, any]) => ({ name: cat.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase()), score: Math.round(score) }))} layout="vertical" margin={{ left: 10, right: 20 }}>
+                          <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 9, fill: c.textMuted }} />
+                          <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 9, fill: c.textSec }} />
+                          <ReTooltip contentStyle={{ background: isDark ? "#1a1a2e" : "#fff", border: `1px solid ${c.border}`, borderRadius: 8, fontSize: 11 }} />
+                          <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                            {(Object.entries(aptitudeAnalytics.categoryScores) as [string, number][]).map(([,], idx) => (
+                              <Cell key={idx} fill={["#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899"][idx % 5]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Skill Mastery Levels (from real topicMastery) */}
+                <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="p-5 border rounded-2xl space-y-3" style={{ borderColor: c.border, background: c.cardBg }}>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-amber-500 flex items-center gap-2"><TrendingUp size={14} /> Topic Mastery</h4>
+                  <div className="space-y-2">
+                    {(aptitudeAnalytics?.topicMastery ?? []).length > 0
+                      ? aptitudeAnalytics.topicMastery.sort((a: any, b: any) => b.accuracy - a.accuracy).map((t: any, i: number) => {
+                          const colors = ["#10b981", "#06b6d4", "#8b5cf6", "#f59e0b", "#ec4899", "#3b82f6"];
+                          return (
+                            <div key={t.topic} className="flex items-center justify-between p-3 rounded-xl" style={{ background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-black w-5 text-center" style={{ color: c.textMuted }}>#{i + 1}</span>
+                                <span className="text-xs font-bold" style={{ color: c.text }}>{t.topic}</span>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${t.trend === "improving" ? "bg-emerald-500/10 text-emerald-500" : t.trend === "declining" ? "bg-red-500/10 text-red-500" : "bg-white/5"}`} style={t.trend === "stable" ? { color: c.textMuted } : {}}>
+                                  {t.trend === "improving" ? "↑" : t.trend === "declining" ? "↓" : "→"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold" style={{ color: c.textMuted }}>{t.totalCorrect}/{t.totalAttempted}</span>
+                                <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                                  <div className="h-full rounded-full" style={{ width: `${t.accuracy}%`, background: colors[i % colors.length] }} />
+                                </div>
+                                <span className="text-[10px] font-black" style={{ color: colors[i % colors.length] }}>{Math.round(t.accuracy)}%</span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      : <p className="text-xs" style={{ color: c.textMuted }}>Complete aptitude sessions to see topic mastery</p>
+                    }
+                  </div>
+                </motion.div>
+
+                {/* Weekly Progress Bar Chart */}
+                {aptitudeAnalytics?.weeklyProgress?.length > 0 && (
+                  <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="p-5 border rounded-2xl" style={{ borderColor: c.border, background: c.cardBg }}>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-500 flex items-center gap-2 mb-3"><TrendingUp size={14} /> Weekly Progress</h4>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={aptitudeAnalytics.weeklyProgress.slice(-7).map((w: any) => ({ name: w.week, sessions: w.sessionsCompleted, accuracy: Math.round(w.accuracy), xp: w.xpEarned }))}>
+                        <XAxis dataKey="name" tick={{ fontSize: 9, fill: c.textMuted }} />
+                        <YAxis tick={{ fontSize: 9, fill: c.textMuted }} />
+                        <ReTooltip contentStyle={{ background: isDark ? "#1a1a2e" : "#fff", border: `1px solid ${c.border}`, borderRadius: 8, fontSize: 11 }} />
+                        <Bar dataKey="sessions" name="Sessions" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="accuracy" name="Accuracy %" fill="#10b981" radius={[4, 4, 0, 0]} opacity={0.6} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </motion.div>
+                )}
+
+                {/* Weak & Strong Topics */}
+                {(aptitudeAnalytics?.weakTopics?.length > 0 || aptitudeAnalytics?.strongTopics?.length > 0) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {aptitudeAnalytics.weakTopics?.length > 0 && (
+                      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4} className="p-5 border rounded-2xl space-y-3" style={{ borderColor: c.border, background: c.cardBg }}>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-red-500 flex items-center gap-1"><AlertCircle size={14} /> Weak Areas</h4>
+                        <div className="space-y-2">
+                          {aptitudeAnalytics.weakTopics.slice(0, 5).map((topic: string) => {
+                            const m = (aptitudeAnalytics.topicMastery ?? []).find((t: any) => t.topic === topic);
+                            return (
+                              <div key={topic} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "rgba(239,68,68,0.06)" }}>
+                                <span className="text-xs font-bold" style={{ color: c.text }}>{topic}</span>
+                                <span className="text-[10px] font-black text-red-400">{m ? Math.round(m.accuracy) : "?"}%</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </motion.div>
-                    ))}
-                  </motion.div>
+                    )}
+                    {aptitudeAnalytics.strongTopics?.length > 0 && (
+                      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={5} className="p-5 border rounded-2xl space-y-3" style={{ borderColor: c.border, background: c.cardBg }}>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1"><CheckCircle2 size={14} /> Strong Areas</h4>
+                        <div className="space-y-2">
+                          {aptitudeAnalytics.strongTopics.slice(0, 5).map((topic: string) => {
+                            const m = (aptitudeAnalytics.topicMastery ?? []).find((t: any) => t.topic === topic);
+                            return (
+                              <div key={topic} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "rgba(16,185,129,0.06)" }}>
+                                <span className="text-xs font-bold" style={{ color: c.text }}>{topic}</span>
+                                <span className="text-[10px] font-black text-emerald-400">{m ? Math.round(m.accuracy) : "?"}%</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
 
-                  {/* Growth log timeline */}
-                  <motion.div
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    custom={1}
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    className="p-5 border rounded-2xl space-y-4 bg-white/[0.01]"
-                    style={{ borderColor: c.border }}
-                  >
-                    <h4 className="text-xs font-bold uppercase tracking-wider">Growth Log Timeline</h4>
-                    <div className="space-y-3 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[1px] before:bg-white/10">
-                      {[
-                        { title: "Next.js & Router architectures", date: "June 2026", desc: "Added to project stack, master metrics achieved." },
-                        { title: "TypeScript & Data Schemas", date: "May 2026", desc: "Integrated types into global database schemas." },
-                        { title: "Generative AI API integration", date: "April 2026", desc: "Completed Gemini model pipeline completions." }
-                      ].map((item, idx) => (
-                        <motion.div
-                          key={idx}
-                          variants={fadeUp}
-                          initial="hidden"
-                          animate="visible"
-                          custom={idx}
-                          className="pl-6 relative space-y-1"
-                        >
-                          <div className="absolute left-[5px] top-1.5 w-1.5 h-1.5 rounded-full bg-amber-500" />
-                          <div className="flex justify-between text-[10px] font-bold">
-                            <span style={{ color: c.text }}>{item.title}</span>
-                            <span style={{ color: c.textMuted }}>{item.date}</span>
-                          </div>
-                          <p className="text-[10px]" style={{ color: c.textSec }}>{item.desc}</p>
-                        </motion.div>
-                      ))}
-                    </div>
+                {!aptitudeAnalytics && (
+                  <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="p-8 border rounded-2xl text-center space-y-3" style={{ borderColor: c.border }}>
+                    <p className="text-sm font-bold" style={{ color: c.text }}>No skill data available</p>
+                    <p className="text-xs" style={{ color: c.textMuted }}>Complete aptitude sessions to unlock skill growth analytics.</p>
+                    <motion.button onClick={() => setView("aptitude-hub")} className="px-4 py-2 rounded-lg bg-amber-500 text-black text-xs font-bold" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>Start Aptitude Practice</motion.button>
                   </motion.div>
-                </div>
+                )}
               </motion.div>
             )}
 
