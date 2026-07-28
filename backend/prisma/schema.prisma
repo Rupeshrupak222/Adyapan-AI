@@ -371,5 +371,189 @@ model CommunityProject {
   @@map("community_projects")
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AI JOB DISCOVERY PLATFORM — Centralized Job Tables (Master DB)
+// ═══════════════════════════════════════════════════════════════════════════
 
+model DiscoveryJob {
+  id              String   @id @default(cuid())
+  fingerprint     String   @unique
+  externalId      String?  @map("external_id")
+  title           String
+  company         String
+  companyId       String?  @map("company_id")
+  logoUrl         String?  @map("logo_url")
+  location        String   @default("")
+  country         String   @default("")
+  state           String   @default("")
+  city            String   @default("")
+  description     String   @default("") @db.Text
+  salaryMin       Int?     @map("salary_min")
+  salaryMax       Int?     @map("salary_max")
+  salaryCurrency  String   @default("INR") @map("salary_currency")
+  experienceMin   Int?     @map("experience_min")
+  experienceMax   Int?     @map("experience_max")
+  employmentType  String   @default("Full-Time") @map("employment_type")
+  workMode        String   @default("Onsite") @map("work_mode")
+  skills          String[] @default([])
+  requirements    String[] @default([])
+  responsibilities String[] @default([])
+  benefits        String[] @default([])
+  education       String   @default("")
+  industry        String   @default("")
+  companySize     String   @default("") @map("company_size")
+  applyUrl        String?  @map("apply_url")
+  sourceUrl       String?  @map("source_url")
+  source          String
+  postedAt        DateTime? @map("posted_at")
+  firstSeenAt     DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt      DateTime @default(now()) @map("last_seen_at")
+  isActive        Boolean  @default(true)
+  isFeatured      Boolean  @default(false) @map("is_featured")
+  viewCount       Int      @default(0) @map("view_count")
+  saveCount       Int      @default(0) @map("save_count")
+  sourceCount     Int      @default(1) @map("source_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([fingerprint])
+  @@index([company])
+  @@index([source])
+  @@index([workMode])
+  @@index([employmentType])
+  @@index([location])
+  @@index([postedAt])
+  @@index([isActive])
+  @@index([skills])
+  @@index([salaryMin])
+  @@index([experienceMin])
+  @@index([createdAt])
+  @@map("discovery_jobs")
+}
+
+model DiscoveryJobSource {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  displayName     String   @map("display_name")
+  isActive        Boolean  @default(true) @map("is_active")
+  schedule        String   @default("daily")
+  lastRunAt       DateTime? @map("last_run_at")
+  lastRunStatus   String?  @map("last_run_status")
+  lastJobsFetched Int      @default(0) @map("last_jobs_fetched")
+  lastJobsInserted Int     @default(0) @map("last_jobs_inserted")
+  lastDuplicates  Int      @default(0) @map("last_duplicates")
+  lastErrors      Int      @default(0) @map("last_errors")
+  lastDurationMs  Int      @default(0) @map("last_duration_ms")
+  totalJobsFetched Int     @default(0) @map("total_jobs_fetched")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("discovery_job_sources")
+}
+
+model DiscoveryCompany {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  slug            String   @unique
+  logoUrl         String?  @map("logo_url")
+  industry        String   @default("")
+  companySize     String   @default("") @map("company_size")
+  website         String   @default("")
+  location        String   @default("")
+  techStack       String[] @default([]) @map("tech_stack")
+  description     String   @default("")
+  jobCount        Int      @default(0) @map("job_count")
+  avgSalaryMin    Int?     @map("avg_salary_min")
+  avgSalaryMax    Int?     @map("avg_salary_max")
+  difficultyLevel String   @default("medium") @map("difficulty_level")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([name])
+  @@index([slug])
+  @@index([industry])
+  @@index([jobCount])
+  @@map("discovery_companies")
+}
+
+model DiscoveryIngestionLog {
+  id              String   @id @default(cuid())
+  source          String
+  status          String   @default("running")
+  jobsFetched     Int      @default(0) @map("jobs_fetched")
+  jobsInserted    Int      @default(0) @map("jobs_inserted")
+  jobsUpdated     Int      @default(0) @map("jobs_updated")
+  duplicatesRemoved Int   @default(0) @map("duplicates_removed")
+  errors          Int      @default(0)
+  errorDetails    String?  @map("error_details") @db.Text
+  durationMs      Int      @default(0) @map("duration_ms")
+  startedAt       DateTime @default(now()) @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+
+  @@index([source])
+  @@index([status])
+  @@index([startedAt])
+  @@map("discovery_ingestion_logs")
+}
+
+model DiscoverySavedJob {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  jobId           String   @map("job_id")
+  collection      String   @default("default")
+  notes           String   @default("")
+  status          String   @default("saved")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([jobId])
+  @@unique([userId, jobId])
+  @@map("discovery_saved_jobs")
+}
+
+model DiscoveryJobView {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  jobId           String   @map("job_id")
+  viewCount       Int      @default(1) @map("view_count")
+  firstViewedAt   DateTime @default(now()) @map("first_viewed_at")
+  lastViewedAt    DateTime @default(now()) @map("last_viewed_at")
+
+  @@index([userId])
+  @@index([jobId])
+  @@unique([userId, jobId])
+  @@map("discovery_job_views")
+}
+
+model DiscoverySearchHistory {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  query           String
+  filtersJson     Json     @default("{}") @map("filters_json")
+  resultCount     Int      @default(0) @map("result_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("discovery_search_history")
+}
+
+model DiscoveryJobAnalytics {
+  id              String   @id @default(cuid())
+  date            DateTime @map("date")
+  totalJobs       Int      @default(0) @map("total_jobs")
+  newJobs         Int      @default(0) @map("new_jobs")
+  activeSources   Int      @default(0) @map("active_sources")
+  byLocation      Json     @default("{}") @map("by_location")
+  bySkill         Json     @default("{}") @map("by_skill")
+  byCompany       Json     @default("{}") @map("by_company")
+  byIndustry      Json     @default("{}") @map("by_industry")
+  salaryRanges    Json     @default("{}") @map("salary_ranges")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@unique([date])
+  @@index([date])
+  @@map("discovery_job_analytics")
+}
 

@@ -128,6 +128,10 @@ const InternshipHubView = dynamic(() => import("@/components/internship-hub/Inte
 const JobHubView = dynamic(() => import("@/components/job-hub/JobHubView").then(m => m.JobHubView), {
   loading: () => <DashboardWidgetSkeleton title="Job matching" />
 });
+const JobDiscoveryView = dynamic(() => import("@/components/job-hub/JobDiscoveryView").then(m => m.default), {
+  loading: () => <DashboardWidgetSkeleton title="Job Discovery" />,
+  ssr: false,
+});
 const PlacementHubView = dynamic(() => import("@/components/placement-hub/PlacementHubView").then(m => m.PlacementHubView), {
   loading: () => <DashboardWidgetSkeleton title="Placement Hub" />,
   ssr: false,
@@ -256,6 +260,10 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Job Referrals", viewId: "job-hub", category: "Job Hub" },
   { label: "Hiring Challenges", viewId: "job-hub", category: "Job Hub" },
   { label: "LinkedIn Jobs", viewId: "job-hub", category: "Job Hub" },
+  { label: "Job Discovery", viewId: "job-discovery", category: "Job Hub" },
+  { label: "Discover Jobs", viewId: "job-discovery", category: "Job Hub" },
+  { label: "Search All Jobs", viewId: "job-discovery", category: "Job Hub" },
+  { label: "Saved Jobs", viewId: "job-discovery", category: "Job Hub" },
   { label: "Aptitude Practice", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Technical MCQs", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Readiness Score", viewId: "placement-hub", category: "Placement Hub" },
@@ -346,6 +354,7 @@ export const sidebarItems: SidebarItem[] = [
   {
     id: "job", label: "Job Hub", icon: <UserCircle size={18} />,
     submenu: [
+      { label: "Job Discovery", href: "#" },
       { label: "Browse Jobs", href: "#" },
       { label: "AI Job Match", href: "#" },
       { label: "JD Analyzer", href: "#" },
@@ -558,9 +567,10 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "Browse Jobs") onViewTool("job-matching");
                       else if (sub.label === "AI Job Match") onViewTool("job-jd-match");
                       else if (sub.label === "JD Analyzer") onViewTool("job-jd-match");
-                      else if (sub.label === "Job Referrals") onViewTool("job-referrals");
-                      else if (sub.label === "Hiring Challenges") onViewTool("job-challenges");
-                      else if (sub.label === "LinkedIn Jobs") onViewTool("job-matching");
+                       else if (sub.label === "Job Referrals") onViewTool("job-referrals");
+                       else if (sub.label === "Hiring Challenges") onViewTool("job-challenges");
+                       else if (sub.label === "LinkedIn Jobs") onViewTool("job-matching");
+                       else if (sub.label === "Job Discovery") onViewTool("job-discovery");
                       else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
                       else if (sub.label === "Readiness Score") onViewTool("placement-readiness");
@@ -903,7 +913,7 @@ export function DashboardTopNav({
         </div>
 
         <span style={{ width: 1, height: 20, background: "var(--border-color)", margin: "0 4px" }} />
-        <motion.button whileHover={{scale:1.02, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 0 12px rgba(245,158,11,0.15)"}} whileTap={{scale:0.97}} transition={{duration:0.12}} onClick={() => onViewTool("job-hub")} style={{ ...navBtnBase, padding: "0.5rem 0.75rem" }}>Jobs</motion.button>
+        <motion.button whileHover={{scale:1.02, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 0 12px rgba(245,158,11,0.15)"}} whileTap={{scale:0.97}} transition={{duration:0.12}} onClick={() => onViewTool("job-discovery")} style={{ ...navBtnBase, padding: "0.5rem 0.75rem" }}>Jobs</motion.button>
         <motion.button whileHover={{scale:1.02, borderColor: "rgba(245,158,11,0.5)", boxShadow: "0 0 12px rgba(245,158,11,0.15)"}} whileTap={{scale:0.97}} transition={{duration:0.12}} onClick={() => onViewTool("internship-hub")} style={{ ...navBtnBase, padding: "0.5rem 0.75rem" }}>Internships</motion.button>
         <span style={{ width: 1, height: 20, background: "var(--border-color)", margin: "0 4px" }} />
         <motion.button whileHover={{scale:1.02, borderColor: "#a78bfa", boxShadow: "0 0 16px rgba(139,92,246,0.3)"}} whileTap={{scale:0.97}} transition={{duration:0.12}}
@@ -2400,6 +2410,8 @@ function UserDashboardContent() {
           <HubErrorBoundary><InternshipHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "job-hub" || activeView === "job-matching" || activeView === "job-jd-match" || activeView === "job-referrals" || activeView === "job-challenges" || activeView === "job-saved" || activeView === "linkedin-job-scraper" ? (
           <HubErrorBoundary><JobHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
+        ) : activeView === "job-discovery" ? (
+          <HubErrorBoundary><JobDiscoveryView /></HubErrorBoundary>
         ) : activeView === "aptitude-engine" || activeView === "aptitude-engine-analytics" ? (
           <HubErrorBoundary><AptitudeEngineView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "placement-hub" || activeView === "placement-aptitude" || activeView === "placement-reasoning" || activeView === "placement-mcqs" || activeView === "placement-mocks" || activeView === "placement-readiness" ? (

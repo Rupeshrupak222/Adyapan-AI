@@ -54,6 +54,7 @@ import { engineRouter } from "./engine.routes";
 import { technicalEngineRouter } from "./technical-engine.routes";
 import { hrInterviewRouter } from "./hr-interview.routes";
 import { productivityRouter } from "./productivity.routes";
+import { jobDiscoveryRouter } from "./job-discovery.routes";
 import avatarRouter from "./avatar.routes";
 
 export const apiRouter = Router();
@@ -115,6 +116,9 @@ apiRouter.use("/internship", internshipRouter);
 
 // Enhanced Job Listing Routes
 apiRouter.use("/job-listing", jobListingRouter);
+
+// Job Discovery Platform Routes
+apiRouter.use("/discovery", jobDiscoveryRouter);
 
 // Community Routes
 apiRouter.use("/community", communityRouter);
