@@ -202,6 +202,66 @@ Return JSON matching:
   }
 });
 
+// Get own full community profile (single endpoint for all own-profile data)
+router.get("/me", async (req: any, res) => {
+  try {
+    const currentUserId = getUserId(req);
+
+    let profile = await prisma.profile.findUnique({
+      where: { userId: currentUserId },
+      include: { user: { select: { id: true, name: true, email: true, role: true, createdAt: true } } },
+    });
+
+    if (!profile) {
+      const user = await prisma.user.findUnique({
+        where: { id: currentUserId },
+        select: { id: true, name: true, email: true, role: true, createdAt: true },
+      });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      profile = await prisma.profile.create({
+        data: {
+          userId: user.id,
+          username: user.name ? user.name.toLowerCase().replace(/\s+/g, "") : `user_${user.id.slice(0, 6)}`,
+        },
+        include: { user: { select: { id: true, name: true, email: true, role: true, createdAt: true } } },
+      });
+    }
+
+    const [followers, following, projects, activities, achievements] = await Promise.all([
+      prisma.communityFollow.count({ where: { followingId: currentUserId } }),
+      prisma.communityFollow.count({ where: { followerId: currentUserId } }),
+      prisma.communityProject.findMany({ where: { userId: currentUserId }, orderBy: { createdAt: "desc" }, take: 20 }),
+      prisma.communityActivity.findMany({ where: { userId: currentUserId }, orderBy: { createdAt: "desc" }, take: 50 }),
+      prisma.communityAchievement.findMany({ where: { userId: currentUserId }, orderBy: { unlockedAt: "desc" } }),
+    ]);
+
+    let recommendations: { title: string; description: string; category: string }[] = [];
+    try {
+      const skills = (profile.skills as string[]) || [];
+      const result = await generateJSON(
+        "You are a career development AI. Provide personalized recommendations based on the user's skills and interests.",
+        `User skills: ${skills.join(", ") || "Not specified"}
+Provide 3-5 concise, actionable recommendations for skill development, projects to build, or communities to join.
+
+Return JSON matching:
+{
+  "recommendations": [
+    { "title": "Recommendation title", "description": "Brief description", "category": "skill|project|community" }
+  ]
+}`,
+        { model: MODELS.FAST, temperature: 0.7 },
+        { recommendations: [] }
+      );
+      recommendations = result.recommendations || [];
+    } catch { /* AI recommendations are optional */ }
+
+    res.json({ success: true, profile, followers, following, isFollowing: false, projects, activities, achievements, recommendations });
+  } catch (error) {
+    handleRouteError(res, error, "Community.getMyProfile", "Failed to fetch profile");
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // COMMUNITY BROWSING & MESSAGING
 // ═══════════════════════════════════════════════════════════════════════════

@@ -266,7 +266,6 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Saved Jobs", viewId: "job-discovery", category: "Job Hub" },
   { label: "Aptitude Practice", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Technical MCQs", viewId: "placement-hub", category: "Placement Hub" },
-  { label: "Readiness Score", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Placement Intelligence", viewId: "placement-intelligence", category: "Placement Hub" },
   { label: "Company Match Analysis", viewId: "placement-intelligence", category: "Placement Hub" },
   { label: "AI Placement Score", viewId: "placement-intelligence", category: "Placement Hub" },
@@ -368,7 +367,6 @@ export const sidebarItems: SidebarItem[] = [
     submenu: [
       { label: "AI Aptitude Engine", href: "#" },
       { label: "Technical MCQs", href: "#" },
-      { label: "Readiness Score", href: "#" },
     ],
   },
   {
@@ -573,7 +571,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                        else if (sub.label === "Job Discovery") onViewTool("job-discovery");
                       else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
-                      else if (sub.label === "Readiness Score") onViewTool("placement-readiness");
                       else if (sub.label === "Email Writer") onViewTool("prod-email");
                       else if (sub.label === "SOP Generator") onViewTool("prod-sop");
                       else if (sub.label === "LinkedIn Post Gen") onViewTool("prod-linkedin");
@@ -727,7 +724,7 @@ export function DashboardTopNav({
     transition: "border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, color 0.12s ease",
   };
   const genItems = ["Notes", "Assignment", "PPT", "Quiz", "Research Paper", "Resume"];
-  const evalItems = ["ATS Score", "Skill Assessment", "Placement Readiness"];
+  const evalItems = ["ATS Score", "Skill Assessment"];
   return (
     <header style={{
       position: "fixed", top: 0, left: 0, width: "100%", height: 70,
@@ -899,7 +896,6 @@ export function DashboardTopNav({
                 <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.97}} transition={{duration:0.12}} key={item} onClick={() => {
                   if (item === "ATS Score") onViewTool("ats-checker");
                   else if (item === "Skill Assessment") onViewTool("analytics-skills");
-                  else if (item === "Placement Readiness") onViewTool("placement-readiness");
                 }} style={{
                   display: "block", width: "100%", textAlign: "left",
                   padding: "0.45rem 0.7rem", fontSize: "0.8rem", color: "var(--text-secondary)",

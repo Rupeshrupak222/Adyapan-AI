@@ -187,12 +187,14 @@ export function CommunityProfileView({ userId, onViewUser, onBack }: { userId?: 
   const isOwnProfile = !userId;
 
   useEffect(() => {
+    let cancelled = false;
     const fetchProfile = async () => {
       setLoading(true);
       setError(null);
       try {
         if (userId) {
           const res = await api.get(`/community/users/${userId}`);
+          if (cancelled) return;
           if (res.data.success && res.data.profile) {
             setProfile(res.data.profile);
             setIsFollowing(res.data.isFollowing || false);
@@ -204,58 +206,30 @@ export function CommunityProfileView({ userId, onViewUser, onBack }: { userId?: 
             setError("Profile not found");
           }
         } else {
-          const res = await api.get("/profile/me");
-          if (res.data?.profile) {
+          const res = await api.get("/community/me");
+          if (cancelled) return;
+          if (res.data?.success && res.data?.profile) {
             setProfile(res.data.profile);
+            setFollowStats({ followers: res.data.followers || 0, following: res.data.following || 0 });
+            if (res.data.projects) setProjects(res.data.projects);
+            if (res.data.activities) setActivities(res.data.activities);
+            if (res.data.achievements) setAchievements(res.data.achievements);
+            if (res.data.recommendations) setRecommendations(res.data.recommendations);
           } else {
-            // If profile record isn't in DB yet, fetch auth me details as fallback
-            const userRes = await api.get("/auth/me");
-            const u = userRes.data.user;
-            setProfile({
-              id: "temp",
-              userId: u.id,
-              username: u.name ? u.name.toLowerCase().replace(/\s+/g, "") : `user_${u.id?.slice(0, 6)}`,
-              user: u,
-              skills: [],
-              interestedDomains: [],
-            } as any);
+            setError("Profile not found");
           }
         }
       } catch (err) {
+        if (cancelled) return;
         console.error("Failed to load profile", err);
         setError("Failed to load profile");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchProfile();
+    return () => { cancelled = true; };
   }, [userId]);
-
-  useEffect(() => {
-    const targetId = userId || profile?.userId;
-    if (!targetId) return;
-    const fetchCommunityData = async () => {
-      try {
-        const [statsRes, actRes, projRes, achRes, recRes] = await Promise.allSettled([
-          api.get(`/community/stats/${targetId}`),
-          isOwnProfile ? api.get("/community/activity") : Promise.resolve({ status: "fulfilled" as const, value: { data: { success: false } } }),
-          isOwnProfile ? api.get("/community/projects") : Promise.resolve({ status: "fulfilled" as const, value: { data: { success: false } } }),
-          isOwnProfile ? api.get("/community/achievements") : Promise.resolve({ status: "fulfilled" as const, value: { data: { success: false } } }),
-          isOwnProfile ? api.get("/community/recommendations") : Promise.resolve({ status: "fulfilled" as const, value: { data: { success: false } } }),
-        ]);
-        if (statsRes.status === "fulfilled" && statsRes.value.data.success) {
-          const s = statsRes.value.data;
-          setFollowStats({ followers: s.followers, following: s.following });
-          if (isOwnProfile) setIsFollowing(s.isFollowing);
-        }
-        if (actRes.status === "fulfilled" && (actRes.value as any).data.success) setActivities((actRes.value as any).data.activities);
-        if (projRes.status === "fulfilled" && (projRes.value as any).data.success) setProjects((projRes.value as any).data.projects);
-        if (achRes.status === "fulfilled" && (achRes.value as any).data.success) setAchievements((achRes.value as any).data.achievements);
-        if (recRes.status === "fulfilled" && (recRes.value as any).data.success) setRecommendations((recRes.value as any).data.recommendations);
-      } catch { /* ignore */ }
-    };
-    fetchCommunityData();
-  }, [profile?.userId, userId, isOwnProfile]);
 
   const handleShare = useCallback(() => {
     navigator.clipboard.writeText(window.location.href);
