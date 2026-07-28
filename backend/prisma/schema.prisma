@@ -409,7 +409,7 @@ model DiscoveryJob {
   postedAt        DateTime? @map("posted_at")
   firstSeenAt     DateTime @default(now()) @map("first_seen_at")
   lastSeenAt      DateTime @default(now()) @map("last_seen_at")
-  isActive        Boolean  @default(true)
+  isActive        Boolean  @default(true) @map("is_active")
   isFeatured      Boolean  @default(false) @map("is_featured")
   viewCount       Int      @default(0) @map("view_count")
   saveCount       Int      @default(0) @map("save_count")
