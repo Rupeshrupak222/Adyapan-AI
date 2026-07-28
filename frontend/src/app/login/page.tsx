@@ -121,7 +121,8 @@ function LoginPageContent() {
   const cardBorder= isDark ? "rgba(255,255,255,0.1)"    : "rgba(0,0,0,0.1)";
   const cardText  = isDark ? "#ffffff"                   : "#0f172a";
   const labelClr  = isDark ? "rgba(255,255,255,0.65)"   : "#475569";
-  const mutedClr  = isDark ? "rgba(255,255,255,0.35)"   : "#94a3b8";
+  const mutedClr  = isDark ? "rgba(255,255,255,0.45)"   : "#64748b";
+  const iconClr   = isDark ? "rgba(255,255,255,0.75)"   : "#475569";
   const inputBg   = isDark ? "rgba(255,255,255,0.06)"   : "rgba(0,0,0,0.04)";
   const inputBdr  = isDark ? "rgba(255,255,255,0.12)"   : "rgba(0,0,0,0.12)";
   const socialBg  = isDark ? "rgba(255,255,255,0.06)"   : "rgba(0,0,0,0.04)";
@@ -230,7 +231,7 @@ function LoginPageContent() {
                       <motion.div key={f.label} custom={i} variants={staggerItem} initial="hidden" animate="visible">
                         <label className="mb-1 block text-xs font-semibold" style={{ color: labelClr }}>{f.label}</label>
                         <div className="relative">
-                          <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: mutedClr, display: "flex" }}>{f.icon}</span>
+                          <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}>{f.icon}</span>
                           <input type={f.type} required placeholder={f.ph} value={f.val} onChange={e => f.set(e.target.value)} className={inp()} style={inpStyle} />
                         </div>
                       </motion.div>
@@ -277,7 +278,7 @@ function LoginPageContent() {
                       <motion.div key={key} className={full ? "col-span-2" : "col-span-1"} custom={fi} variants={staggerItem} initial="hidden" animate="visible">
                         <label className="mb-0.5 block text-xs font-semibold" style={{ color: labelClr }}>{label}</label>
                         <div className="relative">
-                          <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: mutedClr, display: "flex" }}>{icon}</span>
+                          <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}>{icon}</span>
                           <input type={type} required placeholder={ph} value={reg[key as keyof typeof reg]}
                             onChange={e => setReg(r => ({ ...r, [key]: e.target.value }))} className={inpReg()} style={inpStyle} />
                         </div>
@@ -286,7 +287,7 @@ function LoginPageContent() {
                     <motion.div className="col-span-1" custom={5} variants={staggerItem} initial="hidden" animate="visible">
                       <label className="mb-0.5 block text-xs font-semibold" style={{ color: labelClr }}>Academic Year</label>
                       <div className="relative">
-                        <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: mutedClr, display: "flex" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+                        <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
                         <select required value={reg.year} onChange={e => setReg(r => ({ ...r, year: e.target.value }))}
                           className={inpReg()} style={{ ...inpStyle, appearance: "none" as const, backgroundColor: isDark ? "#1a1a2e" : "#ffffff", color: cardText }}>
                           <option value="" disabled style={{ background: isDark ? "#1a1a2e" : "#ffffff", color: cardText }}>Select Year</option>
@@ -302,7 +303,7 @@ function LoginPageContent() {
                       <motion.div key={key} className="col-span-1" custom={6 + fi} variants={staggerItem} initial="hidden" animate="visible">
                         <label className="mb-0.5 block text-xs font-semibold" style={{ color: labelClr }}>{label}</label>
                         <div className="relative">
-                          <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: mutedClr, display: "flex" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                          <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
                           <input type="password" required placeholder="••••••••" value={reg[key as keyof typeof reg]}
                             onChange={e => setReg(r => ({ ...r, [key]: e.target.value }))} className={inpReg()} style={inpStyle} />
                         </div>
@@ -357,7 +358,7 @@ function LoginPageContent() {
                         <motion.div key={f.label} custom={i} variants={staggerItem} initial="hidden" animate="visible">
                           <label className="mb-1 block text-xs font-semibold" style={{ color: labelClr }}>{f.label}</label>
                           <div className="relative">
-                            <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: mutedClr, display: "flex" }}>{f.icon}</span>
+                            <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}>{f.icon}</span>
                             <input type={f.type} required placeholder={f.ph} value={f.val}
                               onChange={e => f.set(e.target.value)} disabled={f.label === "Email Address" && forgotStep === "otp"}
                               className={inp()} style={{ ...inpStyle, opacity: f.label === "Email Address" && forgotStep === "otp" ? 0.6 : 1 }} />

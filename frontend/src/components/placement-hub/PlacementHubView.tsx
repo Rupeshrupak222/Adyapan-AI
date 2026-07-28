@@ -16,10 +16,6 @@ const AptitudeEngineView = lazy(() =>
   import("@/components/aptitude-hub/AptitudeEngineView").then(m => ({ default: m.AptitudeEngineView }))
 );
 
-const LogicalReasoningModuleView = lazy(() =>
-  import("./LogicalReasoningModuleView").then(m => ({ default: m.LogicalReasoningModuleView }))
-);
-
 const TechnicalMCQsModuleView = lazy(() =>
   import("./TechnicalMCQsModuleView").then(m => ({ default: m.TechnicalMCQsModuleView }))
 );
@@ -127,18 +123,12 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
     red: "#ef4444",
   };
 
-  // Tab State: "aptitude" | "reasoning" | "mcqs" | "mocks"
-  const [tab, setTab] = useState<"aptitude" | "reasoning" | "mcqs" | "mocks">("aptitude");
+  // Tab State: "aptitude" | "mcqs"
+  const [tab, setTab] = useState<"aptitude" | "mcqs">("aptitude");
 
   // Practice session state
   const [practiceSession, setPracticeSession] = useState<PracticeSession | null>(null);
   const [showTrick, setShowTrick] = useState(false);
-
-  // Active Mock Test state
-  const [activeTest, setActiveTest] = useState<MockTest | null>(null);
-  const [testTimeRemaining, setTestTimeRemaining] = useState(0);
-  const [testAnswers, setTestAnswers] = useState<Record<string, number>>({});
-  const [testCompletedReport, setTestCompletedReport] = useState<{ score: number; correct: number; total: number; sections: Record<string, number>; accuracy: number } | null>(null);
 
   // Stats / History
   const [completedMocksCount, setCompletedMocksCount] = useState(0);
@@ -148,111 +138,16 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { role: "assistant", content: "Hello! I am your Adyapan AI Placement Coach. Ask me to explain a math problem, create a mock test, or recommend study resources!" }
+    { role: "assistant", content: "Hello! I am your Adyapan AI Placement Coach. Ask me to explain a math problem or recommend study resources!" }
   ]);
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Timer reference for mock test
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Mock tests list from backend
-  const [mockTestsList, setMockTestsList] = useState<any[]>([]);
-  const [mockTestsLoading, setMockTestsLoading] = useState(false);
-
-  // Readiness report from backend
-  const [readinessReport, setReadinessReport] = useState<any>(null);
-  const [readinessLoading, setReadinessLoading] = useState(false);
-
-  // Fetch mock tests when switching to mocks tab
-  useEffect(() => {
-    if (tab === "mocks" && mockTestsList.length === 0) {
-      setMockTestsLoading(true);
-      api.get("/placement/mock/list")
-        .then(({ data }) => {
-          if (data.success && data.tests) setMockTestsList(data.tests);
-        })
-        .catch(() => {})
-        .finally(() => setMockTestsLoading(false));
-    }
-  }, [tab]);
-
   // Sync tab with activeModule from props
   useEffect(() => {
     if (activeModule === "placement-aptitude" || activeModule === "aptitude-engine") setTab("aptitude");
-    else if (activeModule === "placement-reasoning") setTab("reasoning");
     else if (activeModule === "placement-mcqs") setTab("mcqs");
-    else if (activeModule === "placement-mocks") setTab("mocks");
   }, [activeModule]);
-
-  // Mock test countdown timer
-  const handleEndMockTest = (auto = false) => {
-    if (!activeTest) return;
-    if (!auto && !confirm("Are you sure you want to submit your mock test?")) return;
-
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    // Calculate score
-    let correctCount = 0;
-    let totalQuestions = 0;
-    const sectionScores: Record<string, number> = {};
-
-    activeTest.sections.forEach(sec => {
-      let secCorrect = 0;
-      sec.questions.forEach(q => {
-        totalQuestions += 1;
-        const selected = testAnswers[q.id];
-        if (selected === q.correctIdx) {
-          correctCount += 1;
-          secCorrect += 1;
-        }
-      });
-      sectionScores[sec.name] = secCorrect;
-    });
-
-    const finalPercent = Math.round((correctCount / totalQuestions) * 100);
-
-    setTestCompletedReport({
-      score: finalPercent,
-      correct: correctCount,
-      total: totalQuestions,
-      sections: sectionScores,
-      accuracy: finalPercent
-    });
-
-    setCompletedMocksCount(prev => prev + 1);
-    setAvgAccuracy(prev => Math.round((prev + finalPercent) / 2));
-
-    // Submit mock test results to backend
-    api.post("/placement/mock/submit", {
-      testId: activeTest.id,
-      score: finalPercent,
-      correct: correctCount,
-      total: totalQuestions,
-      sections: sectionScores,
-      answers: testAnswers,
-    }).catch(() => {});
-
-    setActiveTest(null);
-  };
-
-  useEffect(() => {
-    if (activeTest && testTimeRemaining > 0) {
-      timerRef.current = setInterval(() => {
-        setTestTimeRemaining(prev => {
-          if (prev <= 1000) {
-            clearInterval(timerRef.current!);
-            handleEndMockTest(true);
-            return 0;
-          }
-          return prev - 1000;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [activeTest, testTimeRemaining]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -321,7 +216,7 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
       try {
         await api.post("/placement/practice/submit", {
           topic: practiceSession.topic,
-          category: tab === "aptitude" ? "aptitude" : tab === "reasoning" ? "reasoning" : "mcqs",
+          category: tab === "aptitude" ? "aptitude" : "mcqs",
           questions: practiceSession.questions,
           answers: practiceSession.history.map(h => ({ questionIdx: h.questionIdx, selectedIdx: h.selectedIdx })),
           score: practiceSession.score,
@@ -330,17 +225,6 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
       alert(`🎉 Practice Completed! Your Score: ${practiceSession.score}/${practiceSession.questions.length}`);
       setPracticeSession(null);
     }
-  };
-
-  const handleStartMockTest = (test: MockTest) => {
-    setActiveTest(test);
-    setTestTimeRemaining(test.durationMs);
-    setTestAnswers({});
-    setTestCompletedReport(null);
-  };
-
-  const handleSelectMockAnswer = (qId: string, optIdx: number) => {
-    setTestAnswers(prev => ({ ...prev, [qId]: optIdx }));
   };
 
   const handleAssistantSend = async () => {
@@ -371,13 +255,6 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
     }
   };
 
-  const formatTime = (ms: number) => {
-    const totalSecs = Math.floor(ms / 1000);
-    const mins = Math.floor(totalSecs / 60);
-    const secs = totalSecs % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
       <div className="flex-1 flex flex-col gap-4">
@@ -404,26 +281,6 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
                   </div>
                 }>
                   <AptitudeEngineView setView={setView} activeModule="aptitude-engine" theme={theme} />
-                </Suspense>
-              </motion.div>
-            )}
-
-            {/* TAB B: LOGICAL REASONING (Redesigned Placement Hub Module) */}
-            {tab === "reasoning" && !practiceSession && (
-              <motion.div
-                key="reasoning-module"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="w-full"
-              >
-                <Suspense fallback={
-                  <div className="p-10 border rounded-2xl text-center" style={{ background: c.cardBg, borderColor: c.border }}>
-                    <Clock size={20} className="text-amber-500 animate-spin mx-auto mb-2" />
-                    <p className="text-xs font-bold" style={{ color: c.textMuted }}>Loading Logical Reasoning Module...</p>
-                  </div>
-                }>
-                  <LogicalReasoningModuleView setView={setView} theme={theme} />
                 </Suspense>
               </motion.div>
             )}
@@ -594,176 +451,6 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
                 )}
               </motion.div>
             )}
-
-            {/* TAB D: MOCK TESTS */}
-            {tab === "mocks" && !activeTest && (
-              <motion.div
-                key="mocks-list"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                {/* Reports Summary */}
-                {testCompletedReport && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.92, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="p-5 border rounded-2xl bg-emerald-500/10 border-emerald-500/20 space-y-3"
-                  >
-                    <h4 className="text-xs font-black uppercase tracking-wider text-emerald-500 flex items-center gap-1.5">
-                      <motion.span initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 280, damping: 18 }} className="inline-flex"><CheckCircle2 size={16} /></motion.span> Latest Mock Test Evaluation
-                    </h4>
-                    <p className="text-xs leading-relaxed" style={{ color: c.textSec }}>
-                      You completed the mock test with a score of **{testCompletedReport.score}%** ({testCompletedReport.correct}/{testCompletedReport.total} questions correct). We have adjusted your readiness indicators!
-                    </p>
-                  </motion.div>
-                )}
-
-                {mockTestsLoading ? (
-                  <div className="p-10 border rounded-2xl text-center" style={{ background: c.cardBg, borderColor: c.border }}>
-                    <Clock size={20} className="text-amber-500 animate-spin mx-auto mb-2" />
-                    <p className="text-xs font-bold" style={{ color: c.textMuted }}>Loading mock tests...</p>
-                  </div>
-                ) : mockTestsList.length > 0 ? (
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-amber-500">Available Mock Tests</h4>
-                    {mockTestsList.map((test: any, idx: number) => (
-                      <motion.div
-                        key={test.id || idx}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="p-5 border rounded-2xl hover:bg-white/5 transition-colors cursor-pointer"
-                        style={{ background: c.cardBg, borderColor: c.border }}
-                        onClick={() => handleStartMockTest({
-                          id: test.id,
-                          name: test.name,
-                          durationMs: test.durationMs || 30 * 60 * 1000,
-                          sections: test.sections || [{ name: "General", questions: [] }],
-                        })}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-sm font-extrabold" style={{ color: c.text }}>{test.name}</p>
-                            <p className="text-xs mt-1" style={{ color: c.textSec }}>{test.description || `${test.totalQuestions || 0} questions • ${Math.round((test.durationMs || 1800000) / 60000)} min`}</p>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-2 py-1 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-500 text-[10px] font-bold uppercase">
-                              {test.difficulty || "Medium"}
-                            </span>
-                            <ArrowRight size={14} className="text-amber-500" />
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-10 border rounded-2xl text-center"
-                    style={{ background: c.cardBg, borderColor: c.border }}
-                  >
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                      className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center"
-                    >
-                      <FileText size={24} className="text-amber-500/60" />
-                    </motion.div>
-                    <p className="text-sm font-extrabold mb-1" style={{ color: c.text }}>No mock tests available yet</p>
-                    <p className="text-xs" style={{ color: c.textMuted }}>Use the AI Coach to generate a custom mock test, or check back later.</p>
-                  </motion.div>
-                )}
-              </motion.div>
-            )}
-
-            {/* ACTIVE MOCK TEST EXAM INTERFACE */}
-            {activeTest && (
-              <motion.div
-                key="test-exam-active"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.35 }}
-                className="flex flex-col h-[calc(100vh-130px)] rounded-2xl border"
-                style={{ background: c.cardBg, borderColor: c.border }}
-              >
-                {/* Exam Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b shrink-0 bg-white/[0.01]" style={{ borderColor: c.border }}>
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-wider text-amber-500">Placement Assessment</span>
-                    <h3 className="text-sm font-extrabold" style={{ color: c.text }}>{activeTest.name}</h3>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1 text-xs font-black" style={{ color: testTimeRemaining < 5 * 60 * 1000 ? c.red : c.text }}>
-                      <motion.span initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 280, damping: 18 }} className="inline-flex"><Clock size={14} /></motion.span> {formatTime(testTimeRemaining)}
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => handleEndMockTest(false)}
-                      className="py-1.5 px-3 rounded bg-red-500/15 border border-red-500/20 text-red-500 text-[10px] font-bold hover:bg-red-500/25 transition-colors"
-                    >
-                      Finish Test
-                    </motion.button>
-                  </div>
-                </div>
-
-                {/* Exam Sections & Questions */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-                  {activeTest.sections.map((sec, sIdx) => (
-                    <motion.div
-                      key={sIdx}
-                      variants={fadeUp}
-                      initial="hidden"
-                      animate="visible"
-                      custom={sIdx}
-                      className="space-y-6"
-                    >
-                      <h4 className="text-xs font-black uppercase tracking-wider text-amber-500 border-b pb-2" style={{ borderColor: c.border }}>
-                        Section: {sec.name}
-                      </h4>
-                      {sec.questions.map((q, qIdx) => (
-                        <motion.div
-                          key={q.id}
-                          variants={fadeUp}
-                          initial="hidden"
-                          animate="visible"
-                          custom={qIdx}
-                          className="space-y-3"
-                        >
-                          <p className="text-xs font-bold leading-relaxed whitespace-pre-line" style={{ color: c.text }}>
-                            Q{qIdx + 1}. {q.text}
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {q.options.map((opt, oIdx) => {
-                              const isSelected = testAnswers[q.id] === oIdx;
-                              return (
-                                <motion.div
-                                  key={oIdx}
-                                  whileHover={{ y: -2, scale: 1.005 }}
-                                  onClick={() => handleSelectMockAnswer(q.id, oIdx)}
-                                  className={`p-2.5 border rounded-lg cursor-pointer transition-all text-xs font-semibold ${
-                                    isSelected ? "bg-amber-500/15 border-amber-500/35 text-amber-500" : "bg-white/5 border-white/10"
-                                  }`}
-                                  style={isSelected ? {} : { color: c.textSec }}
-                                >
-                                  {opt}
-                                </motion.div>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-
 
           </AnimatePresence>
         </div>

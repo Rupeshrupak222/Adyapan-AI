@@ -9,6 +9,8 @@ import {
   Crown, Check, X, ArrowLeft, Sparkles, Zap,
   Shield, Loader2, Star, ChevronDown,
 } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
+import { FloatingOrbs } from "@/components/ui/PremiumComponents";
 
 interface SubscriptionStatus {
   plan: string;
@@ -80,6 +82,9 @@ const RAZORPAY_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
 
 export default function PremiumPage() {
   const router = useRouter();
+  const theme = useTheme();
+  const isDark = theme === "dark";
+
   const [loading, setLoading] = useState(true);
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [user, setUser] = useState<Record<string, any> | null>(null);
@@ -112,65 +117,102 @@ export default function PremiumPage() {
       setRazorpayLoaded(true);
     }
   }, [router]);
- 
-   const handleSubscribe = async (planId: string) => {
-     if (processing) return;
 
-     setProcessing(planId);
-     try {
-       const orderRes = await api.post("/payment/create-order", { plan: planId });
-       if (!orderRes.data.success) throw new Error("Failed to create order");
+  const handleSubscribe = async (planId: string) => {
+    if (processing) return;
 
-       const { order, key } = orderRes.data;
+    setProcessing(planId);
+    try {
+      const orderRes = await api.post("/payment/create-order", { plan: planId });
+      if (!orderRes.data.success) throw new Error("Failed to create order");
 
-       const options = {
-         key,
-         amount: order.amount,
-         currency: order.currency,
-         name: "Adyapan AI",
-         description: `${planId === "pro_monthly" ? "Pro Monthly" : "Pro Yearly"} Subscription`,
-         order_id: order.id,
-          handler: async function (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
-           try {
-             const verifyRes = await api.post("/payment/verify", {
-               orderId: response.razorpay_order_id,
-               paymentId: response.razorpay_payment_id,
-               signature: response.razorpay_signature,
-             });
-             if (verifyRes.data.success) {
-               setSub({
-                 plan: planId,
-                 status: "active",
-                 endDate: null,
-                 razorpaySubscriptionId: order.id,
-               });
-               toast.success("Payment successful! Your plan is now active.");
-             } else {
-               toast.error("Payment verification failed. Please contact support.");
-             }
-           } catch {
-             toast.error("Payment verification failed. Please contact support.");
-           }
-           setProcessing(null);
-         },
-         modal: {
-           ondismiss: function () {
-             setProcessing(null);
-           },
-         },
-       };
+      const { order, key } = orderRes.data;
 
-        const rzp = new (window as unknown as { Razorpay: new (options: unknown) => { open: () => void } }).Razorpay(options);
-        rzp.open();
-      } catch (err) {
-        toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to initiate payment");
-       setProcessing(null);
-     }
-   };
+      const options = {
+        key,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Adyapan AI",
+        description: `${planId === "pro_monthly" ? "Pro Monthly" : "Pro Yearly"} Subscription`,
+        order_id: order.id,
+        handler: async function (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
+          try {
+            const verifyRes = await api.post("/payment/verify", {
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+            });
+            if (verifyRes.data.success) {
+              setSub({
+                plan: planId,
+                status: "active",
+                endDate: null,
+                razorpaySubscriptionId: order.id,
+              });
+              toast.success("Payment successful! Your plan is now active.");
+            } else {
+              toast.error("Payment verification failed. Please contact support.");
+            }
+          } catch {
+            toast.error("Payment verification failed. Please contact support.");
+          }
+          setProcessing(null);
+        },
+        modal: {
+          ondismiss: function () {
+            setProcessing(null);
+          },
+        },
+      };
+
+      const rzp = new (window as unknown as { Razorpay: new (options: unknown) => { open: () => void } }).Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to initiate payment");
+      setProcessing(null);
+    }
+  };
+
+  const colors = {
+    bg: isDark ? "#080710" : "#f8fafc",
+    text: isDark ? "#ffffff" : "#0f172a",
+    subtext: isDark ? "rgba(255,255,255,0.6)" : "#475569",
+    subtextMuted: isDark ? "rgba(255,255,255,0.4)" : "#64748b",
+    headerBorder: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
+    backBtnBg: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+    backBtnBorder: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
+    cardPopularBg: isDark
+      ? "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.04))"
+      : "linear-gradient(135deg, rgba(245,158,11,0.1), rgba(254,243,199,0.6))",
+    cardPopularBorder: isDark ? "1px solid rgba(245,158,11,0.3)" : "1px solid rgba(245,158,11,0.4)",
+    cardPopularShadow: isDark ? "0 0 40px rgba(245,158,11,0.1)" : "0 10px 30px rgba(245,158,11,0.12)",
+    cardDefaultBg: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.85)",
+    cardDefaultBorder: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)",
+    cardDefaultShadow: isDark ? "none" : "0 4px 20px rgba(0,0,0,0.03)",
+    featureText: isDark ? "rgba(255,255,255,0.8)" : "#334155",
+    missingFeatureText: isDark ? "rgba(255,255,255,0.25)" : "#94a3b8",
+    badgeProBg: isDark ? "rgba(245,158,11,0.1)" : "rgba(245,158,11,0.12)",
+    badgeProText: isDark ? "#f59e0b" : "#d97706",
+    badgeProBorder: isDark ? "1px solid rgba(245,158,11,0.2)" : "1px solid rgba(245,158,11,0.3)",
+    badgeFreeBg: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+    badgeFreeText: isDark ? "rgba(255,255,255,0.4)" : "#64748b",
+    badgeFreeBorder: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)",
+    upgradeBtnStandardBg: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+    upgradeBtnStandardText: isDark ? "#ffffff" : "#0f172a",
+    upgradeBtnStandardBorder: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)",
+    gridCardBg: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.9)",
+    gridCardBorder: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)",
+    itemCardBg: isDark ? "rgba(255,255,255,0.03)" : "#f8fafc",
+    itemCardBorder: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)",
+    itemDesc: isDark ? "rgba(255,255,255,0.5)" : "#64748b",
+    testNoticeBg: isDark ? "rgba(245,158,11,0.08)" : "rgba(245,158,11,0.1)",
+    testNoticeText: isDark ? "#f59e0b" : "#b45309",
+    testNoticeBorder: isDark ? "1px solid rgba(245,158,11,0.15)" : "1px solid rgba(245,158,11,0.25)",
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#080710" }}>
+      <div className="min-h-screen flex items-center justify-center transition-colors duration-300" style={{ background: colors.bg }}>
         <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
       </div>
     );
@@ -179,13 +221,15 @@ export default function PremiumPage() {
   const isPro = sub?.status === "active";
 
   return (
-    <div className="min-h-screen" style={{ background: "#080710", color: "#fff" }}>
+    <div className="min-h-screen relative overflow-hidden transition-colors duration-300" style={{ background: colors.bg, color: colors.text }}>
+      <FloatingOrbs />
+
       {/* Nav */}
-      <header className="flex items-center gap-3 px-6 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+      <header className="relative z-10 flex items-center gap-3 px-6 py-4 border-b transition-colors duration-300" style={{ borderColor: colors.headerBorder }}>
         <button
           onClick={() => router.push("/dashboard/user")}
-          className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+          className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+          style={{ background: colors.backBtnBg, border: `1px solid ${colors.backBtnBorder}`, color: colors.text }}
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -196,7 +240,7 @@ export default function PremiumPage() {
         <div className="flex-1" />
         {isPro && (
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold"
-            style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.2)" }}>
+            style={{ background: colors.badgeProBg, color: colors.badgeProText, border: colors.badgeProBorder }}>
             <Sparkles className="w-3.5 h-3.5" />
             {sub?.plan === "pro_yearly" ? "Pro Yearly" : "Pro Monthly"} Active
           </div>
@@ -204,22 +248,22 @@ export default function PremiumPage() {
       </header>
 
       {/* Hero */}
-      <div className="text-center py-16 px-4">
+      <div className="relative z-10 text-center py-16 px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
             <Crown className="w-8 h-8 text-amber-500" />
           </div>
           <h1 className="text-4xl font-extrabold mb-3" style={{ fontFamily: "'Outfit', sans-serif" }}>
             Unlock <span style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Premium</span>
           </h1>
-          <p className="text-sm max-w-lg mx-auto" style={{ color: "rgba(255,255,255,0.6)" }}>
+          <p className="text-sm max-w-lg mx-auto transition-colors duration-300" style={{ color: colors.subtext }}>
             Get unlimited access to all AI features, premium models, and advanced tools to accelerate your career.
           </p>
         </motion.div>
       </div>
 
       {/* Plans */}
-      <div className="max-w-5xl mx-auto px-4 pb-20">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 pb-20">
         <div className="grid md:grid-cols-3 gap-5">
           {PLANS.map((plan, i) => {
             const isCurrentPlan = isPro && sub?.plan === plan.id;
@@ -233,19 +277,15 @@ export default function PremiumPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="relative rounded-2xl p-6 flex flex-col"
+                className="relative rounded-2xl p-6 flex flex-col backdrop-blur-md transition-all duration-300"
                 style={{
-                  background: plan.popular
-                    ? "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.04))"
-                    : "rgba(255,255,255,0.03)",
-                  border: plan.popular
-                    ? "1px solid rgba(245,158,11,0.3)"
-                    : "1px solid rgba(255,255,255,0.08)",
-                  boxShadow: plan.popular ? "0 0 40px rgba(245,158,11,0.1)" : "none",
+                  background: plan.popular ? colors.cardPopularBg : colors.cardDefaultBg,
+                  border: plan.popular ? colors.cardPopularBorder : colors.cardDefaultBorder,
+                  boxShadow: plan.popular ? colors.cardPopularShadow : colors.cardDefaultShadow,
                 }}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-bold"
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-bold shadow-md"
                     style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>
                     <Star className="w-3 h-3 inline mr-1" />Most Popular
                   </div>
@@ -256,11 +296,11 @@ export default function PremiumPage() {
                     {plan.name}
                   </h3>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold">₹{plan.price}</span>
-                    <span style={{ color: "rgba(255,255,255,0.4)" }}>{plan.period}</span>
+                    <span className="text-4xl font-extrabold" style={{ color: colors.text }}>₹{plan.price}</span>
+                    <span style={{ color: colors.subtextMuted }}>{plan.period}</span>
                   </div>
                   {plan.yearlyNote && (
-                    <div className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+                    <div className="text-[10px] mt-1" style={{ color: colors.subtextMuted }}>
                       {plan.yearlyNote}
                     </div>
                   )}
@@ -270,11 +310,11 @@ export default function PremiumPage() {
                   {plan.features.map((f, j) => (
                     <div key={j} className="flex items-start gap-2 text-xs">
                       <Check className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span style={{ color: "rgba(255,255,255,0.8)" }}>{f}</span>
+                      <span style={{ color: colors.featureText }}>{f}</span>
                     </div>
                   ))}
                   {plan.missing.map((f, j) => (
-                    <div key={j} className="flex items-start gap-2 text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>
+                    <div key={j} className="flex items-start gap-2 text-xs" style={{ color: colors.missingFeatureText }}>
                       <X className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                       <span>{f}</span>
                     </div>
@@ -282,11 +322,11 @@ export default function PremiumPage() {
                 </div>
 
                 {showCurrentLabel && (
-                  <div className="w-full py-3 rounded-xl text-center text-xs font-bold"
+                  <div className="w-full py-3 rounded-xl text-center text-xs font-bold transition-colors"
                     style={{
-                      background: isPro ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.05)",
-                      color: isPro ? "#f59e0b" : "rgba(255,255,255,0.4)",
-                      border: `1px solid ${isPro ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.08)"}`,
+                      background: isPro ? colors.badgeProBg : colors.badgeFreeBg,
+                      color: isPro ? colors.badgeProText : colors.badgeFreeText,
+                      border: isPro ? colors.badgeProBorder : colors.badgeFreeBorder,
                     }}>
                     {isPro ? "Current Plan" : "Free Plan"}
                   </div>
@@ -296,13 +336,13 @@ export default function PremiumPage() {
                   <button
                     onClick={() => handleSubscribe(plan.id)}
                     disabled={processing !== null}
-                    className="w-full py-3 rounded-xl text-xs font-extrabold transition-all disabled:opacity-50"
+                    className="w-full py-3 rounded-xl text-xs font-extrabold transition-all disabled:opacity-50 cursor-pointer hover:shadow-lg"
                     style={{
                       background: plan.popular
                         ? "linear-gradient(135deg, #f59e0b, #d97706)"
-                        : "rgba(255,255,255,0.06)",
-                      color: plan.popular ? "#000" : "#fff",
-                      border: plan.popular ? "none" : "1px solid rgba(255,255,255,0.1)",
+                        : colors.upgradeBtnStandardBg,
+                      color: plan.popular ? "#000" : colors.upgradeBtnStandardText,
+                      border: plan.popular ? "none" : colors.upgradeBtnStandardBorder,
                     }}
                   >
                     {processing === plan.id ? (
@@ -325,10 +365,10 @@ export default function PremiumPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mt-16 rounded-2xl p-8"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+          className="mt-16 rounded-2xl p-8 backdrop-blur-md transition-colors duration-300"
+          style={{ background: colors.gridCardBg, border: colors.gridCardBorder }}
         >
-          <h2 className="text-xl font-extrabold mb-6 flex items-center gap-2">
+          <h2 className="text-xl font-extrabold mb-6 flex items-center gap-2" style={{ color: colors.text }}>
             <Zap className="w-5 h-5 text-amber-500" />
             Everything in Premium
           </h2>
@@ -341,14 +381,14 @@ export default function PremiumPage() {
               { icon: <Crown className="w-4 h-4" />, title: "Cover Letters", desc: "Unlimited AI-generated cover letters" },
               { icon: <Sparkles className="w-4 h-4" />, title: "Priority Support", desc: "Get help within 24 hours" },
             ].map((feature, i) => (
-              <div key={i} className="flex items-start gap-3 p-4 rounded-xl"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div key={i} className="flex items-start gap-3 p-4 rounded-xl transition-colors duration-300"
+                style={{ background: colors.itemCardBg, border: colors.itemCardBorder }}>
                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
                   <span className="text-amber-500">{feature.icon}</span>
                 </div>
                 <div>
-                  <div className="text-sm font-bold mb-0.5">{feature.title}</div>
-                  <div className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>{feature.desc}</div>
+                  <div className="text-sm font-bold mb-0.5" style={{ color: colors.text }}>{feature.title}</div>
+                  <div className="text-xs" style={{ color: colors.itemDesc }}>{feature.desc}</div>
                 </div>
               </div>
             ))}
@@ -362,8 +402,8 @@ export default function PremiumPage() {
           transition={{ delay: 0.6 }}
           className="mt-8 text-center"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-bold"
-            style={{ background: "rgba(245,158,11,0.08)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.15)" }}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-bold transition-colors"
+            style={{ background: colors.testNoticeBg, color: colors.testNoticeText, border: colors.testNoticeBorder }}>
             <Shield className="w-3 h-3" />
             Test Mode — Use card 4111 1111 1111 1111 for test payments
           </div>

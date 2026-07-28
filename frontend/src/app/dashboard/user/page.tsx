@@ -257,9 +257,7 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Hiring Challenges", viewId: "job-hub", category: "Job Hub" },
   { label: "LinkedIn Jobs", viewId: "job-hub", category: "Job Hub" },
   { label: "Aptitude Practice", viewId: "placement-hub", category: "Placement Hub" },
-  { label: "Logical Reasoning", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Technical MCQs", viewId: "placement-hub", category: "Placement Hub" },
-  { label: "Mock Tests", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Readiness Score", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Placement Intelligence", viewId: "placement-intelligence", category: "Placement Hub" },
   { label: "Company Match Analysis", viewId: "placement-intelligence", category: "Placement Hub" },
@@ -360,9 +358,7 @@ export const sidebarItems: SidebarItem[] = [
     id: "placement", label: "Placement Hub", icon: <Trophy size={18} />,
     submenu: [
       { label: "AI Aptitude Engine", href: "#" },
-      { label: "Logical Reasoning", href: "#" },
       { label: "Technical MCQs", href: "#" },
-      { label: "Mock Tests", href: "#" },
       { label: "Readiness Score", href: "#" },
     ],
   },
@@ -566,9 +562,7 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "Hiring Challenges") onViewTool("job-challenges");
                       else if (sub.label === "LinkedIn Jobs") onViewTool("job-matching");
                       else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
-                      else if (sub.label === "Logical Reasoning") onViewTool("placement-reasoning");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
-                      else if (sub.label === "Mock Tests") onViewTool("placement-mocks");
                       else if (sub.label === "Readiness Score") onViewTool("placement-readiness");
                       else if (sub.label === "Email Writer") onViewTool("prod-email");
                       else if (sub.label === "SOP Generator") onViewTool("prod-sop");

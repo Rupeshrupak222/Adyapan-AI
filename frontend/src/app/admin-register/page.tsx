@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { api } from "@/services/api";
 import { saveAuthSession } from "@/hooks/useAuth";
 import {
@@ -44,7 +45,8 @@ export default function AdminRegisterPage() {
   const cardBorder = isDark ? "rgba(255,255,255,0.1)"           : "rgba(0,0,0,0.1)";
   const cardText   = isDark ? "#ffffff"                          : "#0f172a";
   const labelClr   = isDark ? "rgba(255,255,255,0.65)"          : "#475569";
-  const mutedClr   = isDark ? "rgba(255,255,255,0.3)"           : "#94a3b8";
+  const mutedClr   = isDark ? "rgba(255,255,255,0.45)"          : "#64748b";
+  const iconClr    = isDark ? "rgba(255,255,255,0.75)"          : "#475569";
   const inputBg    = isDark ? "rgba(255,255,255,0.06)"          : "rgba(0,0,0,0.04)";
   const inputBdr   = isDark ? "rgba(255,255,255,0.12)"          : "rgba(0,0,0,0.12)";
 
@@ -134,38 +136,42 @@ export default function AdminRegisterPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: bg, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-      <div style={{
-        width: "100%", maxWidth: 420,
-        background: cardBg, border: `1px solid ${cardBorder}`,
-        borderRadius: 20, padding: "2rem 1.75rem",
-        backdropFilter: "blur(24px)",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-        color: cardText,
-      }}>
+    <div style={{ minHeight: "100vh", background: bg, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", fontFamily: "'Inter', sans-serif" }}>
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        style={{
+          width: "100%", maxWidth: 440,
+          background: cardBg, border: `1px solid ${cardBorder}`,
+          borderRadius: 20, padding: "2rem",
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+          color: cardText, margin: "auto",
+        }}>
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
+        <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
           <div style={{
-            width: 56, height: 56, borderRadius: "50%",
-            background: "rgba(245,158,11,0.12)", border: "2px solid rgba(245,158,11,0.4)",
+            width: 48, height: 48, borderRadius: 14,
+            background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 1rem",
+            margin: "0 auto 0.75rem", color: "#f59e0b",
           }}>
-            <ShieldCheck size={26} color="#f59e0b" />
+            <ShieldCheck size={24} />
           </div>
-          <h1 style={{ fontSize: "1.35rem", fontWeight: 800, marginBottom: "0.3rem" }}>Admin Registration</h1>
-          <p style={{ fontSize: "0.8rem", color: labelClr }}>
-            Restricted access — requires a valid admin secret key
+          <h1 style={{ fontSize: "1.35rem", fontWeight: 800, margin: 0 }}>Admin Registration</h1>
+          <p style={{ fontSize: "0.78rem", color: labelClr, marginTop: 4 }}>
+            Create an administrator account for Adyapan AI
           </p>
         </div>
 
-        {/* Secret key notice */}
+        {/* Notice Banner */}
         <div style={{
-          background: isDark ? "rgba(245,158,11,0.08)" : "rgba(245,158,11,0.1)",
+          background: "rgba(245,158,11,0.08)",
           border: "1px solid rgba(245,158,11,0.25)",
           borderRadius: 10, padding: "0.65rem 0.85rem",
-          fontSize: "0.76rem", color: "#f59e0b",
-          marginBottom: "1.25rem", display: "flex", gap: 8, alignItems: "flex-start",
+          fontSize: "0.75rem", color: "#f59e0b",
+          marginBottom: "1.25rem", display: "flex", gap: "0.6rem", alignItems: "flex-start",
         }}>
           <ShieldCheck size={14} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>This page is for authorized administrators only. You need the <strong>admin secret key</strong> to register.</span>
@@ -180,7 +186,7 @@ export default function AdminRegisterPage() {
               <div style={{ position: "relative" }}>
                 <span style={{
                   position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)",
-                  color: mutedClr, display: "flex",
+                  color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10,
                 }}>
                   {f.icon}
                 </span>
@@ -236,7 +242,7 @@ export default function AdminRegisterPage() {
             Sign in
           </Link>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

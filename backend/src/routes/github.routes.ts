@@ -34,10 +34,10 @@ router.post("/analyze", async (req: any, res) => {
 
 router.post("/readme", async (req: any, res) => {
   try {
-    const { projectName, extraContext } = req.body;
+    const { projectName, extraContext, templateStyle } = req.body;
     if (!projectName) return res.status(400).json({ error: "Project name is required" });
     
-    const result = await generateReadme(projectName, extraContext);
+    const result = await generateReadme(projectName, extraContext, templateStyle);
     const userPrisma = await getUserPrismaFromRequest(req);
 
     await userPrisma.generatedReadme.create({

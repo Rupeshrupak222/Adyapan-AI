@@ -1,4 +1,30 @@
 import { marked, Renderer } from "marked";
+import fs from "fs";
+import path from "path";
+
+let cachedLogoBase64: string | null = null;
+
+function getLogoBase64(): string {
+  if (cachedLogoBase64 !== null) return cachedLogoBase64;
+  try {
+    const cwd = process.cwd();
+    const candidatePaths = [
+      path.join(cwd, "frontend", "public", "assets", "logo.png"),
+      path.join(cwd, "..", "frontend", "public", "assets", "logo.png"),
+      path.join(__dirname, "..", "..", "..", "frontend", "public", "assets", "logo.png"),
+      path.join(__dirname, "..", "..", "public", "assets", "logo.png"),
+    ];
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        const fileBuf = fs.readFileSync(p);
+        cachedLogoBase64 = `data:image/png;base64,${fileBuf.toString("base64")}`;
+        return cachedLogoBase64;
+      }
+    }
+  } catch { /* fallback */ }
+  cachedLogoBase64 = "";
+  return cachedLogoBase64;
+}
 
 function escapeHtml(text: string): string {
   return text
@@ -95,6 +121,7 @@ export function formatNotesHtml(
   const wordCount = options.wordCount || markdown.split(/\s+/).length;
   const readingTime = options.readingTime || `${Math.ceil(wordCount / 200)} min`;
   const exportId = options.exportId || `ADY-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const logoDataUri = getLogoBase64();
 
   const dateStr = new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -110,7 +137,7 @@ export function formatNotesHtml(
   <title>${escapeHtml(topic)} - Adyapan AI Notes</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -126,14 +153,24 @@ export function formatNotesHtml(
       --border: #E5E7EB;
     }
 
+    @page {
+      size: A4;
+      margin: 18mm 12mm 16mm 12mm;
+    }
+
     body {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      line-height: 1.75;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1.7;
       color: var(--text);
       background: var(--bg);
       position: relative;
     }
+
+    /* ── Page Break Controls ─────────────────── */
+    h1, h2, h3, h4, h5, h6 { page-break-after: avoid; break-after: avoid; }
+    .code-container, .table-wrapper, .callout-box, .meta-card { page-break-inside: avoid; break-inside: avoid; }
+    li { page-break-inside: avoid; break-inside: avoid; }
 
     /* ── Watermark Background ────────────────────── */
     .watermark {
@@ -142,9 +179,9 @@ export function formatNotesHtml(
       left: 50%;
       transform: translate(-50%, -50%) rotate(-35deg);
       font-family: 'Poppins', sans-serif;
-      font-size: 80px;
+      font-size: 72px;
       font-weight: 800;
-      color: rgba(244, 180, 0, 0.04);
+      color: rgba(244, 180, 0, 0.035);
       pointer-events: none;
       user-select: none;
       z-index: 0;
@@ -152,9 +189,9 @@ export function formatNotesHtml(
     }
 
     .notes-container {
-      max-width: 860px;
+      max-width: 820px;
       margin: 0 auto;
-      padding: 40px 48px;
+      padding: 8px 40px 24px;
       position: relative;
       z-index: 1;
     }
@@ -162,25 +199,39 @@ export function formatNotesHtml(
     /* ── Top Header Brand ────────────────────────── */
     .brand-header {
       text-align: center;
-      padding-bottom: 24px;
+      padding-bottom: 20px;
       border-bottom: 3px solid var(--primary);
-      margin-bottom: 28px;
+      margin-bottom: 24px;
+    }
+
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .brand-logo-img {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      object-fit: contain;
+      box-shadow: 0 4px 12px rgba(244, 180, 0, 0.3);
     }
 
     .brand-logo-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 48px;
-      height: 48px;
+      width: 46px;
+      height: 46px;
       border-radius: 12px;
       background: linear-gradient(135deg, #F4B400, #D97706);
       color: #000;
       font-family: 'Poppins', sans-serif;
       font-weight: 800;
       font-size: 22px;
-      margin-bottom: 10px;
-      box-shadow: 0 4px 12px rgba(244, 180, 0, 0.25);
+      box-shadow: 0 4px 12px rgba(244, 180, 0, 0.3);
     }
 
     .brand-title {
@@ -332,7 +383,12 @@ export function formatNotesHtml(
   <div class="notes-container">
     <!-- Brand Header -->
     <div class="brand-header">
-      <div class="brand-logo-badge">A</div>
+      <div class="brand-logo-container">
+        ${logoDataUri
+          ? `<img src="${logoDataUri}" alt="Adyapan AI" class="brand-logo-img" />`
+          : `<div class="brand-logo-badge">A</div>`
+        }
+      </div>
       <div class="brand-title">ADYAPAN AI</div>
       <div class="brand-subtitle">AI Notes Generator</div>
       <div class="brand-tagline">"Powered by Artificial Intelligence"</div>
