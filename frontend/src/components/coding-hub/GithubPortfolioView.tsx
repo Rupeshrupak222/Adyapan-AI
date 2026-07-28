@@ -26,10 +26,11 @@ import {
   User,
   ExternalLink,
   Layers,
-  Lock,
   Columns,
   MapPin,
   Users,
+  Terminal,
+  Share2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
@@ -38,7 +39,7 @@ import { ChatBackground } from "@/components/ady-chat/ChatBackground";
 import Editor from "@monaco-editor/react";
 import confetti from "canvas-confetti";
 
-// ─── Inline Github Icon Fallback ─────────────────────────────────────────────
+// ─── Inline Github Icon ─────────────────────────────────────────────────────
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement> & { size?: number }) => (
   <svg
@@ -125,12 +126,12 @@ export function GithubPortfolioView() {
   // README generator states
   const [projectName, setProjectName] = useState("");
   const [projectContext, setProjectContext] = useState("");
-  const [templateStyle, setTemplateStyle] = useState("Modern Showcase");
+  const [templateStyle, setTemplateStyle] = useState("Modern Gold Showcase");
   const [readmeContent, setReadmeContent] = useState("");
 
   // Portfolio states
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
-  const [portfolioTheme, setPortfolioTheme] = useState<"cyberpunk" | "slate" | "emerald">("cyberpunk");
+  const [portfolioTheme, setPortfolioTheme] = useState<"amber" | "obsidian" | "sunset">("amber");
 
   // Direct Push to GitHub states
   const [githubPat, setGithubPat] = useState("");
@@ -141,13 +142,13 @@ export function GithubPortfolioView() {
   const [pushing, setPushing] = useState(false);
   const [pushLog, setPushLog] = useState<{ status: "success" | "error" | null; message: string; details?: string }>({
     status: null,
-    message: "Ready to push files.",
+    message: "Ready to push files to GitHub.",
   });
 
   const [theme, setTheme] = useState("dark");
   const isDark = theme === "dark";
 
-  // Sync theme
+  // Sync theme with Adyapan AI theme engine
   useEffect(() => {
     const t = document.documentElement.getAttribute("data-theme") || "dark";
     setTheme(t);
@@ -167,7 +168,7 @@ export function GithubPortfolioView() {
     if (savedUser) setUsername(savedUser);
   }, []);
 
-  // ─── Handlers ─────────────────────────────────────────────────────────────
+  // ─── Extraction & Logic Handlers ──────────────────────────────────────────
 
   const handleAnalyze = async () => {
     if (!username.trim()) {
@@ -177,7 +178,7 @@ export function GithubPortfolioView() {
     setLoading(true);
     setAnalysis(null);
     setPortfolio(null);
-    setPushLog({ status: null, message: "Ready to push files." });
+    setPushLog({ status: null, message: "Ready to push files to GitHub." });
 
     try {
       const res = await api.post("/github/analyze", { username: username.trim() });
@@ -206,7 +207,7 @@ export function GithubPortfolioView() {
     setProjectContext(`Language: ${repo.language || "TypeScript"}\nDescription: ${repo.description}`);
     setTargetRepo(`${username || "user"}/${repo.name}`);
     setActiveStep(2);
-    toast.info(`Selected project "${repo.name}" for README generation`);
+    toast.info(`Selected repository "${repo.name}" for README builder`);
   };
 
   const handleGenerateReadme = async () => {
@@ -246,18 +247,18 @@ export function GithubPortfolioView() {
         setPortfolio({
           homeHero: res.data.homeHero || {
             title: analysis.name || username,
-            tagline: "Software Engineer & Open Source Contributor",
-            bio: analysis.summary || "Building optimized full-stack applications.",
+            tagline: "Software Engineer & Open Source Craftsperson",
+            bio: analysis.summary || "Building high-performance scalable web applications.",
             location: analysis.location || "Remote",
           },
           stats: res.data.stats || {
             yearsExp: "3+ Years",
-            projectsCompleted: `${analysis.publicRepos || 15}+ Repos`,
+            projectsCompleted: `${analysis.publicRepos || 15}+ Repositories`,
             contributions: `${analysis.estimatedCommits || 850}+ Commits`,
           },
           aboutSection: res.data.aboutSection || analysis.summary || "Experienced full-stack software engineer.",
           skills: res.data.skills || [
-            { category: "Primary Tech", items: analysis.topLanguages.length ? analysis.topLanguages : ["TypeScript", "React", "Node.js"] },
+            { category: "Core Stack", items: analysis.topLanguages.length ? analysis.topLanguages : ["TypeScript", "React", "Node.js", "Python"] },
           ],
           projectsToHighlight: res.data.projectsToHighlight?.length
             ? res.data.projectsToHighlight
@@ -320,7 +321,7 @@ export function GithubPortfolioView() {
         localStorage.setItem("adyapan-github-pat", githubPat.trim());
         toast.success("README pushed to GitHub!");
         confetti({
-          particleCount: 150,
+          particleCount: 160,
           spread: 80,
           origin: { y: 0.6 },
         });
@@ -376,44 +377,50 @@ export function GithubPortfolioView() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${portfolio.homeHero.title || username} - Developer Portfolio</title>
+  <title>${portfolio.homeHero.title || username} - Amber Gold Portfolio</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; background-color: #090d16; color: #f1f5f9; }
+    body { font-family: 'Inter', sans-serif; background-color: #0b0b14; color: #f8fafc; }
     h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+    .amber-gradient { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .amber-text-gradient { background: linear-gradient(135deg, #f59e0b, #fbbf24, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   </style>
 </head>
 <body class="min-h-screen p-6 md:p-12 max-w-5xl mx-auto space-y-12">
-  <header class="text-center py-12 border-b border-slate-800 space-y-4">
-    <h1 class="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+  <header class="text-center py-12 border-b border-amber-500/20 space-y-4">
+    <div class="inline-block p-1 rounded-2xl amber-gradient mb-2">
+      <img src="https://github.com/${username}.png" alt="${username}" class="w-20 h-20 rounded-xl object-cover" />
+    </div>
+    <h1 class="text-4xl md:text-5xl font-extrabold amber-text-gradient">
       ${portfolio.homeHero.tagline}
     </h1>
     <p class="text-slate-400 max-w-2xl mx-auto text-base">${portfolio.homeHero.bio}</p>
-    <div class="flex justify-center gap-4 pt-4 text-xs font-bold">
-      <span class="px-4 py-2 bg-emerald-500 text-black rounded-xl">📍 ${portfolio.homeHero.location || "Remote"}</span>
+    <div class="flex justify-center gap-3 pt-4 text-xs font-bold">
+      <span class="px-4 py-2 bg-amber-500/15 border border-amber-500/30 text-amber-400 rounded-xl">📍 ${portfolio.homeHero.location || "Remote"}</span>
     </div>
   </header>
-  
+
   <section class="space-y-4">
-    <h2 class="text-xl font-bold text-emerald-400">About Me</h2>
+    <h2 class="text-xl font-bold text-amber-400 border-b border-amber-500/20 pb-2">About Developer</h2>
     <p class="text-slate-300 leading-relaxed whitespace-pre-wrap">${portfolio.aboutSection}</p>
   </section>
 
   <section class="space-y-6">
-    <h2 class="text-xl font-bold text-emerald-400">Featured Repositories</h2>
+    <h2 class="text-xl font-bold text-amber-400 border-b border-amber-500/20 pb-2">Featured Repositories</h2>
     <div class="grid md:grid-cols-2 gap-4">
       ${portfolio.projectsToHighlight.map(p => `
-        <div class="p-5 border border-slate-800 bg-slate-900/50 rounded-2xl space-y-2">
+        <div class="p-5 border border-amber-500/20 bg-amber-500/[0.03] rounded-2xl space-y-2">
           <h3 class="font-bold text-lg text-slate-100">${p.title}</h3>
           <p class="text-xs text-slate-400">${p.summary}</p>
-          <span class="inline-block px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 text-xs font-semibold">${p.tech}</span>
+          <span class="inline-block px-2.5 py-1 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 text-xs font-semibold">${p.tech}</span>
         </div>
       `).join("")}
     </div>
   </section>
-  <footer class="text-center py-8 border-t border-slate-800 text-xs text-slate-500">
-    Generated via Adyapan AI GitHub Portfolio Wizard &copy; ${new Date().getFullYear()}
+
+  <footer class="text-center py-8 border-t border-amber-500/20 text-xs text-slate-500">
+    Crafted via Adyapan AI GitHub Portfolio Wizard &copy; ${new Date().getFullYear()}
   </footer>
 </body>
 </html>`;
@@ -427,23 +434,23 @@ export function GithubPortfolioView() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success("Downloaded Portfolio HTML!");
+    toast.success("Exported Portfolio HTML!");
   };
 
-  // Dynamic Theme Colors
-  const sidebarBg = isDark ? "rgba(8,11,22,0.96)" : "rgba(255,255,255,0.97)";
-  const sidebarBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
-  const primaryText = isDark ? "#ffffff" : "#0f172a";
-  const cardBg = isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)";
-  const inputBg = isDark ? "rgba(0,0,0,0.5)" : "#ffffff";
-  const inputBorder = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)";
+  // Amber Gold Design Token Mappings
+  const sidebarBg = isDark ? "rgba(10,10,18,0.96)" : "rgba(255,255,255,0.97)";
+  const sidebarBorder = isDark ? "rgba(245,158,11,0.15)" : "rgba(245,158,11,0.2)";
+  const primaryText = isDark ? "#f8fafc" : "#0f172a";
+  const cardBg = isDark ? "rgba(245,158,11,0.03)" : "rgba(245,158,11,0.03)";
+  const inputBg = isDark ? "rgba(8,8,14,0.7)" : "#ffffff";
+  const inputBorder = isDark ? "rgba(245,158,11,0.2)" : "rgba(245,158,11,0.3)";
 
   return (
     <div className="relative flex overflow-hidden w-full h-full" style={{ color: primaryText }}>
       {/* Starry background */}
       <ChatBackground isDark={isDark} />
 
-      {/* Floating hamburger button when sidebar is collapsed */}
+      {/* Floating Toggle for Sidebar */}
       <AnimatePresence>
         {!sidebarOpen && (
           <motion.button
@@ -452,9 +459,9 @@ export function GithubPortfolioView() {
             style={{
               width: 36,
               height: 36,
-              background: "linear-gradient(135deg, #10b981, #059669)",
-              color: "#fff",
-              boxShadow: "0 4px 14px rgba(16,185,129,0.3)",
+              background: "linear-gradient(135deg, #f59e0b, #d97706)",
+              color: "#000",
+              boxShadow: "0 4px 16px rgba(245,158,11,0.35)",
             }}
             initial={{ opacity: 0, scale: 0.8, x: -10 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -474,7 +481,7 @@ export function GithubPortfolioView() {
 
       <div className="flex flex-1 overflow-hidden relative z-10 w-full h-full">
         
-        {/* Left Interactive Wizard Controls */}
+        {/* Left Control Sidebar */}
         <AnimatePresence>
           {sidebarOpen && (
             <motion.aside
@@ -494,22 +501,22 @@ export function GithubPortfolioView() {
               {/* Header & Close Button */}
               <div className="p-4 border-b flex items-center justify-between flex-shrink-0" style={{ borderColor: sidebarBorder }}>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-extrabold shadow-md shadow-emerald-500/20">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black font-black shadow-md shadow-amber-500/25">
                     <Github size={18} />
                   </div>
                   <div>
-                    <h2 className="font-extrabold text-sm tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                    <h2 className="font-extrabold text-sm tracking-tight text-amber-500" style={{ fontFamily: "'Outfit', sans-serif" }}>
                       GitHub Portfolio Wizard
                     </h2>
-                    <p className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                      <Sparkles size={10} /> AI Developer Showcase
+                    <p className="text-[10px] text-amber-400/80 font-semibold flex items-center gap-1">
+                      <Sparkles size={10} /> Amber Gold AI Engine
                     </p>
                   </div>
                 </div>
 
                 <motion.button
                   onClick={() => setSidebarOpen(false)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -536,11 +543,11 @@ export function GithubPortfolioView() {
                       onClick={() => setActiveStep(step as any)}
                       className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${
                         active
-                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm"
+                          ? "bg-amber-500/15 text-amber-400 border border-amber-500/35 shadow-sm shadow-amber-500/10"
                           : "text-slate-400 hover:bg-white/5"
                       }`}
                     >
-                      <Icon size={14} className={active ? "text-emerald-400" : "text-slate-500"} />
+                      <Icon size={14} className={active ? "text-amber-400" : "text-slate-500"} />
                       <span>{step}. {label}</span>
                     </button>
                   );
@@ -555,31 +562,31 @@ export function GithubPortfolioView() {
                   <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                     <div className="p-4 border rounded-2xl space-y-3" style={{ background: cardBg, borderColor: sidebarBorder }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                           <User size={14} /> Step 1: GitHub Extractor
                         </span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/25">
                           Live Sync
                         </span>
                       </div>
 
                       <div className="flex gap-2">
                         <div className="relative flex-1">
-                          <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                          <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400/60" size={14} />
                           <input
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
                             placeholder="GitHub Username (e.g. torvalds)"
-                            className="w-full rounded-xl pl-9 pr-3 py-2.5 text-xs focus:outline-none focus:border-emerald-500 transition"
+                            className="w-full rounded-xl pl-9 pr-3 py-2.5 text-xs focus:outline-none focus:border-amber-500 transition"
                             style={{ background: inputBg, borderColor: inputBorder, borderStyle: "solid", borderWidth: 1 }}
                           />
                         </div>
                         <motion.button
                           onClick={handleAnalyze}
                           disabled={loading || !username}
-                          className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold rounded-xl disabled:opacity-50 transition flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                          className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs font-extrabold rounded-xl disabled:opacity-50 transition flex items-center gap-1.5 shadow-md shadow-amber-500/20"
                           whileHover={{ scale: 1.03 }}
                           whileTap={{ scale: 0.97 }}
                         >
@@ -593,21 +600,21 @@ export function GithubPortfolioView() {
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="space-y-3 pt-3 border-t border-white/5"
+                          className="space-y-3 pt-3 border-t border-amber-500/15"
                         >
                           {/* Profile Header */}
-                          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-black/30 border border-white/5">
+                          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-black/40 border border-amber-500/20">
                             <img
                               src={analysis.avatarUrl || `https://github.com/${username}.png`}
                               alt={analysis.name || username}
-                              className="w-10 h-10 rounded-full border-2 border-emerald-500/50 object-cover"
+                              className="w-10 h-10 rounded-full border-2 border-amber-500/50 object-cover"
                               onError={(e) => {
                                 (e.target as HTMLElement).style.display = "none";
                               }}
                             />
                             <div className="flex-1 min-w-0">
                               <h3 className="text-xs font-black truncate">{analysis.name || username}</h3>
-                              <p className="text-[10px] text-emerald-400 font-mono">@{username}</p>
+                              <p className="text-[10px] text-amber-400 font-mono">@{username}</p>
                               {analysis.location && (
                                 <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
                                   <MapPin size={9} /> {analysis.location}
@@ -618,7 +625,7 @@ export function GithubPortfolioView() {
                               href={`https://github.com/${username}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-slate-400 hover:text-emerald-400 transition p-1.5"
+                              className="text-slate-400 hover:text-amber-400 transition p-1.5"
                             >
                               <ExternalLink size={14} />
                             </a>
@@ -626,15 +633,15 @@ export function GithubPortfolioView() {
 
                           {/* Quick Stats Grid */}
                           <div className="grid grid-cols-2 gap-2">
-                            <div className="p-2.5 rounded-xl bg-black/30 border border-white/5 flex items-center gap-2">
-                              <GitCommit className="w-4 h-4 text-blue-400" />
+                            <div className="p-2.5 rounded-xl bg-black/40 border border-amber-500/15 flex items-center gap-2">
+                              <GitCommit className="w-4 h-4 text-amber-400" />
                               <div>
                                 <div className="text-xs font-black">{analysis.estimatedCommits.toLocaleString()}</div>
                                 <span className="text-[9px] text-slate-400 uppercase font-semibold">Commits</span>
                               </div>
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-black/30 border border-white/5 flex items-center gap-2">
+                            <div className="p-2.5 rounded-xl bg-black/40 border border-amber-500/15 flex items-center gap-2">
                               <Star className="w-4 h-4 text-amber-400" />
                               <div>
                                 <div className="text-xs font-black">{analysis.estimatedStars}</div>
@@ -642,16 +649,16 @@ export function GithubPortfolioView() {
                               </div>
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-black/30 border border-white/5 flex items-center gap-2">
-                              <Code2 className="w-4 h-4 text-emerald-400" />
+                            <div className="p-2.5 rounded-xl bg-black/40 border border-amber-500/15 flex items-center gap-2">
+                              <Code2 className="w-4 h-4 text-amber-400" />
                               <div>
                                 <div className="text-xs font-black">{analysis.publicRepos || analysis.keyProjects.length}</div>
                                 <span className="text-[9px] text-slate-400 uppercase font-semibold">Public Repos</span>
                               </div>
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-black/30 border border-white/5 flex items-center gap-2">
-                              <Users className="w-4 h-4 text-purple-400" />
+                            <div className="p-2.5 rounded-xl bg-black/40 border border-amber-500/15 flex items-center gap-2">
+                              <Users className="w-4 h-4 text-amber-400" />
                               <div>
                                 <div className="text-xs font-black">{analysis.followers || 0}</div>
                                 <span className="text-[9px] text-slate-400 uppercase font-semibold">Followers</span>
@@ -660,15 +667,15 @@ export function GithubPortfolioView() {
                           </div>
 
                           {/* Top Technologies */}
-                          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5 space-y-1">
+                          <div className="p-2.5 rounded-xl bg-black/40 border border-amber-500/15 space-y-1">
                             <span className="text-[9px] text-slate-400 uppercase font-bold flex items-center gap-1">
-                              <Layers size={10} className="text-emerald-400" /> Key Language Distribution
+                              <Layers size={10} className="text-amber-400" /> Key Language Distribution
                             </span>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {analysis.topLanguages.map((lang, idx) => (
                                 <span
                                   key={idx}
-                                  className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold"
+                                  className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[10px] font-semibold"
                                 >
                                   {lang}
                                 </span>
@@ -686,13 +693,13 @@ export function GithubPortfolioView() {
                                 <div
                                   key={idx}
                                   onClick={() => handleSelectRepo(p)}
-                                  className="p-2 rounded-xl bg-white/5 border border-white/5 hover:border-emerald-500/30 hover:bg-emerald-500/10 cursor-pointer transition flex items-center justify-between text-xs"
+                                  className="p-2 rounded-xl bg-white/5 border border-white/5 hover:border-amber-500/40 hover:bg-amber-500/10 cursor-pointer transition flex items-center justify-between text-xs"
                                 >
                                   <div className="min-w-0 pr-2">
                                     <span className="font-extrabold truncate block text-slate-200">{p.name}</span>
                                     <span className="text-[9px] text-slate-400 truncate block">{p.description}</span>
                                   </div>
-                                  <ChevronRight size={14} className="text-slate-500 flex-shrink-0" />
+                                  <ChevronRight size={14} className="text-amber-400 flex-shrink-0" />
                                 </div>
                               ))}
                             </div>
@@ -700,7 +707,7 @@ export function GithubPortfolioView() {
 
                           <motion.button
                             onClick={() => setActiveStep(2)}
-                            className="w-full py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl transition flex justify-center items-center gap-1.5"
+                            className="w-full py-2.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-amber-400 text-xs font-bold rounded-xl transition flex justify-center items-center gap-1.5"
                           >
                             Next Step: Craft README <ChevronRight size={14} />
                           </motion.button>
@@ -715,7 +722,7 @@ export function GithubPortfolioView() {
                   <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                     <div className="p-4 border rounded-2xl space-y-3" style={{ background: cardBg, borderColor: sidebarBorder }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                           <FileText size={14} /> Step 2: AI README Craftsman
                         </span>
                       </div>
@@ -730,7 +737,7 @@ export function GithubPortfolioView() {
                             value={projectName}
                             onChange={(e) => setProjectName(e.target.value)}
                             placeholder="Project Name (e.g. task-runner)"
-                            className="w-full rounded-xl p-2.5 text-xs focus:outline-none focus:border-emerald-500 transition"
+                            className="w-full rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500 transition"
                             style={{ background: inputBg, borderColor: inputBorder, borderStyle: "solid", borderWidth: 1 }}
                           />
                         </div>
@@ -742,10 +749,10 @@ export function GithubPortfolioView() {
                           <select
                             value={templateStyle}
                             onChange={(e) => setTemplateStyle(e.target.value)}
-                            className="w-full rounded-xl p-2.5 text-xs focus:outline-none focus:border-emerald-500 transition"
+                            className="w-full rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500 transition"
                             style={{ background: inputBg, borderColor: inputBorder, borderStyle: "solid", borderWidth: 1 }}
                           >
-                            <option value="Modern Showcase">🚀 Modern Showcase (Badges & Headers)</option>
+                            <option value="Modern Gold Showcase">🚀 Modern Gold Showcase (Badges & Headers)</option>
                             <option value="Minimalist Developer">⚡ Minimalist Developer (Clean & Direct)</option>
                             <option value="Full-Stack Enterprise">🛠️ Full-Stack Enterprise (Architecture & Endpoints)</option>
                             <option value="Open Source Library">📦 Open Source Library (NPM & CLI Guide)</option>
@@ -760,7 +767,7 @@ export function GithubPortfolioView() {
                             value={projectContext}
                             onChange={(e) => setProjectContext(e.target.value)}
                             placeholder="Enter tech stack, key features, or installation instructions..."
-                            className="w-full h-24 rounded-xl p-2.5 text-xs focus:outline-none focus:border-emerald-500 resize-none font-sans transition"
+                            className="w-full h-24 rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500 resize-none font-sans transition"
                             style={{ background: inputBg, borderColor: inputBorder, borderStyle: "solid", borderWidth: 1 }}
                           />
                         </div>
@@ -769,7 +776,7 @@ export function GithubPortfolioView() {
                       <motion.button
                         onClick={handleGenerateReadme}
                         disabled={loading || !projectName}
-                        className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-black rounded-xl disabled:opacity-50 transition flex justify-center items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                        className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs font-black rounded-xl disabled:opacity-50 transition flex justify-center items-center gap-1.5 shadow-md shadow-amber-500/20"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -796,31 +803,31 @@ export function GithubPortfolioView() {
                   <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                     <div className="p-4 border rounded-2xl space-y-3" style={{ background: cardBg, borderColor: sidebarBorder }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                           <Layout size={14} /> Step 3: Portfolio Website
                         </span>
                       </div>
 
                       <p className="text-xs text-slate-400 leading-relaxed">
-                        Generate a high-converting single page portfolio site using your GitHub profile analytics.
+                        Generate a high-converting developer portfolio site using your GitHub profile analytics.
                       </p>
 
                       <div>
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                          Preview Color Theme
+                          Preview Theme
                         </label>
                         <div className="grid grid-cols-3 gap-1.5 text-xs font-bold">
                           {[
-                            { id: "cyberpunk", label: "Midnight", color: "bg-indigo-600" },
-                            { id: "slate", label: "Sleek Slate", color: "bg-slate-700" },
-                            { id: "emerald", label: "Emerald Glass", color: "bg-emerald-600" },
+                            { id: "amber", label: "Amber Gold", color: "bg-amber-500" },
+                            { id: "obsidian", label: "Obsidian", color: "bg-slate-800" },
+                            { id: "sunset", label: "Sunset", color: "bg-gradient-to-r from-amber-500 to-rose-500" },
                           ].map((th) => (
                             <button
                               key={th.id}
                               onClick={() => setPortfolioTheme(th.id as any)}
                               className={`p-2 rounded-xl border flex items-center justify-center gap-1.5 transition ${
                                 portfolioTheme === th.id
-                                  ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
+                                  ? "border-amber-500 bg-amber-500/15 text-amber-400"
                                   : "border-white/10 text-slate-400 hover:bg-white/5"
                               }`}
                             >
@@ -834,7 +841,7 @@ export function GithubPortfolioView() {
                       <motion.button
                         onClick={handleBuildPortfolio}
                         disabled={loading}
-                        className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-black rounded-xl disabled:opacity-50 transition flex justify-center items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                        className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs font-black rounded-xl disabled:opacity-50 transition flex justify-center items-center gap-1.5 shadow-md shadow-amber-500/20"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -846,7 +853,7 @@ export function GithubPortfolioView() {
                         <div className="space-y-2 pt-2">
                           <button
                             onClick={downloadPortfolioHtml}
-                            className="w-full py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl transition flex justify-center items-center gap-1.5"
+                            className="w-full py-2 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-amber-400 text-xs font-bold rounded-xl transition flex justify-center items-center gap-1.5"
                           >
                             <Download size={14} /> Export Standalone HTML
                           </button>
@@ -867,7 +874,7 @@ export function GithubPortfolioView() {
                   <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                     <div className="p-4 border rounded-2xl space-y-3" style={{ background: cardBg, borderColor: sidebarBorder }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                           <GitCommit size={14} /> Step 4: Direct Repository Push
                         </span>
                       </div>
@@ -877,13 +884,13 @@ export function GithubPortfolioView() {
                         <div>
                           <div className="flex justify-between items-center text-[10px] text-slate-400 mb-1">
                             <label className="font-bold uppercase tracking-wider flex items-center gap-1">
-                              <Key className="w-3 h-3 text-slate-500" /> Personal Access Token (PAT)
+                              <Key className="w-3 h-3 text-amber-400" /> Personal Access Token (PAT)
                             </label>
                             <a
                               href="https://github.com/settings/tokens/new"
                               target="_blank"
                               rel="noreferrer"
-                              className="text-emerald-400 hover:underline"
+                              className="text-amber-400 hover:underline"
                             >
                               Get Token
                             </a>
@@ -894,7 +901,7 @@ export function GithubPortfolioView() {
                               value={githubPat}
                               onChange={(e) => setGithubPat(e.target.value)}
                               placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                              className="w-full rounded-xl p-2.5 pr-8 text-xs font-mono focus:outline-none focus:border-emerald-500 transition"
+                              className="w-full rounded-xl p-2.5 pr-8 text-xs font-mono focus:outline-none focus:border-amber-500 transition"
                               style={{ background: inputBg, borderColor: inputBorder, borderStyle: "solid", borderWidth: 1 }}
                             />
                             <button
@@ -910,14 +917,14 @@ export function GithubPortfolioView() {
                         {/* Target Repository */}
                         <div>
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
-                            <Database className="w-3 h-3 text-slate-500" /> Target Repository
+                            <Database className="w-3 h-3 text-amber-400" /> Target Repository
                           </label>
                           <input
                             type="text"
                             value={targetRepo}
                             onChange={(e) => setTargetRepo(e.target.value)}
                             placeholder="owner/repo-name (e.g. torvalds/linux)"
-                            className="w-full rounded-xl p-2.5 text-xs focus:outline-none focus:border-emerald-500 transition font-mono"
+                            className="w-full rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500 transition font-mono"
                             style={{ background: inputBg, borderColor: inputBorder, borderStyle: "solid", borderWidth: 1 }}
                           />
                         </div>
@@ -925,14 +932,14 @@ export function GithubPortfolioView() {
                         {/* File Path */}
                         <div>
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
-                            <GitBranch className="w-3 h-3 text-slate-500" /> Repo File Path
+                            <GitBranch className="w-3 h-3 text-amber-400" /> Repo File Path
                           </label>
                           <input
                             type="text"
                             value={filePath}
                             onChange={(e) => setFilePath(e.target.value)}
                             placeholder="README.md"
-                            className="w-full rounded-xl p-2.5 text-xs focus:outline-none focus:border-emerald-500 transition font-mono"
+                            className="w-full rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500 transition font-mono"
                             style={{ background: inputBg, borderColor: inputBorder, borderStyle: "solid", borderWidth: 1 }}
                           />
                         </div>
@@ -940,14 +947,14 @@ export function GithubPortfolioView() {
                         {/* Commit Message */}
                         <div>
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
-                            <GitCommit className="w-3 h-3 text-slate-500" /> Commit Message
+                            <GitCommit className="w-3 h-3 text-amber-400" /> Commit Message
                           </label>
                           <input
                             type="text"
                             value={commitMessage}
                             onChange={(e) => setCommitMessage(e.target.value)}
                             placeholder="Update README.md via Adyapan AI"
-                            className="w-full rounded-xl p-2.5 text-xs focus:outline-none focus:border-emerald-500 transition"
+                            className="w-full rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500 transition"
                             style={{ background: inputBg, borderColor: inputBorder, borderStyle: "solid", borderWidth: 1 }}
                           />
                         </div>
@@ -956,7 +963,7 @@ export function GithubPortfolioView() {
                       <motion.button
                         onClick={handlePushToGithub}
                         disabled={pushing || !githubPat || !targetRepo || !readmeContent}
-                        className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-black rounded-xl disabled:opacity-50 transition flex justify-center items-center gap-1.5 shadow-lg shadow-emerald-500/20"
+                        className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs font-black rounded-xl disabled:opacity-50 transition flex justify-center items-center gap-1.5 shadow-lg shadow-amber-500/25"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -976,26 +983,26 @@ export function GithubPortfolioView() {
         {/* Right Live Preview Workspace */}
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
           
-          {/* Top Preview Control Navigation */}
+          {/* Top Preview Control Navigation Bar */}
           <div className="p-3 border-b flex items-center justify-between gap-4 flex-wrap z-10" style={{ borderColor: sidebarBorder }}>
             <div className="flex items-center gap-2 ml-12 lg:ml-0">
-              <span className="font-extrabold text-sm tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+              <span className="font-extrabold text-sm tracking-tight text-amber-500" style={{ fontFamily: "'Outfit', sans-serif" }}>
                 Preview Window
               </span>
               {projectName && (
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-400 text-[10px] font-bold">
                   {projectName}
                 </span>
               )}
             </div>
 
             {/* Showcase View Switcher */}
-            <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl border" style={{ borderColor: sidebarBorder }}>
+            <div className="flex items-center gap-1.5 bg-black/30 p-1 rounded-xl border" style={{ borderColor: sidebarBorder }}>
               <button
                 onClick={() => setActivePreviewTab("preview")}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                   activePreviewTab === "preview"
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                    ? "bg-amber-500/15 text-amber-400 border border-amber-500/35 shadow-sm"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -1006,7 +1013,7 @@ export function GithubPortfolioView() {
                 onClick={() => setActivePreviewTab("editor")}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                   activePreviewTab === "editor"
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                    ? "bg-amber-500/15 text-amber-400 border border-amber-500/35 shadow-sm"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -1017,7 +1024,7 @@ export function GithubPortfolioView() {
                 onClick={() => setActivePreviewTab("split")}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                   activePreviewTab === "split"
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                    ? "bg-amber-500/15 text-amber-400 border border-amber-500/35 shadow-sm"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -1029,7 +1036,7 @@ export function GithubPortfolioView() {
                   onClick={() => setActivePreviewTab("website")}
                   className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                     activePreviewTab === "website"
-                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                      ? "bg-amber-500/15 text-amber-400 border border-amber-500/35 shadow-sm"
                       : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
@@ -1056,7 +1063,7 @@ export function GithubPortfolioView() {
                     onClick={downloadReadmeFile}
                     whileHover={{ scale: 1.04 }}
                     whileTap={{ scale: 0.96 }}
-                    className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 text-emerald-400 text-xs font-bold flex items-center gap-1.5"
+                    className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 text-amber-400 text-xs font-bold flex items-center gap-1.5"
                     title="Download README.md"
                   >
                     <Download size={13} /> Download .md
@@ -1080,18 +1087,18 @@ export function GithubPortfolioView() {
                   className="w-full h-full overflow-y-auto p-6 md:p-8 custom-scrollbar"
                 >
                   {readmeContent ? (
-                    <div className="max-w-3xl mx-auto p-6 rounded-2xl border bg-slate-950/50 shadow-2xl" style={{ borderColor: sidebarBorder }}>
+                    <div className="max-w-3xl mx-auto p-6 rounded-2xl border bg-black/40 shadow-2xl" style={{ borderColor: sidebarBorder }}>
                       <div className="text-sm leading-relaxed text-slate-300">
                         {renderMarkdown(readmeContent, isDark)}
                       </div>
                     </div>
                   ) : (
                     <div className="h-full flex flex-col justify-center items-center text-slate-400 space-y-3">
-                      <FileText className="w-12 h-12 animate-pulse text-emerald-500/40" />
+                      <FileText className="w-12 h-12 animate-pulse text-amber-500/40" />
                       <p className="text-sm font-semibold">Load a profile in Step 1 or enter a project in Step 2 to generate a README.md.</p>
                       <button
                         onClick={() => setActiveStep(1)}
-                        className="px-4 py-2 bg-emerald-500 text-black text-xs font-bold rounded-xl shadow-md"
+                        className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black text-xs font-extrabold rounded-xl shadow-md"
                       >
                         Start Wizard &rarr;
                       </button>
@@ -1158,7 +1165,7 @@ export function GithubPortfolioView() {
                     />
                   </div>
 
-                  <div className="h-full overflow-y-auto p-6 bg-slate-950/40 custom-scrollbar">
+                  <div className="h-full overflow-y-auto p-6 bg-black/30 custom-scrollbar">
                     {readmeContent ? (
                       <div className="text-xs leading-relaxed text-slate-300">
                         {renderMarkdown(readmeContent, isDark)}
@@ -1187,16 +1194,16 @@ export function GithubPortfolioView() {
                         <div className="w-2.5 h-2.5 rounded-full bg-red-500 opacity-60" />
                         <div className="w-2.5 h-2.5 rounded-full bg-yellow-500 opacity-60" />
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-60" />
-                        <div className="ml-4 px-3 py-1 rounded bg-black/40 text-[10px] text-slate-400 font-mono flex items-center gap-1.5 border border-white/5">
-                          <Globe className="w-3 h-3 text-slate-500" />
-                          <span>https://portfolio.dev/{username || "developer"}</span>
+                        <div className="ml-4 px-3 py-1 rounded bg-black/40 text-[10px] text-amber-400/80 font-mono flex items-center gap-1.5 border border-white/5">
+                          <Globe className="w-3 h-3 text-amber-400" />
+                          <span>https://portfolio.adyapan.ai/{username || "developer"}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Live Portfolio Preview</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amber Gold Preview</span>
                         <button
                           onClick={downloadPortfolioHtml}
-                          className="px-2.5 py-1 rounded bg-emerald-500 text-black text-[10px] font-extrabold hover:bg-emerald-400 transition"
+                          className="px-2.5 py-1 rounded bg-gradient-to-r from-amber-500 to-amber-600 text-black text-[10px] font-extrabold hover:from-amber-400 hover:to-amber-500 transition shadow-sm"
                         >
                           Export HTML
                         </button>
@@ -1208,26 +1215,34 @@ export function GithubPortfolioView() {
                       className="p-6 md:p-10 space-y-10 min-h-[500px]"
                       style={{
                         background:
-                          portfolioTheme === "cyberpunk"
-                            ? "#090d16"
-                            : portfolioTheme === "slate"
-                            ? "#0f172a"
-                            : "#062016",
+                          portfolioTheme === "amber"
+                            ? "#0c0b14"
+                            : portfolioTheme === "obsidian"
+                            ? "#0a0a0f"
+                            : "#160e0a",
                       }}
                     >
                       {/* Hero Section */}
                       <div className="text-center py-8 space-y-4">
-                        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent leading-tight">
+                        <div className="inline-block p-1 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 mb-2 shadow-lg shadow-amber-500/20">
+                          <img
+                            src={analysis?.avatarUrl || `https://github.com/${username}.png`}
+                            alt={username}
+                            className="w-16 h-16 rounded-xl object-cover"
+                            onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                          />
+                        </div>
+                        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 bg-clip-text text-transparent leading-tight">
                           {portfolio.homeHero.tagline}
                         </h1>
                         <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
                           {portfolio.homeHero.bio}
                         </p>
                         <div className="flex justify-center gap-3 pt-3">
-                          <span className="px-4 py-2 bg-emerald-500 text-black font-extrabold text-xs rounded-xl shadow-md shadow-emerald-500/20">
-                            Explore Projects
+                          <span className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-extrabold text-xs rounded-xl shadow-md shadow-amber-500/25">
+                            Explore Repositories
                           </span>
-                          <span className="px-4 py-2 border border-white/10 hover:bg-white/5 transition text-slate-300 font-semibold text-xs rounded-xl">
+                          <span className="px-4 py-2 border border-amber-500/30 text-amber-400 font-semibold text-xs rounded-xl hover:bg-amber-500/10 transition">
                             Contact Me
                           </span>
                         </div>
@@ -1235,26 +1250,26 @@ export function GithubPortfolioView() {
 
                       {/* Stats Section */}
                       {portfolio.stats && (
-                        <div className="grid grid-cols-3 gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5 text-center">
+                        <div className="grid grid-cols-3 gap-3 p-4 rounded-2xl bg-amber-500/[0.04] border border-amber-500/20 text-center">
                           <div>
-                            <div className="text-lg font-black text-emerald-400">{portfolio.stats.yearsExp || "3+ Years"}</div>
+                            <div className="text-lg font-black text-amber-400">{portfolio.stats.yearsExp || "3+ Years"}</div>
                             <div className="text-[10px] text-slate-400 font-semibold uppercase">Experience</div>
                           </div>
                           <div>
-                            <div className="text-lg font-black text-cyan-400">{portfolio.stats.projectsCompleted || "20+ Repos"}</div>
+                            <div className="text-lg font-black text-amber-300">{portfolio.stats.projectsCompleted || "20+ Repos"}</div>
                             <div className="text-[10px] text-slate-400 font-semibold uppercase">Projects</div>
                           </div>
                           <div>
-                            <div className="text-lg font-black text-purple-400">{portfolio.stats.contributions || "1,000+ Commits"}</div>
+                            <div className="text-lg font-black text-amber-500">{portfolio.stats.contributions || "1,000+ Commits"}</div>
                             <div className="text-[10px] text-slate-400 font-semibold uppercase">Contributions</div>
                           </div>
                         </div>
                       )}
 
                       {/* About section */}
-                      <div className="space-y-3 border-t border-white/5 pt-8">
-                        <h2 className="text-lg font-bold text-emerald-400 flex items-center gap-1.5">
-                          <Info className="w-4 h-4" /> About Professional Journey
+                      <div className="space-y-3 border-t border-amber-500/15 pt-8">
+                        <h2 className="text-lg font-bold text-amber-400 flex items-center gap-1.5">
+                          <Info className="w-4 h-4" /> About Software Craftsmanship
                         </h2>
                         <p className="text-xs text-slate-300 leading-relaxed max-w-2xl whitespace-pre-wrap">
                           {portfolio.aboutSection}
@@ -1263,17 +1278,17 @@ export function GithubPortfolioView() {
 
                       {/* Skills Matrix */}
                       {portfolio.skills && portfolio.skills.length > 0 && (
-                        <div className="space-y-4 border-t border-white/5 pt-8">
-                          <h2 className="text-lg font-bold text-emerald-400 flex items-center gap-1.5">
-                            <Layers className="w-4 h-4" /> Technical Skills & Technologies
+                        <div className="space-y-4 border-t border-amber-500/15 pt-8">
+                          <h2 className="text-lg font-bold text-amber-400 flex items-center gap-1.5">
+                            <Layers className="w-4 h-4" /> Technical Stack Matrix
                           </h2>
                           <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                             {portfolio.skills.map((sk, idx) => (
-                              <div key={idx} className="p-3.5 border border-white/5 bg-white/[0.02] rounded-xl space-y-2">
+                              <div key={idx} className="p-3.5 border border-amber-500/20 bg-amber-500/[0.03] rounded-xl space-y-2">
                                 <h3 className="text-xs font-bold text-slate-200">{sk.category}</h3>
                                 <div className="flex flex-wrap gap-1">
                                   {sk.items.map((item, i) => (
-                                    <span key={i} className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">
+                                    <span key={i} className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 text-[10px] font-semibold">
                                       {item}
                                     </span>
                                   ))}
@@ -1285,14 +1300,14 @@ export function GithubPortfolioView() {
                       )}
 
                       {/* Projects section */}
-                      <div className="space-y-4 border-t border-white/5 pt-8">
-                        <h2 className="text-lg font-bold text-emerald-400 flex items-center gap-1.5">
-                          <Code2 className="w-4 h-4" /> Featured Repositories & Open Source Works
+                      <div className="space-y-4 border-t border-amber-500/15 pt-8">
+                        <h2 className="text-lg font-bold text-amber-400 flex items-center gap-1.5">
+                          <Code2 className="w-4 h-4" /> Featured Repositories & Works
                         </h2>
                         
                         <div className="grid gap-4 sm:grid-cols-2">
                           {portfolio.projectsToHighlight.map((proj, idx) => (
-                            <div key={idx} className="p-4 border border-white/5 bg-white/[0.02] rounded-2xl flex flex-col justify-between gap-3 hover:border-emerald-500/30 transition">
+                            <div key={idx} className="p-4 border border-amber-500/20 bg-amber-500/[0.03] rounded-2xl flex flex-col justify-between gap-3 hover:border-amber-500/40 transition">
                               <div>
                                 <div className="flex justify-between items-start">
                                   <h3 className="font-extrabold text-sm text-slate-100">{proj.title}</h3>
@@ -1304,7 +1319,7 @@ export function GithubPortfolioView() {
                                 </div>
                                 <p className="text-[11px] text-slate-300 mt-1 leading-normal">{proj.summary}</p>
                               </div>
-                              <span className="inline-block px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold self-start border border-emerald-500/20">
+                              <span className="inline-block px-2.5 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[10px] font-bold self-start border border-amber-500/30">
                                 {proj.tech}
                               </span>
                             </div>
@@ -1321,21 +1336,21 @@ export function GithubPortfolioView() {
           </div>
 
           {/* Log Footer for Push Statuses */}
-          <div className="p-3 border-t bg-black/30 text-xs font-mono" style={{ borderColor: sidebarBorder }}>
+          <div className="p-3 border-t bg-black/40 text-xs font-mono" style={{ borderColor: sidebarBorder }}>
             <div className="max-w-4xl mx-auto flex items-start gap-2.5">
               {pushing ? (
-                <Loader2 className="w-4 h-4 animate-spin text-emerald-400 flex-shrink-0 mt-0.5" />
+                <Loader2 className="w-4 h-4 animate-spin text-amber-400 flex-shrink-0 mt-0.5" />
               ) : pushLog.status === "success" ? (
-                <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
               ) : pushLog.status === "error" ? (
-                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <XCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
               ) : (
-                <GitBranch className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
+                <Terminal className="w-4 h-4 text-amber-400/70 flex-shrink-0 mt-0.5" />
               )}
               <div className="flex-1 min-w-0">
                 <span className="text-slate-300 font-semibold">{pushLog.message}</span>
                 {pushLog.details && (
-                  <pre className="mt-1.5 p-2.5 bg-black/60 border border-white/5 rounded-xl text-[10px] leading-relaxed text-cyan-200 overflow-x-auto whitespace-pre font-mono">
+                  <pre className="mt-1.5 p-2.5 bg-black/70 border border-amber-500/20 rounded-xl text-[10px] leading-relaxed text-amber-300 overflow-x-auto whitespace-pre font-mono">
                     {pushLog.details}
                   </pre>
                 )}
