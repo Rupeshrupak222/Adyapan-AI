@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Settings, Palette, Bell, Sparkles, BookOpen, Shield, Lock,
@@ -10,7 +10,7 @@ import {
   Moon, Sun, Monitor, ChevronRight, ExternalLink, Key, Smartphone,
   AlertTriangle, X, MessageSquare, Code, Link2, Clock, Star,
   Brain, Lightbulb, Trophy, ArrowUpRight, Image, FolderOpen,
-  Database, ShieldCheck, Fingerprint, Menu, Info,
+  Database, ShieldCheck, Fingerprint, Menu, Info, Loader2,
   Heart, ClipboardList, TrendingUp, Target, Calendar, Users
 } from "lucide-react";
 import { toast } from "sonner";
@@ -70,13 +70,23 @@ export function ManageAccountView() {
     inputBg: isDark ? "rgba(0,0,0,0.4)" : "#f8fafc",
   }), [isDark]);
 
-  // ── State ──
+  // ── Loading & UI state ──
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionId>("profile");
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  // Modals
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPwFields, setShowPwFields] = useState(false);
 
-  // Profile
+  // ── Profile state ──
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -86,8 +96,10 @@ export function ManageAccountView() {
   const [branch, setBranch] = useState("");
   const [gradYear, setGradYear] = useState("");
   const [bio, setBio] = useState("");
+  const [memberSince, setMemberSince] = useState("");
+  const [plan, setPlan] = useState("free");
 
-  // Appearance
+  // ── Appearance state ──
   const [themeMode, setThemeMode] = useState<"dark" | "light" | "system">("dark");
   const [accentColor, setAccentColor] = useState("#f59e0b");
   const [compactMode, setCompactMode] = useState(false);
@@ -96,7 +108,7 @@ export function ManageAccountView() {
   const [sidebarCollapse, setSidebarCollapse] = useState(true);
   const [fontSize, setFontSize] = useState(14);
 
-  // AI Preferences
+  // ── AI Preferences state ──
   const [aiModel, setAiModel] = useState("gemini");
   const [responseLength, setResponseLength] = useState("balanced");
   const [creativity, setCreativity] = useState(70);
@@ -106,7 +118,7 @@ export function ManageAccountView() {
   const [autoCitation, setAutoCitation] = useState(false);
   const [autoSaveConversations, setAutoSaveConversations] = useState(true);
 
-  // Learning
+  // ── Learning state ──
   const [language, setLanguage] = useState("en");
   const [learningStyle, setLearningStyle] = useState("visual");
   const [dailyGoal, setDailyGoal] = useState(3);
@@ -116,7 +128,7 @@ export function ManageAccountView() {
   const [quizDifficulty, setQuizDifficulty] = useState("medium");
   const [tutorPersonality, setTutorPersonality] = useState("friendly");
 
-  // Notifications
+  // ── Notifications state ──
   const [notifEmail, setNotifEmail] = useState(true);
   const [notifPush, setNotifPush] = useState(true);
   const [notifAssignment, setNotifAssignment] = useState(true);
@@ -126,66 +138,194 @@ export function ManageAccountView() {
   const [notifWeekly, setNotifWeekly] = useState(true);
   const [notifDaily, setNotifDaily] = useState(true);
 
-  // Security
+  // ── Security state ──
   const [twoFactor, setTwoFactor] = useState(false);
   const [loginAlerts, setLoginAlerts] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Connected Accounts
+  // ── Connected Accounts state ──
   const [connectedAccounts, setConnectedAccounts] = useState([
-    { name: "Google", icon: "G", color: "#4285f4", connected: true },
-    { name: "GitHub", icon: "GH", color: "#ffffff", connected: true },
-    { name: "Microsoft", icon: "M", color: "#00a4ef", connected: false },
+    { name: "Google",    icon: "G",  color: "#4285f4", connected: false },
+    { name: "GitHub",   icon: "GH", color: "#ffffff", connected: false },
+    { name: "Microsoft",icon: "M",  color: "#00a4ef", connected: false },
     { name: "LinkedIn", icon: "in", color: "#0077b5", connected: false },
-    { name: "Notion", icon: "N", color: "#ffffff", connected: false },
   ]);
 
-  // API
+  // ── API Keys state ──
   const [apiKeys, setApiKeys] = useState([
-    { name: "Gemini API", status: "active", lastSync: "2 min ago", key: "AIza...xxxx" },
-    { name: "OpenAI API", status: "active", lastSync: "5 min ago", key: "sk-...xxxx" },
-    { name: "Claude API", status: "inactive", lastSync: "Never", key: "" },
-    { name: "Groq API", status: "active", lastSync: "1 min ago", key: "gsk_...xxxx" },
-    { name: "OpenRouter API", status: "inactive", lastSync: "Never", key: "" },
+    { name: "Gemini API",      slug: "gemini",      status: "inactive", lastSync: "Never", key: "" },
+    { name: "OpenAI API",      slug: "openai",      status: "inactive", lastSync: "Never", key: "" },
+    { name: "Claude API",      slug: "claude",      status: "inactive", lastSync: "Never", key: "" },
+    { name: "Groq API",        slug: "groq",        status: "inactive", lastSync: "Never", key: "" },
+    { name: "OpenRouter API",  slug: "openrouter",  status: "inactive", lastSync: "Never", key: "" },
   ]);
 
-  // Privacy
+  // ── Privacy state ──
   const [publicProfile, setPublicProfile] = useState(true);
   const [dataCollection, setDataCollection] = useState(true);
   const [personalizedAI, setPersonalizedAI] = useState(true);
 
-  // Load profile from API
+  // ── Storage & Activity (loaded from API) ──
+  const [storageUsed, setStorageUsed] = useState(0);
+  const storageTotal = 10;
+  const storagePercent = Math.round((storageUsed / storageTotal) * 100);
+  const [storageCategories, setStorageCategories] = useState<Array<{ name: string; size: string; percent: number; color: "amber" | "green" | "purple" | "rose" }>>([]);
+  const [activityLog, setActivityLog] = useState<Array<{ time: string; action: string; icon: typeof MessageSquare; color: string }>>([]);
+  const activeDevices: Array<{ name: string; location: string; current: boolean; lastActive: string }> = [];
+
+  // ── Auto-save debounce refs ──
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Load all settings on mount ──
   useEffect(() => {
-    const fetchProfile = async () => {
+    const loadSettings = async () => {
       try {
-        const res = await api.get("/profile/me");
-        const p = res.data.profile;
-        if (p) {
-          if (p.user?.name) setFullName(p.user.name);
-          if (p.user?.email) setEmail(p.user.email);
-          if (p.username) setUsername(p.username);
-          if (p.phone) setPhone(p.phone);
-          if (p.college) setCollege(p.college);
-          if (p.degree) setDegree(p.degree);
-          if (p.branch) setBranch(p.branch);
-          if (p.graduationYear) setGradYear(p.graduationYear);
-          if (p.aboutMe) setBio(p.aboutMe);
+        setLoading(true);
+        const res = await api.get("/settings");
+        const { settings: s, profile: p, meta } = res.data;
+
+        // Profile
+        if (p.fullName) setFullName(p.fullName);
+        if (p.email) setEmail(p.email);
+        if (p.phone) setPhone(p.phone);
+        if (p.college) setCollege(p.college);
+        if (p.degree) setDegree(p.degree);
+        if (p.branch) setBranch(p.branch);
+        if (p.graduationYear) setGradYear(p.graduationYear);
+        if (p.bio) setBio(p.bio);
+        if (p.username) setUsername(p.username);
+        if (p.plan) setPlan(p.plan);
+        if (p.memberSince) setMemberSince(new Date(p.memberSince).toLocaleDateString("en-IN", { year: "numeric", month: "long" }));
+
+        // Appearance
+        setThemeMode((s.themeMode || "dark") as "dark" | "light" | "system");
+        setAccentColor(s.accentColor || "#f59e0b");
+        setCompactMode(!!s.compactMode);
+        setGlassEffect(s.glassEffect ?? true);
+        setAnimationsEnabled(s.animationsEnabled ?? true);
+        setSidebarCollapse(s.sidebarCollapse ?? true);
+        setFontSize(s.fontSize || 14);
+
+        // AI
+        setAiModel(s.aiModel || "gemini");
+        setResponseLength(s.responseLength || "balanced");
+        setCreativity(s.creativity ?? 70);
+        setAiMemory(s.aiMemory ?? true);
+        setMarkdownOutput(s.markdownOutput ?? true);
+        setCodeHighlighting(s.codeHighlighting ?? true);
+        setAutoCitation(s.autoCitation ?? false);
+        setAutoSaveConversations(s.autoSaveConversations ?? true);
+
+        // Learning
+        setLanguage(s.language || "en");
+        setLearningStyle(s.learningStyle || "visual");
+        setDailyGoal(s.dailyGoal || 3);
+        setReminderTime(s.reminderTime || "09:00");
+        setDifficulty(s.difficulty || "intermediate");
+        setNoteFormat(s.noteFormat || "markdown");
+        setQuizDifficulty(s.quizDifficulty || "medium");
+        setTutorPersonality(s.tutorPersonality || "friendly");
+
+        // Notifications
+        setNotifEmail(s.notifEmail ?? true);
+        setNotifPush(s.notifPush ?? true);
+        setNotifAssignment(s.notifAssignment ?? true);
+        setNotifInterview(s.notifInterview ?? true);
+        setNotifCoding(s.notifCoding ?? false);
+        setNotifResearch(s.notifResearch ?? false);
+        setNotifWeekly(s.notifWeekly ?? true);
+        setNotifDaily(s.notifDaily ?? true);
+
+        // Privacy
+        setPublicProfile(s.publicProfile ?? true);
+        setDataCollection(s.dataCollection ?? true);
+        setPersonalizedAI(s.personalizedAI ?? true);
+
+        // Security
+        setTwoFactor(s.twoFactorEnabled ?? false);
+        setLoginAlerts(s.loginAlerts ?? true);
+
+        // API Keys
+        if (s.apiKeys) {
+          setApiKeys(prev => prev.map(k => {
+            const slug = k.slug as keyof typeof s.apiKeys;
+            const data = s.apiKeys[slug];
+            return data ? { ...k, key: data.key || "", status: data.active ? "active" : "inactive", lastSync: data.active ? "Synced" : "Never" } : k;
+          }));
         }
-      } catch {
-        // fallback: load from localStorage
-        const stored = (key: string) => localStorage.getItem(`adyapan-${key}`);
-        const sName = stored("full-name");
-        const sEmail = stored("email");
-        const sPhone = stored("phone");
-        if (sName) setFullName(sName);
-        if (sEmail) setEmail(sEmail);
-        if (sPhone) setPhone(sPhone);
+
+        // Connected Accounts
+        if (s.connectedAccounts) {
+          setConnectedAccounts(prev => prev.map(a => {
+            const slug = a.name.toLowerCase() as keyof typeof s.connectedAccounts;
+            return { ...a, connected: !!s.connectedAccounts[slug] };
+          }));
+        }
+      } catch (err) {
+        // Fallback: load profile from old endpoint
+        try {
+          const res = await api.get("/profile/me");
+          const p = res.data.profile;
+          if (p?.user?.name) setFullName(p.user.name);
+          if (p?.user?.email) setEmail(p.user.email);
+          if (p?.username) setUsername(p.username);
+          if (p?.phone) setPhone(p.phone);
+          if (p?.college) setCollege(p.college);
+          if (p?.degree) setDegree(p.degree);
+          if (p?.branch) setBranch(p.branch);
+          if (p?.graduationYear) setGradYear(p.graduationYear);
+          if (p?.aboutMe) setBio(p.aboutMe);
+        } catch { /* silently fail */ }
+      } finally {
+        setLoading(false);
       }
     };
-    fetchProfile();
+    loadSettings();
   }, []);
 
+  // ── Load storage & activity when those sections are active ──
+  useEffect(() => {
+    if (activeSection === "storage") {
+      api.get("/settings/storage").then(res => {
+        if (res.data?.storage) {
+          const s = res.data.storage;
+          const total = s.totalMb || 0;
+          setStorageUsed(parseFloat((total / 1024).toFixed(2)));
+          setStorageCategories([
+            { name: "Notes", size: `${s.notes.count} files`, percent: total ? Math.round((s.notes.estimatedMb / total) * 100) : 0, color: "amber" },
+            { name: "Resumes", size: `${s.resumes.count} files`, percent: total ? Math.round((s.resumes.estimatedMb / total) * 100) : 0, color: "green" },
+            { name: "Assignments", size: `${s.assignments.count} files`, percent: total ? Math.round((s.assignments.estimatedMb / total) * 100) : 0, color: "purple" },
+            { name: "Sessions", size: `${s.sessions.count} sessions`, percent: total ? Math.round((s.sessions.estimatedMb / total) * 100) : 0, color: "rose" },
+          ]);
+        }
+      }).catch(() => {});
+    }
+    if (activeSection === "activity") {
+      api.get("/settings/activity").then(res => {
+        if (res.data?.activity) {
+          setActivityLog(res.data.activity.map((a: any) => ({
+            time: new Date(a.createdAt).toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" }),
+            action: a.title || a.message || "Activity",
+            icon: MessageSquare,
+            color: "text-amber-500",
+          })));
+        }
+      }).catch(() => {});
+    }
+  }, [activeSection]);
+
   const markChanged = useCallback(() => setHasChanges(true), []);
+
+  // ── Debounced auto-save for toggles (notifications, privacy, security) ──
+  const scheduleSave = useCallback((section: string, data: Record<string, unknown>) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        await api.put(`/settings/${section}`, data);
+        toast.success(`${section.charAt(0).toUpperCase() + section.slice(1)} saved!`, { duration: 1500 });
+      } catch { /* silent */ }
+    }, 800);
+  }, []);
 
   // ── Search filtering ──
   const filteredNav = useMemo(() => {
@@ -194,23 +334,103 @@ export function ManageAccountView() {
     return NAV_ITEMS.filter((item) => item.label.toLowerCase().includes(q));
   }, [searchQuery]);
 
-  // ── Handlers ──
-  const handleSave = async () => {
+  // ── Save Profile ──
+  const handleSaveProfile = async () => {
+    setSaving(true);
     try {
-      await api.put("/profile/me", { phone, college, degree, graduationYear: gradYear, username });
-      localStorage.setItem("adyapan-full-name", fullName);
-      localStorage.setItem("adyapan-email", email);
-      localStorage.setItem("adyapan-phone", phone);
+      await api.put("/profile/me", { phone, college, degree, graduationYear: gradYear, username, aboutMe: bio });
       setHasChanges(false);
-      toast.success("Settings saved successfully!");
-    } catch {
-      toast.error("Failed to save settings. Please try again.");
-    }
+      toast.success("Profile saved!");
+    } catch { toast.error("Failed to save profile."); }
+    finally { setSaving(false); }
   };
 
-  const handleReset = () => {
+  // ── Save Appearance ──
+  const handleSaveAppearance = async () => {
+    setSaving(true);
+    try {
+      await api.put("/settings/appearance", { themeMode, accentColor, compactMode, glassEffect, animationsEnabled, sidebarCollapse, fontSize });
+      setHasChanges(false);
+      toast.success("Appearance saved!");
+    } catch { toast.error("Failed to save appearance."); }
+    finally { setSaving(false); }
+  };
+
+  // ── Save AI Preferences ──
+  const handleSaveAI = async () => {
+    setSaving(true);
+    try {
+      await api.put("/settings/ai", { aiModel, responseLength, creativity, aiMemory, markdownOutput, codeHighlighting, autoCitation, autoSaveConversations });
+      setHasChanges(false);
+      toast.success("AI preferences saved!");
+    } catch { toast.error("Failed to save AI preferences."); }
+    finally { setSaving(false); }
+  };
+
+  // ── Save Learning ──
+  const handleSaveLearning = async () => {
+    setSaving(true);
+    try {
+      await api.put("/settings/learning", { language, learningStyle, dailyGoal, reminderTime, difficulty, noteFormat, quizDifficulty, tutorPersonality });
+      setHasChanges(false);
+      toast.success("Learning preferences saved!");
+    } catch { toast.error("Failed to save learning preferences."); }
+    finally { setSaving(false); }
+  };
+
+  // ── Generic top-bar Save (context-aware) ──
+  const handleSave = async () => {
+    if (activeSection === "profile") return handleSaveProfile();
+    if (activeSection === "appearance") return handleSaveAppearance();
+    if (activeSection === "ai-preferences") return handleSaveAI();
+    if (activeSection === "learning") return handleSaveLearning();
+    toast.info("Changes are auto-saved for this section.");
     setHasChanges(false);
-    toast.info("Settings reset to defaults.");
+  };
+
+  const handleReset = async () => {
+    setHasChanges(false);
+    toast.info("Reloading saved settings...");
+    try {
+      const res = await api.get("/settings");
+      const s = res.data?.settings || {};
+      setThemeMode((s.themeMode || "dark") as "dark" | "light" | "system");
+      setAccentColor(s.accentColor || "#f59e0b");
+      setCompactMode(!!s.compactMode);
+      setGlassEffect(s.glassEffect ?? true);
+      setAnimationsEnabled(s.animationsEnabled ?? true);
+      setSidebarCollapse(s.sidebarCollapse ?? true);
+      setFontSize(s.fontSize || 14);
+    } catch { /* ignore */ }
+  };
+
+  // ── Change Password ──
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword) { toast.error("Fill in all password fields."); return; }
+    if (newPassword !== confirmPassword) { toast.error("Passwords do not match."); return; }
+    if (newPassword.length < 8) { toast.error("Password must be at least 8 characters."); return; }
+    setSaving(true);
+    try {
+      await api.post("/settings/change-password", { currentPassword, newPassword });
+      toast.success("Password changed successfully!");
+      setShowChangePassword(false);
+      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Failed to change password.");
+    } finally { setSaving(false); }
+  };
+
+  // ── Delete Account ──
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) { toast.error("Enter your password to confirm."); return; }
+    setSaving(true);
+    try {
+      await api.delete("/settings/account", { data: { password: deletePassword } });
+      toast.success("Account deleted. Redirecting...");
+      setTimeout(() => { window.location.href = "/"; }, 1500);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Failed to delete account.");
+    } finally { setSaving(false); }
   };
 
   const handleSectionChange = (id: SectionId) => {
@@ -224,15 +444,15 @@ export function ManageAccountView() {
     return Math.round((fields.filter(Boolean).length / fields.length) * 100);
   }, [fullName, username, email, phone, college, degree, branch, gradYear, bio]);
 
-  // ── Storage / Activity / Devices — fetched from API where available ──
-  const storageUsed = 0;
-  const storageTotal = 10;
-  const storagePercent = 0;
-  const storageCategories: Array<{ name: string; size: string; percent: number; color: "amber" | "green" | "purple" | "rose" }> = [];
-
-  const activityLog: Array<{ time: string; action: string; icon: typeof MessageSquare; color: string }> = [];
-
-  const activeDevices: Array<{ name: string; location: string; current: boolean; lastActive: string }> = [];
+  // ── Loading skeleton ──
+  if (loading) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-72 gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        <p className="text-sm font-semibold" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "#64748b" }}>Loading your settings...</p>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -409,14 +629,14 @@ export function ManageAccountView() {
         <div className="flex-1 min-w-0">
           <AnimatePresence mode="wait">
             <motion.div key={activeSection} {...sectionTransition}>
-              {activeSection === "profile" && <ProfileSection c={c} fullName={fullName} setFullName={setFullName} username={username} setUsername={setUsername} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} college={college} setCollege={setCollege} degree={degree} setDegree={setDegree} branch={branch} setBranch={setBranch} gradYear={gradYear} setGradYear={setGradYear} bio={bio} setBio={setBio} markChanged={markChanged} />}
-              {activeSection === "account" && <AccountSection c={c} email={email} markChanged={markChanged} />}
-              {activeSection === "appearance" && <AppearanceSection c={c} isDark={isDark} themeMode={themeMode} setThemeMode={setThemeMode} accentColor={accentColor} setAccentColor={setAccentColor} compactMode={compactMode} setCompactMode={setCompactMode} glassEffect={glassEffect} setGlassEffect={setGlassEffect} animationsEnabled={animationsEnabled} setAnimationsEnabled={setAnimationsEnabled} sidebarCollapse={sidebarCollapse} setSidebarCollapse={setSidebarCollapse} fontSize={fontSize} setFontSize={setFontSize} markChanged={markChanged} />}
-              {activeSection === "notifications" && <NotificationsSection c={c} notifEmail={notifEmail} setNotifEmail={setNotifEmail} notifPush={notifPush} setNotifPush={setNotifPush} notifAssignment={notifAssignment} setNotifAssignment={setNotifAssignment} notifInterview={notifInterview} setNotifInterview={setNotifInterview} notifCoding={notifCoding} setNotifCoding={setNotifCoding} notifResearch={notifResearch} setNotifResearch={setNotifResearch} notifWeekly={notifWeekly} setNotifWeekly={setNotifWeekly} notifDaily={notifDaily} setNotifDaily={setNotifDaily} markChanged={markChanged} />}
-              {activeSection === "ai-preferences" && <AIPreferencesSection c={c} aiModel={aiModel} setAiModel={setAiModel} responseLength={responseLength} setResponseLength={setResponseLength} creativity={creativity} setCreativity={setCreativity} aiMemory={aiMemory} setAiMemory={setAiMemory} markdownOutput={markdownOutput} setMarkdownOutput={setMarkdownOutput} codeHighlighting={codeHighlighting} setCodeHighlighting={setCodeHighlighting} autoCitation={autoCitation} setAutoCitation={setAutoCitation} autoSaveConversations={autoSaveConversations} setAutoSaveConversations={setAutoSaveConversations} markChanged={markChanged} />}
-              {activeSection === "learning" && <LearningSection c={c} language={language} setLanguage={setLanguage} learningStyle={learningStyle} setLearningStyle={setLearningStyle} dailyGoal={dailyGoal} setDailyGoal={setDailyGoal} reminderTime={reminderTime} setReminderTime={setReminderTime} difficulty={difficulty} setDifficulty={setDifficulty} noteFormat={noteFormat} setNoteFormat={setNoteFormat} quizDifficulty={quizDifficulty} setQuizDifficulty={setQuizDifficulty} tutorPersonality={tutorPersonality} setTutorPersonality={setTutorPersonality} markChanged={markChanged} />}
-              {activeSection === "security" && <SecuritySection c={c} twoFactor={twoFactor} setTwoFactor={setTwoFactor} loginAlerts={loginAlerts} setLoginAlerts={setLoginAlerts} showPassword={showPassword} setShowPassword={setShowPassword} activeDevices={activeDevices} markChanged={markChanged} />}
-              {activeSection === "privacy" && <PrivacySection c={c} publicProfile={publicProfile} setPublicProfile={setPublicProfile} dataCollection={dataCollection} setDataCollection={setDataCollection} personalizedAI={personalizedAI} setPersonalizedAI={setPersonalizedAI} markChanged={markChanged} />}
+              {activeSection === "profile" && <ProfileSection c={c} fullName={fullName} setFullName={setFullName} username={username} setUsername={setUsername} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} college={college} setCollege={setCollege} degree={degree} setDegree={setDegree} branch={branch} setBranch={setBranch} gradYear={gradYear} setGradYear={setGradYear} bio={bio} setBio={setBio} markChanged={markChanged} onSave={handleSaveProfile} saving={saving} />}
+              {activeSection === "account" && <AccountSection c={c} email={email} plan={plan} memberSince={memberSince} markChanged={markChanged} onDeleteAccount={() => setShowDeleteModal(true)} onChangePassword={() => setShowChangePassword(true)} />}
+              {activeSection === "appearance" && <AppearanceSection c={c} isDark={isDark} themeMode={themeMode} setThemeMode={setThemeMode} accentColor={accentColor} setAccentColor={setAccentColor} compactMode={compactMode} setCompactMode={setCompactMode} glassEffect={glassEffect} setGlassEffect={setGlassEffect} animationsEnabled={animationsEnabled} setAnimationsEnabled={setAnimationsEnabled} sidebarCollapse={sidebarCollapse} setSidebarCollapse={setSidebarCollapse} fontSize={fontSize} setFontSize={setFontSize} markChanged={markChanged} onSave={handleSaveAppearance} saving={saving} />}
+              {activeSection === "notifications" && <NotificationsSection c={c} notifEmail={notifEmail} setNotifEmail={setNotifEmail} notifPush={notifPush} setNotifPush={setNotifPush} notifAssignment={notifAssignment} setNotifAssignment={setNotifAssignment} notifInterview={notifInterview} setNotifInterview={setNotifInterview} notifCoding={notifCoding} setNotifCoding={setNotifCoding} notifResearch={notifResearch} setNotifResearch={setNotifResearch} notifWeekly={notifWeekly} setNotifWeekly={setNotifWeekly} notifDaily={notifDaily} setNotifDaily={setNotifDaily} markChanged={markChanged} scheduleSave={scheduleSave} />}
+              {activeSection === "ai-preferences" && <AIPreferencesSection c={c} aiModel={aiModel} setAiModel={setAiModel} responseLength={responseLength} setResponseLength={setResponseLength} creativity={creativity} setCreativity={setCreativity} aiMemory={aiMemory} setAiMemory={setAiMemory} markdownOutput={markdownOutput} setMarkdownOutput={setMarkdownOutput} codeHighlighting={codeHighlighting} setCodeHighlighting={setCodeHighlighting} autoCitation={autoCitation} setAutoCitation={setAutoCitation} autoSaveConversations={autoSaveConversations} setAutoSaveConversations={setAutoSaveConversations} markChanged={markChanged} onSave={handleSaveAI} saving={saving} />}
+              {activeSection === "learning" && <LearningSection c={c} language={language} setLanguage={setLanguage} learningStyle={learningStyle} setLearningStyle={setLearningStyle} dailyGoal={dailyGoal} setDailyGoal={setDailyGoal} reminderTime={reminderTime} setReminderTime={setReminderTime} difficulty={difficulty} setDifficulty={setDifficulty} noteFormat={noteFormat} setNoteFormat={setNoteFormat} quizDifficulty={quizDifficulty} setQuizDifficulty={setQuizDifficulty} tutorPersonality={tutorPersonality} setTutorPersonality={setTutorPersonality} markChanged={markChanged} onSave={handleSaveLearning} saving={saving} />}
+              {activeSection === "security" && <SecuritySection c={c} twoFactor={twoFactor} setTwoFactor={setTwoFactor} loginAlerts={loginAlerts} setLoginAlerts={setLoginAlerts} showPassword={showPassword} setShowPassword={setShowPassword} activeDevices={activeDevices} markChanged={markChanged} scheduleSave={scheduleSave} onChangePassword={() => setShowChangePassword(true)} />}
+              {activeSection === "privacy" && <PrivacySection c={c} publicProfile={publicProfile} setPublicProfile={setPublicProfile} dataCollection={dataCollection} setDataCollection={setDataCollection} personalizedAI={personalizedAI} setPersonalizedAI={setPersonalizedAI} markChanged={markChanged} scheduleSave={scheduleSave} />}
               {activeSection === "connected" && <ConnectedAccountsSection c={c} accounts={connectedAccounts} setAccounts={setConnectedAccounts} markChanged={markChanged} />}
               {activeSection === "api" && <APISection c={c} apiKeys={apiKeys} setApiKeys={setApiKeys} markChanged={markChanged} />}
               {activeSection === "storage" && <StorageSection c={c} storageUsed={storageUsed} storageTotal={storageTotal} storagePercent={storagePercent} categories={storageCategories} />}
@@ -510,6 +730,146 @@ export function ManageAccountView() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Change Password Modal ── */}
+      <AnimatePresence>
+        {showChangePassword && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+            onClick={() => setShowChangePassword(false)}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative rounded-2xl border p-6 space-y-4 w-full max-w-md"
+              style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: c.border }}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text }}>
+                  <Key size={16} className="text-amber-500" /> Change Password
+                </h3>
+                <button onClick={() => setShowChangePassword(false)} className="p-1.5 rounded-lg hover:bg-white/5">
+                  <X size={16} style={{ color: c.textSec }} />
+                </button>
+              </div>
+              {[
+                { label: "Current Password", value: currentPassword, setter: setCurrentPassword },
+                { label: "New Password", value: newPassword, setter: setNewPassword },
+                { label: "Confirm New Password", value: confirmPassword, setter: setConfirmPassword },
+              ].map((field) => (
+                <div key={field.label} className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>{field.label}</label>
+                  <div className="relative">
+                    <input
+                      type={showPwFields ? "text" : "password"}
+                      value={field.value}
+                      onChange={(e) => field.setter(e.target.value)}
+                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-amber-500/40 transition-all pr-10"
+                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={() => setShowPwFields(!showPwFields)}
+                className="flex items-center gap-1.5 text-[10px]"
+                style={{ color: c.textMuted }}
+              >
+                {showPwFields ? <EyeOff size={11} /> : <Eye size={11} />}
+                {showPwFields ? "Hide" : "Show"} passwords
+              </button>
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  onClick={() => setShowChangePassword(false)}
+                  className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                  style={{ borderColor: c.border, color: c.textSec }}
+                >Cancel</button>
+                <motion.button
+                  onClick={handleChangePassword}
+                  disabled={saving}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {saving ? <Loader2 size={13} className="animate-spin" /> : <Key size={13} />}
+                  Change Password
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Delete Account Modal ── */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+            onClick={() => setShowDeleteModal(false)}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative rounded-2xl border p-6 space-y-4 w-full max-w-md"
+              style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: "rgba(239,68,68,0.3)" }}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold flex items-center gap-2 text-red-500">
+                  <AlertTriangle size={16} /> Delete Account
+                </h3>
+                <button onClick={() => setShowDeleteModal(false)} className="p-1.5 rounded-lg hover:bg-white/5">
+                  <X size={16} style={{ color: c.textSec }} />
+                </button>
+              </div>
+              <div className="rounded-xl p-3 bg-red-500/10 border border-red-500/20">
+                <p className="text-xs" style={{ color: c.textSec }}>
+                  ⚠️ This action is <strong>permanent and irreversible</strong>. All your data including notes, sessions, progress, and settings will be permanently deleted.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Confirm with your password</label>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Enter password to confirm..."
+                  className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-red-500/40 transition-all"
+                  style={{ background: c.inputBg, borderColor: "rgba(239,68,68,0.3)", color: c.text }}
+                />
+              </div>
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                  style={{ borderColor: c.border, color: c.textSec }}
+                >Cancel</button>
+                <motion.button
+                  onClick={handleDeleteAccount}
+                  disabled={saving || !deletePassword}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40"
+                >
+                  {saving ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                  Delete Forever
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -524,7 +884,7 @@ type SectionProps = { c: ReturnType<typeof ManageAccountView extends () => unkno
 function ProfileSection({
   c, fullName, setFullName, username, setUsername, email, setEmail, phone, setPhone,
   college, setCollege, degree, setDegree, branch, setBranch, gradYear, setGradYear,
-  bio, setBio, markChanged,
+  bio, setBio, markChanged, onSave, saving,
 }: {
   c: Record<string, string>;
   fullName: string; setFullName: (v: string) => void;
@@ -537,6 +897,8 @@ function ProfileSection({
   gradYear: string; setGradYear: (v: string) => void;
   bio: string; setBio: (v: string) => void;
   markChanged: () => void;
+  onSave: () => void;
+  saving: boolean;
 }) {
   const inputStyle = { background: c.inputBg, borderColor: c.border, color: c.text };
 
@@ -674,14 +1036,33 @@ function ProfileSection({
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4}
         className="flex justify-end gap-2.5">
         <PremiumButton variant="secondary">Cancel</PremiumButton>
-        <PremiumButton variant="primary" icon={<Save size={13} />}>Save Profile</PremiumButton>
+        <motion.button
+          onClick={onSave}
+          disabled={saving}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold disabled:opacity-60"
+        >
+          {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+          Save Profile
+        </motion.button>
       </motion.div>
     </div>
   );
 }
 
 // ─── Account Section ─────────────────────────────────────────────────────
-function AccountSection({ c, email, markChanged }: { c: Record<string, string>; email: string; markChanged: () => void }) {
+function AccountSection({
+  c, email, plan, memberSince, markChanged, onDeleteAccount, onChangePassword,
+}: {
+  c: Record<string, string>;
+  email: string;
+  plan: string;
+  memberSince: string;
+  markChanged: () => void;
+  onDeleteAccount: () => void;
+  onChangePassword: () => void;
+}) {
   return (
     <div className="space-y-5">
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
@@ -702,25 +1083,62 @@ function AccountSection({ c, email, markChanged }: { c: Record<string, string>; 
           <div className="flex items-center justify-between py-2.5 border-b" style={{ borderColor: c.border }}>
             <div>
               <span className="text-xs font-bold block">Account Type</span>
-              <span className="text-[10px]" style={{ color: c.textMuted }}>Premium Student</span>
+              <span className="text-[10px]" style={{ color: c.textMuted }}>{plan === "free" ? "Free Plan" : "Premium Student"}</span>
             </div>
-            <PremiumBadge variant="amber">Premium</PremiumBadge>
+            <PremiumBadge variant={plan === "free" ? "green" : "amber"}>{plan === "free" ? "Free" : "Premium"}</PremiumBadge>
           </div>
           <div className="flex items-center justify-between py-2.5 border-b" style={{ borderColor: c.border }}>
             <div>
               <span className="text-xs font-bold block">Member Since</span>
-              <span className="text-[10px]" style={{ color: c.textMuted }}>January 2025</span>
+              <span className="text-[10px]" style={{ color: c.textMuted }}>{memberSince || "—"}</span>
             </div>
-            <span className="text-xs font-bold" style={{ color: c.textSec }}>18 months</span>
           </div>
           <div className="flex items-center justify-between py-2.5">
             <div>
               <span className="text-xs font-bold block">Language</span>
               <span className="text-[10px]" style={{ color: c.textMuted }}>Interface language</span>
             </div>
-            <span className="text-xs font-bold" style={{ color: c.textSec }}>English (US)</span>
+            <span className="text-xs font-bold" style={{ color: c.textSec }}>English (IN)</span>
           </div>
         </div>
+      </motion.div>
+
+      {/* Account Actions */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+        className="rounded-2xl border p-6 space-y-3"
+        style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
+      >
+        <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.primary }}>
+          <Shield size={16} /> Account Actions
+        </h3>
+        <motion.button
+          onClick={onChangePassword}
+          whileHover={{ x: 3 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left text-xs font-bold transition-all hover:border-amber-500/30"
+          style={{ borderColor: c.border, color: c.textSec }}
+        >
+          <Key size={15} className="text-amber-500" />
+          <div>
+            <span className="block">Change Password</span>
+            <span className="text-[10px] font-normal" style={{ color: c.textMuted }}>Update your account password securely</span>
+          </div>
+          <ChevronRight size={14} className="ml-auto opacity-40" />
+        </motion.button>
+        <motion.button
+          onClick={onDeleteAccount}
+          whileHover={{ x: 3 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left text-xs font-bold transition-all border-red-500/20 hover:border-red-500/40"
+          style={{ color: "#ef4444" }}
+        >
+          <Trash2 size={15} />
+          <div>
+            <span className="block">Delete Account</span>
+            <span className="text-[10px] font-normal text-red-400">Permanently delete your account and all data</span>
+          </div>
+          <ChevronRight size={14} className="ml-auto opacity-40" />
+        </motion.button>
       </motion.div>
     </div>
   );
@@ -731,7 +1149,7 @@ function AppearanceSection({
   c, isDark, themeMode, setThemeMode, accentColor, setAccentColor,
   compactMode, setCompactMode, glassEffect, setGlassEffect,
   animationsEnabled, setAnimationsEnabled, sidebarCollapse, setSidebarCollapse,
-  fontSize, setFontSize, markChanged,
+  fontSize, setFontSize, markChanged, onSave, saving,
 }: {
   c: Record<string, string>; isDark: boolean;
   themeMode: string; setThemeMode: (v: "dark" | "light" | "system") => void;
@@ -742,6 +1160,8 @@ function AppearanceSection({
   sidebarCollapse: boolean; setSidebarCollapse: (v: boolean) => void;
   fontSize: number; setFontSize: (v: number) => void;
   markChanged: () => void;
+  onSave?: () => void;
+  saving?: boolean;
 }) {
   const accentColors = ["#f59e0b", "#ef4444", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
 
@@ -885,7 +1305,7 @@ function NotificationsSection({
   c, notifEmail, setNotifEmail, notifPush, setNotifPush,
   notifAssignment, setNotifAssignment, notifInterview, setNotifInterview,
   notifCoding, setNotifCoding, notifResearch, setNotifResearch,
-  notifWeekly, setNotifWeekly, notifDaily, setNotifDaily, markChanged,
+  notifWeekly, setNotifWeekly, notifDaily, setNotifDaily, markChanged, scheduleSave,
 }: {
   c: Record<string, string>;
   notifEmail: boolean; setNotifEmail: (v: boolean) => void;
@@ -897,16 +1317,24 @@ function NotificationsSection({
   notifWeekly: boolean; setNotifWeekly: (v: boolean) => void;
   notifDaily: boolean; setNotifDaily: (v: boolean) => void;
   markChanged: () => void;
+  scheduleSave: (section: string, data: Record<string, unknown>) => void;
 }) {
+  const handleToggle = (key: string, current: boolean, setter: (v: boolean) => void) => {
+    const val = !current;
+    setter(val);
+    markChanged();
+    scheduleSave("notifications", { [key]: val });
+  };
+
   const toggles = [
-    { enabled: notifEmail, toggle: () => setNotifEmail(!notifEmail), label: "Email Notifications", desc: "Receive updates about your learning progress", icon: <Mail size={14} /> },
-    { enabled: notifPush, toggle: () => setNotifPush(!notifPush), label: "Push Notifications", desc: "Browser and mobile push alerts", icon: <Bell size={14} /> },
-    { enabled: notifAssignment, toggle: () => setNotifAssignment(!notifAssignment), label: "Assignment Alerts", desc: "Deadline reminders and submission updates", icon: <ClipboardList size={14} /> },
-    { enabled: notifInterview, toggle: () => setNotifInterview(!notifInterview), label: "Interview Reminders", desc: "Upcoming interview schedule notifications", icon: <MessageSquare size={14} /> },
-    { enabled: notifCoding, toggle: () => setNotifCoding(!notifCoding), label: "Coding Challenge Alerts", desc: "New challenges and contest notifications", icon: <Code size={14} /> },
-    { enabled: notifResearch, toggle: () => setNotifResearch(!notifResearch), label: "Research Updates", desc: "New research papers and citations", icon: <FileText size={14} /> },
-    { enabled: notifWeekly, toggle: () => setNotifWeekly(!notifWeekly), label: "Weekly Progress Report", desc: "Summary of your weekly learning activity", icon: <Activity size={14} /> },
-    { enabled: notifDaily, toggle: () => setNotifDaily(!notifDaily), label: "Daily Study Reminder", desc: "Daily nudge to stay on track", icon: <Clock size={14} /> },
+    { enabled: notifEmail, toggle: () => handleToggle("notifEmail", notifEmail, setNotifEmail), label: "Email Notifications", desc: "Receive updates about your learning progress", icon: <Mail size={14} /> },
+    { enabled: notifPush, toggle: () => handleToggle("notifPush", notifPush, setNotifPush), label: "Push Notifications", desc: "Browser and mobile push alerts", icon: <Bell size={14} /> },
+    { enabled: notifAssignment, toggle: () => handleToggle("notifAssignment", notifAssignment, setNotifAssignment), label: "Assignment Alerts", desc: "Deadline reminders and submission updates", icon: <ClipboardList size={14} /> },
+    { enabled: notifInterview, toggle: () => handleToggle("notifInterview", notifInterview, setNotifInterview), label: "Interview Reminders", desc: "Upcoming interview schedule notifications", icon: <MessageSquare size={14} /> },
+    { enabled: notifCoding, toggle: () => handleToggle("notifCoding", notifCoding, setNotifCoding), label: "Coding Challenge Alerts", desc: "New challenges and contest notifications", icon: <Code size={14} /> },
+    { enabled: notifResearch, toggle: () => handleToggle("notifResearch", notifResearch, setNotifResearch), label: "Research Updates", desc: "New research papers and citations", icon: <FileText size={14} /> },
+    { enabled: notifWeekly, toggle: () => handleToggle("notifWeekly", notifWeekly, setNotifWeekly), label: "Weekly Progress Report", desc: "Summary of your weekly learning activity", icon: <Activity size={14} /> },
+    { enabled: notifDaily, toggle: () => handleToggle("notifDaily", notifDaily, setNotifDaily), label: "Daily Study Reminder", desc: "Daily nudge to stay on track", icon: <Clock size={14} /> },
   ];
 
   return (
@@ -918,8 +1346,8 @@ function NotificationsSection({
         <h3 className="text-sm font-bold flex items-center gap-2 pb-3" style={{ color: c.primary }}>
           <Bell size={16} /> Notification Preferences
         </h3>
-        {toggles.map((t, i) => (
-          <SettingsToggle key={t.label} enabled={t.enabled} onToggle={() => { t.toggle(); markChanged(); }} label={t.label} description={t.desc} icon={t.icon} />
+        {toggles.map((t) => (
+          <SettingsToggle key={t.label} enabled={t.enabled} onToggle={t.toggle} label={t.label} description={t.desc} icon={t.icon} />
         ))}
       </motion.div>
     </div>
@@ -943,6 +1371,8 @@ function AIPreferencesSection({
   autoCitation: boolean; setAutoCitation: (v: boolean) => void;
   autoSaveConversations: boolean; setAutoSaveConversations: (v: boolean) => void;
   markChanged: () => void;
+  onSave?: () => void;
+  saving?: boolean;
 }) {
   const models = [
     { id: "gemini", name: "Gemini", desc: "Google's multimodal AI" },
@@ -1078,6 +1508,8 @@ function LearningSection({
   quizDifficulty: string; setQuizDifficulty: (v: string) => void;
   tutorPersonality: string; setTutorPersonality: (v: string) => void;
   markChanged: () => void;
+  onSave?: () => void;
+  saving?: boolean;
 }) {
   return (
     <div className="space-y-5">
@@ -1190,6 +1622,8 @@ function SecuritySection({
   showPassword: boolean; setShowPassword: (v: boolean) => void;
   activeDevices: { name: string; location: string; current: boolean; lastActive: string }[];
   markChanged: () => void;
+  scheduleSave?: (section: string, data: Record<string, unknown>) => void;
+  onChangePassword?: () => void;
 }) {
   const inputStyle = { background: c.inputBg, borderColor: c.border, color: c.text };
 
@@ -1289,14 +1723,22 @@ function SecuritySection({
 // ─── Privacy Section ─────────────────────────────────────────────────────
 function PrivacySection({
   c, publicProfile, setPublicProfile, dataCollection, setDataCollection,
-  personalizedAI, setPersonalizedAI, markChanged,
+  personalizedAI, setPersonalizedAI, markChanged, scheduleSave,
 }: {
   c: Record<string, string>;
   publicProfile: boolean; setPublicProfile: (v: boolean) => void;
   dataCollection: boolean; setDataCollection: (v: boolean) => void;
   personalizedAI: boolean; setPersonalizedAI: (v: boolean) => void;
   markChanged: () => void;
+  scheduleSave: (section: string, data: Record<string, unknown>) => void;
 }) {
+  const handleToggle = (key: string, current: boolean, setter: (v: boolean) => void) => {
+    const val = !current;
+    setter(val);
+    markChanged();
+    scheduleSave("privacy", { [key]: val });
+  };
+
   return (
     <div className="space-y-5">
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
@@ -1306,9 +1748,9 @@ function PrivacySection({
         <h3 className="text-sm font-bold flex items-center gap-2 pb-3" style={{ color: c.primary }}>
           <Lock size={16} /> Privacy Controls
         </h3>
-        <SettingsToggle enabled={publicProfile} onToggle={() => { setPublicProfile(!publicProfile); markChanged(); }} label="Public Profile" description="Allow others to view your community profile" icon={<Globe size={14} />} />
-        <SettingsToggle enabled={dataCollection} onToggle={() => { setDataCollection(!dataCollection); markChanged(); }} label="Data Collection" description="Help improve Adyapan with anonymous usage data" icon={<Database size={14} />} />
-        <SettingsToggle enabled={personalizedAI} onToggle={() => { setPersonalizedAI(!personalizedAI); markChanged(); }} label="Personalized AI" description="AI uses your learning history for better recommendations" icon={<Brain size={14} />} />
+        <SettingsToggle enabled={publicProfile} onToggle={() => handleToggle("publicProfile", publicProfile, setPublicProfile)} label="Public Profile" description="Allow others to view your community profile" icon={<Globe size={14} />} />
+        <SettingsToggle enabled={dataCollection} onToggle={() => handleToggle("dataCollection", dataCollection, setDataCollection)} label="Data Collection" description="Help improve Adyapan with anonymous usage data" icon={<Database size={14} />} />
+        <SettingsToggle enabled={personalizedAI} onToggle={() => handleToggle("personalizedAI", personalizedAI, setPersonalizedAI)} label="Personalized AI" description="AI uses your learning history for better recommendations" icon={<Brain size={14} />} />
       </motion.div>
 
       {/* Data Actions */}
@@ -1430,8 +1872,8 @@ function APISection({
   c, apiKeys, setApiKeys, markChanged,
 }: {
   c: Record<string, string>;
-  apiKeys: { name: string; status: string; lastSync: string; key: string }[];
-  setApiKeys: (v: { name: string; status: string; lastSync: string; key: string }[]) => void;
+  apiKeys: { name: string; slug?: string; status: string; lastSync: string; key: string }[];
+  setApiKeys: (v: any) => void;
   markChanged: () => void;
 }) {
   const inputStyle = { background: c.inputBg, borderColor: c.border, color: c.text };

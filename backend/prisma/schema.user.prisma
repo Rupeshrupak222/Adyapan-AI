@@ -1050,8 +1050,85 @@ model Profile {
   targetRole        String?  @map("target_role")
   username          String?
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  settings          UserSettings?
 
   @@map("profiles")
+}
+
+// ─── User Settings Model ──────────────────────────────────────────────────────
+// Stores all persistent user preferences for the Settings page
+model UserSettings {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique @map("user_id")
+  profileId               String   @unique @map("profile_id")
+
+  // Appearance
+  themeMode               String   @default("dark")        @map("theme_mode")
+  accentColor             String   @default("#f59e0b")     @map("accent_color")
+  compactMode             Boolean  @default(false)          @map("compact_mode")
+  glassEffect             Boolean  @default(true)           @map("glass_effect")
+  animationsEnabled       Boolean  @default(true)           @map("animations_enabled")
+  sidebarCollapse         Boolean  @default(true)           @map("sidebar_collapse")
+  fontSize                Int      @default(14)             @map("font_size")
+
+  // AI Preferences
+  aiModel                 String   @default("gemini")       @map("ai_model")
+  responseLength          String   @default("balanced")     @map("response_length")
+  creativity              Int      @default(70)
+  aiMemory                Boolean  @default(true)           @map("ai_memory")
+  markdownOutput          Boolean  @default(true)           @map("markdown_output")
+  codeHighlighting        Boolean  @default(true)           @map("code_highlighting")
+  autoCitation            Boolean  @default(false)          @map("auto_citation")
+  autoSaveConversations   Boolean  @default(true)           @map("auto_save_conversations")
+
+  // Learning Preferences
+  language                String   @default("en")
+  learningStyle           String   @default("visual")      @map("learning_style")
+  dailyGoal               Int      @default(3)              @map("daily_goal")
+  reminderTime            String   @default("09:00")        @map("reminder_time")
+  difficulty              String   @default("intermediate")
+  noteFormat              String   @default("markdown")     @map("note_format")
+  quizDifficulty          String   @default("medium")       @map("quiz_difficulty")
+  tutorPersonality        String   @default("friendly")     @map("tutor_personality")
+
+  // Notifications
+  notifEmail              Boolean  @default(true)           @map("notif_email")
+  notifPush               Boolean  @default(true)           @map("notif_push")
+  notifAssignment         Boolean  @default(true)           @map("notif_assignment")
+  notifInterview          Boolean  @default(true)           @map("notif_interview")
+  notifCoding             Boolean  @default(false)          @map("notif_coding")
+  notifResearch           Boolean  @default(false)          @map("notif_research")
+  notifWeekly             Boolean  @default(true)           @map("notif_weekly")
+  notifDaily              Boolean  @default(true)           @map("notif_daily")
+
+  // Privacy
+  publicProfile           Boolean  @default(true)           @map("public_profile")
+  dataCollection          Boolean  @default(true)           @map("data_collection")
+  personalizedAI          Boolean  @default(true)           @map("personalized_ai")
+
+  // Security
+  twoFactorEnabled        Boolean  @default(false)          @map("two_factor_enabled")
+  loginAlerts             Boolean  @default(true)           @map("login_alerts")
+
+  // API Keys (stored masked, shown masked in UI)
+  geminiApiKey            String?  @map("gemini_api_key")
+  openaiApiKey            String?  @map("openai_api_key")
+  claudeApiKey            String?  @map("claude_api_key")
+  groqApiKey              String?  @map("groq_api_key")
+  openrouterApiKey        String?  @map("openrouter_api_key")
+
+  // Connected Accounts
+  googleConnected         Boolean  @default(false)          @map("google_connected")
+  githubConnected         Boolean  @default(false)          @map("github_connected")
+  microsoftConnected      Boolean  @default(false)          @map("microsoft_connected")
+  linkedinConnected       Boolean  @default(false)          @map("linkedin_connected")
+
+  createdAt               DateTime @default(now())          @map("created_at")
+  updatedAt               DateTime @updatedAt               @map("updated_at")
+
+  profile                 Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
 }
 
 model Payment {

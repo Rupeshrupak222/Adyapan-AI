@@ -56,6 +56,7 @@ import { hrInterviewRouter } from "./hr-interview.routes";
 import { productivityRouter } from "./productivity.routes";
 import { jobDiscoveryRouter } from "./job-discovery.routes";
 import avatarRouter from "./avatar.routes";
+import { settingsRouter } from "./settings.routes";
 
 export const apiRouter = Router();
 
@@ -170,6 +171,5 @@ apiRouter.use("/blog", blogRouter);
 // AI Avatar Routes
 apiRouter.use("/avatar", avatarRouter);
 
-
-
-
+// User Settings Routes
+apiRouter.use("/settings", settingsRouter);
