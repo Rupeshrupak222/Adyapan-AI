@@ -98,6 +98,9 @@ export function ManageAccountView() {
   const [bio, setBio] = useState("");
   const [memberSince, setMemberSince] = useState("");
   const [plan, setPlan] = useState("free");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // ── Appearance state ──
   const [themeMode, setThemeMode] = useState<"dark" | "light" | "system">("dark");
@@ -171,7 +174,9 @@ export function ManageAccountView() {
   const storagePercent = Math.round((storageUsed / storageTotal) * 100);
   const [storageCategories, setStorageCategories] = useState<Array<{ name: string; size: string; percent: number; color: "amber" | "green" | "purple" | "rose" }>>([]);
   const [activityLog, setActivityLog] = useState<Array<{ time: string; action: string; icon: typeof MessageSquare; color: string }>>([]);
-  const activeDevices: Array<{ name: string; location: string; current: boolean; lastActive: string }> = [];
+  const activeDevices: Array<{ name: string; location: string; current: boolean; lastActive: string }> = [
+    { name: "Current Browser", location: "This device", current: true, lastActive: "Now" },
+  ];
 
   // ── Auto-save debounce refs ──
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -196,6 +201,7 @@ export function ManageAccountView() {
         if (p.username) setUsername(p.username);
         if (p.plan) setPlan(p.plan);
         if (p.memberSince) setMemberSince(new Date(p.memberSince).toLocaleDateString("en-IN", { year: "numeric", month: "long" }));
+        if (p.photoUrl !== undefined) setPhotoUrl(p.photoUrl || "");
 
         // Appearance
         setThemeMode((s.themeMode || "dark") as "dark" | "light" | "system");
@@ -338,11 +344,38 @@ export function ManageAccountView() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      await api.put("/profile/me", { phone, college, degree, graduationYear: gradYear, username, aboutMe: bio });
+      await api.put("/profile/me", { fullName, phone, college, degree, branch, graduationYear: gradYear, username, aboutMe: bio });
       setHasChanges(false);
       toast.success("Profile saved!");
     } catch { toast.error("Failed to save profile."); }
     finally { setSaving(false); }
+  };
+
+  // ── Upload Profile Photo ──
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error("Photo must be under 2MB."); return; }
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append("photo", file);
+      const res = await api.post("/settings/profile-photo", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      if (res.data?.photoUrl) {
+        setPhotoUrl(res.data.photoUrl);
+        toast.success("Profile photo updated!");
+      }
+    } catch { toast.error("Failed to upload photo."); }
+    finally { setUploadingPhoto(false); if (photoInputRef.current) photoInputRef.current.value = ""; }
+  };
+
+  // ── Remove Profile Photo ──
+  const handlePhotoRemove = async () => {
+    try {
+      await api.delete("/settings/profile-photo");
+      setPhotoUrl("");
+      toast.success("Profile photo removed!");
+    } catch { toast.error("Failed to remove photo."); }
   };
 
   // ── Save Appearance ──
@@ -431,6 +464,45 @@ export function ManageAccountView() {
     } catch (err: any) {
       toast.error(err?.response?.data?.error || "Failed to delete account.");
     } finally { setSaving(false); }
+  };
+
+  // ── Export User Data ──
+  const handleExportData = async () => {
+    toast.info("Preparing your data export...");
+    try {
+      const res = await api.get("/settings/export-data", { responseType: "blob" });
+      const blob = new Blob([res.data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `adyapan-export-${Date.now()}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Data exported successfully!");
+    } catch { toast.error("Failed to export data."); }
+  };
+
+  // ── Delete Chat History ──
+  const [showDeleteChatModal, setShowDeleteChatModal] = useState(false);
+  const handleDeleteChatHistory = async () => {
+    setSaving(true);
+    try {
+      const res = await api.delete("/settings/chat-history");
+      toast.success(`${res.data?.deletedSessions || 0} chat sessions deleted!`);
+      setShowDeleteChatModal(false);
+    } catch { toast.error("Failed to delete chat history."); }
+    finally { setSaving(false); }
+  };
+
+  // ── Logout All Devices ──
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const handleLogoutDevices = async () => {
+    setSaving(true);
+    try {
+      await api.post("/settings/logout-devices");
+      toast.success("All other devices logged out!");
+      setShowLogoutModal(false);
+    } catch { toast.error("Failed to logout devices."); }
+    finally { setSaving(false); }
   };
 
   const handleSectionChange = (id: SectionId) => {
@@ -629,16 +701,16 @@ export function ManageAccountView() {
         <div className="flex-1 min-w-0">
           <AnimatePresence mode="wait">
             <motion.div key={activeSection} {...sectionTransition}>
-              {activeSection === "profile" && <ProfileSection c={c} fullName={fullName} setFullName={setFullName} username={username} setUsername={setUsername} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} college={college} setCollege={setCollege} degree={degree} setDegree={setDegree} branch={branch} setBranch={setBranch} gradYear={gradYear} setGradYear={setGradYear} bio={bio} setBio={setBio} markChanged={markChanged} onSave={handleSaveProfile} saving={saving} />}
+              {activeSection === "profile" && <ProfileSection c={c} fullName={fullName} setFullName={setFullName} username={username} setUsername={setUsername} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} college={college} setCollege={setCollege} degree={degree} setDegree={setDegree} branch={branch} setBranch={setBranch} gradYear={gradYear} setGradYear={setGradYear} bio={bio} setBio={setBio} photoUrl={photoUrl} photoInputRef={photoInputRef} uploadingPhoto={uploadingPhoto} onPhotoUpload={handlePhotoUpload} onPhotoRemove={handlePhotoRemove} markChanged={markChanged} onSave={handleSaveProfile} saving={saving} />}
               {activeSection === "account" && <AccountSection c={c} email={email} plan={plan} memberSince={memberSince} markChanged={markChanged} onDeleteAccount={() => setShowDeleteModal(true)} onChangePassword={() => setShowChangePassword(true)} />}
               {activeSection === "appearance" && <AppearanceSection c={c} isDark={isDark} themeMode={themeMode} setThemeMode={setThemeMode} accentColor={accentColor} setAccentColor={setAccentColor} compactMode={compactMode} setCompactMode={setCompactMode} glassEffect={glassEffect} setGlassEffect={setGlassEffect} animationsEnabled={animationsEnabled} setAnimationsEnabled={setAnimationsEnabled} sidebarCollapse={sidebarCollapse} setSidebarCollapse={setSidebarCollapse} fontSize={fontSize} setFontSize={setFontSize} markChanged={markChanged} onSave={handleSaveAppearance} saving={saving} />}
               {activeSection === "notifications" && <NotificationsSection c={c} notifEmail={notifEmail} setNotifEmail={setNotifEmail} notifPush={notifPush} setNotifPush={setNotifPush} notifAssignment={notifAssignment} setNotifAssignment={setNotifAssignment} notifInterview={notifInterview} setNotifInterview={setNotifInterview} notifCoding={notifCoding} setNotifCoding={setNotifCoding} notifResearch={notifResearch} setNotifResearch={setNotifResearch} notifWeekly={notifWeekly} setNotifWeekly={setNotifWeekly} notifDaily={notifDaily} setNotifDaily={setNotifDaily} markChanged={markChanged} scheduleSave={scheduleSave} />}
               {activeSection === "ai-preferences" && <AIPreferencesSection c={c} aiModel={aiModel} setAiModel={setAiModel} responseLength={responseLength} setResponseLength={setResponseLength} creativity={creativity} setCreativity={setCreativity} aiMemory={aiMemory} setAiMemory={setAiMemory} markdownOutput={markdownOutput} setMarkdownOutput={setMarkdownOutput} codeHighlighting={codeHighlighting} setCodeHighlighting={setCodeHighlighting} autoCitation={autoCitation} setAutoCitation={setAutoCitation} autoSaveConversations={autoSaveConversations} setAutoSaveConversations={setAutoSaveConversations} markChanged={markChanged} onSave={handleSaveAI} saving={saving} />}
               {activeSection === "learning" && <LearningSection c={c} language={language} setLanguage={setLanguage} learningStyle={learningStyle} setLearningStyle={setLearningStyle} dailyGoal={dailyGoal} setDailyGoal={setDailyGoal} reminderTime={reminderTime} setReminderTime={setReminderTime} difficulty={difficulty} setDifficulty={setDifficulty} noteFormat={noteFormat} setNoteFormat={setNoteFormat} quizDifficulty={quizDifficulty} setQuizDifficulty={setQuizDifficulty} tutorPersonality={tutorPersonality} setTutorPersonality={setTutorPersonality} markChanged={markChanged} onSave={handleSaveLearning} saving={saving} />}
-              {activeSection === "security" && <SecuritySection c={c} twoFactor={twoFactor} setTwoFactor={setTwoFactor} loginAlerts={loginAlerts} setLoginAlerts={setLoginAlerts} showPassword={showPassword} setShowPassword={setShowPassword} activeDevices={activeDevices} markChanged={markChanged} scheduleSave={scheduleSave} onChangePassword={() => setShowChangePassword(true)} />}
-              {activeSection === "privacy" && <PrivacySection c={c} publicProfile={publicProfile} setPublicProfile={setPublicProfile} dataCollection={dataCollection} setDataCollection={setDataCollection} personalizedAI={personalizedAI} setPersonalizedAI={setPersonalizedAI} markChanged={markChanged} scheduleSave={scheduleSave} />}
-              {activeSection === "connected" && <ConnectedAccountsSection c={c} accounts={connectedAccounts} setAccounts={setConnectedAccounts} markChanged={markChanged} />}
-              {activeSection === "api" && <APISection c={c} apiKeys={apiKeys} setApiKeys={setApiKeys} markChanged={markChanged} />}
+              {activeSection === "security" && <SecuritySection c={c} twoFactor={twoFactor} setTwoFactor={setTwoFactor} loginAlerts={loginAlerts} setLoginAlerts={setLoginAlerts} showPassword={showPassword} setShowPassword={setShowPassword} activeDevices={activeDevices} markChanged={markChanged} scheduleSave={scheduleSave} onChangePassword={() => setShowChangePassword(true)} onLogoutDevices={() => setShowLogoutModal(true)} />}
+              {activeSection === "privacy" && <PrivacySection c={c} publicProfile={publicProfile} setPublicProfile={setPublicProfile} dataCollection={dataCollection} setDataCollection={setDataCollection} personalizedAI={personalizedAI} setPersonalizedAI={setPersonalizedAI} markChanged={markChanged} scheduleSave={scheduleSave} onExportData={handleExportData} onDeleteChatHistory={() => setShowDeleteChatModal(true)} onDeleteAccount={() => setShowDeleteModal(true)} />}
+              {activeSection === "connected" && <ConnectedAccountsSection c={c} accounts={connectedAccounts} setAccounts={setConnectedAccounts} markChanged={markChanged} scheduleSave={scheduleSave} />}
+              {activeSection === "api" && <APISection c={c} apiKeys={apiKeys} setApiKeys={setApiKeys} markChanged={markChanged} scheduleSave={scheduleSave} />}
               {activeSection === "storage" && <StorageSection c={c} storageUsed={storageUsed} storageTotal={storageTotal} storagePercent={storagePercent} categories={storageCategories} />}
               {activeSection === "activity" && <ActivitySection c={c} activityLog={activityLog} />}
               {activeSection === "help" && <HelpSection c={c} />}
@@ -683,13 +755,14 @@ export function ManageAccountView() {
           >
             <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Quick Actions</span>
             {[
-              { label: "Upgrade Plan", icon: ArrowUpRight, color: "text-amber-500" },
-              { label: "Download Data", icon: Download, color: "text-cyan-500" },
-              { label: "Export Chats", icon: FileText, color: "text-purple-500" },
-              { label: "Invite Friend", icon: Link2, color: "text-emerald-500" },
+              { label: "Upgrade Plan", icon: ArrowUpRight, color: "text-amber-500", action: () => window.location.href = "/pricing" },
+              { label: "Download Data", icon: Download, color: "text-cyan-500", action: handleExportData },
+              { label: "Export Chats", icon: FileText, color: "text-purple-500", action: handleExportData },
+              { label: "Invite Friend", icon: Link2, color: "text-emerald-500", action: () => { navigator.clipboard.writeText(window.location.origin + "/register?ref=" + username); toast.success("Invite link copied!"); } },
             ].map((action) => (
               <motion.button
                 key={action.label}
+                onClick={action.action}
                 whileHover={{ x: 3 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-xs font-bold transition-all hover:bg-white/5"
@@ -870,6 +943,114 @@ export function ManageAccountView() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Delete Chat History Modal ── */}
+      <AnimatePresence>
+        {showDeleteChatModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+            onClick={() => setShowDeleteChatModal(false)}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative rounded-2xl border p-6 space-y-4 w-full max-w-md"
+              style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: "rgba(249,115,22,0.3)" }}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: "#f97316" }}>
+                  <Trash2 size={16} /> Delete Chat History
+                </h3>
+                <button onClick={() => setShowDeleteChatModal(false)} className="p-1.5 rounded-lg hover:bg-white/5">
+                  <X size={16} style={{ color: c.textSec }} />
+                </button>
+              </div>
+              <div className="rounded-xl p-3 bg-orange-500/10 border border-orange-500/20">
+                <p className="text-xs" style={{ color: c.textSec }}>
+                  This will permanently delete all your AI conversations. This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  onClick={() => setShowDeleteChatModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                  style={{ borderColor: c.border, color: c.textSec }}
+                >Cancel</button>
+                <motion.button
+                  onClick={handleDeleteChatHistory}
+                  disabled={saving}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40"
+                >
+                  {saving ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                  Delete All Chats
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Logout All Devices Modal ── */}
+      <AnimatePresence>
+        {showLogoutModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+            onClick={() => setShowLogoutModal(false)}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative rounded-2xl border p-6 space-y-4 w-full max-w-md"
+              style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: "rgba(239,68,68,0.3)" }}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold flex items-center gap-2 text-red-500">
+                  <LogOut size={16} /> Logout All Devices
+                </h3>
+                <button onClick={() => setShowLogoutModal(false)} className="p-1.5 rounded-lg hover:bg-white/5">
+                  <X size={16} style={{ color: c.textSec }} />
+                </button>
+              </div>
+              <div className="rounded-xl p-3 bg-red-500/10 border border-red-500/20">
+                <p className="text-xs" style={{ color: c.textSec }}>
+                  This will log you out of all other devices. You will need to sign in again on those devices.
+                </p>
+              </div>
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                  style={{ borderColor: c.border, color: c.textSec }}
+                >Cancel</button>
+                <motion.button
+                  onClick={handleLogoutDevices}
+                  disabled={saving}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40"
+                >
+                  {saving ? <Loader2 size={13} className="animate-spin" /> : <LogOut size={13} />}
+                  Logout All
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -878,13 +1059,12 @@ export function ManageAccountView() {
 // SECTION COMPONENTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-type SectionProps = { c: ReturnType<typeof ManageAccountView extends () => unknown ? never : never> extends { } ? Record<string, string> : Record<string, string> };
-
 // ─── Profile Section ─────────────────────────────────────────────────────
 function ProfileSection({
   c, fullName, setFullName, username, setUsername, email, setEmail, phone, setPhone,
   college, setCollege, degree, setDegree, branch, setBranch, gradYear, setGradYear,
-  bio, setBio, markChanged, onSave, saving,
+  bio, setBio, photoUrl, photoInputRef, uploadingPhoto, onPhotoUpload, onPhotoRemove,
+  markChanged, onSave, saving,
 }: {
   c: Record<string, string>;
   fullName: string; setFullName: (v: string) => void;
@@ -896,6 +1076,9 @@ function ProfileSection({
   branch: string; setBranch: (v: string) => void;
   gradYear: string; setGradYear: (v: string) => void;
   bio: string; setBio: (v: string) => void;
+  photoUrl: string; photoInputRef: React.RefObject<HTMLInputElement>;
+  uploadingPhoto: boolean; onPhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPhotoRemove: () => void;
   markChanged: () => void;
   onSave: () => void;
   saving: boolean;
@@ -915,25 +1098,31 @@ function ProfileSection({
         <div className="flex items-center gap-5">
           <div className="relative group">
             <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-amber-500/30">
-              <img src={getDiceBearUrl(fullName)} alt="avatar" width={80} height={80} className="block" />
+              <img src={photoUrl || getDiceBearUrl(fullName)} alt="avatar" width={80} height={80} className="block object-cover w-full h-full" />
             </div>
-            <div className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+            <div className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => photoInputRef.current?.click()}>
               <Camera size={18} className="text-white" />
             </div>
+            <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={onPhotoUpload} />
           </div>
           <div>
             <span className="text-xs font-bold block" style={{ color: c.text }}>{fullName}</span>
             <span className="text-[10px] block mt-0.5" style={{ color: c.textMuted }}>JPG, PNG or GIF. Max 2MB.</span>
             <div className="flex gap-2 mt-2">
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold">
-                Upload Photo
+                onClick={() => photoInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold disabled:opacity-50">
+                {uploadingPhoto ? "Uploading..." : "Upload Photo"}
               </motion.button>
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                className="px-3 py-1.5 rounded-lg border text-[10px] font-bold"
-                style={{ borderColor: c.border, color: c.textMuted }}>
-                Remove
-              </motion.button>
+              {photoUrl && (
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  onClick={onPhotoRemove}
+                  className="px-3 py-1.5 rounded-lg border text-[10px] font-bold"
+                  style={{ borderColor: c.border, color: c.textMuted }}>
+                  Remove
+                </motion.button>
+              )}
             </div>
           </div>
         </div>
@@ -1035,7 +1224,7 @@ function ProfileSection({
       {/* Save/Cancel */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4}
         className="flex justify-end gap-2.5">
-        <PremiumButton variant="secondary">Cancel</PremiumButton>
+        <PremiumButton variant="secondary" onClick={() => window.location.reload()}>Cancel</PremiumButton>
         <motion.button
           onClick={onSave}
           disabled={saving}
@@ -1615,6 +1804,7 @@ function LearningSection({
 function SecuritySection({
   c, twoFactor, setTwoFactor, loginAlerts, setLoginAlerts,
   showPassword, setShowPassword, activeDevices, markChanged,
+  scheduleSave, onChangePassword, onLogoutDevices,
 }: {
   c: Record<string, string>;
   twoFactor: boolean; setTwoFactor: (v: boolean) => void;
@@ -1624,8 +1814,27 @@ function SecuritySection({
   markChanged: () => void;
   scheduleSave?: (section: string, data: Record<string, unknown>) => void;
   onChangePassword?: () => void;
+  onLogoutDevices?: () => void;
 }) {
   const inputStyle = { background: c.inputBg, borderColor: c.border, color: c.text };
+  const [secCurrentPw, setSecCurrentPw] = useState("");
+  const [secNewPw, setSecNewPw] = useState("");
+  const [secConfirmPw, setSecConfirmPw] = useState("");
+  const [secSaving, setSecSaving] = useState(false);
+
+  const handleInlinePasswordChange = async () => {
+    if (!secCurrentPw || !secNewPw) { toast.error("Fill in all password fields."); return; }
+    if (secNewPw !== secConfirmPw) { toast.error("Passwords do not match."); return; }
+    if (secNewPw.length < 8) { toast.error("Password must be at least 8 characters."); return; }
+    setSecSaving(true);
+    try {
+      await api.post("/settings/change-password", { currentPassword: secCurrentPw, newPassword: secNewPw });
+      toast.success("Password changed successfully!");
+      setSecCurrentPw(""); setSecNewPw(""); setSecConfirmPw("");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Failed to change password.");
+    } finally { setSecSaving(false); }
+  };
 
   return (
     <div className="space-y-5">
@@ -1642,6 +1851,7 @@ function SecuritySection({
             <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Current Password</label>
             <div className="relative">
               <input type={showPassword ? "text" : "password"} placeholder="Enter current password"
+                value={secCurrentPw} onChange={(e) => setSecCurrentPw(e.target.value)}
                 className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-amber-500/40 transition-all pr-10"
                 style={inputStyle} />
               <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -1653,18 +1863,29 @@ function SecuritySection({
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>New Password</label>
               <input type="password" placeholder="Enter new password"
+                value={secNewPw} onChange={(e) => setSecNewPw(e.target.value)}
                 className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-amber-500/40 transition-all"
                 style={inputStyle} />
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Confirm Password</label>
               <input type="password" placeholder="Confirm new password"
+                value={secConfirmPw} onChange={(e) => setSecConfirmPw(e.target.value)}
                 className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-amber-500/40 transition-all"
                 style={inputStyle} />
             </div>
           </div>
         </div>
-        <PremiumButton variant="primary" icon={<Key size={13} />}>Update Password</PremiumButton>
+        <motion.button
+          onClick={handleInlinePasswordChange}
+          disabled={secSaving}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold disabled:opacity-60"
+        >
+          {secSaving ? <Loader2 size={13} className="animate-spin" /> : <Key size={13} />}
+          Update Password
+        </motion.button>
       </motion.div>
 
       {/* 2FA & Login Alerts */}
@@ -1708,6 +1929,7 @@ function SecuritySection({
           ))}
         </div>
         <motion.button
+          onClick={onLogoutDevices}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="w-full py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all"
@@ -1724,6 +1946,7 @@ function SecuritySection({
 function PrivacySection({
   c, publicProfile, setPublicProfile, dataCollection, setDataCollection,
   personalizedAI, setPersonalizedAI, markChanged, scheduleSave,
+  onExportData, onDeleteChatHistory, onDeleteAccount,
 }: {
   c: Record<string, string>;
   publicProfile: boolean; setPublicProfile: (v: boolean) => void;
@@ -1731,6 +1954,9 @@ function PrivacySection({
   personalizedAI: boolean; setPersonalizedAI: (v: boolean) => void;
   markChanged: () => void;
   scheduleSave: (section: string, data: Record<string, unknown>) => void;
+  onExportData: () => void;
+  onDeleteChatHistory: () => void;
+  onDeleteAccount: () => void;
 }) {
   const handleToggle = (key: string, current: boolean, setter: (v: boolean) => void) => {
     const val = !current;
@@ -1763,6 +1989,7 @@ function PrivacySection({
         </h3>
         <div className="space-y-2.5">
           <motion.button whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
+            onClick={onExportData}
             className="w-full flex items-center justify-between p-3 rounded-xl border transition-all hover:bg-white/5"
             style={{ borderColor: c.border }}>
             <div className="flex items-center gap-2.5">
@@ -1775,6 +2002,7 @@ function PrivacySection({
             <ChevronRight size={14} style={{ color: c.textMuted }} />
           </motion.button>
           <motion.button whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
+            onClick={onDeleteChatHistory}
             className="w-full flex items-center justify-between p-3 rounded-xl border transition-all hover:bg-white/5"
             style={{ borderColor: c.border }}>
             <div className="flex items-center gap-2.5">
@@ -1787,6 +2015,7 @@ function PrivacySection({
             <ChevronRight size={14} style={{ color: c.textMuted }} />
           </motion.button>
           <motion.button whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
+            onClick={onDeleteAccount}
             className="w-full flex items-center justify-between p-3 rounded-xl border transition-all"
             style={{ borderColor: "rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.03)" }}>
             <div className="flex items-center gap-2.5">
@@ -1806,18 +2035,21 @@ function PrivacySection({
 
 // ─── Connected Accounts Section ──────────────────────────────────────────
 function ConnectedAccountsSection({
-  c, accounts, setAccounts, markChanged,
+  c, accounts, setAccounts, markChanged, scheduleSave,
 }: {
   c: Record<string, string>;
   accounts: { name: string; icon: string; color: string; connected: boolean }[];
   setAccounts: (v: { name: string; icon: string; color: string; connected: boolean }[]) => void;
   markChanged: () => void;
+  scheduleSave: (section: string, data: Record<string, unknown>) => void;
 }) {
   const toggleAccount = (index: number) => {
     const updated = [...accounts];
     updated[index] = { ...updated[index], connected: !updated[index].connected };
     setAccounts(updated);
     markChanged();
+    const key = `${updated[index].name.toLowerCase()}Connected`;
+    scheduleSave("connected-accounts", { [key]: updated[index].connected });
     toast.success(updated[index].connected ? `Connected to ${updated[index].name}` : `Disconnected from ${updated[index].name}`);
   };
 
@@ -1869,14 +2101,38 @@ function ConnectedAccountsSection({
 
 // ─── API Integrations Section ────────────────────────────────────────────
 function APISection({
-  c, apiKeys, setApiKeys, markChanged,
+  c, apiKeys, setApiKeys, markChanged, scheduleSave,
 }: {
   c: Record<string, string>;
   apiKeys: { name: string; slug?: string; status: string; lastSync: string; key: string }[];
   setApiKeys: (v: any) => void;
   markChanged: () => void;
+  scheduleSave: (section: string, data: Record<string, unknown>) => void;
 }) {
   const inputStyle = { background: c.inputBg, borderColor: c.border, color: c.text };
+
+  const handleUpdateKey = (index: number) => {
+    const api = apiKeys[index];
+    scheduleSave("api-keys", { [`${api.slug}ApiKey`]: api.key });
+    toast.success(`${api.name} key updated!`);
+  };
+
+  const handleRemoveKey = (index: number) => {
+    const api = apiKeys[index];
+    const updated = [...apiKeys];
+    updated[index] = { ...updated[index], key: "", status: "inactive", lastSync: "Never" };
+    setApiKeys(updated);
+    markChanged();
+    scheduleSave("api-keys", { [`${api.slug}ApiKey`]: "" });
+    toast.success(`${api.name} key removed!`);
+  };
+
+  const updateKeyField = (index: number, value: string) => {
+    const updated = [...apiKeys];
+    updated[index] = { ...updated[index], key: value };
+    setApiKeys(updated);
+    markChanged();
+  };
 
   return (
     <div className="space-y-5">
@@ -1911,17 +2167,20 @@ function APISection({
                   <Key size={12} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: c.textMuted }} />
                   <input
                     type="password"
-                    defaultValue={api.key}
+                    value={api.key}
+                    onChange={(e) => updateKeyField(i, e.target.value)}
                     placeholder="Enter API key..."
                     className="w-full rounded-lg px-3 py-2 pl-8 text-[11px] border outline-none focus:border-amber-500/40 transition-all"
                     style={inputStyle}
                   />
                 </div>
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => handleUpdateKey(i)}
                   className="px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold shrink-0">
                   Update
                 </motion.button>
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => handleRemoveKey(i)}
                   className="px-3 py-2 rounded-lg border text-[10px] font-bold shrink-0"
                   style={{ borderColor: "rgba(239,68,68,0.2)", color: "#ef4444" }}>
                   Remove
@@ -1943,6 +2202,31 @@ function StorageSection({
   storageUsed: number; storageTotal: number; storagePercent: number;
   categories: { name: string; size: string; percent: number; color: "amber" | "green" | "purple" | "rose" }[];
 }) {
+  const [clearingCache, setClearingCache] = useState(false);
+
+  const handleClearCache = async () => {
+    setClearingCache(true);
+    try {
+      await api.delete("/settings/storage/cache");
+      toast.success("Cache cleared successfully!");
+    } catch { toast.error("Failed to clear cache."); }
+    finally { setClearingCache(false); }
+  };
+
+  const handleDownloadBackup = async () => {
+    toast.info("Preparing your backup...");
+    try {
+      const res = await api.get("/settings/export-data", { responseType: "blob" });
+      const blob = new Blob([res.data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `adyapan-backup-${Date.now()}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Backup downloaded!");
+    } catch { toast.error("Failed to download backup."); }
+  };
+
   return (
     <div className="space-y-5">
       {/* Usage Overview */}
@@ -1972,14 +2256,18 @@ function StorageSection({
         </div>
         <div className="flex gap-2.5">
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            onClick={handleDownloadBackup}
             className="flex-1 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2"
             style={{ borderColor: c.border, color: c.textSec, background: c.cardBg }}>
             <Download size={13} /> Download Backup
           </motion.button>
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            className="flex-1 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2"
+            onClick={handleClearCache}
+            disabled={clearingCache}
+            className="flex-1 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-50"
             style={{ borderColor: "rgba(239,68,68,0.25)", color: "#ef4444", background: "rgba(239,68,68,0.05)" }}>
-            <Trash2 size={13} /> Clear Cache
+            {clearingCache ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+            {clearingCache ? "Clearing..." : "Clear Cache"}
           </motion.button>
         </div>
       </motion.div>
@@ -1994,7 +2282,6 @@ function ActivitySection({
   c: Record<string, string>;
   activityLog: { time: string; action: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string }[];
 }) {
-  const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   const filtered = activityLog.filter((item) => {
@@ -2053,12 +2340,12 @@ function ActivitySection({
 // ─── Help Section ────────────────────────────────────────────────────────
 function HelpSection({ c }: { c: Record<string, string> }) {
   const items = [
-    { title: "FAQ", desc: "Frequently asked questions about Adyapan AI", icon: HelpCircle, color: "text-blue-500" },
-    { title: "Contact Support", desc: "Get help from our support team", icon: Mail, color: "text-emerald-500" },
-    { title: "Report Bug", desc: "Report issues or unexpected behavior", icon: AlertTriangle, color: "text-rose-500" },
-    { title: "Documentation", desc: "Explore guides and tutorials", icon: FileText, color: "text-purple-500" },
-    { title: "Community", desc: "Join the Adyapan developer community", icon: Users, color: "text-cyan-500" },
-    { title: "About Adyapan AI", desc: "Version 2.0.0 · Made with love", icon: Info, color: "text-amber-500" },
+    { title: "FAQ", desc: "Frequently asked questions about Adyapan AI", icon: HelpCircle, color: "text-blue-500", href: "/faq" },
+    { title: "Contact Support", desc: "Get help from our support team", icon: Mail, color: "text-emerald-500", href: "/support" },
+    { title: "Report Bug", desc: "Report issues or unexpected behavior", icon: AlertTriangle, color: "text-rose-500", href: "/report-bug" },
+    { title: "Documentation", desc: "Explore guides and tutorials", icon: FileText, color: "text-purple-500", href: "/docs" },
+    { title: "Community", desc: "Join the Adyapan developer community", icon: Users, color: "text-cyan-500", href: "/community" },
+    { title: "About Adyapan AI", desc: "Version 2.0.0 · Made with love", icon: Info, color: "text-amber-500", href: "/about" },
   ];
 
   return (
@@ -2076,6 +2363,8 @@ function HelpSection({ c }: { c: Record<string, string> }) {
             return (
               <motion.div key={item.title} variants={fadeUp} initial="hidden" animate="visible" custom={i}
                 whileHover={{ y: -2, scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => window.location.href = item.href}
                 className="p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition-all"
                 style={{ borderColor: c.border, background: c.cardBgHover }}>
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
