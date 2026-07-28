@@ -14,6 +14,7 @@ import {
   BookOpen, AlertCircle, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
+import CompanyLogo from "@/components/interview-hub/CompanyLogo";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -254,28 +255,6 @@ function formatSalary(min?: number, max?: number): string {
 // ═══════════════════════════════════════════════════════════════════════════
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════════════════════════════════════
-
-function CompanyLogo({ company, logoUrl, size = 44 }: { company: string; logoUrl?: string; size?: number }) {
-  const [imgErr, setImgErr] = useState(false);
-  const cleanCompany = (company || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const domain = `${cleanCompany}.com`;
-  const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-  const src = logoUrl || faviconUrl;
-
-  if (src && !imgErr) {
-    return (
-      <div className="rounded-xl overflow-hidden shrink-0 border p-1 flex items-center justify-center" style={{ width: size, height: size, borderColor: "rgba(148,163,184,0.15)", background: "rgba(255,255,255,0.06)" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={company} width={size - 8} height={size - 8} style={{ objectFit: "contain", display: "block" }} onError={() => setImgErr(true)} />
-      </div>
-    );
-  }
-  return (
-    <div className="rounded-xl shrink-0 flex items-center justify-center text-white font-black text-xs border" style={{ width: size, height: size, background: getLogoColor(company), borderColor: "rgba(255,255,255,0.1)" }}>
-      {getLogoInitials(company)}
-    </div>
-  );
-}
 
 function SkeletonCard({ c }: { c: Record<string, string> }) {
   return (
