@@ -11,7 +11,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       name: requireString(req.body.name, "name"),
       email: requireString(req.body.email, "email"),
       password: requireString(req.body.password, "password"),
-      role: typeof req.body.role === "string" ? req.body.role : undefined,
+      role: "USER",
     });
 
     res.status(201).json({

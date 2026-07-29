@@ -101,7 +101,7 @@ export async function registerUser(input: RegisterInput) {
       name: input.name,
       email,
       password,
-      role: "USER",
+      role: input.role === "ADMIN" ? "ADMIN" : "USER",
       profile: {
         create: {},
       },
