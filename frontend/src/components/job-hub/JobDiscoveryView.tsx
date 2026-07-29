@@ -1424,25 +1424,57 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                       </h4>
                       <div className="p-5 rounded-2xl border leading-relaxed text-sm space-y-4" style={{ background: c.surface, borderColor: c.border, color: c.textSec }}>
                         {(() => {
-                          const desc = selectedJob.description || `We are looking for a ${selectedJob.employmentType?.toLowerCase() || "full-time"} ${selectedJob.title} to join ${selectedJob.company}. This is a ${selectedJob.mode?.toLowerCase() || "flexible"} position based in ${selectedJob.location || "flexible location"}.`;
+                          const rawDesc = selectedJob.description || `We are looking for a ${selectedJob.employmentType?.toLowerCase() || "full-time"} ${selectedJob.title} to join ${selectedJob.company}. This is a ${selectedJob.mode?.toLowerCase() || "flexible"} position based in ${selectedJob.location || "flexible location"}.`;
                           
-                          // Format headings concatenated together like "Job SummaryAs a Software Engineer..."
-                          const formattedText = desc
-                            .replace(/(Job Summary|Job Requirements|Role Overview|About Us|About the Role|Key Responsibilities|Responsibilities|Qualifications|Preferred Qualifications|What You Will Do|What We Look For|Benefits & Perks)(?=[A-Z0-9])/g, "$1\n\n### ")
-                            .replace(/(Job Summary|Job Requirements|Role Overview|About Us|About the Role|Key Responsibilities|Qualifications|Preferred Qualifications|What You Will Do|What We Look For|Benefits & Perks)/gi, "\n\n### $1\n\n");
-                          
-                          const blocks = formattedText.split(/\n\s*\n/).filter(b => b.trim().length > 0);
+                          let text = rawDesc;
+                          if (/<[a-z][\s\S]*>/i.test(text)) {
+                            text = text
+                              .replace(/<(h[1-6]|strong|b)(\s[^>]*)?>([\s\S]*?)<\/\1>/gi, "\n\n### $3\n\n")
+                              .replace(/<li(\s[^>]*)?>([\s\S]*?)<\/li>/gi, "\n- $2")
+                              .replace(/<\/(p|div|section|article)>/gi, "\n\n")
+                              .replace(/<br\s*\/?>/gi, "\n")
+                              .replace(/<[^>]+>/g, " ");
+                          }
+
+                          text = text.replace(/([a-z0-9])\.([A-Z])/g, "$1. $2");
+
+                          const headerKeywords = [
+                            "Who We Are", "About Us", "About The Role", "About The Company", "About Notion", "About NetApp",
+                            "Position Overview", "Role Overview", "Job Summary", "Job Requirements", "Role Summary",
+                            "Key Responsibilities", "Core Responsibilities", "Primary Responsibilities", "Responsibilities",
+                            "What You'll Achieve", "What You'll Do", "What You'll Need", "What You'll Bring", "What You Will Do", "What You Will Bring",
+                            "What We Look For", "What We're Looking For", "What We Offer", "Why Join Us",
+                            "Requirements", "Qualifications", "Minimum Qualifications", "Preferred Qualifications", "Basic Qualifications",
+                            "Bonus Points", "Nice To Have", "Perks & Benefits", "Benefits & Perks", "Benefits"
+                          ];
+
+                          headerKeywords.forEach(kw => {
+                            const esc = kw.replace("'", "\\'");
+                            const reg = new RegExp(`(?<=[a-z0-9.]|^)\\s*(${esc})(?=[A-Z0-9\\s]|$)`, "gi");
+                            text = text.replace(reg, "\n\n### $1\n\n");
+                          });
+
+                          headerKeywords.forEach(kw => {
+                            const esc = kw.replace("'", "\\'");
+                            const reg = new RegExp(`(###\\s*${esc})([A-Z])`, "gi");
+                            text = text.replace(reg, "$1\n\n$2");
+                          });
+
+                          text = text.replace(/\n{3,}/g, "\n\n");
+                          const blocks = text.split(/\n\s*\n/).filter(b => b.trim().length > 0);
 
                           return blocks.map((block, idx) => {
                             const trimmed = block.trim();
                             if (trimmed.startsWith("### ")) {
                               const title = trimmed.replace("### ", "").trim();
                               return (
-                                <h5 key={idx} className="text-xs font-bold uppercase tracking-wider mt-4 mb-2 flex items-center gap-2 border-b pb-1"
-                                  style={{ color: c.text, borderColor: c.border, fontFamily: "Outfit, sans-serif" }}>
-                                  <span className="w-1.5 h-3 rounded-full" style={{ background: c.primary }} />
-                                  {title}
-                                </h5>
+                                <div key={idx} className="mt-5 mb-2 pt-2 border-t first:mt-0 first:pt-0 first:border-0" style={{ borderColor: c.border }}>
+                                  <h5 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2"
+                                    style={{ color: c.primary, fontFamily: "Outfit, sans-serif" }}>
+                                    <span className="w-1.5 h-3 rounded-full" style={{ background: c.primary }} />
+                                    {title}
+                                  </h5>
+                                </div>
                               );
                             }
                             if (trimmed.includes("\n*") || trimmed.includes("\n-") || trimmed.includes("\n•") || trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
