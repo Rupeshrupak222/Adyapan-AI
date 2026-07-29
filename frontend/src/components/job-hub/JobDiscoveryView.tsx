@@ -499,6 +499,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
   const [savedPage, setSavedPage] = useState<"browse" | "saved">("browse");
+  const [syncing, setSyncing] = useState(false);
 
   // ─── Job Detail State ───────────────────────────────────────────────────
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -618,6 +619,24 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
       if (analyticsRes.status === "fulfilled") setAnalytics(analyticsRes.value.data?.analytics || analyticsRes.value.data || null);
     } catch { /* silent */ }
   }, []);
+
+  const handleSyncJobs = useCallback(async () => {
+    setSyncing(true);
+    try {
+      const res = await api.post("/discovery/sync");
+      if (res.data.success) {
+        toast.success("Jobs synchronized & updated successfully!");
+        await fetchJobs(1, false);
+        fetchSidebarData();
+      } else {
+        toast.error(res.data.message || "Failed to sync jobs");
+      }
+    } catch {
+      toast.error("Failed to trigger job sync");
+    } finally {
+      setSyncing(false);
+    }
+  }, [fetchJobs, fetchSidebarData]);
 
   const fetchJobDetail = useCallback(async (jobId: string) => {
     setDetailLoading(true);
@@ -1916,6 +1935,17 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={handleSyncJobs} disabled={syncing}
+              className="px-3 py-2 rounded-xl text-xs font-bold border transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              style={{
+                background: "rgba(245,158,11,0.1)",
+                borderColor: "rgba(245,158,11,0.3)",
+                color: c.primary,
+              }}
+              title="Sync & refresh job listings from multi-portal job engines">
+              <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+              {syncing ? "Syncing..." : "Sync Jobs"}
+            </button>
             <button onClick={() => setSavedPage(prev => prev === "saved" ? "browse" : "saved")}
               className="px-3 py-2 rounded-xl text-xs font-bold border transition-all hover:scale-105 flex items-center gap-1.5 relative"
               style={{

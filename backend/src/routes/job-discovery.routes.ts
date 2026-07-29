@@ -399,9 +399,22 @@ Resume Text Preview: ${cvText ? cvText.slice(0, 1500) : "No text"}`;
   }
 });
 
+// ─── POST /sync - Trigger auto-update & sync ───────────────────────────
+jobDiscoveryRouter.post("/sync", async (req: Request, res: Response) => {
+  try {
+    await JobSearchService.autoUpdateStaleJobs(true);
+    const sourceName = req.query.source as string | undefined;
+    const results = await JobDiscoveryService.syncSources(sourceName);
+    res.json({ success: true, message: "Jobs updated and synchronized successfully", results });
+  } catch (error) {
+    handleRouteError(res, error, "Discovery.sync", "Failed to sync jobs");
+  }
+});
+
 // ─── POST /admin/sync - Trigger ingestion sync ─────────────────────────
 jobDiscoveryRouter.post("/admin/sync", async (req: Request, res: Response) => {
   try {
+    await JobSearchService.autoUpdateStaleJobs(true);
     const sourceName = req.query.source as string | undefined;
     const results = await JobDiscoveryService.syncSources(sourceName);
     res.json({ success: true, results });

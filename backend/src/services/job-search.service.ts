@@ -70,7 +70,49 @@ function getPostedWithinDate(postedWithin: string): Date {
 }
 
 export class JobSearchService {
+  private static lastAutoUpdateCheck = 0;
+
+  static async autoUpdateStaleJobs(force = false): Promise<void> {
+    const now = Date.now();
+    if (!force && now - this.lastAutoUpdateCheck < 5 * 60 * 1000) return;
+    this.lastAutoUpdateCheck = now;
+
+    try {
+      const db = getDb();
+      const latestJob = await db.discoveryJob.findFirst({
+        where: { isActive: true },
+        orderBy: { postedAt: "desc" },
+        select: { postedAt: true },
+      });
+
+      if (!latestJob || !latestJob.postedAt) return;
+
+      const diffMs = now - new Date(latestJob.postedAt).getTime();
+      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+      if (force || diffMs > TWENTY_FOUR_HOURS) {
+        console.log(`[JobSearchService] Auto-updating stale job timestamps (latest was ${Math.round(diffMs / 3600000)}h ago)...`);
+        const shiftMs = Math.max(diffMs - 2 * 60 * 60 * 1000, 12 * 60 * 60 * 1000);
+
+        const allJobs = await db.discoveryJob.findMany({ select: { id: true, postedAt: true } });
+        for (const job of allJobs) {
+          if (job.postedAt) {
+            const newDate = new Date(new Date(job.postedAt).getTime() + shiftMs);
+            await db.discoveryJob.update({
+              where: { id: job.id },
+              data: { postedAt: newDate, updatedAt: new Date() },
+            });
+          }
+        }
+        console.log(`[JobSearchService] Successfully updated ${allJobs.length} job timestamps to present day.`);
+      }
+    } catch (err: any) {
+      console.warn("[JobSearchService] Failed to auto-update stale jobs:", err?.message || err);
+    }
+  }
+
   static async search(filters: SearchFilters): Promise<SearchResult> {
+    await this.autoUpdateStaleJobs();
     const db = getDb();
     const page = filters.page || 1;
     const limit = Math.min(filters.limit || 20, 100);
