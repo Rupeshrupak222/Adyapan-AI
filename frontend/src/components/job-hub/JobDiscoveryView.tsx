@@ -67,19 +67,26 @@ interface Facets {
 
 interface AIMatch {
   overallScore: number;
-  skillMatch: { matched: string[]; missing: string[]; suggested: string[] };
-  experienceMatch: { score: number; details: string };
-  educationMatch: { score: number; details: string };
+  activeCvName?: string;
+  skillMatch?: { score?: number; matched?: string[]; missing?: string[]; suggested?: string[] };
+  experienceMatch?: { score: number; details?: string };
+  educationMatch?: { score: number; details?: string };
   reasons: string[];
   preparationTips: string[];
 }
 
 interface MissingSkills {
-  skills: {
+  skills?: {
     name: string;
     importance: string;
     timeToLearn: string;
-    resources: { title: string; url: string; type: string }[];
+    resources?: { title: string; url: string; type: string }[];
+  }[];
+  missingTechnicalSkills?: {
+    skill: string;
+    importance: string;
+    estimatedWeeks: number;
+    resources?: string[];
   }[];
 }
 
@@ -1409,21 +1416,69 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             <div className="flex-1 overflow-y-auto p-6">
               <AnimatePresence mode="wait">
                 {detailTab === "overview" && (
-                  <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+                  <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
                     <div>
-                      <h4 className="text-sm font-bold mb-3" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>About this role</h4>
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: c.textSec }}>
-                        {selectedJob.description || `We are looking for a ${selectedJob.employmentType?.toLowerCase()} ${selectedJob.title} to join ${selectedJob.company}. This is a ${selectedJob.mode?.toLowerCase()} position based in ${selectedJob.location || "flexible location"}.`}
+                      <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                        <Briefcase size={16} style={{ color: c.primary }} />
+                        About this role
+                      </h4>
+                      <div className="p-5 rounded-2xl border leading-relaxed text-sm space-y-4" style={{ background: c.surface, borderColor: c.border, color: c.textSec }}>
+                        {(() => {
+                          const desc = selectedJob.description || `We are looking for a ${selectedJob.employmentType?.toLowerCase() || "full-time"} ${selectedJob.title} to join ${selectedJob.company}. This is a ${selectedJob.mode?.toLowerCase() || "flexible"} position based in ${selectedJob.location || "flexible location"}.`;
+                          
+                          // Format headings concatenated together like "Job SummaryAs a Software Engineer..."
+                          const formattedText = desc
+                            .replace(/(Job Summary|Job Requirements|Role Overview|About Us|About the Role|Key Responsibilities|Responsibilities|Qualifications|Preferred Qualifications|What You Will Do|What We Look For|Benefits & Perks)(?=[A-Z0-9])/g, "$1\n\n### ")
+                            .replace(/(Job Summary|Job Requirements|Role Overview|About Us|About the Role|Key Responsibilities|Qualifications|Preferred Qualifications|What You Will Do|What We Look For|Benefits & Perks)/gi, "\n\n### $1\n\n");
+                          
+                          const blocks = formattedText.split(/\n\s*\n/).filter(b => b.trim().length > 0);
+
+                          return blocks.map((block, idx) => {
+                            const trimmed = block.trim();
+                            if (trimmed.startsWith("### ")) {
+                              const title = trimmed.replace("### ", "").trim();
+                              return (
+                                <h5 key={idx} className="text-xs font-bold uppercase tracking-wider mt-4 mb-2 flex items-center gap-2 border-b pb-1"
+                                  style={{ color: c.text, borderColor: c.border, fontFamily: "Outfit, sans-serif" }}>
+                                  <span className="w-1.5 h-3 rounded-full" style={{ background: c.primary }} />
+                                  {title}
+                                </h5>
+                              );
+                            }
+                            if (trimmed.includes("\n*") || trimmed.includes("\n-") || trimmed.includes("\n•") || trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
+                              const lines = trimmed.split("\n").filter(l => l.trim().length > 0);
+                              return (
+                                <ul key={idx} className="space-y-2 my-2 pl-1">
+                                  {lines.map((line, li) => (
+                                    <li key={li} className="flex items-start gap-2">
+                                      <span className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: c.primary }} />
+                                      <span style={{ color: c.textSec }}>{line.replace(/^[-*•\d.]+\s*/, "")}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              );
+                            }
+                            return (
+                              <p key={idx} className="leading-relaxed">
+                                {trimmed}
+                              </p>
+                            );
+                          });
+                        })()}
                       </div>
                     </div>
+
                     {selectedJob.benefits && selectedJob.benefits.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-bold mb-3" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>Benefits</h4>
-                        <div className="space-y-2">
+                        <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                          <Sparkles size={16} style={{ color: "#34d399" }} />
+                          Perks & Benefits
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           {selectedJob.benefits.map((benefit, i) => (
-                            <div key={i} className="flex items-start gap-2">
-                              <CheckCircle2 size={14} className="mt-0.5 shrink-0" style={{ color: "#10b981" }} />
-                              <span className="text-sm" style={{ color: c.textSec }}>{benefit}</span>
+                            <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl border" style={{ background: c.surface, borderColor: c.border }}>
+                              <CheckCircle2 size={14} className="mt-0.5 shrink-0" style={{ color: "#34d399" }} />
+                              <span className="text-xs font-medium leading-relaxed" style={{ color: c.textSec }}>{benefit}</span>
                             </div>
                           ))}
                         </div>
@@ -1434,88 +1489,171 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
                 {detailTab === "requirements" && (
                   <motion.div key="requirements" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                    {selectedJob.requirements && selectedJob.requirements.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-bold mb-3" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>Requirements</h4>
-                        <div className="space-y-2">
-                          {selectedJob.requirements.map((req, i) => (
-                            <div key={i} className="flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: c.primary }} />
-                              <span className="text-sm leading-relaxed" style={{ color: c.textSec }}>{req}</span>
+                    {(() => {
+                      const hasReqs = selectedJob.requirements && selectedJob.requirements.length > 0;
+                      const hasResps = selectedJob.responsibilities && selectedJob.responsibilities.length > 0;
+
+                      // Fallback parser if requirements or responsibilities array is empty
+                      const parseFallback = (text: string) => {
+                        if (!text) return [];
+                        const sentences = text.split(/\n|(?<=[.!?])\s+/);
+                        const matched = sentences
+                          .map(s => s.trim().replace(/^[-*•\d.]+\s*/, ""))
+                          .filter(s => s.length > 20 && /\b(must|experience|proficient|knowledge|ability|degree|deliver|design|implement|develop|strong|build)\b/i.test(s));
+                        return Array.from(new Set(matched)).slice(0, 8);
+                      };
+
+                      const reqsList = hasReqs ? selectedJob.requirements! : parseFallback(selectedJob.description || "");
+                      const respsList = hasResps ? selectedJob.responsibilities! : [];
+
+                      return (
+                        <>
+                          {reqsList.length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                                <Target size={16} style={{ color: c.primary }} />
+                                Key Requirements & Qualifications ({reqsList.length})
+                              </h4>
+                              <div className="space-y-2.5">
+                                {reqsList.map((req, i) => (
+                                  <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl border transition-all" style={{ background: c.surface, borderColor: c.border }}>
+                                    <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: c.primary }} />
+                                    <span className="text-xs leading-relaxed font-medium" style={{ color: c.textSec }}>{req}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {selectedJob.responsibilities && selectedJob.responsibilities.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-bold mb-3" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>Responsibilities</h4>
-                        <div className="space-y-2">
-                          {selectedJob.responsibilities.map((resp, i) => (
-                            <div key={i} className="flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: "#818cf8" }} />
-                              <span className="text-sm leading-relaxed" style={{ color: c.textSec }}>{resp}</span>
+                          )}
+
+                          {respsList.length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                                <Zap size={16} style={{ color: "#818cf8" }} />
+                                Core Responsibilities ({respsList.length})
+                              </h4>
+                              <div className="space-y-2.5">
+                                {respsList.map((resp, i) => (
+                                  <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl border transition-all" style={{ background: c.surface, borderColor: c.border }}>
+                                    <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: "#818cf8" }} />
+                                    <span className="text-xs leading-relaxed font-medium" style={{ color: c.textSec }}>{resp}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                          )}
+
+                          {reqsList.length === 0 && respsList.length === 0 && (
+                            <div className="flex flex-col items-center justify-center py-10 text-center border rounded-2xl p-6" style={{ background: c.surface, borderColor: c.border }}>
+                              <AlertCircle size={32} style={{ color: c.textMuted }} className="mb-2" />
+                              <p className="text-xs font-semibold" style={{ color: c.textMuted }}>No distinct bulleted requirements parsed for this listing.</p>
+                              <p className="text-[11px] mt-1" style={{ color: c.textMuted }}>See the Overview tab for complete job description details.</p>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </motion.div>
                 )}
 
                 {detailTab === "skills" && (
-                  <motion.div key="skills" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-                    <h4 className="text-sm font-bold" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
-                      Required Skills ({selectedJob.skills?.length || 0})
-                    </h4>
+                  <motion.div key="skills" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                        <Code2 size={16} style={{ color: c.primary }} />
+                        Required Skills & Competencies ({selectedJob.skills?.length || 0})
+                      </h4>
+                    </div>
+
                     {selectedJob.skills && selectedJob.skills.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {selectedJob.skills.map((skill, i) => (
-                          <motion.span key={skill} custom={i} variants={fadeUp} initial="hidden" animate="visible"
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all hover:scale-[1.03] cursor-default"
-                            style={{
-                              background: i % 3 === 0 ? "rgba(245,158,11,0.08)" : i % 3 === 1 ? "rgba(99,102,241,0.08)" : "rgba(16,185,129,0.08)",
-                              color: i % 3 === 0 ? c.primary : i % 3 === 1 ? "#818cf8" : "#34d399",
-                              borderColor: i % 3 === 0 ? "rgba(245,158,11,0.2)" : i % 3 === 1 ? "rgba(99,102,241,0.2)" : "rgba(16,185,129,0.2)",
-                            }}>{skill}</motion.span>
-                        ))}
+                      <div className="p-5 rounded-2xl border" style={{ background: c.surface, borderColor: c.border }}>
+                        <div className="flex flex-wrap gap-2.5">
+                          {selectedJob.skills.map((skill, i) => {
+                            const isUserSkill = skillTags.some(t => t.toLowerCase() === skill.toLowerCase());
+                            return (
+                              <motion.div key={skill} custom={i} variants={fadeUp} initial="hidden" animate="visible"
+                                className="px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-2 transition-all hover:scale-105 cursor-default shadow-sm"
+                                style={{
+                                  background: isUserSkill ? "rgba(16,185,129,0.12)" : i % 3 === 0 ? "rgba(245,158,11,0.08)" : i % 3 === 1 ? "rgba(99,102,241,0.08)" : "rgba(236,72,153,0.08)",
+                                  color: isUserSkill ? "#34d399" : i % 3 === 0 ? c.primary : i % 3 === 1 ? "#818cf8" : "#f472b6",
+                                  borderColor: isUserSkill ? "rgba(16,185,129,0.3)" : i % 3 === 0 ? "rgba(245,158,11,0.2)" : i % 3 === 1 ? "rgba(99,102,241,0.2)" : "rgba(236,72,153,0.2)",
+                                }}>
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ background: "currentColor" }} />
+                                <span>{skill}</span>
+                                {isUserSkill && (
+                                  <span className="px-1.5 py-0.2 text-[9px] rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold uppercase tracking-wider">Matched</span>
+                                )}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    ) : <p className="text-sm" style={{ color: c.textMuted }}>No specific skills listed</p>}
+                    ) : (
+                      <div className="flex flex-col items-center py-10 border rounded-2xl" style={{ background: c.surface, borderColor: c.border }}>
+                        <Code2 size={28} style={{ color: c.textMuted }} className="mb-2" />
+                        <p className="text-xs" style={{ color: c.textMuted }}>No specific skill tags listed for this position.</p>
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
                 {detailTab === "company" && (
-                  <motion.div key="company" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <CompanyLogo company={selectedJob.company} logoUrl={selectedJob.logoUrl} size={64} />
-                      <div>
-                        <h4 className="text-base font-bold" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>{selectedJob.company}</h4>
-                        {selectedJob.industry && <span className="text-xs" style={{ color: c.textMuted }}>{selectedJob.industry}</span>}
+                  <motion.div key="company" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+                    <div className="p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" style={{ background: c.surface, borderColor: c.border }}>
+                      <div className="flex items-center gap-4">
+                        <CompanyLogo company={selectedJob.company} logoUrl={selectedJob.logoUrl} size={64} />
+                        <div>
+                          <h4 className="text-lg font-bold" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>{selectedJob.company}</h4>
+                          <p className="text-xs mt-0.5 flex items-center gap-2" style={{ color: c.textMuted }}>
+                            {selectedJob.industry && <span>{selectedJob.industry}</span>}
+                            {selectedJob.industry && selectedJob.location && <span>•</span>}
+                            {selectedJob.location && <span className="flex items-center gap-1"><MapPin size={11} /> {selectedJob.location}</span>}
+                          </p>
+                        </div>
                       </div>
+                      {selectedJob.applyUrl && (
+                        <a href={selectedJob.applyUrl} target="_blank" rel="noopener noreferrer"
+                          className="px-4 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 no-underline transition-all hover:scale-105"
+                          style={{ background: "rgba(245,158,11,0.1)", borderColor: "rgba(245,158,11,0.3)", color: c.primary }}>
+                          <Globe size={13} /> Visit Job Portal <ExternalLink size={12} />
+                        </a>
+                      )}
                     </div>
-                    {selectedJob.companySize && (
-                      <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: c.surface }}>
-                        <Users size={14} style={{ color: c.primary }} />
-                        <span className="text-xs font-semibold" style={{ color: c.textSec }}>Company Size: {selectedJob.companySize} employees</span>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-3">
-                      {selectedJob.location && (
-                        <div className="p-3 rounded-xl border" style={{ background: c.surface, borderColor: c.border }}>
-                          <span className="text-[10px] font-bold uppercase block mb-1" style={{ color: c.textMuted }}>Location</span>
-                          <span className="text-xs font-semibold flex items-center gap-1" style={{ color: c.text }}>
-                            <MapPin size={11} /> {selectedJob.location}
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {selectedJob.companySize && (
+                        <div className="p-3.5 rounded-xl border" style={{ background: c.surface, borderColor: c.border }}>
+                          <span className="text-[10px] font-bold uppercase block mb-1" style={{ color: c.textMuted }}>Company Size</span>
+                          <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: c.text }}>
+                            <Users size={14} style={{ color: c.primary }} /> {selectedJob.companySize} employees
                           </span>
                         </div>
                       )}
                       {selectedJob.mode && (
-                        <div className="p-3 rounded-xl border" style={{ background: c.surface, borderColor: c.border }}>
+                        <div className="p-3.5 rounded-xl border" style={{ background: c.surface, borderColor: c.border }}>
                           <span className="text-[10px] font-bold uppercase block mb-1" style={{ color: c.textMuted }}>Work Mode</span>
-                          <span className="text-xs font-semibold flex items-center gap-1" style={{ color: c.text }}>
-                            <Globe size={11} /> {selectedJob.mode}
+                          <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: c.text }}>
+                            <Globe size={14} style={{ color: "#818cf8" }} /> {selectedJob.mode}
                           </span>
                         </div>
                       )}
+                      {selectedJob.employmentType && (
+                        <div className="p-3.5 rounded-xl border" style={{ background: c.surface, borderColor: c.border }}>
+                          <span className="text-[10px] font-bold uppercase block mb-1" style={{ color: c.textMuted }}>Employment</span>
+                          <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: c.text }}>
+                            <Briefcase size={14} style={{ color: "#34d399" }} /> {selectedJob.employmentType}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-4 rounded-xl border space-y-2" style={{ background: c.surface, borderColor: c.border }}>
+                      <h5 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: c.textMuted }}>
+                        <Building2 size={14} style={{ color: c.primary }} /> Employer Summary
+                      </h5>
+                      <p className="text-xs leading-relaxed" style={{ color: c.textSec }}>
+                        {selectedJob.company} is currently actively hiring for {selectedJob.title} in {selectedJob.location || "flexible locations"}. 
+                        Review role specifications, required technical competencies, and submit your application via the official job link.
+                      </p>
                     </div>
                   </motion.div>
                 )}
@@ -1525,48 +1663,64 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                     {aiMatchLoading ? (
                       <div className="flex flex-col items-center py-12">
                         <Loader2 size={32} className="animate-spin mb-3" style={{ color: c.primary }} />
-                        <span className="text-sm" style={{ color: c.textMuted }}>Analyzing your match...</span>
+                        <span className="text-sm font-semibold" style={{ color: c.textMuted }}>Analyzing active CV against job criteria...</span>
                       </div>
                     ) : aiMatch ? (<>
+                      <div className="flex items-center justify-between p-3.5 rounded-xl border" style={{ background: "rgba(99,102,241,0.06)", borderColor: "rgba(99,102,241,0.2)" }}>
+                        <div className="flex items-center gap-2.5">
+                          <FileText size={16} style={{ color: "#818cf8" }} />
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: c.textMuted }}>Matched Against Active CV</span>
+                            <span className="text-xs font-bold" style={{ color: c.text }}>{aiMatch.activeCvName || "Active Resume Profile"}</span>
+                          </div>
+                        </div>
+                        <button onClick={() => fetchAIMatch(selectedJob.id)} className="p-1.5 rounded-lg border transition-all hover:scale-105" style={{ background: c.surface, borderColor: c.border, color: c.textMuted }} title="Re-analyze match">
+                          <RefreshCw size={13} />
+                        </button>
+                      </div>
+
                       <div className="flex items-center gap-5 p-5 rounded-2xl border" style={{ background: c.surface, borderColor: c.border }}>
                         <ScoreCircle score={aiMatch.overallScore} size={72} />
                         <div>
                           <h4 className="text-base font-bold" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
                             {aiMatch.overallScore >= 80 ? "Excellent Match!" : aiMatch.overallScore >= 60 ? "Good Match" : aiMatch.overallScore >= 40 ? "Moderate Match" : "Low Match"}
                           </h4>
-                          <p className="text-xs mt-1" style={{ color: c.textMuted }}>
-                            Your profile matches {aiMatch.overallScore}% of this role&apos;s requirements
+                          <p className="text-xs mt-1 leading-relaxed" style={{ color: c.textMuted }}>
+                            Your active CV matches {aiMatch.overallScore}% of key skill and experience requirements for this position.
                           </p>
                         </div>
                       </div>
+
                       <div className="space-y-3">
-                        {aiMatch.experienceMatch && <ScoreBar label="Experience" score={aiMatch.experienceMatch.score} c={c} />}
-                        {aiMatch.educationMatch && <ScoreBar label="Education" score={aiMatch.educationMatch.score} c={c} />}
+                        {aiMatch.experienceMatch && <ScoreBar label="Experience Alignment" score={aiMatch.experienceMatch.score} c={c} />}
+                        {aiMatch.educationMatch && <ScoreBar label="Education Alignment" score={aiMatch.educationMatch.score} c={c} />}
                       </div>
+
                       {aiMatch.reasons && aiMatch.reasons.length > 0 && (
                         <div className="space-y-2">
                           <h5 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
-                            <Lightbulb size={14} style={{ color: c.primary }} /> Why this matches
+                            <Lightbulb size={14} style={{ color: c.primary }} /> Key Match Insights
                           </h5>
-                          <div className="space-y-1.5">
+                          <div className="space-y-2">
                             {aiMatch.reasons.map((reason, i) => (
-                              <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg" style={{ background: "rgba(16,185,129,0.05)" }}>
-                                <CheckCircle2 size={13} className="mt-0.5 shrink-0" style={{ color: "#10b981" }} />
+                              <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl border" style={{ background: "rgba(16,185,129,0.05)", borderColor: "rgba(16,185,129,0.15)" }}>
+                                <CheckCircle2 size={14} className="mt-0.5 shrink-0" style={{ color: "#10b981" }} />
                                 <span className="text-xs leading-relaxed" style={{ color: c.textSec }}>{reason}</span>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
+
                       {aiMatch.preparationTips && aiMatch.preparationTips.length > 0 && (
                         <div className="space-y-2">
                           <h5 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
-                            <Zap size={14} style={{ color: c.primary }} /> Preparation Tips
+                            <Zap size={14} style={{ color: c.primary }} /> Recommendations & Next Steps
                           </h5>
-                          <div className="space-y-1.5">
+                          <div className="space-y-2">
                             {aiMatch.preparationTips.map((tip, i) => (
-                              <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg" style={{ background: "rgba(245,158,11,0.05)" }}>
-                                <ArrowRight size={13} className="mt-0.5 shrink-0" style={{ color: c.primary }} />
+                              <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl border" style={{ background: "rgba(245,158,11,0.05)", borderColor: "rgba(245,158,11,0.15)" }}>
+                                <ArrowRight size={14} className="mt-0.5 shrink-0" style={{ color: c.primary }} />
                                 <span className="text-xs leading-relaxed" style={{ color: c.textSec }}>{tip}</span>
                               </div>
                             ))}
@@ -1575,11 +1729,14 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                       )}
                     </>) : (
                       <div className="flex flex-col items-center py-12">
-                        <Sparkles size={32} style={{ color: c.textMuted }} className="mb-3" />
-                        <p className="text-sm" style={{ color: c.textMuted }}>Click to generate AI match analysis</p>
+                        <Sparkles size={36} style={{ color: c.primary }} className="mb-3 animate-pulse" />
+                        <p className="text-sm font-semibold" style={{ color: c.text }}>Analyze Job Match with Active CV</p>
+                        <p className="text-xs text-center max-w-xs mt-1 mb-4" style={{ color: c.textMuted }}>Compare your active resume and candidate profile against the requirements for {selectedJob.title}.</p>
                         <button onClick={() => fetchAIMatch(selectedJob.id)}
-                          className="mt-3 px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105"
-                          style={{ background: c.primary, color: "#000" }}>Analyze Match</button>
+                          className="px-5 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-105 shadow-md flex items-center gap-2"
+                          style={{ background: c.primary, color: "#000" }}>
+                          <Sparkles size={14} /> Analyze Match Now
+                        </button>
                       </div>
                     )}
                   </motion.div>
@@ -1590,54 +1747,76 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                     {missingSkillsLoading ? (
                       <div className="flex flex-col items-center py-12">
                         <Loader2 size={32} className="animate-spin mb-3" style={{ color: c.primary }} />
-                        <span className="text-sm" style={{ color: c.textMuted }}>Analyzing skill gaps...</span>
+                        <span className="text-sm font-semibold" style={{ color: c.textMuted }}>Comparing resume skills against job requirements...</span>
                       </div>
-                    ) : missingSkills ? (<>
-                      <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)" }}>
-                        <Target size={20} style={{ color: c.primary }} />
-                        <div>
-                          <span className="text-sm font-bold block" style={{ color: c.text }}>{missingSkills.skills?.length || 0} skills to learn</span>
-                          <span className="text-[11px]" style={{ color: c.textMuted }}>Build these skills to improve your match score</span>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        {(missingSkills.skills || []).map((skill, i) => (
-                          <motion.div key={i} custom={i} variants={fadeUp} initial="hidden" animate="visible"
-                            className="p-4 rounded-xl border space-y-3" style={{ background: c.surface, borderColor: c.border }}>
-                            <div className="flex items-center justify-between">
-                              <h5 className="text-sm font-bold" style={{ color: c.text }}>{skill.name}</h5>
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold"
-                                style={{
-                                  background: skill.importance === "High" ? "rgba(239,68,68,0.1)" : skill.importance === "Medium" ? "rgba(245,158,11,0.1)" : "rgba(100,116,139,0.1)",
-                                  color: skill.importance === "High" ? "#ef4444" : skill.importance === "Medium" ? "#f59e0b" : "#64748b",
-                                }}>{skill.importance}</span>
+                    ) : missingSkills ? (
+                      (() => {
+                        const skillsList = missingSkills.skills || (missingSkills.missingTechnicalSkills || []).map(item => ({
+                          name: item.skill,
+                          importance: item.importance || "High",
+                          timeToLearn: `${item.estimatedWeeks || 2} weeks`,
+                          resources: (item.resources || []).map(r => ({ title: typeof r === "string" ? r : "Learning resource", url: "#", type: "course" }))
+                        }));
+
+                        return (<>
+                          <div className="flex items-center gap-3 p-4 rounded-xl border" style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.2)" }}>
+                            <Target size={22} style={{ color: c.primary }} />
+                            <div>
+                              <span className="text-sm font-bold block" style={{ color: c.text }}>{skillsList.length} skill gaps identified</span>
+                              <span className="text-[11px]" style={{ color: c.textMuted }}>Acquiring these key competencies will maximize your interview shortlist chances</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Clock size={12} style={{ color: c.textMuted }} />
-                              <span className="text-[11px]" style={{ color: c.textMuted }}>Estimated time: {skill.timeToLearn}</span>
-                            </div>
-                            {skill.resources && skill.resources.length > 0 && (
-                              <div className="space-y-1.5">
-                                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Resources</span>
-                                {skill.resources.map((res, ri) => (
-                                  <a key={ri} href={res.url} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-2 p-2 rounded-lg transition-all hover:bg-white/5 no-underline">
-                                    {res.type === "course" ? <BookOpen size={12} /> : res.type === "article" ? <FileText size={12} /> : <ExternalLink size={12} />}
-                                    <span className="text-xs font-semibold" style={{ color: c.primary }}>{res.title}</span>
-                                  </a>
-                                ))}
-                              </div>
-                            )}
-                          </motion.div>
-                        ))}
-                      </div>
-                    </>) : (
+                          </div>
+
+                          <div className="space-y-3">
+                            {skillsList.map((skill, i) => (
+                              <motion.div key={i} custom={i} variants={fadeUp} initial="hidden" animate="visible"
+                                className="p-4 rounded-xl border space-y-3" style={{ background: c.surface, borderColor: c.border }}>
+                                <div className="flex items-center justify-between">
+                                  <h5 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text }}>
+                                    <Code2 size={15} style={{ color: c.primary }} />
+                                    {skill.name}
+                                  </h5>
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border"
+                                    style={{
+                                      background: skill.importance?.toLowerCase() === "high" || skill.importance === "critical" ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)",
+                                      color: skill.importance?.toLowerCase() === "high" || skill.importance === "critical" ? "#ef4444" : "#f59e0b",
+                                      borderColor: skill.importance?.toLowerCase() === "high" || skill.importance === "critical" ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.2)",
+                                    }}>{skill.importance || "High"} Importance</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Clock size={12} style={{ color: c.textMuted }} />
+                                  <span className="text-[11px]" style={{ color: c.textMuted }}>Est. Time to Learn: <strong style={{ color: c.text }}>{skill.timeToLearn}</strong></span>
+                                </div>
+                                {skill.resources && skill.resources.length > 0 && (
+                                  <div className="space-y-1.5 pt-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: c.textMuted }}>Recommended Resources</span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      {skill.resources.map((res, ri) => (
+                                        <a key={ri} href={res.url} target="_blank" rel="noopener noreferrer"
+                                          className="flex items-center gap-2 p-2 rounded-lg border transition-all hover:border-amber-500/40 no-underline"
+                                          style={{ background: c.cardBg, borderColor: c.border }}>
+                                          {res.type === "course" ? <BookOpen size={12} style={{ color: c.primary }} /> : <ExternalLink size={12} style={{ color: c.primary }} />}
+                                          <span className="text-xs font-medium truncate" style={{ color: c.text }}>{res.title}</span>
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </motion.div>
+                            ))}
+                          </div>
+                        </>);
+                      })()
+                    ) : (
                       <div className="flex flex-col items-center py-12">
-                        <Target size={32} style={{ color: c.textMuted }} className="mb-3" />
-                        <p className="text-sm" style={{ color: c.textMuted }}>Click to analyze skill gaps</p>
+                        <Target size={36} style={{ color: c.primary }} className="mb-3 animate-bounce" />
+                        <p className="text-sm font-semibold" style={{ color: c.text }}>Analyze Skill Gaps with Active CV</p>
+                        <p className="text-xs text-center max-w-xs mt-1 mb-4" style={{ color: c.textMuted }}>Find out which skills in this job description are missing from your active resume.</p>
                         <button onClick={() => fetchMissingSkills(selectedJob.id)}
-                          className="mt-3 px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105"
-                          style={{ background: c.primary, color: "#000" }}>Analyze Skills</button>
+                          className="px-5 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-105 shadow-md flex items-center gap-2"
+                          style={{ background: c.primary, color: "#000" }}>
+                          <Target size={14} /> Analyze Skill Gaps
+                        </button>
                       </div>
                     )}
                   </motion.div>
