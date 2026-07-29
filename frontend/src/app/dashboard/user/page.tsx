@@ -122,6 +122,9 @@ const EngineView = dynamic(() => import("@/components/interview-hub/engine/Engin
 const TechnicalInterviewView = dynamic(() => import("@/components/interview-hub/technical-engine/TechnicalInterviewView").then(m => m.default), {
   loading: () => <DashboardWidgetSkeleton title="Technical Interview Engine" />
 });
+const HRView = dynamic(() => import("@/components/interview-hub/hr-engine/HRView").then(m => m.default), {
+  loading: () => <DashboardWidgetSkeleton title="HR Interview Engine" />
+});
 const JobDiscoveryView = dynamic(() => import("@/components/job-hub/JobDiscoveryView").then(m => m.default), {
   loading: () => <DashboardWidgetSkeleton title="Job Discovery" />,
   ssr: false,
@@ -2625,7 +2628,9 @@ function UserDashboardContent() {
           <HubErrorBoundary><EngineView theme={theme} /></HubErrorBoundary>
         ) : activeView === "interview-technical" || activeView === "technical-interview" ? (
           <HubErrorBoundary><TechnicalInterviewView theme={theme} /></HubErrorBoundary>
-        ) : activeView === "interview-hub" || activeView === "interview-hr" || activeView === "interview-mock" ? (
+        ) : activeView === "interview-hr" || activeView === "hr-interview" ? (
+          <HubErrorBoundary><HRView theme={theme} /></HubErrorBoundary>
+        ) : activeView === "interview-hub" || activeView === "interview-mock" ? (
           <HubErrorBoundary><InterviewHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "job-discovery" ? (
           <HubErrorBoundary><JobDiscoveryView /></HubErrorBoundary>

@@ -653,13 +653,19 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
             {activeModule === "interview-hub" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
-                  { title: "AI HR Interview", desc: "Behavioral, situational, and HR-focused interview practice.", icon: <User size={24} className="text-pink-500" />, type: "behavioral" as const },
-                  { title: "AI Technical Interview", desc: "Coding, system design, architecture, and deep technical discussions.", icon: <Code size={24} className="text-cyan-500" />, type: "technical" as const },
+                  { title: "AI HR Interview", desc: "Behavioral, situational, and HR-focused interview practice.", icon: <User size={24} className="text-pink-500" />, type: "behavioral" as const, viewId: "interview-hr" },
+                  { title: "AI Technical Interview", desc: "Coding, system design, architecture, and deep technical discussions.", icon: <Code size={24} className="text-cyan-500" />, type: "technical" as const, viewId: "interview-technical" },
                 ].map((card) => (
                   <div key={card.title}
                     className="rounded-2xl p-5 border flex flex-col justify-between hover:shadow-xl transition-all cursor-pointer group"
                     style={{ background: c.cardBg, borderColor: c.border }}
-                    onClick={() => handleStartClicked(card.type)}
+                    onClick={() => {
+                      if (setView) {
+                        setView(card.viewId);
+                      } else {
+                        handleStartClicked(card.type);
+                      }
+                    }}
                   >
                     <div className="space-y-3">
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:border-amber-500/20 group-hover:bg-amber-500/5 transition-all" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
