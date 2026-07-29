@@ -9,6 +9,13 @@ import {
   getSystemHealth,
   getModuleAnalytics,
   getSecurityLogs,
+  getAdminJobs,
+  createAdminJob,
+  updateAdminJob,
+  deleteAdminJob,
+  triggerJobIngestion,
+  getAdminSettings,
+  updateAdminSettings,
 } from "../controllers/admin.controller";
 import { requireAuth, requireRole } from "../middleware/auth";
 import {
@@ -32,6 +39,18 @@ adminRouter.get("/analytics/revenue", ...guard, getRevenueAnalytics);
 adminRouter.get("/system-health", ...guard, getSystemHealth);
 adminRouter.get("/modules", ...guard, getModuleAnalytics);
 adminRouter.get("/security", ...guard, getSecurityLogs);
+
+// Job Discovery Management
+adminRouter.get("/jobs", ...guard, getAdminJobs);
+adminRouter.post("/jobs", ...guard, createAdminJob);
+adminRouter.put("/jobs/:id", ...guard, updateAdminJob);
+adminRouter.delete("/jobs/:id", ...guard, deleteAdminJob);
+adminRouter.post("/jobs/ingest", ...guard, triggerJobIngestion);
+
+// System Settings Management
+adminRouter.get("/settings", ...guard, getAdminSettings);
+adminRouter.put("/settings", ...guard, updateAdminSettings);
+
 adminRouter.get("/performance", ...guard, (req, res) => {
   try {
     const { PerformanceMonitor } = require("../utils/monitoring");
