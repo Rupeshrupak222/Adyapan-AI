@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, useInView } from "framer-motion";
 import { api } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/cn";
 import { mkColors } from "@/utils/themeColors";
 import { useThemeColors } from "@/hooks/useThemeColors";
@@ -385,12 +386,19 @@ function ChartComponent({ type, data, options, height = 200 }: {
 
 export function CareerDashboardView({ setView }: { setView?: (v: string) => void }) {
   const router = useRouter();
+  const { user } = useAuth();
   const [data, setData] = useState<CareerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingStep, setLoadingStep] = useState(0);
   const [theme, setTheme] = useState("dark");
   const [refreshing, setRefreshing] = useState(false);
   const C = useMemo(() => mkColors(theme), [theme]);
+
+  const userFirstName = useMemo(() => {
+    if (user?.name) return user.name.split(" ")[0].trim();
+    if ((user as any)?.firstName) return (user as any).firstName;
+    return "";
+  }, [user]);
 
   useEffect(() => {
     const t = document.documentElement.getAttribute("data-theme") || "dark";
@@ -626,32 +634,37 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
       {/* ─── AI Daily Brief ─────────────────────────────────────── */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}>
         <PremiumCard glow className="p-5 border-amber-500/15 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-purple-500" />
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
-              <Sparkles size={18} className="text-amber-400" />
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-amber-500/10">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+              <Sparkles size={16} className="text-amber-400" />
             </div>
-            <div className="flex-1">
-              <h3 className="text-xs font-extrabold text-amber-500 uppercase tracking-wider mb-2">AI Daily Brief</h3>
-              <div className="space-y-1.5">
-                {data.dailyBrief.lines.map((line, i) => (
-                  <motion.p
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + i * 0.15 }}
-                    className="text-sm leading-relaxed"
-                    style={{ color: C.textSec }}
-                  >
-                    {i === 0 ? (
-                      <span className="font-bold" style={{ color: C.text }}>{line}</span>
-                    ) : (
-                      line
-                    )}
-                  </motion.p>
-                ))}
-              </div>
-            </div>
+            <h3 className="text-xs font-extrabold text-amber-500 uppercase tracking-wider">AI Daily Brief</h3>
+            <div className="h-[2px] flex-1 bg-gradient-to-r from-amber-500/40 via-orange-500/25 to-transparent rounded-full ml-2" />
+          </div>
+
+          <div className="space-y-2">
+            {data.dailyBrief.lines.map((line, i) => {
+              let displayLine = line;
+              if (i === 0 && userFirstName) {
+                displayLine = displayLine.replace(/Good (Morning|Afternoon|Evening),?\s*(User|there|Honey|Learner|Student)?/i, (match, p1) => `Good ${p1}, ${userFirstName}`);
+              }
+              return (
+                <motion.p
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.1 }}
+                  className="text-sm leading-relaxed"
+                  style={{ color: C.textSec }}
+                >
+                  {i === 0 ? (
+                    <span className="font-bold text-base block mb-1" style={{ color: C.text }}>{displayLine}</span>
+                  ) : (
+                    displayLine
+                  )}
+                </motion.p>
+              );
+            })}
           </div>
         </PremiumCard>
       </motion.div>

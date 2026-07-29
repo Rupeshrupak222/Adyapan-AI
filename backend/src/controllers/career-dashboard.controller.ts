@@ -1,12 +1,18 @@
 import type { NextFunction, Request, Response } from "express";
-import { getUserPrismaFromRequest } from "../utils/prisma";
+import { getUserPrismaFromRequest, masterPrisma } from "../utils/prisma";
 import { requireUserId } from "../utils/request";
 import { generateOrchestratedJSON } from "../lib/ai/openrouter";
 
 // Helper to compute the programmatic stats baseline (aggregating from ~30 tables)
 async function computeDashboardBaseline(userId: string, userPrisma: any) {
   let profile: any = null;
-  try { profile = await userPrisma.profile.findUnique({ where: { userId }, include: { user: true } }); } catch {}
+  try { profile = await userPrisma.profile.findUnique({ where: { userId } }); } catch {}
+
+  let userRecord: any = null;
+  try { userRecord = await masterPrisma.user.findUnique({ where: { id: userId } }); } catch {}
+
+  const rawName = userRecord?.name || (profile as any)?.name || (profile as any)?.careerGoal || "";
+  const userName = rawName ? String(rawName).trim().split(" ")[0] : "Learner";
 
   let resumes: any[] = [];
   try { resumes = await userPrisma.resume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }); } catch {}
@@ -513,8 +519,6 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   if (hour >= 12 && hour < 17) greeting = "Good Afternoon";
   else if (hour >= 17) greeting = "Good Evening";
 
-  const userName = profile?.user?.name?.split(" ")[0] || "there";
-
   const briefLines: string[] = [];
   briefLines.push(`${greeting}, ${userName}.`);
 
@@ -827,12 +831,14 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       score: w.strengthScore,
       risk: w.riskLevel,
     })),
+    userName,
   };
 }
 
 // Helper to use AI Orchestration and calculate/save full Dashboard data
 async function generateAndSaveDashboard(userId: string, userPrisma: any) {
   const baseline = await computeDashboardBaseline(userId, userPrisma);
+  const userName = baseline.userName || "Learner";
 
   try {
     const systemPrompt = `You are a Principal Product Architect, staff recruiter, and career strategist at Adyapan AI.
@@ -840,9 +846,9 @@ Analyze the user's dashboard statistics across Learning, Coding, and Resume Hubs
 Produce a highly personalized AI Daily Brief, actionable Career Insights, prioritized Today's Actions, recommendations list, and career coach feedback.
 
 CRITICAL FORMATTING RULES:
-1. You MUST greet the user personally. If their name is known, greet them. Use friendly but professional terms.
+1. Under "dailyBrief", the first line of "lines" MUST greet the candidate by their name "${userName}". Strictly use: "Good Morning, ${userName}." (or Good Afternoon / Good Evening depending on time of day).
 2. Under "dailyBrief", include "lines": a list of 4-6 sentences. E.g.:
-   - "Good Morning, {Name}." (or Honey / userName)
+   - "Good Morning, ${userName}."
    - "You improved your ATS score by {X} points this week." (only if ATS score improved, or mention current ATS score)
    - "{Topic} remains your weakest coding topic." (identify weakest topic from weakTopics list)
    - "Your LinkedIn profile is now {Y}% optimized." (reference linkedinScore)
@@ -873,7 +879,8 @@ You MUST respond with valid JSON matching this schema exactly:
   }
 }`;
 
-    const userPrompt = `USER PROFILE SUMMARY:
+    const userPrompt = `CANDIDATE NAME: ${userName}
+USER PROFILE SUMMARY:
 Target Role: ${baseline.learningSummary.recommendedTopic || "Software Engineer"}
 Overall Readiness: ${baseline.scores.overall}%
 Coding Readiness: ${baseline.scores.coding}%
