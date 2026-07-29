@@ -122,9 +122,6 @@ const EngineView = dynamic(() => import("@/components/interview-hub/engine/Engin
 const TechnicalInterviewView = dynamic(() => import("@/components/interview-hub/technical-engine/TechnicalInterviewView").then(m => m.default), {
   loading: () => <DashboardWidgetSkeleton title="Technical Interview Engine" />
 });
-const InternshipHubView = dynamic(() => import("@/components/internship-hub/InternshipHubView").then(m => m.InternshipHubView), {
-  loading: () => <DashboardWidgetSkeleton title="Internship Finder" />
-});
 const JobDiscoveryView = dynamic(() => import("@/components/job-hub/JobDiscoveryView").then(m => m.default), {
   loading: () => <DashboardWidgetSkeleton title="Job Discovery" />,
   ssr: false,
@@ -194,7 +191,12 @@ import {
   LineChart, Trophy, MessageCircle, Users,
   Target, Globe, Edit3, Save, X,
   Upload, Download, Trash2, RefreshCw, ArrowLeft, Lock, Shield,
+  Flame, AlertCircle, CheckCircle2, Clock, Brain, Sparkles,
 } from "lucide-react";
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip,
+  ResponsiveContainer, Cell,
+} from "recharts";
 
 export interface AdyapanUser {
   name: string;
@@ -247,10 +249,6 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Interview Engine", viewId: "interview-engine", category: "Interview Hub" },
   { label: "Research Paper AI", viewId: "research-hub", category: "Research Hub" },
   { label: "Plagiarism Checker", viewId: "research-plagiarism", category: "Research Hub" },
-  { label: "Browse Internships", viewId: "internship-hub", category: "Internship Hub" },
-  { label: "AI Internship Match", viewId: "internship-hub", category: "Internship Hub" },
-  { label: "Internship Tracker", viewId: "internship-hub", category: "Internship Hub" },
-  { label: "Saved Internships", viewId: "internship-hub", category: "Internship Hub" },
   { label: "Job Discovery", viewId: "job-discovery", category: "Job Hub" },
   { label: "Discover Jobs", viewId: "job-discovery", category: "Job Hub" },
   { label: "Search All Jobs", viewId: "job-discovery", category: "Job Hub" },
@@ -330,15 +328,6 @@ export const sidebarItems: SidebarItem[] = [
     submenu: [
       { label: "Research Paper AI", href: "#" },
       { label: "Plagiarism Checker", href: "#" },
-    ],
-  },
-  {
-    id: "internship", label: "Internship Hub", icon: <Briefcase size={18} />,
-    submenu: [
-      { label: "Browse Internships", href: "#" },
-      { label: "AI Match", href: "#" },
-      { label: "Application Tracker", href: "#" },
-      { label: "Saved Internships", href: "#" },
     ],
   },
   {
@@ -543,10 +532,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       else if (sub.label === "AI Technical Interview") onViewTool("interview-technical");
                       else if (sub.label === "Research Paper AI") onViewTool("research-paper-ai");
                       else if (sub.label === "Plagiarism Checker") onViewTool("research-plagiarism");
-                      else if (sub.label === "Browse Internships") onViewTool("internship-finder");
-                      else if (sub.label === "AI Match" && sub.href === "#") onViewTool("internship-recommendations");
-                      else if (sub.label === "Application Tracker") onViewTool("internship-tracker");
-                      else if (sub.label === "Saved Internships") onViewTool("internship-saved");
                        else if (sub.label === "Job Discovery") onViewTool("job-discovery");
                       else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
                       else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
@@ -925,15 +910,6 @@ export function DashboardTopNav({
           style={{ ...navBtnBase, padding: "0.45rem 0.8rem" }}
         >
           <Briefcase size={13} style={{ color: "#10b981" }} /> Jobs
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.03, borderColor: "rgba(99,102,241,0.6)", boxShadow: "0 3px 12px rgba(99,102,241,0.18)", background: isDarkTheme ? "rgba(99,102,241,0.12)" : "rgba(99,102,241,0.08)" }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ duration: 0.12 }}
-          onClick={() => onViewTool("internship-hub")}
-          style={{ ...navBtnBase, padding: "0.45rem 0.8rem" }}
-        >
-          <GraduationCap size={13} style={{ color: "#6366f1" }} /> Internships
         </motion.button>
         <span style={{ width: 1, height: 20, background: isDarkTheme ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)", margin: "0 4px" }} />
         <motion.button
@@ -1484,6 +1460,188 @@ function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resume
             ))}
           </div>
         </PanelCard>
+      </div>
+    </div>
+  );
+}
+// ─── Cross-Module Analytics (Placement, Interview, Streak, Weak Topics) ──────
+function CrossModuleAnalytics({ aptitude, interview, streak, placement, weakTopics, onViewTool }: {
+  aptitude: any; interview: any; streak: any; placement: any; weakTopics: any;
+  onViewTool: (v: string) => void;
+}) {
+  const hasAny = aptitude || interview || streak || placement || weakTopics;
+  if (!hasAny) return null;
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.2rem", alignItems: "start", marginTop: "1.2rem" }} className="panel-grid-responsive">
+
+      {/* ─── Column 1: Placement Readiness + Interview ─── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
+        {/* Placement Readiness Gauge */}
+        {placement && (
+          <PanelCard title="Placement Readiness">
+            <div style={{ display: "flex", alignItems: "center", gap: "1.2rem", marginBottom: "0.8rem" }}>
+              <div style={{ position: "relative", width: 80, height: 80, flexShrink: 0 }}>
+                <svg viewBox="0 0 36 36" style={{ transform: "rotate(-90deg)", width: 80, height: 80 }}>
+                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" strokeWidth="3" />
+                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={placement.placementScore >= 70 ? "#10b981" : placement.placementScore >= 40 ? "#f59e0b" : "#ef4444"} strokeWidth="3" strokeDasharray={`${placement.placementScore || 0}, 100`} />
+                </svg>
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+                  <span style={{ fontSize: "1.1rem", fontWeight: 800, color: placement.placementScore >= 70 ? "#10b981" : placement.placementScore >= 40 ? "#f59e0b" : "#ef4444" }}>{placement.placementScore || 0}</span>
+                </div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>Overall Score</div>
+                {placement.subScores && typeof placement.subScores === "object" && Object.entries(placement.subScores).slice(0, 3).map(([k, v]: [string, any]) => (
+                  <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.65rem", color: "var(--text-secondary)", marginBottom: 2 }}>
+                    <span style={{ textTransform: "capitalize" }}>{k.replace(/([A-Z])/g, " $1").trim()}</span>
+                    <span style={{ fontWeight: 700, color: "var(--primary)" }}>{v}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onViewTool("placement-hub")} style={{ width: "100%", padding: "0.45rem", border: "1px solid var(--border-color)", borderRadius: 8, background: "transparent", color: "var(--text-secondary)", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
+              View Placement Hub →
+            </motion.button>
+          </PanelCard>
+        )}
+
+        {/* Interview Performance */}
+        {interview && (
+          <PanelCard title="Interview Performance">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", marginBottom: "0.7rem" }}>
+              <div style={{ padding: "0.5rem", borderRadius: 8, background: "var(--surface-bg)", textAlign: "center" }}>
+                <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Sessions</div>
+                <div style={{ fontSize: "1rem", fontWeight: 800, color: "var(--primary)" }}>{interview.totalInterviews ?? 0}</div>
+              </div>
+              <div style={{ padding: "0.5rem", borderRadius: 8, background: "var(--surface-bg)", textAlign: "center" }}>
+                <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Best Score</div>
+                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#10b981" }}>{interview.bestScore ?? 0}%</div>
+              </div>
+            </div>
+            <CompactItem label="Average Score" value={`${interview.averageScore ?? 0}%`} highlight />
+            {interview.skillAverages && typeof interview.skillAverages === "object" && Object.entries(interview.skillAverages).slice(0, 3).map(([skill, score]: [string, any]) => (
+              <div key={skill} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.7rem", color: "var(--text-secondary)", padding: "0.3rem 0" }}>
+                <span>{skill}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 50, height: 4, borderRadius: 2, background: "var(--border-color)", overflow: "hidden" }}>
+                    <div style={{ width: `${score}%`, height: "100%", borderRadius: 2, background: score >= 70 ? "#10b981" : "#f59e0b" }} />
+                  </div>
+                  <span style={{ fontSize: "0.6rem", fontWeight: 700, color: score >= 70 ? "#10b981" : "#f59e0b" }}>{Math.round(score)}%</span>
+                </div>
+              </div>
+            ))}
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onViewTool("interview-hub")} style={{ width: "100%", padding: "0.45rem", marginTop: "0.5rem", border: "1px solid var(--border-color)", borderRadius: 8, background: "transparent", color: "var(--text-secondary)", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
+              View Interview Hub →
+            </motion.button>
+          </PanelCard>
+        )}
+      </div>
+
+      {/* ─── Column 2: Streak + Weekly Activity Chart ─── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
+        {/* Streak & Activity */}
+        {streak && (
+          <PanelCard title="Streak & Activity">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem", marginBottom: "0.8rem" }}>
+              <div style={{ padding: "0.5rem", borderRadius: 8, background: "rgba(239,68,68,0.06)", textAlign: "center" }}>
+                <Flame size={14} style={{ color: "#ef4444", margin: "0 auto 2px" }} />
+                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#ef4444" }}>{streak.currentStreak ?? streak.streak ?? 0}</div>
+                <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Current</div>
+              </div>
+              <div style={{ padding: "0.5rem", borderRadius: 8, background: "rgba(245,158,11,0.06)", textAlign: "center" }}>
+                <Trophy size={14} style={{ color: "#f59e0b", margin: "0 auto 2px" }} />
+                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#f59e0b" }}>{streak.longestStreak ?? streak.bestStreak ?? 0}</div>
+                <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Best</div>
+              </div>
+              <div style={{ padding: "0.5rem", borderRadius: 8, background: "rgba(139,92,246,0.06)", textAlign: "center" }}>
+                <Star size={14} style={{ color: "#8b5cf6", margin: "0 auto 2px" }} />
+                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#8b5cf6" }}>{streak.points ?? streak.xp ?? 0}</div>
+                <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>XP</div>
+              </div>
+            </div>
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onViewTool("learning-streak")} style={{ width: "100%", padding: "0.45rem", border: "1px solid var(--border-color)", borderRadius: 8, background: "transparent", color: "var(--text-secondary)", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
+              View Streak Dashboard →
+            </motion.button>
+          </PanelCard>
+        )}
+
+        {/* Weekly Activity Chart (from aptitude weeklyProgress) */}
+        {aptitude?.weeklyProgress?.length > 0 && (
+          <PanelCard title="Weekly Activity">
+            <div style={{ height: 160 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={aptitude.weeklyProgress.slice(-7).map((w: any) => ({ name: w.week, sessions: w.sessionsCompleted || 0, accuracy: Math.round(w.accuracy || 0) }))}>
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "var(--text-muted)" }} />
+                  <YAxis tick={{ fontSize: 9, fill: "var(--text-muted)" }} />
+                  <ReTooltip contentStyle={{ background: "var(--surface-bg)", border: "1px solid var(--border-color)", borderRadius: 8, fontSize: 11 }} />
+                  <Bar dataKey="sessions" name="Sessions" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="accuracy" name="Accuracy %" fill="#10b981" radius={[4, 4, 0, 0]} opacity={0.5} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </PanelCard>
+        )}
+      </div>
+
+      {/* ─── Column 3: Weak Topics + Aptitude Overview ─── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
+        {/* Weak Topics */}
+        {weakTopics && (
+          <PanelCard title="Topics Needing Attention">
+            {(weakTopics.weakTopics ?? []).slice(0, 5).length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+                {(weakTopics.weakTopics ?? []).slice(0, 5).map((wt: any, i: number) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.4rem 0.6rem", borderRadius: 8, background: "rgba(239,68,68,0.04)", borderLeft: "3px solid #ef4444" }}>
+                    <span style={{ fontSize: "0.7rem", fontWeight: 600, color: "var(--text-primary)" }}>{wt.topic || wt.name || "Unknown"}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      {wt.mastery !== undefined && <span style={{ fontSize: "0.6rem", color: "var(--text-muted)" }}>{Math.round(wt.mastery)}%</span>}
+                      <span style={{ fontSize: "0.55rem", fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: wt.risk === "high" ? "rgba(239,68,68,0.15)" : wt.risk === "medium" ? "rgba(245,158,11,0.15)" : "rgba(148,163,184,0.15)", color: wt.risk === "high" ? "#ef4444" : wt.risk === "medium" ? "#f59e0b" : "var(--text-muted)" }}>
+                        {wt.risk || "needs work"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", textAlign: "center", padding: "0.5rem" }}>No weak topics identified yet. Keep practicing!</p>
+            )}
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onViewTool("weak-topics")} style={{ width: "100%", padding: "0.45rem", marginTop: "0.5rem", border: "1px solid var(--border-color)", borderRadius: 8, background: "transparent", color: "var(--text-secondary)", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
+              View Weak Topics →
+            </motion.button>
+          </PanelCard>
+        )}
+
+        {/* Aptitude Skill Overview */}
+        {aptitude?.topicMastery?.length > 0 && (
+          <PanelCard title="Skill Mastery Overview">
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+              {aptitude.topicMastery.sort((a: any, b: any) => b.accuracy - a.accuracy).slice(0, 5).map((t: any, i: number) => {
+                const colors = ["#10b981", "#06b6d4", "#8b5cf6", "#f59e0b", "#ec4899"];
+                return (
+                  <div key={t.topic} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.7rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: "0.55rem", fontWeight: 800, color: "var(--text-muted)", width: 14 }}>#{i + 1}</span>
+                      <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{t.topic}</span>
+                      <span style={{ fontSize: "0.55rem", color: t.trend === "improving" ? "#10b981" : t.trend === "declining" ? "#ef4444" : "var(--text-muted)" }}>
+                        {t.trend === "improving" ? "↑" : t.trend === "declining" ? "↓" : "→"}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 45, height: 4, borderRadius: 2, background: "var(--border-color)", overflow: "hidden" }}>
+                        <div style={{ width: `${t.accuracy}%`, height: "100%", borderRadius: 2, background: colors[i % colors.length] }} />
+                      </div>
+                      <span style={{ fontSize: "0.6rem", fontWeight: 700, color: colors[i % colors.length], minWidth: 24, textAlign: "right" }}>{Math.round(t.accuracy)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onViewTool("aptitude-hub")} style={{ width: "100%", padding: "0.45rem", marginTop: "0.5rem", border: "1px solid var(--border-color)", borderRadius: 8, background: "transparent", color: "var(--text-secondary)", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
+              View Aptitude Hub →
+            </motion.button>
+          </PanelCard>
+        )}
       </div>
     </div>
   );
@@ -2119,6 +2277,13 @@ function UserDashboardContent() {
   });
   const [statsLoading, setStatsLoading] = useState(true);
 
+  // ── Extended cross-module analytics (fetched in parallel) ──
+  const [aptitudeAnalytics, setAptitudeAnalytics] = useState<any>(null);
+  const [interviewAnalytics, setInterviewAnalytics] = useState<any>(null);
+  const [streakData, setStreakData] = useState<any>(null);
+  const [placementScore, setPlacementScore] = useState<any>(null);
+  const [weakTopicsData, setWeakTopicsData] = useState<any>(null);
+
   const searchParams = useSearchParams();
 
   // Sync activeView with URL search params on mount & popstate
@@ -2202,7 +2367,12 @@ function UserDashboardContent() {
         studyRes,
         codingRes,
         dsaRes,
-        challengesRes
+        challengesRes,
+        aptitudeRes,
+        engineRes,
+        streakRes,
+        placementRes,
+        weakTopicsRes
       ] = await Promise.allSettled([
         api.get("/profile/me"),
         api.get("/resume/list"),
@@ -2217,7 +2387,12 @@ function UserDashboardContent() {
         api.get("/study/history"),
         api.get("/coding/history"),
         api.get("/dsa/progress"),
-        api.get("/challenges/")
+        api.get("/challenges/"),
+        api.get("/aptitude/analytics"),
+        api.get("/engine/analytics"),
+        api.get("/streak/dashboard"),
+        api.get("/placement/intelligence/score"),
+        api.get("/weak-topics/dashboard")
       ]);
 
       const profileData = profileRes.status === "fulfilled" ? profileRes.value.data.profile : null;
@@ -2267,6 +2442,13 @@ function UserDashboardContent() {
         profileCompletion: completion,
         targetRole
       });
+
+      // ── Extended cross-module analytics ──
+      if (aptitudeRes.status === "fulfilled" && aptitudeRes.value.data?.success) setAptitudeAnalytics(aptitudeRes.value.data.analytics);
+      if (engineRes.status === "fulfilled" && engineRes.value.data) setInterviewAnalytics(engineRes.value.data);
+      if (streakRes.status === "fulfilled" && streakRes.value.data?.success) setStreakData(streakRes.value.data);
+      if (placementRes.status === "fulfilled" && placementRes.value.data?.success) setPlacementScore(placementRes.value.data);
+      if (weakTopicsRes.status === "fulfilled" && weakTopicsRes.value.data?.success) setWeakTopicsData(weakTopicsRes.value.data);
     } catch (err) {
       console.error("Error fetching dashboard statistics:", err);
     } finally {
@@ -2445,8 +2627,6 @@ function UserDashboardContent() {
           <HubErrorBoundary><TechnicalInterviewView theme={theme} /></HubErrorBoundary>
         ) : activeView === "interview-hub" || activeView === "interview-hr" || activeView === "interview-mock" ? (
           <HubErrorBoundary><InterviewHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
-        ) : activeView === "internship-hub" || activeView === "internship-finder" || activeView === "internship-recommendations" || activeView === "internship-tracker" || activeView === "internship-saved" ? (
-          <HubErrorBoundary><InternshipHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "job-discovery" ? (
           <HubErrorBoundary><JobDiscoveryView /></HubErrorBoundary>
         ) : activeView === "aptitude-engine" || activeView === "aptitude-engine-analytics" ? (
@@ -2517,6 +2697,16 @@ function UserDashboardContent() {
                 </>
               )}
               <PanelGrid stats={dashboardStats} onViewTool={setActiveView} />
+
+              {/* ═══ CROSS-MODULE ANALYTICS ═══ */}
+              <CrossModuleAnalytics
+                aptitude={aptitudeAnalytics}
+                interview={interviewAnalytics}
+                streak={streakData}
+                placement={placementScore}
+                weakTopics={weakTopicsData}
+                onViewTool={setActiveView}
+              />
             </>
           )
         )}

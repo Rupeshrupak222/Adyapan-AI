@@ -1000,7 +1000,6 @@ export default function LandingPage() {
             viewport={{ once: true }}
           >
             {[
-              { icon: Briefcase, color: "amber", title: "Micro-Internships", desc: "Short-term remote engineering positions." },
               { icon: Trophy, color: "orange", title: "Hiring Drives", desc: "Direct hiring partnership opportunities." },
               { icon: Calendar, color: "yellow", title: "Hackathons", desc: "Compete globally and verify skill sets." },
             ].map((item, i) => {
