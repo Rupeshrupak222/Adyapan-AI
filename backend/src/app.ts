@@ -45,9 +45,11 @@ export function createApp() {
     }),
   );
 
-  // Rate limiting disabled for development — re-enable for production:
-  // app.use("/api/auth", rateLimit({ windowMs: 15*60*1000, max: 20 }));
-  // app.use("/api", rateLimit({ windowMs: 15*60*1000, max: 200 }));
+  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: { success: false, error: "Too many authentication requests, please try again later." } });
+  const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, message: { success: false, error: "Rate limit exceeded, please slow down." } });
+
+  app.use("/api/auth", authLimiter);
+  app.use("/api", apiLimiter);
 
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));

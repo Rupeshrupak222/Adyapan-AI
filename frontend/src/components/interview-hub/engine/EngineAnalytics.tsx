@@ -174,6 +174,7 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
 
   const [sortField, setSortField] = useState<"date" | "score">("date");
   const [sortAsc, setSortAsc] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<any>(null);
 
   const displayedHistory = useMemo(() => {
     const sorted = [...sortedHistory];
@@ -1104,7 +1105,7 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                           transition={{ delay: i * 0.03 }}
                           className="group cursor-pointer border-t transition-colors"
                           style={{ borderColor: c.border }}
-                          onClick={() => {}}
+                          onClick={() => setSelectedEntry(rawEntry)}
                         >
                           <td className="py-3 px-4 sm:px-0 text-xs font-bold" style={{ color: c.textSec }}>
                             {(() => {
