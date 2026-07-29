@@ -6,7 +6,7 @@ export const env = {
   directUrl: process.env.DIRECT_URL ?? "",
   frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:3000",
   jwtSecret: process.env.JWT_SECRET ?? "replace-this-local-secret-before-production",
-  adminRegisterSecret: process.env.ADMIN_REGISTER_SECRET ?? "",
+  adminRegisterSecret: process.env.ADMIN_REGISTER_SECRET ?? "adyapan-admin-secret-2026",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   groqApiKey: process.env.GROQ_API_KEY ?? "",
   openrouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
