@@ -44,7 +44,7 @@ const PLANS = [
   {
     id: "pro_monthly",
     name: "Pro Monthly",
-    price: 149,
+    price: 199,
     period: "/mo",
     popular: true,
     color: "#f59e0b",
@@ -59,12 +59,12 @@ const PLANS = [
       "Priority Support",
     ],
     missing: [],
-    yearlyNote: "Billed ₹149/month",
+    yearlyNote: "Billed ₹199/month",
   },
   {
     id: "pro_yearly",
     name: "Pro Yearly",
-    price: 999,
+    price: 1999,
     period: "/yr",
     color: "#8b5cf6",
     features: [
@@ -74,7 +74,7 @@ const PLANS = [
       "Premium Badge",
     ],
     missing: [],
-    yearlyNote: "Billed ₹999/year (₹83/mo)",
+    yearlyNote: "Billed ₹1,999/year (₹166/mo)",
   },
 ];
 

@@ -79,6 +79,26 @@ export const landingFAQs = [
     question: "Can I share my verified metrics directly with recruiters?",
     answer: "Absolutely! Once your profile and credentials are verified, you can export a public dashboard link to share with recruiters or link it directly on your LinkedIn.",
   },
+  {
+    question: "What AI models does Adyapan support?",
+    answer: "Adyapan integrates with multiple cutting-edge AI models including GPT-4o, Claude, Gemini, DeepSeek, Llama 3.3, and Mistral Large. Premium users get access to all models with higher rate limits.",
+  },
+  {
+    question: "How does the Pro subscription billing work?",
+    answer: "Pro Monthly is billed at ₹199/month. Pro Yearly is billed at ₹1,999/year (effectively ₹166/month — saving you over 15% compared to monthly). You can cancel anytime and retain access until the end of your billing period.",
+  },
+  {
+    question: "Can I switch between monthly and yearly plans?",
+    answer: "Yes, you can upgrade or downgrade your plan at any time. When switching, the remaining balance from your current plan is adjusted toward the new plan. Contact support for assistance with plan changes.",
+  },
+  {
+    question: "Is my data secure on Adyapan?",
+    answer: "Absolutely. Your resumes, cover letters, and study materials are encrypted at rest and in transit. We never share your personal data with third parties without explicit consent. Role-based access ensures only you can view your private dashboard.",
+  },
+  {
+    question: "What payment methods do you accept?",
+    answer: "We accept all major credit/debit cards, UPI, net banking, and popular wallets through our secure Razorpay payment gateway. All transactions are PCI-DSS compliant and encrypted.",
+  },
 ];
 
 export const foundationModules = [
