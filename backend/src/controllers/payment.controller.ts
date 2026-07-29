@@ -23,8 +23,8 @@ try {
 }
 
 const PLAN_PRICES: Record<string, { amount: number; label: string }> = {
-  pro_monthly: { amount: 14900, label: "Pro Monthly" },
-  pro_yearly: { amount: 99900, label: "Pro Yearly" },
+  pro_monthly: { amount: 19900, label: "Pro Monthly" },
+  pro_yearly: { amount: 199900, label: "Pro Yearly" },
 };
 
 // ─── 1. Create Order ─────────────────────────────────────────────

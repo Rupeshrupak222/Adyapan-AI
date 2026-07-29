@@ -10,7 +10,7 @@ import {
   ArrowRight, Sparkles, Terminal, FileText, CheckCircle, ChevronDown,
   Brain, BookOpen, Trophy, MessageSquare, Play,
   Calendar, Star, Check, Layers,
-  Search, Briefcase,
+  Search, Briefcase, Quote, Building2, GraduationCap, Zap, Users,
 } from "lucide-react";
 import { AnimatedRocket, AnimatedSparkles, AnimatedCheck, AnimatedCode, AnimatedZap } from "@/components/ui/AnimatedIcons";
 import { Navbar } from "@/components/layout/Navbar";
@@ -413,10 +413,13 @@ export default function LandingPage() {
         </motion.div>
       </motion.section>
 
-      {/* ════════════════ SCROLL STORY ════════════════ */}
-      <Section bg="bg-[#05070c]" variant="section3D">
-        <div className="max-w-4xl mx-auto px-4 text-center space-y-16">
+      {/* ════════════════ HOW IT WORKS ════════════════ */}
+      <Section id="how-it-works" bg="bg-[#05070c]" variant="section3D">
+        <div className="max-w-6xl mx-auto px-4 text-center space-y-16">
           <motion.div className="space-y-4" variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
+              <Layers size={12} /> Automated Pipeline
+            </motion.div>
             <motion.h2 variants={staggerItem} className="text-3xl md:text-4xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
               Adyapan AI Builds Your Journey Automatically
             </motion.h2>
@@ -433,19 +436,20 @@ export default function LandingPage() {
             viewport={{ once: true }}
           >
             {[
-              { title: "Goal Selection", sub: "Target Role", value: "Machine Learning Engineer", desc: "Define your primary goals, and our platform tunes your syllabus automatically.", color: "amber" },
-              { title: "Roadmap Node", sub: null, steps: ["Learn Core ML", "Build Projects", "Practice Interviews"], desc: "A custom timeline is drawn, mapping skill acquisitions, builds, and recruiter preparation.", color: "orange" },
-              { title: "Career Launch", sub: "Fast-tracked Screen", value2: "Direct Partner Hiring", desc: "Match automatically with micro-internships and placement drives based on verified data.", color: "yellow" },
+              { step: "01", title: "Goal Selection", sub: "Target Role", value: "Machine Learning Engineer", desc: "Define your primary goals, and our platform tunes your syllabus automatically.", color: "amber" },
+              { step: "02", title: "Roadmap Node", sub: null, steps: ["Learn Core ML", "Build Projects", "Practice Interviews"], desc: "A custom timeline is drawn, mapping skill acquisitions, builds, and recruiter preparation.", color: "orange" },
+              { step: "03", title: "Career Launch", sub: "Fast-tracked Screen", value2: "Direct Partner Hiring", desc: "Match automatically with micro-internships and placement drives based on verified data.", color: "yellow" },
             ].map((item, i) => (
               <motion.div
                 key={item.title}
                 variants={staggerItem}
                 whileHover={{ y: -6, borderColor: `rgba(245,158,11,0.25)`, transition: { type: "spring", stiffness: 200 } }}
-                className="p-6 bg-white/2 border border-white/5 rounded-2xl space-y-4 flex flex-col justify-between"
+                className="p-6 bg-white/2 border border-white/5 rounded-2xl space-y-4 flex flex-col justify-between relative overflow-hidden group"
               >
-                <div className={`text-xs uppercase text-${item.color}-400 font-bold tracking-wider`}>{item.title}</div>
+                <div className="absolute top-0 right-0 text-6xl font-extrabold text-white/5 select-none leading-none pr-3 pt-1">{item.step}</div>
+                <div className={`text-xs uppercase text-${item.color}-400 font-bold tracking-wider relative z-10`}>{item.title}</div>
                 {"steps" in item ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative z-10">
                     {item.steps!.map((s, j) => (
                       <motion.div
                         key={s}
@@ -461,7 +465,7 @@ export default function LandingPage() {
                   </div>
                 ) : (
                   <motion.div
-                    className={`p-4 bg-${item.color}-500/10 border border-${item.color}-500/20 rounded-xl text-center space-y-1`}
+                    className={`p-4 bg-${item.color}-500/10 border border-${item.color}-500/20 rounded-xl text-center space-y-1 relative z-10`}
                     whileHover={{ scale: 1.02 }}
                   >
                     <div className="text-[10px] text-gray-400">{item.sub}</div>
@@ -469,7 +473,20 @@ export default function LandingPage() {
                     {"value2" in item && <div className="text-[9px] text-amber-400">{item.value2}</div>}
                   </motion.div>
                 )}
-                <p className="text-xs text-gray-500 leading-relaxed">{item.desc}</p>
+                <p className="text-xs text-gray-500 leading-relaxed relative z-10">{item.desc}</p>
+
+                {/* Connector arrow (desktop) */}
+                {i < 2 && (
+                  <motion.div
+                    className="hidden md:block absolute top-1/2 -right-4 w-8 h-8 -translate-y-1/2 z-20"
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.5 + i * 0.2 }}
+                  >
+                    <ArrowRight size={16} className="text-amber-500/40" />
+                  </motion.div>
+                )}
               </motion.div>
             ))}
           </motion.div>
@@ -670,6 +687,11 @@ export default function LandingPage() {
                   </span>
                 </motion.div>
               ))}
+            </motion.div>
+            <motion.div variants={staggerItem} className="pt-2">
+              <Link href="/login" className="inline-flex items-center gap-2 text-xs font-bold text-[#f59e0b] hover:underline">
+                Explore Coding Hub <ArrowRight size={14} />
+              </Link>
             </motion.div>
           </motion.div>
 
@@ -1000,15 +1022,18 @@ export default function LandingPage() {
             viewport={{ once: true }}
           >
             {[
-              { icon: Trophy, color: "orange", title: "Hiring Drives", desc: "Direct hiring partnership opportunities." },
-              { icon: Calendar, color: "yellow", title: "Hackathons", desc: "Compete globally and verify skill sets." },
+              { icon: Trophy, color: "orange", title: "Hiring Drives", desc: "Direct hiring partnership opportunities with top companies." },
+              { icon: Calendar, color: "yellow", title: "Hackathons", desc: "Compete globally and verify your skill sets." },
+              { icon: Briefcase, color: "amber", title: "Micro-Internships", desc: "Short-term remote gigs matching your profile." },
+              { icon: Star, color: "orange", title: "Referral Network", desc: "Get referred directly to hiring managers." },
             ].map((item, i) => {
               const Icon = item.icon;
+              const colors = ["245,158,11", "234,88,12", "245,158,11", "234,88,12"];
               return (
                 <motion.div
                   key={item.title}
                   variants={staggerItem}
-                  whileHover={{ y: -8, borderColor: `rgba(${i % 2 === 0 ? "245,158,11" : "234,88,12"},0.3)`, transition: { type: "spring", stiffness: 200 } }}
+                  whileHover={{ y: -8, borderColor: `rgba(${colors[i]},0.3)`, transition: { type: "spring", stiffness: 200 } }}
                   className="p-6 bg-white/2 border border-white/5 rounded-2xl space-y-4 transition-colors"
                 >
                   <motion.div
@@ -1053,18 +1078,70 @@ export default function LandingPage() {
           >
             <motion.div variants={staggerItem} className="grid grid-cols-2 gap-4 w-full max-w-md">
               {[
-                { label: "AI Models Available", value: "10+" },
-                { label: "Challenge Categories", value: "10" },
-                { label: "Coding Challenges", value: "62+" },
-                { label: "Study Features", value: "15+" },
+                { label: "AI Models Available", value: 10, suffix: "+" },
+                { label: "Challenge Categories", value: 10, suffix: "" },
+                { label: "Coding Challenges", value: 62, suffix: "+" },
+                { label: "Study Features", value: 15, suffix: "+" },
               ].map((stat, i) => (
-                <div key={i} className="p-5 bg-white/5 border border-white/10 rounded-2xl text-center space-y-1">
-                  <span className="block text-2xl font-extrabold text-white">{stat.value}</span>
+                <motion.div
+                  key={i}
+                  className="p-5 bg-white/5 border border-white/10 rounded-2xl text-center space-y-1"
+                  whileHover={{ scale: 1.03, borderColor: "rgba(245,158,11,0.3)" }}
+                >
+                  <span className="block text-2xl font-extrabold text-white">
+                    <AnimatedNumber value={stat.value} />
+                    {stat.suffix}
+                  </span>
                   <span className="block text-[10px] uppercase tracking-wider text-gray-500">{stat.label}</span>
-                </div>
+                </motion.div>
               ))}
             </motion.div>
           </motion.div>
+        </div>
+      </Section>
+
+      {/* ════════════════ TRUST BAR ════════════════ */}
+      <Section bg="bg-[#030712]" variant="section3D">
+        <div className="max-w-6xl mx-auto px-4 text-center space-y-8">
+          <motion.div
+            className="text-center space-y-4"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <motion.p variants={staggerItem} className="text-xs uppercase tracking-widest text-gray-500 font-bold">
+              Trusted by Students &amp; Institutions Across India
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-40"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {[
+              { Icon: GraduationCap, label: "500+ Colleges" },
+              { Icon: Building2, label: "50+ Hiring Partners" },
+              { Icon: Users, label: "50K+ Active Users" },
+              { Icon: Star, label: "4.8 Avg Rating" },
+            ].map(({ Icon, label }, i) => (
+              <motion.div key={label} variants={staggerItem} className="flex items-center gap-2 text-gray-400">
+                <Icon size={18} className="text-amber-500/60" />
+                <span className="text-xs font-bold">{label}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div
+            className="h-px w-full max-w-2xl mx-auto bg-gradient-to-r from-transparent via-amber-500/20 to-transparent"
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.5 }}
+          />
         </div>
       </Section>
 
@@ -1078,6 +1155,9 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={{ once: true }}
           >
+            <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
+              <Zap size={12} /> Simple Pricing
+            </motion.div>
             <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
               Transparent, Flexible Plans
             </motion.h2>
@@ -1095,7 +1175,7 @@ export default function LandingPage() {
                 onClick={() => setPricingPeriod("annually")}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${pricingPeriod === "annually" ? "bg-amber-500 text-black" : "text-gray-400"}`}
               >
-                Annually (Save 20%)
+                Annually <span className="text-green-400 ml-1">Save 15%</span>
               </button>
             </motion.div>
           </motion.div>
@@ -1108,34 +1188,60 @@ export default function LandingPage() {
             viewport={{ once: true }}
           >
             {[
-              { title: "Free Tier", price: "$0", desc: "Essential tools for all college students.", features: ["Syllabus Notes Creator", "ATS Resume Scanner (3 checks)", "General Job Hub access"], cta: "Start Free", pro: false },
               {
-                title: "Pro Plan", price: pricingPeriod === "annually" ? "$12" : "$15", desc: "Ultimate behavioral coach & full resume audits.",
-                features: ["Infinite Resume SWOT Reviews", "Unlimited AI Mock Interviews", "Direct LinkedIn Profile Optimizer", "Micro-internships matching channels"],
-                cta: "Upgrade to Pro", pro: true, popular: true,
+                title: "Free Tier",
+                price: "₹0",
+                period: "",
+                desc: "Essential tools for all college students.",
+                features: ["Syllabus Notes Creator", "ATS Resume Scanner (3 checks)", "Basic AI Chat Access", "General Job Hub access"],
+                cta: "Start Free",
+                pro: false,
+                highlight: false,
               },
-              { title: "Campus Partner", price: "Institutional", desc: "For departments, placement cells, and universities.", features: ["White-label domain portals", "Admin placement tracker console", "Bulk student cohort analytics"], cta: "Contact Campus Sales", pro: false },
+              {
+                title: "Pro Monthly",
+                price: pricingPeriod === "annually" ? "₹1,999" : "₹199",
+                period: pricingPeriod === "annually" ? "/yr" : "/mo",
+                desc: pricingPeriod === "annually" ? "Billed ₹1,999/year (₹166/mo)" : "Full access, cancel anytime.",
+                features: ["Infinite Resume SWOT Reviews", "Unlimited AI Mock Interviews", "All AI Models (GPT-4o, Claude, Gemini)", "Direct LinkedIn Profile Optimizer", "Micro-internships matching channels", "Priority Support"],
+                cta: "Upgrade to Pro",
+                pro: true,
+                popular: true,
+                annualNote: pricingPeriod === "annually" ? "Save ₹389 vs monthly" : "",
+              },
+              {
+                title: "Campus Partner",
+                price: "Institutional",
+                period: "",
+                desc: "For departments, placement cells, and universities.",
+                features: ["White-label domain portals", "Admin placement tracker console", "Bulk student cohort analytics", "Dedicated account manager"],
+                cta: "Contact Campus Sales",
+                pro: false,
+                highlight: false,
+              },
             ].map((plan, i) => (
               <motion.div
                 key={plan.title}
                 variants={staggerItem}
                 whileHover={{ y: -8, transition: { type: "spring", stiffness: 200 } }}
-                className={`p-8 ${plan.popular ? "bg-[#0f0e09] border-2 border-amber-500/40" : "bg-white/2 border border-white/5"} rounded-2xl flex flex-col justify-between space-y-6 relative`}
+                className={`p-8 ${plan.popular ? "bg-[#0f0e09] border-2 border-amber-500/40 shadow-lg shadow-amber-500/5" : "bg-white/2 border border-white/5"} rounded-2xl flex flex-col justify-between space-y-6 relative`}
               >
                 {plan.popular && (
                   <motion.div
-                    className="absolute top-4 right-4 px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded text-[9px] font-bold text-amber-300 uppercase"
-                    animate={{ scale: [1, 1.05, 1] }}
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-500 text-black rounded-full text-[9px] font-bold uppercase"
+                    animate={{ scale: [1, 1.05, 1], boxShadow: ["0 0 0px rgba(245,158,11,0.4)", "0 0 12px rgba(245,158,11,0.6)", "0 0 0px rgba(245,158,11,0.4)"] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
                     Most Popular
                   </motion.div>
                 )}
-                <div className="space-y-2">
+                <div className="space-y-2 pt-2">
                   <span className={`text-sm font-bold ${plan.popular ? "text-amber-400" : "text-gray-400"}`}>{plan.title}</span>
-                  <div className="text-4xl font-extrabold text-white">
-                    {plan.price} {plan.title === "Pro Plan" && <span className="text-xs text-gray-500">/ mo</span>}
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-extrabold text-white">{plan.price}</span>
+                    {plan.period && <span className="text-xs text-gray-500">{plan.period}</span>}
                   </div>
+                  {plan.annualNote && <div className="text-[10px] text-green-400 font-semibold">{plan.annualNote}</div>}
                   <p className="text-xs text-gray-500">{plan.desc}</p>
                 </div>
                 <ul className="space-y-3 text-xs text-gray-300">
@@ -1145,20 +1251,123 @@ export default function LandingPage() {
                       className="flex items-center gap-2"
                       whileHover={{ x: 3 }}
                     >
-                      <Check size={12} className="text-green-400" /> {f}
+                      <Check size={12} className="text-green-400 flex-shrink-0" /> {f}
                     </motion.li>
                   ))}
                 </ul>
                 <Link
-                  href="/login"
-                  className={`w-full text-center py-2 text-xs font-bold rounded-lg transition-all ${
+                  href={plan.popular ? "/premium" : "/login"}
+                  className={`w-full text-center py-2.5 text-xs font-bold rounded-lg transition-all ${
                     plan.popular
-                      ? "bg-amber-500 text-black hover:bg-amber-600"
-                      : "border border-white/10 hover:bg-white/5"
+                      ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-amber-500/20"
+                      : "border border-white/10 hover:bg-white/5 hover:border-white/20"
                   }`}
                 >
                   {plan.cta}
                 </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Feature Comparison */}
+          <motion.div
+            variants={staggerItem}
+            className="max-w-4xl mx-auto mt-8 p-6 bg-white/3 border border-white/5 rounded-2xl"
+          >
+            <h3 className="text-center text-sm font-bold text-white mb-6">Feature Comparison</h3>
+            <div className="grid grid-cols-3 gap-4 text-xs">
+              {[
+                { feature: "AI Study Assistant", free: true, pro: true, campus: true },
+                { feature: "ATS Resume Scanner", free: "3/mo", pro: "Unlimited", campus: "Unlimited" },
+                { feature: "AI Mock Interviews", free: "1/mo", pro: "Unlimited", campus: "Unlimited" },
+                { feature: "Premium AI Models", free: false, pro: true, campus: true },
+                { feature: "LinkedIn Optimizer", free: false, pro: true, campus: true },
+                { feature: "Placement Matching", free: "Basic", pro: "Priority", campus: "Custom" },
+                { feature: "Dedicated Support", free: false, pro: "Priority", campus: "24/7" },
+              ].map((row) => (
+                <div key={row.feature} className="contents">
+                  <div className="text-gray-400 py-2 border-b border-white/5">{row.feature}</div>
+                  <div className={`text-center py-2 border-b border-white/5 ${row.free ? "text-green-400" : "text-gray-600"}`}>
+                    {row.free === true ? <Check size={12} className="inline" /> : row.free === false ? "—" : row.free}
+                  </div>
+                  <div className={`text-center py-2 border-b border-white/5 ${row.pro ? "text-green-400" : "text-gray-600"}`}>
+                    {row.pro === true ? <Check size={12} className="inline" /> : row.pro === false ? "—" : row.pro}
+                  </div>
+                  <div className={`text-center py-2 border-b border-white/5 ${row.campus ? "text-green-400" : "text-gray-600"}`}>
+                    {row.campus === true ? <Check size={12} className="inline" /> : row.campus === false ? "—" : row.campus}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </Section>
+
+      {/* ════════════════ TESTIMONIALS ════════════════ */}
+      <Section variant="section3D">
+        <div className="max-w-6xl mx-auto px-4 space-y-12">
+          <motion.div
+            className="text-center space-y-4"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
+              <Quote size={12} /> Student Success
+            </motion.div>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+              Loved by Students &amp; Professionals
+            </motion.h2>
+            <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base max-w-xl mx-auto">
+              Hear from users who transformed their careers with Adyapan AI.
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {[
+              {
+                quote: "Adyapan's AI interview coach helped me crack Amazon. The behavioral feedback was incredibly accurate and personalized.",
+                name: "Priya Sharma",
+                role: "SDE, Amazon",
+                rating: 5,
+              },
+              {
+                quote: "The ATS resume scanner caught issues I never noticed. After optimizing, I got 3x more interview calls within weeks.",
+                name: "Rahul Verma",
+                role: "Data Analyst, Microsoft",
+                rating: 5,
+              },
+              {
+                quote: "As a placement coordinator, the analytics dashboard saves us hours. Bulk tracking 200+ students is finally manageable.",
+                name: "Dr. Ananya Patel",
+                role: "Placement Head, VIT University",
+                rating: 5,
+              },
+            ].map((testimonial, i) => (
+              <motion.div
+                key={i}
+                variants={staggerItem}
+                whileHover={{ y: -6, borderColor: "rgba(245,158,11,0.25)" }}
+                className="p-6 bg-white/3 border border-white/5 rounded-2xl space-y-4 relative"
+              >
+                <Quote className="w-8 h-8 text-amber-500/20 absolute top-4 right-4" />
+                <div className="flex gap-1">
+                  {Array.from({ length: testimonial.rating }).map((_, j) => (
+                    <Star key={j} size={12} className="fill-amber-500 text-amber-500" />
+                  ))}
+                </div>
+                <p className="text-xs text-gray-300 leading-relaxed italic">&ldquo;{testimonial.quote}&rdquo;</p>
+                <div className="pt-2 border-t border-white/5">
+                  <span className="block text-sm font-bold text-white">{testimonial.name}</span>
+                  <span className="block text-[10px] text-gray-500">{testimonial.role}</span>
+                </div>
               </motion.div>
             ))}
           </motion.div>

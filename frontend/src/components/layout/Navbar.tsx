@@ -50,6 +50,7 @@ export function Navbar() {
             { label: "Home", href: "/#home" },
             { label: "Features", href: "/#features" },
             { label: "How It Works", href: "/#how-it-works" },
+            { label: "Pricing", href: "/#pricing" },
             { label: "FAQ", href: "/#faq" },
           ].map((item) => (
             <a
@@ -151,6 +152,7 @@ export function Navbar() {
               { label: "Home", href: "/#home" },
               { label: "Features", href: "/#features" },
               { label: "How It Works", href: "/#how-it-works" },
+              { label: "Pricing", href: "/#pricing" },
               { label: "FAQ", href: "/#faq" },
             ].map((item) => (
               <li key={item.href}>
