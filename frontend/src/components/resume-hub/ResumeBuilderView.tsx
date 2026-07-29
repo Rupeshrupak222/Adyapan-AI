@@ -9,7 +9,7 @@ import {
   Check, MessageCircle, Send, X, Bot, User, Loader2, Zap,
   Globe, BookOpen, Award, Languages,
   GraduationCap, Briefcase, Code2, UserCircle, Settings,
-  Monitor, Trophy, RefreshCw, AlertCircle, Star, Target,
+  Monitor, Tablet, Smartphone, Trophy, RefreshCw, AlertCircle, Star, Target,
 } from "lucide-react";
 import type { ResumeHubViewType } from "@/types/resume";
 import { formStateToJSONResume, jsonResumeToFormState } from "@/types/resume";
@@ -64,6 +64,7 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
   const [generatingAI, setGeneratingAI] = useState(false);
   const [exporting, setExporting] = useState<"pdf" | "docx" | null>(null);
   const [zoom, setZoom] = useState(75);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "ai"; text: string }>>([]);
   const [chatInput, setChatInput] = useState("");
@@ -656,13 +657,18 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={{ display: "flex", gap: 2, background: c.surface, border: `1px solid ${c.border}`, borderRadius: 7, padding: 2 }}>
-                        {(["desktop", "tablet", "mobile"] as const).map((d) => (
-                          <motion.button key={d} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                            onClick={() => {}} // device preview is visual only
-                            style={{ padding: "0.25rem 0.45rem", borderRadius: 5, border: "none", cursor: "pointer", background: "transparent", color: c.textMuted, display: "flex" }}>
-                            <Monitor size={11} />
-                          </motion.button>
-                        ))}
+                        {(["desktop", "tablet", "mobile"] as const).map((d) => {
+                          const Icon = d === "desktop" ? Monitor : d === "tablet" ? Tablet : Smartphone;
+                          const isSel = previewDevice === d;
+                          return (
+                            <motion.button key={d} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                              onClick={() => setPreviewDevice(d)}
+                              title={`${d.charAt(0).toUpperCase() + d.slice(1)} View`}
+                              style={{ padding: "0.25rem 0.45rem", borderRadius: 5, border: "none", cursor: "pointer", background: isSel ? "rgba(245,158,11,0.2)" : "transparent", color: isSel ? col : c.textMuted, display: "flex" }}>
+                              <Icon size={11} />
+                            </motion.button>
+                          );
+                        })}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 2, background: c.surface, border: `1px solid ${c.border}`, borderRadius: 7, padding: "2px 4px" }}>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setZoom(prev => Math.max(40, prev - 10))} style={{ background: "none", border: "none", cursor: "pointer", color: c.textMuted, padding: 3, display: "flex" }}><ZoomOut size={11} /></motion.button>
