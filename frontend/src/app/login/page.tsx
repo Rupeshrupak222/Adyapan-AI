@@ -103,10 +103,20 @@ function LoginPageContent() {
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-    // Auto-redirect if already logged in
+    // Clear session if logout query parameter is present
+    if (params.get("logout") === "true") {
+      localStorage.removeItem("adyapan-token");
+      localStorage.removeItem("adyapan-user");
+      sessionStorage.removeItem("adyapan-token");
+      sessionStorage.removeItem("adyapan-user");
+      document.cookie = "adyapan-token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
+      document.cookie = "adyapan-user=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
+    }
+
+    // Auto-redirect if already logged in (and not explicitly logging out)
     const existingToken = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token");
     const existingUser = localStorage.getItem("adyapan-user") || sessionStorage.getItem("adyapan-user");
-    if (existingToken && existingUser) {
+    if (existingToken && existingUser && params.get("logout") !== "true") {
       try {
         const u = JSON.parse(existingUser) as { role?: string };
         router.replace(u.role === "ADMIN" ? "/dashboard/admin" : "/dashboard/user");
@@ -140,7 +150,7 @@ function LoginPageContent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setLoginError(""); setLoginLoading(true);
     try {
-      const { data } = await api.post("/auth/login", { email: loginEmail, password: loginPassword, rememberMe });
+      const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe });
       saveAuthSession(data.token, data.user, rememberMe);
       router.push(data.user.role === "ADMIN" ? "/dashboard/admin" : "/dashboard/user");
     } catch (err: unknown) {
@@ -153,8 +163,8 @@ function LoginPageContent() {
     if (reg.password !== reg.confirm) { setRegError("Passwords do not match."); return; }
     setRegLoading(true);
     try {
-      await api.post("/auth/register", { name: reg.name, email: reg.email, password: reg.password, role: "USER" });
-      setTab("login"); setLoginEmail(reg.email);
+      await api.post("/auth/register", { name: reg.name.trim(), email: reg.email.trim(), password: reg.password, role: "USER" });
+      setTab("login"); setLoginEmail(reg.email.trim());
     } catch (err: unknown) {
       setRegError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Registration failed.");
     } finally { setRegLoading(false); }
