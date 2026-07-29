@@ -87,7 +87,7 @@ function validatePasswordStrength(password: string) {
 }
 
 export async function registerUser(input: RegisterInput) {
-  const email = input.email.toLowerCase();
+  const email = input.email.toLowerCase().trim();
   const existingUser = await prisma.user.findUnique({ where: { email } });
 
   if (existingUser) {
@@ -101,7 +101,7 @@ export async function registerUser(input: RegisterInput) {
       name: input.name,
       email,
       password,
-      role: "USER",
+      role: input.role === "ADMIN" ? "ADMIN" : "USER",
       profile: {
         create: {},
       },
@@ -132,7 +132,7 @@ export async function registerUser(input: RegisterInput) {
 }
 
 export async function loginUser(input: LoginInput & { rememberMe?: boolean }) {
-  const email = input.email.toLowerCase();
+  const email = input.email.toLowerCase().trim();
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {

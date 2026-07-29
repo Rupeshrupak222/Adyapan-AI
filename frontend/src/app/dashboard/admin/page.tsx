@@ -414,10 +414,17 @@ export default function AdminDashboard() {
       }}>
         {/* Left Branding */}
         <div className="flex items-center gap-3">
-          <motion.button whileTap={{ scale: 0.95 }} onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg border text-gray-400 hover:text-white"
-            style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }}>
-            <Menu size={18} />
+          {/* Mobile menu trigger (hidden on desktop) */}
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="mobile-menu-btn"
+            style={{
+              background: "transparent", border: "none", cursor: "pointer",
+              display: "none", alignItems: "center", justifyContent: "center",
+              padding: 4, color: "var(--text-secondary)", marginRight: 2,
+            }}
+          >
+            <Menu size={20} />
           </motion.button>
           <div className="flex items-center gap-2.5">
             <Image src="/assets/logo.png" alt="Adyapan AI" width={32} height={32} className="rounded-full" />
@@ -476,57 +483,98 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* ─── Main Container ────────────────────────────────────────────── */}
-      <div className="flex pt-[70px]">
-        
-        {/* ─── Sidebar ───────────────────────────────────────────────── */}
-        <aside className={`w-64 fixed left-0 top-[70px] bottom-0 z-40 border-r transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
-          style={{ background: isDark ? "#070b0e" : "#ffffff", borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }}>
-          <div className="p-4 space-y-1 overflow-y-auto h-full">
-            {sidebarItems.map(item => {
-              if (item.submenu) {
-                const isOpen = openGroup === item.id;
-                return (
-                  <div key={item.id} className="space-y-1">
-                    <button onClick={() => setOpenGroup(isOpen ? null : item.id)}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-400 hover:text-white transition-all hover:bg-white/5">
-                      <div className="flex items-center gap-2.5">
-                        {item.icon}
-                        <span>{item.label}</span>
-                      </div>
-                      <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                    </button>
-                    {isOpen && (
-                      <div className="pl-6 space-y-1 border-l border-white/10 ml-4">
-                        {item.submenu.map(sub => (
-                          <button key={sub.id} onClick={() => setActiveSection(sub.section)}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${activeSection === sub.section ? "text-amber-500 font-bold bg-amber-500/10" : "text-gray-400 hover:text-white"}`}>
-                            {sub.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
+      {/* Mobile backdrop overlay */}
+      {sidebarOpen && (
+        <div
+          className="mobile-sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: "fixed", inset: 0, top: 70, zIndex: 119,
+            background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            transition: "opacity 0.3s ease",
+          }}
+        />
+      )}
 
-              const isActive = activeSection === item.section;
+      {/* ─── Main Container ────────────────────────────────────────────── */}
+      <div className="flex">
+        
+        {/* ─── Sidebar (Same hover-expand style as User Dashboard) ────── */}
+        <aside className={`dash-sidebar ${sidebarOpen ? "open" : ""}`}
+          style={{
+            background: isDark ? "rgba(6,11,14,0.92)" : "rgba(255,255,255,0.95)",
+            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"
+          }}>
+          {sidebarItems.map(item => {
+            if (item.submenu) {
+              const isOpen = openGroup === item.id;
               return (
-                <button key={item.id} onClick={() => setActiveSection(item.section as SectionId)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${isActive ? "text-amber-500 font-bold bg-amber-500/10 border border-amber-500/20" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
-                  <div className="flex items-center gap-2.5">
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge && <Pill color="#10b981">{item.badge}</Pill>}
-                </button>
+                <div key={item.id} className={isOpen ? "sb-item open" : "sb-item"}>
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}
+                    onClick={() => setOpenGroup(isOpen ? null : item.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "0.75rem",
+                      padding: "0.55rem 0.5rem", borderRadius: 12, marginBottom: 2,
+                      color: "var(--text-secondary)", background: "transparent",
+                      border: "1px solid transparent", fontWeight: 500, fontSize: "0.82rem",
+                      cursor: "pointer", width: "100%", textAlign: "left", whiteSpace: "nowrap",
+                    }}>
+                    <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                    <span className="sb-label" style={{ flex: 1, textAlign: "left" }}>{item.label}</span>
+                    <span className="sb-arrow" style={{ marginLeft: "auto", transition: "transform 0.2s", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                      <ChevronDown size={13} />
+                    </span>
+                  </motion.button>
+                  {isOpen && (
+                    <div className="sb-submenu" style={{ paddingLeft: "1.2rem" }}>
+                      {item.submenu.map(sub => (
+                        <a key={sub.id} href="#" onClick={(e) => { e.preventDefault(); setActiveSection(sub.section); setSidebarOpen(false); }}
+                          style={{
+                            display: "block", padding: "0.35rem 0.5rem", fontSize: "0.76rem",
+                            color: activeSection === sub.section ? "#f59e0b" : "var(--text-secondary)",
+                            fontWeight: activeSection === sub.section ? 700 : 500,
+                            background: activeSection === sub.section ? "rgba(245,158,11,0.1)" : "transparent",
+                            borderRadius: 8, marginBottom: 1, textDecoration: "none", transition: "all 0.15s ease",
+                          }}>
+                          {sub.label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
-            })}
-          </div>
+            }
+
+            const isActive = activeSection === item.section;
+            return (
+              <div key={item.id} className="sb-item">
+                <motion.button key={item.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}
+                  onClick={() => { setActiveSection(item.section as SectionId); setSidebarOpen(false); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "0.75rem",
+                    padding: "0.55rem 0.5rem", borderRadius: 12, marginBottom: 2,
+                    color: isActive ? "#f59e0b" : "var(--text-secondary)",
+                    background: isActive ? "rgba(245,158,11,0.1)" : "transparent",
+                    border: isActive ? "1px solid rgba(245,158,11,0.2)" : "1px solid transparent",
+                    fontWeight: isActive ? 700 : 500, fontSize: "0.82rem",
+                    cursor: "pointer", width: "100%", textAlign: "left", whiteSpace: "nowrap",
+                  }}>
+                  <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                  <span className="sb-label" style={{ flex: 1, textAlign: "left" }}>{item.label}</span>
+                  {item.badge && (
+                    <span className="sb-arrow" style={{ marginLeft: "auto" }}>
+                      <Pill color="#10b981">{item.badge}</Pill>
+                    </span>
+                  )}
+                </motion.button>
+              </div>
+            );
+          })}
         </aside>
 
         {/* ─── Content Area ──────────────────────────────────────────── */}
-        <main className={`flex-1 p-6 transition-all ${sidebarOpen ? "md:ml-64" : "ml-0"}`}>
+        <main className="dash-main flex-1 p-6" style={{ background: "transparent" }}>
           <div className="max-w-7xl mx-auto space-y-6">
 
             {/* ══════════════════════════════════════════════════════════

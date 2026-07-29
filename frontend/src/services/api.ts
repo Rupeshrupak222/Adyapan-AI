@@ -34,6 +34,8 @@ api.interceptors.response.use(
         localStorage.removeItem("adyapan-user");
         sessionStorage.removeItem("adyapan-token");
         sessionStorage.removeItem("adyapan-user");
+        document.cookie = "adyapan-token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
+        document.cookie = "adyapan-user=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
         window.location.href = "/login";
       }
       return Promise.reject(err);
