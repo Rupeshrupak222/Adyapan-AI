@@ -152,7 +152,7 @@ function LoginPageContent() {
     try {
       const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe });
       saveAuthSession(data.token, data.user, rememberMe);
-      router.push(data.user.role === "ADMIN" ? "/dashboard/admin" : "/dashboard/user");
+      window.location.href = data.user.role === "ADMIN" ? "/dashboard/admin" : "/dashboard/user";
     } catch (err: unknown) {
       setLoginError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Invalid email or password.");
     } finally { setLoginLoading(false); }

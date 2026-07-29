@@ -76,7 +76,7 @@ export default function AdminRegisterPage() {
         password: form.password,
       });
       saveAuthSession(data.token, data.user);
-      router.push("/dashboard/admin");
+      window.location.href = "/dashboard/admin";
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
