@@ -3,6 +3,19 @@ import { prisma } from "../config/prisma";
 import { adminDbService } from "../services/admin-db.service";
 import { httpError } from "../utils/httpError";
 import bcrypt from "bcrypt";
+import { autoResolveCompanyLogo } from "../utils/companyLogoResolver";
+import { JobDiscoveryService } from "../services/job-discovery.service";
+
+// Simple memory store for global admin settings
+let systemSettingsMemory = {
+  maintenanceMode: false,
+  announcementBanner: "Welcome to Adyapan AI Platform!",
+  defaultAiModel: "gemini",
+  freeTierTokenLimit: 50,
+  premiumTierTokenLimit: 1000,
+  registrationOpen: true,
+  aiTemperature: 0.7,
+};
 
 // ─── 1. Dashboard Overview ───────────────────────────────────────
 
@@ -234,18 +247,27 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
       await prisma.user.update({ where: { id: userId }, data: { subscriptionStatus: "cancelled" } });
       return res.json({ success: true, message: "User blocked" });
     }
+    if (action === "unblock" || action === "activate") {
+      await prisma.user.update({ where: { id: userId }, data: { subscriptionStatus: "active" } });
+      return res.json({ success: true, message: "User unblocked & activated" });
+    }
     if (action === "suspend") {
       await prisma.user.update({ where: { id: userId }, data: { subscriptionStatus: "cancelled" } });
       return res.json({ success: true, message: "User suspended" });
+    }
+    if (action === "change-role" && req.body.role) {
+      await prisma.user.update({ where: { id: userId }, data: { role: req.body.role } });
+      return res.json({ success: true, message: `Role changed to ${req.body.role}` });
     }
     if (action === "delete") {
       await prisma.user.delete({ where: { id: userId } });
       return res.json({ success: true, message: "User deleted" });
     }
     if (action === "reset-password") {
-      const hashed = await bcrypt.hash("Adyapan@123", 10);
+      const pwd = req.body.newPassword || "Adyapan@123";
+      const hashed = await bcrypt.hash(pwd, 10);
       await prisma.user.update({ where: { id: userId }, data: { password: hashed } });
-      return res.json({ success: true, message: "Password reset to Adyapan@123" });
+      return res.json({ success: true, message: `Password reset to ${pwd}` });
     }
     if (action === "upgrade" && plan) {
       await prisma.user.update({
@@ -447,14 +469,146 @@ export async function getModuleAnalytics(_req: Request, res: Response, next: Nex
 // ─── 9. Security Logs ────────────────────────────────────────────
 
 export async function getSecurityLogs(_req: Request, res: Response) {
+  const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+  const activeCount = await prisma.user.count({ where: { subscriptionStatus: "active" } });
+
   res.json({
     success: true,
     security: {
-      totalAdmins: 0,
-      activeSessions: 0,
+      totalAdmins: adminCount,
+      activeSessions: activeCount,
       failedLogins: 0,
       blockedIps: 0,
       status: "secure",
     },
   });
+}
+
+// ─── 10. Job Management ──────────────────────────────────────────
+
+export async function getAdminJobs(req: Request, res: Response, next: NextFunction) {
+  try {
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? "20"), 10)));
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { company: { contains: search, mode: "insensitive" } },
+        { location: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const [jobs, total] = await Promise.all([
+      prisma.discoveryJob.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.discoveryJob.count({ where }),
+    ]);
+
+    res.json({ success: true, jobs, pagination: { total, page, limit, pages: Math.ceil(total / limit) } });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createAdminJob(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { title, company, location, salaryMin, salaryMax, employmentType, workMode, applyUrl, description, skills } = req.body;
+    if (!title || !company) throw httpError(400, "Title and company are required");
+
+    const fingerprint = `${company.toLowerCase().replace(/[^a-z0-9]/g, "")}-${title.toLowerCase().replace(/[^a-z0-9]/g, "")}-${Date.now()}`;
+    const logoUrl = autoResolveCompanyLogo(company, req.body.logoUrl);
+
+    const job = await prisma.discoveryJob.create({
+      data: {
+        fingerprint,
+        title,
+        company,
+        logoUrl,
+        location: location || "Remote",
+        description: description || "No description provided",
+        salaryMin: salaryMin ? Number(salaryMin) : null,
+        salaryMax: salaryMax ? Number(salaryMax) : null,
+        employmentType: employmentType || "Full-Time",
+        workMode: workMode || "Remote",
+        skills: Array.isArray(skills) ? skills : [],
+        applyUrl: applyUrl || "https://adyapan.ai",
+        source: "Admin Manual",
+        isActive: true,
+        isFeatured: true,
+      },
+    });
+
+    res.json({ success: true, message: "Job created successfully", job });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateAdminJob(req: Request, res: Response, next: NextFunction) {
+  try {
+    const jobId = req.params.id as string;
+    const { isActive, isFeatured, title, company, location, salaryMin, salaryMax } = req.body;
+
+    const job = await prisma.discoveryJob.findUnique({ where: { id: jobId } });
+    if (!job) throw httpError(404, "Job not found");
+
+    const updateData: any = {};
+    if (typeof isActive === "boolean") updateData.isActive = isActive;
+    if (typeof isFeatured === "boolean") updateData.isFeatured = isFeatured;
+    if (title) updateData.title = title;
+    if (company) {
+      updateData.company = company;
+      updateData.logoUrl = autoResolveCompanyLogo(company, job.logoUrl);
+    }
+    if (location) updateData.location = location;
+    if (salaryMin !== undefined) updateData.salaryMin = Number(salaryMin);
+    if (salaryMax !== undefined) updateData.salaryMax = Number(salaryMax);
+
+    const updated = await prisma.discoveryJob.update({
+      where: { id: jobId },
+      data: updateData,
+    });
+
+    res.json({ success: true, message: "Job updated successfully", job: updated });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteAdminJob(req: Request, res: Response, next: NextFunction) {
+  try {
+    const jobId = req.params.id as string;
+    await prisma.discoveryJob.delete({ where: { id: jobId } });
+    res.json({ success: true, message: "Job deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function triggerJobIngestion(_req: Request, res: Response, next: NextFunction) {
+  try {
+    // Run ingestion asynchronously in background
+    JobDiscoveryService.syncSources().catch(err => console.error("Ingestion background error:", err));
+    res.json({ success: true, message: "Job ingestion process launched in background" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── 11. System Settings ─────────────────────────────────────────
+
+export async function getAdminSettings(_req: Request, res: Response) {
+  res.json({ success: true, settings: systemSettingsMemory });
+}
+
+export async function updateAdminSettings(req: Request, res: Response) {
+  systemSettingsMemory = { ...systemSettingsMemory, ...req.body };
+  res.json({ success: true, message: "System settings updated successfully", settings: systemSettingsMemory });
 }
