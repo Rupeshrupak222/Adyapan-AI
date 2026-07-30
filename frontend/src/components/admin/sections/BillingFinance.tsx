@@ -107,7 +107,7 @@ export default function BillingFinance() {
   const [loading, setLoading] = useState(true);
   const [revenue, setRevenue] = useState<RevenueData | null>(null);
   const [dailyRevenue] = useState(() => generateDailyRevenue());
-  const [transactions] = useState(() => generateSampleTransactions(20));
+  const [transactions, setTransactions] = useState<Transaction[]>(() => generateSampleTransactions(20));
   const [planDist, setPlanDist] = useState<PlanDist[]>(PLAN_DIST);
   const [activePieIndex, setActivePieIndex] = useState(-1);
 
@@ -116,14 +116,25 @@ export default function BillingFinance() {
     try {
       const res = await api.get("/admin/analytics/revenue");
       if (res.data.success) {
-        const r = res.data.revenue as RevenueData;
+        const r = res.data.revenue;
         setRevenue(r);
-        setPlanDist([
-          { name: "Free", value: Math.round(r.premiumUsers * 1.8), color: "#818cf8" },
-          { name: "Pro", value: Math.round(r.premiumUsers * 0.6), color: "#10b981" },
-          { name: "Premium", value: r.premiumUsers, color: "#f59e0b" },
-          { name: "Enterprise", value: Math.round(r.premiumUsers * 0.15), color: "#f472b6" },
-        ]);
+        if (r.planDist && Array.isArray(r.planDist) && r.planDist.length > 0) {
+          setPlanDist(r.planDist.map((p: any) => ({
+            name: p.name,
+            value: p.value,
+            color: PLAN_COLORS[p.name] || "#818cf8",
+          })));
+        } else {
+          setPlanDist([
+            { name: "Free", value: Math.round(r.premiumUsers * 1.8), color: "#818cf8" },
+            { name: "Pro", value: Math.round(r.premiumUsers * 0.6), color: "#10b981" },
+            { name: "Premium", value: r.premiumUsers, color: "#f59e0b" },
+            { name: "Enterprise", value: Math.round(r.premiumUsers * 0.15), color: "#f472b6" },
+          ]);
+        }
+        if (r.transactions && Array.isArray(r.transactions) && r.transactions.length > 0) {
+          setTransactions(r.transactions);
+        }
       }
     } catch (err) {
       console.error("[BillingFinance] fetch error", err);

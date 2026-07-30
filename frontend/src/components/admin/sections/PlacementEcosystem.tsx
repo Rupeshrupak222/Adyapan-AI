@@ -70,6 +70,7 @@ function formatDate(iso: string): string {
 export default function PlacementEcosystem() {
   const [jobs, setJobs] = useState<DiscoveryJob[]>([]);
   const [pagination, setPagination] = useState<{ total: number; page: number; limit: number; pages: number } | null>(null);
+  const [stats, setStats] = useState(MOCK_STATS);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -81,10 +82,13 @@ export default function PlacementEcosystem() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get<JobsResponse>(`/admin/jobs?page=${p}&limit=20&search=${encodeURIComponent(q)}`);
+      const res = await api.get<JobsResponse & { stats?: typeof MOCK_STATS }>(`/admin/jobs?page=${p}&limit=20&search=${encodeURIComponent(q)}`);
       if (res.data.success) {
         setJobs(res.data.jobs);
         setPagination(res.data.pagination);
+        if (res.data.stats) {
+          setStats(res.data.stats);
+        }
       }
     } catch {
       setError("Failed to load jobs");
