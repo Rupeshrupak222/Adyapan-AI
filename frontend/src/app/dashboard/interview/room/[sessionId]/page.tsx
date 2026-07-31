@@ -82,13 +82,17 @@ export default function InterviewRoomPage() {
 
   // Waveform animation
   const [waveHeights, setWaveHeights] = useState([4, 6, 8, 12, 8, 6, 4]);
+  const lastSpokenTextRef = useRef<string>("");
 
   // Text-to-Speech
   const speak = useCallback((text: string) => {
-    if (!session?.aiVoiceEnabled) return;
+    if (!session?.aiVoiceEnabled || !text) return;
+    if (lastSpokenTextRef.current === text) return; // Prevent double speak of exact same message
+    lastSpokenTextRef.current = text;
+
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUtterance(text.replace(/[*_#`]/g, ""));
       utterance.rate = 0.95;
       utterance.pitch = 1.0;
       utterance.lang = "en-US";
