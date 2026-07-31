@@ -1,26 +1,9 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
-import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import LenisProvider from "@/components/providers/LenisProvider";
 import ThemeScript from "@/components/providers/ThemeScript";
 import { QueryProvider } from "@/components/providers/QueryProvider";
-
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  display: "swap",
-  fallback: ["system-ui", "sans-serif"],
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  display: "swap",
-  fallback: ["system-ui", "sans-serif"],
-});
 
 export const metadata: Metadata = {
   title: "Adyapan AI",
@@ -35,9 +18,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${plusJakarta.variable} h-full antialiased`}
+      className="h-full antialiased"
+      style={{
+        ["--font-outfit" as any]: "'Outfit', system-ui, -apple-system, sans-serif",
+        ["--font-plus-jakarta" as any]: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+      }}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col font-sans">
         <ThemeScript />
         <LenisProvider />
         <Toaster position="top-right" richColors closeButton />
