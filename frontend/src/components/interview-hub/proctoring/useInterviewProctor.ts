@@ -18,6 +18,71 @@ interface UseInterviewProctorProps {
   onWarningIssued?: (warningCount: number, type: ViolationType) => void;
 }
 
+// Overlap and confidence filtering to eliminate false positive multi-person detections
+function filterPersonDetections(
+  predictions: Array<{ class: string; score: number; bbox: [number, number, number, number] }>,
+  canvasWidth: number,
+  canvasHeight: number,
+  minConfidence = 0.60,
+  minAreaRatio = 0.04
+): Array<{ class: string; score: number; bbox: [number, number, number, number] }> {
+  const totalArea = canvasWidth * canvasHeight;
+
+  // 1. High confidence (>=0.60) & Minimum Box Area (>=4% of frame)
+  const validPersons = predictions.filter((p) => {
+    if (p.class !== "person" || p.score < minConfidence) return false;
+    const [, , w, h] = p.bbox;
+    return (w * h) / totalArea >= minAreaRatio;
+  });
+
+  if (validPersons.length <= 1) return validPersons;
+
+  // 2. Overlap / Non-Maximum Suppression (NMS)
+  // If two boxes overlap by >25% or box centers are inside one another, treat as same candidate
+  const deduplicated: typeof validPersons = [];
+
+  for (const person of validPersons) {
+    const [x1, y1, w1, h1] = person.bbox;
+    const center1X = x1 + w1 / 2;
+    const center1Y = y1 + h1 / 2;
+    const area1 = w1 * h1;
+
+    let isDuplicate = false;
+    for (const existing of deduplicated) {
+      const [x2, y2, w2, h2] = existing.bbox;
+      const center2X = x2 + w2 / 2;
+      const center2Y = y2 + h2 / 2;
+      const area2 = w2 * h2;
+
+      const interX1 = Math.max(x1, x2);
+      const interY1 = Math.max(y1, y2);
+      const interX2 = Math.min(x1 + w1, x2 + w2);
+      const interY2 = Math.min(y1 + h1, y2 + h2);
+
+      const interW = Math.max(0, interX2 - interX1);
+      const interH = Math.max(0, interY2 - interY1);
+      const interArea = interW * interH;
+
+      const unionArea = area1 + area2 - interArea;
+      const iou = unionArea > 0 ? interArea / unionArea : 0;
+
+      const centerInside =
+        center1X >= x2 && center1X <= x2 + w2 && center1Y >= y2 && center1Y <= y2 + h2;
+
+      if (iou > 0.25 || centerInside) {
+        isDuplicate = true;
+        break;
+      }
+    }
+
+    if (!isDuplicate) {
+      deduplicated.push(person);
+    }
+  }
+
+  return deduplicated;
+}
+
 export function useInterviewProctor({
   config = {},
   onAutoSubmit,
@@ -26,7 +91,9 @@ export function useInterviewProctor({
   const {
     detectionIntervalMs = 1500,
     maxWarnings = 3,
-    stabilityCycles = 2,
+    stabilityCycles = 3,
+    warningCooldownMs = 30000, // 30-second delay between warnings
+    minPersonConfidence = 0.60, // 60% confidence requirement
     proctoringEnabled = true,
     audioAlertsEnabled = true,
     allowNoPersonWarning = true,
@@ -42,6 +109,8 @@ export function useInterviewProctor({
     micActive: false,
     modelLoaded: false,
     pendingViolation: null,
+    cooldownActive: false,
+    cooldownRemainingSeconds: 0,
     violationLogs: [],
     errorMessage: null,
     loadingStepMessage: "Initializing Camera & AI Proctor",
@@ -56,6 +125,7 @@ export function useInterviewProctor({
   const isDetectingRef = useRef(false);
   const isTerminatedRef = useRef(false);
   const warningsRef = useRef(0);
+  const lastWarningTimestampRef = useRef<number>(0);
   const pendingViolationRef = useRef<{ type: ViolationType; cycles: number } | null>(null);
   const onAutoSubmitRef = useRef(onAutoSubmit);
   const onWarningIssuedRef = useRef(onWarningIssued);
@@ -125,17 +195,20 @@ export function useInterviewProctor({
     }
   }, []);
 
-  // Issue warning logic
+  // Issue warning logic with timestamp record
   const triggerWarning = useCallback(
     (violationType: ViolationType, detectedCount: number) => {
       if (isTerminatedRef.current) return;
+
+      const now = Date.now();
+      lastWarningTimestampRef.current = now;
 
       const newWarningCount = warningsRef.current + 1;
       warningsRef.current = newWarningCount;
 
       const logEntry: ViolationLog = {
-        id: `v_${Date.now()}`,
-        timestamp: Date.now(),
+        id: `v_${now}`,
+        timestamp: now,
         type: violationType,
         message:
           violationType === "multiple_persons"
@@ -153,6 +226,8 @@ export function useInterviewProctor({
         detectionStatus: "violation",
         violationLogs: [logEntry, ...prev.violationLogs],
         pendingViolation: null,
+        cooldownActive: true,
+        cooldownRemainingSeconds: Math.ceil(warningCooldownMs / 1000),
       }));
 
       pendingViolationRef.current = null;
@@ -171,15 +246,15 @@ export function useInterviewProctor({
         toast.warning(`Warning 1 of ${maxWarnings}`, {
           description:
             violationType === "multiple_persons"
-              ? "Multiple persons detected. Please ensure you are alone."
+              ? "Multiple persons detected. You have 30 seconds to ensure you are alone."
               : "No candidate visible in camera view. Please stay in frame.",
-          duration: 6000,
+          duration: 7000,
         });
       } else if (newWarningCount === 2) {
         toast.error(`Warning 2 of ${maxWarnings}`, {
           description:
-            "Another violation detected. One more warning will automatically terminate the interview session.",
-          duration: 7000,
+            "Another violation detected. You have 30 seconds to clear your frame. One more warning will terminate the session.",
+          duration: 8000,
         });
       } else if (newWarningCount >= maxWarnings) {
         isTerminatedRef.current = true;
@@ -187,6 +262,8 @@ export function useInterviewProctor({
           ...prev,
           status: "terminated",
           detectionStatus: "violation",
+          cooldownActive: false,
+          cooldownRemainingSeconds: 0,
         }));
 
         toast.error("Interview Terminated", {
@@ -200,7 +277,7 @@ export function useInterviewProctor({
         }, 800);
       }
     },
-    [maxWarnings, audioAlertsEnabled]
+    [maxWarnings, audioAlertsEnabled, warningCooldownMs]
   );
 
   // Core Frame Detection
@@ -245,11 +322,15 @@ export function useInterviewProctor({
       ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
       // Perform COCO-SSD object detection
-      const predictions = await model.detect(canvas);
+      const rawPredictions = await model.detect(canvas);
 
-      // Filter for person detections with >0.4 confidence
-      const personDetections = predictions.filter(
-        (p) => p.class === "person" && p.score >= 0.4
+      // Apply NMS + High Confidence (0.60) + Minimum Box Area filtering
+      const personDetections = filterPersonDetections(
+        rawPredictions as any,
+        canvas.width,
+        canvas.height,
+        minPersonConfidence,
+        0.04
       );
 
       const personCount = personDetections.length;
@@ -262,8 +343,15 @@ export function useInterviewProctor({
         frameViolationType = "no_person";
       }
 
-      // STABILITY RULE EVALUATION:
-      // Must detect violation across 'stabilityCycles' consecutive cycles (e.g., 2 cycles = ~3s)
+      // Calculate Cooldown status (30 seconds between warnings)
+      const now = Date.now();
+      const timeSinceLastWarning = now - lastWarningTimestampRef.current;
+      const inCooldown = lastWarningTimestampRef.current > 0 && timeSinceLastWarning < warningCooldownMs;
+      const cooldownRemainingSeconds = inCooldown
+        ? Math.ceil((warningCooldownMs - timeSinceLastWarning) / 1000)
+        : 0;
+
+      // STABILITY RULE & COOLDOWN EVALUATION
       if (frameViolationType !== null) {
         const currentPending = pendingViolationRef.current;
 
@@ -278,6 +366,8 @@ export function useInterviewProctor({
             ...prev,
             personCount,
             detectionStatus: "pending_violation",
+            cooldownActive: inCooldown,
+            cooldownRemainingSeconds,
             pendingViolation: {
               type: frameViolationType,
               personCount,
@@ -285,8 +375,8 @@ export function useInterviewProctor({
             },
           }));
 
-          // If reached required consecutive cycles, issue a warning!
-          if (newCycles >= stabilityCycles) {
+          // Trigger warning ONLY if 30-second cooldown has passed AND required consecutive cycles are reached!
+          if (newCycles >= stabilityCycles && !inCooldown) {
             triggerWarning(frameViolationType, personCount);
           }
         } else {
@@ -300,6 +390,8 @@ export function useInterviewProctor({
             ...prev,
             personCount,
             detectionStatus: "pending_violation",
+            cooldownActive: inCooldown,
+            cooldownRemainingSeconds,
             pendingViolation: {
               type: frameViolationType,
               personCount,
@@ -315,6 +407,8 @@ export function useInterviewProctor({
           ...prev,
           personCount,
           detectionStatus: "normal",
+          cooldownActive: inCooldown,
+          cooldownRemainingSeconds,
           pendingViolation: null,
         }));
       }
@@ -323,7 +417,14 @@ export function useInterviewProctor({
     } finally {
       isDetectingRef.current = false;
     }
-  }, [proctoringEnabled, allowNoPersonWarning, stabilityCycles, triggerWarning]);
+  }, [
+    proctoringEnabled,
+    allowNoPersonWarning,
+    stabilityCycles,
+    warningCooldownMs,
+    minPersonConfidence,
+    triggerWarning,
+  ]);
 
   // Start Proctoring session
   const startProctoring = useCallback(async (): Promise<boolean> => {
@@ -426,6 +527,7 @@ export function useInterviewProctor({
   const resetProctoring = useCallback(() => {
     stopProctoring();
     warningsRef.current = 0;
+    lastWarningTimestampRef.current = 0;
     pendingViolationRef.current = null;
     isTerminatedRef.current = false;
     setProctorState({
@@ -438,6 +540,8 @@ export function useInterviewProctor({
       micActive: false,
       modelLoaded: false,
       pendingViolation: null,
+      cooldownActive: false,
+      cooldownRemainingSeconds: 0,
       violationLogs: [],
       errorMessage: null,
       loadingStepMessage: "Initializing AI Proctor",

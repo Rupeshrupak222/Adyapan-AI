@@ -51,6 +51,14 @@ export const ProctoringPanel: React.FC<ProctoringPanelProps> = ({
 
   // Status colors & labels
   const getStatusBadge = () => {
+    if (proctorState.cooldownActive && proctorState.cooldownRemainingSeconds > 0) {
+      return {
+        label: `Grace Period (${proctorState.cooldownRemainingSeconds}s)`,
+        bg: isDark ? "rgba(245, 158, 11, 0.25)" : "#fef3c7",
+        color: isDark ? "#fbbf24" : "#d97706",
+        border: isDark ? "rgba(245, 158, 11, 0.5)" : "#fcd34d",
+      };
+    }
     if (detectionStatus === "violation" || warnings > 0) {
       return {
         label: `Violation (${warnings}/${maxWarnings})`,

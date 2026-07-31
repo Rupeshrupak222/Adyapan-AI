@@ -25,7 +25,9 @@ export interface ViolationLog {
 export interface ProctoringConfig {
   detectionIntervalMs?: number; // default 1500ms
   maxWarnings?: number; // default 3
-  stabilityCycles?: number; // default 2 consecutive cycles
+  stabilityCycles?: number; // default 3 consecutive cycles
+  warningCooldownMs?: number; // default 30000ms (30s delay between warnings)
+  minPersonConfidence?: number; // default 0.60
   proctoringEnabled?: boolean;
   audioAlertsEnabled?: boolean;
   allowNoPersonWarning?: boolean; // true if 0 persons should trigger warning
@@ -41,6 +43,8 @@ export interface ProctoringState {
   micActive: boolean;
   modelLoaded: boolean;
   pendingViolation: { type: ViolationType; personCount: number; cycles: number } | null;
+  cooldownActive: boolean;
+  cooldownRemainingSeconds: number;
   violationLogs: ViolationLog[];
   errorMessage: string | null;
   loadingStepMessage: string;

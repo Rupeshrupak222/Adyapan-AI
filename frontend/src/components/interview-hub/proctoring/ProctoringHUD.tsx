@@ -74,6 +74,15 @@ export const ProctoringHUD: React.FC<ProctoringHUDProps> = ({
           {warnings} / {maxWarnings}
         </span>
       </div>
+
+      {proctorState.cooldownActive && proctorState.cooldownRemainingSeconds > 0 && (
+        <>
+          <div className={`h-3 w-px ${isDark ? "bg-white/15" : "bg-slate-300"}`} />
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-bold bg-amber-500/20 text-amber-400 border-amber-500/30">
+            <span>Grace: {proctorState.cooldownRemainingSeconds}s</span>
+          </div>
+        </>
+      )}
     </div>
   );
 };
