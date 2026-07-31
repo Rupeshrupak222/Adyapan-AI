@@ -17,7 +17,8 @@ export function useRequireAuth(requiredRole?: "USER" | "ADMIN") {
     const raw = localStorage.getItem("adyapan-user") || sessionStorage.getItem("adyapan-user");
 
     if (!token || !raw) {
-      router.replace(`/login?from=${encodeURIComponent(window.location.pathname)}`);
+      const loginUrl = requiredRole === "ADMIN" ? "/admin-login" : "/login";
+      router.replace(`${loginUrl}?from=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
 
@@ -29,7 +30,8 @@ export function useRequireAuth(requiredRole?: "USER" | "ADMIN") {
           router.replace(dest);
         }
       } catch {
-        router.replace("/login");
+        const fallbackUrl = requiredRole === "ADMIN" ? "/admin-login" : "/login";
+        router.replace(fallbackUrl);
       }
     }
   }, [router, requiredRole]);

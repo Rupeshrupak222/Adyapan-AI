@@ -8,9 +8,16 @@ import {
   Bell, Terminal, Bot, Settings,
 } from "lucide-react";
 
-const sidebarSections = [
+interface SidebarSectionItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  badge?: string;
+}
+
+const sidebarSections: SidebarSectionItem[] = [
   { id: "executive", label: "Executive Dashboard", icon: <LayoutDashboard size={18} /> },
-  { id: "operations", label: "Operations Center", icon: <Activity size={18} />, badge: "Live" },
+  { id: "operations", label: "Operations Center", icon: <Activity size={18} /> },
   { id: "users", label: "User Management", icon: <Users size={18} /> },
   { id: "organizations", label: "Organizations", icon: <Building2 size={18} /> },
   { id: "ai-platform", label: "AI Platform", icon: <Brain size={18} /> },

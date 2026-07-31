@@ -510,6 +510,39 @@ interviewRouter.get("/history", async (req, res) => {
   }
 });
 
+interviewRouter.get("/sessions", async (req, res) => {
+  try {
+    const prisma = await getUserPrismaFromRequest(req);
+    const p = prisma as any;
+    const sessions = await p.interviewSession.findMany({
+      where: { userId: req.user!.userId },
+      include: {
+        evaluations: { take: 1 },
+        violations: { select: { createdAt: true, eventType: true, severity: true } },
+        messages: { select: { createdAt: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+    const summaries = sessions.map((s: any) => ({
+      id: s.id,
+      role: s.role,
+      targetRole: s.role,
+      company: s.company,
+      type: s.type,
+      difficulty: s.difficulty,
+      technology: s.technology,
+      status: s.status,
+      overallScore: s.evaluations?.[0]?.overallScore ?? null,
+      createdAt: s.createdAt,
+      messageCount: s.messages?.length || 0,
+    }));
+    res.json({ success: true, sessions: summaries });
+  } catch (error) {
+    handleRouteError(res, error, "Interview.sessions", "Failed to fetch sessions");
+  }
+});
+
 // ─── Analytics: Summary endpoint (MUST be before /:sessionId) ───────────────
 interviewRouter.get("/analytics/summary", async (req, res) => {
   try {
