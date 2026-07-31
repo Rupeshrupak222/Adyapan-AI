@@ -2570,7 +2570,7 @@ function UserDashboardContent() {
         {activeView === "profile" ? (
           <HubErrorBoundary><ProfileView /></HubErrorBoundary>
         ) : activeView === "career-dashboard" ? (
-          <HubErrorBoundary><CareerDashboardView setView={setActiveView} /></HubErrorBoundary>
+          <HubErrorBoundary><CareerDashboardView setView={navigateTo} /></HubErrorBoundary>
         ) : activeView === "community-profile" && communityProfileUserId ? (
           <HubErrorBoundary>
             <CommunityProfileView
@@ -2595,7 +2595,7 @@ function UserDashboardContent() {
           <HubErrorBoundary>
             <CommunityProfilesView
               onViewProfile={(userId) => setCommunityProfileUserId(userId)}
-              onMessage={(userId) => { setOpenChatWith(userId); setActiveView("community-messages"); }}
+              onMessage={(userId) => { setOpenChatWith(userId); navigateTo("community-messages"); }}
             />
           </HubErrorBoundary>
         ) : activeView === "community-messages" ? (
@@ -2607,23 +2607,23 @@ function UserDashboardContent() {
         ) : activeView === "billing" ? (
           <HubErrorBoundary><BillingView /></HubErrorBoundary>
         ) : activeView === "resume-hub" || activeView === "resume-builder" ? (
-          <HubErrorBoundary><ResumeBuilderView setView={setActiveView} selectedTemplate={selectedTemplate || "ATS Modern"} /></HubErrorBoundary>
+          <HubErrorBoundary><ResumeBuilderView setView={navigateTo} selectedTemplate={selectedTemplate || "ATS Modern"} /></HubErrorBoundary>
         ) : activeView === "resume-upload" ? (
-          <HubErrorBoundary><ResumeUploadView setView={setActiveView} /></HubErrorBoundary>
+          <HubErrorBoundary><ResumeUploadView setView={navigateTo} /></HubErrorBoundary>
         ) : activeView === "ats-checker" ? (
-          <HubErrorBoundary><AtsCheckerView setView={setActiveView} /></HubErrorBoundary>
+          <HubErrorBoundary><AtsCheckerView setView={navigateTo} /></HubErrorBoundary>
         ) : activeView === "resume-improvements" ? (
-          <HubErrorBoundary><ResumeImprovementsView setView={setActiveView} /></HubErrorBoundary>
+          <HubErrorBoundary><ResumeImprovementsView setView={navigateTo} /></HubErrorBoundary>
         ) : activeView === "cover-letter" ? (
-          <HubErrorBoundary><CoverLetterView setView={setActiveView} /></HubErrorBoundary>
+          <HubErrorBoundary><CoverLetterView setView={navigateTo} /></HubErrorBoundary>
         ) : activeView === "linkedin-optimizer" ? (
-          <HubErrorBoundary><LinkedInView setView={setActiveView} /></HubErrorBoundary>
+          <HubErrorBoundary><LinkedInView setView={navigateTo} /></HubErrorBoundary>
         ) : activeView === "career-roadmap" ? (
-          <HubErrorBoundary><CareerNavigationEngine setView={setActiveView} /></HubErrorBoundary>
+          <HubErrorBoundary><CareerNavigationEngine setView={navigateTo} /></HubErrorBoundary>
         ) : activeView === "study-assistant" ? (
-          <HubErrorBoundary><StudyAssistantView onViewLesson={(data) => { setLessonResult(data); setActiveView("lesson-view"); }} /></HubErrorBoundary>
+          <HubErrorBoundary><StudyAssistantView onViewLesson={(data) => { setLessonResult(data); navigateTo("lesson-view"); }} /></HubErrorBoundary>
         ) : activeView === "lesson-view" && lessonResult ? (
-          <HubErrorBoundary><StudyAssistantView lessonToView={lessonResult} onViewLesson={() => setActiveView("study-assistant")} /></HubErrorBoundary>
+          <HubErrorBoundary><StudyAssistantView lessonToView={lessonResult} onViewLesson={() => navigateTo("study-assistant")} /></HubErrorBoundary>
         ) : activeView === "study-planner" ? (
           <HubErrorBoundary><StudyPlannerDashboard /></HubErrorBoundary>
         ) : activeView === "learning-streak" ? (
@@ -2647,7 +2647,7 @@ function UserDashboardContent() {
         ) : activeView === "coding-challenges" ? (
           <HubErrorBoundary><CodingChallengesView /></HubErrorBoundary>
         ) : activeView === "ady-chat" ? (
-          <HubErrorBoundary><AdyChatView setView={setActiveView} /></HubErrorBoundary>
+          <HubErrorBoundary><AdyChatView setView={navigateTo} /></HubErrorBoundary>
         ) : activeView === "interview-engine" ? (
           <HubErrorBoundary><EngineView theme={theme} /></HubErrorBoundary>
         ) : activeView === "interview-technical" || activeView === "technical-interview" ? (
@@ -2655,25 +2655,25 @@ function UserDashboardContent() {
         ) : activeView === "interview-hr" || activeView === "hr-interview" ? (
           <HubErrorBoundary><HRView theme={theme} /></HubErrorBoundary>
         ) : activeView === "interview-hub" || activeView === "interview-mock" ? (
-          <HubErrorBoundary><InterviewHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
+          <HubErrorBoundary><InterviewHubView setView={navigateTo} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "job-discovery" ? (
           <HubErrorBoundary><JobDiscoveryView /></HubErrorBoundary>
         ) : activeView === "aptitude-engine" || activeView === "aptitude-engine-analytics" ? (
-          <HubErrorBoundary><AptitudeEngineView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
+          <HubErrorBoundary><AptitudeEngineView setView={navigateTo} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "placement-hub" || activeView === "placement-aptitude" || activeView === "placement-reasoning" || activeView === "placement-mcqs" || activeView === "placement-mocks" || activeView === "placement-readiness" ? (
-          <HubErrorBoundary><PlacementHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
+          <HubErrorBoundary><PlacementHubView setView={navigateTo} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "placement-intelligence" ? (
-          <HubErrorBoundary><PlacementIntelligenceView onViewChange={setActiveView} /></HubErrorBoundary>
+          <HubErrorBoundary><PlacementIntelligenceView onViewChange={navigateTo} /></HubErrorBoundary>
         ) : activeView === "productivity-hub" || activeView === "prod-email" || activeView === "prod-sop" || activeView === "prod-linkedin" || activeView === "prod-content" ? (
-          <HubErrorBoundary><ProductivityHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
+          <HubErrorBoundary><ProductivityHubView setView={navigateTo} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "analytics-hub" || activeView === "analytics-learning" || activeView === "analytics-interview" || activeView === "analytics-resume" || activeView === "analytics-skills" ? (
-          <HubErrorBoundary><AnalyticsHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
+          <HubErrorBoundary><AnalyticsHubView setView={navigateTo} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "progress-hub" ? (
           <HubErrorBoundary><ProgressDashboard /></HubErrorBoundary>
         ) : activeView === "research-hub" || activeView === "research-paper-ai" ? (
-          <HubErrorBoundary><ResearchHubView setView={setActiveView} activeModule={activeView} theme={theme} /></HubErrorBoundary>
+          <HubErrorBoundary><ResearchHubView setView={navigateTo} activeModule={activeView} theme={theme} /></HubErrorBoundary>
         ) : activeView === "research-plagiarism" ? (
-          <HubErrorBoundary><PlagiarismCheckerView setView={setActiveView} /></HubErrorBoundary>
+          <HubErrorBoundary><PlagiarismCheckerView setView={navigateTo} /></HubErrorBoundary>
         ) : activeView === "github-portfolio" ? (
           <HubErrorBoundary><GithubPortfolioView /></HubErrorBoundary>
         ) : activeView === "notifications" ? (
@@ -2700,9 +2700,9 @@ function UserDashboardContent() {
                 user={user}
                 targetRole={dashboardStats.targetRole}
                 profileCompletion={dashboardStats.profileCompletion}
-                onStartStudy={() => setActiveView("study-assistant")}
-                onBuildResume={() => setActiveView("resume-hub")}
-                onPracticeDsa={() => setActiveView("dsa-practice")}
+                onStartStudy={() => navigateTo("study-assistant")}
+                onBuildResume={() => navigateTo("resume-hub")}
+                onPracticeDsa={() => navigateTo("dsa-practice")}
               />
               <StatCardsGrid stats={dashboardStats} />
               {recommendationsLoading ? (
@@ -2714,18 +2714,18 @@ function UserDashboardContent() {
                     recommendations={recommendations}
                     onRegenerate={() => fetchRecommendations(true)}
                     onSelectAction={(type) => {
-                      if (type === "study_next" || type === "retention_recovery") setActiveView("study-assistant");
-                      else if (type === "revision") setActiveView("progress-hub");
-                      else if (type === "practice") setActiveView("dsa-practice");
-                      else if (type === "weak_recovery") setActiveView("weak-topics");
-                      else if (type === "exam_prep") setActiveView("study-planner");
-                      else if (type === "interview_prep") setActiveView("interview-hub");
-                      else setActiveView("study-assistant");
+                      if (type === "study_next" || type === "retention_recovery") navigateTo("study-assistant");
+                      else if (type === "revision") navigateTo("progress-hub");
+                      else if (type === "practice") navigateTo("dsa-practice");
+                      else if (type === "weak_recovery") navigateTo("weak-topics");
+                      else if (type === "exam_prep") navigateTo("study-planner");
+                      else if (type === "interview_prep") navigateTo("interview-hub");
+                      else navigateTo("study-assistant");
                     }}
                   />
                 </>
               )}
-              <PanelGrid stats={dashboardStats} onViewTool={setActiveView} />
+              <PanelGrid stats={dashboardStats} onViewTool={navigateTo} />
 
               {/* ═══ CROSS-MODULE ANALYTICS ═══ */}
               <CrossModuleAnalytics
@@ -2734,7 +2734,7 @@ function UserDashboardContent() {
                 streak={streakData}
                 placement={placementScore}
                 weakTopics={weakTopicsData}
-                onViewTool={setActiveView}
+                onViewTool={navigateTo}
               />
             </>
           )
