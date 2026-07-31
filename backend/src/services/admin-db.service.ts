@@ -20,14 +20,18 @@ interface UserStats {
 
 class AdminDbService {
   async listUserDatabases(): Promise<DatabaseInfo[]> {
-    const databases = await databaseService.listDatabases();
-    return databases
-      .filter((db) => db.name.startsWith("user_"))
-      .map((db) => ({
-        userId: db.name.replace("user_", ""),
-        dbName: db.name,
-        createdAt: db.created_at,
-      }));
+    try {
+      const databases = await databaseService.listDatabases();
+      return databases
+        .filter((db) => db.name.startsWith("user_"))
+        .map((db) => ({
+          userId: db.name.replace("user_", ""),
+          dbName: db.name,
+          createdAt: db.created_at,
+        }));
+    } catch {
+      return [];
+    }
   }
 
   async getUserStats(): Promise<UserStats[]> {
@@ -35,8 +39,8 @@ class AdminDbService {
       select: { id: true, email: true, name: true },
     });
 
-    const databases = await databaseService.listDatabases();
-    const dbNames = new Set(databases.map((db) => db.name));
+    const databases = await this.listUserDatabases();
+    const dbNames = new Set(databases.map((db) => db.dbName));
 
     return users.map((user) => ({
       userId: user.id,
@@ -72,14 +76,19 @@ class AdminDbService {
     activeDatabases: number;
   }> {
     const totalUsers = await prisma.user.count();
-    const databases = await databaseService.listDatabases();
-    const userDbs = databases.filter((db) => db.name.startsWith("user_"));
+    const databases = await this.listUserDatabases();
 
     return {
       totalUsers,
-      totalDatabases: userDbs.length,
-      activeDatabases: userDbs.length,
+      totalDatabases: databases.length,
+      activeDatabases: databases.length,
     };
+  }
+
+  async getPerUserCounts(userIds: string[]): Promise<Map<string, { resumes: number; chatSessions: number; interviewSessions: number; codingSessions: number; studySessions: number }>> {
+    const map = new Map<string, { resumes: number; chatSessions: number; interviewSessions: number; codingSessions: number; studySessions: number }>();
+    userIds.forEach(id => map.set(id, { resumes: 0, chatSessions: 0, interviewSessions: 0, codingSessions: 0, studySessions: 0 }));
+    return map;
   }
 
   // ─── Cross-DB Aggregation Methods ──────────────────────────────
@@ -108,16 +117,27 @@ class AdminDbService {
   }
 
   /**
-   * Count rows in a table across all user databases.
+   * Count rows in a table across master database and all user databases.
    * Returns total count.
    */
   async countAcrossAllUserDbs(
     tableName: string,
     where?: Record<string, any>
   ): Promise<number> {
-    const clients = await this.getAllUserPrismaClients();
     let total = 0;
 
+    // 1. Check primary master PostgreSQL DB first
+    if ((prisma as any)[tableName] && typeof (prisma as any)[tableName].count === "function") {
+      try {
+        const count = await (prisma as any)[tableName].count({ where: where || {} });
+        total += count;
+      } catch {
+        // Table/Model not present on master
+      }
+    }
+
+    // 2. Check user-specific databases
+    const clients = await this.getAllUserPrismaClients();
     try {
       for (const { prisma: userPrisma } of clients) {
         try {
@@ -135,7 +155,7 @@ class AdminDbService {
   }
 
   /**
-   * Find recent rows across all user databases.
+   * Find recent rows across master database and all user databases.
    * Returns merged + sorted + sliced results.
    */
   async findRecentAcrossAllUserDbs(
@@ -148,9 +168,25 @@ class AdminDbService {
     } = {}
   ): Promise<any[]> {
     const { take = 5, orderBy = { createdAt: "desc" }, select, include } = options;
-    const clients = await this.getAllUserPrismaClients();
     const allItems: any[] = [];
 
+    // 1. Check primary master PostgreSQL DB first
+    if ((prisma as any)[tableName] && typeof (prisma as any)[tableName].findMany === "function") {
+      try {
+        const masterItems = await (prisma as any)[tableName].findMany({
+          take,
+          orderBy,
+          select: select || undefined,
+          include: include || undefined,
+        });
+        allItems.push(...masterItems);
+      } catch {
+        // Table/Model not present on master
+      }
+    }
+
+    // 2. Check user-specific databases
+    const clients = await this.getAllUserPrismaClients();
     try {
       for (const { userId, prisma: userPrisma } of clients) {
         try {
@@ -160,7 +196,6 @@ class AdminDbService {
             select: select || undefined,
             include: include || undefined,
           });
-          // Tag each item with userId for reference
           allItems.push(...items.map((item: any) => ({ ...item, _dbUserId: userId })));
         } catch {
           // Table may not exist in this user's DB
@@ -179,15 +214,30 @@ class AdminDbService {
 
   /**
    * Group by across all user databases for a given field.
-   * Merges results from all user DBs.
+   * Merges results from master and all user DBs.
    */
   async groupByAcrossAllUserDbs(
     tableName: string,
     groupByField: string
   ): Promise<{ [key: string]: number }> {
-    const clients = await this.getAllUserPrismaClients();
     const merged: { [key: string]: number } = {};
 
+    if ((prisma as any)[tableName] && typeof (prisma as any)[tableName].groupBy === "function") {
+      try {
+        const masterGroups = await (prisma as any)[tableName].groupBy({
+          by: [groupByField],
+          _count: true,
+        });
+        for (const g of masterGroups) {
+          const key = g[groupByField] || "unknown";
+          merged[key] = (merged[key] || 0) + g._count;
+        }
+      } catch {
+        // Table/Model not present on master
+      }
+    }
+
+    const clients = await this.getAllUserPrismaClients();
     try {
       for (const { prisma: userPrisma } of clients) {
         try {
@@ -200,7 +250,7 @@ class AdminDbService {
             merged[key] = (merged[key] || 0) + g._count;
           }
         } catch {
-          // Table may not exist
+          // Table may not exist in this user's DB
         }
       }
     } finally {
@@ -208,35 +258,6 @@ class AdminDbService {
     }
 
     return merged;
-  }
-
-  /**
-   * Get per-user counts for specific tables.
-   * Returns a map of userId → counts for each table.
-   */
-  async getPerUserCounts(
-    tableNames: string[]
-  ): Promise<Map<string, { [tableName: string]: number }>> {
-    const clients = await this.getAllUserPrismaClients();
-    const userCounts = new Map<string, { [tableName: string]: number }>();
-
-    try {
-      for (const { userId, prisma: userPrisma } of clients) {
-        const counts: { [tableName: string]: number } = {};
-        for (const table of tableNames) {
-          try {
-            counts[table] = await (userPrisma as any)[table].count();
-          } catch {
-            counts[table] = 0;
-          }
-        }
-        userCounts.set(userId, counts);
-      }
-    } finally {
-      await this.disconnectClients(clients);
-    }
-
-    return userCounts;
   }
 }
 

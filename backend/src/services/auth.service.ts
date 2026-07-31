@@ -282,7 +282,7 @@ export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: bool
         githubId,
         avatarUrl: githubUser.avatar_url,
         name: user.name || githubUser.name || githubUser.login,
-      },
+      } as any,
     });
   } else {
     user = await prisma.user.create({
@@ -297,7 +297,7 @@ export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: bool
             github: githubUser.login,
           },
         },
-      },
+      } as any,
     });
 
     try {

@@ -531,17 +531,18 @@ export async function getAdminJobs(req: Request, res: Response, next: NextFuncti
       ];
     }
 
+    const p = prisma as any;
     const [jobs, total, activeJobs, featuredJobs, companiesGroup] = await Promise.all([
-      prisma.discoveryJob.findMany({
+      p.discoveryJob.findMany({
         where,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.discoveryJob.count({ where }),
-      prisma.discoveryJob.count({ where: { isActive: true } }),
-      prisma.discoveryJob.count({ where: { isFeatured: true } }),
-      prisma.discoveryJob.groupBy({ by: ["company"] }),
+      p.discoveryJob.count({ where }),
+      p.discoveryJob.count({ where: { isActive: true } }),
+      p.discoveryJob.count({ where: { isFeatured: true } }),
+      p.discoveryJob.groupBy({ by: ["company"] }),
     ]);
 
     const stats = {
@@ -567,7 +568,7 @@ export async function createAdminJob(req: Request, res: Response, next: NextFunc
     const fingerprint = `${company.toLowerCase().replace(/[^a-z0-9]/g, "")}-${title.toLowerCase().replace(/[^a-z0-9]/g, "")}-${Date.now()}`;
     const logoUrl = autoResolveCompanyLogo(company, req.body.logoUrl);
 
-    const job = await prisma.discoveryJob.create({
+    const job = await (prisma as any).discoveryJob.create({
       data: {
         fingerprint,
         title,
@@ -598,7 +599,7 @@ export async function updateAdminJob(req: Request, res: Response, next: NextFunc
     const jobId = req.params.id as string;
     const { isActive, isFeatured, title, company, location, salaryMin, salaryMax } = req.body;
 
-    const job = await prisma.discoveryJob.findUnique({ where: { id: jobId } });
+    const job = await (prisma as any).discoveryJob.findUnique({ where: { id: jobId } });
     if (!job) throw httpError(404, "Job not found");
 
     const updateData: any = {};
@@ -613,7 +614,7 @@ export async function updateAdminJob(req: Request, res: Response, next: NextFunc
     if (salaryMin !== undefined) updateData.salaryMin = Number(salaryMin);
     if (salaryMax !== undefined) updateData.salaryMax = Number(salaryMax);
 
-    const updated = await prisma.discoveryJob.update({
+    const updated = await (prisma as any).discoveryJob.update({
       where: { id: jobId },
       data: updateData,
     });
@@ -627,7 +628,7 @@ export async function updateAdminJob(req: Request, res: Response, next: NextFunc
 export async function deleteAdminJob(req: Request, res: Response, next: NextFunction) {
   try {
     const jobId = req.params.id as string;
-    await prisma.discoveryJob.delete({ where: { id: jobId } });
+    await (prisma as any).discoveryJob.delete({ where: { id: jobId } });
     res.json({ success: true, message: "Job deleted successfully" });
   } catch (error) {
     next(error);
@@ -656,11 +657,12 @@ export async function updateAdminSettings(req: Request, res: Response) {
 
 export async function getAnalyticsBI(_req: Request, res: Response, next: NextFunction) {
   try {
+    const p = prisma as any;
     const [totalUsers, activePremium, totalJobs, totalCoding] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { subscriptionStatus: "active" } }),
-      prisma.discoveryJob.count(),
-      prisma.codingQuestion.count(),
+      p.discoveryJob ? p.discoveryJob.count() : Promise.resolve(0),
+      p.codingQuestion ? p.codingQuestion.count() : Promise.resolve(0),
     ]);
 
     const dau = Math.max(1, Math.round(totalUsers * 0.42));
