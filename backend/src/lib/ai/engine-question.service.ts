@@ -388,7 +388,7 @@ Be specific and reference actual responses from the candidate. Avoid generic fee
     interviewerPerspective: avgQuality >= 70
       ? "This answer shows competence. I would move forward with this candidate."
       : "This answer needs improvement. I would want to see more depth before advancing.",
-    score: Math.min(100, Math.max(20, avgQuality + Math.round((Math.random() - 0.5) * 20))),
+    score: Math.min(100, Math.max(20, Math.round(avgQuality))),
     tags: avgQuality >= 70 ? ["adequate", "relevant"] : ["needs-improvement", "vague"],
   }));
 

@@ -1,31 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
 import {
-  Brain, RefreshCw, Activity, Clock, CheckCircle2, XCircle, AlertTriangle,
-  Loader2, DollarSign, Gauge, Terminal, Save, Wifi, WifiOff, Zap,
+  Brain, RefreshCw, Activity, AlertTriangle,
+  Loader2, Gauge, Save, Wifi, Zap,
 } from "lucide-react";
-
-// ─── Seeded PRNG for stable randomized data ───────────────────────────────
-
-function seededHash(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
-  return Math.abs(h % 100000) / 100000;
-}
-
-function randInt(seed: string, min: number, max: number): number {
-  return Math.floor(seededHash(seed) * (max - min + 1)) + min;
-}
-
-function randFloat(seed: string, min: number, max: number): number {
-  return +(seededHash(seed) * (max - min) + min).toFixed(1);
-}
 
 // ─── Formatters ───────────────────────────────────────────────────────────
 
@@ -35,41 +19,7 @@ function fmtNum(n: number): string {
   return n.toLocaleString();
 }
 
-function fmtDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
-}
-
-function fmtTime(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = now.getTime() - d.getTime();
-  if (diff < 60000) return "just now";
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
-// ─── Sparkline Generator ──────────────────────────────────────────────────
-
-function sparkline(seed: string): string {
-  const pts = 8, w = 64, h = 24, step = w / (pts - 1);
-  const vals = Array.from({ length: pts }, (_, i) => {
-    const base = Math.sin(i * 0.9 + seededHash(seed) * 3) * 5 + 12;
-    const noise = (seededHash(seed + "_n" + i) - 0.5) * 10;
-    return Math.max(2, Math.min(22, base + noise));
-  });
-  return vals.map((v, i) => {
-    const x = i * step;
-    const y = h - v;
-    return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
-}
-
 // ─── Data Types ───────────────────────────────────────────────────────────
-
-type ModelStatus = "Online" | "Degraded" | "Offline";
-type AiRequestStatus = "success" | "error" | "pending";
 
 interface AiAnalytics {
   totalRequests: number;
@@ -83,18 +33,7 @@ interface AiSettings {
   aiTemperature: number;
 }
 
-interface AiRequest {
-  id: string;
-  time: string;
-  user: string;
-  model: string;
-  type: string;
-  tokens: number;
-  status: AiRequestStatus;
-  duration: number;
-}
-
-// ─── Static Model Definitions ─────────────────────────────────────────────
+// ─── Configured Model Definitions ─────────────────────────────────────────
 
 const MODEL_DEFS = [
   { id: "gemini",  name: "Gemini 2.0 Flash",  provider: "Google",    version: "2.0.1", icon: <Brain size={15} /> },
@@ -106,78 +45,6 @@ const MODEL_DEFS = [
   { id: "mistral", name: "Mistral Large 2",    provider: "Mistral",   version: "2.0.0", icon: <Brain size={15} /> },
   { id: "local",   name: "Local Model",         provider: "On-device", version: "1.0.0", icon: <Zap size={15} /> },
 ] as const;
-
-const MODEL_IDS = MODEL_DEFS.map((m) => m.id);
-
-function buildModel(id: string) {
-  const def = MODEL_DEFS.find((m) => m.id === id)!;
-  const s = `model_${id}`;
-  const roll = seededHash(s);
-  const status: ModelStatus = roll < 0.65 ? "Online" : roll < 0.88 ? "Degraded" : "Offline";
-  return {
-    ...def,
-    status,
-    latency: randInt(s + "_lat", 120, 2800),
-    requests: randInt(s + "_req", 1200, 85000),
-    errorRate: randFloat(s + "_err", 0.1, 4.8),
-    sparklinePath: sparkline(s),
-  };
-}
-
-// ─── Fake Request Generator ───────────────────────────────────────────────
-
-function generateRequests(): AiRequest[] {
-  const models = MODEL_DEFS.map((m) => m.name);
-  const users = ["alice@adyapan.ai", "bob@adyapan.ai", "charlie@adyapan.ai", "diana@adyapan.ai", "eve@adyapan.ai"];
-  const types = ["Chat", "Code Gen", "Summarize", "Analyze", "Translate", "Extract"];
-  const reqs: AiRequest[] = [];
-  const now = Date.now();
-  for (let i = 0; i < 50; i++) {
-    const offset = Math.random() * 259200000;
-    const time = new Date(now - offset).toISOString();
-    const tokens = Math.floor(Math.random() * 4000) + 100;
-    const sr = Math.random();
-    const status: AiRequestStatus = sr < 0.82 ? "success" : sr < 0.95 ? "error" : "pending";
-    const duration = +(Math.random() * 4 + 0.3).toFixed(1);
-    reqs.push({
-      id: `req_${i}`,
-      time,
-      user: users[Math.floor(Math.random() * users.length)],
-      model: models[Math.floor(Math.random() * models.length)],
-      type: types[Math.floor(Math.random() * types.length)],
-      tokens,
-      status,
-      duration,
-    });
-  }
-  return reqs.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-}
-
-// ─── Status Helpers ───────────────────────────────────────────────────────
-
-function statusProps(s: ModelStatus) {
-  if (s === "Online")  return { variant: "success" as const,  color: "#10b981", icon: <Wifi size={10} /> };
-  if (s === "Degraded") return { variant: "warning" as const, color: "#f59e0b", icon: <AlertTriangle size={10} /> };
-  return { variant: "error" as const, color: "#ef4444", icon: <WifiOff size={10} /> };
-}
-
-function latencyProps(ms: number) {
-  if (ms < 500) return { color: "#10b981" };
-  if (ms < 1500) return { color: "#f59e0b" };
-  return { color: "#ef4444" };
-}
-
-function errorProps(rate: number) {
-  if (rate < 1) return { color: "#10b981" };
-  if (rate < 3) return { color: "#f59e0b" };
-  return { color: "#ef4444" };
-}
-
-function reqStatusProps(s: AiRequestStatus) {
-  if (s === "success") return { variant: "success" as const, color: "#10b981", icon: <CheckCircle2 size={11} /> };
-  if (s === "error")   return { variant: "error" as const,   color: "#ef4444", icon: <XCircle size={11} /> };
-  return { variant: "warning" as const, color: "#f59e0b", icon: <Clock size={11} /> };
-}
 
 // ─── Main Component ───────────────────────────────────────────────────────
 
@@ -197,23 +64,12 @@ export default function AIPlatform() {
   const [freeLimit, setFreeLimit] = useState("");
   const [premiumLimit, setPremiumLimit] = useState("");
 
-  // Stable generated data
-  const models = useMemo(() => MODEL_IDS.map(buildModel), []);
-  const requests = useMemo(generateRequests, []);
-
-  // Costs derived from analytics
-  const costs = useMemo(() => {
-    const total = analytics?.totalRequests ?? 0;
-    const cpr = 0.0025;
-    const monthly = total * cpr;
-    const daily = monthly / 30;
-    const weekly = daily * 7;
-    return {
-      daily: +daily.toFixed(2),
-      weekly: +weekly.toFixed(2),
-      monthly: +monthly.toFixed(2),
-    };
-  }, [analytics]);
+  // Request volume projected from real usage
+  const volume = {
+    daily: Math.round((analytics?.totalRequests ?? 0) / 30),
+    weekly: Math.round(((analytics?.totalRequests ?? 0) / 30) * 7),
+    monthly: analytics?.totalRequests ?? 0,
+  };
 
   // ── Fetch ──────────────────────────────────────────────────────────────
 
@@ -340,95 +196,45 @@ export default function AIPlatform() {
             AI Models Overview
           </h2>
           <div className="ml-auto flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-              {models.filter((m) => m.status === "Online").length}/{models.length} Online
+              {MODEL_DEFS.length} configured
             </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
-          {models.map((model, idx) => {
-            const sp = statusProps(model.status);
-            const lp = latencyProps(model.latency);
-            const ep = errorProps(model.errorRate);
-            return (
-              <motion.div
-                key={model.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.02 * idx, duration: 0.3 }}
-                whileHover={{ scale: 1.02 }}
-                className="p-3.5 rounded-xl border transition-all"
-                style={{ background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", borderColor: "var(--border-color)" }}
-              >
-                {/* Model Header */}
-                <div className="flex items-center justify-between mb-2.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span style={{ color: "#f59e0b" }}>{model.icon}</span>
-                    <span className="text-xs font-bold truncate" style={{ color: "var(--text-primary)" }}>
-                      {model.name}
-                    </span>
-                  </div>
-                  <StatusBadge variant={sp.variant} pulse={model.status === "Online"}>
-                    {model.status}
-                  </StatusBadge>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {MODEL_DEFS.map((model, idx) => (
+            <motion.div
+              key={model.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.02 * idx, duration: 0.3 }}
+              whileHover={{ scale: 1.02 }}
+              className="p-3.5 rounded-xl border transition-all"
+              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", borderColor: "var(--border-color)" }}
+            >
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span style={{ color: "#f59e0b" }}>{model.icon}</span>
+                  <span className="text-xs font-bold truncate" style={{ color: "var(--text-primary)" }}>
+                    {model.name}
+                  </span>
                 </div>
-
-                {/* Metrics */}
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mb-2.5">
-                  <div>
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <Gauge size={9} style={{ color: "var(--text-muted)" }} />
-                      <span className="text-[9px] font-medium" style={{ color: "var(--text-muted)" }}>Latency</span>
-                    </div>
-                    <span className="text-xs font-bold font-mono" style={{ color: lp.color }}>
-                      {fmtDuration(model.latency)}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <Activity size={9} style={{ color: "var(--text-muted)" }} />
-                      <span className="text-[9px] font-medium" style={{ color: "var(--text-muted)" }}>Requests</span>
-                    </div>
-                    <span className="text-xs font-bold font-mono" style={{ color: "var(--text-secondary)" }}>
-                      {fmtNum(model.requests)}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <AlertTriangle size={9} style={{ color: "var(--text-muted)" }} />
-                      <span className="text-[9px] font-medium" style={{ color: "var(--text-muted)" }}>Errors</span>
-                    </div>
-                    <span className="text-xs font-bold font-mono" style={{ color: ep.color }}>
-                      {model.errorRate}%
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <Terminal size={9} style={{ color: "var(--text-muted)" }} />
-                      <span className="text-[9px] font-medium" style={{ color: "var(--text-muted)" }}>Version</span>
-                    </div>
-                    <span className="text-xs font-bold font-mono" style={{ color: "var(--text-muted)" }}>
-                      v{model.version}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Sparkline */}
-                <svg viewBox="0 0 64 24" className="w-full h-5" preserveAspectRatio="none">
-                  <path
-                    d={model.sparklinePath}
-                    fill="none"
-                    stroke={model.status === "Online" ? "#10b981" : model.status === "Degraded" ? "#f59e0b" : "#ef4444"}
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </motion.div>
-            );
-          })}
+                <StatusBadge variant="info">
+                  {model.provider}
+                </StatusBadge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
+                  v{model.version}
+                </span>
+                {selectedModel === model.id && (
+                  <StatusBadge variant="success">Default</StatusBadge>
+                )}
+              </div>
+            </motion.div>
+          ))}
         </div>
       </motion.div>
 
@@ -503,7 +309,7 @@ export default function AIPlatform() {
         </div>
       </motion.div>
 
-      {/* ── Section 4 & 5: Token Limits + Cost Summary ──────────────────────── */}
+      {/* ── Section 4 & 5: Token Limits + Request Volume ───────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Token Limits */}
@@ -592,7 +398,7 @@ export default function AIPlatform() {
           </div>
         </motion.div>
 
-        {/* AI Cost Summary */}
+        {/* Request Volume */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -601,17 +407,16 @@ export default function AIPlatform() {
           style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
         >
           <div className="flex items-center gap-2 mb-4">
-            <DollarSign size={16} style={{ color: "#f59e0b" }} />
+            <Gauge size={16} style={{ color: "#f59e0b" }} />
             <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
-              AI Cost Summary
+              AI Request Volume
             </h2>
           </div>
           <p className="text-[10px] font-medium mb-4" style={{ color: "var(--text-muted)" }}>
-            Estimated AI inference costs based on current request volume
+            Projected request volume based on current usage
           </p>
 
           <div className="grid grid-cols-3 gap-3">
-            {/* Daily */}
             <div
               className="rounded-xl border p-3.5 text-center"
               style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.2)" }}
@@ -620,14 +425,13 @@ export default function AIPlatform() {
                 Daily
               </div>
               <div className="text-lg font-black font-mono tracking-tight" style={{ color: "#f59e0b" }}>
-                ${costs.daily.toFixed(2)}
+                {fmtNum(volume.daily)}
               </div>
               <div className="text-[9px] font-medium mt-0.5" style={{ color: "var(--text-muted)" }}>
-                ~{fmtNum(Math.round((analytics?.totalRequests ?? 0) / 30))} req
+                projected req
               </div>
             </div>
 
-            {/* Weekly */}
             <div
               className="rounded-xl border p-3.5 text-center"
               style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.2)" }}
@@ -636,14 +440,13 @@ export default function AIPlatform() {
                 Weekly
               </div>
               <div className="text-lg font-black font-mono tracking-tight" style={{ color: "#f59e0b" }}>
-                ${costs.weekly.toFixed(2)}
+                {fmtNum(volume.weekly)}
               </div>
               <div className="text-[9px] font-medium mt-0.5" style={{ color: "var(--text-muted)" }}>
-                ~{fmtNum(Math.round(((analytics?.totalRequests ?? 0) / 30) * 7))} req
+                projected req
               </div>
             </div>
 
-            {/* Monthly */}
             <div
               className="rounded-xl border p-3.5 text-center"
               style={{ background: "rgba(16,185,129,0.06)", borderColor: "rgba(16,185,129,0.2)" }}
@@ -652,10 +455,10 @@ export default function AIPlatform() {
                 Monthly
               </div>
               <div className="text-lg font-black font-mono tracking-tight" style={{ color: "#10b981" }}>
-                ${costs.monthly.toFixed(2)}
+                {fmtNum(volume.monthly)}
               </div>
               <div className="text-[9px] font-medium mt-0.5" style={{ color: "var(--text-muted)" }}>
-                {fmtNum(analytics?.totalRequests ?? 0)} total req
+                total req
               </div>
             </div>
           </div>
@@ -692,112 +495,6 @@ export default function AIPlatform() {
           )}
         </motion.div>
       </div>
-
-      {/* ── Section 6: AI Request Explorer ─────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25, duration: 0.35 }}
-        className="rounded-2xl border"
-        style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
-      >
-        <div className="flex items-center gap-2 p-5 pb-0">
-          <Terminal size={16} style={{ color: "#f59e0b" }} />
-          <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
-            AI Request Explorer
-          </h2>
-          <StatusBadge variant="default" pulse>
-            {requests.length} requests
-          </StatusBadge>
-        </div>
-
-        <div className="p-5">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                  <th className="pb-3 pr-3 whitespace-nowrap">Time</th>
-                  <th className="pb-3 pr-3 whitespace-nowrap">User</th>
-                  <th className="pb-3 pr-3 whitespace-nowrap">Model</th>
-                  <th className="pb-3 pr-3 whitespace-nowrap">Type</th>
-                  <th className="pb-3 pr-3 whitespace-nowrap text-right">Tokens</th>
-                  <th className="pb-3 pr-3 whitespace-nowrap text-center">Status</th>
-                  <th className="pb-3 whitespace-nowrap text-right">Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                <AnimatePresence>
-                  {requests.slice(0, 20).map((req, idx) => {
-                    const rsp = reqStatusProps(req.status);
-                    return (
-                      <motion.tr
-                        key={req.id}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.015, duration: 0.2 }}
-                        className="group text-xs"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        <td className="py-2.5 pr-3 whitespace-nowrap">
-                          <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-                            {fmtTime(req.time)}
-                          </span>
-                        </td>
-                        <td className="py-2.5 pr-3 whitespace-nowrap">
-                          <span className="text-[11px] font-bold">{req.user.split("@")[0]}</span>
-                        </td>
-                        <td className="py-2.5 pr-3 whitespace-nowrap">
-                          <span className="text-[11px]">{req.model}</span>
-                        </td>
-                        <td className="py-2.5 pr-3 whitespace-nowrap">
-                          <span
-                            className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold"
-                            style={{
-                              background: "rgba(245,158,11,0.1)",
-                              color: "#f59e0b",
-                              border: "1px solid rgba(245,158,11,0.2)",
-                            }}
-                          >
-                            {req.type}
-                          </span>
-                        </td>
-                        <td className="py-2.5 pr-3 whitespace-nowrap text-right font-mono font-bold text-[11px]">
-                          {fmtNum(req.tokens)}
-                        </td>
-                        <td className="py-2.5 pr-3 whitespace-nowrap text-center">
-                          <span className="inline-flex items-center gap-1">
-                            <span style={{ color: rsp.color }}>{rsp.icon}</span>
-                            <span className="text-[10px] font-bold capitalize" style={{ color: rsp.color }}>
-                              {req.status}
-                            </span>
-                          </span>
-                        </td>
-                        <td className="py-2.5 whitespace-nowrap text-right">
-                          <span className="text-[11px] font-mono font-bold" style={{ color: req.duration > 3 ? "#ef4444" : req.duration > 1.5 ? "#f59e0b" : "#10b981" }}>
-                            {req.duration.toFixed(1)}s
-                          </span>
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </AnimatePresence>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Footer */}
-          <div
-            className="flex items-center justify-between mt-3 pt-3 border-t text-[10px] font-medium"
-            style={{ borderColor: "var(--border-color)", color: "var(--text-muted)" }}
-          >
-            <span>Showing 20 of {requests.length} requests</span>
-            <span className="flex items-center gap-1">
-              <Clock size={11} />
-              Last 3 days
-            </span>
-          </div>
-        </div>
-      </motion.div>
 
     </div>
   );

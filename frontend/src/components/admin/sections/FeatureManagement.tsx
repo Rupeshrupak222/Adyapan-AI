@@ -1,206 +1,210 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   FileText, Briefcase, Search, Code, Monitor,
   ClipboardList, HelpCircle, Layers, Mail, FileCheck,
-  MessageSquare, Route, Calendar, Flame,
-  ChevronRight,
+  MessageSquare, Calendar, Flame, Loader2, RefreshCw,
 } from "lucide-react";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
+import { api } from "@/services/api";
 
-const STATUS_CYCLE = ["Enabled", "Disabled", "Maintenance", "Beta", "Premium Only"] as const;
-type FeatureStatus = (typeof STATUS_CYCLE)[number];
-
-function nextStatus(s: FeatureStatus): FeatureStatus {
-  const idx = STATUS_CYCLE.indexOf(s);
-  return STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+interface ModulesData {
+  resumeHub: {
+    resumes: number; atsReports: number; coverLetters: number; linkedinReports: number;
+  };
+  learningHub: {
+    studySessions: number; notes: number; quizzes: number; assignments: number;
+    ppts: number; mindmaps: number; flashcards: number;
+  };
+  codingHub: {
+    sessions: number; submissions: number; challenges: number;
+  };
+  interviewHub: {
+    sessions: number; completed: number;
+  };
 }
 
-function statusMap(s: FeatureStatus) {
-  switch (s) {
-    case "Enabled": return { variant: "success" as const, color: "#10b981" };
-    case "Disabled": return { variant: "error" as const, color: "#ef4444" };
-    case "Maintenance": return { variant: "warning" as const, color: "#f59e0b" };
-    case "Beta": return { variant: "info" as const, color: "#818cf8" };
-    case "Premium Only": return { variant: "info" as const, color: "#f472b6" };
-  }
+interface FeatureRow {
+  key: string;
+  name: string;
+  icon: React.ReactNode;
+  color: string;
+  value: number;
 }
 
-function healthColor(s: FeatureStatus, traffic: number): string {
-  if (s === "Disabled") return "#ef4444";
-  if (s === "Maintenance") return "#f59e0b";
-  if (s === "Beta" || s === "Premium Only") return "#f59e0b";
-  if (traffic < 20) return "#ef4444";
-  if (traffic < 60) return "#f59e0b";
-  return "#10b981";
-}
-
-function healthLabel(s: FeatureStatus, traffic: number): string {
-  if (s === "Disabled") return "Critical";
-  if (s === "Maintenance") return "Warning";
-  if (s === "Beta" || s === "Premium Only") return "Warning";
-  if (traffic < 20) return "Critical";
-  if (traffic < 60) return "Warning";
-  return "Healthy";
-}
-
-const FEATURE_DEFS = [
-  { id: "resume-builder", name: "Resume Builder", icon: <FileText size={16} />, version: "2.1.0" },
-  { id: "interview-ai", name: "Interview AI", icon: <Briefcase size={16} />, version: "1.4.2" },
-  { id: "research-ai", name: "Research AI", icon: <Search size={16} />, version: "1.2.0" },
-  { id: "coding-ai", name: "Coding AI", icon: <Code size={16} />, version: "2.0.1" },
-  { id: "ppt-generator", name: "PPT Generator", icon: <Monitor size={16} />, version: "1.1.3" },
-  { id: "assignments", name: "Assignments", icon: <ClipboardList size={16} />, version: "1.0.5" },
-  { id: "mcq-generator", name: "MCQ Generator", icon: <HelpCircle size={16} />, version: "1.3.0" },
-  { id: "flashcards", name: "Flashcards", icon: <Layers size={16} />, version: "1.0.2" },
-  { id: "email-writer", name: "Email Writer", icon: <Mail size={16} />, version: "1.1.0" },
-  { id: "sop-generator", name: "SOP Generator", icon: <FileCheck size={16} />, version: "1.0.8" },
-  { id: "ady-chat", name: "Ady Chat", icon: <MessageSquare size={16} />, version: "2.3.1" },
-  { id: "career-roadmap", name: "Career Roadmap", icon: <Route size={16} />, version: "1.0.4" },
-  { id: "study-planner", name: "Study Planner", icon: <Calendar size={16} />, version: "1.2.1" },
-  { id: "learning-streak", name: "Learning Streak", icon: <Flame size={16} />, version: "1.0.0" },
+const FEATURES: Omit<FeatureRow, "value">[] = [
+  { key: "resumes", name: "Resume Builder", icon: <FileText size={16} />, color: "#f59e0b" },
+  { key: "atsReports", name: "ATS Reports", icon: <Search size={16} />, color: "#f59e0b" },
+  { key: "coverLetters", name: "Cover Letters", icon: <Mail size={16} />, color: "#f59e0b" },
+  { key: "linkedinReports", name: "LinkedIn Reports", icon: <FileCheck size={16} />, color: "#f59e0b" },
+  { key: "studySessions", name: "Study Sessions", icon: <Calendar size={16} />, color: "#10b981" },
+  { key: "notes", name: "Notes Generated", icon: <ClipboardList size={16} />, color: "#10b981" },
+  { key: "quizzes", name: "Quizzes", icon: <HelpCircle size={16} />, color: "#10b981" },
+  { key: "assignments", name: "Assignments", icon: <Layers size={16} />, color: "#10b981" },
+  { key: "ppts", name: "PPT Generator", icon: <Monitor size={16} />, color: "#10b981" },
+  { key: "mindmaps", name: "Mind Maps", icon: <Flame size={16} />, color: "#10b981" },
+  { key: "flashcards", name: "Flashcards", icon: <MessageSquare size={16} />, color: "#10b981" },
+  { key: "sessions", name: "Coding Sessions", icon: <Code size={16} />, color: "#818cf8" },
+  { key: "submissions", name: "Code Submissions", icon: <FileText size={16} />, color: "#818cf8" },
+  { key: "challenges", name: "Challenges", icon: <Briefcase size={16} />, color: "#818cf8" },
+  { key: "interviewSessions", name: "Interview Sessions", icon: <Briefcase size={16} />, color: "#f472b6" },
+  { key: "interviewCompleted", name: "Interviews Completed", icon: <MessageSquare size={16} />, color: "#f472b6" },
 ];
 
-interface FeatureState {
-  id: string;
-  status: FeatureStatus;
-  traffic: number;
-}
-
-function initFeatures(): FeatureState[] {
-  return FEATURE_DEFS.map((f) => ({
-    id: f.id,
-    status: "Enabled" as FeatureStatus,
-    traffic: 50 + Math.floor(Math.random() * 41),
-  }));
-}
+const FEATURE_GROUPS = [
+  { label: "Resume Hub", color: "#f59e0b", keys: ["resumes", "atsReports", "coverLetters", "linkedinReports"] },
+  { label: "Learning Hub", color: "#10b981", keys: ["studySessions", "notes", "quizzes", "assignments", "ppts", "mindmaps", "flashcards"] },
+  { label: "Coding Hub", color: "#818cf8", keys: ["sessions", "submissions", "challenges"] },
+  { label: "Interview Hub", color: "#f472b6", keys: ["interviewSessions", "interviewCompleted"] },
+];
 
 export default function FeatureManagement() {
-  const [features, setFeatures] = useState<FeatureState[]>(initFeatures);
+  const [loading, setLoading] = useState(true);
+  const [features, setFeatures] = useState<FeatureRow[]>([]);
 
-  const cycleStatus = useCallback((id: string) => {
-    setFeatures((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, status: nextStatus(f.status) } : f))
-    );
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/admin/modules");
+      const m: ModulesData = res.data?.modules;
+      if (!m) return;
+
+      const map: Record<string, number> = {
+        resumes: m.resumeHub?.resumes ?? 0,
+        atsReports: m.resumeHub?.atsReports ?? 0,
+        coverLetters: m.resumeHub?.coverLetters ?? 0,
+        linkedinReports: m.resumeHub?.linkedinReports ?? 0,
+        studySessions: m.learningHub?.studySessions ?? 0,
+        notes: m.learningHub?.notes ?? 0,
+        quizzes: m.learningHub?.quizzes ?? 0,
+        assignments: m.learningHub?.assignments ?? 0,
+        ppts: m.learningHub?.ppts ?? 0,
+        mindmaps: m.learningHub?.mindmaps ?? 0,
+        flashcards: m.learningHub?.flashcards ?? 0,
+        sessions: m.codingHub?.sessions ?? 0,
+        submissions: m.codingHub?.submissions ?? 0,
+        challenges: m.codingHub?.challenges ?? 0,
+        interviewSessions: m.interviewHub?.sessions ?? 0,
+        interviewCompleted: m.interviewHub?.completed ?? 0,
+      };
+
+      setFeatures(
+        FEATURES.map((f) => ({ ...f, value: map[f.key] ?? 0 }))
+      );
+    } catch {
+      setFeatures([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const setTraffic = useCallback((id: string, traffic: number) => {
-    setFeatures((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, traffic: Math.min(100, Math.max(0, traffic)) } : f))
-    );
-  }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  const enabledCount = features.filter((f) => f.status === "Enabled").length;
+  const activeCount = features.filter((f) => f.value > 0).length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#f59e0b" }} />
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+            Loading Feature Management
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const total = features.reduce((s, f) => s + f.value, 0);
+  const maxVal = Math.max(...features.map((f) => f.value), 1);
 
   return (
     <div className="space-y-6 pb-12">
       <SectionHeader
         title="Feature Management"
-        description="Control platform features, rollouts, toggles, and A/B experiments"
+        description="Live usage across all platform features"
         actions={
           <div className="flex items-center gap-2 flex-wrap">
-            <StatusBadge variant="success" pulse>
-              {enabledCount}/{FEATURE_DEFS.length} Enabled
-            </StatusBadge>
-            <StatusBadge variant="info">v2.4.1</StatusBadge>
+            <StatusBadge variant="success" pulse>{activeCount}/{features.length} Active</StatusBadge>
+            <StatusBadge variant="info">{total.toLocaleString()} Total Items</StatusBadge>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={fetchData}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all"
+              style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.25)" }}
+            >
+              <RefreshCw size={12} />
+              Refresh
+            </motion.button>
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {FEATURE_DEFS.map((def, idx) => {
-          const state = features.find((f) => f.id === def.id)!;
-          const sm = statusMap(state.status);
-          const hColor = healthColor(state.status, state.traffic);
-          const hLabel = healthLabel(state.status, state.traffic);
-
-          return (
-            <motion.div
-              key={def.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.025, duration: 0.3 }}
-              className="rounded-2xl border p-4 flex flex-col gap-3"
-              style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
+      {FEATURE_GROUPS.map((group, gi) => {
+        const groupFeatures = features.filter((f) => group.keys.includes(f.key));
+        return (
+          <motion.div
+            key={group.label}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: gi * 0.06, duration: 0.35 }}
+            className="rounded-2xl border p-5"
+            style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: group.color }} />
+              <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
+                {group.label}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+              {groupFeatures.map((feat) => {
+                const pct = Math.round((feat.value / maxVal) * 100);
+                const active = feat.value > 0;
+                return (
                   <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}
+                    key={feat.key}
+                    className="rounded-xl border p-3.5"
+                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--border-color)" }}
                   >
-                    <span style={{ color: "#f59e0b" }}>{def.icon}</span>
+                    <div className="flex items-center gap-2.5 mb-2">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${feat.color}18` }}>
+                        <span style={{ color: feat.color }}>{feat.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold truncate" style={{ color: "var(--text-primary)" }}>{feat.name}</p>
+                        <p className="text-[9px] font-medium" style={{ color: "var(--text-muted)" }}>Total records</p>
+                      </div>
+                      <StatusBadge variant={active ? "success" : "default"}>
+                        {active ? "Active" : "Unused"}
+                      </StatusBadge>
+                    </div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>Usage</span>
+                      <span className="text-xs font-black font-mono" style={{ color: feat.color }}>
+                        {feat.value.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                        className="h-full rounded-full"
+                        style={{ background: feat.color }}
+                      />
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>
-                      {def.name}
-                    </p>
-                    <p className="text-[10px] font-medium font-mono" style={{ color: "var(--text-muted)" }}>
-                      v{def.version}
-                    </p>
-                  </div>
-                </div>
-                {/* Health */}
-                <div className="flex items-center gap-1.5 shrink-0 mt-1">
-                  <span className="w-2 h-2 rounded-full" style={{ background: hColor }} />
-                  <span className="text-[9px] font-bold uppercase" style={{ color: hColor }}>
-                    {hLabel}
-                  </span>
-                </div>
-              </div>
-
-              {/* Status toggle */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => cycleStatus(def.id)}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all"
-                style={{
-                  background: `${sm.color}14`,
-                  color: sm.color,
-                  border: `1px solid ${sm.color}30`,
-                }}
-              >
-                {state.status}
-                <ChevronRight size={11} />
-              </motion.button>
-
-              {/* Traffic slider */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                    Traffic
-                  </span>
-                  <span className="text-[11px] font-bold font-mono" style={{ color: "#f59e0b" }}>
-                    {state.traffic}%
-                  </span>
-                </div>
-                <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <motion.div
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{ background: "linear-gradient(90deg, #f59e0b, #d97706)" }}
-                    initial={false}
-                    animate={{ width: `${state.traffic}%` }}
-                    transition={{ duration: 0.15 }}
-                  />
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={state.traffic}
-                    onChange={(e) => setTraffic(def.id, Number(e.target.value))}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        );
+      })}
     </div>
   );
 }

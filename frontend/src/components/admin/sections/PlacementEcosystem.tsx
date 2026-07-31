@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Briefcase, Building2, Star, Users, TrendingUp, MapPin,
-  Search, RefreshCw, Loader2, Trash2, Plus, Play,
-  CheckCircle, XCircle, DollarSign, Globe, Clock,
+  Briefcase, Building2, Star, MapPin,
+  Search, Loader2, Trash2, Plus, Play,
+  CheckCircle, XCircle, Globe, X,
 } from "lucide-react";
 import { api } from "@/services/api";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
@@ -31,35 +31,15 @@ interface JobsResponse {
   success: boolean;
   jobs: DiscoveryJob[];
   pagination: { total: number; page: number; limit: number; pages: number };
+  stats: JobsStats;
 }
 
-const MOCK_STATS = {
-  totalJobs: 342,
-  activeJobs: 186,
-  featuredJobs: 28,
-  applications: 1247,
-  companies: 89,
-  placementRate: "78.4",
-};
-
-const MOCK_JOB_STATS_BY_TYPE = [
-  { label: "Full-Time", count: 142, color: "#10b981" },
-  { label: "Part-Time", count: 38, color: "#818cf8" },
-  { label: "Internship", count: 64, color: "#f59e0b" },
-  { label: "Contract", count: 29, color: "#f472b6" },
-  { label: "Freelance", count: 22, color: "#38bdf8" },
-];
-
-const MOCK_JOB_STATS_BY_LOCATION = [
-  { label: "Remote", count: 97, color: "#10b981" },
-  { label: "Bangalore", count: 56, color: "#818cf8" },
-  { label: "Mumbai", count: 48, color: "#f59e0b" },
-  { label: "Delhi/NCR", count: 41, color: "#f472b6" },
-  { label: "Hyderabad", count: 35, color: "#38bdf8" },
-  { label: "Pune", count: 22, color: "#a78bfa" },
-  { label: "Chennai", count: 18, color: "#34d399" },
-  { label: "International", count: 25, color: "#fb923c" },
-];
+interface JobsStats {
+  totalJobs: number;
+  activeJobs: number;
+  featuredJobs: number;
+  companies: number;
+}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("en-IN", {
@@ -70,25 +50,29 @@ function formatDate(iso: string): string {
 export default function PlacementEcosystem() {
   const [jobs, setJobs] = useState<DiscoveryJob[]>([]);
   const [pagination, setPagination] = useState<{ total: number; page: number; limit: number; pages: number } | null>(null);
-  const [stats, setStats] = useState(MOCK_STATS);
+  const [stats, setStats] = useState<JobsStats>({ totalJobs: 0, activeJobs: 0, featuredJobs: 0, companies: 0 });
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [ingestLoading, setIngestLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: "", company: "", location: "", salaryMin: "", salaryMax: "",
+    employmentType: "Full-Time", workMode: "Remote", description: "",
+  });
+  const [createLoading, setCreateLoading] = useState(false);
 
   const fetchJobs = useCallback(async (p: number, q: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get<JobsResponse & { stats?: typeof MOCK_STATS }>(`/admin/jobs?page=${p}&limit=20&search=${encodeURIComponent(q)}`);
+      const res = await api.get<JobsResponse>(`/admin/jobs?page=${p}&limit=20&search=${encodeURIComponent(q)}`);
       if (res.data.success) {
         setJobs(res.data.jobs);
         setPagination(res.data.pagination);
-        if (res.data.stats) {
-          setStats(res.data.stats);
-        }
+        if (res.data.stats) setStats(res.data.stats);
       }
     } catch {
       setError("Failed to load jobs");
@@ -150,6 +134,51 @@ export default function PlacementEcosystem() {
     }
   };
 
+  const handleCreateJob = async () => {
+    if (!createForm.title.trim() || !createForm.company.trim()) {
+      alert("Title and company are required");
+      return;
+    }
+    setCreateLoading(true);
+    try {
+      await api.post("/admin/jobs", {
+        title: createForm.title.trim(),
+        company: createForm.company.trim(),
+        location: createForm.location.trim() || undefined,
+        salaryMin: createForm.salaryMin ? Number(createForm.salaryMin) : undefined,
+        salaryMax: createForm.salaryMax ? Number(createForm.salaryMax) : undefined,
+        employmentType: createForm.employmentType,
+        workMode: createForm.workMode,
+        description: createForm.description.trim() || undefined,
+      });
+      setShowCreate(false);
+      setCreateForm({ title: "", company: "", location: "", salaryMin: "", salaryMax: "", employmentType: "Full-Time", workMode: "Remote", description: "" });
+      fetchJobs(1, "");
+    } catch {
+      alert("Failed to create job");
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const STAT_COLORS = ["#10b981", "#818cf8", "#f59e0b", "#f472b6", "#38bdf8", "#a78bfa", "#34d399", "#fb923c"];
+
+  const jobsByType = Object.entries(
+    jobs.reduce<Record<string, number>>((acc, j) => {
+      const key = j.employmentType || "Unknown";
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {})
+  ).sort((a, b) => b[1] - a[1]);
+
+  const jobsByLocation = Object.entries(
+    jobs.reduce<Record<string, number>>((acc, j) => {
+      const key = j.location || "Unknown";
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {})
+  ).sort((a, b) => b[1] - a[1]);
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -160,7 +189,7 @@ export default function PlacementEcosystem() {
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
-              onClick={() => alert("Post New Job — placeholder action")}
+              onClick={() => setShowCreate(true)}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all"
               style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.25)" }}
             >
@@ -187,49 +216,35 @@ export default function PlacementEcosystem() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05, duration: 0.3 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
       >
         <MetricCard
           label="Total Jobs"
-          value={pagination?.total ?? MOCK_STATS.totalJobs}
+          value={stats.totalJobs.toLocaleString()}
           color="#f59e0b"
           icon={<Briefcase size={16} />}
           subtitle="All time listings"
         />
         <MetricCard
           label="Active Jobs"
-          value={MOCK_STATS.activeJobs}
+          value={stats.activeJobs.toLocaleString()}
           color="#10b981"
           icon={<CheckCircle size={16} />}
           subtitle="Currently open"
         />
         <MetricCard
           label="Featured Jobs"
-          value={MOCK_STATS.featuredJobs}
+          value={stats.featuredJobs.toLocaleString()}
           color="#818cf8"
           icon={<Star size={16} />}
           subtitle="Promoted listings"
         />
         <MetricCard
-          label="Applications"
-          value={MOCK_STATS.applications}
-          color="#f472b6"
-          icon={<Users size={16} />}
-          subtitle="Total received"
-        />
-        <MetricCard
           label="Companies"
-          value={MOCK_STATS.companies}
+          value={stats.companies.toLocaleString()}
           color="#38bdf8"
           icon={<Building2 size={16} />}
-          subtitle="Partnered employers"
-        />
-        <MetricCard
-          label="Placement Rate"
-          value={`${MOCK_STATS.placementRate}%`}
-          color="#a78bfa"
-          icon={<TrendingUp size={16} />}
-          subtitle="Success rate"
+          subtitle="Hiring employers"
         />
       </motion.div>
 
@@ -456,14 +471,17 @@ export default function PlacementEcosystem() {
             </h2>
           </div>
           <div className="p-5 space-y-4">
-            {MOCK_JOB_STATS_BY_TYPE.map((stat) => {
-              const total = MOCK_JOB_STATS_BY_TYPE.reduce((s, x) => s + x.count, 0);
-              const pct = ((stat.count / total) * 100).toFixed(1);
+            {jobsByType.length === 0 ? (
+              <p className="text-xs font-medium text-center py-8" style={{ color: "var(--text-muted)" }}>No jobs to display</p>
+            ) : jobsByType.map(([label, count], i) => {
+              const total = jobsByType.reduce((s, [, c]) => s + c, 0);
+              const color = STAT_COLORS[i % STAT_COLORS.length];
+              const pct = ((count / total) * 100).toFixed(1);
               return (
-                <div key={stat.label}>
+                <div key={label}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{stat.label}</span>
-                    <span className="text-xs font-mono font-bold" style={{ color: stat.color }}>{stat.count}</span>
+                    <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{label}</span>
+                    <span className="text-xs font-mono font-bold" style={{ color }}>{count}</span>
                   </div>
                   <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
                     <motion.div
@@ -471,10 +489,10 @@ export default function PlacementEcosystem() {
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       className="h-full rounded-full"
-                      style={{ background: stat.color }}
+                      style={{ background: color }}
                     />
                   </div>
-                  <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{pct}% of total</span>
+                  <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{pct}% of shown</span>
                 </div>
               );
             })}
@@ -495,17 +513,20 @@ export default function PlacementEcosystem() {
             </h2>
           </div>
           <div className="p-5 space-y-4">
-            {MOCK_JOB_STATS_BY_LOCATION.map((stat) => {
-              const total = MOCK_JOB_STATS_BY_LOCATION.reduce((s, x) => s + x.count, 0);
-              const pct = ((stat.count / total) * 100).toFixed(1);
+            {jobsByLocation.length === 0 ? (
+              <p className="text-xs font-medium text-center py-8" style={{ color: "var(--text-muted)" }}>No locations to display</p>
+            ) : jobsByLocation.map(([label, count], i) => {
+              const total = jobsByLocation.reduce((s, [, c]) => s + c, 0);
+              const color = STAT_COLORS[i % STAT_COLORS.length];
+              const pct = ((count / total) * 100).toFixed(1);
               return (
-                <div key={stat.label}>
+                <div key={label}>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <MapPin size={11} style={{ color: stat.color }} />
-                      <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{stat.label}</span>
+                      <MapPin size={11} style={{ color }} />
+                      <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{label}</span>
                     </div>
-                    <span className="text-xs font-mono font-bold" style={{ color: stat.color }}>{stat.count}</span>
+                    <span className="text-xs font-mono font-bold" style={{ color }}>{count}</span>
                   </div>
                   <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
                     <motion.div
@@ -513,16 +534,171 @@ export default function PlacementEcosystem() {
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       className="h-full rounded-full"
-                      style={{ background: stat.color }}
+                      style={{ background: color }}
                     />
                   </div>
-                  <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{pct}% of total</span>
+                  <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{pct}% of shown</span>
                 </div>
               );
             })}
           </div>
         </motion.div>
       </div>
+
+      {showCreate && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
+          onClick={() => !createLoading && setShowCreate(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+            transition={{ type: "spring", duration: 0.35 }}
+            className="w-full max-w-lg rounded-3xl border p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+            style={{ background: "var(--bg-dark)", borderColor: "var(--border-color)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)" }}>
+                <Plus size={18} style={{ color: "#f59e0b" }} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-black" style={{ color: "var(--text-primary)" }}>Post New Job</h3>
+                <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>Create a new job listing</p>
+              </div>
+              <button onClick={() => setShowCreate(false)} disabled={createLoading} style={{ color: "var(--text-muted)" }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Job Title *</label>
+                <input
+                  type="text"
+                  value={createForm.title}
+                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                  placeholder="e.g. Software Engineer"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                  style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Company *</label>
+                <input
+                  type="text"
+                  value={createForm.company}
+                  onChange={(e) => setCreateForm({ ...createForm, company: e.target.value })}
+                  placeholder="e.g. Google"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                  style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Location</label>
+                  <input
+                    type="text"
+                    value={createForm.location}
+                    onChange={(e) => setCreateForm({ ...createForm, location: e.target.value })}
+                    placeholder="e.g. Remote / Bangalore"
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                    style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Work Mode</label>
+                  <select
+                    value={createForm.workMode}
+                    onChange={(e) => setCreateForm({ ...createForm, workMode: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                    style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                  >
+                    {["Remote", "On-site", "Hybrid"].map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Employment Type</label>
+                  <select
+                    value={createForm.employmentType}
+                    onChange={(e) => setCreateForm({ ...createForm, employmentType: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                    style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                  >
+                    {["Full-Time", "Part-Time", "Internship", "Contract", "Freelance"].map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Min Salary (INR)</label>
+                  <input
+                    type="number"
+                    value={createForm.salaryMin}
+                    onChange={(e) => setCreateForm({ ...createForm, salaryMin: e.target.value })}
+                    placeholder="e.g. 600000"
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                    style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Max Salary (INR)</label>
+                  <input
+                    type="number"
+                    value={createForm.salaryMax}
+                    onChange={(e) => setCreateForm({ ...createForm, salaryMax: e.target.value })}
+                    placeholder="e.g. 1200000"
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                    style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Description</label>
+                <textarea
+                  value={createForm.description}
+                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                  placeholder="Role responsibilities, requirements..."
+                  rows={3}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5 resize-none"
+                  style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mt-5">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowCreate(false)}
+                disabled={createLoading}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all"
+                style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-color)" }}
+              >
+                Cancel
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={handleCreateJob}
+                disabled={createLoading || !createForm.title.trim() || !createForm.company.trim()}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                style={{
+                  background: createForm.title.trim() && createForm.company.trim() ? "linear-gradient(135deg, #f59e0b, #d97706)" : "var(--bg-card-hover)",
+                  color: createForm.title.trim() && createForm.company.trim() ? "#000" : "var(--text-muted)",
+                  border: "1px solid transparent",
+                }}
+              >
+                {createLoading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                {createLoading ? "Posting..." : "Post Job"}
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }

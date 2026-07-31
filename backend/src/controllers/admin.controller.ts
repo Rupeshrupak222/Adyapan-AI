@@ -498,20 +498,82 @@ export async function getModuleAnalytics(_req: Request, res: Response, next: Nex
 
 // ─── 9. Security Logs ────────────────────────────────────────────
 
-export async function getSecurityLogs(_req: Request, res: Response) {
-  const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
-  const activeCount = await prisma.user.count({ where: { subscriptionStatus: "active" } });
+export async function getSecurityLogs(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  res.json({
-    success: true,
-    security: {
-      totalAdmins: adminCount,
-      activeSessions: activeCount,
-      failedLogins: 0,
-      blockedIps: 0,
-      status: "secure",
-    },
-  });
+    const [adminCount, activeAdminCount, logins, admins, alerts, failed24h] = await Promise.all([
+      prisma.user.count({ where: { role: "ADMIN" } }),
+      (prisma as any).adminUser.count({ where: { status: "ACTIVE" } }),
+      (prisma as any).adminLoginHistory.findMany({
+        take: 14,
+        orderBy: { createdAt: "desc" },
+      }),
+      (prisma as any).adminUser.findMany({
+        take: 10,
+        orderBy: { lastLoginAt: "desc" },
+        include: { role: true },
+      }),
+      (prisma as any).adminNotification.findMany({
+        take: 20,
+        orderBy: { createdAt: "desc" },
+      }),
+      (prisma as any).adminLoginHistory.count({
+        where: { status: "FAILED", createdAt: { gte: last24h } },
+      }),
+    ]);
+
+    const failedLogins = failed24h;
+    const status = failedLogins > 10 ? "critical" : failedLogins > 0 ? "warning" : "secure";
+
+    res.json({
+      success: true,
+      security: {
+        totalAdmins: adminCount,
+        activeSessions: activeAdminCount,
+        failedLogins,
+        blockedIps: 0,
+        status,
+        logins: logins.map((l: any) => ({
+          id: l.id,
+          email: l.email,
+          ipAddress: l.ipAddress || "—",
+          userAgent: l.userAgent || "",
+          status: l.status === "SUCCESS" ? "success" : "failed",
+          timestamp: l.createdAt.toISOString(),
+        })),
+        admins: admins.map((a: any) => ({
+          id: a.id,
+          name: a.name,
+          email: a.email,
+          role: a.role?.name || "Admin",
+          lastActive: (a.lastLoginAt || a.createdAt).toISOString(),
+          permissions: a.role?.name === "Super Admin" ? ["all"] : [],
+        })),
+        alerts: alerts.map((n: any) => ({
+          id: n.id,
+          title: n.title,
+          description: n.message,
+          severity: n.type === "critical" || n.type === "warning" ? n.type : "info",
+          source: "Admin System",
+          timestamp: n.createdAt.toISOString(),
+          acknowledged: n.isRead,
+        })),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function markNotificationRead(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = req.params.id as string;
+    await (prisma as any).adminNotification.update({ where: { id }, data: { isRead: true } });
+    res.json({ success: true, message: "Notification marked as read" });
+  } catch (error) {
+    next(error);
+  }
 }
 
 // ─── 10. Job Management & Placement Telemetry ────────────────────
@@ -549,9 +611,7 @@ export async function getAdminJobs(req: Request, res: Response, next: NextFuncti
       totalJobs: total,
       activeJobs,
       featuredJobs,
-      applications: total * 4,
       companies: companiesGroup.length,
-      placementRate: total > 0 ? "82.5" : "0.0",
     };
 
     res.json({ success: true, jobs, pagination: { total, page, limit, pages: Math.ceil(total / limit) }, stats });
@@ -665,37 +725,16 @@ export async function getAnalyticsBI(_req: Request, res: Response, next: NextFun
       p.codingQuestion ? p.codingQuestion.count() : Promise.resolve(0),
     ]);
 
-    const dau = Math.max(1, Math.round(totalUsers * 0.42));
-    const wau = Math.max(1, Math.round(totalUsers * 0.78));
-    const mau = Math.max(1, totalUsers);
-
-    const funnels = [
-      { step: "Signup", count: totalUsers, rate: "100%" },
-      { step: "Onboarding Completed", count: Math.round(totalUsers * 0.88), rate: "88%" },
-      { step: "Active Feature Usage", count: Math.round(totalUsers * 0.74), rate: "74%" },
-      { step: "Pro/Premium Conversion", count: activePremium, rate: totalUsers > 0 ? `${Math.round((activePremium / totalUsers) * 100)}%` : "0%" },
-    ];
-
-    const retentionTrend = [
-      { period: "Week 1", retention: 94, active: dau },
-      { period: "Week 2", retention: 86, active: Math.round(dau * 0.92) },
-      { period: "Week 3", retention: 79, active: Math.round(dau * 0.84) },
-      { period: "Week 4", retention: 75, active: Math.round(dau * 0.79) },
-    ];
+    const premiumConversionRate = totalUsers > 0 ? Math.round((activePremium / totalUsers) * 100) : 0;
 
     res.json({
       success: true,
       analytics: {
         totalUsers,
-        dau,
-        wau,
-        mau,
-        retentionRate: "88.4%",
-        placementRate: totalJobs > 0 ? "84.2%" : "0.0%",
+        activePremium,
+        premiumConversionRate,
         totalJobs,
         totalCoding,
-        funnels,
-        retentionTrend,
       },
     });
   } catch (error) {

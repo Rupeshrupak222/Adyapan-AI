@@ -8,7 +8,7 @@ import {
   BarChart3, Loader2, Clock, RefreshCw, Sparkles,
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { api } from "@/services/api";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
@@ -29,30 +29,21 @@ interface LearningHubData {
 interface LearningFeature {
   key: string;
   label: string;
+  short: string;
   value: number;
   icon: React.ReactNode;
   color: string;
   status: "active" | "growing" | "stable" | "low";
 }
 
-const WEEKLY_DATA = [
-  { day: "Mon", sessions: 42, notes: 18, quizzes: 8, assignments: 5 },
-  { day: "Tue", sessions: 56, notes: 24, quizzes: 12, assignments: 7 },
-  { day: "Wed", sessions: 48, notes: 21, quizzes: 10, assignments: 6 },
-  { day: "Thu", sessions: 63, notes: 29, quizzes: 15, assignments: 9 },
-  { day: "Fri", sessions: 51, notes: 20, quizzes: 11, assignments: 4 },
-  { day: "Sat", sessions: 38, notes: 15, quizzes: 6, assignments: 3 },
-  { day: "Sun", sessions: 45, notes: 22, quizzes: 9, assignments: 5 },
-];
-
 const FEATURE_META: Omit<LearningFeature, "value" | "status">[] = [
-  { key: "studySessions", label: "Study Sessions", icon: <BookOpen size={16} />, color: "#10b981" },
-  { key: "notes", label: "Notes Generated", icon: <FileText size={16} />, color: "#818cf8" },
-  { key: "quizzes", label: "Quizzes Created", icon: <HelpCircle size={16} />, color: "#f59e0b" },
-  { key: "assignments", label: "Assignments", icon: <ClipboardList size={16} />, color: "#f472b6" },
-  { key: "ppts", label: "PPTs", icon: <Presentation size={16} />, color: "#38bdf8" },
-  { key: "mindmaps", label: "Mind Maps", icon: <BrainCircuit size={16} />, color: "#a78bfa" },
-  { key: "flashcards", label: "Flashcards", icon: <Layers size={16} />, color: "#fb923c" },
+  { key: "studySessions", label: "Study Sessions", short: "Sessions", icon: <BookOpen size={16} />, color: "#10b981" },
+  { key: "notes", label: "Notes Generated", short: "Notes", icon: <FileText size={16} />, color: "#818cf8" },
+  { key: "quizzes", label: "Quizzes Created", short: "Quizzes", icon: <HelpCircle size={16} />, color: "#f59e0b" },
+  { key: "assignments", label: "Assignments", short: "Assign", icon: <ClipboardList size={16} />, color: "#f472b6" },
+  { key: "ppts", label: "PPTs", short: "PPTs", icon: <Presentation size={16} />, color: "#38bdf8" },
+  { key: "mindmaps", label: "Mind Maps", short: "Maps", icon: <BrainCircuit size={16} />, color: "#a78bfa" },
+  { key: "flashcards", label: "Flashcards", short: "Cards", icon: <Layers size={16} />, color: "#fb923c" },
 ];
 
 function getStatus(value: number, max: number): "active" | "growing" | "stable" | "low" {
@@ -103,6 +94,8 @@ export default function LearningEcosystem() {
     : [];
 
   const sorted = [...features].sort((a, b) => b.value - a.value);
+
+  const chartData = features.map((f) => ({ short: f.short, value: f.value, color: f.color }));
 
   if (loading) {
     return (
@@ -169,15 +162,15 @@ export default function LearningEcosystem() {
         <div className="flex items-center gap-2 mb-4">
           <BarChart3 size={16} style={{ color: "#f59e0b" }} />
           <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
-            Weekly Learning Activity
+            Activity by Feature
           </h2>
         </div>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={WEEKLY_DATA} barGap={2} barCategoryGap="12%">
+            <BarChart data={chartData} barGap={2} barCategoryGap="12%">
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
               <XAxis
-                dataKey="day"
+                dataKey="short"
                 tick={{ fontSize: 11, fill: "var(--text-muted)" }}
                 axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
                 tickLine={false}
@@ -196,10 +189,11 @@ export default function LearningEcosystem() {
                 }}
                 labelStyle={{ color: "var(--text-primary)", fontWeight: 700 }}
               />
-              <Bar dataKey="sessions" name="Sessions" fill="#10b981" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="notes" name="Notes" fill="#818cf8" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="quizzes" name="Quizzes" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="assignments" name="Assignments" fill="#f472b6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="value" name="Total" radius={[4, 4, 0, 0]}>
+                {chartData.map((entry, idx) => (
+                  <Cell key={idx} fill={entry.color} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

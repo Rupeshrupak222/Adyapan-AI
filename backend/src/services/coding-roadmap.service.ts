@@ -26,6 +26,14 @@ export interface RoadmapJSON {
   guidance: string;
 }
 
+// Standard DSA topic catalogue (matches Codeforces topic mapper)
+export const DSA_TOPICS = [
+  "Arrays", "Strings", "Hashing", "Linked Lists", "Stacks", "Queues",
+  "Trees", "Binary Trees", "BST", "Heaps", "Recursion", "Backtracking",
+  "Greedy", "Dynamic Programming", "Graphs", "Tries", "Sliding Window",
+  "Two Pointers", "Bit Manipulation", "Binary Search"
+];
+
 export class CodingRoadmapService {
   /**
    * Generates a personalized coding roadmap for a user
@@ -371,7 +379,6 @@ ${JSON.stringify(unsolvedPool.slice(0, 80), null, 2)}`;
     });
     const uniqueTopics = new Set(questions.map(q => q.topic));
     const topicCoverage = uniqueTopics.size;
-
     // --- PLACEMENT READINESS SCORE ---
     // Formula: Roadmap (40%), Solved Count (30% -> target 60 solved), Complexity (15%), Challenges (15% -> target 3 challenges)
     const roadmapWeight = roadmapProgress * 0.40;
@@ -398,8 +405,10 @@ ${JSON.stringify(unsolvedPool.slice(0, 80), null, 2)}`;
         challengesCompleted,
         avgComplexity: Math.round(avgComplexity) || 0,
         avgReview: Math.round(avgReview) || 0,
-        topicCoverage
-      }
+        topicCoverage,
+        totalTopics: DSA_TOPICS.length
+      },
+      topics: DSA_TOPICS
     };
   }
 

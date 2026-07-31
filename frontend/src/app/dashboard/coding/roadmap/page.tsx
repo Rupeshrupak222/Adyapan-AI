@@ -32,7 +32,7 @@ import {
 } from "../../user/page";
 import { useConfirm } from "@/components/ui/ConfirmModal";
 
-const ALL_TOPICS = [
+const FALLBACK_TOPICS = [
   "Arrays", "Strings", "Hashing", "Linked Lists", "Stacks", "Queues",
   "Trees", "BST", "Heaps", "Recursion", "Backtracking",
   "Greedy", "Dynamic Programming", "Graphs", "Tries", "Sliding Window",
@@ -183,11 +183,11 @@ export default function CodingRoadmapPage() {
         const [readinessRes, recRes, streakRes] = await Promise.all([
           api.get("/coding/roadmap/readiness"),
           api.get("/coding/roadmap/recommendations"),
-          api.get("/learning-streak").catch(() => ({ data: { streak: null } }))
+          api.get("/streak/dashboard").catch(() => ({ data: { data: null } }))
         ]);
         setReadiness(readinessRes.data.readiness);
         setRecommendations(recRes.data.recommendations);
-        setStreakData(streakRes.data.streak || streakRes.data);
+        setStreakData(streakRes.data?.data || streakRes.data?.streak || null);
       }
     } catch (err) {
       console.error("Failed to load roadmap data", err);
@@ -641,7 +641,7 @@ export default function CodingRoadmapPage() {
                   </div>
 
                   {/* Topic Library */}
-                  <TopicLibraryCard topics={ALL_TOPICS} topicProgress={topicProgressMap} />
+                  <TopicLibraryCard topics={readiness?.topics?.length ? readiness.topics : FALLBACK_TOPICS} topicProgress={topicProgressMap} />
 
                   {/* Timeline */}
                   <div className="space-y-4">
@@ -884,7 +884,7 @@ export default function CodingRoadmapPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs" style={{ color: "var(--text-muted)" }}>Topic Coverage</span>
-                        <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{readiness?.stats?.topicCoverage || 0}/19</span>
+                        <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{readiness?.stats?.topicCoverage || 0}/{readiness?.stats?.totalTopics || FALLBACK_TOPICS.length}</span>
                       </div>
                     </div>
                   </PremiumCard>

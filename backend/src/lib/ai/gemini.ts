@@ -296,17 +296,17 @@ export function getDynamicFallback(resumeText: string, targetRole: string): ATSD
   const calculatedScore = Math.min(95, Math.max(35, Math.round(coverageRatio * 85 + 10)));
   const scoreLabel = calculatedScore >= 90 ? "Excellent" : calculatedScore >= 75 ? "Good" : calculatedScore >= 60 ? "Fair" : "Poor";
 
-  const readabilityScore = Math.round(50 + Math.random() * 40);
-  const formattingScore = Math.round(60 + Math.random() * 30);
+  const readabilityScore = Math.min(90, Math.max(40, Math.round(45 + resumeText.length / 80)));
+  const formattingScore = Math.min(90, Math.max(50, Math.round(60 + found.length * 3)));
   
   return {
     score: calculatedScore,
     scoreLabel,
     formattingScore,
     keywordScore: Math.round(coverageRatio * 100),
-    projectScore: Math.round(45 + Math.random() * 40),
-    skillsScore: Math.round(50 + Math.random() * 45),
-    experienceScore: Math.round(40 + Math.random() * 50),
+    projectScore: Math.min(90, Math.max(35, Math.round(coverageRatio * 100 * 0.7))),
+    skillsScore: Math.round(coverageRatio * 100),
+    experienceScore: Math.min(90, Math.max(35, Math.round(coverageRatio * 100 * 0.6 + 10))),
     educationScore: 80,
     readabilityScore,
     keywordsFound: found.length > 0 ? found : ["Communication", "Problem Solving"],
@@ -394,7 +394,8 @@ export function getDynamicIntelligenceFallback(resumeText: string, targetRole: s
   }
   
   const formattedRole = targetRole || "Software Engineer";
-  const calculatedScore = Math.min(92, Math.max(45, Math.round(50 + Math.random() * 35)));
+  const lengthFactor = resumeText.length > 2000 ? 15 : resumeText.length > 800 ? 10 : resumeText.length > 300 ? 5 : 0;
+  const calculatedScore = Math.min(92, Math.max(45, Math.round(45 + (1 - missing.length / 8) * 35 + lengthFactor)));
   
   return {
     recruiterView: {

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { AnalyticsService } from "../services/analytics.service";
 import { getUserPrismaFromRequest } from "../utils/prisma";
+import { generateJSON, MODELS } from "../lib/ai/openrouter";
 
 export async function generateAnalytics(req: Request, res: Response): Promise<void> {
   try {
@@ -203,5 +204,76 @@ export async function seedMockData(req: Request, res: Response): Promise<void> {
   } catch (error: any) {
     console.error("Seed mock data controller error:", error);
     res.status(500).json({ success: false, error: error.message || "Failed to seed demo analytics data" });
+  }
+}
+
+export async function chatWithAnalytics(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const query = typeof req.body?.query === "string" ? req.body.query.trim() : "";
+    const tab = typeof req.body?.tab === "string" ? req.body.tab : "learning";
+
+    if (!query) {
+      res.status(400).json({ success: false, error: "Query is required" });
+      return;
+    }
+
+    const userPrisma = await getUserPrismaFromRequest(req);
+
+    const [learningAnalytics, interviewCount, completedInterviews, recentSessions, aptitudeCount, atsCount, resumeCount, streakData] = await Promise.all([
+      userPrisma.learningAnalytics.findUnique({ where: { userId } }),
+      userPrisma.interviewSession.count({ where: { userId } }),
+      userPrisma.interviewSession.count({ where: { userId, status: "completed" } }),
+      userPrisma.interviewSession.findMany({
+        where: { userId, status: "completed" },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: { role: true, targetRole: true, targetCompany: true, createdAt: true, evaluation: { select: { overallScore: true } } },
+      }),
+      userPrisma.aptitudeSession.count({ where: { userId } }),
+      userPrisma.aTSReport.count({ where: { userId } }),
+      userPrisma.resume.count({ where: { userId } }),
+      userPrisma.learningStreak.findUnique({ where: { userId } }),
+    ]);
+
+    const context = {
+      learning: learningAnalytics
+        ? { learningScore: learningAnalytics.learningScore, examReadiness: learningAnalytics.examReadiness }
+        : null,
+      streak: streakData ? { current: streakData.currentStreak, best: streakData.bestStreak } : null,
+      interviews: {
+        total: interviewCount,
+        completed: completedInterviews,
+        recentScores: recentSessions.map((s) => ({
+          role: s.role || s.targetRole || "interview",
+          company: s.targetCompany || null,
+          score: s.evaluation?.overallScore ?? null,
+        })),
+      },
+      aptitudeSessions: aptitudeCount,
+      atsReports: atsCount,
+      resumes: resumeCount,
+    };
+
+    const result = await generateJSON(
+      "You are Adyapan AI Performance Coach, an expert education and career performance analyst. Use ONLY the provided user analytics context. Give concise, encouraging, and actionable advice in plain text (no JSON, no markdown headers, no bullet-heavy output).",
+      `Current analytics tab the user is viewing: ${tab}
+User question: "${query}"
+
+User analytics context:
+${JSON.stringify(context, null, 2)}
+
+Return JSON matching:
+{
+  "response": "Your concise helpful answer based on the context"
+}`,
+      { model: MODELS.FAST, temperature: 0.7 },
+      { response: "Based on your progress data, keep up the consistent practice and complete more assessments to unlock deeper analytics insights." }
+    );
+
+    res.json({ success: true, response: result.response });
+  } catch (error: any) {
+    console.error("Analytics chat error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to process analytics chat" });
   }
 }

@@ -208,43 +208,55 @@ export async function analyzeATSReport(req: Request, res: Response, next: NextFu
       analysis = getDynamicFallback(resumeText, targetRole);
     }
 
-    const associatedResumeId = await getOrCreateResumeId(userId, resumeId, userPrisma);
+    let associatedResumeId: string | null = null;
+    try {
+      associatedResumeId = await getOrCreateResumeId(userId, resumeId, userPrisma);
+    } catch (resumeIdErr: any) {
+      console.error("[ATS] Failed to resolve resumeId for DB save:", resumeIdErr?.message || resumeIdErr);
+    }
 
-    // Save ATS report to DB
-    const report = await userPrisma.aTSReport.create({
-      data: {
-        userId,
-        resumeId: associatedResumeId,
-        score: analysis.score,
-        missingKeywords: analysis.keywordsMissing,
-        recommendations: JSON.parse(JSON.stringify({
-          recommendations: analysis.recommendations,
-          formattingIssues: analysis.formattingIssues,
-          strengths: analysis.strengths,
-          sectionScores: analysis.sectionScores,
-          keywordAnalysis: analysis.keywordAnalysis,
-          formattingCheck: analysis.formattingCheck,
-          strengthBars: analysis.strengthBars,
-          readability: analysis.readability,
-          resumeLength: analysis.length,
-          formatting: analysis.formatting,
-          recruiterScore: analysis.recruiterScore,
-          scoreLabel: analysis.scoreLabel,
-          keywordsFound: analysis.keywordsFound,
-          strongKeywords: analysis.strongKeywords || [],
-          weakKeywords: analysis.weakKeywords || [],
-        })),
-        overallScore: analysis.score,
-        formattingScore: analysis.formattingScore ?? (analysis.formatting === "Excellent" ? 95 : analysis.formatting === "Good" ? 80 : analysis.formatting === "Fair" ? 60 : 40),
-        keywordScore: analysis.keywordScore ?? Math.round((analysis.keywordsFound.length / Math.max(1, analysis.keywordsFound.length + (analysis.keywordsMissing || []).length)) * 100),
-        experienceScore: analysis.experienceScore ?? (analysis.sectionScores?.experience?.score ? analysis.sectionScores.experience.score * 10 : 70),
-        projectScore: analysis.projectScore ?? (analysis.sectionScores?.projects?.score ? analysis.sectionScores.projects.score * 10 : 70),
-        skillsScore: analysis.skillsScore ?? (analysis.sectionScores?.skills?.score ? analysis.sectionScores.skills.score * 10 : 80),
-        educationScore: analysis.educationScore ?? (analysis.sectionScores?.education?.score ? analysis.sectionScores.education.score * 10 : 80),
-        readabilityScore: analysis.readabilityScore ?? (analysis.readability === "Excellent" ? 95 : analysis.readability === "Good" ? 80 : analysis.readability === "Fair" ? 60 : 40),
-        reportJson: JSON.parse(JSON.stringify(analysis)),
-      },
-    });
+    // Save ATS report to DB — wrapped in try-catch so analysis is always returned
+    let report: any = null;
+    if (associatedResumeId) {
+    try {
+      report = await userPrisma.aTSReport.create({
+        data: {
+          userId,
+          resumeId: associatedResumeId,
+          score: analysis.score,
+          missingKeywords: analysis.keywordsMissing,
+          recommendations: JSON.parse(JSON.stringify({
+            recommendations: analysis.recommendations,
+            formattingIssues: analysis.formattingIssues,
+            strengths: analysis.strengths,
+            sectionScores: analysis.sectionScores,
+            keywordAnalysis: analysis.keywordAnalysis,
+            formattingCheck: analysis.formattingCheck,
+            strengthBars: analysis.strengthBars,
+            readability: analysis.readability,
+            resumeLength: analysis.length,
+            formatting: analysis.formatting,
+            recruiterScore: analysis.recruiterScore,
+            scoreLabel: analysis.scoreLabel,
+            keywordsFound: analysis.keywordsFound,
+            strongKeywords: analysis.strongKeywords || [],
+            weakKeywords: analysis.weakKeywords || [],
+          })),
+          overallScore: analysis.score,
+          formattingScore: analysis.formattingScore ?? (analysis.formatting === "Excellent" ? 95 : analysis.formatting === "Good" ? 80 : analysis.formatting === "Fair" ? 60 : 40),
+          keywordScore: analysis.keywordScore ?? Math.round((analysis.keywordsFound.length / Math.max(1, analysis.keywordsFound.length + (analysis.keywordsMissing || []).length)) * 100),
+          experienceScore: analysis.experienceScore ?? (analysis.sectionScores?.experience?.score ? analysis.sectionScores.experience.score * 10 : 70),
+          projectScore: analysis.projectScore ?? (analysis.sectionScores?.projects?.score ? analysis.sectionScores.projects.score * 10 : 70),
+          skillsScore: analysis.skillsScore ?? (analysis.sectionScores?.skills?.score ? analysis.sectionScores.skills.score * 10 : 80),
+          educationScore: analysis.educationScore ?? (analysis.sectionScores?.education?.score ? analysis.sectionScores.education.score * 10 : 80),
+          readabilityScore: analysis.readabilityScore ?? (analysis.readability === "Excellent" ? 95 : analysis.readability === "Good" ? 80 : analysis.readability === "Fair" ? 60 : 40),
+          reportJson: JSON.parse(JSON.stringify(analysis)),
+        },
+      });
+    } catch (dbErr: any) {
+      console.error("[ATS] Failed to save ATS report to DB (returning analysis anyway):", dbErr?.message || dbErr);
+    }
+    } // end if (associatedResumeId)
 
     res.json({ success: true, report, analysis });
   } catch (error) {

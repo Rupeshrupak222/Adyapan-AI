@@ -749,6 +749,7 @@ engineRouter.get("/analytics", async (req, res) => {
       .map((s: any) => ({
         date: s.createdAt?.toISOString?.() || String(s.createdAt),
         score: s.evaluations?.[0]?.overallScore || 0,
+        confidence: s.evaluations?.[0]?.confidenceScore || 0,
       }));
 
     // Skill averages from evaluations

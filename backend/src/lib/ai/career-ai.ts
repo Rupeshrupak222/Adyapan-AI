@@ -140,9 +140,15 @@ function computeFallback(profileData: any): CareerRoadmapData {
   const overallScore = Math.round(technicalScore * 0.3 + resumeScore * 0.2 + interviewScore * 0.2 + placementScore * 0.15 + recruiterScore * 0.15);
 
   // Build skill map from actual skills
+  const skillLevel = Math.min(80, Math.max(20,
+    20
+    + (dsaSolved > 50 ? 20 : dsaSolved > 20 ? 12 : dsaSolved > 0 ? 6 : 0)
+    + Math.round(dsaAccuracy * 0.2)
+    + Math.min(10, skills.length)
+  ));
   const skillMapSkills = skills.slice(0, 8).map((s: string) => ({
     name: s,
-    currentLevel: Math.min(80, 30 + Math.round(Math.random() * 30)),
+    currentLevel: skillLevel,
     targetLevel: 85,
     status: "in_progress" as const,
     dependencies: [] as string[],

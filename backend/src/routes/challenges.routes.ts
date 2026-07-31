@@ -8,6 +8,21 @@ import { generateJSON, MODELS } from "../lib/ai/openrouter";
 const router = Router();
 router.use(requireAuth);
 
+// ─── All active challenges ───────────────────────────────────────────────────
+
+router.get("/", async (req: any, res) => {
+  try {
+    const userPrisma = await getUserPrismaFromRequest(req);
+    const challenges = await userPrisma.challenge.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json({ challenges });
+  } catch (error) {
+    handleRouteError(res, error, "Challenges.list", "Failed to fetch challenges");
+  }
+});
+
 // ─── Categories ─────────────────────────────────────────────────────────────
 
 router.get("/categories", async (req: any, res) => {
@@ -56,7 +71,7 @@ router.get("/categories", async (req: any, res) => {
           breakdown: { easy, medium, hard },
           solved,
           progress: total > 0 ? Math.round((solved / total) * 100) : 0,
-          popularity: total * 12 + Math.floor(Math.random() * 50),
+          popularity: total * 12,
         };
       })
     );

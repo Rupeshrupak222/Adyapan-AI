@@ -9,6 +9,7 @@ import {
   getSystemHealth,
   getModuleAnalytics,
   getSecurityLogs,
+  markNotificationRead,
   getAdminJobs,
   createAdminJob,
   updateAdminJob,
@@ -41,7 +42,7 @@ adminRouter.get("/analytics/bi", ...guard, getAnalyticsBI);
 adminRouter.get("/system-health", ...guard, getSystemHealth);
 adminRouter.get("/modules", ...guard, getModuleAnalytics);
 adminRouter.get("/security", ...guard, getSecurityLogs);
-
+adminRouter.post("/notifications/:id/read", ...guard, markNotificationRead);
 // Job Discovery Management
 adminRouter.get("/jobs", ...guard, getAdminJobs);
 adminRouter.post("/jobs", ...guard, createAdminJob);

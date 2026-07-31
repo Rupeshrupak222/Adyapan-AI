@@ -1643,8 +1643,7 @@ function ReportView({ sessionId, evaluation, config, messages, onRetry, onNewInt
       setLoadingIntelligence(true);
       try {
         const token = localStorage.getItem("adyapan-token");
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-        const res = await fetch(`${base}/api/technical-engine/${sessionId}/coach`, {
+        const res = await fetch(`${api.defaults.baseURL}/technical-engine/${sessionId}/coach`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

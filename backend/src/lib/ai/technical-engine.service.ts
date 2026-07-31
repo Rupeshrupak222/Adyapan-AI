@@ -523,7 +523,7 @@ Return as JSON:
     questionNumber: i + 1,
     question: q.content,
     answer: candidateMessages[i]?.content || "No answer provided",
-    score: Math.min(100, Math.max(20, avgQuality + Math.round((Math.random() - 0.5) * 20))),
+    score: Math.min(100, Math.max(20, Math.round(avgQuality))),
     analysis: `Answer ${i + 1}: ${avgQuality >= 60 ? "Demonstrates adequate understanding." : "Could benefit from more depth."}`,
     tags: avgQuality >= 60 ? ["adequate"] : ["needs-improvement"],
   }));

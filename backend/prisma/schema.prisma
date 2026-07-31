@@ -85,6 +85,19 @@ model BlacklistedToken {
   @@map("blacklisted_tokens")
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  otpHash   String   @map("otp_hash")
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
 enum Role {
   USER
   ADMIN

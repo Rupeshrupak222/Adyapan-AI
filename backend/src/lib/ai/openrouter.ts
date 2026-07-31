@@ -292,43 +292,43 @@ export async function generateJSON<T>(
       const repaired = tryRepairJSON(cached);
       const parsed = JSON.parse(repaired);
       const validated = enforceSchema(parsed, fallback);
-      // Reject cached resume profiles that are empty/all-default (only for resume schemas that have name/email/skills)
-      const isResumeSchema = fallback !== null && fallback !== undefined && ("name" in (fallback as any) || "email" in (fallback as any));
-      const isEmpty = isResumeSchema && !(validated as any).name && !(validated as any).email && ((validated as any).skills?.length ?? 0) === 0;
-      if (isEmpty) {
-      } else {
-        return validated;
-      }
+      return validated;
     } catch (e) {
       console.warn("[AI Engine] Cache hit but failed to validate, falling back to fresh API call:", (e as Error)?.message);
     }
   }
 
   const start = Date.now();
-  let text = "";
+  const messages: OpenRouterMessage[] = [
+    { role: "system", content: modifiedSys },
+    { role: "user", content: userPrompt },
+  ];
+
+  let text: string;
   try {
-    const messages: OpenRouterMessage[] = [
-      { role: "system", content: modifiedSys },
-      { role: "user", content: userPrompt },
-    ];
     text = await callAIRobust(messages, options);
-    const duration = Date.now() - start;
+  } catch (error) {
+    console.error(`[AI Engine] All AI providers failed during JSON generation:`, error);
+    throw new Error("AI extraction failed: all providers are rate-limited or unavailable. Please try again later.");
+  }
+  const duration = Date.now() - start;
 
-    try {
-      const { PerformanceMonitor } = require("../../utils/monitoring");
-      PerformanceMonitor.record("ai", options.model || "unknown", duration);
-    } catch (err) {}
+  try {
+    const { PerformanceMonitor } = require("../../utils/monitoring");
+    PerformanceMonitor.record("ai", options.model || "unknown", duration);
+  } catch (err) {}
 
+  try {
     const repaired = tryRepairJSON(text);
     const parsed = JSON.parse(repaired);
     const validated = enforceSchema(parsed, fallback);
-    
+
     setCachedAIResponse(modifiedSys, userPrompt, options, text);
     return validated;
   } catch (error) {
-    console.warn(`[AI Engine] Initial JSON generation/parsing failed:`, error);
+    console.warn(`[AI Engine] Initial JSON parsing/validation failed (AI call succeeded):`, error);
     try {
-        const retryMessages: OpenRouterMessage[] = [
+      const retryMessages: OpenRouterMessage[] = [
         { role: "system", content: `${modifiedSys}\nIMPORTANT: Your previous output was invalid JSON. Ensure all keys and string values are double-quoted and all trailing commas are removed. Do not include markdown wraps or conversational prose.` },
         { role: "user", content: fallback != null ? `${userPrompt}\n\nStrict instruction: return valid JSON matching this schema: ${JSON.stringify(fallback)}` : userPrompt }
       ];
@@ -336,7 +336,7 @@ export async function generateJSON<T>(
       const repaired = tryRepairJSON(retryText);
       const parsed = JSON.parse(repaired);
       const validated = enforceSchema(parsed, fallback);
-      
+
       setCachedAIResponse(modifiedSys, userPrompt, options, retryText);
       return validated;
     } catch (retryError) {

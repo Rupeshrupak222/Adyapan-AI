@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { generateInterviewPDF } from "@/utils/interview-pdf";
 import InterviewIntelligence from "@/components/interview-hub/shared/InterviewIntelligence";
+import { api } from "@/services/api";
 import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
 import type { EngineEvaluation, AnswerAnalysis, IntelligenceData } from "./EngineTypes";
 
@@ -217,8 +218,7 @@ export default function EngineReport({
       setLoadingIntelligence(true);
       try {
         const token = localStorage.getItem("adyapan-token");
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-        const res = await fetch(`${base}/api/engine/${sessionId}/coach`, {
+        const res = await fetch(`${api.defaults.baseURL}/engine/${sessionId}/coach`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
