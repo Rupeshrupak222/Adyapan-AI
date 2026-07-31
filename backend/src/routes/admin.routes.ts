@@ -18,7 +18,7 @@ import {
   updateAdminSettings,
   getAnalyticsBI,
 } from "../controllers/admin.controller";
-import { requireAuth, requireRole } from "../middleware/auth";
+import { requireAdminAuth } from "../middleware/adminAuth";
 import {
   getUserDatabases,
   getUserDatabaseStats,
@@ -29,7 +29,7 @@ import {
 
 export const adminRouter = Router();
 
-const guard = [requireAuth, requireRole("ADMIN")];
+const guard = [requireAdminAuth];
 
 adminRouter.get("/dashboard", ...guard, getDashboardStats);
 adminRouter.get("/activity", ...guard, getActivityFeed);
