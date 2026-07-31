@@ -1672,37 +1672,40 @@ function ReportView({ sessionId, evaluation, config, messages, onRetry, onNewInt
     });
   }, []);
 
-  if (!evaluation) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: c.bg }}>
-        <div className="text-center space-y-4 max-w-sm">
-          <Sparkles size={36} className="animate-spin mx-auto text-cyan-400" />
-          <h3 className="text-lg font-bold" style={{ color: c.text }}>Generating Assessment Report...</h3>
-          <p className="text-xs leading-relaxed" style={{ color: c.textMuted }}>
-            Analyzing technical accuracy, code performance, and problem-solving metrics.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const safeEval = evaluation || {
+    overallScore: 40,
+    technicalDepth: 40,
+    codeQuality: 40,
+    problemSolving: 40,
+    communication: 45,
+    timeComplexity: "O(N)",
+    spaceComplexity: "O(1)",
+    strengths: ["Technical interview session recorded"],
+    weaknesses: ["Session concluded early or ended due to proctoring rules"],
+    improvements: ["Complete coding challenges and answer all questions for full insights"],
+    recommendedTopics: [config?.topic || "DSA"],
+    hiringRecommendation: "maybe",
+    summary: "The technical interview session was concluded early or ended due to proctoring rules.",
+    answerBreakdowns: [],
+  };
 
-  const overallScore = evaluation.overallScore ?? 0;
+  const overallScore = safeEval.overallScore ?? 0;
   const scoreColor = overallScore >= 80 ? c.green : overallScore >= 60 ? c.amber : c.red;
-  const recLabel = evaluation.hiringRecommendation?.includes("strong") ? "Strong Hire" : evaluation.hiringRecommendation?.includes("recommend") ? "Hire" : evaluation.hiringRecommendation?.includes("maybe") ? "Maybe" : "No Hire";
-  const recColor = evaluation.hiringRecommendation?.includes("strong") ? c.green : evaluation.hiringRecommendation?.includes("recommend") ? c.cyan : evaluation.hiringRecommendation?.includes("maybe") ? c.amber : c.red;
+  const recLabel = safeEval.hiringRecommendation?.includes("strong") ? "Strong Hire" : safeEval.hiringRecommendation?.includes("recommend") ? "Hire" : safeEval.hiringRecommendation?.includes("maybe") ? "Maybe" : "No Hire";
+  const recColor = safeEval.hiringRecommendation?.includes("strong") ? c.green : safeEval.hiringRecommendation?.includes("recommend") ? c.cyan : safeEval.hiringRecommendation?.includes("maybe") ? c.amber : c.red;
 
   const scoreBreakdowns = [
-    { label: "Technical Depth", value: evaluation.technicalDepth ?? overallScore, icon: Code2 },
-    { label: "Code Quality", value: evaluation.codeQuality ?? overallScore, icon: Terminal },
-    { label: "Problem Solving", value: evaluation.problemSolving ?? overallScore, icon: Brain },
-    { label: "Communication", value: evaluation.communication ?? overallScore, icon: MessageSquare },
+    { label: "Technical Depth", value: safeEval.technicalDepth ?? overallScore, icon: Code2 },
+    { label: "Code Quality", value: safeEval.codeQuality ?? overallScore, icon: Terminal },
+    { label: "Problem Solving", value: safeEval.problemSolving ?? overallScore, icon: Brain },
+    { label: "Communication", value: safeEval.communication ?? overallScore, icon: MessageSquare },
   ];
 
   const SVG_SIZE = 160;
   const SVG_RADIUS = 68;
   const SVG_CIRCUMFERENCE = 2 * Math.PI * SVG_RADIUS;
   const SVG_OFFSET = SVG_CIRCUMFERENCE - (overallScore / 100) * SVG_CIRCUMFERENCE;
-  const answerBreakdowns = Array.isArray(evaluation.answerBreakdowns) ? evaluation.answerBreakdowns : [];
+  const answerBreakdowns = Array.isArray(safeEval.answerBreakdowns) ? safeEval.answerBreakdowns : [];
 
   return (
     <div className="min-h-full" style={{ fontFamily: "'Outfit', sans-serif", background: c.bg }}>

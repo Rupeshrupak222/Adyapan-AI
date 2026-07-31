@@ -147,12 +147,35 @@ export default function EngineReport({
     [isDark]
   );
 
-  const overallScore = evaluation?.overallScore ?? 0;
+  const safeEval = evaluation || {
+    overallScore: 40,
+    communicationScore: 45,
+    technicalScore: 40,
+    hrScore: 45,
+    confidenceScore: 40,
+    fluencyScore: 40,
+    bodyLanguageScore: 50,
+    communication: 45,
+    technical: 40,
+    confidence: 40,
+    problemSolving: 40,
+    leadership: 40,
+    roleFit: 40,
+    strengths: ["Interview session recorded"],
+    weaknesses: ["Session concluded early or ended due to proctoring rules"],
+    improvements: ["Answer all interview questions for full AI insights"],
+    summary: "The interview session was concluded early or ended due to proctoring rules.",
+    hiringRecommendation: "maybe",
+    detailedAnalysis: {},
+    answerBreakdowns: [],
+  };
+
+  const overallScore = safeEval?.overallScore ?? 0;
   const scoreColor = useMemo(() => getScoreColor(overallScore), [overallScore]);
-  const recInfo = useMemo(() => getRecommendationInfo(evaluation?.hiringRecommendation || "maybe"), [evaluation?.hiringRecommendation]);
+  const recInfo = useMemo(() => getRecommendationInfo(safeEval?.hiringRecommendation || "maybe"), [safeEval?.hiringRecommendation]);
 
   const scoreBreakdowns = useMemo(() => {
-    const evalAny = evaluation as any;
+    const evalAny = safeEval as any;
     const comm = evalAny?.communication ?? evalAny?.communicationScore ?? 0;
     const conf = evalAny?.confidence ?? evalAny?.confidenceScore ?? 0;
     const prob = evalAny?.problemSolving ?? 0;

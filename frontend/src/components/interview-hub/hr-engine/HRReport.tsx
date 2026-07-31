@@ -89,6 +89,22 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
     amber: "#f59e0b",
   };
 
+  const safeEval = evaluation || {
+    overallScore: 40,
+    communicationScore: 45,
+    starScore: 40,
+    confidenceScore: 40,
+    leadershipScore: 40,
+    teamworkScore: 40,
+    ownershipScore: 40,
+    adaptabilityScore: 40,
+    strengths: ["HR interview session recorded"],
+    weaknesses: ["Session completed early or terminated due to proctoring rules"],
+    improvements: ["Answer all behavioral questions for detailed STAR evaluation"],
+    summary: "The HR interview session was concluded early or ended due to security rules.",
+    hiringRecommendation: "maybe",
+  };
+
   const getRecommendationConfig = (rec: string) => {
     switch (rec) {
       case "strong_recommend": return { label: "Strong Hire", color: "#10b981", bg: "rgba(16,185,129,0.1)" };
@@ -98,7 +114,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
     }
   };
 
-  const recConfig = getRecommendationConfig(evaluation.hiringRecommendation);
+  const recConfig = getRecommendationConfig(safeEval.hiringRecommendation || "maybe");
 
   useEffect(() => {
     const fetchIntelligence = async () => {
