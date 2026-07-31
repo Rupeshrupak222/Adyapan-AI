@@ -16,6 +16,7 @@ import {
   triggerJobIngestion,
   getAdminSettings,
   updateAdminSettings,
+  getAnalyticsBI,
 } from "../controllers/admin.controller";
 import { requireAuth, requireRole } from "../middleware/auth";
 import {
@@ -36,6 +37,7 @@ adminRouter.get("/users", ...guard, getAdminUsers);
 adminRouter.post("/users/:id/action", ...guard, updateUserPlan);
 adminRouter.get("/analytics/ai", ...guard, getAiAnalytics);
 adminRouter.get("/analytics/revenue", ...guard, getRevenueAnalytics);
+adminRouter.get("/analytics/bi", ...guard, getAnalyticsBI);
 adminRouter.get("/system-health", ...guard, getSystemHealth);
 adminRouter.get("/modules", ...guard, getModuleAnalytics);
 adminRouter.get("/security", ...guard, getSecurityLogs);
