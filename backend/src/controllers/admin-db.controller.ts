@@ -13,7 +13,7 @@ export async function getUserDatabaseStats(req: Request, res: Response) {
 
 export async function queryUserDb(req: Request, res: Response) {
   const userId = req.params.userId as string;
-  const query = req.body.query as string;
+  const query = req.body?.query as string | undefined;
   
   if (!query) {
     res.status(400).json({ error: "Query is required" });

@@ -345,9 +345,9 @@ export async function getReadinessReport(
   const weakTopics = topicAvgs.filter(([_, s]) => s < 50).map(([t]) => t).slice(0, 5);
 
   const companies = ["TCS", "Infosys", "Wipro", "Cognizant", "HCL"];
-  const companyReadiness = companies.map((company) => ({
+  const companyReadiness = companies.map((company, idx) => ({
     company,
-    score: Math.max(0, Math.min(100, overallScore + Math.floor(Math.random() * 10 - 5))),
+    score: Math.max(0, Math.min(100, overallScore - idx * 2 + strongTopics.length * 3)),
   }));
 
   let recommendation = "";

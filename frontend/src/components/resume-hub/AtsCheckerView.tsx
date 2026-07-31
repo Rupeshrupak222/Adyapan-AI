@@ -364,6 +364,7 @@ export function AtsCheckerView({ setView }: Props) {
   const [cmpBusy, setCmpBusy] = useState(false);
 
   const [expandedRec, setExpandedRec] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const jdRef = useRef<HTMLInputElement>(null);
@@ -503,6 +504,7 @@ export function AtsCheckerView({ setView }: Props) {
 
   const startAnalysisWithId = async (explicitId: string) => {
     setScreen("loading");
+    setErrorMsg(null);
     setLoading(true); setLoadStep(0);
     const iv = setInterval(() => setLoadStep(p => Math.min(p + 1, loadSteps.length - 1)), 700);
     try {
@@ -535,10 +537,11 @@ export function AtsCheckerView({ setView }: Props) {
       try {
         confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 }, colors: ["#f59e0b", "#ea580c", "#10b981"] });
       } catch { /* confetti blocked */ }
-    } catch (err) {
+    } catch (err: any) {
       clearInterval(iv);
       setScreen("home");
-      // User-friendly error instead of alert
+      const msg = err?.response?.data?.message || err?.message || "Analysis failed. Please try again.";
+      setErrorMsg(msg);
       console.error("ATS Analysis failed:", err);
     } finally { setLoading(false); }
   };
@@ -553,7 +556,11 @@ export function AtsCheckerView({ setView }: Props) {
   const applySugg = async (s: ATSSuggestion) => {
     try {
       const r = await api.post("/ats/apply-improvement", { section: s.section, originalContent: s.original, suggestionText: s.description });
-      if (r.data.improved) { setApplied(p => new Set(p).add(s.id)); setUpdScore(p => Math.min(100, p + Math.round(Math.random() * 3 + 1))); }
+      if (r.data.improved) {
+        const delta = s.impact === "high" ? 3 : s.impact === "medium" ? 2 : 1;
+        setApplied(p => new Set(p).add(s.id));
+        setUpdScore(p => Math.min(100, p + delta));
+      }
     } catch { }
   };
 
@@ -583,7 +590,7 @@ export function AtsCheckerView({ setView }: Props) {
 
   const resetAll = () => {
     setScreen("home"); setAnalysis(null); setIntel(null); setFile(null);
-    setSelId(""); setSuggestions([]); setApplied(new Set());
+    setSelId(""); setSuggestions([]); setApplied(new Set()); setErrorMsg(null);
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -748,6 +755,26 @@ export function AtsCheckerView({ setView }: Props) {
               </motion.div>
 
               <div className="space-y-5 relative z-10">
+                {/* Error Banner */}
+                {errorMsg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="flex items-start gap-3 p-4 rounded-xl"
+                    style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)" }}
+                  >
+                    <AlertCircle size={18} style={{ color: "#ef4444", flexShrink: 0, marginTop: 1 }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold" style={{ color: "#ef4444" }}>Analysis Failed</p>
+                      <p className="text-xs mt-0.5" style={{ color: c.tx2 }}>{errorMsg}</p>
+                    </div>
+                    <button onClick={() => setErrorMsg(null)} style={{ color: c.txM }}>
+                      <X size={14} />
+                    </button>
+                  </motion.div>
+                )}
+
                 {/* Empty state */}
                 {!file && !selId && resumes.length === 0 && (
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>

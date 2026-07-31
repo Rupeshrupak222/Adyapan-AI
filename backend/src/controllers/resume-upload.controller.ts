@@ -241,7 +241,7 @@ export async function uploadAndParseResume(req: Request, res: Response, next: Ne
         languages: profile.languages as any,
         links: profile.links as any,
         completenessScore: analysis.score,
-        strengthScore: Math.min(100, analysis.score + Math.floor(Math.random() * 10)),
+        strengthScore: Math.min(100, analysis.score),
         missingSections: analysis.missingSections as any,
         recommendations: analysis.recommendations as any,
         strengths: analysis.strengths as any,

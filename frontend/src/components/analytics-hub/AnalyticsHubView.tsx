@@ -103,7 +103,7 @@ export function AnalyticsHubView({ setView, activeModule = "analytics-hub", them
           const [engineRes, historyRes, hrRes] = await Promise.allSettled([
             api.get("/engine/analytics"),
             api.get("/interview/history"),
-            api.get("/hr/analytics"),
+            api.get("/interview/hr/analytics"),
           ]);
           if (cancelled) return;
           if (engineRes.status === "fulfilled" && engineRes.value.data) {

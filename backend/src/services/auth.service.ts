@@ -197,6 +197,83 @@ export async function rateLimitAuthRequest(ip: string) {
   }
 }
 
+const OTP_TTL_MS = 10 * 60 * 1000;
+
+function generateOtp(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+export async function requestPasswordReset(email: string): Promise<{ devOtp?: string }> {
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (!user) {
+    // Do not reveal whether an account exists
+    return {};
+  }
+
+  const otp = generateOtp();
+  const otpHash = await bcrypt.hash(otp, 10);
+
+  await prisma.passwordResetToken.create({
+    data: {
+      email: normalizedEmail,
+      otpHash,
+      expiresAt: new Date(Date.now() + OTP_TTL_MS),
+    },
+  });
+
+  // No email provider is configured; surface the OTP via the API response in
+  // non-production environments and log it in production for operators.
+  if (env.nodeEnv !== "production") {
+    return { devOtp: otp };
+  }
+  console.log(`[PasswordReset] OTP for ${normalizedEmail}: ${otp}`);
+  return {};
+}
+
+export async function resetPassword(email: string, otp: string, newPassword: string) {
+  const normalizedEmail = email.toLowerCase().trim();
+  validatePasswordStrength(newPassword);
+
+  if (!otp || !/^\d{6}$/.test(otp)) {
+    throw httpError(400, "Invalid OTP. Please enter the 6-digit code.");
+  }
+
+  const tokenRecord = await prisma.passwordResetToken.findFirst({
+    where: {
+      email: normalizedEmail,
+      used: false,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!tokenRecord) {
+    throw httpError(400, "Invalid or expired OTP. Please request a new one.");
+  }
+
+  const isValidOtp = await bcrypt.compare(otp, tokenRecord.otpHash);
+  if (!isValidOtp) {
+    throw httpError(400, "Invalid OTP.");
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (!user) {
+    throw httpError(404, "Account not found.");
+  }
+  if (!user.password) {
+    throw httpError(400, "This account was created via GitHub login and has no password. Please use GitHub to sign in.");
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 12);
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: user.id }, data: { password: hashed } }),
+    prisma.passwordResetToken.update({ where: { id: tokenRecord.id }, data: { used: true } }),
+  ]);
+
+  return { message: "Password reset successful. Please sign in with your new password." };
+}
+
 type GitHubUser = {
   id: number;
   login: string;

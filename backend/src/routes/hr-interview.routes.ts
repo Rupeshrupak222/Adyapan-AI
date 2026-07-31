@@ -607,6 +607,7 @@ hrInterviewRouter.get("/analytics", async (req, res) => {
     const scoreTrend = [...completed].reverse().map((s: any) => ({
       date: s.createdAt?.toISOString?.() || String(s.createdAt),
       score: s.evaluations?.[0]?.overallScore || 0,
+      confidence: s.evaluations?.[0]?.confidenceScore || 0,
     }));
 
     const competencyKeys = ["communicationScore", "leadershipScore", "confidenceScore", "hrScore"] as const;

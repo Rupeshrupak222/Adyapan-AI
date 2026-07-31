@@ -11,6 +11,7 @@ import type { HREvaluation, HRAnswerBreakdown, IntelligenceData } from "./HRType
 import { HR_COMPETENCY_CONFIG } from "./HRTypes";
 import { generateInterviewPDF } from "@/utils/interview-pdf";
 import InterviewIntelligence from "@/components/interview-hub/shared/InterviewIntelligence";
+import { api } from "@/services/api";
 
 interface HRReportProps {
   sessionId: string;
@@ -122,8 +123,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
       setLoadingIntelligence(true);
       try {
         const token = localStorage.getItem("adyapan-token");
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-        const res = await fetch(`${base}/api/hr-interview/${sessionId}/coach`, {
+        const res = await fetch(`${api.defaults.baseURL}/interview/hr/${sessionId}/coach`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

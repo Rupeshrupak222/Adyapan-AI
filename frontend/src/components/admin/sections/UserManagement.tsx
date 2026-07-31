@@ -59,16 +59,17 @@ const roleMap: Record<string, { label: string; variant: "success" | "warning" | 
 };
 
 const planMap: Record<string, { label: string; variant: "success" | "warning" | "error" | "info" | "default" }> = {
-  PREMIUM: { label: "Premium", variant: "success" },
-  FREE: { label: "Free", variant: "default" },
-  ENTERPRISE: { label: "Enterprise", variant: "warning" },
+  premium: { label: "Premium", variant: "success" },
+  free: { label: "Free", variant: "default" },
+  enterprise: { label: "Enterprise", variant: "warning" },
 };
 
 const statusMap: Record<string, { label: string; variant: "success" | "warning" | "error" | "info" | "default" }> = {
-  ACTIVE: { label: "Active", variant: "success" },
-  SUSPENDED: { label: "Suspended", variant: "error" },
-  CANCELLED: { label: "Cancelled", variant: "default" },
-  EXPIRED: { label: "Expired", variant: "warning" },
+  active: { label: "Active", variant: "success" },
+  suspended: { label: "Suspended", variant: "error" },
+  cancelled: { label: "Cancelled", variant: "default" },
+  inactive: { label: "Inactive", variant: "default" },
+  expired: { label: "Expired", variant: "warning" },
 };
 
 function formatDate(dateStr: string) {
@@ -109,10 +110,10 @@ export default function UserManagement() {
       const params: Record<string, string | number> = { page, limit: 20 };
       if (search) params.search = search;
       if (activeFilter === "admin") params.role = "ADMIN";
-      else if (activeFilter === "premium") params.plan = "PREMIUM";
-      else if (activeFilter === "free") params.plan = "FREE";
-      else if (activeFilter === "active") params.status = "ACTIVE";
-      else if (activeFilter === "suspended") params.status = "SUSPENDED";
+      else if (activeFilter === "premium") params.plan = "premium";
+      else if (activeFilter === "free") params.plan = "free";
+      else if (activeFilter === "active") params.status = "active";
+      else if (activeFilter === "suspended") params.status = "suspended";
 
       const res = await api.get<UsersResponse>("/admin/users", { params });
       setUsers(res.data.users);
@@ -136,10 +137,10 @@ export default function UserManagement() {
     setActionLoading(userId);
     try {
       await api.post(`/admin/users/${userId}/action`, { action, ...extra });
-      showToast(`${action.replace("_", " ")} successful`);
+      showToast(`${action.replace(/[_-]/g, " ")} successful`);
       fetchUsers();
     } catch {
-      showToast(`Failed to ${action.replace("_", " ")}`, "error");
+      showToast(`Failed to ${action.replace(/[_-]/g, " ")}`, "error");
     } finally {
       setActionLoading(null);
     }
@@ -347,10 +348,10 @@ export default function UserManagement() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <StatusBadge variant={planStyle.variant}>
-                              {user.plan === "PREMIUM" ? <Crown size={10} /> : <Star size={10} />}
+                              {user.plan === "premium" ? <Crown size={10} /> : <Star size={10} />}
                               {planStyle.label}
                             </StatusBadge>
-                            <StatusBadge variant={statusStyle.variant} pulse={user.subscriptionStatus === "ACTIVE"}>
+                            <StatusBadge variant={statusStyle.variant} pulse={user.subscriptionStatus === "active"}>
                               {statusStyle.label}
                             </StatusBadge>
                           </div>
@@ -395,29 +396,29 @@ export default function UserManagement() {
                                 icon={<Shield size={13} />}
                                 tooltip="Promote to Admin"
                                 loading={actionLoading === user.id}
-                                onClick={() => handleAction(user.id, "set_role", { role: "ADMIN" })}
+                                onClick={() => handleAction(user.id, "change-role", { role: "ADMIN" })}
                               />
                             ) : (
                               <ActionBtn
                                 icon={<UserMinus size={13} />}
                                 tooltip="Demote to User"
                                 loading={actionLoading === user.id}
-                                onClick={() => handleAction(user.id, "set_role", { role: "USER" })}
+                                onClick={() => handleAction(user.id, "change-role", { role: "USER" })}
                               />
                             )}
-                            {user.plan !== "PREMIUM" ? (
+                            {user.plan !== "premium" ? (
                               <ActionBtn
                                 icon={<Crown size={13} />}
                                 tooltip="Upgrade to Premium"
                                 loading={actionLoading === user.id}
-                                onClick={() => handleAction(user.id, "change_plan", { plan: "PREMIUM" })}
+                                onClick={() => handleAction(user.id, "upgrade_plan", { plan: "premium" })}
                               />
                             ) : (
                               <ActionBtn
                                 icon={<Star size={13} />}
                                 tooltip="Downgrade to Free"
                                 loading={actionLoading === user.id}
-                                onClick={() => handleAction(user.id, "change_plan", { plan: "FREE" })}
+                                onClick={() => handleAction(user.id, "downgrade_plan")}
                               />
                             )}
                             <ActionBtn

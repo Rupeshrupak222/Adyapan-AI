@@ -90,6 +90,7 @@ export default function PremiumPage() {
   const [user, setUser] = useState<Record<string, any> | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [planPrices, setPlanPrices] = useState<Record<string, number> | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token");
@@ -105,6 +106,16 @@ export default function PremiumPage() {
     api.get("/payment/status").then((res) => {
       if (res.data.success) setSub(res.data.subscription);
     }).catch(() => {}).finally(() => setLoading(false));
+
+    api.get("/payment/plans").then((res) => {
+      if (res.data?.success && Array.isArray(res.data.plans)) {
+        const map: Record<string, number> = {};
+        res.data.plans.forEach((p: { id: string; amount: number }) => {
+          map[p.id] = Math.round((p.amount ?? 0) / 100);
+        });
+        setPlanPrices(map);
+      }
+    }).catch(() => {});
 
     // Load Razorpay script
     if (!(window as unknown as Record<string, any>).Razorpay) {
@@ -220,6 +231,11 @@ export default function PremiumPage() {
 
   const isPro = sub?.status === "active";
 
+  const resolvedPlans = PLANS.map((plan) => ({
+    ...plan,
+    price: planPrices && planPrices[plan.id] != null ? planPrices[plan.id] : plan.price,
+  }));
+
   return (
     <div className="min-h-screen relative overflow-hidden transition-colors duration-300" style={{ background: colors.bg, color: colors.text }}>
       <FloatingOrbs />
@@ -265,7 +281,7 @@ export default function PremiumPage() {
       {/* Plans */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 pb-20">
         <div className="grid md:grid-cols-3 gap-5">
-          {PLANS.map((plan, i) => {
+          {resolvedPlans.map((plan, i) => {
             const isCurrentPlan = isPro && sub?.plan === plan.id;
             const isFreePlan = plan.id === "free";
             const showUpgradeBtn = !isCurrentPlan && !isFreePlan;

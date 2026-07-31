@@ -1,284 +1,172 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Key, Webhook, Gauge, Variable, Code,
-  Copy, Check, Eye, EyeOff, Clock, Activity,
-  Globe, Terminal, BookOpen, Box,
+  Key, Webhook, Gauge, Variable, BookOpen,
+  Globe, Terminal, Code, Box, Inbox, RefreshCw,
 } from "lucide-react";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
+import { api } from "@/services/api";
 
-interface ApiKey {
-  id: string;
-  name: string;
-  key: string;
-  masked: string;
-  created: string;
-  lastUsed: string;
+interface PerformanceStats {
+  avgApiResponseTime: number;
+  avgDatabaseQueryTime: number;
+  avgAiGenerationTime: number;
+  avgUploadTime: number;
+  errorRate: number;
+  totalRequests: number;
+  totalErrors: number;
 }
 
-interface WebhookEndpoint {
-  id: string;
-  url: string;
-  status: "Active" | "Paused" | "Failed";
-  lastTriggered: string;
-  eventsCount: number;
+interface PerformanceData {
+  success: boolean;
+  stats?: PerformanceStats;
 }
-
-interface EnvVar {
-  id: string;
-  key: string;
-  value: string;
-  masked: boolean;
-}
-
-const MOCK_API_KEYS: ApiKey[] = [
-  { id: "key-1", name: "Production API Key", key: "sk_ady_prod_a4f8c2b1e9d7f3a6b8c0d2e4f6a8b0c1", masked: "sk_ady_prod_****...b0c1", created: "2026-01-15", lastUsed: "2 min ago" },
-  { id: "key-2", name: "Staging API Key", key: "sk_ady_stag_b3e5f7g9h1i3k5m7n9p1r3t5v7x9z1", masked: "sk_ady_stag_****...9z1", created: "2026-03-22", lastUsed: "1 hour ago" },
-  { id: "key-3", name: "Development API Key", key: "sk_ady_dev_c4d6e8f0g2h4i6k8m0n2p4r6t8v0z2", masked: "sk_ady_dev_****...v0z2", created: "2026-06-10", lastUsed: "5 min ago" },
-];
-
-const MOCK_WEBHOOKS: WebhookEndpoint[] = [
-  { id: "wh-1", url: "https://api.adyapan.ai/webhooks/payments", status: "Active", lastTriggered: "3 min ago", eventsCount: 1247 },
-  { id: "wh-2", url: "https://api.adyapan.ai/webhooks/users", status: "Active", lastTriggered: "1 min ago", eventsCount: 8932 },
-  { id: "wh-3", url: "https://hooks.slack.com/services/T.../B.../xxx", status: "Paused", lastTriggered: "2 days ago", eventsCount: 456 },
-  { id: "wh-4", url: "https://api.adyapan.ai/webhooks/analytics", status: "Failed", lastTriggered: "Failed", eventsCount: 89 },
-];
-
-const MOCK_ENV_VARS: EnvVar[] = [
-  { id: "env-1", key: "DATABASE_URL", value: "postgresql://admin:****@db.adyapan.ai:5432/adyapan_prod", masked: true },
-  { id: "env-2", key: "REDIS_URL", value: "redis://:****@redis.adyapan.ai:6379", masked: true },
-  { id: "env-3", key: "STRIPE_SECRET_KEY", value: "sk_live_****", masked: true },
-  { id: "env-4", key: "OPENAI_API_KEY", value: "sk-****", masked: true },
-  { id: "env-5", key: "CLOUDINARY_URL", value: "cloudinary://****", masked: true },
-  { id: "env-6", key: "NEXT_PUBLIC_APP_URL", value: "https://adyapan.ai", masked: false },
-];
 
 const SDK_LIST = [
-  { name: "REST API", icon: <Globe size={16} />, lang: "HTTP", desc: "Full platform API" },
+  { name: "REST API", icon: <Globe size={16} />, lang: "HTTP", desc: "HTTP JSON API" },
   { name: "Python SDK", icon: <Terminal size={16} />, lang: "Python 3.9+", desc: "pip install adyapan" },
   { name: "JavaScript SDK", icon: <Code size={16} />, lang: "Node 18+", desc: "npm install @adyapan/sdk" },
   { name: "React SDK", icon: <Box size={16} />, lang: "React 18+", desc: "npm install @adyapan/react" },
 ];
 
-function statusWebhookVariant(s: WebhookEndpoint["status"]) {
-  switch (s) {
-    case "Active": return "success" as const;
-    case "Paused": return "warning" as const;
-    case "Failed": return "error" as const;
-  }
+function EmptyCard({ title, icon, message }: { title: string; icon: React.ReactNode; message: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="rounded-2xl border overflow-hidden"
+      style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
+    >
+      <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+        <span style={{ color: "#f59e0b" }}>{icon}</span>
+        <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>{title}</h2>
+        <span className="ml-auto">
+          <StatusBadge variant="default">Not Available</StatusBadge>
+        </span>
+      </div>
+      <div className="px-5 py-8 flex flex-col items-center justify-center text-center">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <Inbox size={22} style={{ color: "rgba(255,255,255,0.18)" }} />
+        </div>
+        <p className="text-[11px] max-w-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{message}</p>
+      </div>
+    </motion.div>
+  );
+}
+
+function MetricBar({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border px-4 py-3" style={{ borderColor: "var(--border-color)", background: "rgba(255,255,255,0.02)" }}>
+      <span className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>{label}</span>
+      <span className="text-[11px] font-mono font-bold" style={{ color: "var(--text-primary)" }}>{value}</span>
+    </div>
+  );
 }
 
 export default function DeveloperCenter() {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [visibleEnv, setVisibleEnv] = useState<string | null>(null);
+  const [stats, setStats] = useState<PerformanceStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const copyKey = async (apiKey: ApiKey) => {
+  const fetchStats = async () => {
+    setLoading(true);
     try {
-      await navigator.clipboard.writeText(apiKey.key);
-      setCopiedId(apiKey.id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch { /* fallback */ }
+      const res = await api.get<PerformanceData>("/admin/performance");
+      if (res.data?.success) {
+        setStats(res.data.stats ?? null);
+      }
+    } catch {
+      setStats(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const totalRequests = stats?.totalRequests ?? 0;
 
   return (
     <div className="space-y-6 pb-12">
       <SectionHeader
         title="Developer Center"
-        description="API keys, webhooks, rate limits, environment configuration, and SDKs"
+        description="API usage, rate limits, and SDKs"
+        actions={
+          <button
+            onClick={fetchStats}
+            disabled={loading}
+            className="p-2 rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          </button>
+        }
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* API Keys */}
+        {/* Live API Usage */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, duration: 0.3 }}
-          className="rounded-2xl border overflow-hidden"
-          style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
-        >
-          <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
-            <Key size={16} style={{ color: "#f59e0b" }} />
-            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>API Keys</h2>
-            <span className="ml-auto text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-              {MOCK_API_KEYS.length} keys
-            </span>
-          </div>
-          <div className="divide-y" style={{ borderColor: "var(--border-color)" }}>
-            {MOCK_API_KEYS.map((apiKey, idx) => (
-              <motion.div
-                key={apiKey.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.05, duration: 0.25 }}
-                className="px-5 py-3.5 space-y-2"
-                style={{ borderColor: "var(--border-color)" }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{apiKey.name}</span>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => copyKey(apiKey)}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all"
-                    style={{
-                      background: copiedId === apiKey.id ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.05)",
-                      color: copiedId === apiKey.id ? "#10b981" : "var(--text-secondary)",
-                      border: "1px solid",
-                      borderColor: copiedId === apiKey.id ? "rgba(16,185,129,0.3)" : "var(--border-color)",
-                    }}
-                  >
-                    {copiedId === apiKey.id ? <Check size={11} /> : <Copy size={11} />}
-                    {copiedId === apiKey.id ? "Copied!" : "Copy"}
-                  </motion.button>
-                </div>
-                <div
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-[11px]"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)" }}
-                >
-                  <span style={{ color: "var(--text-muted)" }}>{apiKey.masked}</span>
-                </div>
-                <div className="flex items-center gap-3 text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-                  <span>Created: {apiKey.created}</span>
-                  <span className="flex items-center gap-1"><Clock size={9} />{apiKey.lastUsed}</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Webhooks */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.3 }}
-          className="rounded-2xl border overflow-hidden"
-          style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
-        >
-          <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
-            <Webhook size={16} style={{ color: "#818cf8" }} />
-            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>Webhooks</h2>
-            <span className="ml-auto text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-              {MOCK_WEBHOOKS.filter((w) => w.status === "Active").length} active
-            </span>
-          </div>
-          <div className="divide-y" style={{ borderColor: "var(--border-color)" }}>
-            {MOCK_WEBHOOKS.map((wh, idx) => (
-              <motion.div
-                key={wh.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.05, duration: 0.25 }}
-                className="px-5 py-3.5 space-y-1.5"
-                style={{ borderColor: "var(--border-color)" }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold truncate max-w-[220px]" style={{ color: "var(--text-primary)" }}>
-                    {wh.url}
-                  </span>
-                  <StatusBadge variant={statusWebhookVariant(wh.status)} pulse={wh.status === "Active"}>
-                    {wh.status}
-                  </StatusBadge>
-                </div>
-                <div className="flex items-center gap-3 text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-                  <span className="flex items-center gap-1"><Activity size={9} />{wh.eventsCount} events</span>
-                  <span className="flex items-center gap-1"><Clock size={9} />{wh.lastTriggered}</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Rate Limits */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.3 }}
           className="rounded-2xl border p-5"
           style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
         >
           <div className="flex items-center gap-2 mb-4">
             <Gauge size={16} style={{ color: "#10b981" }} />
-            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>Rate Limits</h2>
-          </div>
-          <div className="space-y-4">
-            {[
-              { endpoint: "/api/*", limit: 5000, used: 3421 },
-              { endpoint: "/api/ai/*", limit: 1000, used: 876 },
-              { endpoint: "/api/admin/*", limit: 500, used: 234 },
-              { endpoint: "/api/auth/*", limit: 200, used: 45 },
-            ].map((rl, idx) => {
-              const pct = Math.round((rl.used / rl.limit) * 100);
-              const color = pct >= 90 ? "#ef4444" : pct >= 70 ? "#f59e0b" : "#10b981";
-              return (
-                <div key={rl.endpoint}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-mono font-bold" style={{ color: "var(--text-primary)" }}>{rl.endpoint}</span>
-                    <span className="text-[10px] font-mono font-bold" style={{ color }}>{rl.used}/{rl.limit} ({pct}%)</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="h-full rounded-full"
-                      style={{ background: color }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* Environment Variables */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.3 }}
-          className="rounded-2xl border overflow-hidden"
-          style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
-        >
-          <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
-            <Variable size={16} style={{ color: "#f472b6" }} />
-            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>Environment Variables</h2>
+            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>Live API Usage</h2>
             <span className="ml-auto text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-              {MOCK_ENV_VARS.length} vars
+              {stats ? "live" : "offline"}
             </span>
           </div>
-          <div className="divide-y" style={{ borderColor: "var(--border-color)" }}>
-            {MOCK_ENV_VARS.map((envVar, idx) => (
-              <motion.div
-                key={envVar.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.04, duration: 0.25 }}
-                className="px-5 py-3 flex items-center justify-between"
-                style={{ borderColor: "var(--border-color)" }}
-              >
-                <div className="min-w-0 flex-1">
-                  <span className="text-[11px] font-mono font-bold" style={{ color: "var(--text-primary)" }}>{envVar.key}</span>
-                  <span className="text-[11px] font-mono ml-2" style={{ color: "var(--text-muted)" }}>
-                    = {visibleEnv === envVar.id || !envVar.masked ? envVar.value : "****"}
-                  </span>
+          {!stats ? (
+            <p className="text-[11px] py-6 text-center" style={{ color: "var(--text-muted)" }}>
+              No API usage data available right now.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border p-3" style={{ borderColor: "var(--border-color)", background: "rgba(255,255,255,0.02)" }}>
+                  <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Total Requests</p>
+                  <p className="text-lg font-black font-mono mt-1" style={{ color: "var(--text-primary)" }}>{totalRequests.toLocaleString()}</p>
                 </div>
-                {envVar.masked && (
-                  <button
-                    onClick={() => setVisibleEnv(visibleEnv === envVar.id ? null : envVar.id)}
-                    className="p-1 rounded-lg transition-all hover:bg-white/[0.05]"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {visibleEnv === envVar.id ? <EyeOff size={13} /> : <Eye size={13} />}
-                  </button>
-                )}
-              </motion.div>
-            ))}
-          </div>
+                <div className="rounded-xl border p-3" style={{ borderColor: "var(--border-color)", background: "rgba(255,255,255,0.02)" }}>
+                  <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Errors</p>
+                  <p className="text-lg font-black font-mono mt-1" style={{ color: stats.totalErrors > 0 ? "#ef4444" : "var(--text-primary)" }}>{stats.totalErrors.toLocaleString()}</p>
+                </div>
+              </div>
+              <MetricBar label="Avg API response" value={`${Math.round(stats.avgApiResponseTime)} ms`} />
+              <MetricBar label="Avg AI generation" value={`${Math.round(stats.avgAiGenerationTime)} ms`} />
+              <MetricBar label="Avg upload" value={`${Math.round(stats.avgUploadTime)} ms`} />
+              <MetricBar label="Avg database query" value={`${Math.round(stats.avgDatabaseQueryTime)} ms`} />
+              <MetricBar label="Error rate" value={`${stats.errorRate}%`} />
+            </div>
+          )}
         </motion.div>
+
+        <EmptyCard
+          title="API Keys"
+          icon={<Key size={16} />}
+          message="API key management is not implemented yet. No developer key endpoint exists on the backend, so no keys are shown here."
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <EmptyCard
+          title="Webhooks"
+          icon={<Webhook size={16} style={{ color: "#818cf8" }} />}
+          message="Webhook delivery management is not implemented yet. Once webhook endpoints exist, their status and event history will appear here."
+        />
+
+        <EmptyCard
+          title="Environment Variables"
+          icon={<Variable size={16} style={{ color: "#f472b6" }} />}
+          message="Server environment variables are managed outside this dashboard and are intentionally not exposed through the admin UI."
+        />
       </div>
 
       {/* SDKs */}

@@ -3,14 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  BarChart3, GitBranch, Users, TrendingUp,
-  GraduationCap, Target, Sparkles, LineChart,
-  Activity, ArrowUpRight, CheckCircle2, Zap, RefreshCw,
+  Users, TrendingUp, Briefcase, Code2, RefreshCw, CheckCircle2,
 } from "lucide-react";
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Legend, Cell,
-} from "recharts";
 import { api } from "@/services/api";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
@@ -18,21 +12,33 @@ import { toast } from "sonner";
 
 interface AnalyticsData {
   totalUsers: number;
-  dau: number;
-  wau: number;
-  mau: number;
-  retentionRate: string;
-  placementRate: string;
+  activePremium: number;
+  premiumConversionRate: number;
   totalJobs: number;
   totalCoding: number;
-  funnels: { step: string; count: number; rate: string }[];
-  retentionTrend: { period: string; retention: number; active: number }[];
+}
+
+function KpiCard({ label, value, sub, icon, color }: { label: string; value: string; sub: string; icon: React.ReactNode; color: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="p-4 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-1"
+    >
+      <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+        <span>{label}</span>
+        <span style={{ color }}>{icon}</span>
+      </div>
+      <div className="text-2xl font-extrabold text-[var(--text-primary)]">{value}</div>
+      <div className="text-[11px] text-[var(--text-secondary)]">{sub}</div>
+    </motion.div>
+  );
 }
 
 export default function AnalyticsBI() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "funnels" | "retention">("overview");
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -52,11 +58,13 @@ export default function AnalyticsBI() {
     fetchAnalytics();
   }, []);
 
+  const conversion = data?.premiumConversionRate ?? 0;
+
   return (
     <div className="space-y-6 pb-12">
       <SectionHeader
         title="Analytics & Business Intelligence"
-        description="Live operational telemetry, cohort conversion funnels, and retention BI"
+        description="Live platform telemetry from real database counts"
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge variant="success">Live Database Telemetry</StatusBadge>
@@ -74,192 +82,93 @@ export default function AnalyticsBI() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-1">
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-            <span>Daily Active Users (DAU)</span>
-            <Users size={16} className="text-amber-500" />
-          </div>
-          <div className="text-2xl font-extrabold text-[var(--text-primary)]">
-            {data?.dau?.toLocaleString() ?? "—"}
-          </div>
-          <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
-            <ArrowUpRight size={12} /> {data?.retentionRate ?? "88.4%"} retention
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-1">
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-            <span>Weekly Active Users (WAU)</span>
-            <TrendingUp size={16} className="text-emerald-500" />
-          </div>
-          <div className="text-2xl font-extrabold text-[var(--text-primary)]">
-            {data?.wau?.toLocaleString() ?? "—"}
-          </div>
-          <div className="text-[11px] text-[var(--text-secondary)]">
-            Active in last 7 days
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-1">
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-            <span>Monthly Active Users (MAU)</span>
-            <Activity size={16} className="text-indigo-500" />
-          </div>
-          <div className="text-2xl font-extrabold text-[var(--text-primary)]">
-            {data?.mau?.toLocaleString() ?? "—"}
-          </div>
-          <div className="text-[11px] text-[var(--text-secondary)]">
-            Active in last 30 days
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-1">
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-            <span>Placement Readiness</span>
-            <GraduationCap size={16} className="text-orange-500" />
-          </div>
-          <div className="text-2xl font-extrabold text-[var(--text-primary)]">
-            {data?.placementRate ?? "84.2%"}
-          </div>
-          <div className="text-[11px] text-[var(--text-secondary)]">
-            Across {data?.totalJobs ?? 0} active job postings
-          </div>
-        </div>
+        <KpiCard
+          label="Total Users"
+          value={data?.totalUsers?.toLocaleString() ?? "—"}
+          sub="Registered accounts"
+          icon={<Users size={16} />}
+          color="#f59e0b"
+        />
+        <KpiCard
+          label="Active Subscriptions"
+          value={data?.activePremium?.toLocaleString() ?? "—"}
+          sub="Users with an active plan"
+          icon={<TrendingUp size={16} />}
+          color="#10b981"
+        />
+        <KpiCard
+          label="Job Listings"
+          value={data?.totalJobs?.toLocaleString() ?? "—"}
+          sub="Active discovery jobs"
+          icon={<Briefcase size={16} />}
+          color="#818cf8"
+        />
+        <KpiCard
+          label="Coding Questions"
+          value={data?.totalCoding?.toLocaleString() ?? "—"}
+          sub="Synced problem bank"
+          icon={<Code2 size={16} />}
+          color="#38bdf8"
+        />
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-[var(--border-color)] pb-2 text-xs">
-        <button
-          onClick={() => setActiveTab("overview")}
-          className={`px-4 py-2 rounded-xl font-bold transition-colors ${
-            activeTab === "overview"
-              ? "bg-[#f59e0b] text-black"
-              : "bg-[var(--card-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          }`}
-        >
-          Activity Overview
-        </button>
-        <button
-          onClick={() => setActiveTab("funnels")}
-          className={`px-4 py-2 rounded-xl font-bold transition-colors ${
-            activeTab === "funnels"
-              ? "bg-[#f59e0b] text-black"
-              : "bg-[var(--card-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          }`}
-        >
-          Conversion Funnels
-        </button>
-        <button
-          onClick={() => setActiveTab("retention")}
-          className={`px-4 py-2 rounded-xl font-bold transition-colors ${
-            activeTab === "retention"
-              ? "bg-[#f59e0b] text-black"
-              : "bg-[var(--card-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          }`}
-        >
-          Retention Analytics
-        </button>
-      </div>
-
-      {/* Main Charts & Telemetry */}
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 p-5 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-4">
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">User Retention & Engagement Curves</h3>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data?.retentionTrend || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" opacity={0.3} />
-                  <XAxis dataKey="period" stroke="var(--text-secondary)" fontSize={11} />
-                  <YAxis stroke="var(--text-secondary)" fontSize={11} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--card-bg)",
-                      borderColor: "var(--border-color)",
-                      color: "var(--text-primary)",
-                      borderRadius: 12,
-                    }}
-                  />
-                  <Area type="monotone" dataKey="active" stroke="#f59e0b" fill="url(#colorActive)" fillOpacity={0.2} name="Active Users" />
-                </AreaChart>
-              </ResponsiveContainer>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Platform Summary */}
+        <div className="lg:col-span-7 p-5 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-4">
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">Platform Summary</h3>
+          <div className="space-y-3 text-xs">
+            <div className="p-3 rounded-xl bg-[var(--bg-dark)] flex items-center justify-between">
+              <span className="text-[var(--text-secondary)]">Total Registered Users</span>
+              <span className="font-bold text-[var(--text-primary)]">{data?.totalUsers?.toLocaleString() ?? 0}</span>
             </div>
-          </div>
-
-          <div className="lg:col-span-4 p-5 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-4">
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Platform Summary</h3>
-            <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-xl bg-[var(--bg-dark)] flex items-center justify-between">
-                <span className="text-[var(--text-secondary)]">Total Registered Users</span>
-                <span className="font-bold text-[var(--text-primary)]">{data?.totalUsers ?? 0}</span>
-              </div>
-              <div className="p-3 rounded-xl bg-[var(--bg-dark)] flex items-center justify-between">
-                <span className="text-[var(--text-secondary)]">Live Job Listings</span>
-                <span className="font-bold text-[var(--text-primary)]">{data?.totalJobs ?? 0}</span>
-              </div>
-              <div className="p-3 rounded-xl bg-[var(--bg-dark)] flex items-center justify-between">
-                <span className="text-[var(--text-secondary)]">Synced Coding Questions</span>
-                <span className="font-bold text-[var(--text-primary)]">{data?.totalCoding ?? 0}</span>
-              </div>
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
-                <CheckCircle2 size={14} className="inline mr-1" /> System performance and query latencies operating at optimal levels.
-              </div>
+            <div className="p-3 rounded-xl bg-[var(--bg-dark)] flex items-center justify-between">
+              <span className="text-[var(--text-secondary)]">Active Subscriptions</span>
+              <span className="font-bold text-[var(--text-primary)]">{data?.activePremium?.toLocaleString() ?? 0}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-[var(--bg-dark)] flex items-center justify-between">
+              <span className="text-[var(--text-secondary)]">Live Job Listings</span>
+              <span className="font-bold text-[var(--text-primary)]">{data?.totalJobs?.toLocaleString() ?? 0}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-[var(--bg-dark)] flex items-center justify-between">
+              <span className="text-[var(--text-secondary)]">Synced Coding Questions</span>
+              <span className="font-bold text-[var(--text-primary)]">{data?.totalCoding?.toLocaleString() ?? 0}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+              <CheckCircle2 size={14} className="inline mr-1" /> All figures are direct database counts — no estimated or sampled values.
             </div>
           </div>
         </div>
-      )}
 
-      {activeTab === "funnels" && (
-        <div className="p-5 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-4">
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">User Journey Conversion Funnel</h3>
-          <div className="space-y-3">
-            {data?.funnels.map((item, idx) => (
-              <div key={idx} className="space-y-1">
-                <div className="flex justify-between text-xs font-semibold text-[var(--text-primary)]">
-                  <span>{item.step}</span>
-                  <span>{item.count} users ({item.rate})</span>
-                </div>
-                <div className="h-3 w-full bg-[var(--bg-dark)] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all"
-                    style={{ width: item.rate }}
-                  />
-                </div>
+        {/* Subscription Conversion */}
+        <div className="lg:col-span-5 p-5 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-4">
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">Subscription Conversion</h3>
+          {data ? (
+            <>
+              <div className="flex items-end justify-between">
+                <span className="text-3xl font-black font-mono" style={{ color: "#f59e0b" }}>{conversion}%</span>
+                <span className="text-[10px] font-medium text-[var(--text-muted)]">
+                  {data.activePremium.toLocaleString()} of {data.totalUsers.toLocaleString()} users
+                </span>
               </div>
-            ))}
-          </div>
+              <div className="w-full h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(100, conversion)}%` }}
+                  transition={{ duration: 0.7, ease: "easeOut" }}
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500"
+                />
+              </div>
+              <p className="text-[11px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Share of registered users with an active paid subscription.
+              </p>
+            </>
+          ) : (
+            <p className="text-[11px] py-6 text-center" style={{ color: "var(--text-muted)" }}>
+              No analytics data available right now.
+            </p>
+          )}
         </div>
-      )}
-
-      {activeTab === "retention" && (
-        <div className="p-5 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] space-y-4">
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">Weekly Cohort Retention Matrix</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--border-color)] text-[var(--text-secondary)]">
-                  <th className="py-2.5 px-3 font-semibold">Cohort</th>
-                  <th className="py-2.5 px-3 font-semibold">Week 1</th>
-                  <th className="py-2.5 px-3 font-semibold">Week 2</th>
-                  <th className="py-2.5 px-3 font-semibold">Week 3</th>
-                  <th className="py-2.5 px-3 font-semibold">Week 4</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-color)]">
-                {data?.retentionTrend.map((row, idx) => (
-                  <tr key={idx} className="text-[var(--text-primary)]">
-                    <td className="py-3 px-3 font-bold">{row.period}</td>
-                    <td className="py-3 px-3"><span className="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">{row.retention}%</span></td>
-                    <td className="py-3 px-3"><span className="px-2 py-1 rounded bg-emerald-500/15 text-emerald-400 font-bold">{Math.round(row.retention * 0.9)}%</span></td>
-                    <td className="py-3 px-3"><span className="px-2 py-1 rounded bg-amber-500/15 text-amber-400 font-bold">{Math.round(row.retention * 0.8)}%</span></td>
-                    <td className="py-3 px-3"><span className="px-2 py-1 rounded bg-amber-500/10 text-amber-400 font-bold">{Math.round(row.retention * 0.75)}%</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

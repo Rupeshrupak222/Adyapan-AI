@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Users, Crown, DollarSign, Cpu, Repeat, TrendingDown,
+  Users, Crown, DollarSign, Cpu,
   Activity, Server, Clock, LogIn, Brain,
   CreditCard, Database, HardDrive, Mail, Globe, Search,
   BookOpen, Code, Briefcase, MessageSquare, FileText,
@@ -38,7 +38,7 @@ interface DashboardData {
 
 interface HealthData {
   status: string; uptime: number;
-  memory: { used: number; total: number };
+  memory: { used: number; total: number; rss: number };
   nodeVersion: string; platform: string;
 }
 
@@ -48,7 +48,7 @@ interface ActivityItem {
 
 interface RevenueAnalytics {
   total: number; month: number; today: number;
-  premiumUsers: number; totalTransactions: number; averageOrderValue: number;
+  premiumUsers: number; totalTransactions: number; monthTransactions: number; averageOrderValue: number;
 }
 
 const MODULE_ICONS: Record<string, React.ReactNode> = {
@@ -78,18 +78,6 @@ const SERVICES = [
   { name: "CDN", icon: <Globe size={14} /> },
   { name: "Search", icon: <Search size={14} /> },
 ];
-
-const STATUS_COLORS: Record<string, string> = {
-  success: "#10b981",
-  warning: "#f59e0b",
-  error: "#ef4444",
-};
-
-function getStatusVariant(value: number): "success" | "warning" | "error" {
-  if (value >= 90) return "success";
-  if (value >= 60) return "warning";
-  return "error";
-}
 
 function getUptimeLabel(seconds: number): string {
   const d = Math.floor(seconds / 86400);
@@ -145,26 +133,19 @@ export default function ExecutiveDashboard() {
     ? Math.round((health.memory.used / health.memory.total) * 100)
     : 0;
 
-  const dauMau = dash ? Math.round((dash.users.premium / Math.max(dash.users.total, 1)) * 100) : 0;
-  const churnRate = dash?.users.total
-    ? ((dash.users.admin / Math.max(dash.users.total, 1)) * 0.5 + 2.1).toFixed(1)
-    : "0.0";
+  const healthOk = health?.status === "healthy";
+
+  const premiumShare = dash ? Math.round((dash.users.premium / Math.max(dash.users.total, 1)) * 100) : 0;
+  const freeShare = dash ? Math.round((dash.users.free / Math.max(dash.users.total, 1)) * 100) : 0;
+  const successRate = dash && dash.revenue.totalPayments > 0
+    ? Math.round((dash.revenue.successfulPayments / dash.revenue.totalPayments) * 100)
+    : 0;
 
   const revenueChartData = [
-    { name: "Week 1", revenue: 0, requests: 0 },
-    { name: "Week 2", revenue: 0, requests: 0 },
-    { name: "Week 3", revenue: 0, requests: 0 },
-    { name: "Week 4", revenue: 0, requests: 0 },
-  ].map((d, i) => {
-    const baseRevenue = dash ? dash.revenue.month / 4 : 0;
-    const baseRequests = dash ? dash.totalAiRequests / 4 : 0;
-    const variance = 0.75 + Math.random() * 0.5;
-    return {
-      ...d,
-      revenue: Math.round(baseRevenue * variance * (1 + i * 0.05)),
-      requests: Math.round(baseRequests * variance * (1 + i * 0.03)),
-    };
-  });
+    { name: "Today", revenue: revenueAnalytics?.today ?? 0 },
+    { name: "This Month", revenue: dash?.revenue.month ?? 0 },
+    { name: "All Time", revenue: dash?.revenue.total ?? 0 },
+  ];
 
   const moduleUsage = dash
     ? [
@@ -199,8 +180,10 @@ export default function ExecutiveDashboard() {
         description="Real-time overview of the Adyapan AI platform"
         actions={
           <div className="flex items-center gap-2 flex-wrap">
-            <StatusBadge variant="success" pulse>All Systems</StatusBadge>
-            <StatusBadge variant="info">v2.4.1</StatusBadge>
+            <StatusBadge variant={healthOk ? "success" : "warning"} pulse>
+              {healthOk ? "All Systems" : "Degraded"}
+            </StatusBadge>
+            <StatusBadge variant="info">Node {health?.nodeVersion ?? "—"}</StatusBadge>
             <StatusBadge variant="default">{dash?.users.total ?? 0} Users</StatusBadge>
           </div>
         }
@@ -212,55 +195,54 @@ export default function ExecutiveDashboard() {
           icon={<Users size={18} />}
           label="Total Users"
           value={formatNumber(dash?.users.total ?? 0)}
-          trend={{ up: true, pct: "+12.5%" }}
+          trend={{ up: true, pct: `+${dash?.users.newToday ?? 0} today` }}
           color="#818cf8"
           delay={0.05}
-          subtitle={`${dash?.users.newToday ?? 0} today`}
+          subtitle={`${dash?.users.newWeek ?? 0} new this week`}
         />
         <KPICard
           icon={<Crown size={18} />}
           label="Active Premium"
           value={formatNumber(dash?.users.premium ?? 0)}
-          trend={{ up: true, pct: "+8.3%" }}
+          trend={{ up: true, pct: `${premiumShare}% share` }}
           color="#f59e0b"
           delay={0.1}
-          subtitle={`${((dash?.users.premium ?? 0) / Math.max(dash?.users.total ?? 1, 1) * 100).toFixed(1)}% of users`}
+          subtitle="Premium subscribers"
         />
         <KPICard
           icon={<DollarSign size={18} />}
           label="Revenue (Month)"
           value={formatCurrency(dash?.revenue.month ?? 0)}
-          trend={{ up: true, pct: "+18.7%" }}
+          trend={{ up: true, pct: `${revenueAnalytics?.monthTransactions ?? 0} payments` }}
           color="#10b981"
           delay={0.15}
-          subtitle={revenueAnalytics ? `${revenueAnalytics.totalTransactions} transactions` : "—"}
+          subtitle={revenueAnalytics ? `${formatCurrency(revenueAnalytics.total)} all-time` : "—"}
         />
         <KPICard
           icon={<Cpu size={18} />}
           label="AI Requests"
           value={formatNumber(dash?.totalAiRequests ?? 0)}
-          trend={{ up: true, pct: "+22.4%" }}
           color="#f472b6"
           delay={0.2}
           subtitle="Total all-time"
         />
         <KPICard
-          icon={<Repeat size={18} />}
-          label="DAU / MAU"
-          value={`${dauMau}%`}
-          trend={{ up: false, pct: "-0.4%" }}
+          icon={<Users size={18} />}
+          label="Free Users"
+          value={formatNumber(dash?.users.free ?? 0)}
+          trend={{ up: true, pct: `${freeShare}% share` }}
           color="#38bdf8"
           delay={0.25}
-          subtitle="Stickiness ratio"
+          subtitle={`${dash?.users.admin ?? 0} admin accounts`}
         />
         <KPICard
-          icon={<TrendingDown size={18} />}
-          label="Churn Rate"
-          value={`${churnRate}%`}
-          trend={{ up: false, pct: "-0.2pp" }}
+          icon={<CreditCard size={18} />}
+          label="Payment Success"
+          value={`${successRate}%`}
+          trend={{ up: successRate >= 90, pct: `${dash?.revenue.failedPayments ?? 0} failed` }}
           color="#ef4444"
           delay={0.3}
-          subtitle="Monthly rolling"
+          subtitle={`${dash?.revenue.totalPayments ?? 0} total payments`}
         />
       </div>
 
@@ -281,8 +263,6 @@ export default function ExecutiveDashboard() {
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-3">
           {SERVICES.map((svc) => {
-            const healthVal = 85 + Math.floor(Math.random() * 16);
-            const variant = getStatusVariant(healthVal);
             return (
               <div
                 key={svc.name}
@@ -292,12 +272,12 @@ export default function ExecutiveDashboard() {
                   borderColor: "var(--border-color)",
                 }}
               >
-                <span style={{ color: STATUS_COLORS[variant] }}>{svc.icon}</span>
+                <span style={{ color: healthOk ? "#10b981" : "#f59e0b" }}>{svc.icon}</span>
                 <span className="text-[10px] font-bold text-center leading-tight" style={{ color: "var(--text-secondary)" }}>
                   {svc.name}
                 </span>
-                <StatusBadge variant={variant} pulse={variant === "success"}>
-                  {healthVal}%
+                <StatusBadge variant={healthOk ? "success" : "warning"} pulse={healthOk}>
+                  {healthOk ? "Operational" : "Degraded"}
                 </StatusBadge>
               </div>
             );
@@ -387,20 +367,20 @@ export default function ExecutiveDashboard() {
                 />
               </div>
             </div>
-            {/* CPU */}
+            {/* RSS */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                  <Cpu size={12} className="inline mr-1" />CPU
+                  <HardDrive size={12} className="inline mr-1" />RSS
                 </span>
                 <span className="text-[11px] font-mono font-bold" style={{ color: "var(--text-secondary)" }}>
-                  {health?.platform ?? "—"}
+                  {health ? `${health.memory.rss} MB` : "—"}
                 </span>
               </div>
               <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(memUsedPct + 5, 100)}%` }}
+                  animate={{ width: `${Math.min(memUsedPct, 100)}%` }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
                   className="h-full rounded-full"
                   style={{ background: "#818cf8" }}
@@ -444,7 +424,7 @@ export default function ExecutiveDashboard() {
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 size={16} style={{ color: "#10b981" }} />
             <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
-              Revenue vs AI Requests
+              Revenue Overview
             </h2>
           </div>
           <div className="h-56">
@@ -454,10 +434,6 @@ export default function ExecutiveDashboard() {
                   <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="reqGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
@@ -473,7 +449,6 @@ export default function ExecutiveDashboard() {
                   labelStyle={{ color: "var(--text-secondary)", fontWeight: 700 }}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#revGrad)" strokeWidth={2} name="Revenue" />
-                <Area type="monotone" dataKey="requests" stroke="#f59e0b" fill="url(#reqGrad)" strokeWidth={2} name="AI Requests" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -481,10 +456,6 @@ export default function ExecutiveDashboard() {
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               <span className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>Revenue</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-              <span className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>AI Requests</span>
             </div>
           </div>
         </motion.div>

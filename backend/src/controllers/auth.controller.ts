@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { loginUser, registerUser, getGitHubRedirectUrl, exchangeGitHubCode, handleGitHubUser } from "../services/auth.service";
+import { loginUser, registerUser, getGitHubRedirectUrl, exchangeGitHubCode, handleGitHubUser, requestPasswordReset, resetPassword } from "../services/auth.service";
 import { requireString } from "../utils/request";
 import { env } from "../config/env";
 import { httpError } from "../utils/httpError";
@@ -8,9 +8,9 @@ import { prisma } from "../config/prisma";
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await registerUser({
-      name: requireString(req.body.name, "name"),
-      email: requireString(req.body.email, "email"),
-      password: requireString(req.body.password, "password"),
+      name: requireString(req.body?.name, "name"),
+      email: requireString(req.body?.email, "email"),
+      password: requireString(req.body?.password, "password"),
       role: "USER",
     });
 
@@ -25,7 +25,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
 
 export async function registerAdmin(req: Request, res: Response, next: NextFunction) {
   try {
-    const rawSecret = requireString(req.body.adminSecret, "adminSecret").trim();
+    const rawSecret = requireString(req.body?.adminSecret, "adminSecret").trim();
     const configuredSecret = (env.adminRegisterSecret || "adyapan-admin-secret-2026").trim();
 
     // Flexible secret verification matching standard, trimmed, or configured secret
@@ -43,9 +43,9 @@ export async function registerAdmin(req: Request, res: Response, next: NextFunct
     }
 
     const result = await registerUser({
-      name: requireString(req.body.name, "name").trim(),
-      email: requireString(req.body.email, "email").trim(),
-      password: requireString(req.body.password, "password"),
+      name: requireString(req.body?.name, "name").trim(),
+      email: requireString(req.body?.email, "email").trim(),
+      password: requireString(req.body?.password, "password"),
       role: "ADMIN",
     });
 
@@ -61,16 +61,47 @@ export async function registerAdmin(req: Request, res: Response, next: NextFunct
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await loginUser({
-      email: requireString(req.body.email, "email"),
-      password: requireString(req.body.password, "password"),
-      rememberMe: Boolean(req.body.rememberMe),
+      email: requireString(req.body?.email, "email"),
+      password: requireString(req.body?.password, "password"),
+      rememberMe: Boolean(req.body?.rememberMe),
     });
+
+    if (result.user.role === "ADMIN") {
+      (prisma as any).adminLoginHistory.create({
+        data: {
+          adminId: result.user.id,
+          email: result.user.email,
+          ipAddress: req.ip || undefined,
+          userAgent: req.headers["user-agent"] || undefined,
+          status: "SUCCESS",
+        },
+      }).catch(() => {});
+    }
 
     res.json({
       success: true,
       ...result,
     });
   } catch (error) {
+    const emailRaw = req.body?.email;
+    if (typeof emailRaw === "string" && emailRaw.trim()) {
+      prisma.user
+        .findUnique({ where: { email: emailRaw.trim().toLowerCase() } })
+        .then((u) => {
+          if (u?.role === "ADMIN") {
+            return (prisma as any).adminLoginHistory.create({
+              data: {
+                adminId: u.id,
+                email: u.email,
+                ipAddress: req.ip || undefined,
+                userAgent: req.headers["user-agent"] || undefined,
+                status: "FAILED",
+              },
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
     next(error);
   }
 }
@@ -94,11 +125,30 @@ export function logout(_req: Request, res: Response) {
   });
 }
 
-export function forgotPassword(_req: Request, res: Response) {
-  res.status(202).json({
-    success: true,
-    message: "Password reset flow accepted",
-  });
+export async function forgotPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const email = requireString(req.body?.email, "email");
+    const result = await requestPasswordReset(email);
+    res.json({
+      success: true,
+      message: "If an account exists for that email, an OTP has been generated.",
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resetPasswordController(req: Request, res: Response, next: NextFunction) {
+  try {
+    const email = requireString(req.body?.email, "email");
+    const otp = requireString(req.body?.otp, "otp");
+    const newPassword = requireString(req.body?.newPassword, "newPassword");
+    const result = await resetPassword(email, otp, newPassword);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
 }
 
 export function githubAuth(_req: Request, res: Response) {

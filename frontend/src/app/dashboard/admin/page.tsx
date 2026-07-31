@@ -137,6 +137,8 @@ export default function AdminDashboard() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [theme, setTheme] = useState("dark");
   const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [ingestLoading, setIngestLoading] = useState(false);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
@@ -167,7 +169,20 @@ export default function AdminDashboard() {
   }, [user]);
 
   const handleRefresh = useCallback(() => {
+    setRefreshKey((k) => k + 1);
     setToastMsg("Dashboard refreshed");
+  }, []);
+
+  const handleIngestJobs = useCallback(async () => {
+    setIngestLoading(true);
+    try {
+      await api.post("/admin/jobs/ingest");
+      setToastMsg("Job ingestion triggered");
+    } catch {
+      setToastMsg("Failed to trigger ingestion");
+    } finally {
+      setIngestLoading(false);
+    }
   }, []);
 
   if (initialLoading) {
@@ -198,6 +213,9 @@ export default function AdminDashboard() {
         theme={theme}
         toggleTheme={toggleTheme}
         onRefresh={handleRefresh}
+        onAddJob={() => setActiveSection("placement")}
+        onIngestJobs={handleIngestJobs}
+        ingestLoading={ingestLoading}
       />
 
       <AdminSidebar
@@ -211,7 +229,7 @@ export default function AdminDashboard() {
       <main className="dash-main flex-1" style={{ background: "transparent" }}>
         <div className="max-w-7xl mx-auto space-y-6">
           <motion.div
-            key={activeSection}
+            key={`${activeSection}-${refreshKey}`}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}

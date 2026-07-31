@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Activity, Server, HardDrive, Cpu, Zap, Clock,
-  RefreshCw, Database, Wifi, Mail, Globe, Brain,
+  RefreshCw, Database, Brain,
   Loader2, Timer, BarChart3, Layers, HeartPulse, Gauge,
 } from "lucide-react";
 import { api } from "@/services/api";
@@ -25,16 +25,16 @@ interface SystemHealth {
 
 interface DatabaseMetrics {
   totalUsers: number;
+  totalDatabases: number;
   activeDatabases: number;
-  connectionPool: number;
-  queryPerformance: number;
 }
 
 interface ApiMetrics {
-  avgResponseTime: number;
-  p99Latency: number;
-  requestsPerMin: number;
+  avgApiResponseTime: number;
+  avgDatabaseQueryTime: number;
+  avgAiGenerationTime: number;
   errorRate: number;
+  totalRequests: number;
 }
 
 interface ServiceHealth {
@@ -46,13 +46,7 @@ interface ServiceHealth {
 const SERVICE_ICONS: Record<string, React.ReactNode> = {
   "API Server": <Server size={14} />,
   Database: <Database size={14} />,
-  Redis: <Zap size={14} />,
-  Queue: <Layers size={14} />,
-  WebSocket: <Wifi size={14} />,
-  Email: <Mail size={14} />,
-  CDN: <Globe size={14} />,
   "AI Workers": <Brain size={14} />,
-  "Background Jobs": <Timer size={14} />,
 };
 
 function getUptimeLabel(seconds: number): string {
@@ -86,46 +80,58 @@ function getStatusVariant(status: string): "success" | "warning" | "error" {
 export default function Monitoring() {
   const [loading, setLoading] = useState(true);
   const [health, setHealth] = useState<SystemHealth | null>(null);
-  const [dbMetrics, setDbMetrics] = useState<DatabaseMetrics | null>(null);
+  const [dbMetrics, setDbMetrics] = useState<DatabaseMetrics>({ totalUsers: 0, totalDatabases: 0, activeDatabases: 0 });
+  const [apiMetrics, setApiMetrics] = useState<ApiMetrics>({
+    avgApiResponseTime: 0,
+    avgDatabaseQueryTime: 0,
+    avgAiGenerationTime: 0,
+    errorRate: 0,
+    totalRequests: 0,
+  });
+  const [services, setServices] = useState<ServiceHealth[]>([]);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
-
-  const [apiMetrics] = useState<ApiMetrics>(() => ({
-    avgResponseTime: 42 + Math.random() * 30,
-    p99Latency: 120 + Math.random() * 80,
-    requestsPerMin: 850 + Math.floor(Math.random() * 400),
-    errorRate: +(0.5 + Math.random() * 2).toFixed(1),
-  }));
-
-  const [services] = useState<ServiceHealth[]>(() =>
-    ["API Server", "Database", "Redis", "Queue", "WebSocket", "Email", "CDN", "AI Workers", "Background Jobs"].map((name) => {
-      const roll = Math.random();
-      return {
-        name,
-        status: roll > 0.9 ? "degraded" : roll > 0.98 ? "down" : "healthy",
-        responseTime: Math.round(5 + Math.random() * 95),
-      };
-    })
-  );
 
   const fetchData = useCallback(async () => {
     try {
-      const [healthRes, dbRes] = await Promise.all([
+      const [healthRes, dbRes, perfRes] = await Promise.all([
         api.get("/admin/system-health"),
         api.get("/admin/databases/aggregated").catch(() => null),
+        api.get("/admin/performance").catch(() => null),
       ]);
 
       if (healthRes.data?.success) setHealth(healthRes.data.health);
 
-      if (dbRes?.data?.success) {
+      if (dbRes?.data && typeof dbRes.data.totalDatabases === "number") {
         setDbMetrics(dbRes.data);
-      } else {
-        setDbMetrics({
-          totalUsers: 1240 + Math.floor(Math.random() * 200),
-          activeDatabases: 12,
-          connectionPool: 85 + Math.floor(Math.random() * 15),
-          queryPerformance: 92 + Math.floor(Math.random() * 8),
-        });
       }
+
+      const stats: ApiMetrics = perfRes?.data?.success && perfRes.data.stats
+        ? {
+            avgApiResponseTime: perfRes.data.stats.avgApiResponseTime ?? 0,
+            avgDatabaseQueryTime: perfRes.data.stats.avgDatabaseQueryTime ?? 0,
+            avgAiGenerationTime: perfRes.data.stats.avgAiGenerationTime ?? 0,
+            errorRate: perfRes.data.stats.errorRate ?? 0,
+            totalRequests: perfRes.data.stats.totalRequests ?? 0,
+          }
+        : { avgApiResponseTime: 0, avgDatabaseQueryTime: 0, avgAiGenerationTime: 0, errorRate: 0, totalRequests: 0 };
+      setApiMetrics(stats);
+
+      const derived: ServiceHealth[] = [
+        {
+          name: "API Server",
+          status: healthRes.data?.success ? healthRes.data.health?.status ?? "down" : "down",
+          responseTime: stats.avgApiResponseTime,
+        },
+        {
+          name: "Database",
+          status: dbRes?.data && typeof dbRes.data.totalDatabases === "number" ? "healthy" : "down",
+          responseTime: stats.avgDatabaseQueryTime,
+        },
+      ];
+      if (stats.avgAiGenerationTime > 0) {
+        derived.push({ name: "AI Workers", status: "healthy", responseTime: stats.avgAiGenerationTime });
+      }
+      setServices(derived);
 
       setLastRefreshed(new Date());
     } catch (err) {
@@ -281,29 +287,29 @@ export default function Monitoring() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <MetricCard
-              label="Avg Response Time"
-              value={`${apiMetrics.avgResponseTime.toFixed(0)}ms`}
+              label="Avg Response"
+              value={apiMetrics.avgApiResponseTime > 0 ? `${apiMetrics.avgApiResponseTime}ms` : "—"}
               color="#10b981"
               icon={<Zap size={14} />}
             />
             <MetricCard
-              label="P99 Latency"
-              value={`${apiMetrics.p99Latency.toFixed(0)}ms`}
+              label="Avg DB Query"
+              value={apiMetrics.avgDatabaseQueryTime > 0 ? `${apiMetrics.avgDatabaseQueryTime}ms` : "—"}
               color="#f59e0b"
               icon={<Timer size={14} />}
-              subtitle="99th percentile"
             />
             <MetricCard
-              label="Requests / min"
-              value={apiMetrics.requestsPerMin.toLocaleString()}
+              label="Avg AI Gen"
+              value={apiMetrics.avgAiGenerationTime > 0 ? `${apiMetrics.avgAiGenerationTime}ms` : "—"}
               color="#818cf8"
-              icon={<Activity size={14} />}
+              icon={<Brain size={14} />}
             />
             <MetricCard
               label="Error Rate"
               value={`${apiMetrics.errorRate}%`}
               color={apiMetrics.errorRate > 2 ? "#ef4444" : "#10b981"}
               icon={<Activity size={14} />}
+              subtitle={`${apiMetrics.totalRequests} reqs / 24h`}
             />
           </div>
         </motion.div>
@@ -327,29 +333,29 @@ export default function Monitoring() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <MetricCard
-              label="Total User DBs"
-              value={dbMetrics?.totalUsers ?? 0}
+              label="Total Users"
+              value={dbMetrics.totalUsers.toLocaleString()}
               color="#38bdf8"
               icon={<Database size={14} />}
             />
             <MetricCard
-              label="Active DBs"
-              value={dbMetrics?.activeDatabases ?? 0}
-              color="#10b981"
+              label="Total User DBs"
+              value={dbMetrics.totalDatabases.toLocaleString()}
+              color="#818cf8"
               icon={<Layers size={14} />}
             />
             <MetricCard
-              label="Connection Pool"
-              value={`${dbMetrics?.connectionPool ?? 0}%`}
-              color={getGaugeColor(dbMetrics?.connectionPool ?? 0)}
-              icon={<Wifi size={14} />}
+              label="Active DBs"
+              value={dbMetrics.activeDatabases.toLocaleString()}
+              color="#10b981"
+              icon={<HeartPulse size={14} />}
             />
             <MetricCard
-              label="Query Performance"
-              value={`${dbMetrics?.queryPerformance ?? 0}%`}
-              color={getGaugeColor(100 - (dbMetrics?.queryPerformance ?? 100))}
+              label="Master DB"
+              value={dbMetrics.totalDatabases > 0 ? "Connected" : "—"}
+              color="#10b981"
               icon={<Zap size={14} />}
-              subtitle="Efficiency score"
+              subtitle="Platform database"
             />
           </div>
         </motion.div>

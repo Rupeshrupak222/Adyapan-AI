@@ -2416,7 +2416,7 @@ function UserDashboardContent() {
 
       const codingSessions = codingRes.status === "fulfilled" ? (codingRes.value.data.sessions || []) : [];
       const dsaProgress = dsaRes.status === "fulfilled" ? (dsaRes.value.data.progress || null) : null;
-      const challenges = challengesRes.status === "fulfilled" ? (challengesRes.value.data || []) : [];
+      const challenges = challengesRes.status === "fulfilled" ? (challengesRes.value.data?.challenges || challengesRes.value.data || []) : [];
 
       const avgAtsScore = atsReports.length
         ? Math.round(atsReports.reduce((sum: number, r: { score: number }) => sum + r.score, 0) / atsReports.length)

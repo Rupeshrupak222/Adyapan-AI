@@ -175,8 +175,12 @@ function LoginPageContent() {
     e.preventDefault(); setForgotError(""); setForgotMsg("");
     if (forgotStep === "email") {
       setForgotLoading(true);
-      try { await api.post("/auth/forgot-password", { email: forgotEmail }); setForgotMsg("OTP sent."); setForgotStep("otp"); }
-      catch { setForgotError("Could not send OTP."); }
+      try {
+        const { data } = await api.post("/auth/forgot-password", { email: forgotEmail });
+        setForgotMsg(data.devOtp ? `OTP sent. Development OTP: ${data.devOtp}` : "OTP sent. Check your email for the 6-digit code.");
+        setForgotStep("otp");
+      }
+      catch (err: unknown) { setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not send OTP."); }
       finally { setForgotLoading(false); }
     } else if (forgotStep === "otp") {
       if (forgotNew !== forgotConfirm) { setForgotError("Passwords do not match."); return; }

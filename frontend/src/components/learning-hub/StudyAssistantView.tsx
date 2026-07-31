@@ -168,7 +168,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
 
   const handleFileDrop = async (droppedFile: File) => {
     setFile(droppedFile);
-    setFileDetails({ name: droppedFile.name, size: (droppedFile.size / (1024 * 1024)).toFixed(1) + " MB", pages: Math.floor(Math.random() * 80) + 15, language: "English", time: "30-60 seconds" });
+    setFileDetails({ name: droppedFile.name, size: (droppedFile.size / (1024 * 1024)).toFixed(1) + " MB", pages: 0, language: "English", time: "30-60 seconds" });
     setStatus("uploading");
     try {
       const isBinary = /\.(pdf|docx|doc|pptx|ppt)$/i.test(droppedFile.name);

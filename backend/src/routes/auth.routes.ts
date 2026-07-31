@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { forgotPassword, githubAuth, githubCallback, login, logout, me, register, registerAdmin } from "../controllers/auth.controller";
+import { forgotPassword, resetPasswordController, githubAuth, githubCallback, login, logout, me, register, registerAdmin } from "../controllers/auth.controller";
 import { requireAuth } from "../middleware/auth";
 
 export const authRouter = Router();
@@ -8,6 +8,7 @@ authRouter.post("/register", register);
 authRouter.post("/register-admin", registerAdmin);
 authRouter.post("/login", login);
 authRouter.post("/forgot-password", forgotPassword);
+authRouter.post("/reset-password", resetPasswordController);
 authRouter.post("/logout", requireAuth, logout);
 authRouter.get("/me", requireAuth, me);
 authRouter.get("/github", githubAuth);

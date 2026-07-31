@@ -50,7 +50,7 @@ interface AnalyticsData {
   bestScore: number;
   averageScore: number;
   totalHours: number;
-  scoreTrend: { date: string; score: number }[];
+  scoreTrend: { date: string; score: number; confidence: number }[];
   skillAverages: {
     communication: number;
     technical: number;
@@ -1000,7 +1000,7 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                       tension: 0.4,
                     }, {
                       label: "Confidence",
-                      data: (analytics.scoreTrend || []).map((s) => Math.min(100, Math.max(0, s.score + (Math.random() * 10 - 5)))),
+                      data: (analytics.scoreTrend || []).map((s) => Math.min(100, Math.max(0, s.confidence))),
                       borderColor: "#06b6d4",
                       backgroundColor: "rgba(6,182,212,0.05)",
                       fill: false,
