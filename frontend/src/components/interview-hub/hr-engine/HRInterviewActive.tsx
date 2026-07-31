@@ -13,6 +13,12 @@ import AIAvatar from "@/components/interview-hub/shared/AIAvatar";
 import type { HRConfig, HRMessage, STARAnalysis, CommunicationAnalysis } from "./HRTypes";
 import { useHRStore } from "./HRStore";
 import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
+import {
+  useInterviewProctor,
+  ProctoringPanel,
+  ProctoringHUD,
+  PermissionGateModal,
+} from "@/components/interview-hub/proctoring";
 
 interface HRInterviewActiveProps {
   sessionId: string;
@@ -276,6 +282,30 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
     }
   }, [sessionId, onComplete, onEnd]);
 
+  // ── AI Proctoring Engine ──
+  const handleProctorAutoSubmit = useCallback(() => {
+    toast.error("Proctoring Violation Limit Reached", {
+      description: "Submitting HR interview session due to security violations.",
+    });
+    handleEndInterview();
+  }, [handleEndInterview]);
+
+  const {
+    proctorState,
+    videoRef,
+    startProctoring,
+    stopProctoring,
+  } = useInterviewProctor({
+    onAutoSubmit: handleProctorAutoSubmit,
+  });
+
+  useEffect(() => {
+    startProctoring();
+    return () => {
+      stopProctoring();
+    };
+  }, [startProctoring, stopProctoring]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -322,6 +352,9 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* AI Proctoring HUD */}
+          <ProctoringHUD proctorState={proctorState} isDark={isDark} />
+
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold"
             style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb" }}>
             <Clock size={10} />
@@ -717,6 +750,20 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Floating AI Proctoring Webcam Panel */}
+      <ProctoringPanel proctorState={proctorState} videoRef={videoRef} isDark={isDark} />
+
+      {/* Permission Gate Modal */}
+      <PermissionGateModal
+        isOpen={proctorState.status === "error" || proctorState.status === "requesting_permissions"}
+        proctorState={proctorState}
+        onGrantPermission={startProctoring}
+        onProceed={() => {}}
+        onCancel={onEnd}
+        isDark={isDark}
+        interviewTitle="AI HR Behavioral Interview"
+      />
     </div>
   );
 };

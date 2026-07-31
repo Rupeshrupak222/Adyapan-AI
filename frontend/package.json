@@ -16,6 +16,8 @@
     "@react-three/fiber": "^9.6.1",
     "@studio-freight/lenis": "^1.0.42",
     "@tanstack/react-query": "^5.101.2",
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs": "^4.22.0",
     "@xyflow/react": "^12.11.2",
     "axios": "^1.18.1",
     "canvas-confetti": "^1.9.4",

@@ -35,6 +35,12 @@ import { toast } from "sonner";
 import { api } from "@/services/api";
 import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
 import AIAvatar from "@/components/interview-hub/shared/AIAvatar";
+import {
+  useInterviewProctor,
+  ProctoringPanel,
+  ProctoringHUD,
+  PermissionGateModal,
+} from "@/components/interview-hub/proctoring";
 import type {
   EngineConfig,
   EngineMessage,
@@ -660,6 +666,30 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
     ]
   );
 
+  // ── AI Proctoring Engine ──
+  const handleProctorAutoSubmit = useCallback(() => {
+    toast.error("Proctoring Violation Limit Reached", {
+      description: "Submitting interview session due to security violations.",
+    });
+    handleSubmitAnswer(true);
+  }, [handleSubmitAnswer]);
+
+  const {
+    proctorState,
+    videoRef,
+    startProctoring,
+    stopProctoring,
+  } = useInterviewProctor({
+    onAutoSubmit: handleProctorAutoSubmit,
+  });
+
+  useEffect(() => {
+    startProctoring();
+    return () => {
+      stopProctoring();
+    };
+  }, [startProctoring, stopProctoring]);
+
   // ── End interview ──
   const handleEndInterview = useCallback(async () => {
     setShowEndConfirm(false);
@@ -792,6 +822,9 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             LIVE
           </div>
+
+          {/* AI Proctoring HUD */}
+          <ProctoringHUD proctorState={proctorState} isDark={isDark} />
 
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold font-mono"
             style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb" }}>
@@ -1837,6 +1870,20 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
           <span className="font-medium">{violationCount}</span>
         </div>
       </div>
+
+      {/* Floating AI Proctoring Webcam Panel */}
+      <ProctoringPanel proctorState={proctorState} videoRef={videoRef} isDark={isDark} />
+
+      {/* Permission Gate Modal */}
+      <PermissionGateModal
+        isOpen={proctorState.status === "error" || proctorState.status === "requesting_permissions"}
+        proctorState={proctorState}
+        onGrantPermission={startProctoring}
+        onProceed={() => {}}
+        onCancel={onEnd}
+        isDark={isDark}
+        interviewTitle={`${config.targetRole} Interview`}
+      />
     </div>
   );
 };
