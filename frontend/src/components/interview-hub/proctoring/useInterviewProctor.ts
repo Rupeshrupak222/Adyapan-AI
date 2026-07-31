@@ -23,12 +23,12 @@ function filterPersonDetections(
   predictions: Array<{ class: string; score: number; bbox: [number, number, number, number] }>,
   canvasWidth: number,
   canvasHeight: number,
-  minConfidence = 0.60,
-  minAreaRatio = 0.04
+  minConfidence = 0.45,
+  minAreaRatio = 0.01
 ): Array<{ class: string; score: number; bbox: [number, number, number, number] }> {
   const totalArea = canvasWidth * canvasHeight;
 
-  // 1. High confidence (>=0.60) & Minimum Box Area (>=4% of frame)
+  // 1. Filter score >= minConfidence (0.45) & Minimum Box Area (>=1% of frame)
   const validPersons = predictions.filter((p) => {
     if (p.class !== "person" || p.score < minConfidence) return false;
     const [, , w, h] = p.bbox;
@@ -38,7 +38,7 @@ function filterPersonDetections(
   if (validPersons.length <= 1) return validPersons;
 
   // 2. Overlap / Non-Maximum Suppression (NMS)
-  // If two boxes overlap by >25% or box centers are inside one another, treat as same candidate
+  // Deduplicate overlapping boxes for the same person (e.g. head box inside torso box)
   const deduplicated: typeof validPersons = [];
 
   for (const person of validPersons) {
@@ -66,10 +66,14 @@ function filterPersonDetections(
       const unionArea = area1 + area2 - interArea;
       const iou = unionArea > 0 ? interArea / unionArea : 0;
 
-      const centerInside =
-        center1X >= x2 && center1X <= x2 + w2 && center1Y >= y2 && center1Y <= y2 + h2;
+      const minBoxArea = Math.min(area1, area2);
+      const overlapRatioOfSmaller = minBoxArea > 0 ? interArea / minBoxArea : 0;
 
-      if (iou > 0.25 || centerInside) {
+      const centerInside =
+        (center1X >= x2 && center1X <= x2 + w2 && center1Y >= y2 && center1Y <= y2 + h2) ||
+        (center2X >= x1 && center2X <= x1 + w1 && center2Y >= y1 && center2Y <= y1 + h1);
+
+      if (iou > 0.15 || centerInside || overlapRatioOfSmaller > 0.30) {
         isDuplicate = true;
         break;
       }
@@ -93,7 +97,7 @@ export function useInterviewProctor({
     maxWarnings = 3,
     stabilityCycles = 3,
     warningCooldownMs = 30000, // 30-second delay between warnings
-    minPersonConfidence = 0.60, // 60% confidence requirement
+    minPersonConfidence = 0.45, // Calibrated 45% confidence requirement
     proctoringEnabled = true,
     audioAlertsEnabled = true,
     allowNoPersonWarning = true,
@@ -324,13 +328,13 @@ export function useInterviewProctor({
       // Perform COCO-SSD object detection
       const rawPredictions = await model.detect(canvas);
 
-      // Apply NMS + High Confidence (0.60) + Minimum Box Area filtering
+      // Apply NMS + Calibrated Confidence (0.45) + Area filtering (0.01)
       const personDetections = filterPersonDetections(
         rawPredictions as any,
         canvas.width,
         canvas.height,
         minPersonConfidence,
-        0.04
+        0.01
       );
 
       const personCount = personDetections.length;
