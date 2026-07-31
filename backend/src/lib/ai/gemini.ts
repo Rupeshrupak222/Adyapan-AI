@@ -513,26 +513,6 @@ Output a JSON object with this exact schema:
 
 Be thorough and specific. Score honestly.`;
 
-  const fallback: ATSDeepAnalysis = {
-    score: 65, scoreLabel: "Fair",
-    formattingScore: 70, keywordScore: 60, projectScore: 65, skillsScore: 80, experienceScore: 60, educationScore: 85, readabilityScore: 75,
-    keywordsFound: ["Python", "JavaScript"], keywordsMissing: ["Docker", "AWS", "Kubernetes"],
-    strongKeywords: ["Python"], weakKeywords: ["JavaScript"],
-    readability: "Good", length: "1 Page", formatting: "Good", recruiterScore: 7.2,
-    sectionScores: {
-      summary: { score: 7, suggestions: ["Add measurable achievements"] },
-      skills: { score: 8, suggestions: ["Add cloud technologies"] },
-      experience: { score: 6, suggestions: ["Quantify achievements"] },
-      projects: { score: 7, suggestions: ["Add tech stack details"] },
-      education: { score: 8, suggestions: ["Add relevant coursework"] },
-    },
-    keywordAnalysis: { found: ["Python", "JavaScript"], missing: ["Docker", "AWS"] },
-    formattingCheck: { onePage: true, fontsConsistent: true, atsFriendly: true, headingsCorrect: true, contactPresent: true },
-    strengthBars: { summary: 70, projects: 65, skills: 80, experience: 60, education: 85 },
-    recommendations: ["Add missing keywords", "Quantify achievements"],
-    formattingIssues: [], strengths: ["Strong technical skills"],
-  };
-
   return generateJSON<ATSDeepAnalysis>(ATS_SYSTEM, prompt, { model: MODELS.FAST }, getDynamicFallback(resumeText, targetRole));
 }
 

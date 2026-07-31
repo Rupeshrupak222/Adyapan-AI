@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { stripMarkdown } from "@/utils/stripMarkdown";
 import CountUp from "react-countup";
 import confetti from "canvas-confetti";
@@ -502,13 +503,25 @@ export function AtsCheckerView({ setView }: Props) {
   };
 
   const startAnalysisWithId = async (explicitId: string) => {
+    let effectiveSelId = explicitId || selId;
+    if (!file && !effectiveSelId && resumes.length > 0) {
+      effectiveSelId = resumes[0].id;
+      setSelId(effectiveSelId);
+    }
+
+    if (!file && !effectiveSelId) {
+      toast.error("Please upload a resume file or select a saved resume to analyze.");
+      return;
+    }
+
     setScreen("loading");
-    setLoading(true); setLoadStep(0);
+    setLoading(true);
+    setLoadStep(0);
     const iv = setInterval(() => setLoadStep(p => Math.min(p + 1, loadSteps.length - 1)), 700);
+
     try {
       const fd = new FormData();
       if (file) fd.append("resume", file);
-      const effectiveSelId = explicitId || selId;
       if (effectiveSelId) fd.append("resumeId", effectiveSelId);
       fd.append("targetRole", role);
       if (incJD === "yes") {
@@ -520,27 +533,39 @@ export function AtsCheckerView({ setView }: Props) {
         api.post("/ats/analyze", fd, { headers: hdrs }),
         api.post("/ats/intelligence", fd, { headers: hdrs }),
       ]);
-      clearInterval(iv); setLoadStep(loadSteps.length - 1);
+      clearInterval(iv);
+      setLoadStep(loadSteps.length - 1);
+
       if (aR.status === "rejected") {
-        throw new Error(aR.reason?.response?.data?.message || aR.reason?.message || "Failed to analyze resume.");
+        const errMsg = aR.reason?.response?.data?.message || aR.reason?.message || "Failed to analyze resume.";
+        toast.error(errMsg);
+        throw new Error(errMsg);
       }
-      if (aR.status === "fulfilled" && aR.value.data.analysis) {
-        setAnalysis(aR.value.data.analysis);
-        setUpdScore(aR.value.data.analysis.score);
+
+      const resAnalysis = aR.value.data.analysis || aR.value.data.report?.reportJson || aR.value.data.report;
+      if (resAnalysis) {
+        setAnalysis(resAnalysis);
+        setUpdScore(resAnalysis.score || 75);
       }
-      if (iR.status === "fulfilled" && iR.value.data.intelligence) setIntel(iR.value.data.intelligence);
+
+      if (iR.status === "fulfilled" && iR.value.data.intelligence) {
+        setIntel(iR.value.data.intelligence);
+      }
+
       await new Promise(r => setTimeout(r, 600));
       setScreen("dashboard");
-      if (aR.status === "fulfilled") genSuggestions(aR.value.data.analysis);
+
+      if (resAnalysis) genSuggestions(resAnalysis);
       try {
         confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 }, colors: ["#f59e0b", "#ea580c", "#10b981"] });
       } catch { /* confetti blocked */ }
-    } catch (err) {
+    } catch (err: any) {
       clearInterval(iv);
       setScreen("home");
-      // User-friendly error instead of alert
       console.error("ATS Analysis failed:", err);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const genSuggestions = async (a?: ATSDeepAnalysis) => {

@@ -9,6 +9,7 @@ import {
   atsAIChat,
   analyzeResumeIntelligence,
   compareResumes,
+  getDynamicFallback,
 } from "../lib/ai/gemini";
 import mammoth from "mammoth";
 import { getUserPrismaFromRequest } from "../utils/prisma";
@@ -203,8 +204,8 @@ export async function analyzeATSReport(req: Request, res: Response, next: NextFu
     try {
       analysis = await analyzeResumeDeep(resumeText, targetRole, jobDescription);
     } catch (aiErr: any) {
-      console.error("[ATS] AI analysis failed:", aiErr?.message || aiErr);
-      throw httpError(503, "AI analysis service is temporarily unavailable. Please try again in a moment.");
+      console.warn("[ATS] AI analysis fallback invoked:", aiErr?.message || aiErr);
+      analysis = getDynamicFallback(resumeText, targetRole);
     }
 
     const associatedResumeId = await getOrCreateResumeId(userId, resumeId, userPrisma);
