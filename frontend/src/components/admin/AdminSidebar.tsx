@@ -63,11 +63,6 @@ export function AdminSidebar({ activeSection, setActiveSection, sidebarOpen, set
         }}
       >
         <div className="flex flex-col gap-0.5 flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-          <div className="px-2 pb-2 mb-1" style={{ borderBottom: "1px solid var(--border-color)" }}>
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-              Platform Console
-            </span>
-          </div>
           {sidebarSections.map((item) => {
             const isActive = activeSection === item.id;
             return (

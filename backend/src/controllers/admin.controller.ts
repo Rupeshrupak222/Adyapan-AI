@@ -12,7 +12,7 @@ let systemSettingsMemory = {
   supportEmail: "support@adyapan.ai",
   defaultLanguage: "en",
   maintenanceMode: false,
-  announcementBanner: "Welcome to Adyapan AI Platform!",
+  announcementBanner: "",
   registrationOpen: true,
   defaultAiModel: "gemini",
   aiTemperature: 0.7,

@@ -2551,21 +2551,10 @@ function UserDashboardContent() {
       {showOnboarding && <OnboardingFlow onComplete={() => setShowOnboarding(false)} />}
       <FloatingOrbs />
 
-      {systemConfig?.announcementBanner && (
-        <div style={{
-          position: "fixed", top: 70, left: 0, right: 0, zIndex: 104,
-          background: "linear-gradient(90deg, #f59e0b, #d97706)", color: "#000",
-          padding: "6px 16px", textAlign: "center", fontSize: "0.8rem", fontWeight: 800,
-          boxShadow: "0 2px 10px rgba(245,158,11,0.3)"
-        }}>
-          📢 {systemConfig.announcementBanner}
-        </div>
-      )}
-
       <DashboardTopNav user={user} theme={theme} onThemeToggle={handleThemeToggle} onViewProfile={handleViewProfile} onAdyChat={handleAdyChat} onViewTool={navigateTo} onMenuToggle={() => setSidebarOpen(prev => !prev)} notifications={notifications} setNotifications={setNotifications} unreadCount={unreadCount} onMarkAllRead={async () => { try { await api.put("/notifications/read-all"); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); setUnreadCount(0); } catch {} }} onClearAll={async () => { try { await api.delete("/notifications/clear"); setNotifications([]); setUnreadCount(0); } catch {} }} onPremium={handlePremium} onViewSettings={() => navigateTo("settings")} />
       <DashboardSidebar activeView={activeView} onViewDashboard={handleViewDashboard} onViewTool={navigateTo} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <main className="dash-main relative z-10 resume-hub-theme" style={{ paddingTop: systemConfig?.announcementBanner ? 36 : undefined }}>
+      <main className="dash-main relative z-10 resume-hub-theme">
         {systemConfig?.maintenanceMode && user?.role !== "ADMIN" && (
           <div className="mb-6 p-4 rounded-xl border flex items-center gap-3"
             style={{ background: "rgba(245,158,11,0.12)", borderColor: "rgba(245,158,11,0.3)", color: "#f59e0b" }}>
