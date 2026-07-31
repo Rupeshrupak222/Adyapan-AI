@@ -8,9 +8,16 @@ import {
   Bell, Terminal, Bot, Settings,
 } from "lucide-react";
 
-const sidebarSections = [
+interface SidebarSectionItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  badge?: string;
+}
+
+const sidebarSections: SidebarSectionItem[] = [
   { id: "executive", label: "Executive Dashboard", icon: <LayoutDashboard size={18} /> },
-  { id: "operations", label: "Operations Center", icon: <Activity size={18} />, badge: "Live" },
+  { id: "operations", label: "Operations Center", icon: <Activity size={18} /> },
   { id: "users", label: "User Management", icon: <Users size={18} /> },
   { id: "organizations", label: "Organizations", icon: <Building2 size={18} /> },
   { id: "ai-platform", label: "AI Platform", icon: <Brain size={18} /> },
@@ -63,11 +70,6 @@ export function AdminSidebar({ activeSection, setActiveSection, sidebarOpen, set
         }}
       >
         <div className="flex flex-col gap-0.5 flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-          <div className="px-2 pb-2 mb-1" style={{ borderBottom: "1px solid var(--border-color)" }}>
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-              Platform Console
-            </span>
-          </div>
           {sidebarSections.map((item) => {
             const isActive = activeSection === item.id;
             return (

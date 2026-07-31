@@ -51,7 +51,7 @@ export function AdminHeader({
           <Image src="/assets/logo.png" alt="Adyapan AI" width={32} height={32} className="rounded-full" />
           <div>
             <span className="font-extrabold text-base tracking-tight" style={{ color: "var(--text-primary)" }}>Adyapan AI</span>
-            <span className="text-[10px] font-bold text-amber-500 block -mt-1 tracking-wider uppercase">Platform Console</span>
+            <span className="text-[10px] font-bold text-amber-500 block -mt-1 tracking-wider uppercase">Admin Console</span>
           </div>
         </div>
       </div>

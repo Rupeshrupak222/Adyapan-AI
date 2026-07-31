@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import type { PlatformUser } from "@/types/user";
 
 const USER_KEY = "adyapan-user";
@@ -72,11 +72,19 @@ export function getAuthUser(): PlatformUser | null {
 export function useAuth() {
   const [user, setUser] = useState<PlatformUser | null>(() => getAuthUser());
 
+  useEffect(() => {
+    const stored = getAuthUser();
+    if (stored) {
+      setUser(stored);
+    }
+  }, []);
+
   const logout = useCallback(() => {
+    const isNavAdmin = user?.role === "ADMIN" || (typeof window !== "undefined" && window.location.pathname.includes("admin"));
     clearAuthSession();
     setUser(null);
-    window.location.href = "/login";
-  }, []);
+    window.location.href = isNavAdmin ? "/admin-login" : "/login";
+  }, [user]);
 
   return useMemo(
     () => ({

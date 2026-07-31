@@ -237,9 +237,9 @@ export default function AdminRegisterPage() {
         </form>
 
         <p style={{ textAlign: "center", fontSize: "0.78rem", color: labelClr, marginTop: "1.25rem" }}>
-          Already have an account?{" "}
-          <Link href="/login" style={{ color: "#f59e0b", fontWeight: 700, textDecoration: "none" }}>
-            Sign in
+          Already an admin?{" "}
+          <Link href="/admin-login" style={{ color: "#f59e0b", fontWeight: 700, textDecoration: "none" }}>
+            Sign in to Admin Dashboard
           </Link>
         </p>
       </motion.div>

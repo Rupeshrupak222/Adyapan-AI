@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/services/api";
 import { saveAuthSession } from "@/hooks/useAuth";
@@ -266,6 +267,9 @@ function LoginPageContent() {
                     </motion.div>
                     <motion.p className="text-center text-xs" style={{ color: labelClr }} custom={6} variants={staggerItem} initial="hidden" animate="visible">
                       Don&apos;t have an account? <button type="button" onClick={() => switchTab("register")} className="font-bold text-amber-500">Register here</button>
+                    </motion.p>
+                    <motion.p className="text-center text-[11px] mt-1" style={{ color: mutedClr }} custom={7} variants={staggerItem} initial="hidden" animate="visible">
+                      Admin Portal? <Link href="/admin-login" className="font-bold text-amber-500 hover:underline">Sign in here →</Link>
                     </motion.p>
                   </form>
                 </motion.div>

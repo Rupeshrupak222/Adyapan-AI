@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { getPlatformConfig, updatePlatformConfig } from "../config/platform-config";
+import { getSystemSettingsMemory } from "../controllers/admin.controller";
 import { requireUserId } from "../utils/request";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 
@@ -8,9 +9,16 @@ export const configRouter = Router();
 configRouter.get("/", async (_req, res) => {
   try {
     const config = getPlatformConfig();
-    res.json({ success: true, config });
+    const adminSettings = getSystemSettingsMemory();
+    res.json({
+      success: true,
+      config: {
+        ...config,
+        ...adminSettings,
+      },
+    });
   } catch (error) {
-    res.json({ success: true, config: getPlatformConfig() });
+    res.json({ success: true, config: { ...getPlatformConfig(), ...getSystemSettingsMemory() } });
   }
 });
 

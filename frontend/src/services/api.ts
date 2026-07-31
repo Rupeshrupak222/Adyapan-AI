@@ -26,17 +26,19 @@ api.interceptors.response.use(
   async (err) => {
     const { config, response } = err;
     
-    // Redirect to login on 401
+    // Redirect to login on 401 (only if not already on an authentication page)
     if (typeof window !== "undefined" && response?.status === 401) {
       const path = window.location.pathname;
-      if (!path.startsWith("/login")) {
+      const isAuthPage = path.startsWith("/login") || path.startsWith("/admin-login") || path.startsWith("/admin-register");
+      if (!isAuthPage) {
         localStorage.removeItem("adyapan-token");
         localStorage.removeItem("adyapan-user");
         sessionStorage.removeItem("adyapan-token");
         sessionStorage.removeItem("adyapan-user");
         document.cookie = "adyapan-token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
         document.cookie = "adyapan-user=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
-        window.location.href = "/login";
+        const redirectTarget = (path.startsWith("/dashboard/admin") || path.startsWith("/profile/admin")) ? "/admin-login" : "/login";
+        window.location.href = redirectTarget;
       }
       return Promise.reject(err);
     }

@@ -106,8 +106,11 @@ const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
     return () => clearInterval(interval);
   }, []);
 
+  const lastSpokenTextRef = useRef<string>("");
   const speakText = useCallback((text: string) => {
-    if (!voiceEnabled || !window.speechSynthesis) return;
+    if (!voiceEnabled || !window.speechSynthesis || !text) return;
+    if (lastSpokenTextRef.current === text) return;
+    lastSpokenTextRef.current = text;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text.replace(/[#{}`]/g, ""));
     utterance.rate = config.voiceSpeed || 0.95;

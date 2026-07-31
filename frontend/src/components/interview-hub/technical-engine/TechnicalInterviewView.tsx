@@ -918,6 +918,7 @@ function ActiveInterview({
     window.speechSynthesis.cancel();
     const cleaned = text.replace(/[*_#`]/g, "").replace(/\n+/g, ". ");
 
+    let playedAvatarAudio = false;
     try {
       const res = await api.post("/avatar/speak", { text: cleaned }, { responseType: "arraybuffer" });
       const contentType = (res.headers as any)["content-type"] || "";
@@ -938,13 +939,17 @@ function ActiveInterview({
             } catch {}
           }, 1500);
         }
+        playedAvatarAudio = true;
       } else if (contentType.includes("audio/mpeg") || mode === "elevenlabs") {
         const blob = new Blob([res.data], { type: "audio/mpeg" });
         const url = URL.createObjectURL(blob);
         setAvatarAudioUrl(url);
         setAvatarVideoUrl(null);
+        playedAvatarAudio = true;
       }
     } catch {}
+
+    if (playedAvatarAudio) return;
 
     if (voiceEnabled) {
       const utterance = new SpeechSynthesisUtterance(cleaned);

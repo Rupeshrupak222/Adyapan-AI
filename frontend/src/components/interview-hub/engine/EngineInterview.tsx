@@ -511,14 +511,13 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
 
       const cleaned = text.replace(/[*_#`]/g, "").replace(/\n+/g, ". ");
 
-      // ── Try ElevenLabs + D-ID avatar ──────────────────────────────
+      let playedAvatarAudio = false;
       try {
         const res = await api.post("/avatar/speak", { text: cleaned }, { responseType: "arraybuffer" });
         const contentType = (res.headers as any)["content-type"] || "";
         const mode = (res.headers as any)["x-avatar-mode"];
 
         if (mode === "did" || (res.data as any)?.mode === "did") {
-          // D-ID talk created — poll for video
           const json = JSON.parse(Buffer.from(res.data).toString());
           const talkId = json.talkId;
           if (talkId) {
@@ -533,18 +532,21 @@ const EngineInterview: React.FC<EngineInterviewProps> = ({
               } catch {}
             }, 1500);
           }
+          playedAvatarAudio = true;
         } else if (contentType.includes("audio/mpeg") || mode === "elevenlabs") {
-          // ElevenLabs audio — play via <audio> element in AIAvatar
           const blob = new Blob([res.data], { type: "audio/mpeg" });
           const url = URL.createObjectURL(blob);
           setAvatarAudioUrl(url);
           setAvatarVideoUrl(null);
+          playedAvatarAudio = true;
         }
       } catch {
         // Fallback to browser TTS
       }
 
-      // Always play browser TTS as reliable fallback / sync
+      // If ElevenLabs or D-ID audio is playing, do NOT speak browser TTS simultaneously
+      if (playedAvatarAudio) return;
+
       if (voiceEnabled) {
         const utterance = new SpeechSynthesisUtterance(cleaned);
         utterance.rate = config.voiceSpeed;

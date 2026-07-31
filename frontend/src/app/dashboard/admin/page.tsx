@@ -176,7 +176,7 @@ export default function AdminDashboard() {
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: "#f59e0b" }} />
           <div className="text-sm font-bold tracking-wide" style={{ color: "var(--text-secondary)" }}>
-            Loading Platform Console...
+            Loading Executive Dashboard...
           </div>
         </div>
       </div>
