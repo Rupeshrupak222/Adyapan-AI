@@ -23,12 +23,12 @@ function filterPersonDetections(
   predictions: Array<{ class: string; score: number; bbox: [number, number, number, number] }>,
   canvasWidth: number,
   canvasHeight: number,
-  minConfidence = 0.45,
-  minAreaRatio = 0.01
+  minConfidence = 0.35,
+  minAreaRatio = 0.005
 ): Array<{ class: string; score: number; bbox: [number, number, number, number] }> {
   const totalArea = canvasWidth * canvasHeight;
 
-  // 1. Filter score >= minConfidence (0.45) & Minimum Box Area (>=1% of frame)
+  // 1. Filter score >= minConfidence (0.35) & Minimum Box Area (>=0.5% of frame)
   const validPersons = predictions.filter((p) => {
     if (p.class !== "person" || p.score < minConfidence) return false;
     const [, , w, h] = p.bbox;
@@ -97,7 +97,7 @@ export function useInterviewProctor({
     maxWarnings = 3,
     stabilityCycles = 3,
     warningCooldownMs = 30000, // 30-second delay between warnings
-    minPersonConfidence = 0.45, // Calibrated 45% confidence requirement
+    minPersonConfidence = 0.35, // Calibrated 35% confidence requirement
     proctoringEnabled = true,
     audioAlertsEnabled = true,
     allowNoPersonWarning = true,
@@ -325,16 +325,16 @@ export function useInterviewProctor({
 
       ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
-      // Perform COCO-SSD object detection
-      const rawPredictions = await model.detect(canvas);
+      // Perform COCO-SSD object detection directly on video stream/canvas
+      const rawPredictions = await model.detect(videoEl || canvas);
 
-      // Apply NMS + Calibrated Confidence (0.45) + Area filtering (0.01)
+      // Apply NMS + Calibrated Confidence (0.35) + Area filtering (0.005)
       const personDetections = filterPersonDetections(
         rawPredictions as any,
         canvas.width,
         canvas.height,
         minPersonConfidence,
-        0.01
+        0.005
       );
 
       const personCount = personDetections.length;

@@ -28,14 +28,14 @@ export async function loadCocoSsdModel(
   tfModelPromise = (async () => {
     try {
       onProgress?.("Preparing Interview Environment");
-      const dynamicImport = (pkg: string) => new Function(`return import("${pkg}")`)();
-      
-      const tf = await dynamicImport("@tensorflow/tfjs");
+      const tf = await import("@tensorflow/tfjs");
       onProgress?.("Loading AI Proctor");
-      if (tf && tf.ready) await tf.ready();
+      if (tf && typeof tf.ready === "function") {
+        await tf.ready();
+      }
 
       onProgress?.("Loading Object Detection");
-      const coco = await dynamicImport("@tensorflow-models/coco-ssd");
+      const coco = await import("@tensorflow-models/coco-ssd");
       const model = await coco.load({
         base: "lite_mobilenet_v2",
       });
@@ -47,14 +47,8 @@ export async function loadCocoSsdModel(
     } catch (err) {
       tfModelPromise = null;
       isLoading = false;
-      console.warn("[TF.js Proctoring] Optional AI object detection engine load fallback:", err);
-      // Fallback stub model to allow proctoring without crashing
-      const stubModel: ObjectDetectionModel = {
-        detect: async () => [],
-      };
-      cachedModel = stubModel;
-      onProgress?.("Ready");
-      return stubModel;
+      console.error("[TF.js Proctoring] AI model load error:", err);
+      throw err;
     }
   })();
 
