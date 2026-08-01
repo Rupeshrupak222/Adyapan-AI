@@ -60,6 +60,14 @@ export default function SettingsAppearancePage() {
     localStorage.setItem("adyapan-theme", resolved);
   }, []);
 
+  const applyAccentColor = useCallback((color: string) => {
+    if (typeof document !== "undefined") {
+      document.documentElement.style.setProperty("--primary", color);
+      document.documentElement.style.setProperty("--accent-color", color);
+      localStorage.setItem("adyapan-accent", color);
+    }
+  }, []);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -105,6 +113,7 @@ export default function SettingsAppearancePage() {
         themeMode={themeMode}
         setThemeMode={setThemeMode}
         accentColor={accentColor}
+        setAccentColor={setAccentColor}
         compactMode={compactMode}
         setCompactMode={setCompactMode}
         glassEffect={glassEffect}
@@ -118,6 +127,7 @@ export default function SettingsAppearancePage() {
         markChanged={markChanged}
         onAutoSave={scheduleAppearanceSave}
         onApplyTheme={applyTheme}
+        onApplyAccent={applyAccentColor}
         onSave={handleSave}
         saving={saving}
       />
