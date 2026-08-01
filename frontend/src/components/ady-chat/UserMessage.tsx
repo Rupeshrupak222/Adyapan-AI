@@ -9,10 +9,12 @@ interface UserMessageProps {
   message: ChatMessage;
   index: number;
   isDark: boolean;
+  userName?: string;
   onEdit?: (text: string) => void;
 }
 
-export function UserMessage({ message, index, isDark, onEdit }: UserMessageProps) {
+export function UserMessage({ message, index, isDark, userName, onEdit }: UserMessageProps) {
+  const userInitial = (userName || "U").charAt(0).toUpperCase();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -132,7 +134,7 @@ export function UserMessage({ message, index, isDark, onEdit }: UserMessageProps
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.05 }}
         >
-          U
+          {userInitial}
         </motion.div>
       </div>
     </motion.div>

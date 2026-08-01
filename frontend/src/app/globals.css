@@ -214,6 +214,10 @@ button, input, select, textarea {
   transition: margin-left 0.3s ease;
   background: var(--bg-dark);
 }
+.dash-main.ady-chat-active {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
 .dash-main::-webkit-scrollbar { width: 6px; }
 .dash-main::-webkit-scrollbar-track { background: transparent; }
 .dash-main::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 6px; }
