@@ -2327,13 +2327,13 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
     return (
       <AnimatePresence>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/65 backdrop-blur-[6px]"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 pt-16 sm:pt-20 pb-6 bg-black/75 backdrop-blur-md"
           onClick={() => { setSelectedJob(null); setDetailData(null); }}>
           <motion.div initial={{ opacity: 0, scale: 0.96, y: 15 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 15 }}
             transition={{ type: "spring", damping: 25, stiffness: 280 }}
             onClick={e => e.stopPropagation()}
-            className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border bg-[#0c0d16] border-white/8 shadow-2xl relative flex flex-col">
+            className="w-full max-w-3xl max-h-[calc(100vh-5.5rem)] my-auto rounded-2xl border bg-[#0c0d16] border-white/10 shadow-2xl relative flex flex-col overflow-hidden">
             {/* Top accent */}
             <div className="sticky top-0 z-10 h-[2px] bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500" />
 
@@ -2424,7 +2424,7 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
                 </div>
 
                 {/* Tab Content */}
-                <div className="space-y-5 pt-2 flex-1">
+                <div className="space-y-5 pt-2 flex-1 overflow-y-auto pr-1">
                   {modalTab === "overview" && (
                     <div className="space-y-5">
                       <div className="flex items-center gap-4">

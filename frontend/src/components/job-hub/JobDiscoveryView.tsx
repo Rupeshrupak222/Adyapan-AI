@@ -1357,15 +1357,15 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     return (
       <AnimatePresence>
         <motion.div variants={modalOverlay} initial="hidden" animate="visible" exit="exit"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 pt-16 sm:pt-20 pb-6"
           style={{ background: c.overlay, backdropFilter: "blur(8px)" }} onClick={closeJobDetail}>
           <motion.div variants={modalContent} initial="hidden" animate="visible" exit="exit"
-            className="w-full max-w-4xl max-h-[90vh] rounded-2xl border overflow-hidden flex flex-col"
-            style={{ background: isDark ? "rgba(15, 23, 42, 0.95)" : "rgba(255, 255, 255, 0.98)", borderColor: c.border }}
+            className="w-full max-w-4xl max-h-[calc(100vh-5.5rem)] my-auto rounded-2xl border overflow-hidden flex flex-col shadow-2xl"
+            style={{ background: isDark ? "rgba(15, 23, 42, 0.98)" : "rgba(255, 255, 255, 0.98)", borderColor: c.border }}
             onClick={e => e.stopPropagation()}>
 
             {/* Modal Header */}
-            <div className="flex items-start gap-4 p-6 pb-4 border-b" style={{ borderColor: c.border }}>
+            <div className="flex items-start gap-4 p-6 pb-4 border-b shrink-0" style={{ borderColor: c.border, background: isDark ? "rgba(15, 23, 42, 0.98)" : "rgba(255, 255, 255, 0.98)" }}>
               <CompanyLogo company={selectedJob.company} logoUrl={selectedJob.logoUrl} size={56} />
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg font-bold" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>{selectedJob.title}</h2>
@@ -1418,7 +1418,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             </div>
 
             {/* Detail Tabs */}
-            <div className="flex border-b overflow-x-auto" style={{ borderColor: c.border }}>
+            <div className="flex border-b overflow-x-auto shrink-0" style={{ borderColor: c.border, background: isDark ? "rgba(15, 23, 42, 0.98)" : "rgba(255, 255, 255, 0.98)" }}>
               {detailTabs.map(tab => (
                 <button key={tab.id} onClick={() => {
                   setDetailTab(tab.id);
