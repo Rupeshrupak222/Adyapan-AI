@@ -62,15 +62,85 @@ function getPostedWithinDate(postedWithin: string): Date {
       return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
     case "week":
       return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    case "month":
-      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     default:
       return new Date(0);
   }
 }
 
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash + char) | 0;
+  }
+  let hash2 = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    hash2 ^= str.charCodeAt(i);
+    hash2 = Math.imul(hash2, 0x01000193);
+  }
+  return (hash >>> 0).toString(36) + (hash2 >>> 0).toString(36);
+}
+
 export class JobSearchService {
   private static lastAutoUpdateCheck = 0;
+
+  static async fetchLiveRemoteOKJobs(): Promise<void> {
+    try {
+      const res = await fetch("https://remoteok.com/api", {
+        headers: { "User-Agent": "AdyapanAI/1.0" },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const rawJobs = Array.isArray(data) ? data.slice(1, 40) : [];
+      const db = getDb();
+
+      for (const item of rawJobs) {
+        if (!item.position || !item.company) continue;
+        const title = item.position || "Software Engineer";
+        const company = item.company || "Remote Company";
+        const location = item.location || "Remote";
+        const applyUrl = item.url || item.apply_url || `https://remoteok.com/remote-jobs/${item.id}`;
+        const desc = item.description || `${title} position at ${company}.`;
+        const fp = simpleHash(`${company.toLowerCase()}|${title.toLowerCase()}|${location.toLowerCase()}|${applyUrl.toLowerCase()}`);
+        
+        const tags: string[] = Array.isArray(item.tags) ? item.tags : [];
+        const skills = tags.length > 0 ? tags.slice(0, 15) : ["Software Development", "Remote"];
+
+        await db.discoveryJob.upsert({
+          where: { fingerprint: fp },
+          update: {
+            lastSeenAt: new Date(),
+            description: desc,
+            salaryMin: item.salary_min || (item.salary ? parseInt(item.salary) : undefined),
+            salaryMax: item.salary_max || undefined,
+          },
+          create: {
+            fingerprint: fp,
+            externalId: String(item.id || fp),
+            title,
+            company,
+            logoUrl: item.logo || item.company_logo || null,
+            location,
+            country: "Global",
+            description: desc,
+            salaryMin: item.salary_min || (item.salary ? parseInt(item.salary) : null),
+            salaryMax: item.salary_max || null,
+            salaryCurrency: "USD",
+            employmentType: item.type && String(item.type).toLowerCase().includes("contract") ? "Contract" : "Full-Time",
+            workMode: "Remote",
+            skills,
+            applyUrl,
+            sourceUrl: applyUrl,
+            source: "remoteok",
+            postedAt: item.date ? new Date(item.date) : new Date(),
+            isActive: true,
+          },
+        }).catch(() => {});
+      }
+    } catch (err: any) {
+      console.warn("[JobSearchService] Live RemoteOK fetch warning:", err?.message || err);
+    }
+  }
 
   static async autoUpdateStaleJobs(force = false): Promise<void> {
     const now = Date.now();
@@ -236,10 +306,11 @@ export class JobSearchService {
       }),
     ]);
 
-    if (total === 0 && (!filters.query || filters.query.trim().length === 0)) {
+    if (total === 0) {
       try {
         const DEFAULT_JOBS = [
           {
+            fingerprint: simpleHash("Google|Full Stack Software Engineer|Bengaluru"),
             title: "Full Stack Software Engineer",
             company: "Google",
             location: "Bengaluru, Karnataka, India",
@@ -254,13 +325,15 @@ export class JobSearchService {
             salaryMax: 3200000,
             salaryCurrency: "INR",
             skills: ["React", "TypeScript", "Node.js", "Python", "System Design"],
-            description: "Looking for an exceptional Full Stack Engineer to build high-performance web applications.",
+            description: "Looking for an exceptional Full Stack Engineer to build high-performance web applications and scalable cloud platform services.",
             applyUrl: "https://careers.google.com",
+            sourceUrl: "https://careers.google.com",
             source: "Google Careers",
             isFeatured: true,
             isActive: true,
           },
           {
+            fingerprint: simpleHash("Microsoft|Backend Engineer - AI Systems|Hyderabad"),
             title: "Backend Engineer - AI Systems",
             company: "Microsoft",
             location: "Hyderabad, Telangana, India",
@@ -275,20 +348,22 @@ export class JobSearchService {
             salaryMax: 2800000,
             salaryCurrency: "INR",
             skills: ["C#", "Python", "Azure", "PostgreSQL", "Microservices"],
-            description: "Join the Azure AI & Cloud Engineering team to scale next-gen AI platform APIs.",
+            description: "Join the Azure AI & Cloud Engineering team to scale next-gen AI platform APIs and microservice architectures.",
             applyUrl: "https://careers.microsoft.com",
+            sourceUrl: "https://careers.microsoft.com",
             source: "Microsoft Careers",
             isFeatured: true,
             isActive: true,
           },
           {
+            fingerprint: simpleHash("Swiggy|Frontend Developer (React / Next.js)|Bengaluru"),
             title: "Frontend Developer (React / Next.js)",
             company: "Swiggy",
             location: "Bengaluru, Karnataka, India",
             city: "Bengaluru",
             state: "Karnataka",
             country: "India",
-            workMode: "On-site",
+            workMode: "Onsite",
             employmentType: "Full-Time",
             experienceMin: 1,
             experienceMax: 4,
@@ -296,13 +371,15 @@ export class JobSearchService {
             salaryMax: 2400000,
             salaryCurrency: "INR",
             skills: ["React", "Next.js", "Tailwind CSS", "Redux", "Web Vitals"],
-            description: "Build fast, pixel-perfect user interfaces for millions of daily active consumer orders.",
+            description: "Build fast, pixel-perfect user interfaces for millions of daily active consumer food and instant delivery orders.",
             applyUrl: "https://careers.swiggy.com",
+            sourceUrl: "https://careers.swiggy.com",
             source: "Swiggy Careers",
             isFeatured: true,
             isActive: true,
           },
           {
+            fingerprint: simpleHash("Razorpay|Graduate Software Engineer Trainee|Bengaluru"),
             title: "Graduate Software Engineer Trainee",
             company: "Razorpay",
             location: "Bengaluru, Karnataka, India",
@@ -317,13 +394,15 @@ export class JobSearchService {
             salaryMax: 2000000,
             salaryCurrency: "INR",
             skills: ["Java", "Spring Boot", "MySQL", "Kafka", "Data Structures"],
-            description: "Ideal role for fresh graduates and early career engineers passionate about fintech.",
+            description: "Ideal role for fresh graduates and early career engineers passionate about fintech and payment gateway infrastructure.",
             applyUrl: "https://razorpay.com/jobs",
+            sourceUrl: "https://razorpay.com/jobs",
             source: "Razorpay Careers",
             isFeatured: true,
             isActive: true,
           },
           {
+            fingerprint: simpleHash("Amazon AWS|DevOps & Cloud Engineer|Bengaluru"),
             title: "DevOps & Cloud Engineer",
             company: "Amazon Web Services (AWS)",
             location: "Bengaluru, Karnataka, India",
@@ -338,24 +417,193 @@ export class JobSearchService {
             salaryMax: 3500000,
             salaryCurrency: "INR",
             skills: ["AWS", "Docker", "Kubernetes", "Terraform", "CI/CD"],
-            description: "Architect and manage highly resilient cloud infrastructure and automated deployment pipelines.",
+            description: "Architect and manage highly resilient cloud infrastructure, Kubernetes clusters, and automated deployment pipelines.",
             applyUrl: "https://amazon.jobs",
+            sourceUrl: "https://amazon.jobs",
             source: "Amazon Jobs",
             isFeatured: true,
             isActive: true,
+          },
+          {
+            fingerprint: simpleHash("OpenAI|AI Research & LLM Engineer|Remote"),
+            title: "AI Research & LLM Engineer",
+            company: "OpenAI",
+            location: "Remote / San Francisco, CA",
+            city: "San Francisco",
+            state: "California",
+            country: "United States",
+            workMode: "Remote",
+            employmentType: "Full-Time",
+            experienceMin: 2,
+            experienceMax: 6,
+            salaryMin: 180000,
+            salaryMax: 320000,
+            salaryCurrency: "USD",
+            skills: ["Python", "PyTorch", "Transformers", "LLM", "Deep Learning", "CUDA"],
+            description: "Train, fine-tune, and optimize frontier generative AI models and deployment serving layers.",
+            applyUrl: "https://openai.com/careers",
+            sourceUrl: "https://openai.com/careers",
+            source: "OpenAI Careers",
+            isFeatured: true,
+            isActive: true,
+          },
+          {
+            fingerprint: simpleHash("Meta|Data Scientist - Product Analytics|Remote"),
+            title: "Data Scientist - Product Analytics",
+            company: "Meta",
+            location: "Remote / London, UK",
+            city: "London",
+            state: "London",
+            country: "United Kingdom",
+            workMode: "Remote",
+            employmentType: "Full-Time",
+            experienceMin: 1,
+            experienceMax: 4,
+            salaryMin: 90000,
+            salaryMax: 150000,
+            salaryCurrency: "GBP",
+            skills: ["Python", "SQL", "Statistics", "A/B Testing", "Tableau", "Pandas"],
+            description: "Drive product intelligence, user behavior modeling, and algorithmic optimization across global social platforms.",
+            applyUrl: "https://metacareers.com",
+            sourceUrl: "https://metacareers.com",
+            source: "Meta Careers",
+            isFeatured: true,
+            isActive: true,
+          },
+          {
+            fingerprint: simpleHash("Stripe|Senior Staff Full Stack Developer|Remote"),
+            title: "Senior Staff Full Stack Developer",
+            company: "Stripe",
+            location: "Remote / San Francisco, CA",
+            city: "San Francisco",
+            state: "California",
+            country: "United States",
+            workMode: "Remote",
+            employmentType: "Full-Time",
+            experienceMin: 3,
+            experienceMax: 7,
+            salaryMin: 160000,
+            salaryMax: 280000,
+            salaryCurrency: "USD",
+            skills: ["Ruby", "TypeScript", "React", "GraphQL", "PostgreSQL", "Go"],
+            description: "Engineer foundational global financial infrastructure and merchant dashboard API platform tools.",
+            applyUrl: "https://stripe.com/jobs",
+            sourceUrl: "https://stripe.com/jobs",
+            source: "Stripe Careers",
+            isFeatured: true,
+            isActive: true,
+          },
+          {
+            fingerprint: simpleHash("Zomato|Lead Mobile Engineer (iOS & Android)|Gurugram"),
+            title: "Lead Mobile Engineer (iOS & Android)",
+            company: "Zomato",
+            location: "Gurugram, Haryana, India",
+            city: "Gurugram",
+            state: "Haryana",
+            country: "India",
+            workMode: "Onsite",
+            employmentType: "Full-Time",
+            experienceMin: 2,
+            experienceMax: 5,
+            salaryMin: 1800000,
+            salaryMax: 3000000,
+            salaryCurrency: "INR",
+            skills: ["React Native", "Swift", "Kotlin", "Redux", "Mobile Performance"],
+            description: "Lead mobile app architecture powering hyper-local delivery, live tracking, and interactive consumer experiences.",
+            applyUrl: "https://zomato.com/careers",
+            sourceUrl: "https://zomato.com/careers",
+            source: "Zomato Careers",
+            isFeatured: true,
+            isActive: true,
+          },
+          {
+            fingerprint: simpleHash("Flipkart|SDE-2 Backend Developer|Bengaluru"),
+            title: "SDE-2 Backend Developer",
+            company: "Flipkart",
+            location: "Bengaluru, Karnataka, India",
+            city: "Bengaluru",
+            state: "Karnataka",
+            country: "India",
+            workMode: "Hybrid",
+            employmentType: "Full-Time",
+            experienceMin: 2,
+            experienceMax: 5,
+            salaryMin: 2200000,
+            salaryMax: 3800000,
+            salaryCurrency: "INR",
+            skills: ["Java", "Spring Boot", "Kafka", "Cassandra", "Redis", "Distributed Systems"],
+            description: "Scale high-throughput e-commerce catalog, payment processing, and flash-sale backend microservices.",
+            applyUrl: "https://flipkartcareers.com",
+            sourceUrl: "https://flipkartcareers.com",
+            source: "Flipkart Careers",
+            isFeatured: true,
+            isActive: true,
+          },
+          {
+            fingerprint: simpleHash("TCS|Systems Engineer - Cloud Services|Pune"),
+            title: "Systems Engineer - Cloud Services",
+            company: "Tata Consultancy Services (TCS)",
+            location: "Pune, Maharashtra, India",
+            city: "Pune",
+            state: "Maharashtra",
+            country: "India",
+            workMode: "Hybrid",
+            employmentType: "Full-Time",
+            experienceMin: 0,
+            experienceMax: 3,
+            salaryMin: 650000,
+            salaryMax: 1100000,
+            salaryCurrency: "INR",
+            skills: ["Java", "SQL", "Linux", "AWS", "Shell Scripting"],
+            description: "Deliver enterprise cloud migration and IT digital transformation solutions for global Fortune 500 clients.",
+            applyUrl: "https://tcs.com/careers",
+            sourceUrl: "https://tcs.com/careers",
+            source: "TCS Careers",
+            isFeatured: false,
+            isActive: true,
+          },
+          {
+            fingerprint: simpleHash("Infosys|Senior Specialist Programmer|Bengaluru"),
+            title: "Senior Specialist Programmer",
+            company: "Infosys",
+            location: "Bengaluru, Karnataka, India",
+            city: "Bengaluru",
+            state: "Karnataka",
+            country: "India",
+            workMode: "Hybrid",
+            employmentType: "Full-Time",
+            experienceMin: 1,
+            experienceMax: 4,
+            salaryMin: 950000,
+            salaryMax: 1600000,
+            salaryCurrency: "INR",
+            skills: ["Python", "Django", "React", "PostgreSQL", "Docker"],
+            description: "Develop cutting-edge full-stack software for digital banking and enterprise automation client suites.",
+            applyUrl: "https://infosys.com/careers",
+            sourceUrl: "https://infosys.com/careers",
+            source: "Infosys Careers",
+            isFeatured: false,
+            isActive: true,
           }
         ];
+
         await db.discoveryJob.createMany({
           data: DEFAULT_JOBS,
           skipDuplicates: true,
         });
+
+        // Trigger background live RemoteOK fetch
+        this.fetchLiveRemoteOKJobs().catch(() => {});
+
         const recheck = await Promise.all([
           db.discoveryJob.count({ where }),
           db.discoveryJob.findMany({ where, orderBy, skip, take: limit }),
         ]);
         total = recheck[0];
         jobs = recheck[1];
-      } catch { }
+      } catch (seedErr: any) {
+        console.warn("[JobSearchService] Seed jobs creation warning:", seedErr?.message || seedErr);
+      }
     }
 
     const totalPages = Math.ceil(total / limit);

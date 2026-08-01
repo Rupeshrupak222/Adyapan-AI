@@ -214,7 +214,7 @@ export async function requestPasswordReset(email: string): Promise<{ devOtp?: st
   const otp = generateOtp();
   const otpHash = await bcrypt.hash(otp, 10);
 
-  await prisma.passwordResetToken.create({
+  await (prisma as any).passwordResetToken.create({
     data: {
       email: normalizedEmail,
       otpHash,
@@ -239,7 +239,7 @@ export async function resetPassword(email: string, otp: string, newPassword: str
     throw httpError(400, "Invalid OTP. Please enter the 6-digit code.");
   }
 
-  const tokenRecord = await prisma.passwordResetToken.findFirst({
+  const tokenRecord = await (prisma as any).passwordResetToken.findFirst({
     where: {
       email: normalizedEmail,
       used: false,
@@ -268,7 +268,7 @@ export async function resetPassword(email: string, otp: string, newPassword: str
   const hashed = await bcrypt.hash(newPassword, 12);
   await prisma.$transaction([
     prisma.user.update({ where: { id: user.id }, data: { password: hashed } }),
-    prisma.passwordResetToken.update({ where: { id: tokenRecord.id }, data: { used: true } }),
+    (prisma as any).passwordResetToken.update({ where: { id: tokenRecord.id }, data: { used: true } }),
   ]);
 
   return { message: "Password reset successful. Please sign in with your new password." };

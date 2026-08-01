@@ -798,6 +798,26 @@ export class JobDiscoveryService {
       };
     }
 
+    if (sourceName === "remoteok") {
+      try {
+        console.log(`[JobDiscovery] Fetching live jobs directly from RemoteOK API...`);
+        const res = await fetch("https://remoteok.com/api", {
+          headers: { "User-Agent": "AdyapanAI/1.0" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const rawJobs = Array.isArray(data) ? data.slice(1, 40) : [];
+          const normalized = REMOTEOK_CONFIG.normalizeResult(rawJobs);
+          const ingestionResult = await this.ingestJobs(normalized, "remoteok");
+          await this.logIngestion(ingestionResult);
+          await this.updateSourceStatus("remoteok", ingestionResult);
+          return ingestionResult;
+        }
+      } catch (err: any) {
+        console.warn("[JobDiscovery] RemoteOK direct fetch warning:", err?.message || err);
+      }
+    }
+
     const apifyToken = process.env.APIFY_TOKEN || env.apifyApiKey || "";
     if (!apifyToken) {
       return {
