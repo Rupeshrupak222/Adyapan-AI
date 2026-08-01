@@ -34,12 +34,20 @@ function mapDiscoveryJobToListing(job: any) {
     }
   }
 
-  let expStr = "0-2 yrs";
+  let expStr = "";
   if (job.experienceMin !== undefined && job.experienceMin !== null) {
     const expMin = job.experienceMin;
-    const expMax = job.experienceMax ?? (expMin + 2);
-    expStr = expMin === expMax ? `${expMin} yrs` : `${expMin}-${expMax} yrs`;
+    const expMax = job.experienceMax;
+    if (expMax !== undefined && expMax !== null && expMax > expMin) {
+      expStr = `${expMin}-${expMax} Yrs`;
+    } else {
+      expStr = `${expMin}+ Yrs`;
+    }
+  } else if (job.experience) {
+    expStr = String(job.experience);
   }
+
+  const passingYearVal = job.education ? String(job.education).trim() : "";
 
   const logo = autoResolveCompanyLogo(job.company, job.logoUrl, job.applyUrl || job.sourceUrl);
 
@@ -69,7 +77,7 @@ function mapDiscoveryJobToListing(job: any) {
     experienceMin: job.experienceMin,
     experienceMax: job.experienceMax,
     education: job.education || "",
-    passingYear: job.education || "",
+    passingYear: passingYearVal,
     skills: Array.isArray(job.skills) ? job.skills : [],
     description: job.description || "",
     responsibilities: Array.isArray(job.responsibilities) ? job.responsibilities : [],

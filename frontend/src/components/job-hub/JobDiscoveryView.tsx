@@ -213,10 +213,12 @@ const slideFromLeft = {
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
-function timeAgo(date: string): string {
-  if (!date) return "";
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return "Just now";
+function timeAgo(date: any): string {
+  if (!date) return "Recently";
+  const parsed = new Date(date);
+  if (isNaN(parsed.getTime())) return "Recently";
+  const seconds = Math.floor((Date.now() - parsed.getTime()) / 1000);
+  if (seconds <= 0 || seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
@@ -227,7 +229,7 @@ function timeAgo(date: string): string {
   if (weeks < 4) return `${weeks}w ago`;
   const months = Math.floor(days / 30);
   if (months < 12) return `${months}mo ago`;
-  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function getLogoInitials(name: string): string {
@@ -1136,7 +1138,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
               </span>
             )}
           </div>
-          <span className="text-[9px] font-semibold" style={{ color: c.textMuted }}>{timeAgo(job.postedAt)}</span>
+          <span className="text-[9px] font-semibold" style={{ color: c.textMuted }}>{timeAgo(job.postedAt || (job as any).postedDate || (job as any).createdAt || (job as any).firstSeenAt)}</span>
         </div>
       </motion.div>
     );
@@ -1177,7 +1179,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
               <span className="font-extrabold text-[11px]">₹</span> {job.salary ? job.salary.replace("$", "₹") : formatSalary(job.salaryMin, job.salaryMax)}
             </span>
           )}
-          <span className="text-[9px] font-semibold" style={{ color: c.textMuted }}>{timeAgo(job.postedAt)}</span>
+          <span className="text-[9px] font-semibold" style={{ color: c.textMuted }}>{timeAgo(job.postedAt || (job as any).postedDate || (job as any).createdAt || (job as any).firstSeenAt)}</span>
           <button onClick={e => toggleSave(job.id, e)}
             className="p-1.5 rounded-lg transition-all hover:scale-110 bg-transparent border-none cursor-pointer"
             style={{ color: job.isSaved || savedIds.has(job.id) ? "#f59e0b" : c.textMuted }}>

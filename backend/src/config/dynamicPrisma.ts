@@ -17,37 +17,35 @@ const clientCache = new Map<string, ExtendedUserClient>();
  * never awaited). Queries against not-yet-synced databases fail fast; once the
  * background push completes, subsequent queries succeed.
  */
-const syncState = new Map<string, { synced: boolean; inFlight: boolean }>();
+const syncPromises = new Map<string, Promise<boolean>>();
 
-function triggerSchemaSync(databaseUrl: string): void {
-  const state = syncState.get(databaseUrl);
-  if (state?.inFlight || state?.synced) return;
+function triggerSchemaSync(databaseUrl: string): Promise<boolean> {
+  const existing = syncPromises.get(databaseUrl);
+  if (existing) return existing;
 
-  syncState.set(databaseUrl, { inFlight: true, synced: false });
-
-  const { spawn } = require("child_process") as typeof import("child_process");
-  const child = spawn(
-    `npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`,
-    {
-      shell: true,
-      stdio: "ignore",
-      env: { ...process.env, USER_DATABASE_URL: databaseUrl },
-    }
-  );
-
-  child.on("close", (code: number | null) => {
-    const current = syncState.get(databaseUrl);
-    if (current) {
-      current.inFlight = false;
-      current.synced = code === 0;
-    }
-    if (code !== 0) {
-      console.error(`[dynamicPrisma] Background sync failed for ${databaseUrl.slice(0, 60)} (exit ${code}). It will be retried on the next table-miss.`);
-      syncState.delete(databaseUrl);
-    } else {
-      console.log(`[dynamicPrisma] Background schema sync completed for ${databaseUrl.slice(0, 60)}.`);
-    }
+  const promise = new Promise<boolean>((resolve) => {
+    const { exec } = require("child_process") as typeof import("child_process");
+    console.log(`[dynamicPrisma] Running schema sync push for user database...`);
+    exec(
+      `npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`,
+      {
+        env: { ...process.env, USER_DATABASE_URL: databaseUrl },
+      },
+      (error: any, _stdout: any, stderr: any) => {
+        syncPromises.delete(databaseUrl);
+        if (error) {
+          console.error(`[dynamicPrisma] Schema sync push failed for ${databaseUrl.slice(0, 60)}:`, error?.message || stderr);
+          resolve(false);
+        } else {
+          console.log(`[dynamicPrisma] Schema sync push completed successfully for ${databaseUrl.slice(0, 60)}.`);
+          resolve(true);
+        }
+      }
+    );
   });
+
+  syncPromises.set(databaseUrl, promise);
+  return promise;
 }
 
 function isTableOrColumnMissing(err: any): boolean {
@@ -71,9 +69,15 @@ export function createPrismaClient(databaseUrl: string): any {
             result = await query(args);
           } catch (err: any) {
             if (isTableOrColumnMissing(err)) {
-              console.warn(`[dynamicPrisma] Table ${model} missing in user database. Triggering background sync push...`);
-              triggerSchemaSync(databaseUrl);
-              throw err;
+              console.warn(`[dynamicPrisma] Table ${model} missing in user database. Triggering schema sync and retrying...`);
+              const synced = await triggerSchemaSync(databaseUrl);
+              if (synced) {
+                try {
+                  return await query(args);
+                } catch (retryErr) {
+                  throw retryErr;
+                }
+              }
             }
             throw err;
           }

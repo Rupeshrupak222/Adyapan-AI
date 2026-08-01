@@ -689,6 +689,7 @@ export async function createAdminJob(req: Request, res: Response, next: NextFunc
         applyUrl: applyUrl ? String(applyUrl).trim() : "https://adyapan.ai",
         sourceUrl: applyUrl ? String(applyUrl).trim() : null,
         source: "Admin Manual",
+        postedAt: new Date(),
         isActive: true,
         isFeatured: true,
       },
