@@ -206,6 +206,11 @@ export function ManageAccountView() {
         // Appearance
         setThemeMode((s.themeMode || "dark") as "dark" | "light" | "system");
         setAccentColor(s.accentColor || "#f59e0b");
+        applyTheme(s.themeMode || "dark");
+        if (typeof document !== "undefined") {
+          document.documentElement.style.setProperty("--primary", s.accentColor || "#f59e0b");
+          document.documentElement.style.setProperty("--accent-color", s.accentColor || "#f59e0b");
+        }
         setCompactMode(!!s.compactMode);
         setGlassEffect(s.glassEffect ?? true);
         setAnimationsEnabled(s.animationsEnabled ?? true);
@@ -356,6 +361,15 @@ export function ManageAccountView() {
     localStorage.setItem("adyapan-theme", resolved);
   }, []);
 
+  // ── Apply accent color app-wide ──
+  const applyAccentColor = useCallback((color: string) => {
+    if (typeof document !== "undefined") {
+      document.documentElement.style.setProperty("--primary", color);
+      document.documentElement.style.setProperty("--accent-color", color);
+      localStorage.setItem("adyapan-accent", color);
+    }
+  }, []);
+
   // ── Search filtering ──
   const filteredNav = useMemo(() => {
     if (!searchQuery.trim()) return NAV_ITEMS;
@@ -440,7 +454,40 @@ export function ManageAccountView() {
     if (activeSection === "appearance") return handleSaveAppearance();
     if (activeSection === "ai-preferences") return handleSaveAI();
     if (activeSection === "learning") return handleSaveLearning();
-    toast.info("Changes are auto-saved for this section.");
+    if (activeSection === "notifications") {
+      setSaving(true);
+      try {
+        await api.put("/settings/notifications", {
+          notifEmail, notifPush, notifAssignment, notifInterview,
+          notifCoding, notifResearch, notifWeekly, notifDaily,
+        });
+        setHasChanges(false);
+        toast.success("Notification preferences saved!");
+      } catch { toast.error("Failed to save notification preferences."); }
+      finally { setSaving(false); }
+      return;
+    }
+    if (activeSection === "security") {
+      setSaving(true);
+      try {
+        await api.put("/settings/security", { twoFactorEnabled: twoFactor, loginAlerts });
+        setHasChanges(false);
+        toast.success("Security settings saved!");
+      } catch { toast.error("Failed to save security settings."); }
+      finally { setSaving(false); }
+      return;
+    }
+    if (activeSection === "privacy") {
+      setSaving(true);
+      try {
+        await api.put("/settings/privacy", { publicProfile, dataCollection, personalizedAI });
+        setHasChanges(false);
+        toast.success("Privacy settings saved!");
+      } catch { toast.error("Failed to save privacy settings."); }
+      finally { setSaving(false); }
+      return;
+    }
+    toast.success("Settings saved!");
     setHasChanges(false);
   };
 
@@ -726,7 +773,7 @@ export function ManageAccountView() {
             <motion.div key={activeSection} {...sectionTransition}>
               {activeSection === "profile" && <ProfileSection c={c} fullName={fullName} setFullName={setFullName} username={username} setUsername={setUsername} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} college={college} setCollege={setCollege} degree={degree} setDegree={setDegree} branch={branch} setBranch={setBranch} gradYear={gradYear} setGradYear={setGradYear} bio={bio} setBio={setBio} photoUrl={photoUrl} photoInputRef={photoInputRef} uploadingPhoto={uploadingPhoto} onPhotoUpload={handlePhotoUpload} onPhotoRemove={handlePhotoRemove} markChanged={markChanged} onSave={handleSaveProfile} saving={saving} />}
               {activeSection === "account" && <AccountSection c={c} email={email} plan={plan} memberSince={memberSince} markChanged={markChanged} onDeleteAccount={() => setShowDeleteModal(true)} onChangePassword={() => setShowChangePassword(true)} />}
-              {activeSection === "appearance" && <AppearanceSection c={c} isDark={isDark} themeMode={themeMode} setThemeMode={setThemeMode} accentColor={accentColor} compactMode={compactMode} setCompactMode={setCompactMode} glassEffect={glassEffect} setGlassEffect={setGlassEffect} animationsEnabled={animationsEnabled} setAnimationsEnabled={setAnimationsEnabled} sidebarCollapse={sidebarCollapse} setSidebarCollapse={setSidebarCollapse} fontSize={fontSize} setFontSize={setFontSize} markChanged={markChanged} onAutoSave={scheduleAppearanceSave} onApplyTheme={applyTheme} onSave={handleSaveAppearance} saving={saving} />}
+              {activeSection === "appearance" && <AppearanceSection c={c} isDark={isDark} themeMode={themeMode} setThemeMode={setThemeMode} accentColor={accentColor} setAccentColor={setAccentColor} compactMode={compactMode} setCompactMode={setCompactMode} glassEffect={glassEffect} setGlassEffect={setGlassEffect} animationsEnabled={animationsEnabled} setAnimationsEnabled={setAnimationsEnabled} sidebarCollapse={sidebarCollapse} setSidebarCollapse={setSidebarCollapse} fontSize={fontSize} setFontSize={setFontSize} markChanged={markChanged} onAutoSave={scheduleAppearanceSave} onApplyTheme={applyTheme} onApplyAccent={applyAccentColor} onSave={handleSaveAppearance} saving={saving} />}
               {activeSection === "notifications" && <NotificationsSection c={c} notifEmail={notifEmail} setNotifEmail={setNotifEmail} notifPush={notifPush} setNotifPush={setNotifPush} notifAssignment={notifAssignment} setNotifAssignment={setNotifAssignment} notifInterview={notifInterview} setNotifInterview={setNotifInterview} notifCoding={notifCoding} setNotifCoding={setNotifCoding} notifResearch={notifResearch} setNotifResearch={setNotifResearch} notifWeekly={notifWeekly} setNotifWeekly={setNotifWeekly} notifDaily={notifDaily} setNotifDaily={setNotifDaily} markChanged={markChanged} scheduleSave={scheduleSave} />}
               {activeSection === "ai-preferences" && <AIPreferencesSection c={c} aiModel={aiModel} setAiModel={setAiModel} responseLength={responseLength} setResponseLength={setResponseLength} creativity={creativity} setCreativity={setCreativity} aiMemory={aiMemory} setAiMemory={setAiMemory} markdownOutput={markdownOutput} setMarkdownOutput={setMarkdownOutput} codeHighlighting={codeHighlighting} setCodeHighlighting={setCodeHighlighting} autoCitation={autoCitation} setAutoCitation={setAutoCitation} autoSaveConversations={autoSaveConversations} setAutoSaveConversations={setAutoSaveConversations} markChanged={markChanged} onSave={handleSaveAI} saving={saving} />}
               {activeSection === "learning" && <LearningSection c={c} language={language} setLanguage={setLanguage} learningStyle={learningStyle} setLearningStyle={setLearningStyle} dailyGoal={dailyGoal} setDailyGoal={setDailyGoal} reminderTime={reminderTime} setReminderTime={setReminderTime} difficulty={difficulty} setDifficulty={setDifficulty} noteFormat={noteFormat} setNoteFormat={setNoteFormat} quizDifficulty={quizDifficulty} setQuizDifficulty={setQuizDifficulty} tutorPersonality={tutorPersonality} setTutorPersonality={setTutorPersonality} markChanged={markChanged} onSave={handleSaveLearning} saving={saving} />}
@@ -1358,14 +1405,14 @@ export function AccountSection({
 
 // ─── Appearance Section ──────────────────────────────────────────────────
 export function AppearanceSection({
-  c, isDark, themeMode, setThemeMode, accentColor,
+  c, isDark, themeMode, setThemeMode, accentColor, setAccentColor,
   compactMode, setCompactMode, glassEffect, setGlassEffect,
   animationsEnabled, setAnimationsEnabled, sidebarCollapse, setSidebarCollapse,
-  fontSize, setFontSize, markChanged, onAutoSave, onApplyTheme, onSave, saving,
+  fontSize, setFontSize, markChanged, onAutoSave, onApplyTheme, onApplyAccent, onSave, saving,
 }: {
   c: Record<string, string>; isDark: boolean;
   themeMode: string; setThemeMode: (v: "dark" | "light" | "system") => void;
-  accentColor: string;
+  accentColor: string; setAccentColor: (v: string) => void;
   compactMode: boolean; setCompactMode: (v: boolean) => void;
   glassEffect: boolean; setGlassEffect: (v: boolean) => void;
   animationsEnabled: boolean; setAnimationsEnabled: (v: boolean) => void;
@@ -1374,6 +1421,7 @@ export function AppearanceSection({
   markChanged: () => void;
   onAutoSave?: () => void;
   onApplyTheme?: (mode: string) => void;
+  onApplyAccent?: (color: string) => void;
   onSave?: () => void;
   saving?: boolean;
 }) {
@@ -1402,7 +1450,7 @@ export function AppearanceSection({
                 onClick={() => change(() => { setThemeMode(mode.id); onApplyTheme?.(mode.id); })}
                 whileHover={{ y: -2, scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                className="p-4 rounded-xl border text-center space-y-2 transition-all"
+                className="p-4 rounded-xl border text-center space-y-2 transition-all cursor-pointer"
                 style={{
                   background: isActive
                     ? "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(234,88,12,0.08))"
@@ -1421,6 +1469,48 @@ export function AppearanceSection({
                     className="w-1.5 h-1.5 rounded-full bg-amber-500 mx-auto"
                     style={{ boxShadow: "0 0 6px rgba(245,158,11,0.6)" }} />
                 )}
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+
+      {/* Accent Color */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+        className="rounded-2xl border p-6 space-y-4"
+        style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
+      >
+        <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.primary }}>
+          <Sparkles size={16} /> Accent Color
+        </h3>
+        <div className="flex flex-wrap items-center gap-3">
+          {[
+            { color: "#f59e0b", name: "Amber" },
+            { color: "#ef4444", name: "Red" },
+            { color: "#10b981", name: "Emerald" },
+            { color: "#3b82f6", name: "Blue" },
+            { color: "#8b5cf6", name: "Purple" },
+            { color: "#ec4899", name: "Pink" },
+            { color: "#06b6d4", name: "Cyan" },
+            { color: "#f97316", name: "Orange" },
+          ].map((item) => {
+            const isActive = accentColor === item.color;
+            return (
+              <motion.button
+                key={item.color}
+                onClick={() => change(() => { setAccentColor(item.color); onApplyAccent?.(item.color); })}
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
+                className="w-8 h-8 rounded-full transition-all relative flex items-center justify-center cursor-pointer"
+                style={{
+                  background: item.color,
+                  boxShadow: isActive ? `0 0 12px ${item.color}` : "none",
+                  outline: isActive ? `2px solid ${item.color}` : "none",
+                  outlineOffset: 2,
+                }}
+                title={item.name}
+              >
+                {isActive && <Check size={14} className="text-black font-extrabold" />}
               </motion.button>
             );
           })}
