@@ -122,6 +122,13 @@ interface AnalyticsData {
 
 const PAGE_LIMIT = 12;
 
+function formatCap99(val: number | string | undefined | null): string {
+  if (val == null) return "0";
+  const num = typeof val === "number" ? val : parseInt(String(val), 10);
+  if (isNaN(num)) return String(val);
+  return num > 99 ? "99+" : num.toString();
+}
+
 const WORK_MODES = ["Remote", "Hybrid", "On-site"];
 const EMPLOYMENT_TYPES = ["Full-Time", "Part-Time", "Contract", "Internship", "Freelance"];
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"];
@@ -1032,7 +1039,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
               {facets.workModes?.slice(0, 3).map(m => (
                 <div key={m.name} className="flex items-center justify-between text-[11px]">
                   <span style={{ color: c.textMuted }}>{m.name}</span>
-                  <span className="font-bold" style={{ color: c.text }}>{m.count}</span>
+                  <span className="font-bold" style={{ color: c.text }}>{formatCap99(m.count)}</span>
                 </div>
               ))}
             </div>
@@ -1223,18 +1230,18 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px]" style={{ color: c.textMuted }}>Total Jobs</span>
-                      <span className="text-sm font-black" style={{ color: c.primary }}>{analytics.totalJobs.toLocaleString()}</span>
+                      <span className="text-sm font-black" style={{ color: c.primary }}>{formatCap99(analytics.totalJobs)}</span>
                     </div>
                     {analytics.byLocation?.slice(0, 4).map((l: any) => (
                       <div key={l.name} className="flex items-center justify-between">
                         <span className="text-[11px] truncate" style={{ color: c.textMuted }}>{l.name}</span>
-                        <span className="text-[11px] font-bold" style={{ color: c.text }}>{l.count}</span>
+                        <span className="text-[11px] font-bold" style={{ color: c.text }}>{formatCap99(l.count)}</span>
                       </div>
                     ))}
                     {analytics.byIndustry?.slice(0, 4).map((ind: any) => (
                       <div key={ind.name} className="flex items-center justify-between">
                         <span className="text-[11px] truncate" style={{ color: c.textMuted }}>{ind.name}</span>
-                        <span className="text-[11px] font-bold" style={{ color: c.text }}>{ind.count}</span>
+                        <span className="text-[11px] font-bold" style={{ color: c.text }}>{formatCap99(ind.count)}</span>
                       </div>
                     ))}
                   </div>
@@ -1256,7 +1263,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                           color: i < 3 ? c.primary : c.textMuted,
                           borderColor: i < 3 ? "rgba(245,158,11,0.2)" : c.border,
                         }} onClick={() => { if (!skillTags.includes(skill.name)) setSkillTags(prev => [...prev, skill.name]); }}>
-                        {skill.name} ({skill.count})
+                        {skill.name} ({formatCap99(skill.count)})
                       </span>
                     ))}
                   </div>
@@ -1275,7 +1282,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                         <div className="flex-1 min-w-0">
                           <span className="text-[11px] font-bold truncate block transition-colors" style={{ color: c.text }}>{loc.name}</span>
                         </div>
-                        <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>{loc.count}</span>
+                        <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>{formatCap99(loc.count)}</span>
                       </div>
                     ))}
                   </div>

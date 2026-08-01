@@ -868,7 +868,7 @@ export class JobSearchService {
       await db.discoveryJob.update({
         where: { id: jobId },
         data: { saveCount: { decrement: 1 } },
-      });
+      }).catch(() => {});
       return { saved: false };
     }
 
@@ -878,7 +878,7 @@ export class JobSearchService {
     await db.discoveryJob.update({
       where: { id: jobId },
       data: { saveCount: { increment: 1 } },
-    });
+    }).catch(() => {});
     return { saved: true };
   }
 
@@ -901,18 +901,53 @@ export class JobSearchService {
     ]);
 
     const jobIds = savedRecords.map((r: any) => r.jobId);
-    const jobs = jobIds.length > 0
-      ? await db.discoveryJob.findMany({ where: { id: { in: jobIds } } })
-      : [];
+    let jobs: any[] = [];
+    if (jobIds.length > 0) {
+      jobs = await db.discoveryJob.findMany({ where: { id: { in: jobIds } } });
+      const foundIds = new Set(jobs.map((j: any) => j.id));
+      const missingIds = jobIds.filter((id: string) => !foundIds.has(id));
+      if (missingIds.length > 0) {
+        try {
+          const userJobs = await db.jobListing.findMany({ where: { id: { in: missingIds } } });
+          jobs.push(...userJobs);
+        } catch {}
+      }
+    }
+
     const jobMap: Record<string, any> = {};
     jobs.forEach((j: any) => { jobMap[j.id] = j; });
 
-    const result = savedRecords.map((r: any) => ({
-      ...(jobMap[r.jobId] || {}),
-      savedAt: r.createdAt,
-      collection: r.collection,
-      notes: r.notes,
-    }));
+    const result = savedRecords.map((r: any) => {
+      const job = jobMap[r.jobId] || {};
+      const expMin = job.experienceMin;
+      const expMax = job.experienceMax;
+      let expStr = job.experience || "";
+      if (expMin !== undefined && expMin !== null) {
+        expStr = expMax && expMax > expMin ? `${expMin}-${expMax} Yrs` : `${expMin}+ Yrs`;
+      }
+
+      return {
+        id: r.jobId,
+        jobListingId: r.jobId,
+        title: job.title || "Saved Role",
+        company: job.company || "Company",
+        logoUrl: job.logoUrl || null,
+        location: job.location || "Remote",
+        mode: job.workMode || job.mode || "On-site",
+        employmentType: job.employmentType || "Full-Time",
+        salary: job.salary || (job.salaryMin ? `₹${(job.salaryMin / 100000).toFixed(1)}L PA` : "Competitive"),
+        experience: expStr,
+        education: job.education || "",
+        passingYear: job.education || "",
+        skills: Array.isArray(job.skills) ? job.skills : [],
+        description: job.description || "",
+        applyUrl: job.applyUrl || job.sourceUrl || "https://adyapan.ai",
+        isSaved: true,
+        savedAt: r.createdAt,
+        collection: r.collection,
+        notes: r.notes,
+      };
+    });
 
     return { jobs: result, total };
   }
