@@ -446,6 +446,15 @@ settingsRouter.get("/storage", async (req: any, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const userId = req.user?.userId || req.user?.id;
 
+    // Get user plan to assign limit (Free: 50MB, Premium: 200MB)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true },
+    });
+
+    const isPremium = user?.plan?.toLowerCase() === "premium";
+    const limitMb = isPremium ? 200 : 50;
+
     // Count each storage category
     const [notes, resumes, assignments, sessions] = await Promise.all([
       prisma.generatedNote.count({ where: { userId } }),
@@ -454,12 +463,20 @@ settingsRouter.get("/storage", async (req: any, res) => {
       prisma.interviewSession.count({ where: { userId } }),
     ]);
 
+    const totalMb = notes * 0.05 + resumes * 0.5 + assignments * 0.08 + sessions * 0.1;
+    const usedMb = parseFloat(totalMb.toFixed(2));
+    const percentUsed = Math.min(100, Math.round((usedMb / limitMb) * 100));
+
     const storageData = {
-      notes: { count: notes, estimatedMb: notes * 0.05 },
-      resumes: { count: resumes, estimatedMb: resumes * 0.5 },
-      assignments: { count: assignments, estimatedMb: assignments * 0.08 },
-      sessions: { count: sessions, estimatedMb: sessions * 0.1 },
-      totalMb: notes * 0.05 + resumes * 0.5 + assignments * 0.08 + sessions * 0.1,
+      plan: isPremium ? "premium" : "free",
+      limitMb,
+      usedMb,
+      percentUsed,
+      notes: { count: notes, estimatedMb: parseFloat((notes * 0.05).toFixed(2)) },
+      resumes: { count: resumes, estimatedMb: parseFloat((resumes * 0.5).toFixed(2)) },
+      assignments: { count: assignments, estimatedMb: parseFloat((assignments * 0.08).toFixed(2)) },
+      sessions: { count: sessions, estimatedMb: parseFloat((sessions * 0.1).toFixed(2)) },
+      totalMb: usedMb,
     };
 
     res.json({ success: true, storage: storageData });

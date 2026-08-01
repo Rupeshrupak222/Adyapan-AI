@@ -170,8 +170,8 @@ export function ManageAccountView() {
 
   // ── Storage & Activity (loaded from API) ──
   const [storageUsed, setStorageUsed] = useState(0);
-  const storageTotal = 10;
-  const storagePercent = Math.round((storageUsed / storageTotal) * 100);
+  const [storageTotal, setStorageTotal] = useState(50);
+  const storagePercent = Math.min(100, Math.round((storageUsed / (storageTotal || 1)) * 100));
   const [storageCategories, setStorageCategories] = useState<Array<{ name: string; size: string; percent: number; color: "amber" | "green" | "purple" | "rose" }>>([]);
   const [activityLog, setActivityLog] = useState<Array<{ time: string; action: string; icon: typeof MessageSquare; color: string }>>([]);
   const activeDevices: Array<{ name: string; location: string; current: boolean; lastActive: string }> = [
@@ -300,13 +300,15 @@ export function ManageAccountView() {
       api.get("/settings/storage").then(res => {
         if (res.data?.storage) {
           const s = res.data.storage;
-          const total = s.totalMb || 0;
-          setStorageUsed(parseFloat((total / 1024).toFixed(2)));
+          const usedMb = s.usedMb ?? s.totalMb ?? 0;
+          const limitMb = s.limitMb ?? 50;
+          setStorageUsed(usedMb);
+          setStorageTotal(limitMb);
           setStorageCategories([
-            { name: "Notes", size: `${s.notes.count} files`, percent: total ? Math.round((s.notes.estimatedMb / total) * 100) : 0, color: "amber" },
-            { name: "Resumes", size: `${s.resumes.count} files`, percent: total ? Math.round((s.resumes.estimatedMb / total) * 100) : 0, color: "green" },
-            { name: "Assignments", size: `${s.assignments.count} files`, percent: total ? Math.round((s.assignments.estimatedMb / total) * 100) : 0, color: "purple" },
-            { name: "Sessions", size: `${s.sessions.count} sessions`, percent: total ? Math.round((s.sessions.estimatedMb / total) * 100) : 0, color: "rose" },
+            { name: "Notes", size: `${s.notes?.count || 0} files`, percent: usedMb ? Math.round(((s.notes?.estimatedMb || 0) / usedMb) * 100) : 0, color: "amber" },
+            { name: "Resumes", size: `${s.resumes?.count || 0} files`, percent: usedMb ? Math.round(((s.resumes?.estimatedMb || 0) / usedMb) * 100) : 0, color: "green" },
+            { name: "Assignments", size: `${s.assignments?.count || 0} files`, percent: usedMb ? Math.round(((s.assignments?.estimatedMb || 0) / usedMb) * 100) : 0, color: "purple" },
+            { name: "Sessions", size: `${s.sessions?.count || 0} sessions`, percent: usedMb ? Math.round(((s.sessions?.estimatedMb || 0) / usedMb) * 100) : 0, color: "rose" },
           ]);
         }
       }).catch(() => {});
@@ -810,7 +812,7 @@ export function ManageAccountView() {
               <PremiumProgressBar value={profileCompletion} color="amber" height={4} />
               <div className="flex items-center justify-between text-xs">
                 <span style={{ color: c.textMuted }}>Storage Used</span>
-                <span className="font-bold">{storageUsed} GB</span>
+                <span className="font-bold">{storageUsed} MB / {storageTotal} MB</span>
               </div>
             </div>
           </motion.div>
@@ -2285,11 +2287,12 @@ export function APISection({
 
 // ─── Storage Section ─────────────────────────────────────────────────────
 export function StorageSection({
-  c, storageUsed, storageTotal, storagePercent, categories,
+  c, storageUsed, storageTotal, storagePercent, categories, unit = "MB",
 }: {
   c: Record<string, string>;
   storageUsed: number; storageTotal: number; storagePercent: number;
   categories: { name: string; size: string; percent: number; color: "amber" | "green" | "purple" | "rose" }[];
+  unit?: string;
 }) {
   const [clearingCache, setClearingCache] = useState(false);
 
@@ -2329,7 +2332,7 @@ export function StorageSection({
         <div className="flex flex-col items-center">
           <PremiumProgressRing value={storagePercent} size={120} strokeWidth={8} />
           <span className="text-xs mt-3" style={{ color: c.textMuted }}>
-            {storageUsed} GB of {storageTotal} GB used
+            {storageUsed} {unit} of {storageTotal} {unit} used
           </span>
         </div>
         <div className="space-y-3">

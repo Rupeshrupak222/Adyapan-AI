@@ -20,6 +20,11 @@ interface AdminUser {
   role: string;
   createdAt: string;
   profile?: { college?: string; branch?: string; phone?: string };
+  storage?: {
+    limitMb: number;
+    usedMb: number;
+    percentUsed: number;
+  };
   _count?: {
     resumes?: number;
     chatSessions?: number;
@@ -289,7 +294,7 @@ export default function UserManagement() {
             <table className="w-full text-left" style={{ minWidth: 900 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
-                  {["User", "Role", "Plan & Status", "Hub Usage", "Created", "Actions"].map((h) => (
+                  {["User", "Role", "Plan & Status", "Assigned Storage", "Hub Usage", "Created", "Actions"].map((h) => (
                     <th key={h} className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                       {h}
                     </th>
@@ -303,6 +308,10 @@ export default function UserManagement() {
                     const planStyle = planMap[user.plan] ?? { label: user.plan, variant: "default" as const };
                     const statusStyle = statusMap[user.subscriptionStatus] ?? { label: user.subscriptionStatus, variant: "default" as const };
                     const usageTotal = totalUsage(user);
+                    const isPremium = user.plan?.toLowerCase() === "premium";
+                    const storageLimit = user.storage?.limitMb ?? (isPremium ? 200 : 50);
+                    const storageUsed = user.storage?.usedMb ?? 0;
+                    const storagePercent = user.storage?.percentUsed ?? Math.min(100, Math.round((storageUsed / storageLimit) * 100));
 
                     return (
                       <motion.tr
@@ -354,6 +363,30 @@ export default function UserManagement() {
                             <StatusBadge variant={statusStyle.variant} pulse={user.subscriptionStatus === "active"}>
                               {statusStyle.label}
                             </StatusBadge>
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <div className="space-y-1 min-w-[120px]">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-extrabold text-[11px]" style={{ color: isPremium ? "#f59e0b" : "var(--text-primary)" }}>
+                                {storageLimit} MB
+                              </span>
+                              <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                                {storageUsed} MB
+                              </span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all"
+                                style={{
+                                  width: `${Math.max(4, storagePercent)}%`,
+                                  background: isPremium
+                                    ? "linear-gradient(90deg, #f59e0b, #ea580c)"
+                                    : "linear-gradient(90deg, #3b82f6, #06b6d4)",
+                                }}
+                              />
+                            </div>
                           </div>
                         </td>
 

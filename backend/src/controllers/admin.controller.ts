@@ -225,15 +225,32 @@ export async function getAdminUsers(req: Request, res: Response, next: NextFunct
     const perUserCounts = await adminDbService.getPerUserCounts(hubCountTables);
 
     const enrichedUsers = users.map(user => {
+      const isPremium = user.plan?.toLowerCase() === "premium";
+      const storageLimitMb = isPremium ? 200 : 50;
+
       const counts = perUserCounts.get(user.id) || {};
+      const resumes = counts["resume"] || 0;
+      const chats = counts["chatSession"] || 0;
+      const interviewSessions = counts["interviewSession"] || 0;
+      const codingSessions = counts["codingSession"] || 0;
+      const studySessions = counts["studySession"] || 0;
+
+      const storageUsedMb = parseFloat((resumes * 0.5 + interviewSessions * 0.1 + codingSessions * 0.1 + studySessions * 0.05 + chats * 0.02).toFixed(2));
+      const storagePercent = Math.min(100, Math.round((storageUsedMb / storageLimitMb) * 100));
+
       return {
         ...user,
+        storage: {
+          limitMb: storageLimitMb,
+          usedMb: storageUsedMb,
+          percentUsed: storagePercent,
+        },
         _count: {
-          resumes: counts["resume"] || 0,
-          chatSessions: counts["chatSession"] || 0,
-          interviewSessions: counts["interviewSession"] || 0,
-          codingSessions: counts["codingSession"] || 0,
-          studySessions: counts["studySession"] || 0,
+          resumes,
+          chatSessions: chats,
+          interviewSessions,
+          codingSessions,
+          studySessions,
         },
       };
     });
@@ -283,14 +300,22 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
         where: { id: userId },
         data: { plan: targetPlan, subscriptionStatus: "active", subscriptionEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) },
       });
-      return res.json({ success: true, message: `User upgraded to ${targetPlan}` });
+      return res.json({
+        success: true,
+        message: `User upgraded to ${targetPlan} (Storage limit assigned: 200 MB)`,
+        storageLimitMb: targetPlan === "premium" ? 200 : 50,
+      });
     }
     if (action === "downgrade" || action === "downgrade_plan") {
       await prisma.user.update({
         where: { id: userId },
         data: { plan: "free", subscriptionStatus: "inactive", subscriptionEnd: null },
       });
-      return res.json({ success: true, message: "User downgraded to Free" });
+      return res.json({
+        success: true,
+        message: "User downgraded to Free (Storage limit assigned: 50 MB)",
+        storageLimitMb: 50,
+      });
     }
 
     throw httpError(400, "Invalid action");
