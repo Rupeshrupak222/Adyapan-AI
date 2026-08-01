@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { cloudinary } from "../config/cloudinary";
 import { getProfile, upsertProfile, clearResume } from "../services/profile.service";
+import { AdminAuditService } from "../services/admin-audit.service";
 
 export async function getMyProfile(req: Request, res: Response, next: NextFunction) {
   try {
@@ -14,6 +15,17 @@ export async function getMyProfile(req: Request, res: Response, next: NextFuncti
 export async function updateMyProfile(req: Request, res: Response, next: NextFunction) {
   try {
     const profile = await upsertProfile(req.user?.userId ?? "", req.body);
+    try {
+      await AdminAuditService.log({
+        action: "Profile Updated",
+        module: "Settings",
+        targetId: req.user?.userId,
+        details: { changedFields: Object.keys(req.body), userEmail: req.user?.email || "" },
+        ipAddress: req.ip,
+      });
+    } catch {
+      // Audit logging is best-effort
+    }
     res.json({ success: true, profile });
   } catch (error) {
     next(error);

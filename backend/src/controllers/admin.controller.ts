@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../config/prisma";
 import { adminDbService } from "../services/admin-db.service";
+import { databaseService } from "../services/database.service";
+import { createPrismaClient } from "../config/dynamicPrisma";
 import { httpError } from "../utils/httpError";
 import bcrypt from "bcrypt";
 import { autoResolveCompanyLogo } from "../utils/companyLogoResolver";
@@ -161,10 +163,34 @@ export async function getActivityFeed(_req: Request, res: Response, next: NextFu
       : [];
     const userNameMap = new Map<string, string>(users.map(u => [u.id, u.name]));
 
+    // Settings events: profile updates, password changes, security changes, etc.
+    const settingsAudit = await (prisma as any).adminAuditLog.findMany({
+      where: { module: "Settings" },
+      take: 20,
+      orderBy: { createdAt: "desc" },
+    });
+    const auditTargetIds: string[] = Array.from(new Set(
+      settingsAudit.map((l: any) => l.targetId).filter((id: unknown): id is string => typeof id === "string")
+    ));
+    const auditUsers = auditTargetIds.length > 0
+      ? await prisma.user.findMany({ where: { id: { in: auditTargetIds } }, select: { id: true, name: true } })
+      : [];
+    auditUsers.forEach(u => userNameMap.set(u.id, u.name));
+
     const activities: { time: Date; user: string; action: string; module: string; id: string }[] = [];
 
     recentUsers.forEach(u => activities.push({ time: u.createdAt, user: u.name, action: "Registered", module: "Platform", id: u.id }));
     recentPayments.forEach(p => activities.push({ time: p.createdAt, user: p.user?.name || "User", action: `Payment ${p.status}`, module: "Billing", id: p.id }));
+
+    settingsAudit.forEach((log: any) => {
+      activities.push({
+        time: log.createdAt,
+        user: userNameMap.get(log.targetId) || log.details?.userEmail || "User",
+        action: log.action,
+        module: "Settings",
+        id: log.id,
+      });
+    });
 
     hubResults.forEach((items, idx) => {
       const { action, module } = hubTables[idx];
@@ -977,6 +1003,143 @@ export async function deleteAdminNotification(req: Request, res: Response, next:
     const id = req.params.id as string;
     await (prisma as any).systemNotification.delete({ where: { id } });
     res.json({ success: true, message: "Notification deleted" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── 13. User Settings & Support Ticket Management ────────────────
+
+const SUPPORT_STATUSES = ["open", "in_progress", "resolved", "closed"];
+
+export async function getAdminSupportTickets(req: Request, res: Response, next: NextFunction) {
+  try {
+    const status = typeof req.query.status === "string" ? req.query.status.toLowerCase() : "";
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+
+    const tickets = await adminDbService.findRecentAcrossAllUserDbs("supportTicket", { take: 100 });
+
+    let filtered = tickets;
+    if (status && status !== "all") {
+      filtered = filtered.filter((t: any) => String(t.status).toLowerCase() === status);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter((t: any) =>
+        String(t.subject || "").toLowerCase().includes(q) ||
+        String(t.ticketId || "").toLowerCase().includes(q) ||
+        String(t.message || "").toLowerCase().includes(q)
+      );
+    }
+
+    const targetUserIds = Array.from(new Set(filtered.map((t: any) => t.userId || t._dbUserId).filter(Boolean)));
+    const users = targetUserIds.length > 0
+      ? await prisma.user.findMany({ where: { id: { in: targetUserIds } }, select: { id: true, name: true, email: true } })
+      : [];
+    const userMap = new Map(users.map(u => [u.id, u]));
+
+    const openCount = tickets.filter((t: any) => String(t.status).toLowerCase() === "open").length;
+    const inProgressCount = tickets.filter((t: any) => String(t.status).toLowerCase() === "in_progress").length;
+    const resolvedCount = tickets.filter((t: any) => String(t.status).toLowerCase() === "resolved").length;
+    const bugCount = tickets.filter((t: any) => String(t.category).toLowerCase() === "bug").length;
+
+    res.json({
+      success: true,
+      tickets: filtered.map((t: any) => ({
+        id: t.id,
+        ticketId: t.ticketId,
+        subject: t.subject,
+        category: t.category,
+        severity: t.severity,
+        status: t.status,
+        message: t.message,
+        userId: t.userId || t._dbUserId,
+        userName: userMap.get(t.userId || t._dbUserId)?.name || "Unknown User",
+        userEmail: userMap.get(t.userId || t._dbUserId)?.email || "",
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+      })),
+      stats: {
+        total: tickets.length,
+        open: openCount,
+        inProgress: inProgressCount,
+        resolved: resolvedCount,
+        bugs: bugCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateSupportTicketStatus(req: Request, res: Response, next: NextFunction) {
+  try {
+    const ticketId = req.params.ticketId as string;
+    const { status, note } = req.body;
+    const newStatus = String(status || "").toLowerCase();
+    if (!SUPPORT_STATUSES.includes(newStatus)) {
+      throw httpError(400, "Status must be one of: " + SUPPORT_STATUSES.join(", "));
+    }
+
+    const tickets = await adminDbService.findRecentAcrossAllUserDbs("supportTicket", { take: 500 });
+    const ticket = tickets.find((t: any) => String(t.ticketId) === ticketId || t.id === ticketId);
+    if (!ticket) throw httpError(404, "Support ticket not found");
+
+    const ownerUserId = ticket.userId || ticket._dbUserId;
+    if (!ownerUserId) throw httpError(404, "Ticket owner not found");
+
+    const dbUrl = await databaseService.getDatabaseUrlForUser(ownerUserId);
+    const client = createPrismaClient(dbUrl);
+    let updated: any;
+    try {
+      updated = await client.supportTicket.update({
+        where: { id: ticket.id },
+        data: { status: newStatus },
+      });
+    } finally {
+      await client.$disconnect();
+    }
+
+    await (prisma as any).adminAuditLog.create({
+      data: {
+        adminId: (req as any).adminUser?.id || null,
+        adminName: (req as any).adminUser?.name || "Admin",
+        action: "Support Ticket Status Updated",
+        module: "Support",
+        targetId: ownerUserId,
+        details: { ticketId, from: ticket.status, to: newStatus, note: note || null },
+        ipAddress: req.ip,
+      },
+    });
+
+    res.json({ success: true, message: `Ticket ${ticketId} marked as ${newStatus}`, ticket: updated });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAdminUserSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.params.userId as string;
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, plan: true, createdAt: true } });
+    if (!user) throw httpError(404, "User not found");
+
+    const dbUrl = await databaseService.getDatabaseUrlForUser(userId);
+    const client = createPrismaClient(dbUrl);
+    let data: any = {};
+    try {
+      const [profile, settings, storageUsage, ticketCount] = await Promise.all([
+        client.profile.findUnique({ where: { userId } }),
+        client.userSettings.findUnique({ where: { userId } }).catch(() => null),
+        client.storageUsage.findUnique({ where: { userId } }).catch(() => null),
+        client.supportTicket.count({ where: { userId } }).catch(() => 0),
+      ]);
+      data = { profile, settings, storageUsage, ticketCount };
+    } finally {
+      await client.$disconnect();
+    }
+
+    res.json({ success: true, user, ...data });
   } catch (error) {
     next(error);
   }

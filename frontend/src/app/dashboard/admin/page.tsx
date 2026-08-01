@@ -71,6 +71,9 @@ const AICopilot = dynamic(() => import("@/components/admin/sections/AICopilot"),
 const SystemSettings = dynamic(() => import("@/components/admin/sections/SystemSettings"), {
   loading: () => <PageLoading />,
 });
+const SupportTickets = dynamic(() => import("@/components/admin/sections/SupportTickets"), {
+  loading: () => <PageLoading />,
+});
 
 function PageLoading() {
   return (
@@ -125,6 +128,7 @@ const sectionComponents: Record<string, React.ComponentType> = {
   developer: DeveloperCenter,
   "ai-copilot": AICopilot,
   settings: SystemSettings,
+  support: SupportTickets,
 };
 
 export default function AdminDashboard() {

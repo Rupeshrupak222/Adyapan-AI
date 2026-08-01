@@ -1132,6 +1132,59 @@ model UserSettings {
   @@map("user_settings")
 }
 
+// ─── Activity Log Model ────────────────────────────────────────────────────────
+// Persistent trail of significant account / settings actions shown on the
+// Activity page and surfaced to the admin dashboard.
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  action    String
+  category  String   @default("settings")
+  details   Json     @default("{}")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// ─── Storage Usage Model ───────────────────────────────────────────────────────
+// Snapshot of storage consumption per user, kept up to date on every
+// /settings/storage request so the Storage page has persistent data.
+model StorageUsage {
+  id         String   @id @default(cuid())
+  userId     String   @unique @map("user_id")
+  limitMb    Float    @default(50)    @map("limit_mb")
+  usedMb     Float    @default(0)     @map("used_mb")
+  notes      Int      @default(0)
+  resumes    Int      @default(0)
+  assignments Int     @default(0)
+  sessions   Int      @default(0)
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("storage_usage")
+}
+
+// ─── Support Ticket Model ──────────────────────────────────────────────────────
+// Persisted support tickets and bug reports submitted from the Help section.
+model SupportTicket {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  ticketId  String   @unique @map("ticket_id")
+  subject   String
+  category  String   @default("general")
+  message   String
+  severity  String   @default("medium")
+  status    String   @default("open")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("support_tickets")
+}
+
 model Payment {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")

@@ -22,6 +22,9 @@ import {
   createAdminBroadcastNotification,
   toggleRevokeAdminNotification,
   deleteAdminNotification,
+  getAdminSupportTickets,
+  updateSupportTicketStatus,
+  getAdminUserSettings,
 } from "../controllers/admin.controller";
 import { requireAdminAuth } from "../middleware/adminAuth";
 import {
@@ -73,6 +76,11 @@ adminRouter.post("/jobs/ingest", ...guard, triggerJobIngestion);
 // System Settings Management
 adminRouter.get("/settings", ...guard, getAdminSettings);
 adminRouter.put("/settings", ...guard, updateAdminSettings);
+
+// User Settings & Support Ticket Management
+adminRouter.get("/support-tickets", ...guard, getAdminSupportTickets);
+adminRouter.put("/support-tickets/:ticketId/status", ...guard, updateSupportTicketStatus);
+adminRouter.get("/users/:userId/settings", ...guard, getAdminUserSettings);
 
 // Coupon Management
 adminRouter.get("/coupons", ...guard, getCoupons);

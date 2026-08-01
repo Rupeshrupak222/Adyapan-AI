@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Activity, Users, Building2, Brain, ToggleLeft,
   GraduationCap, Briefcase, FileText, CreditCard, BarChart3,
   ActivitySquare, Shield, Server, Puzzle, ScrollText,
-  Bell, Terminal, Bot, Settings,
+  Bell, Terminal, Bot, Settings, LifeBuoy,
 } from "lucide-react";
 
 interface SidebarSectionItem {
@@ -33,6 +33,7 @@ const sidebarSections: SidebarSectionItem[] = [
   { id: "integrations", label: "Integrations", icon: <Puzzle size={18} /> },
   { id: "audit", label: "Audit Center", icon: <ScrollText size={18} /> },
   { id: "notifications", label: "Notifications", icon: <Bell size={18} /> },
+  { id: "support", label: "Support Center", icon: <LifeBuoy size={18} /> },
   { id: "developer", label: "Developer Center", icon: <Terminal size={18} /> },
   { id: "settings", label: "System Settings", icon: <Settings size={18} /> },
 ];
