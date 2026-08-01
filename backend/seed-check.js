@@ -9,18 +9,14 @@ async function main() {
   const db = new PrismaClient({ adapter });
 
   const count = await db.discoveryJob.count();
-  console.log("Total jobs:", count);
+  console.log("Total DiscoveryJobs:", count);
 
-  const bySource = await db.discoveryJob.groupBy({ by: ["source"], _count: { id: true }, orderBy: { _count: { id: "desc" } } });
-  console.log("By source:", JSON.stringify(bySource));
-
-  const companies = await db.discoveryCompany.findMany({ take: 5 });
-  console.log("Companies:", companies.map(c => c.name));
-
-  const sources = await db.discoveryJobSource.findMany();
-  console.log("Sources:", sources.map(s => s.name));
-
-  await db.$disconnect();
+  try {
+    const jlCount = await db.jobListing.count();
+    console.log("Total JobListings:", jlCount);
+  } catch (err) {
+    console.log("JobListing table error:", err.message);
+  }
 }
 
 main().catch(console.error);

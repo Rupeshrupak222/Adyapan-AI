@@ -1,25 +1,77 @@
 import { Router, Request, Response } from "express";
 import { requireAuth } from "../middleware/auth";
 import { getUserPrismaFromRequest } from "../utils/prisma";
-import { createPrismaClient } from "../config/dynamicPrisma";
-import { env } from "../config/env";
+import { prisma as masterPrisma } from "../config/prisma";
 import { handleRouteError } from "../utils/routeError";
+import { autoResolveCompanyLogo } from "../utils/companyLogoResolver";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
 import { searchAdzunaJobs, getAdzunaCategories, getSupportedCountries, type NormalizedJob } from "../services/adzuna.service";
 
-let _publicDb: any = null;
-function getPublicDb() {
-  if (!_publicDb) _publicDb = createPrismaClient(env.databaseUrl);
-  return _publicDb;
-}
-
 export const jobListingRouter = Router();
+
+function mapDiscoveryJobToListing(job: any) {
+  if (!job) return null;
+  const salMin = job.salaryMin;
+  const salMax = job.salaryMax;
+  let salaryStr = "Competitive";
+  if (salMin && salMax) {
+    salaryStr = `₹${(salMin / 100000).toFixed(1)}L - ₹${(salMax / 100000).toFixed(1)}L PA`;
+  } else if (salMin) {
+    salaryStr = `₹${(salMin / 100000).toFixed(1)}L+ PA`;
+  }
+
+  const expMin = job.experienceMin ?? 0;
+  const expMax = job.experienceMax ?? (expMin + 2);
+  const expStr = `${expMin}-${expMax} yrs`;
+
+  return {
+    id: job.id,
+    externalId: job.externalId || job.id,
+    source: job.source || "manual",
+    title: job.title,
+    company: job.company,
+    logoUrl: job.logoUrl || autoResolveCompanyLogo(job.company),
+    logo: job.logoUrl || autoResolveCompanyLogo(job.company),
+    logoBg: "#f59e0b",
+    location: job.location || "Remote",
+    country: job.country || "India",
+    state: job.state || "",
+    city: job.city || "",
+    mode: job.workMode || "On-site",
+    workMode: job.workMode || "On-site",
+    employmentType: job.employmentType || "Full-Time",
+    category: job.industry || "Technology",
+    industry: job.industry || "Technology",
+    salary: salaryStr,
+    salaryMin: job.salaryMin,
+    salaryMax: job.salaryMax,
+    salaryCurrency: job.salaryCurrency || "INR",
+    experience: expStr,
+    experienceMin: job.experienceMin,
+    experienceMax: job.experienceMax,
+    skills: Array.isArray(job.skills) ? job.skills : [],
+    description: job.description || "",
+    responsibilities: Array.isArray(job.responsibilities) ? job.responsibilities : [],
+    requirements: Array.isArray(job.requirements) ? job.requirements : [],
+    benefits: Array.isArray(job.benefits) ? job.benefits : [],
+    eligibility: Array.isArray(job.requirements) ? job.requirements : [],
+    companyOverview: `${job.company} is hiring for ${job.title} in ${job.location || 'Remote'}.`,
+    applyUrl: job.applyUrl || "https://adyapan.ai",
+    website: job.sourceUrl || "",
+    deadline: "Open until filled",
+    postedDate: job.postedAt || job.createdAt,
+    postedAt: job.postedAt || job.createdAt,
+    isGovernment: false,
+    isActive: job.isActive ?? true,
+    isFeatured: job.isFeatured ?? false,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+  };
+}
 
 // ─── GET / ─ List jobs with filters (DB + Adzuna merged) ───────────────────
 jobListingRouter.get("/", async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId;
-    const prisma = userId ? await getUserPrismaFromRequest(req) : getPublicDb();
     const {
       search,
       company,
@@ -30,11 +82,9 @@ jobListingRouter.get("/", async (req: Request, res: Response) => {
       city,
       mode,
       employmentType,
-      experience,
       salaryMin,
       salaryMax,
       skills,
-      isGovernment,
       sortBy = "postedDate",
       order = "desc",
       page = "1",
@@ -68,7 +118,7 @@ jobListingRouter.get("/", async (req: Request, res: Response) => {
     }
 
     if (category && typeof category === "string") {
-      where.category = { contains: category.trim(), mode: "insensitive" };
+      where.industry = { contains: category.trim(), mode: "insensitive" };
     }
 
     if (location && typeof location === "string") {
@@ -88,19 +138,11 @@ jobListingRouter.get("/", async (req: Request, res: Response) => {
     }
 
     if (mode && typeof mode === "string") {
-      where.mode = { equals: mode.trim(), mode: "insensitive" };
+      where.workMode = { contains: mode.trim(), mode: "insensitive" };
     }
 
     if (employmentType && typeof employmentType === "string") {
-      where.employmentType = { equals: employmentType.trim(), mode: "insensitive" };
-    }
-
-    if (experience && typeof experience === "string") {
-      where.experience = { contains: experience.trim(), mode: "insensitive" };
-    }
-
-    if (isGovernment !== undefined && isGovernment !== null && typeof isGovernment === "string") {
-      where.isGovernment = isGovernment === "true";
+      where.employmentType = { contains: employmentType.trim(), mode: "insensitive" };
     }
 
     if (salaryMin || salaryMax) {
@@ -124,29 +166,25 @@ jobListingRouter.get("/", async (req: Request, res: Response) => {
       }
     }
 
-    const validSortFields: Record<string, string> = {
-      postedDate: "postedDate",
-      createdAt: "createdAt",
-      salary: "salaryMax",
-    };
-    const sortField = validSortFields[sortBy as string] || "postedDate";
     const sortOrder = order === "asc" ? "asc" : "desc";
 
     // ── Fetch from DB ──
     const shouldFetchDB = source === "all" || source === "db";
     const shouldFetchAdzuna = source === "all" || source === "adzuna";
 
-    const [dbJobs, dbTotal] = shouldFetchDB
+    const [dbRawJobs, dbTotal] = shouldFetchDB
       ? await Promise.all([
-          prisma.jobListing.findMany({
+          masterPrisma.discoveryJob.findMany({
             where,
-            orderBy: { [sortField]: sortOrder },
+            orderBy: { createdAt: sortOrder },
             skip,
             take: limitNum,
           }),
-          prisma.jobListing.count({ where }),
+          masterPrisma.discoveryJob.count({ where }),
         ])
       : [[] as any[], 0];
+
+    const dbJobs = dbRawJobs.map(mapDiscoveryJobToListing);
 
     // ── Fetch from Adzuna ──
     let adzunaJobs: NormalizedJob[] = [];
@@ -193,52 +231,28 @@ jobListingRouter.get("/", async (req: Request, res: Response) => {
 // ─── GET /featured ─ Featured jobs ─────────────────────────────────────────
 jobListingRouter.get("/featured", async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId;
-    const prisma = userId ? await getUserPrismaFromRequest(req) : getPublicDb();
-
-    const jobs = await prisma.jobListing.findMany({
+    const rawJobs = await masterPrisma.discoveryJob.findMany({
       where: { isFeatured: true, isActive: true },
       orderBy: { createdAt: "desc" },
       take: 10,
     });
-
+    const jobs = rawJobs.map(mapDiscoveryJobToListing);
     res.json({ success: true, jobs });
   } catch (error) {
     handleRouteError(res, error, "JobListing.featured", "Failed to fetch featured jobs");
   }
 });
 
-// ─── GET /trending ─ Trending jobs (most saved recently) ───────────────────
+// ─── GET /trending ─ Trending jobs ─────────────────────────────────────────
 jobListingRouter.get("/trending", async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId;
-    const prisma = userId ? await getUserPrismaFromRequest(req) : getPublicDb();
-
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const trending = await prisma.jobListingSaved.groupBy({
-      by: ["jobListingId"],
-      where: { createdAt: { gte: thirtyDaysAgo } },
-      _count: { jobListingId: true },
-      orderBy: { _count: { jobListingId: "desc" } },
+    const rawJobs = await masterPrisma.discoveryJob.findMany({
+      where: { isActive: true },
+      orderBy: { viewCount: "desc" },
       take: 10,
     });
-
-    const jobIds = trending.map((t) => t.jobListingId);
-
-    const jobs =
-      jobIds.length > 0
-        ? await prisma.jobListing.findMany({
-            where: { id: { in: jobIds }, isActive: true },
-          })
-        : [];
-
-    const ordered = jobIds
-      .map((id) => jobs.find((j) => j.id === id))
-      .filter(Boolean);
-
-    res.json({ success: true, jobs: ordered });
+    const jobs = rawJobs.map(mapDiscoveryJobToListing);
+    res.json({ success: true, jobs });
   } catch (error) {
     handleRouteError(res, error, "JobListing.trending", "Failed to fetch trending jobs");
   }
@@ -247,10 +261,7 @@ jobListingRouter.get("/trending", async (req: Request, res: Response) => {
 // ─── GET /companies ─ Distinct companies with counts ──────────────────────
 jobListingRouter.get("/companies", async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId;
-    const prisma = userId ? await getUserPrismaFromRequest(req) : getPublicDb();
-
-    const results = await prisma.jobListing.groupBy({
+    const results = await masterPrisma.discoveryJob.groupBy({
       by: ["company"],
       where: { isActive: true },
       _count: { company: true },
@@ -271,26 +282,23 @@ jobListingRouter.get("/companies", async (req: Request, res: Response) => {
 // ─── GET /stats ─ Job market stats ────────────────────────────────────────
 jobListingRouter.get("/stats", async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId;
-    const prisma = userId ? await getUserPrismaFromRequest(req) : getPublicDb();
-
     const activeWhere = { isActive: true };
 
     const [totalJobs, byMode, byEmploymentType, topCompanies] = await Promise.all([
-      prisma.jobListing.count({ where: activeWhere }),
-      prisma.jobListing.groupBy({
-        by: ["mode"],
+      masterPrisma.discoveryJob.count({ where: activeWhere }),
+      masterPrisma.discoveryJob.groupBy({
+        by: ["workMode"],
         where: activeWhere,
-        _count: { mode: true },
-        orderBy: { _count: { mode: "desc" } },
+        _count: { workMode: true },
+        orderBy: { _count: { workMode: "desc" } },
       }),
-      prisma.jobListing.groupBy({
+      masterPrisma.discoveryJob.groupBy({
         by: ["employmentType"],
         where: activeWhere,
         _count: { employmentType: true },
         orderBy: { _count: { employmentType: "desc" } },
       }),
-      prisma.jobListing.groupBy({
+      masterPrisma.discoveryJob.groupBy({
         by: ["company"],
         where: activeWhere,
         _count: { company: true },
@@ -301,7 +309,7 @@ jobListingRouter.get("/stats", async (req: Request, res: Response) => {
 
     const stats = {
       totalJobs,
-      byMode: byMode.map((m) => ({ mode: m.mode, count: m._count.mode })),
+      byMode: byMode.map((m) => ({ mode: m.workMode, count: m._count.workMode })),
       byEmploymentType: byEmploymentType.map((e) => ({
         employmentType: e.employmentType,
         count: e._count.employmentType,
@@ -363,22 +371,26 @@ jobListingRouter.get("/adzuna/search", async (req: Request, res: Response) => {
 // ─── GET /user/saved ─ Saved job IDs for current user ──────────────────────
 jobListingRouter.get("/user/saved", requireAuth, async (req: Request, res: Response) => {
   try {
-    const prisma = await getUserPrismaFromRequest(req);
     const userId = (req as any).user?.userId;
-
-    const saved = await prisma.jobListingSaved.findMany({
-      where: { userId },
-      select: { jobListingId: true, createdAt: true },
-      orderBy: { createdAt: "desc" },
-    });
+    let saved: any[] = [];
+    try {
+      const prisma = await getUserPrismaFromRequest(req);
+      saved = await prisma.jobListingSaved.findMany({
+        where: { userId },
+        select: { jobListingId: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch {
+      // User DB table may not exist yet
+    }
 
     const savedWithJobs = await Promise.all(
       saved.map(async (s) => {
         try {
-          const jobListing = await prisma.jobListing.findUnique({
+          const rawJob = await masterPrisma.discoveryJob.findUnique({
             where: { id: s.jobListingId },
           });
-          return { id: s.jobListingId, jobListingId: s.jobListingId, createdAt: s.createdAt, jobListing };
+          return { id: s.jobListingId, jobListingId: s.jobListingId, createdAt: s.createdAt, jobListing: mapDiscoveryJobToListing(rawJob) };
         } catch {
           return { id: s.jobListingId, jobListingId: s.jobListingId, createdAt: s.createdAt, jobListing: null };
         }
@@ -401,16 +413,28 @@ jobListingRouter.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const prisma = await getUserPrismaFromRequest(req);
       const userId = (req as any).user?.userId;
+      let applications: any[] = [];
+      try {
+        const prisma = await getUserPrismaFromRequest(req);
+        applications = await prisma.jobListingApplication.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+        });
+      } catch {
+        // User DB fallback
+      }
 
-      const applications = await prisma.jobListingApplication.findMany({
-        where: { userId },
-        include: { jobListing: true },
-        orderBy: { createdAt: "desc" },
-      });
+      const applicationsWithJobs = await Promise.all(
+        applications.map(async (app) => {
+          const rawJob = await masterPrisma.discoveryJob.findUnique({
+            where: { id: app.jobListingId },
+          });
+          return { ...app, jobListing: mapDiscoveryJobToListing(rawJob) };
+        })
+      );
 
-      res.json({ success: true, applications });
+      res.json({ success: true, applications: applicationsWithJobs });
     } catch (error) {
       handleRouteError(
         res,
@@ -425,23 +449,18 @@ jobListingRouter.get(
 // ─── GET /:id ─ Single job detail ─────────────────────────────────────────
 jobListingRouter.get("/:id", async (req: Request, res: Response) => {
   try {
-    const prisma = await getUserPrismaFromRequest(req);
-    const { id } = req.params;
+    const id = req.params.id as string;
 
-    const job = await prisma.jobListing.findUnique({
+    const rawJob = await masterPrisma.discoveryJob.findUnique({
       where: { id },
-      include: {
-        _count: {
-          select: { savedBy: true, applications: true },
-        },
-      },
     });
 
-    if (!job) {
+    if (!rawJob) {
       res.status(404).json({ success: false, error: "Job listing not found" });
       return;
     }
 
+    const job = mapDiscoveryJobToListing(rawJob);
     res.json({ success: true, job });
   } catch (error) {
     handleRouteError(res, error, "JobListing.detail", "Failed to fetch job listing");

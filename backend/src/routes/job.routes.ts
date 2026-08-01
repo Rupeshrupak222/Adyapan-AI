@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
 import { getUserPrismaFromRequest } from "../utils/prisma";
+import { prisma as masterPrisma } from "../config/prisma";
 import { handleRouteError } from "../utils/routeError";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
 
@@ -10,8 +11,7 @@ router.use(requireAuth);
 // Get all active jobs
 router.get("/", async (req: any, res) => {
   try {
-    const userPrisma = await getUserPrismaFromRequest(req);
-    const jobs = await userPrisma.job.findMany({
+    const jobs = await masterPrisma.discoveryJob.findMany({
       where: { isActive: true },
       orderBy: { createdAt: "desc" },
     });
