@@ -7,6 +7,8 @@ import { emitNotification } from "../lib/notificationEmitter";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { requireUserId } from "../utils/request";
+import { resolvePlanPrice } from "./plan.controller";
+import { validateCoupon } from "./coupon.controller";
 
 let razorpay: any = null;
 try {
@@ -22,32 +24,38 @@ try {
   console.error("Failed to initialize Razorpay SDK:", e);
 }
 
-const PLAN_PRICES: Record<string, { amount: number; label: string }> = {
-  pro_monthly: { amount: 19900, label: "Pro Monthly" },
-  pro_yearly: { amount: 199900, label: "Pro Yearly" },
-};
-
 // ─── 1. Create Order ─────────────────────────────────────────────
 
 export async function createOrder(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = requireUserId(req);
 
-    const { plan } = req.body;
-    if (!plan || !PLAN_PRICES[plan]) throw httpError(400, "Invalid plan. Choose pro_monthly or pro_yearly.");
+    const { plan, couponCode } = req.body;
+    const { amount, label } = await resolvePlanPrice(plan);
 
-    const { amount, label } = PLAN_PRICES[plan];
+    // Apply coupon discount when provided.
+    let discountAmount = 0;
+    let appliedCoupon: string | null = null;
+    if (couponCode && String(couponCode).trim().length > 0) {
+      const coupon = await validateCoupon(String(couponCode));
+      discountAmount = Math.round((amount * coupon.discountPct) / 100);
+      appliedCoupon = coupon.code;
+      if (amount - discountAmount <= 0) {
+        throw httpError(400, "Coupon makes this order free. Please contact support.");
+      }
+    }
+    const finalAmount = amount - discountAmount;
 
     const order = razorpay
       ? await razorpay.orders.create({
-          amount,
+          amount: finalAmount,
           currency: "INR",
           receipt: `receipt_${userId}_${Date.now()}`,
-          notes: { userId, plan, label },
+          notes: { userId, plan, label, couponCode: appliedCoupon ?? "" },
         })
       : {
           id: `order_mock_${Math.random().toString(36).substring(7)}`,
-          amount,
+          amount: finalAmount,
           currency: "INR",
           receipt: `receipt_${userId}_${Date.now()}`,
         };
@@ -56,12 +64,21 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
       data: {
         userId,
         orderId: order.id,
-        amount,
+        amount: finalAmount,
         currency: "INR",
         plan,
+        couponCode: appliedCoupon,
+        discountAmount,
         status: "created",
       },
     });
+
+    if (appliedCoupon) {
+      await prisma.coupon.updateMany({
+        where: { code: appliedCoupon },
+        data: { usedCount: { increment: 1 } },
+      });
+    }
 
     res.json({
       success: true,
@@ -71,6 +88,9 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
         currency: order.currency,
         receipt: order.receipt,
       },
+      coupon: appliedCoupon
+        ? { code: appliedCoupon, discountAmount }
+        : null,
       key: env.razorpay.keyId,
     });
   } catch (error) {
@@ -111,8 +131,12 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
     if (!payment) throw httpError(404, "Payment record not found");
     if (payment.userId !== userId) throw httpError(403, "Payment does not belong to this user");
 
-    const planKey = payment.plan as keyof typeof PLAN_PRICES;
-    const planLabel = PLAN_PRICES[planKey]?.label ?? payment.plan;
+    let planLabel = payment.plan;
+    try {
+      planLabel = (await resolvePlanPrice(payment.plan)).label;
+    } catch {
+      /* fall back to raw plan value */
+    }
 
     await prisma.payment.update({
       where: { orderId },
@@ -177,6 +201,20 @@ export async function getStatus(req: Request, res: Response, next: NextFunction)
 
     const isActive = user.subscriptionStatus === "active" && user.subscriptionEnd && new Date(user.subscriptionEnd) > new Date();
 
+    // Find the most recent paid payment that used a coupon, if any.
+    let appliedCoupon: { code: string; discountPct: number } | null = null;
+    const lastCouponPayment = await prisma.payment.findFirst({
+      where: { userId, status: "paid", couponCode: { not: null } },
+      orderBy: { createdAt: "desc" },
+      select: { couponCode: true, discountAmount: true },
+    });
+    if (lastCouponPayment?.couponCode) {
+      const coupon = await prisma.coupon.findUnique({ where: { code: lastCouponPayment.couponCode } });
+      if (coupon) {
+        appliedCoupon = { code: coupon.code, discountPct: coupon.discountPct };
+      }
+    }
+
     res.json({
       success: true,
       subscription: {
@@ -184,8 +222,37 @@ export async function getStatus(req: Request, res: Response, next: NextFunction)
         status: isActive ? "active" : "inactive",
         endDate: user.subscriptionEnd,
         razorpaySubscriptionId: user.razorpaySubscriptionId,
+        appliedCoupon,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── 4. Get Invoices ─────────────────────────────────────────────
+
+export async function getInvoices(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = requireUserId(req);
+
+    const payments = await prisma.payment.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        orderId: true,
+        paymentId: true,
+        amount: true,
+        discountAmount: true,
+        couponCode: true,
+        plan: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    res.json({ success: true, invoices: payments });
   } catch (error) {
     next(error);
   }
@@ -235,18 +302,4 @@ export async function cancelSubscription(req: Request, res: Response, next: Next
   } catch (error) {
     next(error);
   }
-}
-
-// ─── 5. Plans List ──────────────────────────────────────────────
-
-export async function listPlans(_req: Request, res: Response) {
-  res.json({
-    success: true,
-    plans: Object.entries(PLAN_PRICES).map(([id, p]) => ({
-      id,
-      label: p.label,
-      amount: p.amount,
-      currency: "INR",
-    })),
-  });
 }

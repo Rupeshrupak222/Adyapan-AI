@@ -63,13 +63,15 @@ model Payment {
   orderId   String   @unique @map("order_id")
   paymentId String?  @unique @map("payment_id")
   signature String?  @map("signature")
-  amount    Int
-  currency  String   @default("INR")
-  plan      String
-  status    String   @default("created")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount         Int
+  currency       String   @default("INR")
+  plan           String
+  couponCode     String?  @map("coupon_code")
+  discountAmount Int?     @map("discount_amount")
+  status         String   @default("created")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])

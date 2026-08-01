@@ -4,8 +4,10 @@ import {
   verifyPayment,
   getStatus,
   cancelSubscription,
-  listPlans,
+  getInvoices,
 } from "../controllers/payment.controller";
+import { listPlans } from "../controllers/plan.controller";
+import { listActiveCoupons, applyCoupon } from "../controllers/coupon.controller";
 import { requireAuth } from "../middleware/auth";
 
 export const paymentRouter = Router();
@@ -18,3 +20,6 @@ paymentRouter.post("/create-order", createOrder);
 paymentRouter.post("/verify", verifyPayment);
 paymentRouter.get("/status", getStatus);
 paymentRouter.post("/cancel", cancelSubscription);
+paymentRouter.get("/invoices", getInvoices);
+paymentRouter.get("/coupons", listActiveCoupons);
+paymentRouter.post("/coupon/apply", applyCoupon);
