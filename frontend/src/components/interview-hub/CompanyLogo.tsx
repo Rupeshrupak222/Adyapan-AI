@@ -355,27 +355,51 @@ export default function CompanyLogo({
     );
   }
 
-  // Elegant letter badge fallback
-  const initials = name
+  // Elegant letter badge fallback using company name initials
+  const cleanName = name.trim();
+  const initials = cleanName
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
     .map(w => w[0]?.toUpperCase())
-    .join("") || name.substring(0, 2).toUpperCase();
+    .join("") || cleanName.substring(0, 2).toUpperCase() || "C";
+
+  const colorPalette = getCompanyColor(cleanName);
+  const fontSize = Math.max(10, Math.floor(size * 0.38));
 
   return (
     <div
-      className={`rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-transform hover:scale-105 ${className}`}
+      className={`rounded-xl flex items-center justify-center font-black shrink-0 transition-transform hover:scale-105 select-none ${className}`}
       style={{
         width: size,
         height: size,
-        background: `linear-gradient(135deg, ${color}, ${color}cc)`,
-        color: "#ffffff",
-        border: `1px solid ${color}`,
-        boxShadow: `0 4px 14px ${color}40`,
+        background: colorPalette.bg,
+        color: colorPalette.text,
+        border: `1px solid ${colorPalette.border}`,
+        boxShadow: `0 4px 14px ${colorPalette.border}`,
+        fontSize,
       }}
+      title={cleanName}
     >
       {initials}
     </div>
   );
+}
+
+const COLOR_GRADIENTS = [
+  { bg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", border: "rgba(245,158,11,0.4)", text: "#ffffff" },
+  { bg: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)", border: "rgba(59,130,246,0.4)", text: "#ffffff" },
+  { bg: "linear-gradient(135deg, #10b981 0%, #047857 100%)", border: "rgba(16,185,129,0.4)", text: "#ffffff" },
+  { bg: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)", border: "rgba(139,92,246,0.4)", text: "#ffffff" },
+  { bg: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)", border: "rgba(236,72,153,0.4)", text: "#ffffff" },
+  { bg: "linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)", border: "rgba(6,182,212,0.4)", text: "#ffffff" },
+];
+
+function getCompanyColor(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const idx = Math.abs(hash) % COLOR_GRADIENTS.length;
+  return COLOR_GRADIENTS[idx];
 }
