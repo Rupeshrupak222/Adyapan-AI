@@ -89,14 +89,26 @@ export function useSettingsData() {
 // ─── Debounced auto-save helper (matches dashboard behavior) ─────────────
 export function useScheduleSave() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<Record<string, Record<string, unknown>>>({});
 
   const scheduleSave = useCallback((section: string, data: Record<string, unknown>) => {
+    // Merge changes per section so rapid toggles are all persisted,
+    // not just the most recent one.
+    pendingRef.current[section] = { ...(pendingRef.current[section] || {}), ...data };
+
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
-      try {
-        await api.put(`/settings/${section}`, data);
-        toast.success(`${section.charAt(0).toUpperCase() + section.slice(1)} saved!`, { duration: 1500 });
-      } catch { /* silent */ }
+      const sections = pendingRef.current;
+      pendingRef.current = {};
+      await Promise.all(
+        Object.entries(sections).map(([sec, payload]) =>
+          api.put(`/settings/${sec}`, payload).catch(() => {})
+        )
+      );
+      const label = Object.keys(sections)[0];
+      if (label) {
+        toast.success(`${label.charAt(0).toUpperCase() + label.slice(1)} saved!`, { duration: 1500 });
+      }
     }, 800);
   }, []);
 
