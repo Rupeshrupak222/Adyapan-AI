@@ -5,6 +5,7 @@ import { httpError } from "../utils/httpError";
 import bcrypt from "bcrypt";
 import { autoResolveCompanyLogo } from "../utils/companyLogoResolver";
 import { JobDiscoveryService } from "../services/job-discovery.service";
+import { emitBroadcastNotification } from "../lib/notificationEmitter";
 
 // Memory store for global admin settings
 let systemSettingsMemory = {
@@ -772,6 +773,163 @@ export async function getAnalyticsBI(_req: Request, res: Response, next: NextFun
         totalCoding,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── 12. System Broadcast Notifications ──────────────────────────
+
+export async function getAdminNotifications(req: Request, res: Response, next: NextFunction) {
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (page - 1) * limit;
+    const targetAudience = (req.query.targetAudience as string)?.toUpperCase();
+    const type = req.query.type as string;
+    const search = (req.query.search as string)?.trim();
+
+    const where: any = {};
+    if (targetAudience && targetAudience !== "ALL_FILTER") {
+      where.targetAudience = targetAudience;
+    }
+    if (type) {
+      where.type = type;
+    }
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { message: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const [notifications, total, totalAllUsers, freeUsersCount, premiumUsersCount] = await Promise.all([
+      (prisma as any).systemNotification.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      (prisma as any).systemNotification.count({ where }),
+      prisma.user.count(),
+      prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: null }, { plan: "" }] } }),
+      prisma.user.count({ where: { OR: [{ plan: "pro" }, { plan: "premium" }, { subscriptionStatus: "active" }] } }),
+    ]);
+
+    const activeCount = await (prisma as any).systemNotification.count({
+      where: { isRevoked: false },
+    });
+
+    res.json({
+      success: true,
+      notifications,
+      stats: {
+        totalBroadcasts: total,
+        activeBroadcasts: activeCount,
+        reachStats: {
+          all: totalAllUsers,
+          free: freeUsersCount,
+          premium: premiumUsersCount,
+        },
+      },
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createAdminBroadcastNotification(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { title, message, type, targetAudience, actionUrl, priority, sendEmail } = req.body;
+    if (!title || !message) throw httpError(400, "Title and message are required");
+
+    const validAudience = ["ALL", "FREE", "PREMIUM", "ADMIN"].includes((targetAudience || "").toUpperCase())
+      ? targetAudience.toUpperCase()
+      : "ALL";
+
+    const notification = await (prisma as any).systemNotification.create({
+      data: {
+        title: title.trim(),
+        message: message.trim(),
+        type: type || "info",
+        targetAudience: validAudience,
+        actionUrl: actionUrl ? actionUrl.trim() : null,
+        priority: priority || "normal",
+        sendEmail: Boolean(sendEmail),
+        deliveryChannel: sendEmail ? "email_in_app" : "in_app",
+      },
+    });
+
+    // Calculate reach for confirmation message
+    let targetCount = 0;
+    if (validAudience === "ALL") {
+      targetCount = await prisma.user.count();
+    } else if (validAudience === "FREE") {
+      targetCount = await prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: null }, { plan: "" }] } });
+    } else if (validAudience === "PREMIUM") {
+      targetCount = await prisma.user.count({ where: { OR: [{ plan: "pro" }, { plan: "premium" }, { subscriptionStatus: "active" }] } });
+    } else if (validAudience === "ADMIN") {
+      targetCount = await (prisma as any).adminUser.count();
+    }
+
+    // Real-time emit notification event via Socket.io
+    try {
+      emitBroadcastNotification({
+        id: `sys_${notification.id}`,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        targetAudience: notification.targetAudience,
+        link: notification.actionUrl,
+        createdAt: notification.createdAt,
+      });
+    } catch (e) {
+      console.warn("Broadcast socket emit warning:", e);
+    }
+
+    res.json({
+      success: true,
+      message: `Notification broadcasted to ${targetCount} ${validAudience.toLowerCase()} users`,
+      notification,
+      targetCount,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function toggleRevokeAdminNotification(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = req.params.id as string;
+    const existing = await (prisma as any).systemNotification.findUnique({ where: { id } });
+    if (!existing) throw httpError(404, "Notification not found");
+
+    const updated = await (prisma as any).systemNotification.update({
+      where: { id },
+      data: { isRevoked: !existing.isRevoked },
+    });
+
+    res.json({
+      success: true,
+      message: updated.isRevoked ? "Notification broadcast revoked" : "Notification broadcast re-activated",
+      notification: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteAdminNotification(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = req.params.id as string;
+    await (prisma as any).systemNotification.delete({ where: { id } });
+    res.json({ success: true, message: "Notification deleted" });
   } catch (error) {
     next(error);
   }

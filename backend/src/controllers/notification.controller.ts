@@ -4,7 +4,7 @@ import { emitNotification } from "../lib/notificationEmitter";
 import { getUserPrismaFromRequest, masterPrisma } from "../utils/prisma";
 import { requireUserId } from "../utils/request";
 
-// ─── 1. List Notifications (paginated) ────────────────────────────
+// ─── 1. List Notifications (paginated & merged with admin broadcasts) ──────
 
 export async function listNotifications(req: Request, res: Response, next: NextFunction) {
   try {
@@ -14,25 +14,73 @@ export async function listNotifications(req: Request, res: Response, next: NextF
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
 
+    // Get user details to inspect plan (free vs premium)
+    const user = await masterPrisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, plan: true, subscriptionStatus: true },
+    });
+
+    const userPlan = (user?.plan || "free").toLowerCase();
+    const isPremium = userPlan === "pro" || userPlan === "premium" || user?.subscriptionStatus === "active";
+    const targetFilter = isPremium ? ["ALL", "PREMIUM"] : ["ALL", "FREE"];
+
     const userPrisma = await getUserPrismaFromRequest(req);
-    const [notifications, total] = await Promise.all([
+
+    // Fetch personal notifications and active system broadcast notifications in parallel
+    const [personalNotifications, systemBroadcasts] = await Promise.all([
       userPrisma.notification.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
+        take: 50,
       }),
-      userPrisma.notification.count({ where: { userId } }),
+      (masterPrisma as any).systemNotification.findMany({
+        where: {
+          isRevoked: false,
+          targetAudience: { in: targetFilter },
+        },
+        include: {
+          reads: {
+            where: { userId },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+      }),
     ]);
+
+    // Map system broadcasts
+    const mappedBroadcasts = systemBroadcasts.map((b: any) => ({
+      id: `sys_${b.id}`,
+      systemNotificationId: b.id,
+      userId,
+      type: b.type || "announcement",
+      title: b.title,
+      message: b.message,
+      link: b.actionUrl,
+      read: Array.isArray(b.reads) && b.reads.length > 0,
+      targetAudience: b.targetAudience,
+      priority: b.priority,
+      isSystem: true,
+      createdAt: b.createdAt,
+    }));
+
+    // Merge personal & broadcast notifications
+    const allNotifications = [...mappedBroadcasts, ...personalNotifications].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    const paginated = allNotifications.slice(skip, skip + limit);
+    const unreadCount = allNotifications.filter((n) => !n.read).length;
 
     res.json({
       success: true,
-      notifications,
+      notifications: paginated,
+      unreadCount,
       pagination: {
         page,
         limit,
-        total,
-        pages: Math.ceil(total / limit),
+        total: allNotifications.length,
+        pages: Math.ceil(allNotifications.length / limit),
       },
     });
   } catch (error) {
@@ -46,12 +94,34 @@ export async function getUnreadCount(req: Request, res: Response, next: NextFunc
   try {
     const userId = requireUserId(req);
 
-    const userPrisma = await getUserPrismaFromRequest(req);
-    const count = await userPrisma.notification.count({
-      where: { userId, read: false },
+    const user = await masterPrisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, plan: true, subscriptionStatus: true },
     });
 
-    res.json({ success: true, count });
+    const userPlan = (user?.plan || "free").toLowerCase();
+    const isPremium = userPlan === "pro" || userPlan === "premium" || user?.subscriptionStatus === "active";
+    const targetFilter = isPremium ? ["ALL", "PREMIUM"] : ["ALL", "FREE"];
+
+    const userPrisma = await getUserPrismaFromRequest(req);
+
+    const [personalUnread, systemBroadcasts] = await Promise.all([
+      userPrisma.notification.count({ where: { userId, read: false } }),
+      (masterPrisma as any).systemNotification.findMany({
+        where: {
+          isRevoked: false,
+          targetAudience: { in: targetFilter },
+        },
+        include: {
+          reads: { where: { userId } },
+        },
+      }),
+    ]);
+
+    const systemUnread = systemBroadcasts.filter((b: any) => !b.reads || b.reads.length === 0).length;
+    const totalCount = personalUnread + systemUnread;
+
+    res.json({ success: true, count: totalCount });
   } catch (error) {
     next(error);
   }
@@ -62,8 +132,19 @@ export async function getUnreadCount(req: Request, res: Response, next: NextFunc
 export async function markAsRead(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = requireUserId(req);
-
     const id = req.params.id as string;
+
+    if (id.startsWith("sys_")) {
+      const sysId = id.replace("sys_", "");
+      await (masterPrisma as any).systemNotificationRead.upsert({
+        where: {
+          notificationId_userId: { notificationId: sysId, userId },
+        },
+        create: { notificationId: sysId, userId },
+        update: { readAt: new Date() },
+      });
+      return res.json({ success: true });
+    }
 
     const userPrisma = await getUserPrismaFromRequest(req);
     const notification = await userPrisma.notification.findUnique({ where: { id } });
@@ -92,6 +173,34 @@ export async function markAllAsRead(req: Request, res: Response, next: NextFunct
       where: { userId, read: false },
       data: { read: true },
     });
+
+    // Mark system broadcasts as read for this user
+    const user = await masterPrisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, plan: true, subscriptionStatus: true },
+    });
+    const userPlan = (user?.plan || "free").toLowerCase();
+    const isPremium = userPlan === "pro" || userPlan === "premium" || user?.subscriptionStatus === "active";
+    const targetFilter = isPremium ? ["ALL", "PREMIUM"] : ["ALL", "FREE"];
+
+    const unreadSystem = await (masterPrisma as any).systemNotification.findMany({
+      where: {
+        isRevoked: false,
+        targetAudience: { in: targetFilter },
+        reads: { none: { userId } },
+      },
+      select: { id: true },
+    });
+
+    for (const b of unreadSystem) {
+      await (masterPrisma as any).systemNotificationRead.upsert({
+        where: {
+          notificationId_userId: { notificationId: b.id, userId },
+        },
+        create: { notificationId: b.id, userId },
+        update: { readAt: new Date() },
+      }).catch(() => {});
+    }
 
     res.json({ success: true });
   } catch (error) {

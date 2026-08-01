@@ -11,3 +11,15 @@ export function emitNotification(userId: string, notification: { id: string; typ
     console.warn("Failed to emit notification via Socket.io — server may not be initialized");
   }
 }
+
+export function emitBroadcastNotification(notification: { id: string; type: string; title: string; message: string; targetAudience: string; link?: string | null; createdAt: Date }) {
+  try {
+    io.emit("notification:broadcast", notification);
+    io.emit("notification:new", {
+      ...notification,
+      read: false,
+    });
+  } catch {
+    console.warn("Failed to emit broadcast notification via Socket.io");
+  }
+}
