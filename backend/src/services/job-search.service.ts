@@ -1,4 +1,5 @@
 import { getMasterPrisma } from "../config/dynamicPrisma";
+import { JobDiscoveryService } from "./job-discovery.service";
 // AI integration available for future use
 
 export interface SearchFilters {
@@ -606,10 +607,28 @@ export class JobSearchService {
       }
     }
 
+    const mappedJobs = jobs.map((job: any) => {
+      let jobSkills = Array.isArray(job.skills) ? job.skills : [];
+      if (jobSkills.length === 0) {
+        const text = `${job.title || ""} ${job.company || ""} ${job.description || ""}`.toLowerCase();
+        jobSkills = JobDiscoveryService.extractSkills(text);
+        if (jobSkills.length === 0) {
+          if (/analyst|risk|finance|audit|compliance|monitoring/i.test(text)) {
+            jobSkills = ["Risk Management", "Data Analysis", "Compliance", "Financial Modeling", "Excel"];
+          } else if (/manager|lead|director|head|project/i.test(text)) {
+            jobSkills = ["Project Management", "Agile", "Team Leadership", "Strategic Planning", "Communication"];
+          } else {
+            jobSkills = ["Problem Solving", "Technical Execution", "Communication", "Data Analysis"];
+          }
+        }
+      }
+      return { ...job, skills: jobSkills };
+    });
+
     const totalPages = Math.ceil(total / limit);
 
     return {
-      jobs,
+      jobs: mappedJobs,
       total,
       page,
       limit,

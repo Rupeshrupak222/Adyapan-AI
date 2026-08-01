@@ -624,6 +624,21 @@ export async function createAdminJob(req: Request, res: Response, next: NextFunc
     const fingerprint = `${company.toLowerCase().replace(/[^a-z0-9]/g, "")}-${title.toLowerCase().replace(/[^a-z0-9]/g, "")}-${Date.now()}`;
     const logoUrl = autoResolveCompanyLogo(company, req.body.logoUrl);
 
+    let finalSkills = Array.isArray(skills) && skills.length > 0 ? skills : [];
+    if (finalSkills.length === 0) {
+      finalSkills = JobDiscoveryService.extractSkills(`${title} ${company} ${description || ""}`);
+    }
+    if (finalSkills.length === 0) {
+      const lower = `${title} ${company} ${description || ""}`.toLowerCase();
+      if (/analyst|risk|finance|audit|compliance|monitoring/i.test(lower)) {
+        finalSkills = ["Risk Management", "Data Analysis", "Compliance", "Financial Modeling", "Excel"];
+      } else if (/manager|lead|director|head|project/i.test(lower)) {
+        finalSkills = ["Project Management", "Agile", "Team Leadership", "Strategic Planning", "Communication"];
+      } else {
+        finalSkills = ["Problem Solving", "Technical Execution", "Communication", "Data Analysis"];
+      }
+    }
+
     const job = await (prisma as any).discoveryJob.create({
       data: {
         fingerprint,
@@ -636,7 +651,7 @@ export async function createAdminJob(req: Request, res: Response, next: NextFunc
         salaryMax: salaryMax ? Number(salaryMax) : null,
         employmentType: employmentType || "Full-Time",
         workMode: workMode || "Remote",
-        skills: Array.isArray(skills) ? skills : [],
+        skills: finalSkills,
         applyUrl: applyUrl || "https://adyapan.ai",
         source: "Admin Manual",
         isActive: true,
