@@ -189,24 +189,48 @@ const BRAND_SVGS: Record<string, string> = {
 };
 
 /**
- * Automatically resolves and returns an official logo URL for any company name.
+ * Automatically resolves and returns an official logo URL for any company name or apply link.
  */
-export function autoResolveCompanyLogo(companyName: string, existingLogo?: string | null): string {
+export function autoResolveCompanyLogo(
+  companyName: string,
+  existingLogo?: string | null,
+  applyUrl?: string | null
+): string {
   if (existingLogo && existingLogo.trim().startsWith("http") && !existingLogo.includes("example.com")) {
     return existingLogo.trim();
   }
 
-  if (!companyName || !companyName.trim()) return "";
+  // 1. Extract domain from applyUrl if provided
+  let applyDomain = "";
+  if (applyUrl && typeof applyUrl === "string" && applyUrl.trim().startsWith("http")) {
+    try {
+      const parsedUrl = new URL(applyUrl.trim());
+      let hostname = parsedUrl.hostname.toLowerCase();
+      if (hostname.startsWith("www.")) hostname = hostname.slice(4);
+      // Exclude generic aggregator domains
+      const aggregators = ["adyapan.ai", "linkedin.com", "indeed.com", "naukri.com", "glassdoor.com", "internshala.com"];
+      if (!aggregators.some((ag) => hostname.includes(ag))) {
+        applyDomain = hostname;
+      }
+    } catch {}
+  }
+
+  if (!companyName || !companyName.trim()) {
+    if (applyDomain) {
+      return `https://logo.clearbit.com/${applyDomain}`;
+    }
+    return "";
+  }
 
   const name = companyName.trim();
   const simpleKey = name.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-  // 1. Direct Wikimedia brand SVG match
+  // 2. Direct Wikimedia brand SVG match
   if (BRAND_SVGS[simpleKey]) {
     return BRAND_SVGS[simpleKey];
   }
 
-  // 2. Clean legal entity fluff
+  // 3. Clean legal entity fluff
   const stripped = name
     .replace(/\b(pvt|private|ltd|limited|inc|incorporated|llc|corp|corporation|technologies|solutions|services|software|india|group|holdings|systems|labs|networks|co|company|enterprises|global)\b/gi, "")
     .trim();
@@ -216,8 +240,8 @@ export function autoResolveCompanyLogo(companyName: string, existingLogo?: strin
     return BRAND_SVGS[strippedKey];
   }
 
-  // 3. Resolve Domain
-  let domain = COMPANY_DOMAINS[simpleKey] || COMPANY_DOMAINS[strippedKey];
+  // 4. Resolve Domain
+  let domain = COMPANY_DOMAINS[simpleKey] || COMPANY_DOMAINS[strippedKey] || applyDomain;
   if (!domain) {
     for (const k of Object.keys(COMPANY_DOMAINS)) {
       if (strippedKey && (strippedKey.startsWith(k) || k.startsWith(strippedKey))) {

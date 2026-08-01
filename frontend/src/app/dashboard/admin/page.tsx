@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, Bot, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -134,6 +134,7 @@ export default function AdminDashboard() {
 
   const [activeSection, setActiveSection] = useState("executive");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [theme, setTheme] = useState("dark");
   const [initialLoading, setInitialLoading] = useState(true);
@@ -238,6 +239,97 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
       </main>
+
+      {/* ── Floating Animated AI Copilot Circle Button & Drawer (Right Lower Corner) ── */}
+      <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end pointer-events-auto">
+        <AnimatePresence>
+          {copilotOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.85, y: 20 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className="mb-4 w-[430px] max-w-[calc(100vw-2rem)] h-[620px] max-h-[calc(100vh-7rem)] rounded-3xl border shadow-2xl overflow-hidden flex flex-col"
+              style={{
+                background: isDark ? "#0c131a" : "#ffffff",
+                borderColor: isDark ? "rgba(245,158,11,0.25)" : "rgba(245,158,11,0.3)",
+                boxShadow: isDark
+                  ? "0 25px 50px rgba(0,0,0,0.85), 0 0 35px rgba(245,158,11,0.2)"
+                  : "0 25px 50px rgba(0,0,0,0.18), 0 0 25px rgba(245,158,11,0.12)",
+              }}
+            >
+              {/* Drawer Header */}
+              <div
+                className="px-5 py-3.5 flex items-center justify-between border-b shrink-0"
+                style={{
+                  background: isDark ? "rgba(15,23,32,0.92)" : "rgba(248,250,252,0.95)",
+                  borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
+                }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs"
+                    style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}
+                  >
+                    <Bot size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold tracking-tight flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}>
+                      AI Copilot
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    </h3>
+                    <p className="text-[10px] text-amber-500 font-semibold leading-tight">Live Platform Operations Assistant</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCopilotOpen(false)}
+                  className="p-1.5 rounded-full transition-all hover:bg-white/10 cursor-pointer border-none"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Drawer Body - AICopilot Component */}
+              <div className="flex-1 overflow-y-auto p-4" style={{ scrollbarWidth: "thin" }}>
+                <AICopilot />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Floating Circle Button with Pulse Animation */}
+        <div className="relative">
+          {/* Pulsing Backlight Glow */}
+          <motion.div
+            animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0.15, 0.5] }}
+            transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
+            className="absolute inset-0 rounded-full bg-amber-500/35 blur-md pointer-events-none"
+          />
+
+          <motion.button
+            whileHover={{ scale: 1.12, boxShadow: "0 12px 35px rgba(245,158,11,0.6)" }}
+            whileTap={{ scale: 0.92 }}
+            animate={{
+              y: [0, -5, 0],
+            }}
+            transition={{
+              y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
+            }}
+            onClick={() => setCopilotOpen(!copilotOpen)}
+            className="w-14 h-14 rounded-full flex items-center justify-center cursor-pointer border-none relative z-10 shadow-2xl transition-all"
+            style={{
+              background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+              color: "#000",
+              boxShadow: "0 10px 28px rgba(245,158,11,0.45)",
+            }}
+            title="Open AI Copilot"
+          >
+            {copilotOpen ? <X size={24} /> : <Bot size={26} />}
+            <span className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900 shadow-sm" />
+          </motion.button>
+        </div>
+      </div>
     </div>
   );
 }

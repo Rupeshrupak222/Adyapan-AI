@@ -44,6 +44,8 @@ interface JobListing {
   experience?: string;
   experienceMin?: number;
   experienceMax?: number;
+  education?: string;
+  passingYear?: string;
   skills: string[];
   description?: string;
   responsibilities?: string[];
@@ -486,6 +488,12 @@ function JobCard({ job, c, onOpen, onSave }: {
             <Clock size={9} /> {job.experience}
           </span>
         )}
+        {(job.education || (job as any).passingYear) && (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border"
+            style={{ background: "rgba(245,158,11,0.06)", color: "#f59e0b", borderColor: "rgba(245,158,11,0.12)" }}>
+            <GraduationCap size={9} /> {job.education || (job as any).passingYear}
+          </span>
+        )}
       </div>
 
       <p className="text-[11px] leading-relaxed mb-3 line-clamp-2" style={{ color: c.textMuted }}>
@@ -517,7 +525,7 @@ function JobCard({ job, c, onOpen, onSave }: {
           )}
           {job.salary && (
             <span className="text-[10px] font-bold flex items-center gap-1" style={{ color: "#10b981" }}>
-              <DollarSign size={10} /> {job.salary}
+              <span className="font-extrabold text-[11px]">₹</span> {job.salary.replace("$", "₹")}
             </span>
           )}
         </div>
