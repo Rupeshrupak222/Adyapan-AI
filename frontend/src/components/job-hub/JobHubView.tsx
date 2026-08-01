@@ -485,6 +485,12 @@ function JobCard({ job, c, onOpen, onSave }: {
             <Briefcase size={9} /> {job.employmentType}
           </span>
         )}
+        {job.source === "Admin Manual" && (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border"
+            style={{ background: "rgba(245,158,11,0.06)", color: "#f59e0b", borderColor: "rgba(245,158,11,0.12)" }}>
+            <Tag size={9} /> Admin Manual
+          </span>
+        )}
         {job.experience && (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border"
             style={{ background: "rgba(236,72,153,0.06)", color: "#f472b6", borderColor: "rgba(236,72,153,0.12)" }}>
@@ -535,7 +541,7 @@ function JobCard({ job, c, onOpen, onSave }: {
       })()}
 
       <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: c.border }}>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {job.location && (
             <span className="text-[10px] font-semibold flex items-center gap-1" style={{ color: c.textMuted }}>
               <MapPin size={10} /> {job.location}
@@ -546,8 +552,18 @@ function JobCard({ job, c, onOpen, onSave }: {
               <span className="font-extrabold text-[11px]">₹</span> {job.salary.replace("$", "₹")}
             </span>
           )}
+          {job.experience && (
+            <span className="text-[10px] font-bold flex items-center gap-1" style={{ color: "#f472b6" }}>
+              <Clock size={10} /> {job.experience}
+            </span>
+          )}
+          {(job.education || (job as any).passingYear) && (
+            <span className="text-[10px] font-bold flex items-center gap-1" style={{ color: "#f59e0b" }}>
+              <GraduationCap size={10} /> {job.education || (job as any).passingYear}
+            </span>
+          )}
         </div>
-        <span className="text-[9px] font-semibold" style={{ color: c.textMuted }}>
+        <span className="text-[9px] font-semibold shrink-0" style={{ color: c.textMuted }}>
           {timeAgo(job.postedDate || (job as any).postedAt || (job as any).createdAt || (job as any).firstSeenAt)}
         </span>
       </div>

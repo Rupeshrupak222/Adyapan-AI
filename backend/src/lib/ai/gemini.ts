@@ -2698,28 +2698,28 @@ export async function generateCoverLetterV2(
 ): Promise<EnhancedCoverLetterResult> {
   const jdContext = parsedJD ? `
 PARSED JOB DATA:
-- Required Skills: ${parsedJD.requiredSkills.join(", ")}
-- Preferred Skills: ${parsedJD.preferredSkills.join(", ")}
-- Responsibilities: ${parsedJD.responsibilities.join("; ")}
-- Tech Stack: ${parsedJD.techStack.join(", ")}
-- Keywords: ${parsedJD.keywords.join(", ")}
-- Soft Skills: ${parsedJD.softSkills.join(", ")}` : "";
+- Required Skills: ${(parsedJD.requiredSkills || []).join(", ")}
+- Preferred Skills: ${(parsedJD.preferredSkills || []).join(", ")}
+- Responsibilities: ${(parsedJD.responsibilities || []).join("; ")}
+- Tech Stack: ${(parsedJD.techStack || []).join(", ")}
+- Keywords: ${(parsedJD.keywords || []).join(", ")}
+- Soft Skills: ${(parsedJD.softSkills || []).join(", ")}` : "";
 
   const companyContext = companyInsights ? `
 COMPANY INSIGHTS:
-- Summary: ${companyInsights.summary}
-- Values: ${companyInsights.values.join(", ")}
-- Culture: ${companyInsights.cultureHighlights.join("; ")}
-- Mission: ${companyInsights.mission}
-- Tone: ${companyInsights.toneRecommendation}` : "";
+- Summary: ${companyInsights.summary || ""}
+- Values: ${(companyInsights.values || []).join(", ")}
+- Culture: ${Array.isArray((companyInsights as any).cultureHighlights) ? (companyInsights as any).cultureHighlights.join("; ") : ((companyInsights as any).culture || "")}
+- Mission: ${companyInsights.mission || ""}
+- Tone: ${companyInsights.toneRecommendation || ""}` : "";
 
   const matchContext = roleMatch ? `
 ROLE MATCH ANALYSIS:
-- Match Score: ${roleMatch.matchScore}%
-- Matching Skills: ${roleMatch.matchingSkills.join(", ")}
-- Missing Skills: ${roleMatch.missingSkills.join(", ")}
-- Strengths to Highlight: ${roleMatch.strengthsToHighlight.join("; ")}
-- Recommended Focus: ${roleMatch.recommendedFocusAreas.join("; ")}` : "";
+- Match Score: ${roleMatch.matchScore || 0}%
+- Matching Skills: ${(roleMatch.matchingSkills || []).join(", ")}
+- Missing Skills: ${(roleMatch.missingSkills || []).join(", ")}
+- Strengths to Highlight: ${(roleMatch.strengthsToHighlight || []).join("; ")}
+- Recommended Focus: ${(roleMatch.recommendedFocusAreas || []).join("; ")}` : "";
 
   const lengthGuide = length === "short" ? "Write a concise 200-250 word cover letter (3-4 paragraphs total)."
     : length === "detailed" ? "Write a comprehensive 400-500 word cover letter (5-6 paragraphs, with detailed project/skill discussions)."
