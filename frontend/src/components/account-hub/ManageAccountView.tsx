@@ -333,6 +333,29 @@ export function ManageAccountView() {
     }, 800);
   }, []);
 
+  // ── Debounced auto-save for appearance controls ──
+  const appearanceSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleAppearanceSave = useCallback(() => {
+    if (appearanceSaveRef.current) clearTimeout(appearanceSaveRef.current);
+    appearanceSaveRef.current = setTimeout(async () => {
+      try {
+        await api.put("/settings/appearance", {
+          themeMode, accentColor, compactMode, glassEffect, animationsEnabled, sidebarCollapse, fontSize,
+        });
+        setHasChanges(false);
+      } catch { /* silent */ }
+    }, 700);
+  }, [themeMode, accentColor, compactMode, glassEffect, animationsEnabled, sidebarCollapse, fontSize]);
+
+  // ── Apply theme mode app-wide ──
+  const applyTheme = useCallback((mode: string) => {
+    const resolved = mode === "system"
+      ? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : mode;
+    document.documentElement.setAttribute("data-theme", resolved);
+    localStorage.setItem("adyapan-theme", resolved);
+  }, []);
+
   // ── Search filtering ──
   const filteredNav = useMemo(() => {
     if (!searchQuery.trim()) return NAV_ITEMS;
@@ -703,7 +726,7 @@ export function ManageAccountView() {
             <motion.div key={activeSection} {...sectionTransition}>
               {activeSection === "profile" && <ProfileSection c={c} fullName={fullName} setFullName={setFullName} username={username} setUsername={setUsername} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} college={college} setCollege={setCollege} degree={degree} setDegree={setDegree} branch={branch} setBranch={setBranch} gradYear={gradYear} setGradYear={setGradYear} bio={bio} setBio={setBio} photoUrl={photoUrl} photoInputRef={photoInputRef} uploadingPhoto={uploadingPhoto} onPhotoUpload={handlePhotoUpload} onPhotoRemove={handlePhotoRemove} markChanged={markChanged} onSave={handleSaveProfile} saving={saving} />}
               {activeSection === "account" && <AccountSection c={c} email={email} plan={plan} memberSince={memberSince} markChanged={markChanged} onDeleteAccount={() => setShowDeleteModal(true)} onChangePassword={() => setShowChangePassword(true)} />}
-              {activeSection === "appearance" && <AppearanceSection c={c} isDark={isDark} themeMode={themeMode} setThemeMode={setThemeMode} accentColor={accentColor} setAccentColor={setAccentColor} compactMode={compactMode} setCompactMode={setCompactMode} glassEffect={glassEffect} setGlassEffect={setGlassEffect} animationsEnabled={animationsEnabled} setAnimationsEnabled={setAnimationsEnabled} sidebarCollapse={sidebarCollapse} setSidebarCollapse={setSidebarCollapse} fontSize={fontSize} setFontSize={setFontSize} markChanged={markChanged} onSave={handleSaveAppearance} saving={saving} />}
+              {activeSection === "appearance" && <AppearanceSection c={c} isDark={isDark} themeMode={themeMode} setThemeMode={setThemeMode} accentColor={accentColor} compactMode={compactMode} setCompactMode={setCompactMode} glassEffect={glassEffect} setGlassEffect={setGlassEffect} animationsEnabled={animationsEnabled} setAnimationsEnabled={setAnimationsEnabled} sidebarCollapse={sidebarCollapse} setSidebarCollapse={setSidebarCollapse} fontSize={fontSize} setFontSize={setFontSize} markChanged={markChanged} onAutoSave={scheduleAppearanceSave} onApplyTheme={applyTheme} onSave={handleSaveAppearance} saving={saving} />}
               {activeSection === "notifications" && <NotificationsSection c={c} notifEmail={notifEmail} setNotifEmail={setNotifEmail} notifPush={notifPush} setNotifPush={setNotifPush} notifAssignment={notifAssignment} setNotifAssignment={setNotifAssignment} notifInterview={notifInterview} setNotifInterview={setNotifInterview} notifCoding={notifCoding} setNotifCoding={setNotifCoding} notifResearch={notifResearch} setNotifResearch={setNotifResearch} notifWeekly={notifWeekly} setNotifWeekly={setNotifWeekly} notifDaily={notifDaily} setNotifDaily={setNotifDaily} markChanged={markChanged} scheduleSave={scheduleSave} />}
               {activeSection === "ai-preferences" && <AIPreferencesSection c={c} aiModel={aiModel} setAiModel={setAiModel} responseLength={responseLength} setResponseLength={setResponseLength} creativity={creativity} setCreativity={setCreativity} aiMemory={aiMemory} setAiMemory={setAiMemory} markdownOutput={markdownOutput} setMarkdownOutput={setMarkdownOutput} codeHighlighting={codeHighlighting} setCodeHighlighting={setCodeHighlighting} autoCitation={autoCitation} setAutoCitation={setAutoCitation} autoSaveConversations={autoSaveConversations} setAutoSaveConversations={setAutoSaveConversations} markChanged={markChanged} onSave={handleSaveAI} saving={saving} />}
               {activeSection === "learning" && <LearningSection c={c} language={language} setLanguage={setLanguage} learningStyle={learningStyle} setLearningStyle={setLearningStyle} dailyGoal={dailyGoal} setDailyGoal={setDailyGoal} reminderTime={reminderTime} setReminderTime={setReminderTime} difficulty={difficulty} setDifficulty={setDifficulty} noteFormat={noteFormat} setNoteFormat={setNoteFormat} quizDifficulty={quizDifficulty} setQuizDifficulty={setQuizDifficulty} tutorPersonality={tutorPersonality} setTutorPersonality={setTutorPersonality} markChanged={markChanged} onSave={handleSaveLearning} saving={saving} />}
@@ -1335,23 +1358,27 @@ function AccountSection({
 
 // ─── Appearance Section ──────────────────────────────────────────────────
 function AppearanceSection({
-  c, isDark, themeMode, setThemeMode, accentColor, setAccentColor,
+  c, isDark, themeMode, setThemeMode, accentColor,
   compactMode, setCompactMode, glassEffect, setGlassEffect,
   animationsEnabled, setAnimationsEnabled, sidebarCollapse, setSidebarCollapse,
-  fontSize, setFontSize, markChanged, onSave, saving,
+  fontSize, setFontSize, markChanged, onAutoSave, onApplyTheme, onSave, saving,
 }: {
   c: Record<string, string>; isDark: boolean;
   themeMode: string; setThemeMode: (v: "dark" | "light" | "system") => void;
-  accentColor: string; setAccentColor: (v: string) => void;
+  accentColor: string;
   compactMode: boolean; setCompactMode: (v: boolean) => void;
   glassEffect: boolean; setGlassEffect: (v: boolean) => void;
   animationsEnabled: boolean; setAnimationsEnabled: (v: boolean) => void;
   sidebarCollapse: boolean; setSidebarCollapse: (v: boolean) => void;
   fontSize: number; setFontSize: (v: number) => void;
   markChanged: () => void;
+  onAutoSave?: () => void;
+  onApplyTheme?: (mode: string) => void;
   onSave?: () => void;
   saving?: boolean;
 }) {
+  const change = (fn: () => void) => { fn(); markChanged(); onAutoSave?.(); };
+
   return (
     <div className="space-y-5">
       {/* Theme Mode */}
@@ -1372,7 +1399,7 @@ function AppearanceSection({
             return (
               <motion.button
                 key={mode.id}
-                onClick={() => { setThemeMode(mode.id); markChanged(); }}
+                onClick={() => change(() => { setThemeMode(mode.id); onApplyTheme?.(mode.id); })}
                 whileHover={{ y: -2, scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 className="p-4 rounded-xl border text-center space-y-2 transition-all"
@@ -1408,10 +1435,10 @@ function AppearanceSection({
         <h3 className="text-sm font-bold flex items-center gap-2 pb-3" style={{ color: c.primary }}>
           <Eye size={16} /> Display Options
         </h3>
-        <SettingsToggle enabled={compactMode} onToggle={() => { setCompactMode(!compactMode); markChanged(); }} label="Compact Mode" description="Reduce spacing for more content density" icon={<Monitor size={14} />} />
-        <SettingsToggle enabled={glassEffect} onToggle={() => { setGlassEffect(!glassEffect); markChanged(); }} label="Glass Effect" description="Enable glassmorphism backdrop blur" icon={<Eye size={14} />} />
-        <SettingsToggle enabled={animationsEnabled} onToggle={() => { setAnimationsEnabled(!animationsEnabled); markChanged(); }} label="Animations" description="Smooth transitions and motion effects" icon={<Sparkles size={14} />} />
-        <SettingsToggle enabled={sidebarCollapse} onToggle={() => { setSidebarCollapse(!sidebarCollapse); markChanged(); }} label="Sidebar Auto Collapse" description="Collapse sidebar when not hovered" icon={<Menu size={14} />} />
+        <SettingsToggle enabled={compactMode} onToggle={() => change(() => setCompactMode(!compactMode))} label="Compact Mode" description="Reduce spacing for more content density" icon={<Monitor size={14} />} />
+        <SettingsToggle enabled={glassEffect} onToggle={() => change(() => setGlassEffect(!glassEffect))} label="Glass Effect" description="Enable glassmorphism backdrop blur" icon={<Eye size={14} />} />
+        <SettingsToggle enabled={animationsEnabled} onToggle={() => change(() => setAnimationsEnabled(!animationsEnabled))} label="Animations" description="Smooth transitions and motion effects" icon={<Sparkles size={14} />} />
+        <SettingsToggle enabled={sidebarCollapse} onToggle={() => change(() => setSidebarCollapse(!sidebarCollapse))} label="Sidebar Auto Collapse" description="Collapse sidebar when not hovered" icon={<Menu size={14} />} />
       </motion.div>
 
       {/* Font Size */}
@@ -1425,7 +1452,7 @@ function AppearanceSection({
         <div className="flex items-center gap-4">
           <span className="text-[10px]" style={{ color: c.textMuted }}>A</span>
           <input type="range" min={12} max={18} value={fontSize}
-            onChange={(e) => { setFontSize(Number(e.target.value)); markChanged(); }}
+            onChange={(e) => change(() => setFontSize(Number(e.target.value)))}
             className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
             style={{
               background: `linear-gradient(to right, #f59e0b ${((fontSize - 12) / 6) * 100}%, ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"} ${((fontSize - 12) / 6) * 100}%)`,
