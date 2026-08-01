@@ -622,7 +622,8 @@ export class JobSearchService {
           }
         }
       }
-      return { ...job, skills: jobSkills };
+      const finalPostedAt = job.postedAt || job.createdAt || job.firstSeenAt || new Date();
+      return { ...job, skills: jobSkills, postedAt: finalPostedAt, postedDate: finalPostedAt };
     });
 
     const totalPages = Math.ceil(total / limit);

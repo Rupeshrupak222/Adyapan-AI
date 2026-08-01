@@ -269,9 +269,12 @@ const staggerItem = {
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
-function timeAgo(date: string): string {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return "Just now";
+function timeAgo(date: any): string {
+  if (!date) return "Recently";
+  const parsed = new Date(date);
+  if (isNaN(parsed.getTime())) return "Recently";
+  const seconds = Math.floor((Date.now() - parsed.getTime()) / 1000);
+  if (seconds <= 0 || seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
@@ -280,7 +283,7 @@ function timeAgo(date: string): string {
   if (days < 7) return `${days}d ago`;
   const weeks = Math.floor(days / 7);
   if (weeks < 4) return `${weeks}w ago`;
-  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function getLogoInitials(name: string): string {
@@ -545,7 +548,7 @@ function JobCard({ job, c, onOpen, onSave }: {
           )}
         </div>
         <span className="text-[9px] font-semibold" style={{ color: c.textMuted }}>
-          {timeAgo(job.postedDate)}
+          {timeAgo(job.postedDate || (job as any).postedAt || (job as any).createdAt || (job as any).firstSeenAt)}
         </span>
       </div>
     </motion.div>
