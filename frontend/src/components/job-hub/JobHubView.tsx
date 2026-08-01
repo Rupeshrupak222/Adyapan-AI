@@ -52,6 +52,7 @@ interface JobListing {
   requirements?: string[];
   benefits?: string[];
   postedDate: string;
+  source?: string;
   isFeatured?: boolean;
   isSaved?: boolean;
   isGovernment?: boolean;
