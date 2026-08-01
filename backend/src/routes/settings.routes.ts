@@ -144,6 +144,7 @@ settingsRouter.get("/", async (req: any, res) => {
         linkedin: profile.linkedin || "",
         plan: user?.plan || "free",
         memberSince: user?.createdAt || new Date(),
+        photoUrl: profile.photoUrl || "",
       },
       meta: {
         notificationCount,

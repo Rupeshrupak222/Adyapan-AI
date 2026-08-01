@@ -2179,15 +2179,39 @@ function RecommendedToday({ recommendations, onSelectAction, onRegenerate }: { r
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Page (Security Redirect) ───────────────────────────────────────────
+// All named exports (DashboardSidebar, DashboardTopNav, AdyapanUser, etc.)
+// remain in this file so other dashboard pages can import them.
+// The default export redirects to /dashboard/user/[uid] for security.
 
 export default function UserDashboardPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const raw = localStorage.getItem("adyapan-user") || sessionStorage.getItem("adyapan-user");
+    if (!raw) { router.replace("/login"); return; }
+    try {
+      const user = JSON.parse(raw) as { id?: string; role?: string };
+      if (!user.id) { router.replace("/login"); return; }
+      if (user.role === "ADMIN") { router.replace("/dashboard/admin"); return; }
+      router.replace(`/dashboard/user/${user.id}`);
+    } catch { router.replace("/login"); }
+  }, [router]);
+
   return (
-    <SocketProvider>
-      <Suspense fallback={<DashboardWidgetSkeleton title="Loading Dashboard..." />}>
-        <UserDashboardContent />
-      </Suspense>
-    </SocketProvider>
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center",
+      justifyContent: "center", background: "#070715", color: "#f59e0b",
+      fontFamily: "'Outfit', sans-serif", fontSize: 14, gap: 10,
+    }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+        style={{ animation: "spin 0.7s linear infinite" }}>
+        <circle cx="12" cy="12" r="10" strokeOpacity="0.2" />
+        <path d="M12 2a10 10 0 0 1 10 10" />
+      </svg>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      Redirecting to your dashboard...
+    </div>
   );
 }
 
