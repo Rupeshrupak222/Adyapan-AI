@@ -115,7 +115,7 @@ export function IntroAnimation({ isDark, onComplete }: IntroAnimationProps) {
             zIndex: 1000,
             background: isDark
               ? "linear-gradient(135deg, #040412 0%, #080820 50%, #050512 100%)"
-              : "linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 50%, #f8faff 100%)",
+              : "linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)",
           }}
           exit={{
             opacity: 0,
@@ -128,15 +128,15 @@ export function IntroAnimation({ isDark, onComplete }: IntroAnimationProps) {
           <div
             className="absolute inset-0"
             style={{
-              opacity: isDark ? 0.5 : 0.4,
+              opacity: isDark ? 0.5 : 0.3,
               background: isDark
                 ? `
                   radial-gradient(ellipse 80% 60% at 30% 30%, rgba(245,158,11,0.12) 0%, transparent 60%),
-                  radial-gradient(ellipse 60% 50% at 70% 70%, rgba(59,130,246,0.08) 0%, transparent 60%)
+                  radial-gradient(ellipse 60% 50% at 70% 70%, rgba(217,119,6,0.08) 0%, transparent 60%)
                 `
                 : `
-                  radial-gradient(ellipse 80% 60% at 30% 30%, rgba(245,158,11,0.06) 0%, transparent 60%),
-                  radial-gradient(ellipse 60% 50% at 70% 70%, rgba(59,130,246,0.04) 0%, transparent 60%)
+                  radial-gradient(ellipse 80% 60% at 30% 30%, rgba(245,158,11,0.05) 0%, transparent 60%),
+                  radial-gradient(ellipse 60% 50% at 70% 70%, rgba(217,119,6,0.03) 0%, transparent 60%)
                 `,
             }}
           />
