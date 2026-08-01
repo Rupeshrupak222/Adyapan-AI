@@ -1264,7 +1264,7 @@ function ProfileSection({
 }
 
 // ─── Account Section ─────────────────────────────────────────────────────
-function AccountSection({
+export function AccountSection({
   c, email, plan, memberSince, markChanged, onDeleteAccount, onChangePassword,
 }: {
   c: Record<string, string>;
@@ -1357,7 +1357,7 @@ function AccountSection({
 }
 
 // ─── Appearance Section ──────────────────────────────────────────────────
-function AppearanceSection({
+export function AppearanceSection({
   c, isDark, themeMode, setThemeMode, accentColor,
   compactMode, setCompactMode, glassEffect, setGlassEffect,
   animationsEnabled, setAnimationsEnabled, sidebarCollapse, setSidebarCollapse,
@@ -1489,7 +1489,7 @@ function AppearanceSection({
 }
 
 // ─── Notifications Section ───────────────────────────────────────────────
-function NotificationsSection({
+export function NotificationsSection({
   c, notifEmail, setNotifEmail, notifPush, setNotifPush,
   notifAssignment, setNotifAssignment, notifInterview, setNotifInterview,
   notifCoding, setNotifCoding, notifResearch, setNotifResearch,
@@ -1543,7 +1543,7 @@ function NotificationsSection({
 }
 
 // ─── AI Preferences Section ──────────────────────────────────────────────
-function AIPreferencesSection({
+export function AIPreferencesSection({
   c, aiModel, setAiModel, responseLength, setResponseLength,
   creativity, setCreativity, aiMemory, setAiMemory,
   markdownOutput, setMarkdownOutput, codeHighlighting, setCodeHighlighting,
@@ -1680,7 +1680,7 @@ function AIPreferencesSection({
 }
 
 // ─── Learning Section ────────────────────────────────────────────────────
-function LearningSection({
+export function LearningSection({
   c, language, setLanguage, learningStyle, setLearningStyle,
   dailyGoal, setDailyGoal, reminderTime, setReminderTime,
   difficulty, setDifficulty, noteFormat, setNoteFormat,
@@ -1800,7 +1800,7 @@ function LearningSection({
 }
 
 // ─── Security Section ────────────────────────────────────────────────────
-function SecuritySection({
+export function SecuritySection({
   c, twoFactor, setTwoFactor, loginAlerts, setLoginAlerts,
   showPassword, setShowPassword, activeDevices, markChanged,
   scheduleSave, onChangePassword, onLogoutDevices,
@@ -1942,7 +1942,7 @@ function SecuritySection({
 }
 
 // ─── Privacy Section ─────────────────────────────────────────────────────
-function PrivacySection({
+export function PrivacySection({
   c, publicProfile, setPublicProfile, dataCollection, setDataCollection,
   personalizedAI, setPersonalizedAI, markChanged, scheduleSave,
   onExportData, onDeleteChatHistory, onDeleteAccount,
@@ -2033,7 +2033,7 @@ function PrivacySection({
 }
 
 // ─── Connected Accounts Section ──────────────────────────────────────────
-function ConnectedAccountsSection({
+export function ConnectedAccountsSection({
   c, accounts, setAccounts, markChanged, scheduleSave,
 }: {
   c: Record<string, string>;
@@ -2099,7 +2099,7 @@ function ConnectedAccountsSection({
 }
 
 // ─── API Integrations Section ────────────────────────────────────────────
-function APISection({
+export function APISection({
   c, apiKeys, setApiKeys, markChanged, scheduleSave,
 }: {
   c: Record<string, string>;
@@ -2194,7 +2194,7 @@ function APISection({
 }
 
 // ─── Storage Section ─────────────────────────────────────────────────────
-function StorageSection({
+export function StorageSection({
   c, storageUsed, storageTotal, storagePercent, categories,
 }: {
   c: Record<string, string>;
@@ -2275,7 +2275,7 @@ function StorageSection({
 }
 
 // ─── Activity Section ────────────────────────────────────────────────────
-function ActivitySection({
+export function ActivitySection({
   c, activityLog,
 }: {
   c: Record<string, string>;
@@ -2337,7 +2337,7 @@ function ActivitySection({
 }
 
 // ─── Help Section ────────────────────────────────────────────────────────
-function HelpSection({ c }: { c: Record<string, string> }) {
+export function HelpSection({ c }: { c: Record<string, string> }) {
   const items = [
     { title: "FAQ", desc: "Frequently asked questions about Adyapan AI", icon: HelpCircle, color: "text-blue-500", href: "/faq" },
     { title: "Contact Support", desc: "Get help from our support team", icon: Mail, color: "text-emerald-500", href: "/support" },

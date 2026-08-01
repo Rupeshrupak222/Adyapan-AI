@@ -2579,6 +2579,10 @@ function UserDashboardContent() {
 
   const router = useRouter();
   const navigateTo = useCallback((view: string) => {
+    if (view === "settings") {
+      router.push("/dashboard/user/settings/account");
+      return;
+    }
     if (view !== "community-messages") setOpenChatWith(null);
     if (view !== "community-browse") setCommunityProfileUserId(null);
     setActiveView(view);
@@ -2592,7 +2596,7 @@ function UserDashboardContent() {
       }
       window.history.replaceState({}, "", url.toString());
     } catch { /* ignore */ }
-  }, []);
+  }, [router]);
   const handleViewProfile = () => navigateTo("profile");
   const handlePremium = () => router.push("/premium");
   const handleViewDashboard = () => navigateTo("dashboard");
