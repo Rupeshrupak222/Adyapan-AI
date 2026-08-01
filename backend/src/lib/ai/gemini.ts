@@ -2333,7 +2333,7 @@ Return a JSON object:
 
   const fallback: ResumeImprovementResult = {
     overallScoreBefore: 55,
-    overallScoreAfter: 78,
+    overallScoreAfter: 55,
     improvements: [],
     summaryImprovements: { versions: [] },
     keywordOptimization: {
@@ -2344,11 +2344,11 @@ Return a JSON object:
     actionVerbReplacements: [],
     metricEnhancements: [],
     improvementScore: {
-      resumeQuality: { before: 55, after: 78 },
-      atsScore: { before: 50, after: 75 },
-      recruiterAppeal: { before: 50, after: 75 },
-      technicalQuality: { before: 55, after: 78 },
-      readability: { before: 60, after: 80 },
+      resumeQuality: { before: 55, after: 55 },
+      atsScore: { before: 50, after: 50 },
+      recruiterAppeal: { before: 50, after: 50 },
+      technicalQuality: { before: 55, after: 55 },
+      readability: { before: 60, after: 60 },
     },
   };
 

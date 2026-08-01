@@ -613,6 +613,7 @@ export function ResumeImprovementsView({ setView }: { setView: (v: string) => vo
         </div>
 
         {/* Score comparison card */}
+        {result.improvements.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -651,6 +652,7 @@ export function ResumeImprovementsView({ setView }: { setView: (v: string) => vo
             );
           })}
         </motion.div>
+        )}
 
         {/* Tabs */}
         <div style={{
