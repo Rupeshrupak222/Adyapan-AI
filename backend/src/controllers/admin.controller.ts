@@ -346,17 +346,21 @@ export async function getRevenueAnalytics(_req: Request, res: Response, next: Ne
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const [payments, monthPayments, premiumUsers, totalAgg, planCounts, recentPayments] = await Promise.all([
+    const [payments, monthPayments, premiumUsers, totalAgg, planCounts, recentPayments, coupons, discountAgg, couponPaymentsCount] = await Promise.all([
       prisma.payment.findMany({ where: { status: "paid" }, select: { amount: true, createdAt: true, plan: true } }),
       prisma.payment.findMany({ where: { status: "paid", createdAt: { gte: monthAgo } }, select: { amount: true, createdAt: true } }),
       prisma.user.count({ where: { subscriptionStatus: "active" } }),
       prisma.payment.aggregate({ _sum: { amount: true }, where: { status: "paid" } }),
       prisma.user.groupBy({ by: ["plan"], _count: true }),
       prisma.payment.findMany({ take: 20, orderBy: { createdAt: "desc" }, include: { user: { select: { name: true, email: true } } } }),
+      prisma.coupon.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.payment.aggregate({ _sum: { discountAmount: true }, where: { status: "paid" } }),
+      prisma.payment.count({ where: { status: "paid", couponCode: { not: null } } }),
     ]);
 
     const totalRevenue = totalAgg._sum.amount ?? 0;
     const monthRevenue = monthPayments.reduce((s, p) => s + p.amount, 0);
+    const totalDiscount = discountAgg._sum.discountAmount ?? 0;
 
     const planDist = planCounts.map(p => ({
       name: p.plan ? p.plan.charAt(0).toUpperCase() + p.plan.slice(1) : "Free",
@@ -369,8 +373,24 @@ export async function getRevenueAnalytics(_req: Request, res: Response, next: Ne
       amount: p.amount,
       plan: p.plan ? p.plan.charAt(0).toUpperCase() + p.plan.slice(1) : "Pro",
       status: p.status === "paid" ? "paid" : "failed",
+      couponCode: p.couponCode,
+      discountAmount: p.discountAmount ?? 0,
       date: p.createdAt.toISOString(),
     }));
+
+    const couponStats = {
+      totalDiscount,
+      totalRedemptions: couponPaymentsCount,
+      coupons: coupons.map(c => ({
+        id: c.id,
+        code: c.code,
+        discountPct: c.discountPct,
+        validUntil: c.validUntil,
+        maxUses: c.maxUses,
+        usedCount: c.usedCount,
+        isActive: c.isActive,
+      })),
+    };
 
     res.json({
       success: true,
@@ -384,6 +404,7 @@ export async function getRevenueAnalytics(_req: Request, res: Response, next: Ne
         averageOrderValue: payments.length > 0 ? Math.round(totalRevenue / payments.length) : 0,
         planDist,
         transactions,
+        couponStats,
       },
     });
   } catch (error) {

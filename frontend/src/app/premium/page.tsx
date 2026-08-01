@@ -91,6 +91,8 @@ export default function PremiumPage() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [planPrices, setPlanPrices] = useState<Record<string, number> | null>(null);
+  const [coupon, setCoupon] = useState<{ code: string; plan: string } | null>(null);
+  const [couponInfo, setCouponInfo] = useState<{ code: string; discountPct: number; finalAmount: number } | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token");
@@ -101,6 +103,14 @@ export default function PremiumPage() {
     try {
       const u = JSON.parse(localStorage.getItem("adyapan-user") || sessionStorage.getItem("adyapan-user") || "{}");
       setUser(u);
+    } catch { /* ignore */ }
+
+    try {
+      const stored = localStorage.getItem("adyapan-coupon");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.code) setCoupon({ code: parsed.code, plan: parsed.plan || "pro_monthly" });
+      }
     } catch { /* ignore */ }
 
     api.get("/payment/status").then((res) => {
@@ -129,12 +139,28 @@ export default function PremiumPage() {
     }
   }, [router]);
 
+  // Validate stored coupon and show its discount.
+  useEffect(() => {
+    if (!coupon?.code) return;
+    api.post("/payment/coupon/apply", { code: coupon.code, plan: coupon.plan || "pro_monthly" })
+      .then((res) => {
+        if (res.data?.success) {
+          const d = res.data.coupon;
+          setCouponInfo({ code: d.code, discountPct: d.discountPct, finalAmount: d.finalAmount });
+        }
+      })
+      .catch(() => { /* coupon may be expired; ignore */ });
+  }, [coupon]);
+
   const handleSubscribe = async (planId: string) => {
     if (processing) return;
 
     setProcessing(planId);
     try {
-      const orderRes = await api.post("/payment/create-order", { plan: planId });
+      const orderRes = await api.post("/payment/create-order", {
+        plan: planId,
+        couponCode: coupon?.code || undefined,
+      });
       if (!orderRes.data.success) throw new Error("Failed to create order");
 
       const { order, key } = orderRes.data;
@@ -231,10 +257,17 @@ export default function PremiumPage() {
 
   const isPro = sub?.status === "active";
 
-  const resolvedPlans = PLANS.map((plan) => ({
-    ...plan,
-    price: planPrices && planPrices[plan.id] != null ? planPrices[plan.id] : plan.price,
-  }));
+  const couponPct = couponInfo?.discountPct ?? 0;
+  const resolvedPlans = PLANS.map((plan) => {
+    const base = planPrices && planPrices[plan.id] != null ? planPrices[plan.id] : plan.price;
+    const discounted = couponPct > 0 && base > 0 ? Math.round(base * (1 - couponPct / 100)) : base;
+    return {
+      ...plan,
+      price: discounted,
+      originalPrice: base,
+      hasDiscount: couponPct > 0 && discounted < base && plan.id !== "free",
+    };
+  });
 
   return (
     <div className="min-h-screen relative overflow-hidden transition-colors duration-300" style={{ background: colors.bg, color: colors.text }}>
@@ -280,6 +313,25 @@ export default function PremiumPage() {
 
       {/* Plans */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 pb-20">
+        {couponInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold"
+            style={{ background: colors.badgeProBg, color: colors.badgeProText, border: colors.badgeProBorder }}
+          >
+            <Sparkles className="w-4 h-4 shrink-0" />
+            <span className="flex-1">
+              Coupon <span className="underline">{couponInfo.code}</span> applied — {couponInfo.discountPct}% discount will be deducted at checkout.
+            </span>
+            <button
+              onClick={() => { localStorage.removeItem("adyapan-coupon"); setCoupon(null); setCouponInfo(null); }}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-colors hover:bg-amber-500 hover:text-black"
+            >
+              Remove
+            </button>
+          </motion.div>
+        )}
         <div className="grid md:grid-cols-3 gap-5">
           {resolvedPlans.map((plan, i) => {
             const isCurrentPlan = isPro && sub?.plan === plan.id;
@@ -312,9 +364,17 @@ export default function PremiumPage() {
                     {plan.name}
                   </h3>
                   <div className="flex items-baseline gap-1">
+                    {plan.hasDiscount && (
+                      <span className="text-base font-bold line-through" style={{ color: colors.subtextMuted }}>₹{plan.originalPrice}</span>
+                    )}
                     <span className="text-4xl font-extrabold" style={{ color: colors.text }}>₹{plan.price}</span>
                     <span style={{ color: colors.subtextMuted }}>{plan.period}</span>
                   </div>
+                  {plan.hasDiscount && (
+                    <div className="text-[10px] mt-1 font-bold text-emerald-500">
+                      {couponInfo?.code} applied — {couponPct}% off
+                    </div>
+                  )}
                   {plan.yearlyNote && (
                     <div className="text-[10px] mt-1" style={{ color: colors.subtextMuted }}>
                       {plan.yearlyNote}

@@ -31,6 +31,18 @@ import {
   deleteUserDatabase,
   getAggregatedStats,
 } from "../controllers/admin-db.controller";
+import {
+  getCoupons,
+  createCoupon,
+  updateCoupon,
+  deleteCoupon,
+} from "../controllers/coupon.controller";
+import {
+  getPlans,
+  createPlan,
+  updatePlan,
+  deletePlan,
+} from "../controllers/plan.controller";
 
 export const adminRouter = Router();
 
@@ -61,6 +73,18 @@ adminRouter.post("/jobs/ingest", ...guard, triggerJobIngestion);
 // System Settings Management
 adminRouter.get("/settings", ...guard, getAdminSettings);
 adminRouter.put("/settings", ...guard, updateAdminSettings);
+
+// Coupon Management
+adminRouter.get("/coupons", ...guard, getCoupons);
+adminRouter.post("/coupons", ...guard, createCoupon);
+adminRouter.put("/coupons/:id", ...guard, updateCoupon);
+adminRouter.delete("/coupons/:id", ...guard, deleteCoupon);
+
+// Plan Management
+adminRouter.get("/plans", ...guard, getPlans);
+adminRouter.post("/plans", ...guard, createPlan);
+adminRouter.put("/plans/:id", ...guard, updatePlan);
+adminRouter.delete("/plans/:id", ...guard, deletePlan);
 
 adminRouter.get("/performance", ...guard, (req, res) => {
   try {
