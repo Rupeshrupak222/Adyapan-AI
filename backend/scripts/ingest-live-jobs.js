@@ -59,7 +59,7 @@ function normalizeEmploymentType(type) {
 
 async function main() {
   const connectionString = process.env.DATABASE_URL;
-  const apifyToken = process.env.APIFY_API_KEY;
+  const apifyToken = process.env.APIFY_API_KEY || process.env.APIFY_TOKEN;
 
   if (!connectionString) {
     console.error("[IngestLiveJobs] ERROR: DATABASE_URL is not set!");

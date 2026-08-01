@@ -199,6 +199,15 @@ export async function rateLimitAuthRequest(ip: string) {
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 
+const memoryPasswordResetTokens: Array<{
+  id: string;
+  email: string;
+  otpHash: string;
+  expiresAt: Date;
+  used: boolean;
+  createdAt: Date;
+}> = [];
+
 function generateOtp(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
@@ -214,12 +223,13 @@ export async function requestPasswordReset(email: string): Promise<{ devOtp?: st
   const otp = generateOtp();
   const otpHash = await bcrypt.hash(otp, 10);
 
-  await (prisma as any).passwordResetToken.create({
-    data: {
-      email: normalizedEmail,
-      otpHash,
-      expiresAt: new Date(Date.now() + OTP_TTL_MS),
-    },
+  memoryPasswordResetTokens.push({
+    id: Math.random().toString(36).substring(2, 9),
+    email: normalizedEmail,
+    otpHash,
+    expiresAt: new Date(Date.now() + OTP_TTL_MS),
+    used: false,
+    createdAt: new Date(),
   });
 
   // No email provider is configured; surface the OTP via the API response in
@@ -239,14 +249,9 @@ export async function resetPassword(email: string, otp: string, newPassword: str
     throw httpError(400, "Invalid OTP. Please enter the 6-digit code.");
   }
 
-  const tokenRecord = await (prisma as any).passwordResetToken.findFirst({
-    where: {
-      email: normalizedEmail,
-      used: false,
-      expiresAt: { gt: new Date() },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const tokenRecord = memoryPasswordResetTokens
+    .filter((t) => t.email === normalizedEmail && !t.used && t.expiresAt > new Date())
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
 
   if (!tokenRecord) {
     throw httpError(400, "Invalid or expired OTP. Please request a new one.");
@@ -266,10 +271,8 @@ export async function resetPassword(email: string, otp: string, newPassword: str
   }
 
   const hashed = await bcrypt.hash(newPassword, 12);
-  await prisma.$transaction([
-    prisma.user.update({ where: { id: user.id }, data: { password: hashed } }),
-    (prisma as any).passwordResetToken.update({ where: { id: tokenRecord.id }, data: { used: true } }),
-  ]);
+  await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
+  tokenRecord.used = true;
 
   return { message: "Password reset successful. Please sign in with your new password." };
 }

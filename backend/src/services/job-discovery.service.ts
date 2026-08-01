@@ -818,7 +818,7 @@ export class JobDiscoveryService {
       }
     }
 
-    const apifyToken = process.env.APIFY_TOKEN || env.apifyApiKey || "";
+    const apifyToken = process.env.APIFY_API_KEY || process.env.APIFY_TOKEN || env.apifyApiKey || "";
     if (!apifyToken) {
       return {
         source: sourceName,

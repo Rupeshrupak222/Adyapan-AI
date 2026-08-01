@@ -51,7 +51,7 @@ export const env = {
     appId: process.env.ADZUNA_APP_ID ?? "",
     appKey: process.env.ADZUNA_APP_KEY ?? "",
   },
-  apifyApiKey: process.env.APIFY_API_KEY ?? "",
+  apifyApiKey: process.env.APIFY_API_KEY ?? process.env.APIFY_TOKEN ?? "",
   nodeEnv: process.env.NODE_ENV ?? "development",
   masterDatabaseUrl: process.env.MASTER_DATABASE_URL ?? process.env.DATABASE_URL ?? "",
 };
