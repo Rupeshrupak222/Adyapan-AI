@@ -18,6 +18,10 @@ import {
   getAdminSettings,
   updateAdminSettings,
   getAnalyticsBI,
+  getAdminNotifications,
+  createAdminBroadcastNotification,
+  toggleRevokeAdminNotification,
+  deleteAdminNotification,
 } from "../controllers/admin.controller";
 import { requireAdminAuth } from "../middleware/adminAuth";
 import {
@@ -43,6 +47,10 @@ adminRouter.get("/system-health", ...guard, getSystemHealth);
 adminRouter.get("/modules", ...guard, getModuleAnalytics);
 adminRouter.get("/security", ...guard, getSecurityLogs);
 adminRouter.post("/notifications/:id/read", ...guard, markNotificationRead);
+adminRouter.get("/notifications", ...guard, getAdminNotifications);
+adminRouter.post("/notifications", ...guard, createAdminBroadcastNotification);
+adminRouter.put("/notifications/:id/revoke", ...guard, toggleRevokeAdminNotification);
+adminRouter.delete("/notifications/:id", ...guard, deleteAdminNotification);
 // Job Discovery Management
 adminRouter.get("/jobs", ...guard, getAdminJobs);
 adminRouter.post("/jobs", ...guard, createAdminJob);

@@ -589,10 +589,10 @@ export function DashboardTopNav({
   onAdyChat: () => void;
   onViewTool: (tool: string) => void;
   onMenuToggle: () => void;
-  notifications: Array<{ id: string; title: string; message: string; read: boolean; createdAt: string }>;
+  notifications: Array<{ id: string; title: string; message: string; read: boolean; link?: string; targetAudience?: string; priority?: string; isSystem?: boolean; createdAt: string }>;
   onPremium?: () => void;
   onViewSettings?: () => void;
-  setNotifications: React.Dispatch<React.SetStateAction<Array<{ id: string; title: string; message: string; read: boolean; createdAt: string }>>>;
+  setNotifications: React.Dispatch<React.SetStateAction<Array<{ id: string; title: string; message: string; read: boolean; link?: string; targetAudience?: string; priority?: string; isSystem?: boolean; createdAt: string }>>>;
   unreadCount: number;
   onMarkAllRead: () => void;
   onClearAll: () => void;
@@ -609,6 +609,19 @@ export function DashboardTopNav({
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleNotificationClick = async (n: { id: string; link?: string; read: boolean }) => {
+    if (!n.read) {
+      try {
+        await api.put(`/notifications/${n.id}/read`);
+        setNotifications((prev) => prev.map((item) => (item.id === n.id ? { ...item, read: true } : item)));
+      } catch {}
+    }
+    if (n.link) {
+      setNotificationsOpen(false);
+      window.location.href = n.link;
+    }
+  };
 
   const navResults = searchQuery.trim().length >= 2
     ? SEARCH_INDEX.filter((entry) =>
@@ -1025,16 +1038,55 @@ export function DashboardTopNav({
                     No notifications
                   </div>
                 ) : (
-                  notifications.slice(0, 5).map((n) => (
-                    <div key={n.id} style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start", padding: "0.45rem", borderRadius: 8, background: n.read ? "transparent" : "rgba(245,158,11,0.05)", border: `1px solid ${n.read ? "transparent" : "rgba(245,158,11,0.15)"}` }}>
+                  notifications.slice(0, 6).map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => handleNotificationClick(n)}
+                      style={{
+                        display: "flex",
+                        gap: "0.5rem",
+                        alignItems: "flex-start",
+                        padding: "0.55rem",
+                        borderRadius: 10,
+                        background: n.read ? "transparent" : "rgba(245,158,11,0.06)",
+                        border: `1px solid ${n.read ? "transparent" : "rgba(245,158,11,0.2)"}`,
+                        cursor: n.link ? "pointer" : "default",
+                      }}
+                    >
                       {!n.read && (
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--primary)", marginTop: 6, flexShrink: 0 }} />
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b", marginTop: 6, flexShrink: 0 }} />
                       )}
-                      <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: n.read ? 500 : 600, lineHeight: 1.3 }}>{n.title || n.message}</p>
-                        <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>
-                          {n.createdAt ? new Date(n.createdAt).toLocaleDateString() + " " + new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
-                        </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4 }}>
+                          <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: n.read ? 600 : 700, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {n.title || n.message}
+                          </p>
+                          {n.targetAudience === "PREMIUM" && (
+                            <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "#c084fc", background: "rgba(168,85,247,0.15)", padding: "1px 5px", borderRadius: 4, flexShrink: 0 }}>
+                              PRO
+                            </span>
+                          )}
+                          {n.targetAudience === "FREE" && (
+                            <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "#f59e0b", background: "rgba(245,158,11,0.15)", padding: "1px 5px", borderRadius: 4, flexShrink: 0 }}>
+                              FREE
+                            </span>
+                          )}
+                        </div>
+                        {n.title && n.message && (
+                          <p style={{ margin: "2px 0 0 0", fontSize: "0.7rem", color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                            {n.message}
+                          </p>
+                        )}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+                          <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>
+                            {n.createdAt ? new Date(n.createdAt).toLocaleDateString() + " " + new Date(n.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+                          </span>
+                          {n.link && (
+                            <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#f59e0b" }}>
+                              View &rarr;
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))

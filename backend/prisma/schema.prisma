@@ -668,6 +668,41 @@ model AdminNotification {
   @@map("admin_notifications")
 }
 
+model SystemNotification {
+  id              String   @id @default(cuid())
+  adminId         String?  @map("admin_id")
+  title           String
+  message         String   @db.Text
+  type            String   @default("info")
+  targetAudience  String   @default("ALL") @map("target_audience")
+  actionUrl       String?  @map("action_url")
+  priority        String   @default("normal")
+  deliveryChannel String   @default("in_app") @map("delivery_channel")
+  sendEmail       Boolean  @default(false) @map("send_email")
+  isRevoked       Boolean  @default(false) @map("is_revoked")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  reads           SystemNotificationRead[]
+
+  @@index([targetAudience])
+  @@index([createdAt])
+  @@map("system_notifications")
+}
+
+model SystemNotificationRead {
+  id             String   @id @default(cuid())
+  notificationId String   @map("notification_id")
+  userId         String   @map("user_id")
+  readAt         DateTime @default(now()) @map("read_at")
+
+  notification   SystemNotification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, userId])
+  @@index([userId])
+  @@map("system_notification_reads")
+}
+
 model AdminSetting {
   id          String   @id @default(cuid())
   key         String   @unique
