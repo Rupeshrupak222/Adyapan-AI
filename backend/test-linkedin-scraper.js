@@ -17,8 +17,8 @@ async function main() {
     const { items } = await apify.dataset(run.defaultDatasetId).listItems();
     console.log("[LinkedInScraperTest] Items fetched:", items.length);
     if (items.length > 0) {
-      console.log("[LinkedInScraperTest] Sample job title:", items[0].title || items[0].position || items[0].jobTitle);
-      console.log("[LinkedInScraperTest] Sample company:", items[0].companyName || items[0].company);
+      console.log("[LinkedInScraperTest] Sample item keys:", Object.keys(items[0]));
+      console.log("[LinkedInScraperTest] Sample job:", JSON.stringify(items[0], null, 2).slice(0, 1000));
     }
   } catch (err) {
     console.error("[LinkedInScraperTest] Actor execution:", err.message || err);

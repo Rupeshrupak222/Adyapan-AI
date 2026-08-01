@@ -59,7 +59,7 @@ export interface SourceConfig {
 
 const SOURCE_ACTORS: Record<string, { actorId: string; displayName: string; schedule: SourceConfig["schedule"] }> = {
   linkedin: {
-    actorId: "worldunboxer/rapid-linkedin-scraper",
+    actorId: "curious_coder/linkedin-jobs-scraper",
     displayName: "LinkedIn",
     schedule: "6h",
   },
@@ -182,43 +182,51 @@ function simpleHash(str: string): string {
 const LINKEDIN_CONFIG: SourceConfig = {
   name: "linkedin",
   displayName: "LinkedIn",
-  actorId: "worldunboxer/rapid-linkedin-scraper",
+  actorId: "curious_coder/linkedin-jobs-scraper",
   schedule: "6h",
   buildInput: (config: any) => ({
-    jobs_titles: config.jobs_titles || ["Software Engineer", "Full Stack Developer", "Backend Engineer"],
-    location: config.location || "India",
-    jobs_entries: config.count || 30,
-    posted_within: config.posted_within || "Past 24 hours",
+    urls: config.urls || [
+      `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(config.query || config.keywords?.[0] || "software engineer")}&location=${encodeURIComponent(config.location || "India")}`,
+      `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent("full stack developer")}&location=${encodeURIComponent(config.location || "India")}`,
+      `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent("backend engineer")}&location=${encodeURIComponent(config.location || "India")}`,
+    ],
+    count: config.count || 25,
   }),
   normalizeResult: (data: any) => {
     const items = Array.isArray(data) ? data : data?.items || data?.defaultDatasetItems || [];
-    return items.map((item: any): NormalizedJob => {
-      const title = item.job_title || item.title || "";
-      const company = item.company_name || item.companyName || item.company || "";
-      const desc = item.job_description || item.descriptionText || stripHtml(item.descriptionHtml || item.job_description_raw_html || "") || "";
-      const workplace = item.work_arrangement || item.workplaceTypes?.[0] || item.workplaceType || "";
-      const workMode = normalizeWorkMode(desc, workplace);
-      return {
-        title,
-        company,
-        location: item.location || "",
-        description: desc,
-        salaryMin: parseSalary(item.salary_range || item.salaryInfo, "min"),
-        salaryMax: parseSalary(item.salary_range || item.salaryInfo, "max"),
-        experienceMin: parseExperience(item.seniority_level || item.seniorityLevel),
-        experienceMax: parseExperienceMax(item.seniority_level || item.seniorityLevel),
-        employmentType: mapEmploymentType(item.employment_type || item.employmentType || ""),
-        workMode,
-        skills: extractSkills(`${title} ${desc}`),
-        source: "linkedin",
-        sourceUrl: item.job_url || item.link || item.apply_url || "",
-        applyUrl: item.apply_url || item.job_url || item.link || "",
-        postedAt: item.time_posted || item.postedAt || undefined,
-        companyLogo: item.company_logo_url || item.companyLogo || undefined,
-        industry: item.industries || undefined,
-        externalId: item.job_id || item.id || undefined,
-      };
-    });
+    return items
+      .filter((item: any) => item && (item.title || item.job_title || item.position || item.jobTitle) && (item.companyName || item.company_name || item.company))
+      .map((item: any): NormalizedJob => {
+        const title = item.title || item.job_title || item.position || item.jobTitle || "Software Engineer";
+        const company = item.companyName || item.company_name || item.company || "Tech Company";
+        const location = item.location || "India";
+        const desc = item.descriptionText || item.job_description || stripHtml(item.descriptionHtml || item.job_description_raw_html || item.description || "") || `${title} at ${company}`;
+        const workplace = item.workplaceTypes?.[0] || item.work_arrangement || item.workplaceType || item.location || "";
+        const workMode = normalizeWorkMode(desc, workplace);
+        const applyUrl = item.applyUrl || item.link || item.job_url || item.apply_url || item.url || "";
+        const logoUrl = item.companyLogo || item.company_logo_url || item.companyLogoUrl || undefined;
+
+        return {
+          title,
+          company,
+          location,
+          description: desc,
+          salaryMin: parseSalary(item.salary_range || item.salaryInfo || item.salary, "min"),
+          salaryMax: parseSalary(item.salary_range || item.salaryInfo || item.salary, "max"),
+          experienceMin: parseExperience(item.seniorityLevel || item.seniority_level || item.experience),
+          experienceMax: parseExperienceMax(item.seniorityLevel || item.seniority_level || item.experience),
+          employmentType: mapEmploymentType(item.employmentType || item.employment_type || item.jobType || ""),
+          workMode,
+          skills: extractSkills(`${title} ${desc}`),
+          source: "linkedin",
+          sourceUrl: applyUrl,
+          applyUrl,
+          postedAt: item.postedAt || item.time_posted || item.datePosted || undefined,
+          companyLogo: logoUrl,
+          industry: item.industries || item.industry || undefined,
+          externalId: String(item.id || item.job_id || item.key || simpleHash(`${company}|${title}|${location}`)),
+        };
+      });
   },
 };
 
