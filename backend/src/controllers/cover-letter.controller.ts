@@ -117,6 +117,27 @@ async function resolveResumeText(userPrisma: any, resumeId: string, userId: stri
 }
 
 /**
+ * Resolves a resume (manual Resume builder OR uploaded UploadedResume) into
+ * serialized text. `validResumeId` is only populated when the given id maps to
+ * an actual `Resume` record — uploaded-resume ids are NOT valid for the
+ * CoverLetter.resumeId foreign key and must be stored as null to avoid
+ * Prisma P2003 (FK constraint) 500 errors.
+ */
+async function resolveResume(userPrisma: any, resumeId: string, userId: string): Promise<{ text: string; validResumeId: string | null }> {
+  const resume = await userPrisma.resume.findFirst({ where: { id: resumeId, userId } });
+  if (resume) return { text: serializeResumeToText(resume), validResumeId: resumeId };
+
+  const uploaded = await userPrisma.uploadedResume.findFirst({
+    where: { id: resumeId, userId },
+    include: { candidateProfile: true },
+  });
+  if (uploaded?.candidateProfile) return { text: serializeCandidateProfile(uploaded.candidateProfile), validResumeId: null };
+  if (uploaded?.extractedText) return { text: uploaded.extractedText, validResumeId: null };
+
+  return { text: "", validResumeId: null };
+}
+
+/**
  * 1. Generate Cover Letter (Enhanced v2)
  */
 export async function generateCoverLetter(req: Request, res: Response, next: NextFunction) {
@@ -133,8 +154,11 @@ export async function generateCoverLetter(req: Request, res: Response, next: Nex
     const userPrisma = await getUserPrismaFromRequest(req);
 
     let resumeText = "";
+    let validResumeId: string | null = null;
     if (resumeId) {
-      resumeText = await resolveResumeText(userPrisma, resumeId, userId);
+      const resolved = await resolveResume(userPrisma, resumeId, userId);
+      resumeText = resolved.text;
+      validResumeId = resolved.validResumeId;
       console.log(`[CoverLetter] Resumed resumeId=${resumeId}, text length=${resumeText.length}`);
       if (!resumeText) {
         console.warn(`[CoverLetter] resumeId ${resumeId} provided but resolved to empty text`);
@@ -158,7 +182,7 @@ export async function generateCoverLetter(req: Request, res: Response, next: Nex
     const coverLetter = await userPrisma.coverLetter.create({
       data: {
         userId,
-        resumeId: resumeId || null,
+        resumeId: validResumeId,
         companyName,
         role,
         jobDescription: jobDescription || null,

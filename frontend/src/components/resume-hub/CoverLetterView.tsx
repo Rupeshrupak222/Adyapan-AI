@@ -221,7 +221,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
   const [tone, setTone] = useState("Professional");
   const [letterType, setLetterType] = useState("Full-Time");
   const [length, setLength] = useState("Standard");
-  const [mode, setMode] = useState("Software Engineer");
+  const [mode, setMode] = useState("Custom");
 
   // ── Letter Content ────────────────────────────────────────────────────────
   const [coverLetter, setCoverLetter] = useState<CoverLetterItem | null>(null);
@@ -1021,14 +1021,6 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
           <div className="flex items-center gap-2 mb-3"><Sparkles size={16} style={{ color: c.amber }} />
             <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Generation Settings</h3></div>
           <div className="space-y-4">
-            <div>
-              <label className="block text-[10px] uppercase font-semibold mb-1.5" style={{ color: c.textSec }}>Role Mode</label>
-              <div className="flex flex-wrap gap-1.5">{cfg.coverLetterModes.map(m => (
-                <motion.button key={m} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={() => setMode(m)}
-                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all"
-                  style={{ background: mode === m ? c.amberBg : "transparent", border: `1px solid ${mode === m ? c.amber : c.border}`, color: mode === m ? c.amber : c.textSec }}>{m}</motion.button>
-              ))}</div>
-            </div>
             <div>
               <label className="block text-[10px] uppercase font-semibold mb-1.5" style={{ color: c.textSec }}>Tone</label>
               <div className="flex flex-wrap gap-1.5">{cfg.coverLetterTones.map(t => (

@@ -483,7 +483,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   // ─── Filter State ───────────────────────────────────────────────────────
   const [filters, setFilters] = useState({
-    workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
+    location: "", workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
     salaryMin: "", salaryMax: "", skills: "", industry: "", education: "",
     companySize: "", source: "", postedWithin: "", company: "",
   });
@@ -537,6 +537,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   // ─── Active Filters ─────────────────────────────────────────────────────
   const activeFilters = useMemo(() => {
     const chips: { key: string; label: string }[] = [];
+    if (filters.location) chips.push({ key: "location", label: `Location: ${filters.location}` });
     if (filters.workMode) chips.push({ key: "workMode", label: filters.workMode });
     if (filters.employmentType) chips.push({ key: "employmentType", label: filters.employmentType });
     if (filters.experienceMin) chips.push({ key: "experienceMin", label: `Min Exp: ${filters.experienceMin}y` });
@@ -567,6 +568,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         sortBy, sortOrder: sortOrder,
       };
       if (debouncedQuery) params.query = debouncedQuery;
+      if (filters.location) params.location = filters.location;
       if (filters.workMode) params.workMode = filters.workMode;
       if (filters.employmentType) params.employmentType = filters.employmentType;
       if (filters.experienceMin) params.experienceMin = filters.experienceMin;
@@ -756,7 +758,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   const clearAllFilters = useCallback(() => {
     setFilters({
-      workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
+      location: "", workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
       salaryMin: "", salaryMax: "", skills: "", industry: "", education: "",
       companySize: "", source: "", postedWithin: "", company: "",
     });
@@ -875,6 +877,15 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                 }}>{mode}</button>
             ))}
           </div>
+        </div>
+
+        {/* Location */}
+        <div className="space-y-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Location</span>
+          <input type="text" placeholder="City, state, or country..." value={filters.location}
+            onChange={e => handleFilterChange("location", e.target.value)}
+            className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
+            style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
         </div>
 
         {/* Employment Type */}
