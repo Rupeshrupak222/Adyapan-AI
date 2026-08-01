@@ -424,6 +424,7 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
                   streamingText={streamingText}
                   loading={loading}
                   isDark={isDark}
+                  userName={userName}
                   onRegenerate={() => {
                     const lastUser = [...messages].reverse().find(m => m.role === "user");
                     if (lastUser) {

@@ -12,6 +12,7 @@ interface MessageListProps {
   streamingText: string;
   loading: boolean;
   isDark: boolean;
+  userName?: string;
   onRegenerate?: () => void;
   onEditUserMessage?: (text: string) => void;
 }
@@ -21,6 +22,7 @@ export function MessageList({
   streamingText,
   loading,
   isDark,
+  userName,
   onRegenerate,
   onEditUserMessage,
 }: MessageListProps) {
@@ -41,6 +43,7 @@ export function MessageList({
                 message={msg}
                 index={i}
                 isDark={isDark}
+                userName={userName}
                 onEdit={onEditUserMessage}
               />
             ) : (
