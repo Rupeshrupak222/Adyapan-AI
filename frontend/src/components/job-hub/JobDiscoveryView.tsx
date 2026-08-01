@@ -2051,6 +2051,20 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             </AnimatePresence>
           </div>
 
+          <button onClick={() => setFilterOpen(o => !o)}
+            className="hidden lg:flex px-3 py-3 rounded-xl text-xs font-bold border transition-all hover:scale-105 items-center gap-1.5"
+            style={{
+              background: filterOpen ? "rgba(245,158,11,0.12)" : "transparent",
+              borderColor: filterOpen ? "rgba(245,158,11,0.3)" : c.border,
+              color: filterOpen ? c.primary : c.textMuted,
+            }}>
+            <SlidersHorizontal size={16} /> Filters
+            {activeFilters.length > 0 && (
+              <span className="w-4 h-4 rounded-full text-[8px] font-black flex items-center justify-center text-white"
+                style={{ background: c.primary }}>{formatCap99(activeFilters.length)}</span>
+            )}
+          </button>
+
           <CustomSelect
             value={`${sortBy}:${sortOrder}`}
             options={SORT_OPTIONS.map(opt => ({
