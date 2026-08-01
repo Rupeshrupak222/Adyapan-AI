@@ -70,16 +70,14 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
       "challengeSubmission", "interviewSession", "chatSession",
     ];
 
-    const hubCounts = await Promise.all(
-      userHubTables.map((table) => adminDbService.countAcrossAllUserDbs(table))
-    );
+    const hubCounts = await adminDbService.countAllAcrossAllUserDbs(userHubTables);
 
     const [
       resumeCount, atsCount, coverLetterCount, linkedinCount,
       studySessions, notesCount, quizzesCount, assignmentsCount,
       pptsCount, mindmapsCount, codingSessions, submissionsCount,
       challengesCount, interviewSessions, chatSessions,
-    ] = hubCounts;
+    ] = userHubTables.map((t) => hubCounts[t] ?? 0);
 
     const revenueTotal = totalRevenue._sum.amount ?? 0;
     const revenueMonth = monthRevenue._sum.amount ?? 0;
@@ -311,15 +309,13 @@ export async function getAiAnalytics(_req: Request, res: Response, next: NextFun
       "interviewSession", "chatSession",
     ];
 
-    const counts = await Promise.all(
-      hubTables.map((table) => adminDbService.countAcrossAllUserDbs(table))
-    );
+    const counts = await adminDbService.countAllAcrossAllUserDbs(hubTables);
 
     const [
       totalResume, totalAts, totalCover, totalLinkedin,
       totalStudy, totalNotes, totalQuiz, totalAssign, totalPpt, totalMindmap,
       totalCoding, totalSubmit, totalInterview, totalChat,
-    ] = counts;
+    ] = hubTables.map((t) => counts[t] ?? 0);
 
     const totalRequests = totalResume + totalAts + totalCover + totalLinkedin + totalStudy + totalNotes + totalQuiz + totalAssign + totalPpt + totalMindmap + totalCoding + totalSubmit + totalInterview + totalChat;
 
