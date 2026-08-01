@@ -7,7 +7,7 @@ import {
   CreditCard, Globe, Zap, HardDrive, Activity, HelpCircle, Search,
   Save, RotateCcw, Camera, Mail, Phone, GraduationCap, FileText,
   Download, Trash2, RefreshCw, LogOut, Eye, EyeOff, Check,
-  Moon, Sun, Monitor, ChevronRight, ExternalLink, Key, Smartphone,
+  Moon, Sun, Monitor, ChevronRight, ChevronDown, ExternalLink, Key, Smartphone,
   AlertTriangle, X, MessageSquare, Code, Link2, Clock, Star,
   Brain, Trophy, ArrowUpRight, Image, FolderOpen,
   Database, ShieldCheck, Fingerprint, Menu, Info, Loader2,
@@ -2431,13 +2431,115 @@ export function ActivitySection({
 
 // ─── Help Section ────────────────────────────────────────────────────────
 export function HelpSection({ c }: { c: Record<string, string> }) {
-  const items = [
-    { title: "FAQ", desc: "Frequently asked questions about Adyapan AI", icon: HelpCircle, color: "text-blue-500", href: "/faq" },
-    { title: "Contact Support", desc: "Get help from our support team", icon: Mail, color: "text-emerald-500", href: "/support" },
-    { title: "Report Bug", desc: "Report issues or unexpected behavior", icon: AlertTriangle, color: "text-rose-500", href: "/report-bug" },
-    { title: "Documentation", desc: "Explore guides and tutorials", icon: FileText, color: "text-purple-500", href: "/docs" },
-    { title: "Community", desc: "Join the Adyapan developer community", icon: Users, color: "text-cyan-500", href: "/community" },
-    { title: "About Adyapan AI", desc: "Version 2.0.0 · Made with love", icon: Info, color: "text-amber-500", href: "/about" },
+  const [activeModal, setActiveModal] = useState<"faq" | "support" | "bug" | "docs" | "about" | null>(null);
+
+  // FAQ state
+  const [faqQuery, setFaqQuery] = useState("");
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+
+  // Support Ticket state
+  const [supportSubject, setSupportSubject] = useState("");
+  const [supportCategory, setSupportCategory] = useState("General Inquiry");
+  const [supportMessage, setSupportMessage] = useState("");
+  const [submittingSupport, setSubmittingSupport] = useState(false);
+
+  // Bug Report state
+  const [bugTitle, setBugTitle] = useState("");
+  const [bugSeverity, setBugSeverity] = useState("Medium");
+  const [bugSteps, setBugSteps] = useState("");
+  const [bugMessage, setBugMessage] = useState("");
+  const [submittingBug, setSubmittingBug] = useState(false);
+
+  const faqs = [
+    {
+      q: "How do storage limits work on Adyapan AI?",
+      a: "Free accounts receive 50 MB of cloud storage. Upgrading to Premium increases your storage limit to 200 MB for your notes, resumes, study sessions, and assignments."
+    },
+    {
+      q: "How do I upgrade to Premium?",
+      a: "Click on the 'Upgrade Plan' or 'Premium' badge in the top navigation bar or settings sidebar to view subscription options."
+    },
+    {
+      q: "How does Ady Chat work?",
+      a: "Ady Chat is your personal AI tutor. It assists with study notes, coding problems, career advice, and live mock interview practice."
+    },
+    {
+      q: "Can I use my own API keys?",
+      a: "Yes! Navigate to Settings -> API Integrations to add your custom Gemini, OpenAI, Claude, or Groq API keys."
+    },
+    {
+      q: "How do I export my data or chat history?",
+      a: "Under Settings -> Privacy, click 'Export Account Data' to download a complete JSON archive of your account records."
+    },
+    {
+      q: "Is my personal data secure?",
+      a: "We enforce strict encryption, isolated user sandboxes, and two-factor authentication to ensure your data stays private and safe."
+    }
+  ];
+
+  const filteredFaqs = faqs.filter(
+    (item) =>
+      item.q.toLowerCase().includes(faqQuery.toLowerCase()) ||
+      item.a.toLowerCase().includes(faqQuery.toLowerCase())
+  );
+
+  const handleSubmitSupport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supportSubject.trim() || !supportMessage.trim()) {
+      toast.error("Please fill in both subject and message.");
+      return;
+    }
+    setSubmittingSupport(true);
+    try {
+      const res = await api.post("/settings/support-ticket", {
+        subject: supportSubject,
+        category: supportCategory,
+        message: supportMessage,
+      });
+      toast.success(res.data.message || "Support ticket submitted!");
+      setSupportSubject("");
+      setSupportMessage("");
+      setActiveModal(null);
+    } catch {
+      toast.error("Failed to submit support ticket.");
+    } finally {
+      setSubmittingSupport(false);
+    }
+  };
+
+  const handleSubmitBug = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bugTitle.trim() || !bugMessage.trim()) {
+      toast.error("Please fill in bug title and description.");
+      return;
+    }
+    setSubmittingBug(true);
+    try {
+      const res = await api.post("/settings/report-bug", {
+        title: bugTitle,
+        severity: bugSeverity,
+        steps: bugSteps,
+        message: bugMessage,
+      });
+      toast.success(res.data.message || "Bug report submitted!");
+      setBugTitle("");
+      setBugSteps("");
+      setBugMessage("");
+      setActiveModal(null);
+    } catch {
+      toast.error("Failed to submit bug report.");
+    } finally {
+      setSubmittingBug(false);
+    }
+  };
+
+  const cards = [
+    { id: "faq", title: "FAQ", desc: "Frequently asked questions about Adyapan AI", icon: HelpCircle, color: "text-blue-500", onClick: () => setActiveModal("faq") },
+    { id: "support", title: "Contact Support", desc: "Get help from our support team", icon: Mail, color: "text-emerald-500", onClick: () => setActiveModal("support") },
+    { id: "bug", title: "Report Bug", desc: "Report issues or unexpected behavior", icon: AlertTriangle, color: "text-rose-500", onClick: () => setActiveModal("bug") },
+    { id: "docs", title: "Documentation", desc: "Explore guides and tutorials", icon: FileText, color: "text-purple-500", onClick: () => setActiveModal("docs") },
+    { id: "community", title: "Community", desc: "Join the Adyapan developer community", icon: Users, color: "text-cyan-500", onClick: () => window.location.href = "/dashboard/user?view=community-browse" },
+    { id: "about", title: "About Adyapan AI", desc: "Version 2.0.0 · Made with love", icon: Info, color: "text-amber-500", onClick: () => setActiveModal("about") },
   ];
 
   return (
@@ -2450,13 +2552,13 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
           <HelpCircle size={16} /> Help & Support
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {items.map((item, i) => {
+          {cards.map((item, i) => {
             const Icon = item.icon;
             return (
               <motion.div key={item.title} variants={fadeUp} initial="hidden" animate="visible" custom={i}
                 whileHover={{ y: -2, scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => window.location.href = item.href}
+                onClick={item.onClick}
                 className="p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition-all"
                 style={{ borderColor: c.border, background: c.cardBgHover }}>
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -2472,6 +2574,213 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
           })}
         </div>
       </motion.div>
+
+      {/* ── Modal Popups ── */}
+      <AnimatePresence>
+        {activeModal && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setActiveModal(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-xl rounded-2xl border p-6 space-y-4 max-h-[85vh] overflow-y-auto"
+              style={{ background: "#0c0d16", borderColor: c.border, color: c.text }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: c.border }}>
+                <div className="flex items-center gap-2">
+                  <HelpCircle size={18} className="text-amber-500" />
+                  <h3 className="text-base font-extrabold capitalize">
+                    {activeModal === "faq" && "Frequently Asked Questions"}
+                    {activeModal === "support" && "Contact Support Team"}
+                    {activeModal === "bug" && "Report a Bug"}
+                    {activeModal === "docs" && "Documentation & Guides"}
+                    {activeModal === "about" && "About Adyapan AI"}
+                  </h3>
+                </div>
+                <button onClick={() => setActiveModal(null)} className="p-1 rounded-lg hover:bg-white/10 cursor-pointer">
+                  <X size={16} style={{ color: c.textMuted }} />
+                </button>
+              </div>
+
+              {/* FAQ Modal Content */}
+              {activeModal === "faq" && (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: c.textMuted }} />
+                    <input type="text" value={faqQuery} onChange={(e) => setFaqQuery(e.target.value)}
+                      placeholder="Search FAQs..."
+                      className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border outline-none"
+                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                  </div>
+                  <div className="space-y-2">
+                    {filteredFaqs.map((faq, index) => {
+                      const isOpen = expandedFaq === index;
+                      return (
+                        <div key={index} className="rounded-xl border overflow-hidden" style={{ borderColor: c.border }}>
+                          <button onClick={() => setExpandedFaq(isOpen ? null : index)}
+                            className="w-full flex items-center justify-between p-3 text-xs font-bold text-left transition-all hover:bg-white/5 cursor-pointer">
+                            <span>{faq.q}</span>
+                            <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180 text-amber-500" : ""}`} />
+                          </button>
+                          {isOpen && (
+                            <div className="p-3 text-[11px] border-t leading-relaxed" style={{ borderColor: c.border, color: c.textMuted, background: "rgba(255,255,255,0.02)" }}>
+                              {faq.a}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Support Ticket Modal Content */}
+              {activeModal === "support" && (
+                <form onSubmit={handleSubmitSupport} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Subject</label>
+                    <input type="text" value={supportSubject} onChange={(e) => setSupportSubject(e.target.value)}
+                      placeholder="Brief summary of your issue..."
+                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-amber-500/40"
+                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Category</label>
+                    <select value={supportCategory} onChange={(e) => setSupportCategory(e.target.value)}
+                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
+                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
+                      <option value="General Inquiry">General Inquiry</option>
+                      <option value="Technical Issue">Technical Issue</option>
+                      <option value="Billing & Subscription">Billing & Subscription</option>
+                      <option value="Feature Request">Feature Request</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Message</label>
+                    <textarea rows={4} value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)}
+                      placeholder="Describe your issue in detail..."
+                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none resize-none"
+                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} required />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <PremiumButton variant="secondary" onClick={() => setActiveModal(null)} type="button">Cancel</PremiumButton>
+                    <motion.button type="submit" disabled={submittingSupport} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold disabled:opacity-60 cursor-pointer">
+                      {submittingSupport ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                      Submit Ticket
+                    </motion.button>
+                  </div>
+                </form>
+              )}
+
+              {/* Bug Report Modal Content */}
+              {activeModal === "bug" && (
+                <form onSubmit={handleSubmitBug} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Bug Title</label>
+                    <input type="text" value={bugTitle} onChange={(e) => setBugTitle(e.target.value)}
+                      placeholder="What went wrong?"
+                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-amber-500/40"
+                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Severity</label>
+                    <select value={bugSeverity} onChange={(e) => setBugSeverity(e.target.value)}
+                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
+                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
+                      <option value="Low">Low - Minor UI issue</option>
+                      <option value="Medium">Medium - Feature malfunctioning</option>
+                      <option value="High">High - Unable to complete task</option>
+                      <option value="Critical">Critical - System crash or data issue</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Steps to Reproduce (Optional)</label>
+                    <input type="text" value={bugSteps} onChange={(e) => setBugSteps(e.target.value)}
+                      placeholder="e.g., Clicked upload photo -> Network error"
+                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
+                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Description</label>
+                    <textarea rows={3} value={bugMessage} onChange={(e) => setBugMessage(e.target.value)}
+                      placeholder="Explain what happened vs what you expected..."
+                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none resize-none"
+                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} required />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <PremiumButton variant="secondary" onClick={() => setActiveModal(null)} type="button">Cancel</PremiumButton>
+                    <motion.button type="submit" disabled={submittingBug} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 text-white text-xs font-bold disabled:opacity-60 cursor-pointer">
+                      {submittingBug ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
+                      Report Bug
+                    </motion.button>
+                  </div>
+                </form>
+              )}
+
+              {/* Documentation Content */}
+              {activeModal === "docs" && (
+                <div className="space-y-4 text-xs leading-relaxed" style={{ color: c.textSec }}>
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold">
+                    🚀 Adyapan AI Quick Start Guide
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-extrabold text-sm text-white">Core Modules & Hubs</h4>
+                    <ul className="list-disc list-inside space-y-1 text-[11px]" style={{ color: c.textMuted }}>
+                      <li><strong className="text-white">Ady Chat:</strong> Interactive AI assistant for custom queries and instant tutoring.</li>
+                      <li><strong className="text-white">Coding Hub:</strong> Practice DSA problems, generate solutions, and build GitHub portfolios.</li>
+                      <li><strong className="text-white">Interview Hub:</strong> Practice HR and Technical mock interviews with AI evaluation.</li>
+                      <li><strong className="text-white">Resume Hub:</strong> Build ATS-optimized resumes and generate cover letters.</li>
+                      <li><strong className="text-white">Placement Hub:</strong> Practice company MCQs and aptitude tests.</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-1.5 border-t pt-3" style={{ borderColor: c.border }}>
+                    <h4 className="font-extrabold text-sm text-white">Keyboard Shortcuts</h4>
+                    <div className="flex justify-between items-center text-[11px] py-1 border-b" style={{ borderColor: c.border }}>
+                      <span>Quick Search Tool</span>
+                      <kbd className="px-2 py-0.5 rounded bg-white/10 text-[10px] font-mono">Ctrl + K</kbd>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px] py-1 border-b" style={{ borderColor: c.border }}>
+                      <span>Close Modals / Overlays</span>
+                      <kbd className="px-2 py-0.5 rounded bg-white/10 text-[10px] font-mono">Esc</kbd>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* About Modal Content */}
+              {activeModal === "about" && (
+                <div className="space-y-4 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto font-black text-xl">
+                    A
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-extrabold">Adyapan AI Platform</h4>
+                    <span className="text-xs text-amber-500 font-semibold block">Version 2.0.0 (Enterprise Build)</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-left border-y py-3" style={{ borderColor: c.border }}>
+                    <div className="p-3 rounded-xl bg-white/5 border" style={{ borderColor: c.border }}>
+                      <span className="text-[10px] block" style={{ color: c.textMuted }}>Engine Status</span>
+                      <span className="text-xs font-bold text-emerald-400">● Operational</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/5 border" style={{ borderColor: c.border }}>
+                      <span className="text-[10px] block" style={{ color: c.textMuted }}>AI Model Integration</span>
+                      <span className="text-xs font-bold text-amber-400">Gemini / Claude / GPT-4</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] leading-relaxed" style={{ color: c.textMuted }}>
+                    Built with love to empower students, job seekers, and developers with next-gen AI learning tools.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

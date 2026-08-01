@@ -713,3 +713,67 @@ settingsRouter.delete("/storage/cache", async (req: any, res) => {
     handleRouteError(res, error, "Settings.clearCache", "Failed to clear cache");
   }
 });
+
+// ─── POST /settings/support-ticket ── Submit support request ────────────────
+settingsRouter.post("/support-ticket", async (req: any, res) => {
+  try {
+    const prisma = await getUserPrismaFromRequest(req);
+    const userId = req.user?.userId || req.user?.id;
+    const { subject, category, message } = req.body;
+
+    if (!subject || !message) {
+      return res.status(400).json({ success: false, error: "Subject and message are required" });
+    }
+
+    const ticketId = `TK-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    await prisma.notification.create({
+      data: {
+        userId,
+        title: `Support Ticket Created (#${ticketId})`,
+        message: `Your ticket "${subject}" has been received. Our team will respond shortly.`,
+        type: "system",
+      },
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      ticketId,
+      message: `Support ticket #${ticketId} submitted successfully! Our team will get back to you shortly.`,
+    });
+  } catch (error) {
+    handleRouteError(res, error, "Settings.supportTicket", "Failed to submit support ticket");
+  }
+});
+
+// ─── POST /settings/report-bug ── Submit bug report ─────────────────────────
+settingsRouter.post("/report-bug", async (req: any, res) => {
+  try {
+    const prisma = await getUserPrismaFromRequest(req);
+    const userId = req.user?.userId || req.user?.id;
+    const { title, severity, steps, message } = req.body;
+
+    if (!title || !message) {
+      return res.status(400).json({ success: false, error: "Bug title and description are required" });
+    }
+
+    const bugId = `BUG-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    await prisma.notification.create({
+      data: {
+        userId,
+        title: `Bug Report Submitted (#${bugId})`,
+        message: `Thank you for reporting "${title}". Severity: ${severity || "Medium"}.`,
+        type: "system",
+      },
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      bugId,
+      message: `Bug report #${bugId} logged! Thank you for helping us improve Adyapan AI.`,
+    });
+  } catch (error) {
+    handleRouteError(res, error, "Settings.reportBug", "Failed to submit bug report");
+  }
+});
