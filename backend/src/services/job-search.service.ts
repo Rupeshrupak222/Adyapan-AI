@@ -182,7 +182,7 @@ export class JobSearchService {
   }
 
   static async search(filters: SearchFilters): Promise<SearchResult> {
-    await this.autoUpdateStaleJobs();
+    this.autoUpdateStaleJobs().catch(() => {});
     const db = getDb();
     const page = filters.page || 1;
     const limit = Math.min(filters.limit || 20, 100);

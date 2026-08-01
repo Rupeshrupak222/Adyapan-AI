@@ -33,10 +33,17 @@ export async function requireAdminAuth(
     }
 
     const decoded = jwt.verify(token, env.jwtSecret) as {
-      id: string;
+      userId?: string;
+      id?: string;
       email: string;
+      role?: string;
       type?: string;
     };
+
+    const adminUserId = decoded.userId ?? decoded.id;
+    if (!adminUserId) {
+      throw httpError(401, "Invalid or expired admin token");
+    }
 
     // Check if blacklisted
     const blacklisted = await prisma.blacklistedToken.findUnique({
@@ -47,26 +54,41 @@ export async function requireAdminAuth(
     }
 
     // Check in dedicated admin_users table
-    let admin = await (prisma as any).adminUser.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, name: true, email: true, roleId: true, status: true },
-    });
+    let admin: any = null;
+    try {
+      admin = await (prisma as any).adminUser.findUnique({
+        where: { id: adminUserId },
+        select: { id: true, name: true, email: true, roleId: true, status: true },
+      });
+    } catch {
+      // admin_users table may not exist yet; fall through to users table
+    }
 
     // Fallback sync: if legacy admin in user table, auto-seed admin_users
     if (!admin) {
-      const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+      const user = await prisma.user.findUnique({ where: { id: adminUserId } });
       if (user && user.role === "ADMIN") {
-        admin = await (prisma as any).adminUser.upsert({
-          where: { email: user.email },
-          update: { status: "ACTIVE" },
-          create: {
+        try {
+          admin = await (prisma as any).adminUser.upsert({
+            where: { email: user.email },
+            update: { status: "ACTIVE" },
+            create: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              password: user.password,
+              status: "ACTIVE",
+            },
+          });
+        } catch {
+          admin = {
             id: user.id,
             name: user.name,
             email: user.email,
-            password: user.password,
+            roleId: null,
             status: "ACTIVE",
-          },
-        });
+          };
+        }
       }
     }
 
