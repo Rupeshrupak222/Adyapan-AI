@@ -2253,10 +2253,7 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
               <div className="p-5 space-y-3 cursor-pointer" onClick={() => openJobDetail(job)}>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0"
-                      style={{ background: job.logoBg || "rgba(245,158,11,0.1)", color: c.primary, border: `1px solid ${c.border}` }}>
-                      {job.company?.charAt(0) || "C"}
-                    </div>
+                    <CompanyLogo company={job.company} logoUrl={job.logoUrl} size={40} />
                     <div className="min-w-0">
                       <h3 className="text-xs font-bold truncate" style={{ color: c.text }}>{job.title}</h3>
                       <p className="text-[10px] font-semibold truncate flex items-center gap-1" style={{ color: c.textMuted }}>
