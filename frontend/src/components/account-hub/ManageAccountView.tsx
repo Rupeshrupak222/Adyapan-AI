@@ -9,7 +9,7 @@ import {
   Download, Trash2, RefreshCw, LogOut, Eye, EyeOff, Check,
   Moon, Sun, Monitor, ChevronRight, ExternalLink, Key, Smartphone,
   AlertTriangle, X, MessageSquare, Code, Link2, Clock, Star,
-  Brain, Lightbulb, Trophy, ArrowUpRight, Image, FolderOpen,
+  Brain, Trophy, ArrowUpRight, Image, FolderOpen,
   Database, ShieldCheck, Fingerprint, Menu, Info, Loader2,
   Heart, ClipboardList, TrendingUp, Target, Calendar, Users
 } from "lucide-react";
@@ -1352,8 +1352,6 @@ function AppearanceSection({
   onSave?: () => void;
   saving?: boolean;
 }) {
-  const accentColors = ["#f59e0b", "#ef4444", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
-
   return (
     <div className="space-y-5">
       {/* Theme Mode */}
@@ -1399,32 +1397,6 @@ function AppearanceSection({
               </motion.button>
             );
           })}
-        </div>
-      </motion.div>
-
-      {/* Accent Color */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
-        className="rounded-2xl border p-6 space-y-4"
-        style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
-      >
-        <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.primary }}>
-          <Lightbulb size={16} /> Accent Color
-        </h3>
-        <div className="flex flex-wrap gap-3">
-          {accentColors.map((color) => (
-            <motion.button
-              key={color}
-              onClick={() => { setAccentColor(color); markChanged(); }}
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.9 }}
-              className="w-8 h-8 rounded-full border-2 transition-all"
-              style={{
-                background: color,
-                borderColor: accentColor === color ? "#ffffff" : "transparent",
-                boxShadow: accentColor === color ? `0 0 12px ${color}80` : "none",
-              }}
-            />
-          ))}
         </div>
       </motion.div>
 
