@@ -7,10 +7,10 @@ import { ConnectedAccountsSection } from "@/components/account-hub/ManageAccount
 import { SettingsShell, useSettingsColors, useSettingsData, useScheduleSave } from "@/components/account-hub/settings/shell";
 
 const DEFAULT_ACCOUNTS = [
-  { name: "Google",    icon: "G",  color: "#4285f4", connected: false },
-  { name: "GitHub",   icon: "GH", color: "#ffffff", connected: false },
-  { name: "Microsoft", icon: "M",  color: "#00a4ef", connected: false },
-  { name: "LinkedIn",  icon: "in", color: "#0077b5", connected: false },
+  { name: "Google",    icon: "G",  color: "#4285f4", connected: false, authUrl: "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Faccounts.google.com%2F&service=mail&flowName=GlifWebSignIn&flowEntry=ServiceLogin" },
+  { name: "GitHub",   icon: "GH", color: "#ffffff", connected: false, authUrl: "https://github.com/login" },
+  { name: "Microsoft", icon: "M",  color: "#00a4ef", connected: false, authUrl: "https://login.microsoftonline.com/" },
+  { name: "LinkedIn",  icon: "in", color: "#0077b5", connected: false, authUrl: "https://www.linkedin.com/login" },
 ];
 
 export default function SettingsConnectedPage() {

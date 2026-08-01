@@ -1477,47 +1477,7 @@ export function AppearanceSection({
         </div>
       </motion.div>
 
-      {/* Accent Color */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
-        className="rounded-2xl border p-6 space-y-4"
-        style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
-      >
-        <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.primary }}>
-          <Sparkles size={16} /> Accent Color
-        </h3>
-        <div className="flex flex-wrap items-center gap-3">
-          {[
-            { color: "#f59e0b", name: "Amber" },
-            { color: "#ef4444", name: "Red" },
-            { color: "#10b981", name: "Emerald" },
-            { color: "#3b82f6", name: "Blue" },
-            { color: "#8b5cf6", name: "Purple" },
-            { color: "#ec4899", name: "Pink" },
-            { color: "#06b6d4", name: "Cyan" },
-            { color: "#f97316", name: "Orange" },
-          ].map((item) => {
-            const isActive = accentColor === item.color;
-            return (
-              <motion.button
-                key={item.color}
-                onClick={() => change(() => { setAccentColor(item.color); onApplyAccent?.(item.color); })}
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.9 }}
-                className="w-8 h-8 rounded-full transition-all relative flex items-center justify-center cursor-pointer"
-                style={{
-                  background: item.color,
-                  boxShadow: isActive ? `0 0 12px ${item.color}` : "none",
-                  outline: isActive ? `2px solid ${item.color}` : "none",
-                  outlineOffset: 2,
-                }}
-                title={item.name}
-              >
-                {isActive && <Check size={14} className="text-black font-extrabold" />}
-              </motion.button>
-            );
-          })}
-        </div>
-      </motion.div>
+
 
       {/* Toggles */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
@@ -1568,10 +1528,10 @@ export function AppearanceSection({
             <span className="text-xs font-extrabold" style={{ color: c.text }}>Preview Card</span>
           </div>
           <p style={{ fontSize: `${fontSize}px`, color: c.textSec }} className="leading-relaxed">
-            This is how your content will appear with the selected font size and accent color.
+            This is how your content will appear with the selected font size.
           </p>
           <div className="mt-3 flex gap-2">
-            <div className="px-3 py-1 rounded-lg text-[10px] font-bold text-black" style={{ background: accentColor }}>Accent Button</div>
+            <div className="px-3 py-1 rounded-lg text-[10px] font-bold text-black" style={{ background: c.primary }}>Sample Button</div>
             <div className="px-3 py-1 rounded-lg text-[10px] font-bold border" style={{ borderColor: c.border, color: c.textSec }}>Secondary</div>
           </div>
         </div>
@@ -2125,23 +2085,41 @@ export function PrivacySection({
 }
 
 // ─── Connected Accounts Section ──────────────────────────────────────────
+const PROVIDER_AUTH_URLS: Record<string, string> = {
+  Google: "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Faccounts.google.com%2F&service=mail&flowName=GlifWebSignIn&flowEntry=ServiceLogin",
+  GitHub: "https://github.com/login",
+  Microsoft: "https://login.microsoftonline.com/",
+  LinkedIn: "https://www.linkedin.com/login",
+};
+
 export function ConnectedAccountsSection({
   c, accounts, setAccounts, markChanged, scheduleSave,
 }: {
   c: Record<string, string>;
-  accounts: { name: string; icon: string; color: string; connected: boolean }[];
-  setAccounts: (v: { name: string; icon: string; color: string; connected: boolean }[]) => void;
+  accounts: { name: string; icon: string; color: string; connected: boolean; authUrl?: string }[];
+  setAccounts: (v: any) => void;
   markChanged: () => void;
   scheduleSave: (section: string, data: Record<string, unknown>) => void;
 }) {
   const toggleAccount = (index: number) => {
+    const acct = accounts[index];
+    const isConnecting = !acct.connected;
     const updated = [...accounts];
-    updated[index] = { ...updated[index], connected: !updated[index].connected };
+    updated[index] = { ...acct, connected: isConnecting };
     setAccounts(updated);
     markChanged();
-    const key = `${updated[index].name.toLowerCase()}Connected`;
-    scheduleSave("connected-accounts", { [key]: updated[index].connected });
-    toast.success(updated[index].connected ? `Connected to ${updated[index].name}` : `Disconnected from ${updated[index].name}`);
+    const key = `${acct.name.toLowerCase()}Connected`;
+    scheduleSave("connected-accounts", { [key]: isConnecting });
+
+    if (isConnecting) {
+      toast.info(`Redirecting to ${acct.name} login page...`);
+      const targetUrl = acct.authUrl || PROVIDER_AUTH_URLS[acct.name] || "https://google.com";
+      setTimeout(() => {
+        window.open(targetUrl, "_blank");
+      }, 400);
+    } else {
+      toast.success(`Disconnected from ${acct.name}`);
+    }
   };
 
   return (
@@ -2173,13 +2151,14 @@ export function ConnectedAccountsSection({
                 onClick={() => toggleAccount(i)}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all"
+                className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
                 style={{
                   background: acct.connected ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)",
                   color: acct.connected ? "#ef4444" : "#f59e0b",
                   border: `1px solid ${acct.connected ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.2)"}`,
                 }}
               >
+                {!acct.connected && <ExternalLink size={10} />}
                 {acct.connected ? "Disconnect" : "Connect"}
               </motion.button>
             </motion.div>
