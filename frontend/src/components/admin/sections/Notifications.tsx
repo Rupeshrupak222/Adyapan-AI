@@ -354,9 +354,9 @@ export default function Notifications() {
         <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
           {[
             { id: "ALL_FILTER", label: "All Broadcasts", icon: <Inbox size={13} /> },
-            { id: "ALL", label: "🌐 All Users", icon: <Users size={13} /> },
-            { id: "FREE", label: "🎁 Free Users", icon: <Gift size={13} /> },
-            { id: "PREMIUM", label: "👑 Premium Users", icon: <Crown size={13} /> },
+            { id: "ALL", label: "All Users", icon: <Users size={13} /> },
+            { id: "FREE", label: "Free Users", icon: <Gift size={13} /> },
+            { id: "PREMIUM", label: "Premium Users", icon: <Crown size={13} /> },
           ].map((tab) => {
             const active = targetFilter === tab.id;
             return (
@@ -649,7 +649,7 @@ export default function Notifications() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. 🎉 New AI Feature Released or 🚀 50% Off Pro Upgrade!"
+                    placeholder="e.g. New AI Feature Released or 50% Off Pro Upgrade!"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl text-xs font-bold border outline-none bg-slate-900 border-slate-800 text-white focus:border-amber-500"
@@ -682,12 +682,12 @@ export default function Notifications() {
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                       className="w-full px-3 py-2.5 rounded-xl text-xs font-bold border outline-none bg-slate-900 border-slate-800 text-white focus:border-amber-500"
                     >
-                      <option value="announcement">📢 Announcement</option>
-                      <option value="promotion">⚡ Special Offer / Discount</option>
-                      <option value="feature">✨ Feature Release</option>
-                      <option value="alert">⚠️ Important Alert</option>
-                      <option value="maintenance">🛠 Maintenance Notice</option>
-                      <option value="info">ℹ️ General Info</option>
+                      <option value="announcement">Announcement</option>
+                      <option value="promotion">Special Offer / Discount</option>
+                      <option value="feature">Feature Release</option>
+                      <option value="alert">Important Alert</option>
+                      <option value="maintenance">Maintenance Notice</option>
+                      <option value="info">General Info</option>
                     </select>
                   </div>
 
