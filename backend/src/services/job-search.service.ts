@@ -624,7 +624,10 @@ export class JobSearchService {
         }
       }
       const finalPostedAt = job.postedAt || job.createdAt || job.firstSeenAt || new Date();
-      return { ...job, skills: jobSkills, postedAt: finalPostedAt, postedDate: finalPostedAt };
+      // Normalize through the shared mapper so every card gets computed
+      // experience / mode / salary / education / passingYear strings.
+      const mapped = mapDiscoveryJobToListing(job) || {};
+      return { ...job, ...mapped, skills: jobSkills, postedAt: finalPostedAt, postedDate: finalPostedAt };
     });
 
     const totalPages = Math.ceil(total / limit);

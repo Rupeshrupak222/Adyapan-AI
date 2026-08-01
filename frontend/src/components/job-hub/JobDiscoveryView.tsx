@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
 import {
-  Briefcase, Search, Filter, MapPin, Building2, Globe, Clock, DollarSign,
+  Briefcase, Search, Filter, MapPin, Building2, Globe, Clock, DollarSign, GraduationCap,
   Sparkles, ExternalLink, Share2, Copy, X, ChevronDown,
   Loader2, SlidersHorizontal, Users, Target, Zap, FileText,
   Star, Bookmark, BookmarkCheck, BarChart3,
@@ -52,6 +52,7 @@ interface Job {
   industry?: string;
   companySize?: string;
   education?: string;
+  passingYear?: string;
   companyId?: string;
 }
 
@@ -482,7 +483,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   // ─── Filter State ───────────────────────────────────────────────────────
   const [filters, setFilters] = useState({
-    workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
+    location: "", workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
     salaryMin: "", salaryMax: "", skills: "", industry: "", education: "",
     companySize: "", source: "", postedWithin: "", company: "",
   });
@@ -536,6 +537,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   // ─── Active Filters ─────────────────────────────────────────────────────
   const activeFilters = useMemo(() => {
     const chips: { key: string; label: string }[] = [];
+    if (filters.location) chips.push({ key: "location", label: `Location: ${filters.location}` });
     if (filters.workMode) chips.push({ key: "workMode", label: filters.workMode });
     if (filters.employmentType) chips.push({ key: "employmentType", label: filters.employmentType });
     if (filters.experienceMin) chips.push({ key: "experienceMin", label: `Min Exp: ${filters.experienceMin}y` });
@@ -566,6 +568,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         sortBy, sortOrder: sortOrder,
       };
       if (debouncedQuery) params.query = debouncedQuery;
+      if (filters.location) params.location = filters.location;
       if (filters.workMode) params.workMode = filters.workMode;
       if (filters.employmentType) params.employmentType = filters.employmentType;
       if (filters.experienceMin) params.experienceMin = filters.experienceMin;
@@ -755,7 +758,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   const clearAllFilters = useCallback(() => {
     setFilters({
-      workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
+      location: "", workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
       salaryMin: "", salaryMax: "", skills: "", industry: "", education: "",
       companySize: "", source: "", postedWithin: "", company: "",
     });
@@ -874,6 +877,15 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                 }}>{mode}</button>
             ))}
           </div>
+        </div>
+
+        {/* Location */}
+        <div className="space-y-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Location</span>
+          <input type="text" placeholder="City, state, or country..." value={filters.location}
+            onChange={e => handleFilterChange("location", e.target.value)}
+            className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
+            style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
         </div>
 
         {/* Employment Type */}
@@ -1127,6 +1139,12 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
               <Clock size={9} /> {job.experience}
             </span>
           )}
+          {(job.education || job.passingYear) && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border"
+              style={{ background: "rgba(245,158,11,0.06)", color: "#f59e0b", borderColor: "rgba(245,158,11,0.12)" }}>
+              <GraduationCap size={9} /> {job.passingYear || job.education}
+            </span>
+          )}
           {job.source && (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border"
               style={{ background: sourceColor.bg, color: sourceColor.text, borderColor: `${sourceColor.text}20` }}>
@@ -1191,7 +1209,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             {job.mode && <span className="px-2 py-0.5 rounded text-[9px] font-bold border" style={{ background: modeColor.bg, color: modeColor.text, borderColor: `${modeColor.text}20` }}>{job.mode}</span>}
             {job.employmentType && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(16,185,129,0.06)", color: "#34d399" }}>{job.employmentType}</span>}
             {job.experience && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(236,72,153,0.06)", color: "#f472b6" }}>{job.experience}</span>}
-            {job.education && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(245,158,11,0.06)", color: "#f59e0b" }}>{job.education}</span>}
+            {(job.education || job.passingYear) && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(245,158,11,0.06)", color: "#f59e0b" }}>{job.passingYear || job.education}</span>}
             {job.source && <span className="px-2 py-0.5 rounded text-[9px] font-bold border" style={{ background: sourceColor.bg, color: sourceColor.text, borderColor: `${sourceColor.text}20` }}>{job.source}</span>}
           </div>
         </div>
@@ -1419,6 +1437,12 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border"
                       style={{ background: "rgba(236,72,153,0.08)", color: "#f472b6", borderColor: "rgba(236,72,153,0.15)" }}>
                       <Clock size={10} /> {selectedJob.experience}
+                    </span>
+                  )}
+                  {(selectedJob.education || selectedJob.passingYear) && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border"
+                      style={{ background: "rgba(245,158,11,0.08)", color: "#f59e0b", borderColor: "rgba(245,158,11,0.15)" }}>
+                      <GraduationCap size={10} /> {selectedJob.passingYear || selectedJob.education}
                     </span>
                   )}
                   {(selectedJob.salaryMin || selectedJob.salaryMax || selectedJob.salary) && (
@@ -2109,6 +2133,8 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {j.mode && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: modeColor.bg, color: modeColor.text }}>{j.mode}</span>}
                             {j.employmentType && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(16,185,129,0.06)", color: "#34d399" }}>{j.employmentType}</span>}
+                            {j.experience && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(236,72,153,0.06)", color: "#f472b6" }}>{j.experience}</span>}
+                            {(j.education || j.passingYear) && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(245,158,11,0.06)", color: "#f59e0b" }}>{j.passingYear || j.education}</span>}
                             {j.location && <span className="text-[10px] flex items-center gap-0.5" style={{ color: c.textMuted }}><MapPin size={9} /> {j.location}</span>}
                           </div>
                           {(j.salary || j.salaryMin || j.salaryMax) && (
