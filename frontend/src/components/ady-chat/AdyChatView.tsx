@@ -289,15 +289,27 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
     setInput(prompt);
   }, []);
 
+  // Lock dash-main to prevent page scroll when ady-chat is open
+  useEffect(() => {
+    const el = document.querySelector(".dash-main");
+    if (el) {
+      el.classList.add("ady-chat-active");
+    }
+    return () => {
+      if (el) {
+        el.classList.remove("ady-chat-active");
+      }
+    };
+  }, []);
+
   const hasMessages = messages.length > 0 || !!streamingText;
   const userName = user?.name || "Ashish";
 
   // ─── Render ────────────────────────────────────────────────────────────────
-  // NOTE: This component sits inside .dash-main (margin-left:60px, margin-top:70px).
-  // We use relative positioning so we NEVER overlap the dashboard nav or sidebar.
+  // Fixed full height layout — page does not scroll, only chat history and messages list scroll
   return (
     <div
-      className="relative flex overflow-hidden w-full h-[calc(100vh-80px)] min-h-[550px]"
+      className="relative flex overflow-hidden w-full h-[calc(100vh-70px)] max-h-[calc(100vh-70px)]"
       style={{
         background: "transparent",
       }}
@@ -426,7 +438,7 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
                   style={{
                     background: isDark
                       ? "linear-gradient(to top, rgba(7,7,21,0.98) 75%, transparent 100%)"
-                      : "linear-gradient(to top, rgba(240,244,255,0.98) 75%, transparent 100%)",
+                      : "linear-gradient(to top, rgba(255,255,255,0.98) 75%, transparent 100%)",
                   }}
                 >
                   <ChatInput
