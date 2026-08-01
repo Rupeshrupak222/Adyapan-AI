@@ -34,7 +34,6 @@ const sidebarSections: SidebarSectionItem[] = [
   { id: "audit", label: "Audit Center", icon: <ScrollText size={18} /> },
   { id: "notifications", label: "Notifications", icon: <Bell size={18} /> },
   { id: "developer", label: "Developer Center", icon: <Terminal size={18} /> },
-  { id: "ai-copilot", label: "AI Copilot", icon: <Bot size={18} /> },
   { id: "settings", label: "System Settings", icon: <Settings size={18} /> },
 ];
 

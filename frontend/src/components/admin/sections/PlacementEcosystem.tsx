@@ -61,6 +61,7 @@ export default function PlacementEcosystem() {
   const [createForm, setCreateForm] = useState({
     title: "", company: "", location: "", salaryMin: "", salaryMax: "",
     employmentType: "Full-Time", workMode: "Remote", description: "",
+    experienceMin: "", experienceMax: "", passingYear: "", applyUrl: "",
   });
   const [createLoading, setCreateLoading] = useState(false);
 
@@ -149,10 +150,18 @@ export default function PlacementEcosystem() {
         salaryMax: createForm.salaryMax ? Number(createForm.salaryMax) : undefined,
         employmentType: createForm.employmentType,
         workMode: createForm.workMode,
+        experienceMin: createForm.experienceMin ? Number(createForm.experienceMin) : undefined,
+        experienceMax: createForm.experienceMax ? Number(createForm.experienceMax) : undefined,
+        passingYear: createForm.passingYear.trim() || undefined,
+        applyUrl: createForm.applyUrl.trim() || undefined,
         description: createForm.description.trim() || undefined,
       });
       setShowCreate(false);
-      setCreateForm({ title: "", company: "", location: "", salaryMin: "", salaryMax: "", employmentType: "Full-Time", workMode: "Remote", description: "" });
+      setCreateForm({
+        title: "", company: "", location: "", salaryMin: "", salaryMax: "",
+        employmentType: "Full-Time", workMode: "Remote", description: "",
+        experienceMin: "", experienceMax: "", passingYear: "", applyUrl: "",
+      });
       fetchJobs(1, "");
     } catch {
       alert("Failed to create job");
@@ -599,6 +608,18 @@ export default function PlacementEcosystem() {
                   style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
                 />
               </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Apply Link / Career URL</label>
+                <input
+                  type="url"
+                  value={createForm.applyUrl}
+                  onChange={(e) => setCreateForm({ ...createForm, applyUrl: e.target.value })}
+                  placeholder="e.g. https://careers.google.com/jobs/1234"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                  style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Location</label>
@@ -634,6 +655,17 @@ export default function PlacementEcosystem() {
                   </select>
                 </div>
                 <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Batch / Passing Year</label>
+                  <input
+                    type="text"
+                    value={createForm.passingYear}
+                    onChange={(e) => setCreateForm({ ...createForm, passingYear: e.target.value })}
+                    placeholder="e.g. 2024, 2025"
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                    style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                  />
+                </div>
+                <div>
                   <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Min Salary (INR)</label>
                   <input
                     type="number"
@@ -651,6 +683,28 @@ export default function PlacementEcosystem() {
                     value={createForm.salaryMax}
                     onChange={(e) => setCreateForm({ ...createForm, salaryMax: e.target.value })}
                     placeholder="e.g. 1200000"
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                    style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Min Experience (Years)</label>
+                  <input
+                    type="number"
+                    value={createForm.experienceMin}
+                    onChange={(e) => setCreateForm({ ...createForm, experienceMin: e.target.value })}
+                    placeholder="e.g. 0"
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
+                    style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Max Experience (Years)</label>
+                  <input
+                    type="number"
+                    value={createForm.experienceMax}
+                    onChange={(e) => setCreateForm({ ...createForm, experienceMax: e.target.value })}
+                    placeholder="e.g. 2"
                     className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all mt-1.5"
                     style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
                   />

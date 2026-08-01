@@ -715,7 +715,7 @@ export class JobDiscoveryService {
             if (mergedRequirements) updateData.requirements = mergedRequirements;
             if (mergedResponsibilities) updateData.responsibilities = mergedResponsibilities;
             if (mergedBenefits) updateData.benefits = mergedBenefits;
-            const resolvedLogo = autoResolveCompanyLogo(job.company, job.companyLogo);
+            const resolvedLogo = autoResolveCompanyLogo(job.company, job.companyLogo, job.applyUrl || job.sourceUrl);
             if (resolvedLogo) updateData.logoUrl = resolvedLogo;
             if (job.companySize) updateData.companySize = job.companySize;
             if (job.industry) updateData.industry = job.industry;
@@ -726,7 +726,7 @@ export class JobDiscoveryService {
             });
             jobsUpdated++;
           } else {
-            const resolvedLogo = autoResolveCompanyLogo(job.company, job.companyLogo);
+            const resolvedLogo = autoResolveCompanyLogo(job.company, job.companyLogo, job.applyUrl || job.sourceUrl);
             await prisma.discoveryJob.create({
               data: {
                 fingerprint,
@@ -1016,6 +1016,54 @@ export class JobDiscoveryService {
       });
     } catch (err: any) {
       console.warn(`[JobDiscovery] Failed to update source status for ${sourceName}:`, err?.message);
+    }
+  }
+
+  /**
+   * 24-Hour automated check & auto-resolution for all company logos in Job Discovery
+   */
+  static async refreshCompanyLogos(): Promise<{ checked: number; updated: number }> {
+    const prisma = getMasterPrisma();
+    console.log("[JobDiscoveryService] Starting 24-hour company logo check & auto-fetch...");
+
+    try {
+      const jobs = await prisma.discoveryJob.findMany({
+        where: { isActive: true },
+        select: { id: true, company: true, logoUrl: true, applyUrl: true, sourceUrl: true },
+      });
+
+      let updated = 0;
+      for (const job of jobs) {
+        const resolvedLogo = autoResolveCompanyLogo(job.company, job.logoUrl, job.applyUrl || job.sourceUrl);
+        if (resolvedLogo && resolvedLogo !== job.logoUrl) {
+          await prisma.discoveryJob.update({
+            where: { id: job.id },
+            data: { logoUrl: resolvedLogo },
+          });
+          updated++;
+        }
+      }
+
+      try {
+        const companies = await (prisma as any).discoveryCompany.findMany({
+          select: { id: true, name: true, logoUrl: true, website: true },
+        });
+        for (const comp of companies) {
+          const resolvedLogo = autoResolveCompanyLogo(comp.name, comp.logoUrl, comp.website);
+          if (resolvedLogo && resolvedLogo !== comp.logoUrl) {
+            await (prisma as any).discoveryCompany.update({
+              where: { id: comp.id },
+              data: { logoUrl: resolvedLogo },
+            });
+          }
+        }
+      } catch {}
+
+      console.log(`[JobDiscoveryService] 24-Hour company logo check completed: Checked ${jobs.length} jobs, updated ${updated} company logos.`);
+      return { checked: jobs.length, updated };
+    } catch (err: any) {
+      console.error("[JobDiscoveryService] Error refreshing company logos:", err?.message || err);
+      return { checked: 0, updated: 0 };
     }
   }
 }

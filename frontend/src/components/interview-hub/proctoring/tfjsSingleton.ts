@@ -28,6 +28,7 @@ export async function loadCocoSsdModel(
   tfModelPromise = (async () => {
     try {
       onProgress?.("Preparing Interview Environment");
+      // @ts-ignore
       const tf = await import("@tensorflow/tfjs");
       onProgress?.("Loading AI Proctor");
       if (tf && typeof tf.ready === "function") {
@@ -35,6 +36,7 @@ export async function loadCocoSsdModel(
       }
 
       onProgress?.("Loading Object Detection");
+      // @ts-ignore
       const coco = await import("@tensorflow-models/coco-ssd");
       const model = await coco.load({
         base: "lite_mobilenet_v2",

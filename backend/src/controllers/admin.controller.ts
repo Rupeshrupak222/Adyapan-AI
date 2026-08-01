@@ -618,11 +618,19 @@ export async function getAdminJobs(req: Request, res: Response, next: NextFuncti
 
 export async function createAdminJob(req: Request, res: Response, next: NextFunction) {
   try {
-    const { title, company, location, salaryMin, salaryMax, employmentType, workMode, applyUrl, description, skills } = req.body;
+    const {
+      title, company, location, salaryMin, salaryMax, employmentType, workMode,
+      applyUrl, description, skills, experienceMin, experienceMax, education, passingYear
+    } = req.body;
     if (!title || !company) throw httpError(400, "Title and company are required");
 
     const fingerprint = `${company.toLowerCase().replace(/[^a-z0-9]/g, "")}-${title.toLowerCase().replace(/[^a-z0-9]/g, "")}-${Date.now()}`;
-    const logoUrl = autoResolveCompanyLogo(company, req.body.logoUrl);
+    const logoUrl = autoResolveCompanyLogo(company, req.body.logoUrl, applyUrl);
+
+    let educationStr = education || "";
+    if (passingYear) {
+      educationStr = `Batch ${passingYear}`;
+    }
 
     let finalSkills = Array.isArray(skills) && skills.length > 0 ? skills : [];
     if (finalSkills.length === 0) {
@@ -649,10 +657,15 @@ export async function createAdminJob(req: Request, res: Response, next: NextFunc
         description: description || "No description provided",
         salaryMin: salaryMin ? Number(salaryMin) : null,
         salaryMax: salaryMax ? Number(salaryMax) : null,
+        salaryCurrency: "INR",
+        experienceMin: experienceMin !== undefined && experienceMin !== null && experienceMin !== "" ? Number(experienceMin) : null,
+        experienceMax: experienceMax !== undefined && experienceMax !== null && experienceMax !== "" ? Number(experienceMax) : null,
+        education: educationStr,
         employmentType: employmentType || "Full-Time",
         workMode: workMode || "Remote",
         skills: finalSkills,
-        applyUrl: applyUrl || "https://adyapan.ai",
+        applyUrl: applyUrl ? String(applyUrl).trim() : "https://adyapan.ai",
+        sourceUrl: applyUrl ? String(applyUrl).trim() : null,
         source: "Admin Manual",
         isActive: true,
         isFeatured: true,
@@ -668,7 +681,10 @@ export async function createAdminJob(req: Request, res: Response, next: NextFunc
 export async function updateAdminJob(req: Request, res: Response, next: NextFunction) {
   try {
     const jobId = req.params.id as string;
-    const { isActive, isFeatured, title, company, location, salaryMin, salaryMax } = req.body;
+    const {
+      isActive, isFeatured, title, company, location, salaryMin, salaryMax,
+      applyUrl, experienceMin, experienceMax, education, passingYear
+    } = req.body;
 
     const job = await (prisma as any).discoveryJob.findUnique({ where: { id: jobId } });
     if (!job) throw httpError(404, "Job not found");
@@ -677,13 +693,21 @@ export async function updateAdminJob(req: Request, res: Response, next: NextFunc
     if (typeof isActive === "boolean") updateData.isActive = isActive;
     if (typeof isFeatured === "boolean") updateData.isFeatured = isFeatured;
     if (title) updateData.title = title;
-    if (company) {
-      updateData.company = company;
-      updateData.logoUrl = autoResolveCompanyLogo(company, job.logoUrl);
+    if (applyUrl !== undefined) {
+      updateData.applyUrl = applyUrl ? applyUrl.trim() : null;
+    }
+    if (company || applyUrl) {
+      updateData.company = company || job.company;
+      updateData.logoUrl = autoResolveCompanyLogo(company || job.company, job.logoUrl, applyUrl || job.applyUrl);
     }
     if (location) updateData.location = location;
     if (salaryMin !== undefined) updateData.salaryMin = Number(salaryMin);
     if (salaryMax !== undefined) updateData.salaryMax = Number(salaryMax);
+    if (experienceMin !== undefined) updateData.experienceMin = experienceMin ? Number(experienceMin) : null;
+    if (experienceMax !== undefined) updateData.experienceMax = experienceMax ? Number(experienceMax) : null;
+    if (passingYear !== undefined || education !== undefined) {
+      updateData.education = passingYear ? `Batch ${passingYear}` : (education || "");
+    }
 
     const updated = await (prisma as any).discoveryJob.update({
       where: { id: jobId },

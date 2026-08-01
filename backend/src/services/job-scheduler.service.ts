@@ -54,7 +54,10 @@ export class JobSchedulerService {
         totalUpdated += r.jobsUpdated || 0;
       }
 
-      console.log(`[JobScheduler] 24-hour sync complete. Inserted ${totalInserted} new jobs, updated ${totalUpdated} jobs.`);
+      console.log(`[JobScheduler] 24-hour job sync complete. Inserted ${totalInserted} new jobs, updated ${totalUpdated} jobs.`);
+
+      // Automatically check and resolve all company logos every 24 hours
+      await JobDiscoveryService.refreshCompanyLogos();
     } catch (err: any) {
       console.error("[JobScheduler] Error during 24-hour automated job sync:", err?.message || err);
     } finally {

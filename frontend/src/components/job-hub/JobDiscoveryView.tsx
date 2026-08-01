@@ -1132,7 +1132,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             )}
             {(job.salaryMin || job.salaryMax || job.salary) && (
               <span className="text-[10px] font-bold flex items-center gap-1" style={{ color: "#10b981" }}>
-                <DollarSign size={10} /> {job.salary || formatSalary(job.salaryMin, job.salaryMax)}
+                <span className="font-extrabold text-[11px]">₹</span> {job.salary ? job.salary.replace("$", "₹") : formatSalary(job.salaryMin, job.salaryMax)}
               </span>
             )}
           </div>
@@ -1167,13 +1167,14 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             {job.mode && <span className="px-2 py-0.5 rounded text-[9px] font-bold border" style={{ background: modeColor.bg, color: modeColor.text, borderColor: `${modeColor.text}20` }}>{job.mode}</span>}
             {job.employmentType && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(16,185,129,0.06)", color: "#34d399" }}>{job.employmentType}</span>}
             {job.experience && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(236,72,153,0.06)", color: "#f472b6" }}>{job.experience}</span>}
+            {job.education && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(245,158,11,0.06)", color: "#f59e0b" }}>{job.education}</span>}
             {job.source && <span className="px-2 py-0.5 rounded text-[9px] font-bold border" style={{ background: sourceColor.bg, color: sourceColor.text, borderColor: `${sourceColor.text}20` }}>{job.source}</span>}
           </div>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
           {(job.salaryMin || job.salaryMax || job.salary) && (
             <span className="text-[11px] font-bold flex items-center gap-1" style={{ color: "#10b981" }}>
-              <DollarSign size={10} /> {job.salary || formatSalary(job.salaryMin, job.salaryMax)}
+              <span className="font-extrabold text-[11px]">₹</span> {job.salary ? job.salary.replace("$", "₹") : formatSalary(job.salaryMin, job.salaryMax)}
             </span>
           )}
           <span className="text-[9px] font-semibold" style={{ color: c.textMuted }}>{timeAgo(job.postedAt)}</span>
