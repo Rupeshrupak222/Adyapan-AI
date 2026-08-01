@@ -2583,13 +2583,13 @@ ${resumeText}
 JOB REQUIREMENTS:
 - Company: ${parsedJD.companyName}
 - Role: ${parsedJD.role}
-- Required Skills: ${parsedJD.requiredSkills.join(", ")}
-- Preferred Skills: ${parsedJD.preferredSkills.join(", ")}
-- Responsibilities: ${parsedJD.responsibilities.join("; ")}
-- Experience Level: ${parsedJD.experienceLevel}
-- Tech Stack: ${parsedJD.techStack.join(", ")}
-- Soft Skills: ${parsedJD.softSkills.join(", ")}
-- Qualifications: ${parsedJD.qualifications.join("; ")}
+- Required Skills: ${(parsedJD.requiredSkills || []).join(", ")}
+- Preferred Skills: ${(parsedJD.preferredSkills || []).join(", ")}
+- Responsibilities: ${(parsedJD.responsibilities || []).join("; ")}
+- Experience Level: ${parsedJD.experienceLevel || ""}
+- Tech Stack: ${(parsedJD.techStack || []).join(", ")}
+- Soft Skills: ${(parsedJD.softSkills || []).join(", ")}
+- Qualifications: ${(parsedJD.qualifications || []).join("; ")}
 
 Analyze:
 1. Overall match score (0-100)
@@ -2642,7 +2642,7 @@ ${resumeText.substring(0, 2000)}
 JOB:
 - Role: ${parsedJD.role}
 - Company: ${parsedJD.companyName}
-- Required Skills: ${parsedJD.requiredSkills.join(", ")}
+- Required Skills: ${(parsedJD.requiredSkills || []).join(", ")}
 
 Score each dimension (0-100):
 1. Overall Quality
@@ -2830,7 +2830,7 @@ RESUME:
 ${resumeText.substring(0, 2000)}
 """
 
-${parsedJD ? `JOB REQUIREMENTS: ${parsedJD.requiredSkills.join(", ")}` : ""}
+${parsedJD ? `JOB REQUIREMENTS: ${(parsedJD.requiredSkills || []).join(", ")}` : ""}
 
 Provide 5-7 specific improvement suggestions. Each should be actionable and reference either the resume or job requirements. Do NOT give generic advice.
 

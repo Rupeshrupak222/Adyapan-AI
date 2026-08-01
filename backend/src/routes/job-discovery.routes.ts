@@ -58,17 +58,27 @@ jobDiscoveryRouter.get("/jobs", async (req: Request, res: Response) => {
   }
 });
 
-// ─── GET /jobs/:id - Get job detail ────────────────────────────────────
-jobDiscoveryRouter.get("/jobs/:id", async (req: Request, res: Response) => {
+// ─── GET /jobs/saved - Saved jobs ──────────────────────────────────────
+jobDiscoveryRouter.get("/jobs/saved", async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
-    const job = await JobSearchService.getJobById(req.params.id as string, userId);
-    if (!job) {
-      return res.status(404).json({ success: false, message: "Job not found" });
-    }
-    res.json({ success: true, job });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const result = await JobSearchService.getSavedJobs(userId, page, limit);
+    res.json({ success: true, ...result });
   } catch (error) {
-    handleRouteError(res, error, "Discovery.getJob", "Failed to get job");
+    handleRouteError(res, error, "Discovery.saved", "Failed to get saved jobs");
+  }
+});
+
+// ─── POST /jobs/:id/save - Toggle save ─────────────────────────────────
+jobDiscoveryRouter.post("/jobs/:id/save", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const result = await JobSearchService.toggleSave(userId, req.params.id as string);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    handleRouteError(res, error, "Discovery.save", "Failed to save job");
   }
 });
 
@@ -85,74 +95,6 @@ jobDiscoveryRouter.get("/jobs/company/:slug", async (req: Request, res: Response
   }
 });
 
-// ─── GET /companies - List all companies ───────────────────────────────
-jobDiscoveryRouter.get("/companies", async (_req: Request, res: Response) => {
-  try {
-    const companies = await JobSearchService.getCompanies();
-    res.json({ success: true, companies });
-  } catch (error) {
-    handleRouteError(res, error, "Discovery.companies", "Failed to get companies");
-  }
-});
-
-// ─── GET /recommended - Recommended jobs ───────────────────────────────
-jobDiscoveryRouter.get("/recommended", async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.userId;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const jobs = await JobSearchService.getRecommendedJobs(userId, limit);
-    res.json({ success: true, jobs });
-  } catch (error) {
-    handleRouteError(res, error, "Discovery.recommended", "Failed to get recommendations");
-  }
-});
-
-// ─── GET /trending - Trending jobs ─────────────────────────────────────
-jobDiscoveryRouter.get("/trending", async (req: Request, res: Response) => {
-  try {
-    const limit = parseInt(req.query.limit as string) || 10;
-    const jobs = await JobSearchService.getTrendingJobs(limit);
-    res.json({ success: true, jobs });
-  } catch (error) {
-    handleRouteError(res, error, "Discovery.trending", "Failed to get trending jobs");
-  }
-});
-
-// ─── GET /suggestions - Search autocomplete ────────────────────────────
-jobDiscoveryRouter.get("/suggestions", async (req: Request, res: Response) => {
-  try {
-    const q = (req.query.q as string) || "";
-    const suggestions = await JobSearchService.getSuggestions(q);
-    res.json({ success: true, suggestions });
-  } catch (error) {
-    handleRouteError(res, error, "Discovery.suggestions", "Failed to get suggestions");
-  }
-});
-
-// ─── POST /jobs/:id/save - Toggle save ─────────────────────────────────
-jobDiscoveryRouter.post("/jobs/:id/save", async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.userId;
-    const result = await JobSearchService.toggleSave(userId, req.params.id as string);
-    res.json({ success: true, ...result });
-  } catch (error) {
-    handleRouteError(res, error, "Discovery.save", "Failed to save job");
-  }
-});
-
-// ─── GET /jobs/saved - Saved jobs ──────────────────────────────────────
-jobDiscoveryRouter.get("/jobs/saved", async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.userId;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const result = await JobSearchService.getSavedJobs(userId, page, limit);
-    res.json({ success: true, ...result });
-  } catch (error) {
-    handleRouteError(res, error, "Discovery.saved", "Failed to get saved jobs");
-  }
-});
-
 // ─── GET /jobs/recently-viewed - Recently viewed ──────────────────────
 jobDiscoveryRouter.get("/jobs/recently-viewed", async (req: Request, res: Response) => {
   try {
@@ -162,6 +104,21 @@ jobDiscoveryRouter.get("/jobs/recently-viewed", async (req: Request, res: Respon
     res.json({ success: true, jobs });
   } catch (error) {
     handleRouteError(res, error, "Discovery.recentlyViewed", "Failed to get recently viewed");
+  }
+});
+
+// ─── GET /jobs/:id - Get job detail ────────────────────────────────────
+// NOTE: This wildcard must come LAST among /jobs/* routes
+jobDiscoveryRouter.get("/jobs/:id", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const job = await JobSearchService.getJobById(req.params.id as string, userId);
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+    res.json({ success: true, job });
+  } catch (error) {
+    handleRouteError(res, error, "Discovery.getJob", "Failed to get job");
   }
 });
 

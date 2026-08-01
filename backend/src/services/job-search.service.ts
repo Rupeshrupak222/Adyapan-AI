@@ -1,4 +1,5 @@
-import { getMasterPrisma } from "../config/dynamicPrisma";
+import { getMasterPrisma, getUserPrisma } from "../config/dynamicPrisma";
+import { mapDiscoveryJobToListing } from "../utils/jobListingMapper";
 import { JobDiscoveryService } from "./job-discovery.service";
 // AI integration available for future use
 
@@ -901,47 +902,56 @@ export class JobSearchService {
     ]);
 
     const jobIds = savedRecords.map((r: any) => r.jobId);
-    let jobs: any[] = [];
+    const jobMap: Record<string, any> = {};
+
     if (jobIds.length > 0) {
-      jobs = await db.discoveryJob.findMany({ where: { id: { in: jobIds } } });
-      const foundIds = new Set(jobs.map((j: any) => j.id));
+      // 1. Look up in the master discovery database first
+      const masterJobs = await db.discoveryJob.findMany({ where: { id: { in: jobIds } } });
+      masterJobs.forEach((j: any) => { jobMap[j.id] = j; });
+
+      const foundIds = new Set(masterJobs.map((j: any) => j.id));
       const missingIds = jobIds.filter((id: string) => !foundIds.has(id));
+
+      // 2. Fall back to the user database jobListing table for custom/scraped jobs
       if (missingIds.length > 0) {
         try {
-          const userJobs = await db.jobListing.findMany({ where: { id: { in: missingIds } } });
-          jobs.push(...userJobs);
-        } catch {}
+          const userPrisma = await getUserPrisma(userId);
+          const userJobs = await userPrisma.jobListing.findMany({ where: { id: { in: missingIds } } });
+          userJobs.forEach((j: any) => { jobMap[j.id] = j; });
+        } catch (err: any) {
+          console.warn("[JobSearchService] Failed to load custom saved jobs from user DB:", err?.message || err);
+        }
       }
     }
 
-    const jobMap: Record<string, any> = {};
-    jobs.forEach((j: any) => { jobMap[j.id] = j; });
-
     const result = savedRecords.map((r: any) => {
-      const job = jobMap[r.jobId] || {};
-      const expMin = job.experienceMin;
-      const expMax = job.experienceMax;
-      let expStr = job.experience || "";
-      if (expMin !== undefined && expMin !== null) {
-        expStr = expMax && expMax > expMin ? `${expMin}-${expMax} Yrs` : `${expMin}+ Yrs`;
+      const rawJob = jobMap[r.jobId];
+      if (!rawJob) {
+        return {
+          id: r.jobId,
+          jobListingId: r.jobId,
+          title: "Saved Role",
+          company: "Company",
+          logoUrl: null,
+          location: "Remote",
+          mode: "On-site",
+          employmentType: "Full-Time",
+          salary: "Competitive",
+          skills: [],
+          description: "",
+          applyUrl: "https://adyapan.ai",
+          isSaved: true,
+          savedAt: r.createdAt,
+          collection: r.collection,
+          notes: r.notes,
+        };
       }
 
+      const job = mapDiscoveryJobToListing(rawJob) || {};
       return {
+        ...job,
         id: r.jobId,
         jobListingId: r.jobId,
-        title: job.title || "Saved Role",
-        company: job.company || "Company",
-        logoUrl: job.logoUrl || null,
-        location: job.location || "Remote",
-        mode: job.workMode || job.mode || "On-site",
-        employmentType: job.employmentType || "Full-Time",
-        salary: job.salary || (job.salaryMin ? `₹${(job.salaryMin / 100000).toFixed(1)}L PA` : "Competitive"),
-        experience: expStr,
-        education: job.education || "",
-        passingYear: job.education || "",
-        skills: Array.isArray(job.skills) ? job.skills : [],
-        description: job.description || "",
-        applyUrl: job.applyUrl || job.sourceUrl || "https://adyapan.ai",
         isSaved: true,
         savedAt: r.createdAt,
         collection: r.collection,

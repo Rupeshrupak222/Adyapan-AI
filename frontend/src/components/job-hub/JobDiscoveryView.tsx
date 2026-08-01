@@ -602,10 +602,24 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     try {
       const res = await api.get("/discovery/jobs/saved");
       const data = res.data;
-      const list = data.jobs || data.data || data || [];
+      // Backend returns { success: true, jobs: [...], total: N }
+      const list = Array.isArray(data.jobs) ? data.jobs
+        : Array.isArray(data.data) ? data.data
+        : Array.isArray(data) ? data
+        : [];
       setSavedJobs(list);
-      setSavedIds(new Set(list.map((j: any) => j.id || j.jobListingId)));
-    } catch { /* silent */ }
+      // Build savedIds from the list - use the job id field
+      setSavedIds(prev => {
+        const next = new Set(prev);
+        list.forEach((j: any) => {
+          const id = j.id || j.jobListingId || j.jobId;
+          if (id) next.add(id);
+        });
+        return next;
+      });
+    } catch (err) {
+      console.error("[fetchSavedJobs]", err);
+    }
   }, []);
 
   const fetchSuggestions = useCallback(async (q: string) => {
@@ -704,6 +718,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   }, [debouncedQuery, filters, sortBy, sortOrder, skillTags, fetchJobs]);
 
   useEffect(() => { fetchSavedJobs(); }, [fetchSavedJobs]);
+  useEffect(() => { if (savedPage === "saved") fetchSavedJobs(); }, [savedPage]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { fetchSidebarData(); }, [fetchSidebarData]);
 
   useEffect(() => {
@@ -1940,7 +1955,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             <div>
               <h1 className="text-xl font-bold" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>Job Discovery</h1>
               <p className="text-[11px]" style={{ color: c.textMuted }}>
-                {total.toLocaleString()} jobs found {activeFilters.length > 0 ? `· ${activeFilters.length} filters` : ""}
+                {formatCap99(total)} jobs found {activeFilters.length > 0 ? `· ${activeFilters.length} filters` : ""}
               </p>
             </div>
           </div>
@@ -1965,8 +1980,8 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
               }}>
               {savedPage === "saved" ? <BookmarkCheck size={14} /> : <Bookmark size={14} />} Saved
               {savedIds.size > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[8px] font-black flex items-center justify-center text-white"
-                  style={{ background: c.primary }}>{savedIds.size}</span>
+                <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-0.5 rounded-full text-[8px] font-black flex items-center justify-center text-white"
+                  style={{ background: c.primary }}>{formatCap99(savedIds.size)}</span>
               )}
             </button>
             <button onClick={() => setMobileFiltersOpen(true)}
@@ -2072,7 +2087,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
-                  <BookmarkCheck size={16} style={{ color: c.primary }} /> Saved Jobs ({savedJobs.length})
+                  <BookmarkCheck size={16} style={{ color: c.primary }} /> Saved Jobs ({formatCap99(savedJobs.length)})
                 </h2>
                 <button onClick={() => setSavedPage("browse")}
                   className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:scale-105"
@@ -2093,8 +2108,14 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                           <span className="text-[11px] font-semibold" style={{ color: c.textSec }}>{j.company}</span>
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {j.mode && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: modeColor.bg, color: modeColor.text }}>{j.mode}</span>}
+                            {j.employmentType && <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(16,185,129,0.06)", color: "#34d399" }}>{j.employmentType}</span>}
                             {j.location && <span className="text-[10px] flex items-center gap-0.5" style={{ color: c.textMuted }}><MapPin size={9} /> {j.location}</span>}
                           </div>
+                          {(j.salary || j.salaryMin || j.salaryMax) && (
+                            <div className="mt-1.5 text-[10px] font-bold flex items-center gap-1" style={{ color: "#10b981" }}>
+                              <span className="font-extrabold text-[11px]">₹</span> {j.salary || formatSalary(j.salaryMin, j.salaryMax)}
+                            </div>
+                          )}
                         </div>
                         <button onClick={e => { e.stopPropagation(); toggleSave(j.id); }}
                           className="p-2 rounded-lg transition-all hover:scale-110 bg-transparent border-none cursor-pointer"
@@ -2146,7 +2167,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                     )}
                     {!hasMore && jobs.length > 0 && (
                       <span className="text-[11px] font-semibold" style={{ color: c.textMuted }}>
-                        You&apos;ve seen all {total} jobs
+                        You&apos;ve seen all {formatCap99(total)} jobs
                       </span>
                     )}
                   </div>
