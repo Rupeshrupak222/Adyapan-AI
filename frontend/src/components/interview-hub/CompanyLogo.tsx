@@ -277,13 +277,23 @@ export default function CompanyLogo({
   }
 
   // 3. Clearbit Logo API (most reliable high-res company logo API)
-  if (domain && !domain.endsWith(".com.com")) {
+  if (domain) {
     sources.push(`https://logo.clearbit.com/${domain}`);
   }
 
   // 4. Simple Icons SVG Repository
   if (key) {
     sources.push(`https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/${key}.svg`);
+  }
+
+  // 5. Unavatar API
+  if (domain) {
+    sources.push(`https://unavatar.io/${domain}?fallback=false`);
+  }
+
+  // 6. Google Favicons 128px API
+  if (domain) {
+    sources.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
   }
 
   const currentSrc = sources[srcIndex];
@@ -293,14 +303,6 @@ export default function CompanyLogo({
       setSrcIndex(prev => prev + 1);
     } else {
       setImgError(true);
-    }
-  };
-
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    const img = e.currentTarget;
-    // Discard 16x16 default blank document icons returned by fallback APIs
-    if (img.naturalWidth <= 16 && img.naturalHeight <= 16) {
-      handleImageError();
     }
   };
 
@@ -328,18 +330,42 @@ export default function CompanyLogo({
           height={size - 10}
           className="max-w-full max-h-full object-contain filter drop-shadow-sm"
           onError={handleImageError}
-          onLoad={handleImageLoad}
         />
       </div>
     );
   }
 
-  // Elegant initial letter badge fallback using company name initial
+  // TCS special SVG fallback
+  if (key === "tcs") {
+    return (
+      <div
+        className={`rounded-xl flex items-center justify-center p-1 shrink-0 transition-transform hover:scale-105 ${className}`}
+        style={{
+          width: size,
+          height: size,
+          background: containerBg,
+          border: containerBorder,
+          boxShadow: containerShadow,
+        }}
+      >
+        <svg viewBox="0 0 100 40" className="w-full h-full object-contain">
+          <text x="50" y="26" textAnchor="middle" fill="#0066B3" fontSize="26" fontWeight="900" fontFamily="system-ui, -apple-system, sans-serif" letterSpacing="-1">TCS</text>
+        </svg>
+      </div>
+    );
+  }
+
+  // Elegant letter badge fallback using company name initials
   const cleanName = name.trim();
-  const initial = cleanName.charAt(0).toUpperCase() || "C";
+  const initials = cleanName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0]?.toUpperCase())
+    .join("") || cleanName.substring(0, 2).toUpperCase() || "C";
 
   const colorPalette = getCompanyColor(cleanName);
-  const fontSize = Math.max(12, Math.floor(size * 0.45));
+  const fontSize = Math.max(10, Math.floor(size * 0.38));
 
   return (
     <div
@@ -352,11 +378,10 @@ export default function CompanyLogo({
         border: `1px solid ${colorPalette.border}`,
         boxShadow: `0 4px 14px ${colorPalette.border}`,
         fontSize,
-        fontFamily: "Outfit, sans-serif",
       }}
       title={cleanName}
     >
-      {initial}
+      {initials}
     </div>
   );
 }
