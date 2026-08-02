@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
-import { User, Mic, MicOff, Camera } from "lucide-react";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, Mic, MicOff, Camera, PictureInPicture, Maximize2, Minimize2 } from "lucide-react";
 import type { ConversationState, SilenceStage } from "./conversation-types";
 
 interface CandidateCardProps {
@@ -15,6 +15,8 @@ interface CandidateCardProps {
   proctoringHUD?: React.ReactNode;
   theme?: string;
   className?: string;
+  isFloatingPIP?: boolean;
+  onTogglePIP?: () => void;
 }
 
 export const CandidateCard: React.FC<CandidateCardProps> = ({
@@ -27,7 +29,13 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   proctoringHUD,
   theme = "dark",
   className = "",
+  isFloatingPIP: externalPIP,
+  onTogglePIP,
 }) => {
+  const [internalPIP, setInternalPIP] = useState(false);
+  const isFloating = externalPIP !== undefined ? externalPIP : internalPIP;
+  const togglePIP = onTogglePIP || (() => setInternalPIP((prev) => !prev));
+
   const isDark = theme === "dark";
   const isSpeaking = micLevel > 15;
 
@@ -68,20 +76,22 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       : "bg-purple-100 text-purple-800 border-purple-300";
   }
 
-  return (
-    <div
-      className={`relative h-full flex flex-col justify-between p-3.5 rounded-2xl border backdrop-blur-md overflow-hidden transition-all duration-300 ${
+  const containerClasses = isFloating
+    ? "fixed bottom-14 right-4 z-50 w-72 md:w-80 h-56 rounded-2xl border border-cyan-500/40 bg-slate-950/95 backdrop-blur-xl shadow-2xl p-2.5 text-slate-100 flex flex-col justify-between"
+    : `relative h-full flex flex-col justify-between p-3.5 rounded-2xl border backdrop-blur-md overflow-hidden transition-all duration-300 ${
         isDark
           ? "bg-slate-900/90 border-slate-800 shadow-xl shadow-cyan-950/20 text-slate-100"
           : "bg-white/95 border-slate-200 shadow-xl shadow-slate-200/70 text-slate-900"
-      } ${className}`}
-    >
+      } ${className}`;
+
+  return (
+    <div className={containerClasses}>
       {/* Top Header Bar */}
       <div className="flex items-center justify-between z-10 mb-2 shrink-0">
         <div className="flex items-center space-x-2">
           <div
             className={`p-1 rounded-lg border ${
-              isDark
+              isDark || isFloating
                 ? "bg-cyan-600/20 text-cyan-400 border-cyan-500/30"
                 : "bg-cyan-100 text-cyan-700 border-cyan-200"
             }`}
@@ -91,31 +101,48 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           <div>
             <h4
               className={`text-xs font-bold tracking-wide leading-tight ${
-                isDark ? "text-slate-100" : "text-slate-900"
+                isDark || isFloating ? "text-slate-100" : "text-slate-900"
               }`}
             >
               {candidateName}
             </h4>
             <span
               className={`text-[10px] font-semibold block ${
-                isDark ? "text-cyan-400" : "text-cyan-700"
+                isDark || isFloating ? "text-cyan-400" : "text-cyan-700"
               }`}
             >
-              Candidate Feed
+              {isFloating ? "Floating Camera PIP" : "Candidate Feed"}
             </span>
           </div>
         </div>
 
-        {/* Status Pill */}
-        <div
-          className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full border text-[11px] font-semibold ${badgeColor}`}
-        >
-          {isSpeaking ? (
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-          ) : (
-            <Mic className="w-3 h-3" />
-          )}
-          <span>{silenceLabel}</span>
+        <div className="flex items-center space-x-1.5">
+          {/* Status Pill */}
+          <div
+            className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold ${badgeColor}`}
+          >
+            {isSpeaking ? (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+            ) : (
+              <Mic className="w-2.5 h-2.5" />
+            )}
+            <span>{isSpeaking ? "Speaking" : silenceStage !== "none" ? silenceStage : "Ready"}</span>
+          </div>
+
+          {/* Camera PIP Popup Toggle */}
+          <button
+            onClick={togglePIP}
+            className={`p-1 rounded-lg border text-xs transition-colors ${
+              isFloating
+                ? "bg-cyan-600 text-white border-cyan-400"
+                : isDark
+                ? "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
+            }`}
+            title={isFloating ? "Dock Camera Back to Grid" : "Float Camera as PIP Popup"}
+          >
+            {isFloating ? <Maximize2 className="w-3.5 h-3.5" /> : <PictureInPicture className="w-3.5 h-3.5" />}
+          </button>
         </div>
       </div>
 
@@ -125,14 +152,14 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           videoElement
         ) : (
           <div className="flex flex-col items-center justify-center p-4 text-center text-slate-400">
-            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mb-2 border border-slate-700">
-              <Camera className="w-6 h-6 text-slate-400 opacity-60" />
+            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center mb-1 border border-slate-700">
+              <Camera className="w-5 h-5 text-slate-400 opacity-60" />
             </div>
-            <p className="text-xs font-medium">Webcam Video Feed</p>
+            <p className="text-[11px] font-medium">Webcam Video Feed</p>
           </div>
         )}
 
-        {/* Proctoring HUD Overlay */}
+        {/* Proctoring HUD Overlay (Includes Persons Counter) */}
         {proctoringHUD && (
           <div className="absolute top-2 left-2 right-2 z-20 pointer-events-none max-w-full overflow-hidden">
             {proctoringHUD}
@@ -141,8 +168,8 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
         {/* Microphone Audio Level Overlay */}
         <div
-          className={`absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center space-x-2 backdrop-blur-md px-2.5 py-1 rounded-lg border ${
-            isDark
+          className={`absolute bottom-2 left-2 right-2 z-20 flex items-center space-x-2 backdrop-blur-md px-2 py-0.5 rounded-lg border ${
+            isDark || isFloating
               ? "bg-slate-900/85 border-slate-700/50 text-slate-300"
               : "bg-white/90 border-slate-200 text-slate-700 shadow-md"
           }`}
@@ -156,7 +183,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           </div>
           <div
             className={`flex-1 h-1.5 rounded-full overflow-hidden ${
-              isDark ? "bg-slate-800" : "bg-slate-200"
+              isDark || isFloating ? "bg-slate-800" : "bg-slate-200"
             }`}
           >
             <motion.div

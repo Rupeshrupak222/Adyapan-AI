@@ -81,9 +81,13 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
   // ── Proctoring ──
   const handleProctorAutoSubmit = useCallback(() => {
     toast.error("Proctoring Violation Limit Reached", {
-      description: "Submitting HR interview session due to security violations.",
+      description: "Terminating HR interview due to security violations. Redirecting to analytics...",
     });
-    onEnd();
+    if (typeof window !== "undefined") {
+      window.location.href = "/dashboard/interview/analytics";
+    } else {
+      onEnd();
+    }
   }, [onEnd]);
 
   const { proctorState, videoRef, startProctoring, stopProctoring } =
@@ -354,7 +358,13 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
           conversationEngine.pauseConversation();
         }
       }}
-      onEndInterview={onEnd}
+      onEndInterview={() => {
+        if (typeof window !== "undefined") {
+          window.location.href = "/dashboard/interview/analytics";
+        } else {
+          onEnd();
+        }
+      }}
       onMuteToggle={conversationEngine.toggleAiMute}
       onReplayLastQuestion={handleReplayQuestion}
       onTextSubmit={conversationEngine.submitTextAnswer}

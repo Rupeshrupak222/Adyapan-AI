@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Camera, Mic, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Camera, Mic, ShieldCheck, AlertTriangle, Users } from "lucide-react";
 import type { ProctoringState } from "./proctoringTypes";
 
 interface ProctoringHUDProps {
@@ -15,20 +15,48 @@ export const ProctoringHUD: React.FC<ProctoringHUDProps> = ({
   isDark = true,
   className = "",
 }) => {
-  const { warnings, maxWarnings, cameraActive, micActive, modelLoaded } = proctorState;
+  const { warnings, maxWarnings, cameraActive, micActive, modelLoaded, personCount = 1 } = proctorState;
 
   return (
     <div
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border backdrop-blur-md text-[10px] font-medium select-none max-w-full overflow-x-auto scrollbar-none whitespace-nowrap ${
         isDark
           ? "bg-slate-900/90 border-white/15 text-slate-200"
-          : "bg-white/95 border-slate-200 text-slate-800"
+          : "bg-white/95 border-slate-200 text-slate-800 shadow-md"
       } ${className}`}
     >
+      {/* Persons Counter */}
+      <div className="flex items-center gap-1">
+        <Users
+          size={12}
+          className={
+            personCount === 1
+              ? "text-emerald-400"
+              : personCount > 1
+              ? "text-rose-400 animate-pulse"
+              : "text-amber-400"
+          }
+        />
+        <span className="text-[10px] font-semibold">Persons:</span>
+        <span
+          className={
+            personCount === 1
+              ? "text-emerald-400 font-bold"
+              : personCount > 1
+              ? "text-rose-400 font-extrabold"
+              : "text-amber-400 font-bold"
+          }
+        >
+          {personCount}
+        </span>
+      </div>
+
+      <div className={`h-2.5 w-px ${isDark ? "bg-white/20" : "bg-slate-300"}`} />
+
       {/* Camera status */}
       <div className="flex items-center gap-1">
         <Camera size={12} className={cameraActive ? "text-emerald-400" : "text-rose-400"} />
-        <span className="text-[10px]">Camera</span>
+        <span className="text-[10px]">Cam</span>
         <span className={cameraActive ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
           {cameraActive ? "✓" : "✗"}
         </span>
@@ -62,7 +90,7 @@ export const ProctoringHUD: React.FC<ProctoringHUDProps> = ({
       <div
         className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-bold ${
           warnings > 0
-            ? "bg-rose-500/20 text-rose-300 border-rose-500/30"
+            ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
             : isDark
             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
             : "bg-emerald-50 text-emerald-700 border-emerald-200"

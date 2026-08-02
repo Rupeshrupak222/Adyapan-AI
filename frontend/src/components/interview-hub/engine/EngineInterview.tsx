@@ -65,9 +65,13 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
   // ── Proctoring ──
   const handleProctorAutoSubmit = useCallback(() => {
     toast.error("Proctoring Violation Limit Reached", {
-      description: "Submitting interview session due to security violations.",
+      description: "Terminating interview due to security violations. Redirecting to analytics...",
     });
-    onEnd();
+    if (typeof window !== "undefined") {
+      window.location.href = "/dashboard/interview/analytics";
+    } else {
+      onEnd();
+    }
   }, [onEnd]);
 
   const { proctorState, videoRef, startProctoring, stopProctoring } =
@@ -256,7 +260,13 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
           conversationEngine.pauseConversation();
         }
       }}
-      onEndInterview={onEnd}
+      onEndInterview={() => {
+        if (typeof window !== "undefined") {
+          window.location.href = "/dashboard/interview/analytics";
+        } else {
+          onEnd();
+        }
+      }}
       onMuteToggle={conversationEngine.toggleAiMute}
       onReplayLastQuestion={handleReplayQuestion}
       onTextSubmit={conversationEngine.submitTextAnswer}

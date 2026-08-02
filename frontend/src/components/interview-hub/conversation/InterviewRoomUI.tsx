@@ -15,6 +15,7 @@ import {
   Send,
   Loader2,
   AlertCircle,
+  PictureInPicture,
 } from "lucide-react";
 import { InterviewerCard } from "./InterviewerCard";
 import { CandidateCard } from "./CandidateCard";
@@ -95,6 +96,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
   const isDark = theme === "dark";
   const [textInput, setTextInput] = useState("");
   const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
+  const [isFloatingPIP, setIsFloatingPIP] = useState(false);
 
   const handleManualTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,7 +206,11 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
       <main className="flex-1 min-h-0 my-2 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch overflow-hidden">
         {/* Left Column: Interviewer & Candidate Cards (7 cols) */}
         <div className="lg:col-span-7 flex flex-col space-y-3 h-full min-h-0 overflow-hidden">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-0 overflow-hidden">
+          <div
+            className={`grid gap-3 flex-1 min-h-0 overflow-hidden ${
+              isFloatingPIP ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"
+            }`}
+          >
             <InterviewerCard
               state={state}
               interviewerName="AI Recruiter"
@@ -225,6 +231,8 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
               proctoringHUD={proctoringHUD}
               theme={theme}
               className="h-full min-h-0"
+              isFloatingPIP={isFloatingPIP}
+              onTogglePIP={() => setIsFloatingPIP((prev) => !prev)}
             />
           </div>
 
@@ -358,6 +366,22 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
 
         {/* Right Action Tools */}
         <div className="flex items-center space-x-2">
+          {/* Toggle Floating Camera PIP Popup */}
+          <button
+            onClick={() => setIsFloatingPIP((prev) => !prev)}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors ${
+              isFloatingPIP
+                ? "bg-cyan-600/20 text-cyan-300 border-cyan-500/40"
+                : isDark
+                ? "bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 shadow-sm"
+            }`}
+            title="Toggle Floating Camera PIP Popup"
+          >
+            <PictureInPicture className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{isFloatingPIP ? "Dock Camera" : "Floating Camera"}</span>
+          </button>
+
           {/* Text Mode Toggle */}
           <button
             onClick={onTextModeToggle}
