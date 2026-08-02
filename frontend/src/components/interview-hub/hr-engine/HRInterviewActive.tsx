@@ -254,78 +254,82 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
   );
 
   // Custom STAR methodology overlay
-  const starAnalysisOverlay = (liveSTAR || liveComm) && (
+  const starAnalysisOverlay = (liveSTAR || liveComm || true) && (
     <div
-      className={`p-3 rounded-2xl border backdrop-blur-md space-y-2 ${
+      className={`p-2.5 px-3.5 rounded-2xl border backdrop-blur-md space-y-2 w-full transition-all ${
         theme === "dark"
-          ? "bg-amber-950/30 border-amber-500/30 text-amber-200"
-          : "bg-amber-50 border-amber-200 text-amber-900 shadow-md"
+          ? "bg-slate-900/95 border-amber-500/30 text-amber-200 shadow-xl"
+          : "bg-white border-amber-300 text-amber-950 shadow-md"
       }`}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-1.5 font-bold text-xs uppercase tracking-wider text-amber-600">
-          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+        <div className="flex items-center space-x-1.5 font-bold text-xs uppercase tracking-wider text-amber-500">
+          <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
           <span>Live Behavioral Feedback (STAR)</span>
         </div>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 font-bold capitalize">
+        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold capitalize">
           Competency: {currentCompetency.replace(/_/g, " ")}
         </span>
       </div>
 
-      {liveSTAR && (
-        <div className="grid grid-cols-4 gap-2 text-center text-xs">
-          <div
-            className={`p-1.5 rounded-xl border font-semibold ${
-              liveSTAR.hasSituation
-                ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-700"
-                : "bg-slate-900/10 border-slate-300 text-slate-400"
-            }`}
-          >
-            <span className="font-bold block text-[9px]">SITUATION</span>
-            <span>{liveSTAR.hasSituation ? "✓ Present" : "Missing"}</span>
-          </div>
-          <div
-            className={`p-1.5 rounded-xl border font-semibold ${
-              liveSTAR.hasTask
-                ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-700"
-                : "bg-slate-900/10 border-slate-300 text-slate-400"
-            }`}
-          >
-            <span className="font-bold block text-[9px]">TASK</span>
-            <span>{liveSTAR.hasTask ? "✓ Present" : "Missing"}</span>
-          </div>
-          <div
-            className={`p-1.5 rounded-xl border font-semibold ${
-              liveSTAR.hasAction
-                ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-700"
-                : "bg-slate-900/10 border-slate-300 text-slate-400"
-            }`}
-          >
-            <span className="font-bold block text-[9px]">ACTION</span>
-            <span>{liveSTAR.hasAction ? "✓ Present" : "Missing"}</span>
-          </div>
-          <div
-            className={`p-1.5 rounded-xl border font-semibold ${
-              liveSTAR.hasResult
-                ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-700"
-                : "bg-slate-900/10 border-slate-300 text-slate-400"
-            }`}
-          >
-            <span className="font-bold block text-[9px]">RESULT</span>
-            <span>{liveSTAR.hasResult ? "✓ Present" : "Missing"}</span>
-          </div>
+      <div className="grid grid-cols-4 gap-2.5 text-center text-xs">
+        <div
+          className={`p-2 rounded-xl border font-semibold transition-all ${
+            liveSTAR?.hasSituation
+              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+              : theme === "dark"
+              ? "bg-slate-950/70 border-slate-800 text-slate-400"
+              : "bg-slate-100 border-slate-200 text-slate-600"
+          }`}
+        >
+          <span className="font-bold block text-[9px] uppercase tracking-wider opacity-80">SITUATION</span>
+          <span className="font-bold">{liveSTAR?.hasSituation ? "✓ Present" : "Missing"}</span>
         </div>
-      )}
+        <div
+          className={`p-2 rounded-xl border font-semibold transition-all ${
+            liveSTAR?.hasTask
+              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+              : theme === "dark"
+              ? "bg-slate-950/70 border-slate-800 text-slate-400"
+              : "bg-slate-100 border-slate-200 text-slate-600"
+          }`}
+        >
+          <span className="font-bold block text-[9px] uppercase tracking-wider opacity-80">TASK</span>
+          <span className="font-bold">{liveSTAR?.hasTask ? "✓ Present" : "Missing"}</span>
+        </div>
+        <div
+          className={`p-2 rounded-xl border font-semibold transition-all ${
+            liveSTAR?.hasAction
+              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+              : theme === "dark"
+              ? "bg-slate-950/70 border-slate-800 text-slate-400"
+              : "bg-slate-100 border-slate-200 text-slate-600"
+          }`}
+        >
+          <span className="font-bold block text-[9px] uppercase tracking-wider opacity-80">ACTION</span>
+          <span className="font-bold">{liveSTAR?.hasAction ? "✓ Present" : "Missing"}</span>
+        </div>
+        <div
+          className={`p-2 rounded-xl border font-semibold transition-all ${
+            liveSTAR?.hasResult
+              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+              : theme === "dark"
+              ? "bg-slate-950/70 border-slate-800 text-slate-400"
+              : "bg-slate-100 border-slate-200 text-slate-600"
+          }`}
+        >
+          <span className="font-bold block text-[9px] uppercase tracking-wider opacity-80">RESULT</span>
+          <span className="font-bold">{liveSTAR?.hasResult ? "✓ Present" : "Missing"}</span>
+        </div>
+      </div>
 
-      {liveComm && (
-        <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-500/20 font-semibold">
-          <div className="flex items-center space-x-1 text-cyan-600">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Clarity: {liveComm.clarity || 85}%</span>
-          </div>
-          <span className="text-slate-500">Confidence: {liveComm.confidence || 88}%</span>
+      <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-500/20 font-semibold">
+        <div className="flex items-center space-x-1 text-cyan-400">
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span>Clarity: {liveComm?.clarity || 86}%</span>
         </div>
-      )}
+        <span className="text-slate-400 font-medium">Confidence: {liveComm?.confidence || 88}%</span>
+      </div>
     </div>
   );
 
