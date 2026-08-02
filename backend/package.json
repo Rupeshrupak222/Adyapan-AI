@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
-    "build": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\" && node --max-old-space-size=1024 node_modules/prisma/build/index.js generate && node --max-old-space-size=1024 node_modules/prisma/build/index.js generate --schema=prisma/schema.user.prisma && node --max-old-space-size=1024 node_modules/prisma/build/index.js db push && node --max-old-space-size=1024 node_modules/typescript/bin/tsc -p tsconfig.json",
+    "build": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\" && node --max-old-space-size=1024 node_modules/prisma/build/index.js generate && node --max-old-space-size=1024 node_modules/prisma/build/index.js generate --schema=prisma/schema.user.prisma && node --max-old-space-size=1024 node_modules/prisma/build/index.js db push --accept-data-loss && node --max-old-space-size=1024 node_modules/prisma/build/index.js db push --schema=prisma/schema.user.prisma --accept-data-loss && node --max-old-space-size=1024 node_modules/typescript/bin/tsc -p tsconfig.json",
     "start": "node --max-old-space-size=450 dist/index.js",
     "prisma:generate": "prisma generate && prisma generate --schema=prisma/schema.user.prisma",
     "prisma:migrate": "prisma migrate deploy",
