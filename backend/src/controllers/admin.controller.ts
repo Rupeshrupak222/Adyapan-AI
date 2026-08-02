@@ -42,28 +42,41 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    // Master DB queries (users, payments)
-    const [
-      totalUsers,
-      adminUsers,
-      premiumUsers,
-      newUsersToday,
-      newUsersWeek,
-      newUsersMonth,
-      payments,
-      totalRevenue,
-      monthRevenue,
-    ] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { role: "ADMIN" } }),
-      prisma.user.count({ where: { plan: { not: "free" }, subscriptionStatus: "active" } }),
-      prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
-      prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
-      prisma.user.count({ where: { createdAt: { gte: monthAgo } } }),
-      prisma.payment.findMany({ select: { amount: true, status: true, createdAt: true } }),
-      prisma.payment.aggregate({ _sum: { amount: true }, where: { status: "paid" } }),
-      prisma.payment.aggregate({ _sum: { amount: true }, where: { status: "paid", createdAt: { gte: monthAgo } } }),
-    ]);
+    let totalUsers = 0;
+    let adminUsers = 0;
+    let premiumUsers = 0;
+    let newUsersToday = 0;
+    let newUsersWeek = 0;
+    let newUsersMonth = 0;
+    let payments: any[] = [];
+    let revenueTotal = 0;
+    let revenueMonth = 0;
+
+    try {
+      const [tUsers, aUsers, pUsers, nToday, nWeek, nMonth, pymts, totalRev, monthRev] = await Promise.all([
+        prisma.user.count().catch(() => 0),
+        prisma.user.count({ where: { role: "ADMIN" } }).catch(() => 0),
+        prisma.user.count({ where: { OR: [{ plan: { not: "free" } }, { subscriptionStatus: "active" }] } }).catch(() => 0),
+        prisma.user.count({ where: { createdAt: { gte: todayStart } } }).catch(() => 0),
+        prisma.user.count({ where: { createdAt: { gte: weekAgo } } }).catch(() => 0),
+        prisma.user.count({ where: { createdAt: { gte: monthAgo } } }).catch(() => 0),
+        prisma.payment.findMany({ select: { amount: true, status: true, createdAt: true } }).catch(() => []),
+        prisma.payment.aggregate({ _sum: { amount: true }, where: { status: "paid" } }).catch(() => ({ _sum: { amount: 0 } })),
+        prisma.payment.aggregate({ _sum: { amount: true }, where: { status: "paid", createdAt: { gte: monthAgo } } }).catch(() => ({ _sum: { amount: 0 } })),
+      ]);
+
+      totalUsers = tUsers;
+      adminUsers = aUsers;
+      premiumUsers = pUsers;
+      newUsersToday = nToday;
+      newUsersWeek = nWeek;
+      newUsersMonth = nMonth;
+      payments = pymts || [];
+      revenueTotal = totalRev?._sum?.amount ?? 0;
+      revenueMonth = monthRev?._sum?.amount ?? 0;
+    } catch (dbErr) {
+      console.error("[getDashboardStats] Master DB query error:", dbErr);
+    }
 
     // Cross-DB queries for user-hub tables
     const userHubTables = [
@@ -73,7 +86,12 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
       "challengeSubmission", "interviewSession", "chatSession",
     ];
 
-    const hubCounts = await adminDbService.countAllAcrossAllUserDbs(userHubTables);
+    let hubCounts: Record<string, number> = {};
+    try {
+      hubCounts = await adminDbService.countAllAcrossAllUserDbs(userHubTables);
+    } catch (hubErr) {
+      console.error("[getDashboardStats] Hub counts error:", hubErr);
+    }
 
     const [
       resumeCount, atsCount, coverLetterCount, linkedinCount,
@@ -82,12 +100,10 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
       challengesCount, interviewSessions, chatSessions,
     ] = userHubTables.map((t) => hubCounts[t] ?? 0);
 
-    const revenueTotal = totalRevenue._sum.amount ?? 0;
-    const revenueMonth = monthRevenue._sum.amount ?? 0;
     const successfulPayments = payments.filter(p => p.status === "paid").length;
     const failedPayments = payments.filter(p => p.status === "failed").length;
 
-    const freeUsers = totalUsers - premiumUsers - adminUsers;
+    const freeUsers = Math.max(0, totalUsers - premiumUsers - adminUsers);
 
     res.json({
       success: true,
@@ -96,7 +112,7 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
           total: totalUsers,
           admin: adminUsers,
           premium: premiumUsers,
-          free: Math.max(0, freeUsers),
+          free: freeUsers,
           newToday: newUsersToday,
           newWeek: newUsersWeek,
           newMonth: newUsersMonth,
@@ -127,13 +143,16 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
 
 export async function getActivityFeed(_req: Request, res: Response, next: NextFunction) {
   try {
-    // Master DB: recent users + payments
-    const [recentUsers, recentPayments] = await Promise.all([
-      prisma.user.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { id: true, name: true, createdAt: true } }),
-      prisma.payment.findMany({ take: 5, orderBy: { createdAt: "desc" }, include: { user: { select: { name: true } } } }),
-    ]);
+    let recentUsers: any[] = [];
+    let recentPayments: any[] = [];
 
-    // Cross-DB: recent items from user-hub tables
+    try {
+      [recentUsers, recentPayments] = await Promise.all([
+        prisma.user.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { id: true, name: true, createdAt: true } }).catch(() => []),
+        prisma.payment.findMany({ take: 5, orderBy: { createdAt: "desc" }, include: { user: { select: { name: true } } } }).catch(() => []),
+      ]);
+    } catch {}
+
     const hubTables = [
       { table: "resume", action: "Generated Resume", module: "Resume Hub" },
       { table: "coverLetter", action: "Created Cover Letter", module: "Resume Hub" },
@@ -150,37 +169,41 @@ export async function getActivityFeed(_req: Request, res: Response, next: NextFu
       { table: "chatSession", action: "AI Chat Session", module: "Ady Chat" },
     ];
 
-    const hubResults = await Promise.all(
-      hubTables.map(({ table }) =>
-        adminDbService.findRecentAcrossAllUserDbs(table, { take: 5, orderBy: { createdAt: "desc" } })
-      )
-    );
+    let hubResults: any[][] = [];
+    try {
+      hubResults = await Promise.all(
+        hubTables.map(({ table }) =>
+          adminDbService.findRecentAcrossAllUserDbs(table, { take: 5, orderBy: { createdAt: "desc" } }).catch(() => [])
+        )
+      );
+    } catch {
+      hubResults = hubTables.map(() => []);
+    }
 
     const userIds = new Set<string>();
-    hubResults.forEach(items => items.forEach((item: any) => { if (item.userId) userIds.add(item.userId); }));
+    hubResults.forEach(items => items.forEach((item: any) => { if (item?.userId) userIds.add(item.userId); }));
     const users = userIds.size > 0
-      ? await prisma.user.findMany({ where: { id: { in: Array.from(userIds) } }, select: { id: true, name: true } })
+      ? await prisma.user.findMany({ where: { id: { in: Array.from(userIds) } }, select: { id: true, name: true } }).catch(() => [])
       : [];
     const userNameMap = new Map<string, string>(users.map(u => [u.id, u.name]));
 
-    // Settings events: profile updates, password changes, security changes, etc.
-    const settingsAudit = await (prisma as any).adminAuditLog.findMany({
-      where: { module: "Settings" },
-      take: 20,
-      orderBy: { createdAt: "desc" },
-    });
-    const auditTargetIds: string[] = Array.from(new Set(
-      settingsAudit.map((l: any) => l.targetId).filter((id: unknown): id is string => typeof id === "string")
-    ));
-    const auditUsers = auditTargetIds.length > 0
-      ? await prisma.user.findMany({ where: { id: { in: auditTargetIds } }, select: { id: true, name: true } })
-      : [];
-    auditUsers.forEach(u => userNameMap.set(u.id, u.name));
+    let settingsAudit: any[] = [];
+    try {
+      if ((prisma as any).adminAuditLog) {
+        settingsAudit = await (prisma as any).adminAuditLog.findMany({
+          where: { module: "Settings" },
+          take: 20,
+          orderBy: { createdAt: "desc" },
+        }).catch(() => []);
+      }
+    } catch {
+      settingsAudit = [];
+    }
 
     const activities: { time: Date; user: string; action: string; module: string; id: string }[] = [];
 
-    recentUsers.forEach(u => activities.push({ time: u.createdAt, user: u.name, action: "Registered", module: "Platform", id: u.id }));
-    recentPayments.forEach(p => activities.push({ time: p.createdAt, user: p.user?.name || "User", action: `Payment ${p.status}`, module: "Billing", id: p.id }));
+    (recentUsers || []).forEach(u => activities.push({ time: u.createdAt, user: u.name, action: "Registered", module: "Platform", id: u.id }));
+    (recentPayments || []).forEach(p => activities.push({ time: p.createdAt, user: p.user?.name || "User", action: `Payment ${p.status}`, module: "Billing", id: p.id }));
 
     settingsAudit.forEach((log: any) => {
       activities.push({
@@ -194,13 +217,13 @@ export async function getActivityFeed(_req: Request, res: Response, next: NextFu
 
     hubResults.forEach((items, idx) => {
       const { action, module } = hubTables[idx];
-      items.forEach((item: any) => {
+      (items || []).forEach((item: any) => {
         const userName = userNameMap.get(item.userId) || "Unknown User";
-        activities.push({ time: item.createdAt, user: userName, action, module, id: item.id });
+        activities.push({ time: item.createdAt || new Date(), user: userName, action, module, id: item.id || String(Math.random()) });
       });
     });
 
-    activities.sort((a, b) => b.time.getTime() - a.time.getTime());
+    activities.sort((a, b) => (b.time?.getTime?.() || 0) - (a.time?.getTime?.() || 0));
 
     res.json({ success: true, activities: activities.slice(0, 50) });
   } catch (error) {
@@ -397,21 +420,35 @@ export async function getRevenueAnalytics(_req: Request, res: Response, next: Ne
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const [payments, monthPayments, premiumUsers, totalAgg, planCounts, recentPayments, coupons, discountAgg, couponPaymentsCount] = await Promise.all([
-      prisma.payment.findMany({ where: { status: "paid" }, select: { amount: true, createdAt: true, plan: true } }),
-      prisma.payment.findMany({ where: { status: "paid", createdAt: { gte: monthAgo } }, select: { amount: true, createdAt: true } }),
-      prisma.user.count({ where: { subscriptionStatus: "active" } }),
-      prisma.payment.aggregate({ _sum: { amount: true }, where: { status: "paid" } }),
-      prisma.user.groupBy({ by: ["plan"], _count: true }),
-      prisma.payment.findMany({ take: 20, orderBy: { createdAt: "desc" }, include: { user: { select: { name: true, email: true } } } }),
-      prisma.coupon.findMany({ orderBy: { createdAt: "desc" } }),
-      prisma.payment.aggregate({ _sum: { discountAmount: true }, where: { status: "paid" } }),
-      prisma.payment.count({ where: { status: "paid", couponCode: { not: null } } }),
-    ]);
+    let payments: any[] = [];
+    let monthPayments: any[] = [];
+    let premiumUsers = 0;
+    let totalRevenue = 0;
+    let monthRevenue = 0;
+    let planCounts: any[] = [];
+    let recentPayments: any[] = [];
+    let coupons: any[] = [];
+    let totalDiscount = 0;
+    let couponPaymentsCount = 0;
 
-    const totalRevenue = totalAgg._sum.amount ?? 0;
-    const monthRevenue = monthPayments.reduce((s, p) => s + p.amount, 0);
-    const totalDiscount = discountAgg._sum.discountAmount ?? 0;
+    try {
+      payments = await prisma.payment.findMany({ where: { status: "paid" }, select: { amount: true, createdAt: true, plan: true } }).catch(() => []);
+      monthPayments = payments.filter(p => new Date(p.createdAt) >= monthAgo);
+      totalRevenue = payments.reduce((s, p) => s + (p.amount || 0), 0);
+      monthRevenue = monthPayments.reduce((s, p) => s + (p.amount || 0), 0);
+      premiumUsers = await prisma.user.count({ where: { OR: [{ plan: { not: "free" } }, { subscriptionStatus: "active" }] } }).catch(() => 0);
+      planCounts = await prisma.user.groupBy({ by: ["plan"], _count: true }).catch(() => []);
+      recentPayments = await prisma.payment.findMany({ take: 20, orderBy: { createdAt: "desc" }, include: { user: { select: { name: true, email: true } } } }).catch(() => []);
+      
+      if ((prisma as any).coupon) {
+        coupons = await (prisma as any).coupon.findMany({ orderBy: { createdAt: "desc" } }).catch(() => []);
+      }
+      const discountAgg = await prisma.payment.aggregate({ _sum: { discountAmount: true }, where: { status: "paid" } }).catch(() => ({ _sum: { discountAmount: 0 } }));
+      totalDiscount = discountAgg._sum.discountAmount ?? 0;
+      couponPaymentsCount = await prisma.payment.count({ where: { status: "paid", couponCode: { not: null } } }).catch(() => 0);
+    } catch (err) {
+      console.error("[getRevenueAnalytics] Query error:", err);
+    }
 
     const planDist = planCounts.map(p => ({
       name: p.plan ? p.plan.charAt(0).toUpperCase() + p.plan.slice(1) : "Free",
@@ -426,7 +463,7 @@ export async function getRevenueAnalytics(_req: Request, res: Response, next: Ne
       status: p.status === "paid" ? "paid" : "failed",
       couponCode: p.couponCode,
       discountAmount: p.discountAmount ?? 0,
-      date: p.createdAt.toISOString(),
+      date: p.createdAt ? p.createdAt.toISOString() : new Date().toISOString(),
     }));
 
     const couponStats = {
@@ -448,7 +485,7 @@ export async function getRevenueAnalytics(_req: Request, res: Response, next: Ne
       revenue: {
         total: totalRevenue,
         month: monthRevenue,
-        today: payments.filter(p => new Date(p.createdAt) >= todayStart).reduce((s, p) => s + p.amount, 0),
+        today: payments.filter(p => new Date(p.createdAt) >= todayStart).reduce((s, p) => s + (p.amount || 0), 0),
         premiumUsers,
         totalTransactions: payments.length,
         monthTransactions: monthPayments.length,

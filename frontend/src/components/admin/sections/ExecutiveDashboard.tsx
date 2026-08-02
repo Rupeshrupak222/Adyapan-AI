@@ -110,16 +110,25 @@ export default function ExecutiveDashboard() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [dashRes, healthRes, activityRes, revenueRes] = await Promise.all([
+      const [dashRes, healthRes, activityRes, revenueRes] = await Promise.allSettled([
         api.get("/admin/dashboard"),
         api.get("/admin/system-health"),
         api.get("/admin/activity"),
         api.get("/admin/analytics/revenue"),
       ]);
-      if (dashRes.data.success) setDash(dashRes.data.stats);
-      if (healthRes.data.success) setHealth(healthRes.data.health);
-      if (activityRes.data.success) setActivities(activityRes.data.activities ?? []);
-      if (revenueRes.data.success) setRevenueAnalytics(revenueRes.data.revenue);
+
+      if (dashRes.status === "fulfilled" && dashRes.value.data.success) {
+        setDash(dashRes.value.data.stats);
+      }
+      if (healthRes.status === "fulfilled" && healthRes.value.data.success) {
+        setHealth(healthRes.value.data.health);
+      }
+      if (activityRes.status === "fulfilled" && activityRes.value.data.success) {
+        setActivities(activityRes.value.data.activities ?? []);
+      }
+      if (revenueRes.status === "fulfilled" && revenueRes.value.data.success) {
+        setRevenueAnalytics(revenueRes.value.data.revenue);
+      }
     } catch (err) {
       console.error("[ExecutiveDashboard] fetch error", err);
     } finally {
