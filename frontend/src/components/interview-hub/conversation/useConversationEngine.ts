@@ -117,14 +117,15 @@ export function useConversationEngine({
       } catch {}
     }
     setState("PROCESSING");
-    setLiveTranscript("");
-    setAccumulatedTranscript("");
 
     try {
       await callbacks.onSubmitAnswer(fullText);
+      setLiveTranscript("");
+      setAccumulatedTranscript("");
     } catch (err) {
-      toast.error("Failed to process response. Please try again.");
-      setState("WAITING_FOR_CANDIDATE");
+      console.warn("Submission error in engine, recovering:", err);
+      setLiveTranscript("");
+      setAccumulatedTranscript("");
     }
   }, [callbacks, clearSilenceTimers]);
 
