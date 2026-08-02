@@ -1,0 +1,10 @@
+﻿commit a4f72bde2159b58e8dc631044d9a02ec23c6f1c5
+Merge: dbf6b03b 10036c33
+Author: Naveen-mahala <navinmahala1256@gmail.com>
+Date:   Sun Jul 26 20:00:26 2026 +0530
+
+    WIP on main: dbf6b03b feat: LinkedIn Job Scraper with Apify integration + AI fit analysis
+
+MM	backend/src/controllers/linkedin-jobs.controller.ts
+MM	frontend/src/app/dashboard/user/page.tsx
+MM	frontend/src/components/job-hub/JobHubView.tsx

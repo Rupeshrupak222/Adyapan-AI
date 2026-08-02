@@ -1,0 +1,311 @@
+﻿import { ApifyClient } from "apify-client";
+import { env } from "../config/env";
+import { getUserPrisma } from "../config/dynamicPrisma";
+
+const ACTOR_ID = "curious_coder/linkedin-jobs-scraper";
+
+let client: ApifyClient | null = null;
+function getClient(): ApifyClient {
+  if (!client) client = new ApifyClient({ token: env.apifyApiKey });
+  return client;
+}
+
+export interface ScrapedJob {
+  id?: string;
+  link: string;
+  title: string;
+  companyName: string;
+  companyLinkedinUrl?: string;
+  companyLogo?: string;
+  location?: string;
+  salaryInfo?: any;
+  postedAt?: string;
+  benefits?: string[];
+  descriptionHtml?: string;
+  applicantsCount?: string;
+  applyUrl?: string;
+  descriptionText?: string;
+  jobPosterName?: string;
+  jobPosterTitle?: string;
+  seniorityLevel?: string;
+  employmentType?: string;
+  jobFunction?: string;
+  industries?: string;
+  companyDescription?: string;
+  companyWebsite?: string;
+  companyEmployeesCount?: number;
+  workplaceTypes?: string[];
+  workRemoteAllowed?: boolean;
+  insights?: string[];
+}
+
+export interface ScrapeRunResult {
+  runId: string;
+  status: string;
+  defaultDatasetId: string;
+  jobs: ScrapedJob[];
+  total: number;
+}
+
+export async function runLinkedInScraper(
+  url: string,
+  count: number = 50
+): Promise<ScrapeRunResult> {
+  const apify = getClient();
+
+  const input = {
+    urls: [url],
+    count,
+  };
+
+  const run = await apify.actor(ACTOR_ID).call(input, {
+    waitSecs: 120,
+  });
+
+  const { items } = await apify.dataset(run.defaultDatasetId).listItems();
+
+  const jobs: ScrapedJob[] = items.map((item: any) => ({
+    id: item.id,
+    link: item.link || "",
+    title: item.title || "",
+    companyName: item.companyName || "",
+    companyLinkedinUrl: item.companyLinkedinUrl || "",
+    companyLogo: item.companyLogo || "",
+    location: item.location || "",
+    salaryInfo: Array.isArray(item.salaryInfo)
+      ? item.salaryInfo.join(" - ")
+      : item.salaryInfo || "",
+    postedAt: item.postedAt || "",
+    benefits: item.benefits || [],
+    descriptionHtml: item.descriptionHtml || "",
+    applicantsCount: item.applicantsCount || "",
+    applyUrl: item.applyUrl || "",
+    descriptionText: item.descriptionText || "",
+    jobPosterName: item.jobPosterName || "",
+    jobPosterTitle: item.jobPosterTitle || "",
+    seniorityLevel: item.seniorityLevel || "",
+    employmentType: item.employmentType || "",
+    jobFunction: item.jobFunction || "",
+    industries: item.industries || "",
+    companyWebsite: item.companyWebsite || "",
+    companyEmployeesCount: item.companyEmployeesCount || 0,
+    workplaceTypes: item.workplaceTypes || [],
+    workRemoteAllowed: item.workRemoteAllowed || false,
+    insights: item.insights || [],
+  }));
+
+  return {
+    runId: run.id,
+    status: run.status,
+    defaultDatasetId: run.defaultDatasetId,
+    jobs,
+    total: jobs.length,
+  };
+}
+
+export async function getRunStatus(runId: string): Promise<any> {
+  const apify = getClient();
+  const run = await apify.run(runId).get();
+  return {
+    id: run?.id,
+    status: run?.status,
+    defaultDatasetId: run?.defaultDatasetId,
+  };
+}
+
+export async function getRunResults(datasetId: string): Promise<ScrapedJob[]> {
+  const apify = getClient();
+  const { items } = await apify.dataset(datasetId).listItems();
+  return items.map((item: any) => ({
+    id: item.id,
+    link: item.link || "",
+    title: item.title || "",
+    companyName: item.companyName || "",
+    companyLinkedinUrl: item.companyLinkedinUrl || "",
+    companyLogo: item.companyLogo || "",
+    location: item.location || "",
+    salaryInfo: Array.isArray(item.salaryInfo)
+      ? item.salaryInfo.join(" - ")
+      : item.salaryInfo || "",
+    postedAt: item.postedAt || "",
+    benefits: item.benefits || [],
+    descriptionHtml: item.descriptionHtml || "",
+    applicantsCount: item.applicantsCount || "",
+    applyUrl: item.applyUrl || "",
+    descriptionText: item.descriptionText || "",
+    jobPosterName: item.jobPosterName || "",
+    jobPosterTitle: item.jobPosterTitle || "",
+    seniorityLevel: item.seniorityLevel || "",
+    employmentType: item.employmentType || "",
+    jobFunction: item.jobFunction || "",
+    industries: item.industries || "",
+    companyWebsite: item.companyWebsite || "",
+    companyEmployeesCount: item.companyEmployeesCount || 0,
+    workplaceTypes: item.workplaceTypes || [],
+    workRemoteAllowed: item.workRemoteAllowed || false,
+    insights: item.insights || [],
+  }));
+}
+
+export async function saveJob(userId: string, job: ScrapedJob): Promise<any> {
+  const userPrisma = await getUserPrisma(userId);
+  const saved = await userPrisma.linkedInScrapedJob.upsert({
+    where: { userId_link: { userId, link: job.link } },
+    update: {
+      title: job.title,
+      companyName: job.companyName,
+      companyLogo: job.companyLogo || null,
+      location: job.location || null,
+      salaryInfo: job.salaryInfo || null,
+      postedAt: job.postedAt || null,
+      descriptionHtml: job.descriptionHtml || null,
+      descriptionText: job.descriptionText || null,
+      applicantsCount: job.applicantsCount || null,
+      applyUrl: job.applyUrl || null,
+      apifyJobId: job.id || null,
+      seniorityLevel: job.seniorityLevel || null,
+      employmentType: job.employmentType || null,
+      jobFunction: job.jobFunction || null,
+      industries: job.industries || null,
+      benefits: job.benefits ? JSON.stringify(job.benefits) : null,
+      jobPosterName: job.jobPosterName || null,
+      jobPosterTitle: job.jobPosterTitle || null,
+      companyWebsite: job.companyWebsite || null,
+      companyEmployeesCount: job.companyEmployeesCount || null,
+      workplaceType: job.workplaceTypes ? JSON.stringify(job.workplaceTypes) : null,
+      workRemoteAllowed: job.workRemoteAllowed || null,
+    },
+    create: {
+      userId,
+      apifyJobId: job.id || null,
+      title: job.title,
+      companyName: job.companyName,
+      companyLogo: job.companyLogo || null,
+      location: job.location || null,
+      salaryInfo: job.salaryInfo || null,
+      postedAt: job.postedAt || null,
+      descriptionHtml: job.descriptionHtml || null,
+      descriptionText: job.descriptionText || null,
+      applicantsCount: job.applicantsCount || null,
+      applyUrl: job.applyUrl || null,
+      link: job.link,
+      seniorityLevel: job.seniorityLevel || null,
+      employmentType: job.employmentType || null,
+      jobFunction: job.jobFunction || null,
+      industries: job.industries || null,
+      benefits: job.benefits ? JSON.stringify(job.benefits) : null,
+      jobPosterName: job.jobPosterName || null,
+      jobPosterTitle: job.jobPosterTitle || null,
+      companyWebsite: job.companyWebsite || null,
+      companyEmployeesCount: job.companyEmployeesCount || null,
+      workplaceType: job.workplaceTypes ? JSON.stringify(job.workplaceTypes) : null,
+      workRemoteAllowed: job.workRemoteAllowed || null,
+    },
+  });
+  return saved;
+}
+
+export async function getSavedJobs(userId: string): Promise<any[]> {
+  const userPrisma = await getUserPrisma(userId);
+  return userPrisma.linkedInScrapedJob.findMany({
+    where: { userId },
+    orderBy: { savedAt: "desc" },
+  });
+}
+
+export async function deleteSavedJob(userId: string, jobId: string): Promise<void> {
+  const userPrisma = await getUserPrisma(userId);
+  await userPrisma.linkedInScrapedJob.deleteMany({
+    where: { userId, id: jobId },
+  });
+}
+
+export async function analyzeJobFit(
+  userId: string,
+  jobId: string,
+  aiCall: (prompt: string) => Promise<string>
+): Promise<any> {
+  const userPrisma = await getUserPrisma(userId);
+
+  const job = await userPrisma.linkedInScrapedJob.findFirst({
+    where: { userId, id: jobId },
+  });
+  if (!job) throw new Error("Job not found");
+
+  let userProfile = "";
+  let resumeText = "";
+
+  try {
+    const resumes = await userPrisma.resume.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 1,
+    });
+    if (resumes.length > 0) {
+      const r = resumes[0];
+      resumeText = [
+        r.summary,
+        ...(Array.isArray(r.experience) ? r.experience.map((e: any) => `${e.title} at ${e.company}: ${e.description}`).slice(0, 3) : []),
+        ...(Array.isArray(r.skills) ? [r.skills.join(", ")] : []),
+      ].filter(Boolean).join("\n");
+    }
+  } catch { }
+
+  try {
+    const profile = await userPrisma.profile.findFirst({ where: { userId } });
+    if (profile) {
+      userProfile = [
+        profile.firstName,
+        profile.lastName,
+        profile.headline,
+        profile.bio,
+      ].filter(Boolean).join(" | ");
+    }
+  } catch { }
+
+  const prompt = `You are an expert career advisor. Analyze the fit between this candidate and job posting.
+
+CANDIDATE PROFILE:
+${userProfile || "No profile data available"}
+
+RESUME HIGHLIGHTS:
+${resumeText || "No resume data available"}
+
+JOB POSTING:
+Title: ${job.title}
+Company: ${job.companyName}
+Location: ${job.location || "Not specified"}
+Seniority: ${job.seniorityLevel || "Not specified"}
+Employment Type: ${job.employmentType || "Not specified"}
+Industries: ${job.industries || "Not specified"}
+
+Job Description:
+${job.descriptionText?.slice(0, 3000) || "No description available"}
+
+Provide a JSON response with these fields:
+{
+  "fitScore": <number 0-100>,
+  "skillMatch": { "matched": ["skill1", "skill2"], "missing": ["skill1", "skill2"] },
+  "strengths": ["reason1", "reason2"],
+  "gaps": ["gap1", "gap2"],
+  "recommendation": "<2-3 sentence summary>",
+  "actionItems": ["action1", "action2"]
+}`;
+
+  const response = await aiCall(prompt);
+
+  let analysis;
+  try {
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { fitScore: 50, recommendation: response };
+  } catch {
+    analysis = { fitScore: 50, recommendation: response };
+  }
+
+  await userPrisma.linkedInScrapedJob.update({
+    where: { id: jobId },
+    data: { aiAnalysis: analysis },
+  });
+
+  return analysis;
+}
