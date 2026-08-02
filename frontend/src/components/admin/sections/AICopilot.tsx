@@ -204,7 +204,11 @@ const INTENT_ENDPOINTS: { test: (p: string) => boolean; endpoint: string }[] = [
   { test: (p) => ["activity", "recent", "log", "timeline"].some((w) => p.includes(w)), endpoint: "/admin/activity" },
 ];
 
-export default function AICopilot() {
+interface AICopilotProps {
+  isDrawer?: boolean;
+}
+
+export default function AICopilot({ isDrawer = false }: AICopilotProps) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -215,6 +219,11 @@ export default function AICopilot() {
     },
   ]);
   const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   const sendMessage = async (prompt: string) => {
     if (!prompt.trim() || loading) return;
@@ -257,6 +266,174 @@ export default function AICopilot() {
     }
   };
 
+  const renderMessageList = () => (
+    <>
+      {messages.map((msg) => (
+        <motion.div
+          key={msg.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+        >
+          {/* Avatar */}
+          <div
+            className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+              msg.role === "assistant"
+                ? "bg-gradient-to-br from-amber-500/20 to-purple-500/20"
+                : "bg-white/5"
+            }`}
+            style={{
+              border: `1px solid ${
+                msg.role === "assistant" ? "rgba(245,158,11,0.3)" : "var(--border-color)"
+              }`,
+            }}
+          >
+            {msg.role === "assistant" ? (
+              <Brain size={15} style={{ color: "#f59e0b" }} />
+            ) : (
+              <User size={15} style={{ color: "var(--text-secondary)" }} />
+            )}
+          </div>
+
+          {/* Bubble */}
+          <div
+            className="max-w-[85%] rounded-2xl p-3.5"
+            style={{
+              background: msg.role === "assistant"
+                ? "linear-gradient(135deg, rgba(245,158,11,0.04), rgba(147,51,234,0.04))"
+                : "rgba(255,255,255,0.04)",
+              border: `1px solid ${
+                msg.role === "assistant"
+                  ? "rgba(245,158,11,0.15)"
+                  : "var(--border-color)"
+              }`,
+            }}
+          >
+            <div
+              className="text-xs leading-relaxed prose prose-sm max-w-none"
+              style={{ color: "var(--text-primary)" }}
+              dangerouslySetInnerHTML={{
+                __html: msg.content
+                  .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                  .replace(/\n/g, "<br/>")
+                  .replace(/```/g, ""),
+              }}
+            />
+            <div className="text-[9px] font-medium mt-2" style={{ color: "var(--text-muted)" }}>
+              {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </div>
+          </div>
+        </motion.div>
+      ))}
+
+      {loading && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex gap-3"
+        >
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(147,51,234,0.2))",
+              border: "1px solid rgba(245,158,11,0.3)",
+            }}
+          >
+            <Brain size={15} style={{ color: "#f59e0b" }} />
+          </div>
+          <div
+            className="rounded-2xl p-4 flex items-center gap-2"
+            style={{
+              background: "rgba(245,158,11,0.04)",
+              border: "1px solid rgba(245,158,11,0.15)",
+            }}
+          >
+            <Loader2 size={14} className="animate-spin" style={{ color: "#f59e0b" }} />
+            <span className="text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>Querying live data...</span>
+          </div>
+        </motion.div>
+      )}
+      <div ref={messagesEndRef} />
+    </>
+  );
+
+  const renderPrompts = () => (
+    <div
+      className="shrink-0 px-4 py-2.5 border-t flex flex-wrap gap-1.5"
+      style={{ borderColor: "var(--border-color)", background: "rgba(255,255,255,0.02)" }}
+    >
+      {EXAMPLE_PROMPTS.map((prompt) => (
+        <motion.button
+          key={prompt.text}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => sendMessage(prompt.text)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium transition-all cursor-pointer"
+          style={{
+            background: "rgba(245,158,11,0.06)",
+            color: "var(--text-secondary)",
+            border: "1px solid rgba(245,158,11,0.15)",
+          }}
+        >
+          <span style={{ color: "#f59e0b" }}>{prompt.icon}</span>
+          {prompt.text}
+        </motion.button>
+      ))}
+    </div>
+  );
+
+  const renderInputBar = () => (
+    <div
+      className="shrink-0 flex items-center gap-3 px-4 py-3 border-t"
+      style={{
+        borderColor: "var(--border-color)",
+        background: "linear-gradient(135deg, rgba(245,158,11,0.03), transparent)",
+      }}
+    >
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Ask anything about your platform..."
+        className="flex-1 bg-transparent text-xs font-medium outline-none"
+        style={{ color: "var(--text-primary)" }}
+      />
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => sendMessage(input)}
+        disabled={!input.trim() || loading}
+        className="w-9 h-9 rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer"
+        style={{
+          background: input.trim() ? "linear-gradient(135deg, #f59e0b, #d97706)" : "rgba(255,255,255,0.05)",
+          color: input.trim() ? "#000" : "var(--text-muted)",
+          opacity: input.trim() ? 1 : 0.5,
+        }}
+      >
+        <Send size={14} />
+      </motion.button>
+    </div>
+  );
+
+  if (isDrawer) {
+    return (
+      <div className="h-full flex flex-col min-h-0 overflow-hidden bg-transparent">
+        {/* Messages List - Only this scrolls */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4" style={{ scrollbarWidth: "thin" }}>
+          {renderMessageList()}
+        </div>
+
+        {/* Example Prompts - Pinned above input */}
+        {renderPrompts()}
+
+        {/* Input Bar - Pinned at bottom */}
+        {renderInputBar()}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-12">
       <SectionHeader
@@ -291,151 +468,15 @@ export default function AICopilot() {
         }}
       >
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-            >
-              {/* Avatar */}
-              <div
-                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                  msg.role === "assistant"
-                    ? "bg-gradient-to-br from-amber-500/20 to-purple-500/20"
-                    : "bg-white/5"
-                }`}
-                style={{
-                  border: `1px solid ${
-                    msg.role === "assistant" ? "rgba(245,158,11,0.3)" : "var(--border-color)"
-                  }`,
-                }}
-              >
-                {msg.role === "assistant" ? (
-                  <Brain size={15} style={{ color: "#f59e0b" }} />
-                ) : (
-                  <User size={15} style={{ color: "var(--text-secondary)" }} />
-                )}
-              </div>
-
-              {/* Bubble */}
-              <div
-                className="max-w-[80%] rounded-2xl p-4"
-                style={{
-                  background: msg.role === "assistant"
-                    ? "linear-gradient(135deg, rgba(245,158,11,0.04), rgba(147,51,234,0.04))"
-                    : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${
-                    msg.role === "assistant"
-                      ? "rgba(245,158,11,0.15)"
-                      : "var(--border-color)"
-                  }`,
-                }}
-              >
-                <div
-                  className="text-xs leading-relaxed prose prose-sm max-w-none"
-                  style={{ color: "var(--text-primary)" }}
-                  dangerouslySetInnerHTML={{
-                    __html: msg.content
-                      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                      .replace(/\n/g, "<br/>")
-                      .replace(/```/g, ""),
-                  }}
-                />
-                <div className="text-[9px] font-medium mt-2" style={{ color: "var(--text-muted)" }}>
-                  {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-
-          {loading && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex gap-3"
-            >
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                style={{
-                  background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(147,51,234,0.2))",
-                  border: "1px solid rgba(245,158,11,0.3)",
-                }}
-              >
-                <Brain size={15} style={{ color: "#f59e0b" }} />
-              </div>
-              <div
-                className="rounded-2xl p-4 flex items-center gap-2"
-                style={{
-                  background: "rgba(245,158,11,0.04)",
-                  border: "1px solid rgba(245,158,11,0.15)",
-                }}
-              >
-                <Loader2 size={14} className="animate-spin" style={{ color: "#f59e0b" }} />
-                <span className="text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>Querying live data...</span>
-              </div>
-            </motion.div>
-          )}
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4" style={{ scrollbarWidth: "thin" }}>
+          {renderMessageList()}
         </div>
 
         {/* Example Prompts */}
-        <div
-          className="px-5 py-3 border-t flex flex-wrap gap-2"
-          style={{ borderColor: "var(--border-color)", background: "rgba(255,255,255,0.02)" }}
-        >
-          {EXAMPLE_PROMPTS.map((prompt) => (
-            <motion.button
-              key={prompt.text}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => sendMessage(prompt.text)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium transition-all"
-              style={{
-                background: "rgba(245,158,11,0.06)",
-                color: "var(--text-secondary)",
-                border: "1px solid rgba(245,158,11,0.15)",
-              }}
-            >
-              <span style={{ color: "#f59e0b" }}>{prompt.icon}</span>
-              {prompt.text}
-            </motion.button>
-          ))}
-        </div>
+        {renderPrompts()}
 
-        {/* Input */}
-        <div
-          className="flex items-center gap-3 px-5 py-4 border-t"
-          style={{
-            borderColor: "var(--border-color)",
-            background: "linear-gradient(135deg, rgba(245,158,11,0.03), transparent)",
-          }}
-        >
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask anything about your platform..."
-            className="flex-1 bg-transparent text-xs font-medium outline-none"
-            style={{ color: "var(--text-primary)" }}
-          />
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-            style={{
-              background: input.trim() ? "linear-gradient(135deg, #f59e0b, #d97706)" : "rgba(255,255,255,0.05)",
-              color: input.trim() ? "#000" : "var(--text-muted)",
-              opacity: input.trim() ? 1 : 0.5,
-            }}
-          >
-            <Send size={14} />
-          </motion.button>
-        </div>
+        {/* Input Bar */}
+        {renderInputBar()}
       </motion.div>
     </div>
   );
