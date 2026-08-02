@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: adyapan-ai-backend
+    runtime: node
+    region: singapore
+    plan: starter # or free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=450
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: true
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: MASTER_DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_REGISTER_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: https://adyapan-ai-gamma.vercel.app
