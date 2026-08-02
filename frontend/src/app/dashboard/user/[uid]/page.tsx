@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clearAuthSession } from "@/hooks/useAuth";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { api } from "@/services/api";
 import { cn } from "@/lib/cn";
 import { getDiceBearUrl } from "@/lib/avatar";
@@ -693,13 +694,15 @@ export function DashboardTopNav({
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
-  const isDarkTheme = theme === "dark";
-  const navBg = isDarkTheme ? "rgba(6,11,14,0.92)" : "rgba(255,255,255,0.92)";
-  const navBtnBg = isDarkTheme ? "rgba(255,255,255,0.05)" : "rgba(15,23,42,0.04)";
-  const navBtnColor = isDarkTheme ? "#f1f5f9" : "#1e293b";
-  const navInputBg = isDarkTheme ? "rgba(255,255,255,0.05)" : "rgba(15,23,42,0.035)";
+  const liveTheme = useTheme();
+  const activeTheme = liveTheme || theme || "dark";
+  const isDarkTheme = activeTheme === "dark";
+  const navBg = isDarkTheme ? "rgba(6,11,14,0.92)" : "rgba(255,255,255,0.95)";
+  const navBtnBg = isDarkTheme ? "rgba(255,255,255,0.05)" : "rgba(15,23,42,0.05)";
+  const navBtnColor = isDarkTheme ? "#f1f5f9" : "#0f172a";
+  const navInputBg = isDarkTheme ? "rgba(255,255,255,0.05)" : "#f8fafc";
   const navInputColor = isDarkTheme ? "#f1f5f9" : "#0f172a";
-  const navBorder = isDarkTheme ? "rgba(255,255,255,0.1)" : "rgba(203,213,225,0.8)";
+  const navBorder = isDarkTheme ? "rgba(255,255,255,0.1)" : "rgba(203,213,225,0.85)";
   const dropdownBg = isDarkTheme ? "#0c131a" : "#ffffff";
 
   const navBtnBase: React.CSSProperties = {
