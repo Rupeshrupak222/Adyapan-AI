@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/services/api";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { DashboardTopNav, DashboardSidebar } from "../page";
 import type { AdyapanUser } from "../page";
 import { FloatingOrbs } from "@/components/ui/PremiumComponents";
@@ -31,12 +32,15 @@ function getUserId(): string {
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   useRequireAuth("USER");
   const router = useRouter();
+  const liveTheme = useTheme();
 
   const [user, setUser] = useState<AdyapanUser | null>(null);
   const [theme, setTheme] = useState("dark");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState<SettingsNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const activeTheme = liveTheme || theme;
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("adyapan-theme") || "dark";
@@ -91,7 +95,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
 
       <DashboardTopNav
         user={user}
-        theme={theme}
+        theme={activeTheme}
         onThemeToggle={handleThemeToggle}
         onViewProfile={() => go("profile")}
         onAdyChat={() => go("ady-chat")}

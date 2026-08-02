@@ -14,6 +14,21 @@ import type { PlatformUser } from "@/types/user";
 type Tab = "login" | "register" | "forgot";
 type ForgotStep = "email" | "otp" | "done";
 
+// Resolve where to send the user after a successful login.
+// Honors the `?from=` query added by the auth guard (useRequireAuth) and only
+// trusts same-origin, internal paths (never external or protocol-relative URLs).
+function getPostLoginTarget(role?: string): string {
+  if (typeof window !== "undefined") {
+    try {
+      const from = new URLSearchParams(window.location.search).get("from");
+      if (from && from.startsWith("/") && !from.startsWith("//") && !from.startsWith("/\\")) {
+        return from;
+      }
+    } catch { /* ignore malformed query */ }
+  }
+  return role === "ADMIN" ? "/dashboard/admin" : "/dashboard/user";
+}
+
 const GoogleIcon = () => (
   <svg width="16" height="16" viewBox="0 0 48 48">
     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -80,7 +95,7 @@ function LoginPageContent() {
         try {
           const user = JSON.parse(userStr) as PlatformUser;
           saveAuthSession(token, user, true);
-          router.replace(user.role === "ADMIN" ? "/dashboard/admin" : "/dashboard/user");
+          router.replace(getPostLoginTarget(user.role));
           return;
         } catch { return; }
       }
@@ -120,7 +135,7 @@ function LoginPageContent() {
     if (existingToken && existingUser && params.get("logout") !== "true") {
       try {
         const u = JSON.parse(existingUser) as { role?: string };
-        router.replace(u.role === "ADMIN" ? "/dashboard/admin" : "/dashboard/user");
+        router.replace(getPostLoginTarget(u.role));
       } catch { /* ignore */ }
     }
 
@@ -153,7 +168,7 @@ function LoginPageContent() {
     try {
       const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe });
       saveAuthSession(data.token, data.user, rememberMe);
-      window.location.href = data.user.role === "ADMIN" ? "/dashboard/admin" : "/dashboard/user";
+      router.replace(getPostLoginTarget(data.user.role));
     } catch (err: unknown) {
       setLoginError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Invalid email or password.");
     } finally { setLoginLoading(false); }

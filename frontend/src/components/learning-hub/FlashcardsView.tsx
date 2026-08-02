@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import confetti from "canvas-confetti";
 import CountUp from "react-countup";
@@ -151,6 +152,7 @@ const loadSteps = [
 ];
 
 export function FlashcardsView() {
+  const router = useRouter();
   const theme = useTheme();
   const c = mkColors(theme);
 
@@ -837,7 +839,7 @@ export function FlashcardsView() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => window.location.href = `/quiz?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}&autostart=true`}
+                  onClick={() => router.push(`/dashboard/user?view=quiz-generator`)}
                   className="flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer"
                   style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff" }}
                 >

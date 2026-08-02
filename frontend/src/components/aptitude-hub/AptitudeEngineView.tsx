@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calculator, Brain, BookOpen, BarChart3, Lightbulb, Hash,
@@ -81,6 +82,7 @@ const formatTimeSec = (sec: number): string => {
 };
 
 export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", theme = "dark" }: AptitudeEngineViewProps) {
+  const router = useRouter();
   const isDark = theme === "dark";
   const c = {
     bg: isDark ? "#080710" : "#f0f4ff",
@@ -710,7 +712,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                 <div style={{ background: "transparent" }}>
                   <PlacementImpactCard accentColor="#8b5cf6" onNavigate={(v) => {
                     try { localStorage.setItem("dashboard-active-view", v); } catch {}
-                    window.location.href = "/dashboard/user";
+                    router.push("/dashboard/user");
                   }} />
                 </div>
 

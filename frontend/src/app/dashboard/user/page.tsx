@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clearAuthSession } from "@/hooks/useAuth";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { api } from "@/services/api";
 import { cn } from "@/lib/cn";
 import { getDiceBearUrl } from "@/lib/avatar";
@@ -558,6 +559,7 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       onMouseEnter={(e) => {
                         (e.currentTarget as HTMLElement).style.color = "var(--primary)";
                         (e.currentTarget as HTMLElement).style.background = "rgba(245,158,11,0.05)";
+                        if (sub.href && sub.href !== "#") router.prefetch(sub.href);
                       }}
                       onMouseLeave={(e) => {
                         (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
@@ -597,6 +599,7 @@ export function DashboardTopNav({
   onMarkAllRead: () => void;
   onClearAll: () => void;
 }) {
+  const router = useRouter();
   const [generateOpen, setGenerateOpen] = useState(false);
   const [evaluateOpen, setEvaluateOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -619,7 +622,11 @@ export function DashboardTopNav({
     }
     if (n.link) {
       setNotificationsOpen(false);
-      window.location.href = n.link;
+      if (n.link.startsWith("/")) {
+        router.push(n.link);
+      } else {
+        window.location.href = n.link;
+      }
     }
   };
 
@@ -687,13 +694,15 @@ export function DashboardTopNav({
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
-  const isDarkTheme = theme === "dark";
-  const navBg = isDarkTheme ? "rgba(6,11,14,0.92)" : "rgba(255,255,255,0.92)";
-  const navBtnBg = isDarkTheme ? "rgba(255,255,255,0.05)" : "rgba(15,23,42,0.04)";
-  const navBtnColor = isDarkTheme ? "#f1f5f9" : "#1e293b";
-  const navInputBg = isDarkTheme ? "rgba(255,255,255,0.05)" : "rgba(15,23,42,0.035)";
+  const liveTheme = useTheme();
+  const activeTheme = liveTheme || theme || "dark";
+  const isDarkTheme = activeTheme === "dark";
+  const navBg = isDarkTheme ? "rgba(6,11,14,0.92)" : "rgba(255,255,255,0.95)";
+  const navBtnBg = isDarkTheme ? "rgba(255,255,255,0.05)" : "rgba(15,23,42,0.05)";
+  const navBtnColor = isDarkTheme ? "#f1f5f9" : "#0f172a";
+  const navInputBg = isDarkTheme ? "rgba(255,255,255,0.05)" : "#f8fafc";
   const navInputColor = isDarkTheme ? "#f1f5f9" : "#0f172a";
-  const navBorder = isDarkTheme ? "rgba(255,255,255,0.1)" : "rgba(203,213,225,0.8)";
+  const navBorder = isDarkTheme ? "rgba(255,255,255,0.1)" : "rgba(203,213,225,0.85)";
   const dropdownBg = isDarkTheme ? "#0c131a" : "#ffffff";
 
   const navBtnBase: React.CSSProperties = {
@@ -2194,7 +2203,10 @@ export default function UserDashboardPage() {
       const user = JSON.parse(raw) as { id?: string; role?: string };
       if (!user.id) { router.replace("/login"); return; }
       if (user.role === "ADMIN") { router.replace("/dashboard/admin"); return; }
-      router.replace(`/dashboard/user/${user.id}`);
+      // Preserve the query string (e.g. ?view=resume-builder) so deep-linked
+      // hubs land on the requested view instead of silently resetting to dashboard.
+      const query = window.location.search;
+      router.replace(`/dashboard/user/${user.id}${query}`);
     } catch { router.replace("/login"); }
   }, [router]);
 
