@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { enforceAiTokenLimit } from "../middleware/aiTokenLimit.middleware";
 import { generateEnhancedQuiz, generateQuiz } from "../lib/ai/gemini";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { StreakService } from "../services/streak.service";
@@ -9,6 +10,7 @@ import { getTimezone } from "../utils/request";
 export const quizRouter = Router();
 
 quizRouter.use(requireAuth);
+quizRouter.use(enforceAiTokenLimit);
 
 quizRouter.post("/generate", async (req, res) => {
   try {
