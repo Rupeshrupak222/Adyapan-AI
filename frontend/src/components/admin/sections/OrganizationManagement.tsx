@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
+import { useTheme } from "@/hooks/useTheme";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
 
@@ -43,6 +44,9 @@ interface Student {
 }
 
 export default function OrganizationManagement() {
+  const theme = useTheme();
+  const isDark = theme === "dark";
+
   const [loading, setLoading] = useState(true);
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [stats, setStats] = useState({ total: 0, totalUniversities: 0, totalCompanies: 0, totalStudents: 0 });
@@ -232,6 +236,12 @@ export default function OrganizationManagement() {
     );
   });
 
+  const inputStyle = {
+    background: isDark ? "rgba(255,255,255,0.06)" : "#f8fafc",
+    borderColor: isDark ? "rgba(255,255,255,0.15)" : "#cbd5e1",
+    color: "var(--text-primary)",
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
@@ -274,7 +284,7 @@ export default function OrganizationManagement() {
 
       {/* KPI Stats Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-2xl border p-4" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
+        <div className="rounded-2xl border p-4 shadow-sm" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
           <div className="flex items-center gap-2.5 mb-1">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-amber-500/10 text-amber-500">
               <GraduationCap size={15} />
@@ -284,7 +294,7 @@ export default function OrganizationManagement() {
           <p className="text-xl font-black" style={{ color: "var(--text-primary)" }}>{stats.totalUniversities}</p>
         </div>
 
-        <div className="rounded-2xl border p-4" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
+        <div className="rounded-2xl border p-4 shadow-sm" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
           <div className="flex items-center gap-2.5 mb-1">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-indigo-500/10 text-indigo-500">
               <Building2 size={15} />
@@ -294,7 +304,7 @@ export default function OrganizationManagement() {
           <p className="text-xl font-black" style={{ color: "var(--text-primary)" }}>{stats.totalCompanies}</p>
         </div>
 
-        <div className="rounded-2xl border p-4" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
+        <div className="rounded-2xl border p-4 shadow-sm" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
           <div className="flex items-center gap-2.5 mb-1">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/10 text-emerald-500">
               <Users size={15} />
@@ -304,7 +314,7 @@ export default function OrganizationManagement() {
           <p className="text-xl font-black" style={{ color: "var(--text-primary)" }}>{stats.totalStudents}</p>
         </div>
 
-        <div className="rounded-2xl border p-4" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
+        <div className="rounded-2xl border p-4 shadow-sm" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
           <div className="flex items-center gap-2.5 mb-1">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-purple-500/10 text-purple-500">
               <ShieldCheck size={15} />
@@ -325,7 +335,7 @@ export default function OrganizationManagement() {
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeTab === tab ? "bg-amber-500 text-slate-950 shadow-sm" : "hover:bg-white/5"
               }`}
-              style={{ color: activeTab === tab ? "#000" : "var(--text-secondary)" }}
+              style={{ color: activeTab === tab ? "#000" : isDark ? "var(--text-secondary)" : "#475569" }}
             >
               {tab === "ALL" ? "All Organizations" : tab === "UNIVERSITY" ? "Universities" : "Companies"}
             </button>
@@ -340,11 +350,7 @@ export default function OrganizationManagement() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 rounded-xl text-xs outline-none border transition-all"
-            style={{
-              background: "var(--bg-card)",
-              borderColor: "var(--border-color)",
-              color: "var(--text-primary)",
-            }}
+            style={inputStyle}
           />
         </div>
       </div>
@@ -391,7 +397,7 @@ export default function OrganizationManagement() {
                 key={org.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border p-5 flex flex-col justify-between transition-all hover:border-amber-500/40"
+                className="rounded-2xl border p-5 flex flex-col justify-between transition-all hover:border-amber-500/40 shadow-sm"
                 style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
               >
                 <div>
@@ -421,7 +427,7 @@ export default function OrganizationManagement() {
                   </div>
 
                   {/* Metadata info */}
-                  <div className="space-y-1.5 my-3 text-[11px]" style={{ color: "var(--text-secondary)" }}>
+                  <div className="space-y-1.5 my-3 text-[11px]" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>
                     {org.location && (
                       <div className="flex items-center gap-1.5">
                         <MapPin size={12} className="text-amber-500 shrink-0" />
@@ -460,7 +466,7 @@ export default function OrganizationManagement() {
                         setSelectedOrg(org);
                         setBulkModalOpen(true);
                       }}
-                      className="p-1.5 rounded-lg transition-all hover:bg-emerald-500/20 text-emerald-400 cursor-pointer"
+                      className="p-1.5 rounded-lg transition-all hover:bg-emerald-500/20 text-emerald-500 cursor-pointer"
                       title="Bulk Add Students"
                     >
                       <UserPlus size={14} />
@@ -478,7 +484,7 @@ export default function OrganizationManagement() {
                     </button>
                     <button
                       onClick={() => handleDeleteOrg(org.id, org.name)}
-                      className="p-1.5 rounded-lg transition-all hover:bg-rose-500/20 text-rose-400 cursor-pointer"
+                      className="p-1.5 rounded-lg transition-all hover:bg-rose-500/20 text-rose-500 cursor-pointer"
                       title="Delete Organization"
                     >
                       <Trash2 size={14} />
@@ -500,21 +506,25 @@ export default function OrganizationManagement() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="w-full max-w-md rounded-2xl border p-6 shadow-2xl"
-              style={{ background: "#0c131a", borderColor: "rgba(245,158,11,0.3)" }}
+              style={{
+                background: isDark ? "#0c131a" : "#ffffff",
+                borderColor: isDark ? "rgba(245,158,11,0.3)" : "rgba(203,213,225,0.8)",
+                boxShadow: isDark ? "0 25px 50px rgba(0,0,0,0.8)" : "0 20px 40px rgba(0,0,0,0.12)",
+              }}
             >
-              <div className="flex items-center justify-between border-b pb-4 mb-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+              <div className="flex items-center justify-between border-b pb-4 mb-4" style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(226,232,240,1)" }}>
                 <h3 className="text-sm font-extrabold flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
                   {createType === "UNIVERSITY" ? <GraduationCap size={18} className="text-amber-500" /> : <Building2 size={18} className="text-indigo-400" />}
                   Add New {createType === "UNIVERSITY" ? "University" : "Company"}
                 </h3>
-                <button onClick={() => setCreateModalOpen(false)} className="p-1 rounded-full hover:bg-white/10">
+                <button onClick={() => setCreateModalOpen(false)} className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10">
                   <X size={16} style={{ color: "var(--text-secondary)" }} />
                 </button>
               </div>
 
               <form onSubmit={handleCreateOrg} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>
+                  <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>
                     {createType === "UNIVERSITY" ? "University Name *" : "Company Name *"}
                   </label>
                   <input
@@ -523,66 +533,66 @@ export default function OrganizationManagement() {
                     placeholder={createType === "UNIVERSITY" ? "e.g. Indian Institute of Technology Bombay" : "e.g. Google India"}
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                    style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                    className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                    style={inputStyle}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Code / Abbreviation</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Code / Abbreviation</label>
                     <input
                       type="text"
                       placeholder="e.g. IITB"
                       value={formData.code}
                       onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                      style={inputStyle}
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Location</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Location</label>
                     <input
                       type="text"
                       placeholder="e.g. Mumbai, India"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                      style={inputStyle}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Domain</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Domain</label>
                     <input
                       type="text"
                       placeholder="e.g. iitb.ac.in"
                       value={formData.domain}
                       onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                      style={inputStyle}
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Contact Email</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Contact Email</label>
                     <input
                       type="email"
                       placeholder="admin@iitb.ac.in"
                       value={formData.contactEmail}
                       onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                      style={inputStyle}
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-4 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+                <div className="flex items-center justify-end gap-2 pt-4 border-t" style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(226,232,240,1)" }}>
                   <button
                     type="button"
                     onClick={() => setCreateModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer hover:bg-white/10"
+                    className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer hover:bg-black/5 dark:hover:bg-white/10"
                     style={{ color: "var(--text-secondary)" }}
                   >
                     Cancel
@@ -612,81 +622,85 @@ export default function OrganizationManagement() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="w-full max-w-md rounded-2xl border p-6 shadow-2xl"
-              style={{ background: "#0c131a", borderColor: "rgba(245,158,11,0.3)" }}
+              style={{
+                background: isDark ? "#0c131a" : "#ffffff",
+                borderColor: isDark ? "rgba(245,158,11,0.3)" : "rgba(203,213,225,0.8)",
+                boxShadow: isDark ? "0 25px 50px rgba(0,0,0,0.8)" : "0 20px 40px rgba(0,0,0,0.12)",
+              }}
             >
-              <div className="flex items-center justify-between border-b pb-4 mb-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+              <div className="flex items-center justify-between border-b pb-4 mb-4" style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(226,232,240,1)" }}>
                 <h3 className="text-sm font-extrabold flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
                   <Edit2 size={16} className="text-amber-500" /> Edit {editOrg.name}
                 </h3>
-                <button onClick={() => setEditModalOpen(false)} className="p-1 rounded-full hover:bg-white/10">
+                <button onClick={() => setEditModalOpen(false)} className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10">
                   <X size={16} style={{ color: "var(--text-secondary)" }} />
                 </button>
               </div>
 
               <form onSubmit={handleUpdateOrg} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Name</label>
+                  <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Name</label>
                   <input
                     type="text"
                     required
                     value={editOrg.name}
                     onChange={(e) => setEditOrg({ ...editOrg, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                    style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                    className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                    style={inputStyle}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Code</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Code</label>
                     <input
                       type="text"
                       value={editOrg.code || ""}
                       onChange={(e) => setEditOrg({ ...editOrg, code: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                      style={inputStyle}
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Location</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Location</label>
                     <input
                       type="text"
                       value={editOrg.location || ""}
                       onChange={(e) => setEditOrg({ ...editOrg, location: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                      style={inputStyle}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Domain</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Domain</label>
                     <input
                       type="text"
                       value={editOrg.domain || ""}
                       onChange={(e) => setEditOrg({ ...editOrg, domain: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                      style={inputStyle}
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Contact Email</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Contact Email</label>
                     <input
                       type="email"
                       value={editOrg.contactEmail || ""}
                       onChange={(e) => setEditOrg({ ...editOrg, contactEmail: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                      style={inputStyle}
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-4 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+                <div className="flex items-center justify-end gap-2 pt-4 border-t" style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(226,232,240,1)" }}>
                   <button
                     type="button"
                     onClick={() => setEditModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer hover:bg-white/10"
+                    className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer hover:bg-black/5 dark:hover:bg-white/10"
                     style={{ color: "var(--text-secondary)" }}
                   >
                     Cancel
@@ -710,16 +724,26 @@ export default function OrganizationManagement() {
       {/* VIEW STUDENTS MODAL */}
       <AnimatePresence>
         {studentsModalOpen && selectedOrg && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="w-full max-w-3xl h-[650px] max-h-[90vh] rounded-3xl border flex flex-col overflow-hidden shadow-2xl"
-              style={{ background: "#0c131a", borderColor: "rgba(245,158,11,0.3)" }}
+              style={{
+                background: isDark ? "#0c131a" : "#ffffff",
+                borderColor: isDark ? "rgba(245,158,11,0.3)" : "rgba(203,213,225,0.8)",
+                boxShadow: isDark ? "0 25px 50px rgba(0,0,0,0.85)" : "0 25px 50px rgba(0,0,0,0.15)",
+              }}
             >
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b flex items-center justify-between shrink-0 bg-white/5" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+              <div
+                className="px-6 py-4 border-b flex items-center justify-between shrink-0"
+                style={{
+                  background: isDark ? "rgba(255,255,255,0.03)" : "rgba(248,250,252,1)",
+                  borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(226,232,240,1)",
+                }}
+              >
                 <div>
                   <h3 className="text-base font-extrabold flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
                     <GraduationCap size={18} className="text-amber-500" /> {selectedOrg.name} — Registered Students
@@ -732,40 +756,46 @@ export default function OrganizationManagement() {
                   <button
                     onClick={() => setBulkModalOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
-                    style={{ background: "rgba(16,185,129,0.2)", color: "#34d399", border: "1px solid rgba(16,185,129,0.3)" }}
+                    style={{ background: "rgba(16,185,129,0.15)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)" }}
                   >
                     <UserPlus size={14} /> Bulk Add Students
                   </button>
-                  <button onClick={() => setStudentsModalOpen(false)} className="p-1.5 rounded-full hover:bg-white/10">
+                  <button onClick={() => setStudentsModalOpen(false)} className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10">
                     <X size={18} style={{ color: "var(--text-secondary)" }} />
                   </button>
                 </div>
               </div>
 
               {/* Search Bar */}
-              <div className="p-4 border-b shrink-0 bg-white/[0.02]" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+              <div
+                className="p-4 border-b shrink-0"
+                style={{
+                  background: isDark ? "rgba(255,255,255,0.02)" : "#f8fafc",
+                  borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(226,232,240,1)",
+                }}
+              >
                 <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
                   <input
                     type="text"
                     placeholder="Search student by name, email, or branch..."
                     value={studentSearch}
                     onChange={(e) => setStudentSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 rounded-xl text-xs outline-none bg-white/5 border"
-                    style={{ borderColor: "rgba(255,255,255,0.12)", color: "var(--text-primary)" }}
+                    className="w-full pl-9 pr-4 py-2 rounded-xl text-xs outline-none border"
+                    style={inputStyle}
                   />
                 </div>
               </div>
 
               {/* Student Table Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-3" style={{ scrollbarWidth: "thin" }}>
+              <div className="flex-1 overflow-y-auto p-6 space-y-3">
                 {studentsLoading ? (
                   <div className="flex items-center justify-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
                   </div>
                 ) : filteredStudents.length === 0 ? (
                   <div className="text-center py-16">
-                    <Users size={32} className="mx-auto mb-2 text-slate-500" />
+                    <Users size={32} className="mx-auto mb-2 opacity-40" />
                     <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>No students found for this institution.</p>
                   </div>
                 ) : (
@@ -773,8 +803,11 @@ export default function OrganizationManagement() {
                     {filteredStudents.map((s) => (
                       <div
                         key={s.id}
-                        className="flex items-center justify-between p-3.5 rounded-xl border bg-white/[0.02] hover:bg-white/[0.04] transition-all"
-                        style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                        className="flex items-center justify-between p-3.5 rounded-xl border transition-all"
+                        style={{
+                          background: isDark ? "rgba(255,255,255,0.02)" : "rgba(248,250,252,1)",
+                          borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(226,232,240,1)",
+                        }}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 font-bold text-xs">
@@ -788,7 +821,7 @@ export default function OrganizationManagement() {
 
                         <div className="flex items-center gap-4 text-right">
                           <div>
-                            <span className="text-[11px] font-medium block" style={{ color: "var(--text-secondary)" }}>
+                            <span className="text-[11px] font-medium block" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>
                               {s.profile?.degree ? `${s.profile.degree} ` : ""}{s.profile?.branch || "Student"}
                             </span>
                             <span className="text-[9px] text-amber-500 font-mono">
@@ -812,26 +845,30 @@ export default function OrganizationManagement() {
       {/* BULK ADD STUDENTS MODAL */}
       <AnimatePresence>
         {bulkModalOpen && selectedOrg && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="w-full max-w-md rounded-2xl border p-6 shadow-2xl"
-              style={{ background: "#0c131a", borderColor: "rgba(16,185,129,0.4)" }}
+              style={{
+                background: isDark ? "#0c131a" : "#ffffff",
+                borderColor: isDark ? "rgba(16,185,129,0.4)" : "rgba(203,213,225,0.8)",
+                boxShadow: isDark ? "0 25px 50px rgba(0,0,0,0.8)" : "0 20px 40px rgba(0,0,0,0.12)",
+              }}
             >
-              <div className="flex items-center justify-between border-b pb-4 mb-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+              <div className="flex items-center justify-between border-b pb-4 mb-4" style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(226,232,240,1)" }}>
                 <h3 className="text-sm font-extrabold flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
-                  <UserPlus size={18} className="text-emerald-400" /> Bulk Add Students — {selectedOrg.name}
+                  <UserPlus size={18} className="text-emerald-500" /> Bulk Add Students — {selectedOrg.name}
                 </h3>
-                <button onClick={() => setBulkModalOpen(false)} className="p-1 rounded-full hover:bg-white/10">
+                <button onClick={() => setBulkModalOpen(false)} className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10">
                   <X size={16} style={{ color: "var(--text-secondary)" }} />
                 </button>
               </div>
 
               <form onSubmit={handleBulkAddStudents} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>
+                  <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>
                     Student Email Addresses * (Comma or Newline separated)
                   </label>
                   <textarea
@@ -840,41 +877,41 @@ export default function OrganizationManagement() {
                     placeholder="student1@university.edu&#10;student2@university.edu&#10;student3@university.edu"
                     value={bulkEmails}
                     onChange={(e) => setBulkEmails(e.target.value)}
-                    className="w-full p-3 rounded-xl text-xs outline-none border bg-white/5 font-mono"
-                    style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                    className="w-full p-3 rounded-xl text-xs outline-none border font-mono"
+                    style={inputStyle}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Branch / Department</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Branch / Department</label>
                     <input
                       type="text"
                       placeholder="e.g. Computer Science"
                       value={bulkBranch}
                       onChange={(e) => setBulkBranch(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                      style={inputStyle}
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: "var(--text-secondary)" }}>Degree Program</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Degree Program</label>
                     <input
                       type="text"
                       placeholder="e.g. B.Tech / M.Tech"
                       value={bulkDegree}
                       onChange={(e) => setBulkDegree(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border bg-white/5"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-primary)" }}
+                      className="w-full px-3 py-2 rounded-xl text-xs outline-none border"
+                      style={inputStyle}
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-4 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+                <div className="flex items-center justify-end gap-2 pt-4 border-t" style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(226,232,240,1)" }}>
                   <button
                     type="button"
                     onClick={() => setBulkModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer hover:bg-white/10"
+                    className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer hover:bg-black/5 dark:hover:bg-white/10"
                     style={{ color: "var(--text-secondary)" }}
                   >
                     Cancel

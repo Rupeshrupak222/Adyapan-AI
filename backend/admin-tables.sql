@@ -518,3 +518,25 @@ ALTER TABLE "admin_login_history" ADD CONSTRAINT "admin_login_history_admin_id_f
 -- AddForeignKey
 ALTER TABLE "admin_preferences" ADD CONSTRAINT "admin_preferences_admin_id_fkey" FOREIGN KEY ("admin_id") REFERENCES "admin_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- CreateTable
+CREATE TABLE "organizations" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "type" TEXT NOT NULL DEFAULT 'UNIVERSITY',
+    "code" TEXT,
+    "location" TEXT,
+    "domain" TEXT,
+    "contact_email" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "organizations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "organizations_name_key" ON "organizations"("name");
+CREATE INDEX "organizations_type_idx" ON "organizations"("type");
+CREATE INDEX "organizations_name_idx" ON "organizations"("name");
+
+

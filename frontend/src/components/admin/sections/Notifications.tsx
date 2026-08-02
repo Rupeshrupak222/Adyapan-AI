@@ -10,6 +10,7 @@ import {
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
 import { api } from "@/services/api";
+import { useTheme } from "@/hooks/useTheme";
 import { toast } from "sonner";
 
 interface SystemNotification {
@@ -137,6 +138,8 @@ function timeAgo(iso: string): string {
 }
 
 export default function Notifications() {
+  const theme = useTheme();
+  const isDark = theme === "dark";
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const [stats, setStats] = useState<NotificationStats>({
@@ -581,19 +584,19 @@ export default function Notifications() {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="w-full max-w-xl rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
               style={{
-                background: "#0c131a",
-                borderColor: "rgba(245,158,11,0.3)",
-                boxShadow: "0 25px 60px rgba(0,0,0,0.85), 0 0 30px rgba(245,158,11,0.15)",
+                background: isDark ? "#0c131a" : "#ffffff",
+                borderColor: isDark ? "rgba(245,158,11,0.3)" : "rgba(203,213,225,0.8)",
+                boxShadow: isDark ? "0 25px 60px rgba(0,0,0,0.85), 0 0 30px rgba(245,158,11,0.15)" : "0 20px 40px rgba(0,0,0,0.15)",
               }}
             >
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+              <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(226,232,240,1)" }}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-black" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>
                     <Send size={20} />
                   </div>
                   <div>
-                    <h3 className="text-base font-extrabold text-white">Create System Broadcast</h3>
+                    <h3 className="text-base font-extrabold" style={{ color: "var(--text-primary)" }}>Create System Broadcast</h3>
                     <p className="text-xs text-amber-500 font-semibold">Dispatch notifications by user segment</p>
                   </div>
                 </div>
