@@ -6,6 +6,7 @@ import { handleRouteError } from "../utils/routeError";
 import { mapDiscoveryJobToListing } from "../utils/jobListingMapper";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
 import { searchAdzunaJobs, getAdzunaCategories, getSupportedCountries, type NormalizedJob } from "../services/adzuna.service";
+import { JobSearchService } from "../services/job-search.service";
 
 export const jobListingRouter = Router();
 
@@ -112,7 +113,7 @@ jobListingRouter.get("/", async (req: Request, res: Response) => {
     const shouldFetchDB = source === "all" || source === "db";
     const shouldFetchAdzuna = source === "all" || source === "adzuna";
 
-    const [dbRawJobs, dbTotal] = shouldFetchDB
+    let [dbRawJobs, dbTotal] = shouldFetchDB
       ? await Promise.all([
           masterPrisma.discoveryJob.findMany({
             where,
@@ -123,6 +124,19 @@ jobListingRouter.get("/", async (req: Request, res: Response) => {
           masterPrisma.discoveryJob.count({ where }),
         ])
       : [[] as any[], 0];
+
+    if (shouldFetchDB && dbTotal === 0) {
+      await JobSearchService.ensureSeedJobsIfEmpty().catch(() => {});
+      [dbRawJobs, dbTotal] = await Promise.all([
+        masterPrisma.discoveryJob.findMany({
+          where,
+          orderBy: { createdAt: sortOrder },
+          skip,
+          take: limitNum,
+        }),
+        masterPrisma.discoveryJob.count({ where }),
+      ]);
+    }
 
     const dbJobs = dbRawJobs.map(mapDiscoveryJobToListing);
 

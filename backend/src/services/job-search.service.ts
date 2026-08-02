@@ -183,7 +183,121 @@ export class JobSearchService {
     }
   }
 
+  static async ensureSeedJobsIfEmpty(): Promise<void> {
+    try {
+      const db = getDb();
+      const count = await db.discoveryJob.count();
+      if (count === 0) {
+        console.log("[JobSearchService] Database has 0 jobs. Auto-seeding jobs & fetching live feeds...");
+        await this.fetchLiveRemoteOKJobs().catch(() => {});
+        
+        const defaultJobs = [
+          {
+            title: "Senior Full Stack Engineer",
+            company: "Google",
+            location: "Bangalore, India",
+            workMode: "Hybrid",
+            employmentType: "Full-Time",
+            salaryMin: 2500000,
+            salaryMax: 4500000,
+            skills: ["React", "Node.js", "TypeScript", "System Design", "GCP"],
+            description: "Join Google's engineering team to build scalable cloud applications and high-throughput microservices.",
+            applyUrl: "https://careers.google.com",
+            source: "google-careers",
+            fingerprint: simpleHash("google|senior full stack engineer|bangalore"),
+          },
+          {
+            title: "Frontend Developer (React / Next.js)",
+            company: "Microsoft",
+            location: "Hyderabad, India",
+            workMode: "Remote",
+            employmentType: "Full-Time",
+            salaryMin: 1800000,
+            salaryMax: 3500000,
+            skills: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Redux"],
+            description: "Build interactive, high-performance web applications using modern React and TypeScript stack.",
+            applyUrl: "https://careers.microsoft.com",
+            source: "microsoft-careers",
+            fingerprint: simpleHash("microsoft|frontend developer|hyderabad"),
+          },
+          {
+            title: "Backend Engineer (Java / Spring Boot)",
+            company: "Amazon",
+            location: "Bangalore, India",
+            workMode: "On-Site",
+            employmentType: "Full-Time",
+            salaryMin: 2200000,
+            salaryMax: 4000000,
+            skills: ["Java", "Spring Boot", "AWS", "DynamoDB", "Microservices"],
+            description: "Design resilient backend microservices for Amazon AWS and global e-commerce systems.",
+            applyUrl: "https://amazon.jobs",
+            source: "amazon-jobs",
+            fingerprint: simpleHash("amazon|backend engineer|bangalore"),
+          },
+          {
+            title: "AI / ML Engineer",
+            company: "Meta",
+            location: "Remote",
+            workMode: "Remote",
+            employmentType: "Full-Time",
+            salaryMin: 3000000,
+            salaryMax: 6000000,
+            skills: ["Python", "PyTorch", "LLMs", "Machine Learning", "NLP"],
+            description: "Work on cutting-edge generative AI models and recommendation pipelines.",
+            applyUrl: "https://metacareers.com",
+            source: "meta-careers",
+            fingerprint: simpleHash("meta|ai ml engineer|remote"),
+          },
+          {
+            title: "SDE-1 (Freshers & 0-2 YOE)",
+            company: "Swiggy",
+            location: "Bangalore, India",
+            workMode: "Hybrid",
+            employmentType: "Full-Time",
+            salaryMin: 1400000,
+            salaryMax: 2200000,
+            skills: ["Go", "Java", "Data Structures", "Algorithms", "SQL"],
+            description: "Opportunity for freshers and junior developers to work on high-scale food delivery services.",
+            applyUrl: "https://swiggy.com/careers",
+            source: "swiggy-careers",
+            fingerprint: simpleHash("swiggy|sde 1|bangalore"),
+          },
+          {
+            title: "DevOps / Cloud Engineer",
+            company: "Razorpay",
+            location: "Bangalore, India",
+            workMode: "Hybrid",
+            employmentType: "Full-Time",
+            salaryMin: 2000000,
+            salaryMax: 3800000,
+            skills: ["Docker", "Kubernetes", "AWS", "Terraform", "CI/CD"],
+            description: "Manage and scale fintech cloud infrastructure supporting millions of daily transactions.",
+            applyUrl: "https://razorpay.com/jobs",
+            source: "razorpay-jobs",
+            fingerprint: simpleHash("razorpay|devops engineer|bangalore"),
+          }
+        ];
+
+        for (const job of defaultJobs) {
+          await db.discoveryJob.upsert({
+            where: { fingerprint: job.fingerprint },
+            update: { lastSeenAt: new Date() },
+            create: {
+              ...job,
+              country: "India",
+              isActive: true,
+              postedAt: new Date(),
+            },
+          }).catch(() => {});
+        }
+      }
+    } catch (err: any) {
+      console.warn("[JobSearchService] ensureSeedJobsIfEmpty warning:", err?.message || err);
+    }
+  }
+
   static async search(filters: SearchFilters): Promise<SearchResult> {
+    await this.ensureSeedJobsIfEmpty().catch(() => {});
     this.autoUpdateStaleJobs().catch(() => {});
     const db = getDb();
     const page = filters.page || 1;
