@@ -9,14 +9,12 @@ import {
   Volume2,
   VolumeX,
   RotateCcw,
-  Shield,
   Clock,
   Sparkles,
   Keyboard,
   Send,
   Loader2,
   AlertCircle,
-  HelpCircle,
 } from "lucide-react";
 import { InterviewerCard } from "./InterviewerCard";
 import { CandidateCard } from "./CandidateCard";
@@ -111,21 +109,21 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
 
   return (
     <div
-      className={`relative min-h-screen flex flex-col justify-between p-4 md:p-6 select-none ${
+      className={`relative h-[calc(100vh-76px)] w-full flex flex-col justify-between p-3.5 select-none overflow-hidden ${
         isDark ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
       }`}
     >
       {/* 1. Header Bar */}
-      <header className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+      <header className="shrink-0 flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-800/80">
         <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
-            <Sparkles className="w-5 h-5" />
+          <div className="p-1.5 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
+            <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h1 className="text-base md:text-lg font-bold tracking-tight text-slate-100">
+            <h1 className="text-sm md:text-base font-bold tracking-tight text-slate-100 leading-tight">
               {interviewTitle}
             </h1>
-            <p className="text-xs text-slate-400 font-medium">
+            <p className="text-[11px] text-slate-400 font-medium">
               Role: <span className="text-purple-300">{targetRole}</span>
               {companyName && (
                 <>
@@ -140,24 +138,24 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
         </div>
 
         {/* Status Indicators */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
-            <Clock className="w-4 h-4 text-purple-400" />
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
+            <Clock className="w-3.5 h-3.5 text-purple-400" />
             <span>{formatTime(elapsedSeconds)}</span>
           </div>
 
-          <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-medium text-emerald-400">
+          <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-medium text-emerald-400">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Voice Room Active</span>
           </div>
         </div>
       </header>
 
-      {/* 2. Main Stage Content */}
-      <main className="flex-1 my-4 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-        {/* Left Column: Interviewer & Candidate Cards (8 cols) */}
-        <div className="lg:col-span-7 flex flex-col space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+      {/* 2. Main Stage Content (Strict Single-Viewport Grid) */}
+      <main className="flex-1 min-h-0 my-2 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch overflow-hidden">
+        {/* Left Column: Interviewer & Candidate Cards (7 cols) */}
+        <div className="lg:col-span-7 flex flex-col space-y-3 h-full min-h-0 overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-0 overflow-hidden">
             <InterviewerCard
               state={state}
               interviewerName="AI Recruiter"
@@ -166,7 +164,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
               avatarVideoUrl={avatarVideoUrl}
               avatarAudioUrl={avatarAudioUrl}
               theme={theme}
-              className="h-full min-h-[300px]"
+              className="h-full min-h-0"
             />
 
             <CandidateCard
@@ -177,25 +175,25 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
               videoElement={candidateVideoElement}
               proctoringHUD={proctoringHUD}
               theme={theme}
-              className="h-full min-h-[300px]"
+              className="h-full min-h-0"
             />
           </div>
 
-          {/* Custom Overlay (e.g. Technical Code Editor or STAR feedback drawer) if passed */}
+          {/* Custom Overlay (e.g. Technical Code Editor or STAR feedback) */}
           {customOverlayContent && (
-            <div className="flex-1 mt-2">{customOverlayContent}</div>
+            <div className="flex-1 min-h-0 overflow-hidden">{customOverlayContent}</div>
           )}
         </div>
 
         {/* Right Column: Live Meeting Transcript (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col h-full min-h-[350px]">
+        <div className="lg:col-span-5 flex flex-col h-full min-h-0 overflow-hidden">
           <LiveTranscriptTimeline
             messages={messages}
             liveTranscript={liveTranscript}
             accumulatedTranscript={accumulatedTranscript}
             isCandidateSpeaking={micLevel > 15}
             theme={theme}
-            className="flex-1"
+            className="h-full min-h-0 flex-1"
           />
         </div>
       </main>
@@ -204,12 +202,12 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
       <AnimatePresence>
         {state === "PROCESSING" && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-4 p-3 rounded-2xl bg-purple-950/60 border border-purple-500/40 backdrop-blur-md flex items-center justify-center space-x-3 text-purple-200 text-sm shadow-xl shadow-purple-950/50"
+            exit={{ opacity: 0, y: -6 }}
+            className="shrink-0 mb-2 p-2 rounded-xl bg-purple-950/60 border border-purple-500/40 backdrop-blur-md flex items-center justify-center space-x-2 text-purple-200 text-xs shadow-lg shadow-purple-950/40"
           >
-            <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+            <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
             <span className="font-medium tracking-wide">
               Interviewer is reviewing your answer...
             </span>
@@ -217,7 +215,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
         )}
       </AnimatePresence>
 
-      {/* 4. Accessibility Text Mode Drawer (Optional) */}
+      {/* 4. Accessibility Text Mode Drawer */}
       <AnimatePresence>
         {textModeEnabled && (
           <motion.form
@@ -225,18 +223,18 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             onSubmit={handleManualTextSubmit}
-            className="mb-4 flex items-center space-x-2 bg-slate-900 p-2.5 rounded-2xl border border-purple-500/30"
+            className="shrink-0 mb-2 flex items-center space-x-2 bg-slate-900 p-2 rounded-xl border border-purple-500/30"
           >
             <input
               type="text"
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               placeholder="Keyboard Accessibility Mode: Type your answer here..."
-              className="flex-1 bg-transparent px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none"
+              className="flex-1 bg-transparent px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none"
             />
             <button
               type="submit"
-              className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium transition-colors flex items-center space-x-1 text-xs"
+              className="p-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium transition-colors flex items-center space-x-1 text-xs"
             >
               <span>Submit</span>
               <Send className="w-3.5 h-3.5" />
@@ -246,31 +244,31 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
       </AnimatePresence>
 
       {/* 5. Minimal Utility Toolbar (Bottom) */}
-      <footer className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800/80">
+      <footer className="shrink-0 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
         <div className="flex items-center space-x-2">
           {/* Pause / Resume */}
           <button
             onClick={onPauseToggle}
-            className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center space-x-2 transition-colors ${
+            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors ${
               isPaused
                 ? "bg-amber-600/20 text-amber-300 border-amber-500/40 hover:bg-amber-600/30"
                 : "bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800"
             }`}
           >
-            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+            {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
             <span>{isPaused ? "Resume" : "Pause"}</span>
           </button>
 
           {/* Mute AI Voice */}
           <button
             onClick={onMuteToggle}
-            className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center space-x-2 transition-colors ${
+            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors ${
               isAiMuted
                 ? "bg-rose-600/20 text-rose-300 border-rose-500/40 hover:bg-rose-600/30"
                 : "bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800"
             }`}
           >
-            {isAiMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {isAiMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
             <span>{isAiMuted ? "Unmute AI" : "Mute AI"}</span>
           </button>
 
@@ -278,9 +276,9 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
           <button
             onClick={onReplayLastQuestion}
             disabled={!lastInterviewerMessage}
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 disabled:opacity-50 text-xs font-semibold flex items-center space-x-2 transition-colors"
+            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 disabled:opacity-50 text-xs font-semibold flex items-center space-x-1.5 transition-colors"
           >
-            <RotateCcw className="w-4 h-4 text-purple-400" />
+            <RotateCcw className="w-3.5 h-3.5 text-purple-400" />
             <span>Replay Question</span>
           </button>
         </div>
@@ -290,23 +288,23 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
           {/* Text Mode Toggle */}
           <button
             onClick={onTextModeToggle}
-            className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center space-x-2 transition-colors ${
+            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors ${
               textModeEnabled
                 ? "bg-purple-600/20 text-purple-300 border-purple-500/40"
                 : "bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800"
             }`}
             title="Toggle Accessibility Text Mode"
           >
-            <Keyboard className="w-4 h-4" />
+            <Keyboard className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Text Mode</span>
           </button>
 
           {/* End Interview */}
           <button
             onClick={() => setShowEndConfirmModal(true)}
-            className="p-2.5 rounded-xl bg-rose-600/20 text-rose-300 border border-rose-500/40 hover:bg-rose-600/30 text-xs font-semibold flex items-center space-x-2 transition-colors"
+            className="px-3 py-1.5 rounded-xl bg-rose-600/20 text-rose-300 border border-rose-500/40 hover:bg-rose-600/30 text-xs font-semibold flex items-center space-x-1.5 transition-colors"
           >
-            <PhoneOff className="w-4 h-4" />
+            <PhoneOff className="w-3.5 h-3.5" />
             <span>End Interview</span>
           </button>
         </div>

@@ -74,27 +74,27 @@ const SOURCE_ACTORS: Record<string, { actorId: string; displayName: string; sche
     schedule: "6h",
   },
   naukri: {
-    actorId: "naukri/job-scraper",
+    actorId: "muhammetakkurtt/naukri-job-scraper",
     displayName: "Naukri",
     schedule: "daily",
   },
   internshala: {
-    actorId: "internshala/job-scraper",
+    actorId: "solidcode/internshala-scraper",
     displayName: "Internshala",
     schedule: "daily",
   },
   remoteok: {
-    actorId: "remoteok/job-scraper",
+    actorId: "shahidirfan/Remoteok-Job-Scraper",
     displayName: "RemoteOK",
     schedule: "6h",
   },
   wellfound: {
-    actorId: "wellfound/job-scraper",
+    actorId: "orgupdate/wellfound-jobs-scraper",
     displayName: "Wellfound",
     schedule: "daily",
   },
   foundit: {
-    actorId: "foundit/job-scraper",
+    actorId: "shahidirfan/foundit-jobs-scraper",
     displayName: "Foundit (Monster)",
     schedule: "daily",
   },
@@ -285,36 +285,37 @@ const NAUKRI_CONFIG: SourceConfig = {
   schedule: "daily",
   buildInput: (config: any) => ({
     keyword: config.keywords || "software engineer",
-    location: config.location || "Bangalore",
-    experience: config.experience || "",
-    pageLimit: config.pageLimit || 3,
+    maxJobs: Math.max(50, config.count || config.maxJobs || 50),
   }),
   normalizeResult: (data: any) => {
     const items = Array.isArray(data) ? data : data?.items || [];
     return items.map((item: any): NormalizedJob => {
-      const desc = item.description || item.jobDescription || "";
-      const exp = item.experience || "";
+      const desc = item.jobDescription || item.description || "";
+      const exp = item.experience || item.experienceText || "";
       const expMatch = exp.match(/(\d+)/);
       const expMaxMatch = exp.match(/[-–]\s*(\d+)/);
+      const skills = typeof item.tagsAndSkills === "string"
+        ? item.tagsAndSkills.split(",").map((s: string) => s.trim()).filter(Boolean)
+        : Array.isArray(item.tagsAndSkills) ? item.tagsAndSkills : [];
       return {
         title: item.title || item.jobTitle || "",
-        company: item.company || item.companyName || "",
+        company: item.companyName || item.company || "",
         location: item.location || "",
         description: stripHtml(desc),
-        salaryMin: parseSalary(item.salary || item.annualSalary, "min"),
-        salaryMax: parseSalary(item.salary || item.annualSalary, "max"),
-        experienceMin: expMatch ? parseInt(expMatch[1]) : undefined,
-        experienceMax: expMaxMatch ? parseInt(expMaxMatch[1]) : undefined,
+        salaryMin: parseSalary(item.salary || item.salaryDetail?.label, "min"),
+        salaryMax: parseSalary(item.salary || item.salaryDetail?.label, "max"),
+        experienceMin: expMatch ? parseInt(expMatch[1]) : item.minimumExperience !== undefined ? Number(item.minimumExperience) : undefined,
+        experienceMax: expMaxMatch ? parseInt(expMaxMatch[1]) : item.maximumExperience !== undefined ? Number(item.maximumExperience) : undefined,
         employmentType: "Full-Time",
-        workMode: normalizeWorkMode(desc, ""),
-        skills: extractSkills(`${item.title || ""} ${item.jobTitle || ""} ${desc}`),
+        workMode: normalizeWorkMode(desc, item.mode || ""),
+        skills: skills.length > 0 ? skills : extractSkills(`${item.title || ""} ${desc}`),
         source: "naukri",
-        sourceUrl: item.url || item.jobUrl || "",
-        applyUrl: item.url || item.jobUrl || "",
-        postedAt: item.postedDate || item.lastUpdated || undefined,
-        companyLogo: item.companyLogo || undefined,
+        sourceUrl: item.jdURL || item.url || item.jobUrl || "",
+        applyUrl: item.jdURL || item.url || item.jobUrl || "",
+        postedAt: item.createdDate || item.postedDate || item.lastUpdated || undefined,
+        companyLogo: item.logoPath || item.companyLogo || undefined,
         industry: item.industry || undefined,
-        externalId: item.id || item.jobId || undefined,
+        externalId: item.jobId ? String(item.jobId) : item.id ? String(item.id) : undefined,
       };
     });
   },
@@ -326,31 +327,39 @@ const INTERNSHALA_CONFIG: SourceConfig = {
   actorId: SOURCE_ACTORS.internshala.actorId,
   schedule: "daily",
   buildInput: (config: any) => ({
-    keyword: config.keywords || "software development",
+    mode: config.type === "job" ? "jobs" : "internships",
+    category: config.keywords || "Computer Science",
     location: config.location || "Bangalore",
-    type: config.type || "internship",
+    maxResults: Math.max(1, config.count || 100),
   }),
   normalizeResult: (data: any) => {
     const items = Array.isArray(data) ? data : data?.items || [];
     return items.map((item: any): NormalizedJob => {
-      const stipend = item.stipend || item.salary || "";
-      const stipendNum = parseInt(String(stipend).replace(/[^0-9]/g, "")) || 0;
-      const isMonthly = /month|monthly|pm/i.test(String(stipend));
-      const annualMin = isMonthly ? stipendNum * 12 : stipendNum;
+      const stipend = item.stipend || item.salary;
+      const salaryMin = stipend?.min || undefined;
+      const salaryMax = stipend?.max || undefined;
+      const isMonthly = stipend?.period === "month" || /month/i.test(stipend?.raw || "");
+      const annualMin = salaryMin && isMonthly ? salaryMin * 12 : salaryMin;
+      const annualMax = salaryMax && isMonthly ? salaryMax * 12 : salaryMax;
+      const locations = Array.isArray(item.locations) ? item.locations.join(", ") : (item.location || "");
+      const remote = item.workFromHome === true || item.workMode === "wfh";
       return {
         title: item.title || "",
         company: item.company || "",
-        location: item.location || "Remote",
-        description: item.description || item.jobDescription || "",
+        location: locations || "Remote",
+        description: item.description || item.shortDescription || "",
         salaryMin: annualMin || undefined,
-        employmentType: /intern/i.test(item.type || "") ? "Internship" : mapEmploymentType(item.type || ""),
-        workMode: normalizeWorkMode(item.description || "", item.workMode || item.location || ""),
-        skills: extractSkills(`${item.title || ""} ${item.description || ""}`),
+        salaryMax: annualMax || undefined,
+        employmentType: /intern/i.test(item.recordType || item.type || "") ? "Internship" : mapEmploymentType(item.recordType || item.type || ""),
+        workMode: remote ? "Remote" : normalizeWorkMode(item.description || "", item.workMode || locations),
+        skills: Array.isArray(item.skills) && item.skills.length > 0 ? item.skills : extractSkills(`${item.title || ""} ${item.description || ""}`),
         source: "internshala",
-        sourceUrl: item.url || "",
-        applyUrl: item.url || item.applyUrl || "",
-        postedAt: item.postedDate || item.postingDate || undefined,
-        externalId: item.id || undefined,
+        sourceUrl: item.applyUrl || item.url || "",
+        applyUrl: item.applyUrl || item.url || "",
+        postedAt: item.postedAtIso || item.postedAt || undefined,
+        companyLogo: item.companyLogoUrl || undefined,
+        benefits: Array.isArray(item.perks) ? item.perks : undefined,
+        externalId: item.id ? String(item.id) : undefined,
       };
     });
   },
@@ -393,35 +402,37 @@ const WELLFOUND_CONFIG: SourceConfig = {
   actorId: SOURCE_ACTORS.wellfound.actorId,
   schedule: "daily",
   buildInput: (config: any) => ({
-    role: config.keywords || "software engineer",
-    location: config.location || "",
-    remote: config.remote ?? true,
+    includeKeyword: config.keywords || "software engineer",
+    locationName: config.location || "",
+    countryName: config.country || "",
+    pagesToFetch: Math.max(1, config.pagesToFetch || 2),
   }),
   normalizeResult: (data: any) => {
     const items = Array.isArray(data) ? data : data?.items || [];
     return items.map((item: any): NormalizedJob => {
-      const remote = item.remote || item.remote_ok || false;
-      const desc = item.description || "";
+      const remote = item.remote || item.remote_ok || /remote/i.test(item.location || "") || false;
+      const desc = item.description || item.descriptionText || "";
+      const salaryRaw = item.salary || item.salary_info || "";
       return {
-        title: item.title || item.role || "",
-        company: item.company_name || item.company || "",
+        title: item.job_title || item.jobTitle || item.title || item.role || "",
+        company: item.company_name || item.companyName || item.company || "",
         location: item.location || "",
         description: stripHtml(desc),
-        salaryMin: item.salary_min || undefined,
-        salaryMax: item.salary_max || undefined,
+        salaryMin: parseSalary(salaryRaw, "min") || item.salary_min || undefined,
+        salaryMax: parseSalary(salaryRaw, "max") || item.salary_max || undefined,
         experienceMin: item.experience_min || undefined,
         experienceMax: item.experience_max || undefined,
-        employmentType: mapEmploymentType(item.employment_type || item.type || ""),
+        employmentType: mapEmploymentType(item.job_type || item.employment_type || item.type || ""),
         workMode: remote ? "Remote" : normalizeWorkMode(desc, ""),
-        skills: extractSkills(`${item.title || ""} ${desc} ${(item.tags || []).join(" ")}`),
+        skills: extractSkills(`${item.job_title || item.jobTitle || item.title || ""} ${desc} ${(item.tags || []).join(" ")}`),
         source: "wellfound",
-        sourceUrl: item.url || item.app_url || "",
-        applyUrl: item.url || item.apply_url || "",
-        postedAt: item.created_at || undefined,
-        companyLogo: item.company_logo || undefined,
+        sourceUrl: item.URL || item.url || item.jobUrl || item.app_url || "",
+        applyUrl: item.URL || item.url || item.jobUrl || item.apply_url || "",
+        postedAt: item.date || item.postedDate || item.posted_date || item.created_at || undefined,
+        companyLogo: item.company_logo || item.logoUrl || undefined,
         companySize: item.company_size || undefined,
         industry: item.market || item.industry || undefined,
-        externalId: item.id ? String(item.id) : undefined,
+        externalId: item.id ? String(item.id) : item.job_id ? String(item.job_id) : undefined,
       };
     });
   },
@@ -435,35 +446,36 @@ const FOUNDIT_CONFIG: SourceConfig = {
   buildInput: (config: any) => ({
     keyword: config.keywords || "software engineer",
     location: config.location || "",
-    experience: config.experience || "",
-    pageLimit: config.pageLimit || 3,
+    results_wanted: Math.max(10, config.count || 30),
+    max_pages: Math.max(1, config.max_pages || 3),
   }),
   normalizeResult: (data: any) => {
     const items = Array.isArray(data) ? data : data?.items || [];
     return items.map((item: any): NormalizedJob => {
-      const desc = item.description || item.jobDescription || "";
+      const desc = item.description_text || item.description || item.jobDescription || (item.description_html ? stripHtml(item.description_html) : "");
       const exp = item.experience || "";
       const expMatch = exp.match(/(\d+)/);
       const expMaxMatch = exp.match(/[-–]\s*(\d+)/);
+      const skills = Array.isArray(item.skills) ? item.skills : [];
       return {
         title: item.title || "",
-        company: item.company || "",
+        company: item.company || item.companyName || "",
         location: item.location || "",
         description: stripHtml(desc),
         salaryMin: parseSalary(item.salary, "min"),
         salaryMax: parseSalary(item.salary, "max"),
         experienceMin: expMatch ? parseInt(expMatch[1]) : undefined,
         experienceMax: expMaxMatch ? parseInt(expMaxMatch[1]) : undefined,
-        employmentType: mapEmploymentType(item.employmentType || item.jobType || ""),
+        employmentType: mapEmploymentType(item.employment_type || item.employmentType || item.jobType || ""),
         workMode: normalizeWorkMode(desc, item.workMode || ""),
-        skills: extractSkills(`${item.title || ""} ${desc}`),
+        skills: skills.length > 0 ? skills : extractSkills(`${item.title || ""} ${desc}`),
         source: "foundit",
-        sourceUrl: item.url || "",
-        applyUrl: item.url || item.applyUrl || "",
-        postedAt: item.postedDate || item.lastDate || undefined,
+        sourceUrl: item.url || item.apply_url || "",
+        applyUrl: item.apply_url || item.url || "",
+        postedAt: item.date_posted || item.postedDate || item.lastDate || undefined,
         companyLogo: item.companyLogo || undefined,
         industry: item.industry || undefined,
-        externalId: item.id || undefined,
+        externalId: item.job_id ? String(item.job_id) : item.id ? String(item.id) : undefined,
       };
     });
   },
@@ -480,6 +492,12 @@ const SOURCE_CONFIGS: Record<string, SourceConfig> = {
 };
 
 // ─── Helper Utilities ──────────────────────────────────────────────────────────
+
+function toValidDate(value: any): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
 
 function stripHtml(html: string): string {
   if (!html) return "";
@@ -755,7 +773,7 @@ export class JobDiscoveryService {
                 applyUrl: job.applyUrl || null,
                 sourceUrl: job.sourceUrl || null,
                 source,
-                postedAt: job.postedAt ? new Date(job.postedAt) : null,
+                postedAt: toValidDate(job.postedAt),
                 isActive: true,
               },
             });

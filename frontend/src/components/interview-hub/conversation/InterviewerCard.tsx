@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Bot, Volume2, Brain, Loader2 } from "lucide-react";
+import { Bot, Loader2 } from "lucide-react";
 import AIAvatar from "@/components/interview-hub/shared/AIAvatar";
 import type { ConversationState } from "./conversation-types";
 
@@ -51,23 +51,23 @@ export const InterviewerCard: React.FC<InterviewerCardProps> = ({
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-between p-6 rounded-2xl border backdrop-blur-md transition-all duration-300 ${
+      className={`relative h-full flex flex-col items-center justify-between p-3.5 rounded-2xl border backdrop-blur-md overflow-hidden transition-all duration-300 ${
         isDark
           ? "bg-slate-900/90 border-slate-800 shadow-2xl shadow-purple-950/20"
           : "bg-white/90 border-slate-200 shadow-xl shadow-purple-500/10"
       } ${className}`}
     >
       {/* Top Bar: Interviewer Info & Status */}
-      <div className="w-full flex items-center justify-between">
-        <div className="flex items-center space-x-2.5">
+      <div className="w-full flex items-center justify-between shrink-0">
+        <div className="flex items-center space-x-2">
           <div className="p-1.5 rounded-lg bg-purple-600/20 text-purple-400 border border-purple-500/30">
             <Bot className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold tracking-wide text-slate-100">
+            <h4 className="text-xs font-semibold tracking-wide text-slate-100 leading-tight">
               {interviewerName}
             </h4>
-            <p className="text-[11px] text-slate-400 font-medium">
+            <p className="text-[10px] text-slate-400 font-medium">
               {companyName ? `${companyName} • ${interviewerRole}` : interviewerRole}
             </p>
           </div>
@@ -75,28 +75,28 @@ export const InterviewerCard: React.FC<InterviewerCardProps> = ({
 
         {/* Status Pill */}
         <div
-          className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full border text-xs font-medium ${statusBadgeColor}`}
+          className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-medium ${statusBadgeColor}`}
         >
           {isSpeaking && (
             <span className="flex space-x-0.5 items-center">
-              <span className="w-1 h-3 bg-purple-400 animate-pulse rounded-full" />
-              <span className="w-1 h-4 bg-purple-400 animate-pulse delay-75 rounded-full" />
+              <span className="w-1 h-2.5 bg-purple-400 animate-pulse rounded-full" />
+              <span className="w-1 h-3.5 bg-purple-400 animate-pulse delay-75 rounded-full" />
               <span className="w-1 h-2 bg-purple-400 animate-pulse delay-150 rounded-full" />
             </span>
           )}
-          {isThinking && <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />}
+          {isThinking && <Loader2 className="w-3 h-3 animate-spin text-amber-400" />}
           <span>{statusLabel}</span>
         </div>
       </div>
 
       {/* Main AIAvatar Display */}
-      <div className="relative my-6 flex flex-col items-center justify-center">
+      <div className="relative my-auto py-2 flex flex-col items-center justify-center">
         {/* Glow Ring when speaking */}
         {isSpeaking && (
           <motion.div
-            animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+            animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0.6, 0.3] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -inset-4 rounded-full bg-gradient-to-r from-purple-600/40 via-indigo-600/30 to-purple-600/40 blur-xl pointer-events-none"
+            className="absolute -inset-3 rounded-full bg-gradient-to-r from-purple-600/40 via-indigo-600/30 to-purple-600/40 blur-xl pointer-events-none"
           />
         )}
 
@@ -104,20 +104,20 @@ export const InterviewerCard: React.FC<InterviewerCardProps> = ({
           aiStatus={avatarStatus}
           videoUrl={avatarVideoUrl}
           audioUrl={avatarAudioUrl}
-          size="lg"
+          size="md"
           theme={theme}
           companyName={companyName}
         />
       </div>
 
       {/* Footer / Dynamic Waveform */}
-      <div className="w-full flex items-center justify-center h-8">
+      <div className="w-full flex items-center justify-center h-6 shrink-0">
         {isSpeaking ? (
           <div className="flex items-center space-x-1">
-            {[40, 70, 100, 60, 90, 50, 80, 40].map((height, idx) => (
+            {[30, 60, 90, 50, 80, 40, 70, 30].map((height, idx) => (
               <motion.span
                 key={idx}
-                animate={{ height: ["10%", `${height}%`, "10%"] }}
+                animate={{ height: ["15%", `${height}%`, "15%"] }}
                 transition={{
                   duration: 0.6,
                   repeat: Infinity,
@@ -128,7 +128,7 @@ export const InterviewerCard: React.FC<InterviewerCardProps> = ({
             ))}
           </div>
         ) : (
-          <span className="text-xs text-slate-500 font-medium tracking-wide">
+          <span className="text-[11px] text-slate-500 font-medium tracking-wide">
             {isThinking ? "Evaluating conversational context..." : "Ready for candidate response"}
           </span>
         )}
