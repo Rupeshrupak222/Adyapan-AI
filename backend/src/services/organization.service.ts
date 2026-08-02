@@ -24,16 +24,26 @@ export async function autoRegisterOrgFromProfile(orgName?: string | null) {
 }
 
 export async function getAdminOrganizationsService() {
-  // Fetch manually created & auto-created organizations
-  const orgs = await prisma.organization.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  let orgs: any[] = [];
+  try {
+    orgs = await prisma.organization.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    console.error("[getAdminOrganizationsService] organization table query error:", err);
+    orgs = [];
+  }
 
-  // Also query distinct college names from profiles to capture any student-entered universities not in orgs yet
-  const profilesWithCollege = await prisma.profile.findMany({
-    where: { AND: [{ college: { not: null } }, { college: { not: "" } }] },
-    select: { college: true, userId: true, branch: true, degree: true },
-  });
+  let profilesWithCollege: any[] = [];
+  try {
+    profilesWithCollege = await prisma.profile.findMany({
+      where: { AND: [{ college: { not: null } }, { college: { not: "" } }] },
+      select: { college: true, userId: true, branch: true, degree: true },
+    });
+  } catch (err) {
+    console.error("[getAdminOrganizationsService] profile query error:", err);
+    profilesWithCollege = [];
+  }
 
   // Map college name -> count & student IDs
   const profileMap = new Map<string, { count: number; userIds: Set<string> }>();
@@ -46,21 +56,31 @@ export async function getAdminOrganizationsService() {
     profileMap.set(name.toLowerCase(), existing);
   }
 
-  // Auto-sync any un-registered colleges from profiles into database
+  // Auto-sync any un-registered colleges from profiles into database (or virtual fallback)
   for (const [key, val] of profileMap.entries()) {
     const matched = orgs.find(o => o.name.toLowerCase() === key);
     if (!matched) {
       const isCompany = /inc|ltd|corp|llc|tech|software|solutions|services|systems|gmbh|pvt|co\./i.test(key);
+      const rawName = profilesWithCollege.find(p => p.college?.toLowerCase() === key)?.college?.trim() || key;
+      let createdOrg: any = null;
       try {
-        const newOrg = await prisma.organization.create({
+        createdOrg = await prisma.organization.create({
           data: {
-            name: profilesWithCollege.find(p => p.college?.toLowerCase() === key)?.college?.trim() || key,
+            name: rawName,
             type: isCompany ? "COMPANY" : "UNIVERSITY",
             status: "ACTIVE",
           },
         });
-        orgs.push(newOrg);
-      } catch { /* ignore concurrency duplicate */ }
+      } catch {
+        createdOrg = {
+          id: `virtual_${key}`,
+          name: rawName,
+          type: isCompany ? "COMPANY" : "UNIVERSITY",
+          status: "ACTIVE",
+          createdAt: new Date().toISOString(),
+        };
+      }
+      orgs.push(createdOrg);
     }
   }
 
@@ -150,10 +170,15 @@ export async function deleteOrganizationService(id: string) {
 
 export async function getOrganizationStudentsService(orgIdOrName: string) {
   let orgName = orgIdOrName;
-  const org = await prisma.organization.findFirst({
-    where: { OR: [{ id: orgIdOrName }, { name: { equals: orgIdOrName, mode: "insensitive" } }] },
-  });
-  if (org) orgName = org.name;
+  let org: any = null;
+  try {
+    org = await prisma.organization.findFirst({
+      where: { OR: [{ id: orgIdOrName }, { name: { equals: orgIdOrName, mode: "insensitive" } }] },
+    });
+    if (org) orgName = org.name;
+  } catch {
+    org = null;
+  }
 
   const profiles = await prisma.profile.findMany({
     where: { college: { equals: orgName, mode: "insensitive" } },
