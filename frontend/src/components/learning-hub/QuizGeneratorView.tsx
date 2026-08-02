@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { stripMarkdown } from "@/utils/stripMarkdown";
 import CountUp from "react-countup";
@@ -472,6 +473,7 @@ function QuizSkeleton({ step, mode, topic }: { step: number; mode: QuizMode; top
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) => void }) {
+  const router = useRouter();
   const theme = useTheme();
   const c = mkColors(theme);
 
@@ -1169,8 +1171,7 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
                         url.searchParams.set("studyMode", "topic");
                         url.searchParams.set("topic", encodeURIComponent(topicToLearn));
                       }
-                      window.history.replaceState({}, "", url.toString());
-                      window.location.href = url.toString();
+                      router.push(url.pathname + url.search);
                     }
                   }}
                   className="py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"

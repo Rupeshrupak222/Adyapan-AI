@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Settings, Palette, Bell, Sparkles, BookOpen, Shield, Lock,
@@ -55,6 +56,7 @@ type SectionId = (typeof NAV_ITEMS)[number]["id"];
 
 // ─── Main Component ──────────────────────────────────────────────────────
 export function ManageAccountView() {
+  const router = useRouter();
   const theme = useTheme();
   const isDark = theme === "dark";
 
@@ -827,7 +829,7 @@ export function ManageAccountView() {
           >
             <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Quick Actions</span>
             {[
-              { label: "Upgrade Plan", icon: ArrowUpRight, color: "text-amber-500", action: () => window.location.href = "/pricing" },
+              { label: "Upgrade Plan", icon: ArrowUpRight, color: "text-amber-500", action: () => router.push("/premium") },
               { label: "Download Data", icon: Download, color: "text-cyan-500", action: handleExportData },
               { label: "Export Chats", icon: FileText, color: "text-purple-500", action: handleExportData },
               { label: "Invite Friend", icon: Link2, color: "text-emerald-500", action: () => { navigator.clipboard.writeText(window.location.origin + "/register?ref=" + username); toast.success("Invite link copied!"); } },
@@ -2410,6 +2412,7 @@ export function ActivitySection({
 
 // ─── Help Section ────────────────────────────────────────────────────────
 export function HelpSection({ c }: { c: Record<string, string> }) {
+  const router = useRouter();
   const [activeModal, setActiveModal] = useState<"faq" | "support" | "bug" | "docs" | "about" | null>(null);
 
   // FAQ state
@@ -2517,7 +2520,7 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
     { id: "support", title: "Contact Support", desc: "Get help from our support team", icon: Mail, color: "text-emerald-500", onClick: () => setActiveModal("support") },
     { id: "bug", title: "Report Bug", desc: "Report issues or unexpected behavior", icon: AlertTriangle, color: "text-rose-500", onClick: () => setActiveModal("bug") },
     { id: "docs", title: "Documentation", desc: "Explore guides and tutorials", icon: FileText, color: "text-purple-500", onClick: () => setActiveModal("docs") },
-    { id: "community", title: "Community", desc: "Join the Adyapan developer community", icon: Users, color: "text-cyan-500", onClick: () => window.location.href = "/dashboard/user?view=community-browse" },
+    { id: "community", title: "Community", desc: "Join the Adyapan developer community", icon: Users, color: "text-cyan-500", onClick: () => router.push("/dashboard/user?view=community-browse") },
     { id: "about", title: "About Adyapan AI", desc: "Version 2.0.0 · Made with love", icon: Info, color: "text-amber-500", onClick: () => setActiveModal("about") },
   ];
 

@@ -558,6 +558,7 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                       onMouseEnter={(e) => {
                         (e.currentTarget as HTMLElement).style.color = "var(--primary)";
                         (e.currentTarget as HTMLElement).style.background = "rgba(245,158,11,0.05)";
+                        if (sub.href && sub.href !== "#") router.prefetch(sub.href);
                       }}
                       onMouseLeave={(e) => {
                         (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
@@ -597,6 +598,7 @@ export function DashboardTopNav({
   onMarkAllRead: () => void;
   onClearAll: () => void;
 }) {
+  const router = useRouter();
   const [generateOpen, setGenerateOpen] = useState(false);
   const [evaluateOpen, setEvaluateOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -619,7 +621,11 @@ export function DashboardTopNav({
     }
     if (n.link) {
       setNotificationsOpen(false);
-      window.location.href = n.link;
+      if (n.link.startsWith("/")) {
+        router.push(n.link);
+      } else {
+        window.location.href = n.link;
+      }
     }
   };
 
@@ -2194,7 +2200,10 @@ export default function UserDashboardPage() {
       const user = JSON.parse(raw) as { id?: string; role?: string };
       if (!user.id) { router.replace("/login"); return; }
       if (user.role === "ADMIN") { router.replace("/dashboard/admin"); return; }
-      router.replace(`/dashboard/user/${user.id}`);
+      // Preserve the query string (e.g. ?view=resume-builder) so deep-linked
+      // hubs land on the requested view instead of silently resetting to dashboard.
+      const query = window.location.search;
+      router.replace(`/dashboard/user/${user.id}${query}`);
     } catch { router.replace("/login"); }
   }, [router]);
 

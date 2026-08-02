@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -288,6 +289,7 @@ function ChallengeRow({
 // ─── Main View ──────────────────────────────────────────────────────────────
 
 export function CodingChallengesView() {
+  const router = useRouter();
   const [theme, setTheme] = useState("dark");
   const isDark = theme === "dark";
 
@@ -377,7 +379,7 @@ export function CodingChallengesView() {
   };
 
   const openProblem = (challenge: ChallengeListItem) => {
-    window.location.href = `/dashboard/coding/ide/${challenge.id}`;
+    router.push(`/dashboard/coding/ide/${challenge.id}`);
   };
 
   // Re-fetch when filters change (only in challenges view)
