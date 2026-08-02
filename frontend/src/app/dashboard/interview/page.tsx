@@ -15,7 +15,6 @@ import {
   Clock, Calendar, Star, TrendingUp, AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
-import { generateInterviewPDF } from "@/utils/interview-pdf";
 
 // ── SCHEMA ──────────────────────────────────────────────────
 const interviewConfigSchema = z.object({
@@ -227,16 +226,19 @@ function InterviewPageContent() {
               <div className="flex items-center gap-2">
                 {(completedSession as any).evaluation?.overallScore && (
                   <button
-                    onClick={() => generateInterviewPDF({
-                      sessionId: (completedSession as any).id,
-                      role: (completedSession as any).role,
-                      type: (completedSession as any).type,
-                      difficulty: (completedSession as any).difficulty,
-                      language: "english",
-                      durationMinutes: 30,
-                      createdAt: (completedSession as any).createdAt,
-                      evaluation: (completedSession as any).evaluation,
-                    })}
+                    onClick={async () => {
+                      const { generateInterviewPDF } = await import("@/utils/interview-pdf");
+                      generateInterviewPDF({
+                        sessionId: (completedSession as any).id,
+                        role: (completedSession as any).role,
+                        type: (completedSession as any).type,
+                        difficulty: (completedSession as any).difficulty,
+                        language: "english",
+                        durationMinutes: 30,
+                        createdAt: (completedSession as any).createdAt,
+                        evaluation: (completedSession as any).evaluation,
+                      });
+                    }}
                     className="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold hover:bg-emerald-500/25 transition-colors"
                   >
                     Download PDF

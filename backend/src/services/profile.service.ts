@@ -60,7 +60,13 @@ export async function getProfile(userId: string) {
   return profile;
 }
 
-export function upsertProfile(userId: string, input: ProfileInput) {
+import { autoRegisterOrgFromProfile } from "./organization.service";
+
+export async function upsertProfile(userId: string, input: ProfileInput) {
+  if (input.college) {
+    autoRegisterOrgFromProfile(input.college).catch(() => {});
+  }
+
   const data = {
     username: input.username,
     phone: input.phone,

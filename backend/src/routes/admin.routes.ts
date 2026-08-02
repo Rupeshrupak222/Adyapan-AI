@@ -46,10 +46,26 @@ import {
   updatePlan,
   deletePlan,
 } from "../controllers/plan.controller";
+import {
+  getAdminOrganizations,
+  createAdminOrganization,
+  updateAdminOrganization,
+  deleteAdminOrganization,
+  getOrganizationStudents,
+  bulkRegisterOrganizationStudents,
+} from "../controllers/organization.controller";
 
 export const adminRouter = Router();
 
 const guard = [requireAdminAuth];
+
+// Organization & University/Company Management
+adminRouter.get("/organizations", ...guard, getAdminOrganizations);
+adminRouter.post("/organizations", ...guard, createAdminOrganization);
+adminRouter.put("/organizations/:id", ...guard, updateAdminOrganization);
+adminRouter.delete("/organizations/:id", ...guard, deleteAdminOrganization);
+adminRouter.get("/organizations/:id/students", ...guard, getOrganizationStudents);
+adminRouter.post("/organizations/bulk-students", ...guard, bulkRegisterOrganizationStudents);
 
 adminRouter.get("/dashboard", ...guard, getDashboardStats);
 adminRouter.get("/activity", ...guard, getActivityFeed);

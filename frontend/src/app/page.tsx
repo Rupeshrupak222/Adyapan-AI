@@ -12,11 +12,33 @@ import {
   Calendar, Star, Check, Layers,
   Search, Briefcase, Quote, Building2, GraduationCap, Zap, Users,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { AnimatedRocket, AnimatedSparkles, AnimatedCheck, AnimatedCode, AnimatedZap } from "@/components/ui/AnimatedIcons";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { landingFAQs } from "@/data/platform";
-import Scene from "@/components/3d/Scene";
+
+const Scene = dynamic(() => import("@/components/3d/Scene"), {
+  ssr: false,
+  loading: () => <div style={{ width: "100%", height: "100%", minHeight: 300 }} />,
+});
+
+function DeferredScene() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setShow(true), 2000);
+    const onInteract = () => setShow(true);
+    window.addEventListener("pointerdown", onInteract, { once: true });
+    window.addEventListener("scroll", onInteract, { once: true, passive: true });
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("pointerdown", onInteract);
+      window.removeEventListener("scroll", onInteract);
+    };
+  }, []);
+  if (!show) return <div style={{ width: "100%", height: "100%", minHeight: 300 }} />;
+  return <Scene />;
+}
 
 // ─── Animation Variants ──────────────────────────────────────────────────
 const fadeUp: Variants = {
@@ -310,7 +332,7 @@ export default function LandingPage() {
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
             >
-              <Scene />
+              <DeferredScene />
             </motion.div>
             <motion.div
               className="absolute -inset-4 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl opacity-10 blur-xl"

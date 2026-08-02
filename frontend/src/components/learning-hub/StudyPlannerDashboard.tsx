@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/services/api";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
-import jsPDF from "jspdf";
 import { 
   Calendar as CalendarIcon, BookOpen, Clock, AlertCircle, Award, 
   Sparkles, CheckCircle, RefreshCw, ChevronLeft, ChevronRight, 
@@ -284,9 +283,10 @@ export function StudyPlannerDashboard() {
     }
   };
 
-  const handleExport = (type: string = "PDF") => {
+  const handleExport = async (type: string = "PDF") => {
     if (!activePlan) return toast.error("No study plan to export.");
     try {
+      const { default: jsPDF } = await import("jspdf");
       const doc = new jsPDF({ unit: "mm", format: "a4" });
       const marginX = 14;
       let y = 18;
