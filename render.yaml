@@ -14,7 +14,7 @@ services:
       - key: PORT
         value: 10000
       - key: NODE_OPTIONS
-        value: --max-old-space-size=450
+        value: --max-old-space-size=1024
       - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
         value: true
       - key: DATABASE_URL
