@@ -13,6 +13,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { api } from "@/services/api";
+import { useTheme } from "@/hooks/useTheme";
 import { KPICard } from "@/components/admin/shared/KPICard";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
@@ -101,6 +102,9 @@ function formatNumber(n: number): string {
 }
 
 export default function ExecutiveDashboard() {
+  const theme = useTheme();
+  const isDark = theme === "dark";
+
   const [loading, setLoading] = useState(true);
   const [dash, setDash] = useState<DashboardData | null>(null);
   const [health, setHealth] = useState<HealthData | null>(null);
@@ -450,10 +454,12 @@ export default function ExecutiveDashboard() {
                 <YAxis tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{
-                    background: "#0c131a",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: isDark ? "#0c131a" : "#ffffff",
+                    border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
                     borderRadius: 12,
                     fontSize: 12,
+                    color: "var(--text-primary)",
+                    boxShadow: isDark ? "0 10px 25px rgba(0,0,0,0.5)" : "0 10px 25px rgba(0,0,0,0.1)",
                   }}
                   labelStyle={{ color: "var(--text-secondary)", fontWeight: 700 }}
                 />
