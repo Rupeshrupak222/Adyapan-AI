@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/user-client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import { databaseService } from "../services/database.service";
 
 type ExtendedUserClient = any;
@@ -53,7 +54,8 @@ function isTableOrColumnMissing(err: any): boolean {
 }
 
 export function createPrismaClient(databaseUrl: string): any {
-  const adapter = new PrismaPg({ connectionString: databaseUrl, max: 2 });
+  const pool = new Pool({ connectionString: databaseUrl, max: 4 });
+  const adapter = new PrismaPg(pool);
   const base = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
