@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
+import { toast } from "sonner";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
 import {
@@ -112,9 +113,11 @@ export default function AIPlatform() {
       const res = await api.put("/admin/settings", payload);
       if (res.data.success) {
         setSettings(res.data.settings);
+        toast.success(`AI Platform settings updated! Default model: ${selectedModel.toUpperCase()}, Free limit: ${payload.freeTierTokenLimit.toLocaleString()} tokens`);
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || "Failed to save settings");
+      toast.error("Failed to save AI Platform settings.");
     } finally {
       setSaving(false);
     }
