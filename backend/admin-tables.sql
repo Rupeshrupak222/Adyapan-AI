@@ -696,6 +696,145 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- FEATURE MANAGEMENT (Enterprise Feature Flag System)
+-- ═══════════════════════════════════════════════════════════════════════
+
+-- CreateTable: features (master registry)
+CREATE TABLE IF NOT EXISTS "features" (
+    "id" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "module" TEXT NOT NULL DEFAULT 'System',
+    "category" TEXT NOT NULL DEFAULT 'System',
+    "status" TEXT NOT NULL DEFAULT 'Enabled',
+    "environment" TEXT NOT NULL DEFAULT 'Production',
+    "access_level" TEXT NOT NULL DEFAULT 'All',
+    "version" TEXT NOT NULL DEFAULT '1.0.0',
+    "owner" TEXT,
+    "is_premium" BOOLEAN NOT NULL DEFAULT false,
+    "is_beta" BOOLEAN NOT NULL DEFAULT false,
+    "api_endpoint" TEXT,
+    "rate_limit" INTEGER,
+    "notes" TEXT,
+    "last_deployed_at" TIMESTAMP(3),
+    "deleted_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "features_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "features_key_key" ON "features"("key");
+CREATE INDEX IF NOT EXISTS "features_module_idx" ON "features"("module");
+CREATE INDEX IF NOT EXISTS "features_category_idx" ON "features"("category");
+CREATE INDEX IF NOT EXISTS "features_status_idx" ON "features"("status");
+CREATE INDEX IF NOT EXISTS "features_owner_idx" ON "features"("owner");
+
+-- Extend feature_flags with enterprise columns (idempotent)
+ALTER TABLE "feature_flags" ADD COLUMN IF NOT EXISTS "feature_id" TEXT;
+ALTER TABLE "feature_flags" ADD COLUMN IF NOT EXISTS "environment" TEXT NOT NULL DEFAULT 'Production';
+ALTER TABLE "feature_flags" ADD COLUMN IF NOT EXISTS "target_type" TEXT NOT NULL DEFAULT 'all';
+ALTER TABLE "feature_flags" ADD COLUMN IF NOT EXISTS "target_users" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "feature_flags" ADD COLUMN IF NOT EXISTS "target_roles" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "feature_flags" ADD COLUMN IF NOT EXISTS "target_universities" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "feature_flags" ADD COLUMN IF NOT EXISTS "target_countries" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "feature_flags" ADD COLUMN IF NOT EXISTS "updated_by" TEXT;
+ALTER TABLE "feature_flags" ADD COLUMN IF NOT EXISTS "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "feature_flags_feature_id_environment_key" ON "feature_flags"("feature_id", "environment");
+CREATE INDEX IF NOT EXISTS "feature_flags_feature_id_idx" ON "feature_flags"("feature_id");
+
+-- CreateTable: feature_dependencies
+CREATE TABLE IF NOT EXISTS "feature_dependencies" (
+    "id" TEXT NOT NULL,
+    "feature_id" TEXT NOT NULL,
+    "depends_on_id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "feature_dependencies_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "feature_dependencies_feature_dep_key" ON "feature_dependencies"("feature_id", "depends_on_id");
+CREATE INDEX IF NOT EXISTS "feature_dependencies_feature_id_idx" ON "feature_dependencies"("feature_id");
+CREATE INDEX IF NOT EXISTS "feature_dependencies_depends_on_id_idx" ON "feature_dependencies"("depends_on_id");
+
+-- CreateTable: feature_usage (daily analytics snapshots)
+CREATE TABLE IF NOT EXISTS "feature_usage" (
+    "id" TEXT NOT NULL,
+    "feature_id" TEXT NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "requests" INTEGER NOT NULL DEFAULT 0,
+    "users" INTEGER NOT NULL DEFAULT 0,
+    "success_count" INTEGER NOT NULL DEFAULT 0,
+    "error_count" INTEGER NOT NULL DEFAULT 0,
+    "avg_response_ms" INTEGER NOT NULL DEFAULT 0,
+    "revenue_generated" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "ai_tokens_used" BIGINT NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "feature_usage_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "feature_usage_feature_date_key" ON "feature_usage"("feature_id", "date");
+CREATE INDEX IF NOT EXISTS "feature_usage_feature_id_idx" ON "feature_usage"("feature_id");
+
+-- CreateTable: feature_rollouts (rollout history)
+CREATE TABLE IF NOT EXISTS "feature_rollouts" (
+    "id" TEXT NOT NULL,
+    "feature_id" TEXT NOT NULL,
+    "environment" TEXT NOT NULL DEFAULT 'Production',
+    "rollout_pct" INTEGER NOT NULL,
+    "is_enabled" BOOLEAN NOT NULL,
+    "target_type" TEXT NOT NULL DEFAULT 'all',
+    "target_roles" JSONB NOT NULL DEFAULT '[]',
+    "target_users" JSONB NOT NULL DEFAULT '[]',
+    "target_universities" JSONB NOT NULL DEFAULT '[]',
+    "target_countries" JSONB NOT NULL DEFAULT '[]',
+    "changed_by" TEXT,
+    "reason" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "feature_rollouts_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "feature_rollouts_feature_id_idx" ON "feature_rollouts"("feature_id");
+
+-- CreateTable: feature_permissions (per-role management matrix)
+CREATE TABLE IF NOT EXISTS "feature_permissions" (
+    "id" TEXT NOT NULL,
+    "feature_id" TEXT NOT NULL,
+    "role" TEXT NOT NULL,
+    "can_view" BOOLEAN NOT NULL DEFAULT true,
+    "can_edit" BOOLEAN NOT NULL DEFAULT false,
+    "can_toggle" BOOLEAN NOT NULL DEFAULT false,
+    "can_rollout" BOOLEAN NOT NULL DEFAULT false,
+    "can_delete" BOOLEAN NOT NULL DEFAULT false,
+    "can_manage_permissions" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "feature_permissions_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "feature_permissions_feature_role_key" ON "feature_permissions"("feature_id", "role");
+
+-- CreateTable: feature_logs (activity trail)
+CREATE TABLE IF NOT EXISTS "feature_logs" (
+    "id" TEXT NOT NULL,
+    "feature_id" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "changed_by" TEXT,
+    "details" JSONB NOT NULL DEFAULT '{}',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "feature_logs_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "feature_logs_feature_id_idx" ON "feature_logs"("feature_id");
+CREATE INDEX IF NOT EXISTS "feature_logs_created_at_idx" ON "feature_logs"("created_at");
+
 
 
 

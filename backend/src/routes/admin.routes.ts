@@ -56,6 +56,19 @@ import {
   getOrganizationStudents,
   bulkRegisterOrganizationStudents,
 } from "../controllers/organization.controller";
+import {
+  getFeatures,
+  getFeatureById,
+  getFeatureLogs,
+  createFeature,
+  updateFeature,
+  deleteFeature,
+  restoreFeature,
+  updateFeatureStatus,
+  updateFeatureRollout,
+  updateFeaturePermissions,
+  exportFeatures,
+} from "../controllers/feature.controller";
 
 export const adminRouter = Router();
 
@@ -108,6 +121,19 @@ adminRouter.get("/coupons", ...can("billing", "read"), getCoupons);
 adminRouter.post("/coupons", ...can("billing", "write"), createCoupon);
 adminRouter.put("/coupons/:id", ...can("billing", "write"), updateCoupon);
 adminRouter.delete("/coupons/:id", ...can("billing", "write"), deleteCoupon);
+
+// ── Feature Management (Enterprise Feature Flag System) ──
+adminRouter.get("/features/export", ...can("features", "read"), exportFeatures);
+adminRouter.get("/features/logs", ...can("features", "read"), getFeatureLogs);
+adminRouter.get("/features", ...can("features", "read"), getFeatures);
+adminRouter.get("/features/:id", ...can("features", "read"), getFeatureById);
+adminRouter.post("/features", ...can("features", "write"), createFeature);
+adminRouter.put("/features/:id", ...can("features", "write"), updateFeature);
+adminRouter.patch("/features/status", ...can("features", "write"), updateFeatureStatus);
+adminRouter.patch("/features/rollout", ...can("features", "write"), updateFeatureRollout);
+adminRouter.patch("/features/permissions", ...can("features", "write"), updateFeaturePermissions);
+adminRouter.delete("/features/:id", ...can("features", "write"), deleteFeature);
+adminRouter.post("/features/:id/restore", ...can("features", "write"), restoreFeature);
 
 // Plan Management
 adminRouter.get("/plans", ...can("billing", "read"), getPlans);

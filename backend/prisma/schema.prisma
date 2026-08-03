@@ -770,17 +770,136 @@ model SystemMetric {
   @@map("system_metrics")
 }
 
-model FeatureFlag {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  name        String
-  description String?
-  isEnabled   Boolean  @default(true) @map("is_enabled")
-  rolloutPct  Int      @default(100) @map("rollout_pct")
-  status      String   @default("Enabled")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+model Feature {
+  id             String    @id @default(cuid())
+  key            String    @unique
+  name           String
+  description    String?   @db.Text
+  module         String    @default("System")
+  category       String    @default("System")
+  status         String    @default("Enabled")
+  environment    String    @default("Production")
+  accessLevel    String    @default("All") @map("access_level")
+  version        String    @default("1.0.0")
+  owner          String?
+  isPremium      Boolean   @default(false) @map("is_premium")
+  isBeta         Boolean   @default(false) @map("is_beta")
+  apiEndpoint    String?   @map("api_endpoint")
+  rateLimit      Int?      @map("rate_limit")
+  notes          String?   @db.Text
+  lastDeployedAt DateTime? @map("last_deployed_at")
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  @@index([module])
+  @@index([category])
+  @@index([status])
+  @@index([owner])
+  @@map("features")
+}
+
+model FeatureFlag {
+  id                 String   @id @default(cuid())
+  key                String   @unique
+  name               String
+  description        String?  @db.Text
+  isEnabled          Boolean  @default(true) @map("is_enabled")
+  rolloutPct         Int      @default(100) @map("rollout_pct")
+  status             String   @default("Enabled")
+  featureId          String?  @map("feature_id")
+  environment        String   @default("Production")
+  targetType         String   @default("all") @map("target_type")
+  targetUsers        Json     @default("[]") @map("target_users")
+  targetRoles        Json     @default("[]") @map("target_roles")
+  targetUniversities Json     @default("[]") @map("target_universities")
+  targetCountries    Json     @default("[]") @map("target_countries")
+  updatedBy          String?  @map("updated_by")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([featureId])
+  @@unique([featureId, environment])
   @@map("feature_flags")
+}
+
+model FeatureDependency {
+  id          String   @id @default(cuid())
+  featureId   String   @map("feature_id")
+  dependsOnId String   @map("depends_on_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([featureId, dependsOnId])
+  @@index([featureId])
+  @@index([dependsOnId])
+  @@map("feature_dependencies")
+}
+
+model FeatureUsage {
+  id             String   @id @default(cuid())
+  featureId      String   @map("feature_id")
+  date           DateTime
+  requests       Int      @default(0)
+  users          Int      @default(0)
+  successCount   Int      @default(0) @map("success_count")
+  errorCount     Int      @default(0) @map("error_count")
+  avgResponseMs  Int      @default(0) @map("avg_response_ms")
+  revenueGenerated Float  @default(0) @map("revenue_generated")
+  aiTokensUsed   BigInt   @default(0) @map("ai_tokens_used")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@unique([featureId, date])
+  @@index([featureId])
+  @@map("feature_usage")
+}
+
+model FeatureRollout {
+  id                 String   @id @default(cuid())
+  featureId          String   @map("feature_id")
+  environment        String   @default("Production")
+  rolloutPct         Int
+  isEnabled          Boolean
+  targetType         String   @default("all") @map("target_type")
+  targetRoles        Json     @default("[]") @map("target_roles")
+  targetUsers        Json     @default("[]") @map("target_users")
+  targetUniversities Json     @default("[]") @map("target_universities")
+  targetCountries    Json     @default("[]") @map("target_countries")
+  changedBy          String?  @map("changed_by")
+  reason             String?
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([featureId])
+  @@map("feature_rollouts")
+}
+
+model FeaturePermission {
+  id                 String   @id @default(cuid())
+  featureId          String   @map("feature_id")
+  role               String
+  canView            Boolean  @default(true) @map("can_view")
+  canEdit            Boolean  @default(false) @map("can_edit")
+  canToggle          Boolean  @default(false) @map("can_toggle")
+  canRollout         Boolean  @default(false) @map("can_rollout")
+  canDelete          Boolean  @default(false) @map("can_delete")
+  canManagePermissions Boolean @default(false) @map("can_manage_permissions")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@unique([featureId, role])
+  @@map("feature_permissions")
+}
+
+model FeatureLog {
+  id        String   @id @default(cuid())
+  featureId String   @map("feature_id")
+  action    String
+  changedBy String?
+  details   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([featureId])
+  @@index([createdAt])
+  @@map("feature_logs")
 }
 
 model Coupon {
