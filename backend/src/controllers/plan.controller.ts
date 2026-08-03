@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../config/prisma";
 import { httpError } from "../utils/httpError";
+import { AdminAuditService } from "../services/admin-audit.service";
 
 // Default prices (paise) used when the plans table is empty.
 export const DEFAULT_PLANS: Record<string, { amount: number; label: string }> = {
@@ -129,6 +130,16 @@ export async function createPlan(req: Request, res: Response, next: NextFunction
       },
     });
 
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Plan Created",
+      module: "Plans",
+      targetId: plan.id,
+      details: { code: normalizedCode, name: plan.name, priceMonthly: monthly, priceYearly: yearly },
+      ipAddress: req.ip,
+    });
+
     res.json({ success: true, plan });
   } catch (error) {
     next(error);
@@ -174,6 +185,17 @@ export async function updatePlan(req: Request, res: Response, next: NextFunction
     if (isActive != null) data.isActive = Boolean(isActive);
 
     const updated = await prisma.plan.update({ where: { id }, data });
+
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Plan Updated",
+      module: "Plans",
+      targetId: updated.id,
+      details: { code: updated.code, name: updated.name },
+      ipAddress: req.ip,
+    });
+
     res.json({ success: true, plan: updated });
   } catch (error) {
     next(error);
@@ -189,6 +211,17 @@ export async function deletePlan(req: Request, res: Response, next: NextFunction
     if (!plan) throw httpError(404, "Plan not found");
 
     await prisma.plan.delete({ where: { id } });
+
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Plan Deleted",
+      module: "Plans",
+      targetId: id,
+      details: { code: plan.code, name: plan.name },
+      ipAddress: req.ip,
+    });
+
     res.json({ success: true, message: "Plan deleted" });
   } catch (error) {
     next(error);

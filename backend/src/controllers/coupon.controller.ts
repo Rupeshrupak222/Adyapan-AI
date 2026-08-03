@@ -3,6 +3,7 @@ import { prisma } from "../config/prisma";
 import { httpError } from "../utils/httpError";
 import { requireUserId } from "../utils/request";
 import { resolvePlanPrice } from "./plan.controller";
+import { AdminAuditService } from "../services/admin-audit.service";
 
 // ─── Shared validation ───────────────────────────────────────────
 
@@ -128,6 +129,16 @@ export async function createCoupon(req: Request, res: Response, next: NextFuncti
       },
     });
 
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Coupon Created",
+      module: "Coupons",
+      targetId: coupon.id,
+      details: { code: normalizedCode, discountPct: pct },
+      ipAddress: req.ip,
+    });
+
     res.json({ success: true, coupon: toPublicCoupon(coupon) });
   } catch (error) {
     next(error);
@@ -171,6 +182,17 @@ export async function updateCoupon(req: Request, res: Response, next: NextFuncti
     }
 
     const updated = await prisma.coupon.update({ where: { id }, data });
+
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Coupon Updated",
+      module: "Coupons",
+      targetId: updated.id,
+      details: { code: updated.code, discountPct: updated.discountPct },
+      ipAddress: req.ip,
+    });
+
     res.json({ success: true, coupon: toPublicCoupon(updated) });
   } catch (error) {
     next(error);
@@ -186,6 +208,17 @@ export async function deleteCoupon(req: Request, res: Response, next: NextFuncti
     if (!coupon) throw httpError(404, "Coupon not found");
 
     await prisma.coupon.delete({ where: { id } });
+
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Coupon Deleted",
+      module: "Coupons",
+      targetId: id,
+      details: { code: coupon.code },
+      ipAddress: req.ip,
+    });
+
     res.json({ success: true, message: "Coupon deleted" });
   } catch (error) {
     next(error);

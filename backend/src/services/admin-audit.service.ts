@@ -16,7 +16,7 @@ export class AdminAuditService {
       await (prisma as any).adminAuditLog.create({
         data: {
           adminId: options.adminId || null,
-          adminName: options.adminName || "System Admin",
+          adminName: options.adminName || null,
           action: options.action,
           module: options.module,
           targetId: options.targetId || null,

@@ -4,6 +4,7 @@ import { requireString } from "../utils/request";
 import { env } from "../config/env";
 import { httpError } from "../utils/httpError";
 import { prisma } from "../config/prisma";
+import { AdminAuditService } from "../services/admin-audit.service";
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
@@ -75,6 +76,16 @@ export async function login(req: Request, res: Response, next: NextFunction) {
           userAgent: req.headers["user-agent"] || undefined,
           status: "SUCCESS",
         },
+      }).catch(() => {});
+
+      AdminAuditService.log({
+        adminId: result.user.id,
+        adminName: result.user.name,
+        action: "Admin Login",
+        module: "Security",
+        targetId: result.user.id,
+        details: { email: result.user.email },
+        ipAddress: req.ip,
       }).catch(() => {});
     }
 

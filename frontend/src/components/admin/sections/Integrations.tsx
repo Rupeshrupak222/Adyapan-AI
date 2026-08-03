@@ -66,7 +66,7 @@ export default function Integrations() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/settings");
+      const res = await api.get("/admin/integrations");
       if (res.data?.success) {
         setSettings(res.data.settings);
       }
@@ -132,7 +132,7 @@ export default function Integrations() {
         <div className="rounded-2xl border p-8 text-center" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
           <p className="text-sm font-bold" style={{ color: "var(--text-secondary)" }}>Unable to load integration status</p>
           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-            Sign in again to view your configured providers.
+            Refresh or check that the admin backend is reachable.
           </p>
         </div>
       )}

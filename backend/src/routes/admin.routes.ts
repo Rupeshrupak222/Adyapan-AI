@@ -18,6 +18,7 @@ import {
   getAdminSettings,
   updateAdminSettings,
   getAnalyticsBI,
+  getAdminIntegrations,
   getAdminNotifications,
   createAdminBroadcastNotification,
   toggleRevokeAdminNotification,
@@ -27,6 +28,7 @@ import {
   getAdminUserSettings,
 } from "../controllers/admin.controller";
 import { requireAdminAuth } from "../middleware/adminAuth";
+import { requireAdminPermission } from "../middleware/adminPermission";
 import {
   getUserDatabases,
   getUserDatabaseStats,
@@ -57,60 +59,63 @@ import {
 
 export const adminRouter = Router();
 
-const guard = [requireAdminAuth];
+const can = (resource: string, action = "*") => [requireAdminAuth, requireAdminPermission(resource, action)];
 
 // Organization & University/Company Management
-adminRouter.get("/organizations", ...guard, getAdminOrganizations);
-adminRouter.post("/organizations", ...guard, createAdminOrganization);
-adminRouter.put("/organizations/:id", ...guard, updateAdminOrganization);
-adminRouter.delete("/organizations/:id", ...guard, deleteAdminOrganization);
-adminRouter.get("/organizations/:id/students", ...guard, getOrganizationStudents);
-adminRouter.post("/organizations/bulk-students", ...guard, bulkRegisterOrganizationStudents);
+adminRouter.get("/organizations", ...can("organizations", "read"), getAdminOrganizations);
+adminRouter.post("/organizations", ...can("organizations", "write"), createAdminOrganization);
+adminRouter.put("/organizations/:id", ...can("organizations", "write"), updateAdminOrganization);
+adminRouter.delete("/organizations/:id", ...can("organizations", "write"), deleteAdminOrganization);
+adminRouter.get("/organizations/:id/students", ...can("organizations", "read"), getOrganizationStudents);
+adminRouter.post("/organizations/bulk-students", ...can("organizations", "write"), bulkRegisterOrganizationStudents);
 
-adminRouter.get("/dashboard", ...guard, getDashboardStats);
-adminRouter.get("/activity", ...guard, getActivityFeed);
-adminRouter.get("/users", ...guard, getAdminUsers);
-adminRouter.post("/users/:id/action", ...guard, updateUserPlan);
-adminRouter.get("/analytics/ai", ...guard, getAiAnalytics);
-adminRouter.get("/analytics/revenue", ...guard, getRevenueAnalytics);
-adminRouter.get("/analytics/bi", ...guard, getAnalyticsBI);
-adminRouter.get("/system-health", ...guard, getSystemHealth);
-adminRouter.get("/modules", ...guard, getModuleAnalytics);
-adminRouter.get("/security", ...guard, getSecurityLogs);
-adminRouter.post("/notifications/:id/read", ...guard, markNotificationRead);
-adminRouter.get("/notifications", ...guard, getAdminNotifications);
-adminRouter.post("/notifications", ...guard, createAdminBroadcastNotification);
-adminRouter.put("/notifications/:id/revoke", ...guard, toggleRevokeAdminNotification);
-adminRouter.delete("/notifications/:id", ...guard, deleteAdminNotification);
+adminRouter.get("/dashboard", ...can("analytics", "read"), getDashboardStats);
+adminRouter.get("/activity", ...can("analytics", "read"), getActivityFeed);
+adminRouter.get("/users", ...can("users", "read"), getAdminUsers);
+adminRouter.post("/users/:id/action", ...can("users", "write"), updateUserPlan);
+adminRouter.get("/analytics/ai", ...can("analytics", "read"), getAiAnalytics);
+adminRouter.get("/analytics/revenue", ...can("analytics", "read"), getRevenueAnalytics);
+adminRouter.get("/analytics/bi", ...can("analytics", "read"), getAnalyticsBI);
+adminRouter.get("/system-health", ...can("system", "read"), getSystemHealth);
+adminRouter.get("/modules", ...can("analytics", "read"), getModuleAnalytics);
+adminRouter.get("/security", ...can("security", "read"), getSecurityLogs);
+adminRouter.post("/notifications/:id/read", ...can("security", "write"), markNotificationRead);
+adminRouter.get("/notifications", ...can("notifications", "read"), getAdminNotifications);
+adminRouter.post("/notifications", ...can("notifications", "write"), createAdminBroadcastNotification);
+adminRouter.put("/notifications/:id/revoke", ...can("notifications", "write"), toggleRevokeAdminNotification);
+adminRouter.delete("/notifications/:id", ...can("notifications", "write"), deleteAdminNotification);
 // Job Discovery Management
-adminRouter.get("/jobs", ...guard, getAdminJobs);
-adminRouter.post("/jobs", ...guard, createAdminJob);
-adminRouter.put("/jobs/:id", ...guard, updateAdminJob);
-adminRouter.delete("/jobs/:id", ...guard, deleteAdminJob);
-adminRouter.post("/jobs/ingest", ...guard, triggerJobIngestion);
+adminRouter.get("/jobs", ...can("jobs", "read"), getAdminJobs);
+adminRouter.post("/jobs", ...can("jobs", "write"), createAdminJob);
+adminRouter.put("/jobs/:id", ...can("jobs", "write"), updateAdminJob);
+adminRouter.delete("/jobs/:id", ...can("jobs", "write"), deleteAdminJob);
+adminRouter.post("/jobs/ingest", ...can("jobs", "write"), triggerJobIngestion);
 
 // System Settings Management
-adminRouter.get("/settings", ...guard, getAdminSettings);
-adminRouter.put("/settings", ...guard, updateAdminSettings);
+adminRouter.get("/settings", ...can("settings", "read"), getAdminSettings);
+adminRouter.put("/settings", ...can("settings", "write"), updateAdminSettings);
+
+// System Integrations Status
+adminRouter.get("/integrations", ...can("settings", "read"), getAdminIntegrations);
 
 // User Settings & Support Ticket Management
-adminRouter.get("/support-tickets", ...guard, getAdminSupportTickets);
-adminRouter.put("/support-tickets/:ticketId/status", ...guard, updateSupportTicketStatus);
-adminRouter.get("/users/:userId/settings", ...guard, getAdminUserSettings);
+adminRouter.get("/support-tickets", ...can("support", "read"), getAdminSupportTickets);
+adminRouter.put("/support-tickets/:ticketId/status", ...can("support", "write"), updateSupportTicketStatus);
+adminRouter.get("/users/:userId/settings", ...can("users", "read"), getAdminUserSettings);
 
 // Coupon Management
-adminRouter.get("/coupons", ...guard, getCoupons);
-adminRouter.post("/coupons", ...guard, createCoupon);
-adminRouter.put("/coupons/:id", ...guard, updateCoupon);
-adminRouter.delete("/coupons/:id", ...guard, deleteCoupon);
+adminRouter.get("/coupons", ...can("billing", "read"), getCoupons);
+adminRouter.post("/coupons", ...can("billing", "write"), createCoupon);
+adminRouter.put("/coupons/:id", ...can("billing", "write"), updateCoupon);
+adminRouter.delete("/coupons/:id", ...can("billing", "write"), deleteCoupon);
 
 // Plan Management
-adminRouter.get("/plans", ...guard, getPlans);
-adminRouter.post("/plans", ...guard, createPlan);
-adminRouter.put("/plans/:id", ...guard, updatePlan);
-adminRouter.delete("/plans/:id", ...guard, deletePlan);
+adminRouter.get("/plans", ...can("billing", "read"), getPlans);
+adminRouter.post("/plans", ...can("billing", "write"), createPlan);
+adminRouter.put("/plans/:id", ...can("billing", "write"), updatePlan);
+adminRouter.delete("/plans/:id", ...can("billing", "write"), deletePlan);
 
-adminRouter.get("/performance", ...guard, (req, res) => {
+adminRouter.get("/performance", ...can("system", "read"), (req, res) => {
   try {
     const { PerformanceMonitor } = require("../utils/monitoring");
     res.json({ success: true, stats: PerformanceMonitor.getStats() });
@@ -119,8 +124,8 @@ adminRouter.get("/performance", ...guard, (req, res) => {
   }
 });
 
-adminRouter.get("/databases", ...guard, getUserDatabases);
-adminRouter.get("/databases/stats", ...guard, getUserDatabaseStats);
-adminRouter.get("/databases/aggregated", ...guard, getAggregatedStats);
-adminRouter.post("/databases/:userId/query", ...guard, queryUserDb);
-adminRouter.delete("/databases/:userId", ...guard, deleteUserDatabase);
+adminRouter.get("/databases", ...can("databases", "read"), getUserDatabases);
+adminRouter.get("/databases/stats", ...can("databases", "read"), getUserDatabaseStats);
+adminRouter.get("/databases/aggregated", ...can("databases", "read"), getAggregatedStats);
+adminRouter.post("/databases/:userId/query", ...can("databases", "write"), queryUserDb);
+adminRouter.delete("/databases/:userId", ...can("databases", "write"), deleteUserDatabase);

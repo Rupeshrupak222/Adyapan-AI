@@ -161,7 +161,7 @@ export default function OrganizationManagement() {
     setStudentsModalOpen(true);
     setStudentsLoading(true);
     try {
-      const res = await api.get(`/admin/organizations/${org.name}/students`);
+      const res = await api.get(`/admin/organizations/${encodeURIComponent(org.name)}/students`);
       if (res.data.success) {
         setStudents(res.data.students || []);
       }

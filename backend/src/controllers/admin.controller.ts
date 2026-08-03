@@ -4,13 +4,16 @@ import { adminDbService } from "../services/admin-db.service";
 import { databaseService } from "../services/database.service";
 import { createPrismaClient } from "../config/dynamicPrisma";
 import { httpError } from "../utils/httpError";
+import { env } from "../config/env";
 import bcrypt from "bcrypt";
 import { autoResolveCompanyLogo } from "../utils/companyLogoResolver";
 import { JobDiscoveryService } from "../services/job-discovery.service";
 import { emitBroadcastNotification } from "../lib/notificationEmitter";
+import { AdminAuditService } from "../services/admin-audit.service";
 
-// Memory store for global admin settings
-let systemSettingsMemory = {
+// ─── Global admin settings (DB-backed via AdminSetting) ──────────
+
+const DEFAULT_SYSTEM_SETTINGS = {
   platformName: "Adyapan AI",
   supportEmail: "support@adyapan.ai",
   defaultLanguage: "en",
@@ -27,10 +30,51 @@ let systemSettingsMemory = {
   minPasswordLength: 6,
   mfaRequired: false,
   sessionTimeout: 60,
-};
+} as const;
+
+type SystemSettings = typeof DEFAULT_SYSTEM_SETTINGS;
+
+// Fast in-memory cache consumed synchronously by config routes & token tracking.
+let systemSettingsMemory: SystemSettings = { ...DEFAULT_SYSTEM_SETTINGS };
+let settingsLoadPromise: Promise<void> | null = null;
 
 export function getSystemSettingsMemory() {
   return systemSettingsMemory;
+}
+
+function coerceSettingValue(key: string, value: unknown): unknown {
+  const current = (DEFAULT_SYSTEM_SETTINGS as any)[key];
+  if (typeof current === "number") {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : current;
+  }
+  if (typeof current === "boolean") {
+    return value === true || value === "true" || value === 1 || value === "1";
+  }
+  return value == null ? current : String(value);
+}
+
+async function loadSystemSettingsFromDb(): Promise<void> {
+  try {
+    const rows = await (prisma as any).adminSetting.findMany();
+    if (!Array.isArray(rows) || rows.length === 0) return;
+    const merged: any = { ...DEFAULT_SYSTEM_SETTINGS };
+    for (const row of rows) {
+      if (row.key in DEFAULT_SYSTEM_SETTINGS) {
+        merged[row.key] = coerceSettingValue(row.key, row.value);
+      }
+    }
+    systemSettingsMemory = merged;
+  } catch (err) {
+    console.warn("[loadSystemSettingsFromDb] Failed to load admin settings:", err);
+  }
+}
+
+function ensureSettingsLoaded(): Promise<void> {
+  if (!settingsLoadPromise) {
+    settingsLoadPromise = loadSystemSettingsFromDb();
+  }
+  return settingsLoadPromise;
 }
 
 // ─── 1. Dashboard Overview ───────────────────────────────────────
@@ -191,8 +235,7 @@ export async function getActivityFeed(_req: Request, res: Response, next: NextFu
     try {
       if ((prisma as any).adminAuditLog) {
         settingsAudit = await (prisma as any).adminAuditLog.findMany({
-          where: { module: "Settings" },
-          take: 20,
+          take: 30,
           orderBy: { createdAt: "desc" },
         }).catch(() => []);
       }
@@ -200,17 +243,46 @@ export async function getActivityFeed(_req: Request, res: Response, next: NextFu
       settingsAudit = [];
     }
 
+    const adminActorIds = Array.from(new Set(settingsAudit.map((log: any) => log.adminId).filter(Boolean)));
+    const adminNameMap = new Map<string, string>();
+    if (adminActorIds.length > 0) {
+      try {
+        const admins = await (prisma as any).adminUser.findMany({
+          where: { id: { in: adminActorIds } },
+          select: { id: true, name: true },
+        });
+        admins.forEach((a: any) => adminNameMap.set(a.id, a.name));
+      } catch {}
+    }
+
+    const moduleLabels: Record<string, string> = {
+      Settings: "System Settings",
+      "User Management": "User Management",
+      Billing: "Billing & Finance",
+      Coupons: "Billing & Finance",
+      Plans: "Billing & Finance",
+      Organization: "Organization Management",
+      Jobs: "Placement Ecosystem",
+      Support: "Support",
+      Security: "Security Center",
+      Notifications: "Notifications",
+    };
+
     const activities: { time: Date; user: string; action: string; module: string; id: string }[] = [];
 
     (recentUsers || []).forEach(u => activities.push({ time: u.createdAt, user: u.name, action: "Registered", module: "Platform", id: u.id }));
     (recentPayments || []).forEach(p => activities.push({ time: p.createdAt, user: p.user?.name || "User", action: `Payment ${p.status}`, module: "Billing", id: p.id }));
 
     settingsAudit.forEach((log: any) => {
+      const isUserAction = log.details?.actorRole === "user" || (!log.adminId && !log.adminName);
+      const actor = isUserAction
+        ? userNameMap.get(log.targetId) || log.details?.userEmail || "User"
+        : log.adminName || adminNameMap.get(log.adminId) || "Admin";
       activities.push({
         time: log.createdAt,
-        user: userNameMap.get(log.targetId) || log.details?.userEmail || "User",
+        user: actor,
         action: log.action,
-        module: "Settings",
+        module: moduleLabels[log.module] || log.module || "Admin",
         id: log.id,
       });
     });
@@ -270,8 +342,7 @@ export async function getAdminUsers(req: Request, res: Response, next: NextFunct
       prisma.user.count({ where }),
     ]);
 
-    const hubCountTables = ["resume", "chatSession", "interviewSession", "codingSession", "studySession"];
-    const perUserCounts = await adminDbService.getPerUserCounts(hubCountTables);
+    const perUserCounts = await adminDbService.getPerUserCounts(users.map(u => u.id));
 
     const enrichedUsers = users.map(user => {
       const isPremium = user.plan?.toLowerCase() === "premium";
@@ -320,27 +391,71 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw httpError(404, "User not found");
 
+    const adminId = (req as any).adminUser?.id;
+    const adminName = (req as any).adminUser?.name || "Admin";
+    const auditDetails = () => ({ userId, email: user.email });
+
     if (action === "block" || action === "suspend" || action === "suspend_user") {
       await prisma.user.update({ where: { id: userId }, data: { subscriptionStatus: "cancelled" } });
+      await AdminAuditService.log({
+        adminId, adminName,
+        action: "User Suspended",
+        module: "User Management",
+        targetId: userId,
+        details: auditDetails(),
+        ipAddress: req.ip,
+      });
       return res.json({ success: true, message: "User suspended" });
     }
     if (action === "unblock" || action === "activate" || action === "activate_user") {
       await prisma.user.update({ where: { id: userId }, data: { subscriptionStatus: "active" } });
+      await AdminAuditService.log({
+        adminId, adminName,
+        action: "User Activated",
+        module: "User Management",
+        targetId: userId,
+        details: auditDetails(),
+        ipAddress: req.ip,
+      });
       return res.json({ success: true, message: "User activated" });
     }
     if (action === "change-role" || action === "change_role") {
       const targetRole = role || req.body.role || (user.role === "ADMIN" ? "USER" : "ADMIN");
       await prisma.user.update({ where: { id: userId }, data: { role: targetRole } });
+      await AdminAuditService.log({
+        adminId, adminName,
+        action: "User Role Changed",
+        module: "User Management",
+        targetId: userId,
+        details: { ...auditDetails(), from: user.role, to: targetRole },
+        ipAddress: req.ip,
+      });
       return res.json({ success: true, message: `Role changed to ${targetRole}` });
     }
     if (action === "delete" || action === "delete_user") {
       await prisma.user.delete({ where: { id: userId } });
+      await AdminAuditService.log({
+        adminId, adminName,
+        action: "User Deleted",
+        module: "User Management",
+        targetId: userId,
+        details: auditDetails(),
+        ipAddress: req.ip,
+      });
       return res.json({ success: true, message: "User deleted" });
     }
     if (action === "reset-password" || action === "reset_password") {
       const pwd = newPassword || req.body.newPassword || "Adyapan@123";
       const hashed = await bcrypt.hash(pwd, 10);
       await prisma.user.update({ where: { id: userId }, data: { password: hashed } });
+      await AdminAuditService.log({
+        adminId, adminName,
+        action: "Password Reset",
+        module: "User Management",
+        targetId: userId,
+        details: auditDetails(),
+        ipAddress: req.ip,
+      });
       return res.json({ success: true, message: `Password reset to ${pwd}` });
     }
     if (action === "upgrade" || action === "upgrade_plan") {
@@ -348,6 +463,14 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
       await prisma.user.update({
         where: { id: userId },
         data: { plan: targetPlan, subscriptionStatus: "active", subscriptionEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) },
+      });
+      await AdminAuditService.log({
+        adminId, adminName,
+        action: "User Upgraded",
+        module: "User Management",
+        targetId: userId,
+        details: { ...auditDetails(), from: user.plan, to: targetPlan },
+        ipAddress: req.ip,
       });
       return res.json({
         success: true,
@@ -359,6 +482,14 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
       await prisma.user.update({
         where: { id: userId },
         data: { plan: "free", subscriptionStatus: "inactive", subscriptionEnd: null },
+      });
+      await AdminAuditService.log({
+        adminId, adminName,
+        action: "User Downgraded",
+        module: "User Management",
+        targetId: userId,
+        details: { ...auditDetails(), from: user.plan, to: "free" },
+        ipAddress: req.ip,
       });
       return res.json({
         success: true,
@@ -852,13 +983,65 @@ export async function triggerJobIngestion(_req: Request, res: Response, next: Ne
 
 // ─── 11. System Settings ─────────────────────────────────────────
 
-export async function getAdminSettings(_req: Request, res: Response) {
-  res.json({ success: true, settings: systemSettingsMemory });
+export async function getAdminSettings(_req: Request, res: Response, next: NextFunction) {
+  try {
+    await ensureSettingsLoaded();
+    res.json({ success: true, settings: systemSettingsMemory });
+  } catch (error) {
+    next(error);
+  }
 }
 
-export async function updateAdminSettings(req: Request, res: Response) {
-  systemSettingsMemory = { ...systemSettingsMemory, ...req.body };
-  res.json({ success: true, message: "System settings updated successfully", settings: systemSettingsMemory });
+export async function updateAdminSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const updates = req.body && typeof req.body === "object" ? req.body : {};
+    const changedKeys = Object.keys(updates).filter((key) =>
+      Object.prototype.hasOwnProperty.call(DEFAULT_SYSTEM_SETTINGS, key)
+    );
+
+    if (changedKeys.length === 0) {
+      throw httpError(400, "No valid system settings keys provided");
+    }
+
+    await ensureSettingsLoaded();
+
+    const updated: any = { ...systemSettingsMemory };
+    const persisted: Record<string, any> = {};
+    for (const key of changedKeys) {
+      const coerced = coerceSettingValue(key, updates[key]);
+      updated[key] = coerced;
+      persisted[key] = coerced;
+    }
+
+    try {
+      await (prisma as any).$transaction(
+        changedKeys.map((key) =>
+          (prisma as any).adminSetting.upsert({
+            where: { key },
+            create: { key, value: updated[key], category: "general" },
+            update: { value: updated[key] },
+          })
+        )
+      );
+    } catch (dbErr) {
+      console.warn("[updateAdminSettings] Failed to persist settings to DB:", dbErr);
+    }
+
+    systemSettingsMemory = updated;
+
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name || "Admin",
+      action: "System Settings Updated",
+      module: "Settings",
+      details: { keys: changedKeys, values: persisted },
+      ipAddress: req.ip,
+    });
+
+    res.json({ success: true, message: "System settings updated successfully", settings: systemSettingsMemory });
+  } catch (error) {
+    next(error);
+  }
 }
 
 export async function getAnalyticsBI(_req: Request, res: Response, next: NextFunction) {
@@ -881,6 +1064,43 @@ export async function getAnalyticsBI(_req: Request, res: Response, next: NextFun
         premiumConversionRate,
         totalJobs,
         totalCoding,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── 11b. System Integrations Status ─────────────────────────────
+
+const INTEGRATION_KEYS = ["gemini", "openai", "claude", "groq", "openrouter"] as const;
+
+export async function getAdminIntegrations(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const providerKeyMap: Record<string, string> = {
+      gemini: env.geminiApiKey,
+      groq: env.groqApiKey,
+      openrouter: env.openrouterApiKey,
+      openai: "",
+      claude: "",
+    };
+
+    const apiKeys: Record<string, { key: string; active: boolean }> = {};
+    for (const id of INTEGRATION_KEYS) {
+      const configured = Boolean(providerKeyMap[id]);
+      apiKeys[id] = { key: configured ? "••••••••configured" : "", active: configured };
+    }
+
+    res.json({
+      success: true,
+      settings: {
+        apiKeys,
+        connectedAccounts: {
+          google: false,
+          github: Boolean(env.github.clientId && env.github.clientSecret),
+          microsoft: false,
+          linkedin: false,
+        },
       },
     });
   } catch (error) {
@@ -1073,6 +1293,16 @@ export async function createAdminBroadcastNotification(req: Request, res: Respon
       console.warn("Broadcast socket emit warning:", e);
     }
 
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Notification Broadcast Created",
+      module: "Notifications",
+      targetId: notification.id,
+      details: { title: notification.title, targetAudience: validAudience, reach: targetCount },
+      ipAddress: req.ip,
+    });
+
     res.json({
       success: true,
       message: `Notification broadcasted to ${targetCount} ${validAudience.toLowerCase()} users`,
@@ -1095,6 +1325,16 @@ export async function toggleRevokeAdminNotification(req: Request, res: Response,
       data: { isRevoked: !existing.isRevoked },
     });
 
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: updated.isRevoked ? "Notification Broadcast Revoked" : "Notification Broadcast Reactivated",
+      module: "Notifications",
+      targetId: id,
+      details: { title: existing.title },
+      ipAddress: req.ip,
+    });
+
     res.json({
       success: true,
       message: updated.isRevoked ? "Notification broadcast revoked" : "Notification broadcast re-activated",
@@ -1108,7 +1348,19 @@ export async function toggleRevokeAdminNotification(req: Request, res: Response,
 export async function deleteAdminNotification(req: Request, res: Response, next: NextFunction) {
   try {
     const id = req.params.id as string;
+    const existing = await (prisma as any).systemNotification.findUnique({ where: { id } });
     await (prisma as any).systemNotification.delete({ where: { id } });
+
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Notification Broadcast Deleted",
+      module: "Notifications",
+      targetId: id,
+      details: { title: existing?.title || "" },
+      ipAddress: req.ip,
+    });
+
     res.json({ success: true, message: "Notification deleted" });
   } catch (error) {
     next(error);

@@ -69,14 +69,23 @@ export async function requireAdminAuth(
       const user = await prisma.user.findUnique({ where: { id: adminUserId } });
       if (user && user.role === "ADMIN") {
         try {
+          let superRoleId: string | undefined;
+          try {
+            const superRole = await (prisma as any).adminRole.findUnique({
+              where: { name: "Super Admin" },
+              select: { id: true },
+            });
+            superRoleId = superRole?.id;
+          } catch {}
           admin = await (prisma as any).adminUser.upsert({
             where: { email: user.email },
-            update: { status: "ACTIVE" },
+            update: { status: "ACTIVE", roleId: superRoleId || undefined },
             create: {
               id: user.id,
               name: user.name,
               email: user.email,
               password: user.password,
+              roleId: superRoleId || undefined,
               status: "ACTIVE",
             },
           });

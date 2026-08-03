@@ -7,6 +7,7 @@ import {
   getOrganizationStudentsService,
   bulkRegisterStudentsService,
 } from "../services/organization.service";
+import { AdminAuditService } from "../services/admin-audit.service";
 
 export async function getAdminOrganizations(_req: Request, res: Response, next: NextFunction) {
   try {
@@ -25,6 +26,15 @@ export async function createAdminOrganization(req: Request, res: Response, next:
       return;
     }
     const organization = await createOrganizationService({ name, type, code, location, domain, contactEmail });
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Organization Created",
+      module: "Organization",
+      targetId: organization.id,
+      details: { name: organization.name, type: organization.type },
+      ipAddress: req.ip,
+    });
     res.json({ success: true, organization, message: `${type || "Organization"} created successfully!` });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message || "Failed to create organization." });
@@ -35,6 +45,15 @@ export async function updateAdminOrganization(req: Request, res: Response, next:
   try {
     const id = String(req.params.id);
     const organization = await updateOrganizationService(id, req.body);
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Organization Updated",
+      module: "Organization",
+      targetId: id,
+      details: { name: organization.name },
+      ipAddress: req.ip,
+    });
     res.json({ success: true, organization, message: "Organization updated successfully!" });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message || "Failed to update organization." });
@@ -45,6 +64,14 @@ export async function deleteAdminOrganization(req: Request, res: Response, next:
   try {
     const id = String(req.params.id);
     await deleteOrganizationService(id);
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Organization Deleted",
+      module: "Organization",
+      targetId: id,
+      ipAddress: req.ip,
+    });
     res.json({ success: true, message: "Organization deleted successfully!" });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message || "Failed to delete organization." });
@@ -70,6 +97,15 @@ export async function bulkRegisterOrganizationStudents(req: Request, res: Respon
     }
 
     const result = await bulkRegisterStudentsService(orgName, students);
+    await AdminAuditService.log({
+      adminId: (req as any).adminUser?.id,
+      adminName: (req as any).adminUser?.name,
+      action: "Students Bulk Registered",
+      module: "Organization",
+      targetId: null,
+      details: { orgName, registeredCount: result.registeredCount, errors: result.errors },
+      ipAddress: req.ip,
+    });
     res.json({ success: true, ...result });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message || "Bulk registration failed." });
