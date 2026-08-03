@@ -5,113 +5,85 @@ import { generateOrchestratedJSON } from "../lib/ai/openrouter";
 
 // Helper to compute the programmatic stats baseline (aggregating from ~30 tables)
 async function computeDashboardBaseline(userId: string, userPrisma: any) {
-  let profile: any = null;
-  try { profile = await userPrisma.profile.findUnique({ where: { userId } }); } catch {}
+  const q = <T>(fn: () => Promise<T>, fallback: T): Promise<T> =>
+    Promise.resolve().then(fn).catch(() => fallback);
 
-  let userRecord: any = null;
-  try { userRecord = await masterPrisma.user.findUnique({ where: { id: userId } }); } catch {}
+  const [
+    profile,
+    userRecord,
+    uploadedResumes,
+    candidateProfile,
+    resumes,
+    atsReports,
+    linkedinReports,
+    studySessions,
+    dsaProgress,
+    userQuestionProgress,
+    streakActivity,
+    weakTopics,
+    codingSessions,
+    quizAttempts,
+    learningAnalytics,
+    progressTracking,
+    coverLetters,
+    submissions,
+    resumeAnalyses,
+    resumeImprovements,
+    careerRoadmaps,
+    learningStreak,
+    interviewSessions,
+    topicProgress,
+    challengeSubmissions,
+    githubProfile,
+    generatedNotes,
+    quizzes,
+    presentations,
+    mindMaps,
+    flashcards,
+    studyPlans,
+    codingRoadmaps,
+    resumeVersions,
+    uploadedDocuments,
+  ] = await Promise.all([
+    q(() => userPrisma.profile.findUnique({ where: { userId } }), null),
+    q(() => masterPrisma.user.findUnique({ where: { id: userId } }), null),
+    q(() => userPrisma.uploadedResume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }), []),
+    q(() => userPrisma.candidateProfile.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } }), null),
+    q(() => userPrisma.resume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }), []),
+    q(() => userPrisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }), []),
+    q(() => userPrisma.linkedInReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }), []),
+    q(() => userPrisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }), []),
+    q(() => userPrisma.dSAProgress.findFirst({ where: { userId } }), null),
+    q(() => userPrisma.userQuestionProgress.findMany({ where: { userId } }), []),
+    q(() => userPrisma.streakActivity.findMany({ where: { userId } }), []),
+    q(() => userPrisma.weakTopic.findMany({ where: { userId }, orderBy: { strengthScore: "asc" }, take: 10 }), []),
+    q(() => userPrisma.codingSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }), []),
+    q(() => userPrisma.quizAttempt.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }), []),
+    q(() => userPrisma.learningAnalytics.findFirst({ where: { userId } }), null),
+    q(() => userPrisma.progressTracking.findFirst({ where: { userId } }), null),
+    q(() => userPrisma.coverLetter.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }), []),
+    q(() => userPrisma.submission.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }), []),
+    q(() => userPrisma.resumeAnalysis.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }), []),
+    q(() => userPrisma.resumeImprovement.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }), []),
+    q(() => userPrisma.careerRoadmap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 3, include: { tasks: true } }), []),
+    q(() => userPrisma.learningStreak.findFirst({ where: { userId } }), null),
+    q(() => userPrisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10, include: { evaluations: true } }), []),
+    q(() => userPrisma.topicProgress.findMany({ where: { userId }, orderBy: { lastActivity: "desc" }, take: 20 }), []),
+    q(() => userPrisma.challengeSubmission.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }), []),
+    q(() => userPrisma.githubProfile.findFirst({ where: { userId } }), null),
+    q(() => userPrisma.generatedNote.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }), []),
+    q(() => userPrisma.quiz.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }), []),
+    q(() => userPrisma.presentation.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }), []),
+    q(() => userPrisma.mindMap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }), []),
+    q(() => userPrisma.flashcard.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }), []),
+    q(() => userPrisma.studyPlan.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }), []),
+    q(() => userPrisma.codingRoadmap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 3 }), []),
+    q(() => userPrisma.resumeVersion.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }), []),
+    q(() => userPrisma.uploadedDocument.findMany({ where: { userId } }), []),
+  ]);
 
   const rawName = userRecord?.name || (profile as any)?.name || (profile as any)?.careerGoal || "";
   const userName = rawName ? String(rawName).trim().split(" ")[0] : "Learner";
-
-  let uploadedResumes: any[] = [];
-  try { uploadedResumes = await userPrisma.uploadedResume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }); } catch {}
-
-  let candidateProfile: any = null;
-  try { candidateProfile = await userPrisma.candidateProfile.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } }); } catch {}
-
-  let resumes: any[] = [];
-  try { resumes = await userPrisma.resume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }); } catch {}
-
-  let atsReports: any[] = [];
-  try { atsReports = await userPrisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }); } catch {}
-
-  let linkedinReports: any[] = [];
-  try { linkedinReports = await userPrisma.linkedInReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }); } catch {}
-
-  let studySessions: any[] = [];
-  try { studySessions = await userPrisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }); } catch {}
-
-  let dsaProgress: any = null;
-  try { dsaProgress = await userPrisma.dSAProgress.findFirst({ where: { userId } }); } catch {}
-
-  let userQuestionProgress: any[] = [];
-  try { userQuestionProgress = await userPrisma.userQuestionProgress.findMany({ where: { userId } }); } catch {}
-
-  let streakActivity: any[] = [];
-  try { streakActivity = await userPrisma.streakActivity.findMany({ where: { userId } }); } catch {}
-
-  let weakTopics: any[] = [];
-  try { weakTopics = await userPrisma.weakTopic.findMany({ where: { userId }, orderBy: { strengthScore: "asc" }, take: 10 }); } catch {}
-
-  let codingSessions: any[] = [];
-  try { codingSessions = await userPrisma.codingSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }); } catch {}
-
-  let quizAttempts: any[] = [];
-  try { quizAttempts = await userPrisma.quizAttempt.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }); } catch {}
-
-  let learningAnalytics: any = null;
-  try { learningAnalytics = await userPrisma.learningAnalytics.findFirst({ where: { userId } }); } catch {}
-
-  let progressTracking: any = null;
-  try { progressTracking = await userPrisma.progressTracking.findFirst({ where: { userId } }); } catch {}
-
-  let coverLetters: any[] = [];
-  try { coverLetters = await userPrisma.coverLetter.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }); } catch {}
-
-  let submissions: any[] = [];
-  try { submissions = await userPrisma.submission.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }); } catch {}
-
-  let resumeAnalyses: any[] = [];
-  try { resumeAnalyses = await userPrisma.resumeAnalysis.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }); } catch {}
-
-  let resumeImprovements: any[] = [];
-  try { resumeImprovements = await userPrisma.resumeImprovement.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }); } catch {}
-
-  let careerRoadmaps: any[] = [];
-  try { careerRoadmaps = await userPrisma.careerRoadmap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 3, include: { tasks: true } }); } catch {}
-
-  let learningStreak: any = null;
-  try { learningStreak = await userPrisma.learningStreak.findFirst({ where: { userId } }); } catch {}
-
-  let interviewSessions: any[] = [];
-  try { interviewSessions = await userPrisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10, include: { evaluations: true } }); } catch {}
-
-  let topicProgress: any[] = [];
-  try { topicProgress = await userPrisma.topicProgress.findMany({ where: { userId }, orderBy: { lastActivity: "desc" }, take: 20 }); } catch {}
-
-  let challengeSubmissions: any[] = [];
-  try { challengeSubmissions = await userPrisma.challengeSubmission.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }); } catch {}
-
-  let githubProfile: any = null;
-  try { githubProfile = await userPrisma.githubProfile.findFirst({ where: { userId } }); } catch {}
-
-  let generatedNotes: any[] = [];
-  try { generatedNotes = await userPrisma.generatedNote.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }); } catch {}
-
-  let quizzes: any[] = [];
-  try { quizzes = await userPrisma.quiz.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }); } catch {}
-
-  let presentations: any[] = [];
-  try { presentations = await userPrisma.presentation.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }); } catch {}
-
-  let mindMaps: any[] = [];
-  try { mindMaps = await userPrisma.mindMap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }); } catch {}
-
-  let flashcards: any[] = [];
-  try { flashcards = await userPrisma.flashcard.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }); } catch {}
-
-  let studyPlans: any[] = [];
-  try { studyPlans = await userPrisma.studyPlan.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }); } catch {}
-
-  let codingRoadmaps: any[] = [];
-  try { codingRoadmaps = await userPrisma.codingRoadmap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 3 }); } catch {}
-
-  let resumeVersions: any[] = [];
-  try { resumeVersions = await userPrisma.resumeVersion.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }); } catch {}
-
-  let uploadedDocuments: any[] = [];
-  try { uploadedDocuments = await userPrisma.uploadedDocument.findMany({ where: { userId } }); } catch {}
 
   // ─── Compute Scores ─────────────────────────────────────────────────
   const candidateScore = candidateProfile?.strengthScore || 0;

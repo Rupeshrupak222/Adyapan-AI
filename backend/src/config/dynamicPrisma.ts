@@ -4,7 +4,36 @@ import { Pool } from "pg";
 import { databaseService } from "../services/database.service";
 
 type ExtendedUserClient = any;
+
+/**
+ * Bounded LRU cache of per-user Prisma clients. Each client owns a pg pool
+ * (up to `max` connections), so an unbounded cache leaks connections and
+ * memory as user count grows. Once the cap is reached, the least recently
+ * used client is evicted and its pool is disconnected.
+ */
+const MAX_CACHED_CLIENTS = Number(process.env.MAX_USER_DB_CLIENTS) || 500;
 const clientCache = new Map<string, ExtendedUserClient>();
+
+function getCachedClient(userId: string): ExtendedUserClient | undefined {
+  const client = clientCache.get(userId);
+  if (client) {
+    clientCache.delete(userId);
+    clientCache.set(userId, client);
+  }
+  return client;
+}
+
+function cacheClient(userId: string, client: ExtendedUserClient): void {
+  clientCache.set(userId, client);
+  if (clientCache.size > MAX_CACHED_CLIENTS) {
+    const oldestKey = clientCache.keys().next().value as string | undefined;
+    if (oldestKey !== undefined) {
+      const oldest = clientCache.get(oldestKey)!;
+      clientCache.delete(oldestKey);
+      Promise.resolve(oldest.$disconnect()).catch(() => {});
+    }
+  }
+}
 
 /**
  * Non-blocking, deduplicated schema sync for user databases.
@@ -98,8 +127,9 @@ export function createPrismaClient(databaseUrl: string): any {
 const pendingClientPromises = new Map<string, Promise<any>>();
 
 export async function getUserPrisma(userId: string): Promise<any> {
-  if (clientCache.has(userId)) {
-    return clientCache.get(userId)!;
+  const cached = getCachedClient(userId);
+  if (cached) {
+    return cached;
   }
   if (pendingClientPromises.has(userId)) {
     return pendingClientPromises.get(userId)!;
@@ -109,7 +139,7 @@ export async function getUserPrisma(userId: string): Promise<any> {
     try {
       const dbUrl = await databaseService.getDatabaseUrlForUser(userId);
       const client = createPrismaClient(dbUrl);
-      clientCache.set(userId, client);
+      cacheClient(userId, client);
       return client;
     } finally {
       pendingClientPromises.delete(userId);

@@ -28,8 +28,8 @@ import {
 import {
   DashboardSidebar,
   DashboardTopNav,
-  AdyapanUser
-} from "../../user/page";
+} from "@/components/dashboard-shell";
+import type { AdyapanUser } from "@/components/dashboard-shell";
 import { useConfirm } from "@/components/ui/ConfirmModal";
 
 const FALLBACK_TOPICS = [

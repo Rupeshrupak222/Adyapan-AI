@@ -30,8 +30,8 @@ import {
 import {
   DashboardSidebar,
   DashboardTopNav,
-  AdyapanUser
-} from "../../../user/page";
+} from "@/components/dashboard-shell";
+import type { AdyapanUser } from "@/components/dashboard-shell";
 import { renderMarkdown, inlineFormat } from "@/utils/renderMarkdown";
 
 // Checklists for loading experience

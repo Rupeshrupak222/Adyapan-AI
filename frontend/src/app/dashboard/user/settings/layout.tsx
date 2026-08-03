@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { api } from "@/services/api";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useTheme } from "@/hooks/useTheme";
-import { DashboardTopNav, DashboardSidebar } from "../page";
-import type { AdyapanUser } from "../page";
+import { DashboardTopNav, DashboardSidebar } from "@/components/dashboard-shell";
+import type { AdyapanUser } from "@/components/dashboard-shell";
 import { FloatingOrbs } from "@/components/ui/PremiumComponents";
 
 type SettingsNotification = {

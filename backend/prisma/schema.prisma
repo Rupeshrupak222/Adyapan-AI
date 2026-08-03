@@ -24,6 +24,9 @@ model User {
   subscriptionEnd     DateTime? @map("subscription_end")
   payments            Payment[]
 
+  @@index([plan, subscriptionStatus])
+  @@index([role])
+  @@index([createdAt])
   @@map("users")
 }
 
@@ -75,6 +78,7 @@ model Payment {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([status, createdAt])
   @@map("payments")
 }
 
@@ -360,6 +364,8 @@ model CommunityMessage {
 
   @@index([senderId])
   @@index([receiverId])
+  @@index([senderId, createdAt])
+  @@index([receiverId, createdAt])
   @@map("community_messages")
 }
 
@@ -569,6 +575,7 @@ model DiscoverySearchHistory {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([userId, createdAt])
   @@map("discovery_search_history")
 }
 
@@ -669,6 +676,7 @@ model AdminAuditLog {
 
   @@index([adminId])
   @@index([createdAt])
+  @@index([module, createdAt])
   @@map("admin_audit_logs")
 }
 
@@ -706,6 +714,7 @@ model SystemNotification {
 
   @@index([targetAudience])
   @@index([createdAt])
+  @@index([isRevoked, targetAudience, createdAt])
   @@map("system_notifications")
 }
 

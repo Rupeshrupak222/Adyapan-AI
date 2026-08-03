@@ -278,16 +278,16 @@ router.get("/users", async (req: any, res) => {
       select: { id: true, name: true },
     });
     if (usersWithoutProfile.length > 0) {
-      for (const u of usersWithoutProfile) {
-        try {
-          await prisma.profile.create({
+      await Promise.all(
+        usersWithoutProfile.map((u: any) =>
+          prisma.profile.create({
             data: {
               userId: u.id,
               username: u.name ? u.name.toLowerCase().replace(/\s+/g, "") : `user_${u.id.slice(0, 6)}`,
             },
-          });
-        } catch { /* ignore if already created concurrently */ }
-      }
+          }).catch(() => { /* ignore if already created concurrently */ })
+        )
+      );
     }
 
     const where: any = {};

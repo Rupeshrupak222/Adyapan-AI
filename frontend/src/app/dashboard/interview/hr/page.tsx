@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 import {
   DashboardSidebar,
   DashboardTopNav,
-  AdyapanUser,
-} from "../../user/page";
+} from "@/components/dashboard-shell";
+import type { AdyapanUser } from "@/components/dashboard-shell";
 
 const HRView = dynamic(
   () => import("@/components/interview-hub/hr-engine/HRView").then(m => m.default),

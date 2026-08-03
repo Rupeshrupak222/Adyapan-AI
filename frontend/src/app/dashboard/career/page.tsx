@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 import {
   DashboardSidebar,
   DashboardTopNav,
-  AdyapanUser,
-} from "../user/page";
+} from "@/components/dashboard-shell";
+import type { AdyapanUser } from "@/components/dashboard-shell";
 
 const CareerDashboardView = dynamic(
   () => import("@/components/career-hub/CareerDashboardView").then(m => m.CareerDashboardView),

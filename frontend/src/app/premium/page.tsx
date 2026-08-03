@@ -91,6 +91,11 @@ export default function PremiumPage() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [dynamicPlans, setDynamicPlans] = useState<any[] | null>(null);
+  const [coupon, setCoupon] = useState<{ code: string; plan?: string } | null>(null);
+  const [couponInfo, setCouponInfo] = useState<{ code: string; discountPct: number; finalAmount: number } | null>(null);
+  const [planPrices, setPlanPrices] = useState<Record<string, number>>({});
+
+  const couponPct = couponInfo?.discountPct || 0;
 
   useEffect(() => {
     const token = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token");

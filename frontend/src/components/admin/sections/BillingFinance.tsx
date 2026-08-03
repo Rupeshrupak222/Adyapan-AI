@@ -54,6 +54,7 @@ interface PlanRow {
   priceMonthly: number;
   priceYearly: number;
   features: string[];
+  featuresStr?: string;
   isActive: boolean;
 }
 
@@ -96,7 +97,7 @@ export default function BillingFinance() {
 
   // Plan form
   const [showPlanForm, setShowPlanForm] = useState(false);
-  const [newPlan, setNewPlan] = useState({ name: "", code: "", priceMonthly: "", priceYearly: "" });
+  const [newPlan, setNewPlan] = useState({ name: "", code: "", priceMonthly: "", priceYearly: "", features: "" });
   const [editingPlan, setEditingPlan] = useState<PlanRow | null>(null);
 
   const fetchData = useCallback(async () => {

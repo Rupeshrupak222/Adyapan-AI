@@ -281,6 +281,7 @@ model QuizAttempt {
   @@index([userId])
   @@index([quizId])
   @@index([createdAt])
+  @@index([userId, quizId])
   @@map("quiz_attempts")
 }
 
@@ -297,6 +298,7 @@ model Flashcard {
   @@index([userId])
   @@index([quizId])
   @@index([topic])
+  @@index([userId, quizId])
   @@map("flashcards")
 }
 
@@ -409,6 +411,7 @@ model Submission {
   @@index([userId])
   @@index([problemId])
   @@index([createdAt])
+  @@index([userId, problemId])
   @@map("submissions")
 }
 
@@ -620,6 +623,8 @@ model InterviewSession {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([userId, status])
   @@map("interview_sessions")
 }
 
@@ -635,6 +640,7 @@ model InterviewMessage {
 
   @@index([sessionId])
   @@index([createdAt])
+  @@index([sessionId, createdAt])
   @@map("interview_messages")
 }
 
@@ -655,6 +661,7 @@ model ProctoringEvent {
 
   @@index([sessionId])
   @@index([createdAt])
+  @@index([sessionId, createdAt])
   @@map("proctoring_events")
 }
 
@@ -721,6 +728,7 @@ model Notification {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([userId, read, createdAt])
   @@map("notifications")
 }
 
@@ -757,6 +765,7 @@ model LearningEvent {
   @@index([userId])
   @@index([documentId])
   @@index([createdAt])
+  @@index([userId, eventType, createdAt])
   @@map("learning_events")
 }
 
@@ -802,6 +811,7 @@ model TopicProgress {
   @@index([userId])
   @@index([documentId])
   @@index([topicName])
+  @@index([userId, topicName])
   @@map("topic_progress")
 }
 
@@ -820,6 +830,7 @@ model ConceptMastery {
 
   @@index([userId])
   @@index([topicName])
+  @@index([userId, conceptName])
   @@map("concept_mastery")
 }
 
@@ -859,6 +870,7 @@ model StudyTask {
   @@index([studyPlanId])
   @@index([topicName])
   @@index([createdAt])
+  @@index([studyPlanId, status])
   @@map("study_tasks")
 }
 
@@ -874,6 +886,8 @@ model StudyRevision {
   @@index([userId])
   @@index([topicName])
   @@index([createdAt])
+  @@index([userId, status])
+  @@index([userId, topicName, status])
   @@map("study_revisions")
 }
 
@@ -913,6 +927,7 @@ model StreakEvent {
   @@index([userId])
   @@index([documentId])
   @@index([createdAt])
+  @@index([userId, createdAt])
   @@map("streak_events")
 }
 
@@ -1698,6 +1713,8 @@ model JobListing {
   @@index([skills])
   @@index([postedDate])
   @@index([createdAt])
+  @@index([source])
+  @@index([isActive, postedDate])
   @@map("job_listings")
 }
 
@@ -1726,6 +1743,7 @@ model JobListingApplication {
   @@index([userId])
   @@index([jobListingId])
   @@unique([userId, jobListingId])
+  @@index([userId, status])
   @@map("job_listing_applications")
 }
 

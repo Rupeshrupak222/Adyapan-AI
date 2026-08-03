@@ -50,9 +50,15 @@ quizRouter.post("/generate", async (req, res) => {
           questions: result.questions as any,
         },
       });
-      for (const fc of result.flashcards) {
-        await userPrisma.flashcard.create({
-          data: { userId: req.user!.userId, quizId: quiz.id, topic, front: fc.front, back: fc.back },
+      if (result.flashcards.length > 0) {
+        await userPrisma.flashcard.createMany({
+          data: result.flashcards.map((fc: any) => ({
+            userId: req.user!.userId,
+            quizId: quiz.id,
+            topic,
+            front: fc.front,
+            back: fc.back,
+          })),
         });
       }
 

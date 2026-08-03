@@ -105,9 +105,11 @@ Return a JSON object with this exact structure (no markdown wrapper, no other te
 
     // 4. Save to Database
     // Archive previous plans by deleting their tasks
-    const existingPlans = await userPrisma.studyPlan.findMany({ where: { userId } });
-    for (const plan of existingPlans) {
-      await userPrisma.studyTask.deleteMany({ where: { studyPlanId: plan.id } });
+    const existingPlans = await userPrisma.studyPlan.findMany({ where: { userId }, select: { id: true } });
+    if (existingPlans.length > 0) {
+      await userPrisma.studyTask.deleteMany({
+        where: { studyPlanId: { in: existingPlans.map((p: any) => p.id) } },
+      });
     }
     await userPrisma.studyPlan.deleteMany({ where: { userId } });
     // Keep study revisions clean
@@ -135,6 +137,9 @@ Return a JSON object with this exact structure (no markdown wrapper, no other te
       { type: "30 Day Revision", days: 30 }
     ];
 
+    const taskData: any[] = [];
+    const revisionData: any[] = [];
+
     for (const item of planData.schedule) {
       const taskDate = new Date(today);
       taskDate.setDate(today.getDate() + (item.day - 1));
@@ -143,15 +148,13 @@ Return a JSON object with this exact structure (no markdown wrapper, no other te
         const estTimePerTopic = Math.round((item.study_hours * 60) / item.topics.length);
 
         for (const topic of item.topics) {
-          await userPrisma.studyTask.create({
-            data: {
-              studyPlanId: newPlan.id,
-              topicName: topic,
-              scheduledDate: taskDate,
-              priority: item.priority || "Important",
-              status: "Pending",
-              estimatedTime: estTimePerTopic
-            }
+          taskData.push({
+            studyPlanId: newPlan.id,
+            topicName: topic,
+            scheduledDate: taskDate,
+            priority: item.priority || "Important",
+            status: "Pending",
+            estimatedTime: estTimePerTopic,
           });
 
           // Schedule spaced repetition revisions
@@ -161,19 +164,24 @@ Return a JSON object with this exact structure (no markdown wrapper, no other te
 
             // Cap revision creation inside exam bounds if needed
             if (!examDate || revDate <= new Date(examDate)) {
-              await userPrisma.studyRevision.create({
-                data: {
-                  userId,
-                  topicName: topic,
-                  revisionDate: revDate,
-                  revisionType: interval.type,
-                  status: "Pending"
-                }
+              revisionData.push({
+                userId,
+                topicName: topic,
+                revisionDate: revDate,
+                revisionType: interval.type,
+                status: "Pending",
               });
             }
           }
         }
       }
+    }
+
+    if (taskData.length > 0) {
+      await userPrisma.studyTask.createMany({ data: taskData });
+    }
+    if (revisionData.length > 0) {
+      await userPrisma.studyRevision.createMany({ data: revisionData });
     }
 
     // Track Streak Activity

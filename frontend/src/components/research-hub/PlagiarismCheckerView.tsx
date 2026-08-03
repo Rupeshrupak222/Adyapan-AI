@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { api } from "@/services/api";
-import * as pdfjsLib from "pdfjs-dist";
 import {
   ArrowLeft, Shield, Upload, FileText, Sparkles, Zap, Brain,
   CheckCircle2, XCircle, AlertCircle, Clock, Eye, Copy, Download,
@@ -16,8 +15,6 @@ import {
   Activity, Gauge, Sparkle, RotateCcw, ArrowRight,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 function extractErrorMessage(err: any, fallback: string): string {
   return err?.response?.data?.message || err?.response?.data?.error || err?.message || fallback;
@@ -191,7 +188,9 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
       try {
         toast.info("Extracting text from PDF...");
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const { getDocument, GlobalWorkerOptions, version } = await import("pdfjs-dist");
+        GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+        const pdf = await getDocument({ data: arrayBuffer }).promise;
         const totalPages = pdf.numPages;
         const textParts: string[] = [];
 

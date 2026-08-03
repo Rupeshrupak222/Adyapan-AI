@@ -28,8 +28,8 @@ import { PlacementImpactCard } from "@/components/placement-hub/PlacementImpactC
 import {
   DashboardSidebar,
   DashboardTopNav,
-  AdyapanUser
-} from "@/app/dashboard/user/page";
+} from "@/components/dashboard-shell";
+import type { AdyapanUser } from "@/components/dashboard-shell";
 import {
   Chart as ChartJS,
   CategoryScale,

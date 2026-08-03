@@ -54,6 +54,14 @@ function getDb() {
   return _db;
 }
 
+interface SearchCacheEntry {
+  at: number;
+  result: SearchResult;
+}
+const SEARCH_CACHE_TTL_MS = 60 * 1000;
+const SEARCH_CACHE_MAX = 100;
+const searchCache = new Map<string, SearchCacheEntry>();
+
 function getPostedWithinDate(postedWithin: string): Date {
   const now = new Date();
   switch (postedWithin) {
@@ -297,6 +305,12 @@ export class JobSearchService {
   }
 
   static async search(filters: SearchFilters): Promise<SearchResult> {
+    const cacheKey = JSON.stringify(filters);
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.at < SEARCH_CACHE_TTL_MS) {
+      return cached.result;
+    }
+
     await this.ensureSeedJobsIfEmpty().catch(() => {});
     this.autoUpdateStaleJobs().catch(() => {});
     const db = getDb();
@@ -760,7 +774,7 @@ export class JobSearchService {
 
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    const result: SearchResult = {
       jobs: mappedJobs,
       total,
       page,
@@ -769,6 +783,14 @@ export class JobSearchService {
       filters,
       facets: await JobSearchService.getFacets(filters),
     };
+
+    searchCache.set(cacheKey, { at: Date.now(), result });
+    if (searchCache.size > SEARCH_CACHE_MAX) {
+      const oldest = searchCache.keys().next().value;
+      if (oldest !== undefined) searchCache.delete(oldest);
+    }
+
+    return result;
   }
 
   static async getFacets(filters: SearchFilters): Promise<SearchResult["facets"]> {

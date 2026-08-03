@@ -436,71 +436,78 @@ export class ProgressService {
       create: { userId, ...progressData },
     });
 
-    // Upsert topic progress
+    // Upsert topic progress (batched)
+    const [existingTps, existingCms] = await Promise.all([
+      prisma.topicProgress.findMany({
+        where: { userId },
+        select: { id: true, topicName: true },
+      }),
+      prisma.conceptMastery.findMany({
+        where: { userId },
+        select: { id: true, conceptName: true },
+      }),
+    ]);
+    const tpById = new Map(existingTps.map((t: any) => [t.topicName, t.id]));
+    const cmById = new Map(existingCms.map((c: any) => [c.conceptName, c.id]));
+
+    const tpUpdates: any[] = [];
+    const tpCreates: any[] = [];
     for (const tp of topicProgressItems) {
-      const existing = await prisma.topicProgress.findFirst({
-        where: { userId, topicName: tp.topicName },
-      });
-      if (existing) {
-        await prisma.topicProgress.update({
-          where: { id: existing.id },
-          data: {
-            progressPercentage: tp.progressPercentage,
-            masteryScore: tp.masteryScore,
-            revisionStatus: tp.revisionStatus,
-            questionsPracticed: tp.questionsPracticed,
-            conceptsCovered: tp.conceptsCovered,
-            lastActivity: new Date(tp.lastActivity),
-            status: tp.status,
-          },
-        });
+      const existingId = tpById.get(tp.topicName);
+      const data = {
+        progressPercentage: tp.progressPercentage,
+        masteryScore: tp.masteryScore,
+        revisionStatus: tp.revisionStatus,
+        questionsPracticed: tp.questionsPracticed,
+        conceptsCovered: tp.conceptsCovered,
+        lastActivity: new Date(tp.lastActivity),
+        status: tp.status,
+      };
+      if (existingId) {
+        tpUpdates.push(prisma.topicProgress.update({ where: { id: existingId }, data }));
       } else {
-        await prisma.topicProgress.create({
-          data: {
-            userId,
-            topicName: tp.topicName,
-            progressPercentage: tp.progressPercentage,
-            masteryScore: tp.masteryScore,
-            revisionStatus: tp.revisionStatus,
-            questionsPracticed: tp.questionsPracticed,
-            conceptsCovered: tp.conceptsCovered,
-            lastActivity: new Date(tp.lastActivity),
-            status: tp.status,
-          },
+        tpCreates.push({
+          userId,
+          topicName: tp.topicName,
+          ...data,
         });
       }
     }
+    if (tpCreates.length > 0) {
+      await prisma.topicProgress.createMany({ data: tpCreates });
+    }
+    if (tpUpdates.length > 0) {
+      await Promise.all(tpUpdates);
+    }
 
-    // Upsert concept mastery
+    // Upsert concept mastery (batched)
+    const cmUpdates: any[] = [];
+    const cmCreates: any[] = [];
     for (const cm of conceptMasteryItems) {
-      const existing = await prisma.conceptMastery.findFirst({
-        where: { userId, conceptName: cm.conceptName },
-      });
-      if (existing) {
-        await prisma.conceptMastery.update({
-          where: { id: existing.id },
-          data: {
-            masteryScore: cm.masteryScore,
-            interactions: cm.interactions,
-            revisionCount: cm.revisionCount,
-            practiceCount: cm.practiceCount,
-            lastReviewed: new Date(cm.lastReviewed),
-          },
-        });
+      const existingId = cmById.get(cm.conceptName);
+      const data = {
+        masteryScore: cm.masteryScore,
+        interactions: cm.interactions,
+        revisionCount: cm.revisionCount,
+        practiceCount: cm.practiceCount,
+        lastReviewed: new Date(cm.lastReviewed),
+      };
+      if (existingId) {
+        cmUpdates.push(prisma.conceptMastery.update({ where: { id: existingId }, data }));
       } else {
-        await prisma.conceptMastery.create({
-          data: {
-            userId,
-            conceptName: cm.conceptName,
-            topicName: cm.topicName,
-            masteryScore: cm.masteryScore,
-            interactions: cm.interactions,
-            revisionCount: cm.revisionCount,
-            practiceCount: cm.practiceCount,
-            lastReviewed: new Date(cm.lastReviewed),
-          },
+        cmCreates.push({
+          userId,
+          conceptName: cm.conceptName,
+          topicName: cm.topicName,
+          ...data,
         });
       }
+    }
+    if (cmCreates.length > 0) {
+      await prisma.conceptMastery.createMany({ data: cmCreates });
+    }
+    if (cmUpdates.length > 0) {
+      await Promise.all(cmUpdates);
     }
 
     return {

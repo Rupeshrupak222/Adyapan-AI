@@ -192,15 +192,17 @@ export async function markAllAsRead(req: Request, res: Response, next: NextFunct
       select: { id: true },
     });
 
-    for (const b of unreadSystem) {
-      await (masterPrisma as any).systemNotificationRead.upsert({
-        where: {
-          notificationId_userId: { notificationId: b.id, userId },
-        },
-        create: { notificationId: b.id, userId },
-        update: { readAt: new Date() },
-      }).catch(() => {});
-    }
+    await Promise.all(
+      unreadSystem.map((b: any) =>
+        (masterPrisma as any).systemNotificationRead.upsert({
+          where: {
+            notificationId_userId: { notificationId: b.id, userId },
+          },
+          create: { notificationId: b.id, userId },
+          update: { readAt: new Date() },
+        }).catch(() => {})
+      )
+    );
 
     res.json({ success: true });
   } catch (error) {

@@ -33,7 +33,7 @@ export function getCachedAIResponse(
     if (fs.existsSync(filePath)) {
       const dataStr = fs.readFileSync(filePath, "utf-8");
       const entry = JSON.parse(dataStr) as CacheEntry;
-      
+
       const age = Date.now() - entry.timestamp;
       if (age < CACHE_TTL_MS) {
         return entry.response;
@@ -52,7 +52,7 @@ export function setCachedAIResponse(
   userPrompt: string,
   options: any,
   response: string
-): void {
+): Promise<void> {
   try {
     const key = getCacheKey(systemPrompt, userPrompt, options);
     const filePath = path.join(CACHE_DIR, `${key}.json`);
@@ -62,8 +62,11 @@ export function setCachedAIResponse(
       response,
     };
 
-    fs.writeFileSync(filePath, JSON.stringify(entry, null, 2), "utf-8");
+    return fs.promises.writeFile(filePath, JSON.stringify(entry), "utf-8").catch((error) => {
+      console.error("[AI Cache] Error writing cache file:", error);
+    });
   } catch (error) {
     console.error("[AI Cache] Error writing cache file:", error);
+    return Promise.resolve();
   }
 }
