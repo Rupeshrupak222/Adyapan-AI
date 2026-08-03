@@ -114,7 +114,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   try { uploadedDocuments = await userPrisma.uploadedDocument.findMany({ where: { userId } }); } catch {}
 
   // ─── Compute Scores ─────────────────────────────────────────────────
-  const candidateScore = candidateProfile?.strengthScore || candidateProfile?.completenessScore || 0;
+  const candidateScore = candidateProfile?.strengthScore || 0;
   const totalResumesCount = resumes.length + uploadedResumes.length;
 
   const avgAtsScore = atsReports.length
@@ -786,9 +786,9 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       interview: interviewReadiness,
       recruiter: recruiterReadiness,
       portfolio: portfolioReadiness,
-      ats: Math.max(latestAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0),
+      ats: atsReports.length > 0 ? (atsReports[0].overallScore || atsReports[0].score || 0) : (candidateProfile?.strengthScore || 0),
       linkedin: avgLinkedinScore,
-      profileCompletion: Math.max(profileCompletion, candidateProfile?.completenessScore || 0, totalResumesCount > 0 ? 70 : 0),
+      profileCompletion: Math.max(profileCompletion, candidateProfile?.completenessScore || 0),
     },
     dailyBrief: {
       greeting,
@@ -831,8 +831,8 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       codingSessions: codingSessions.length,
     },
     resumeSummary: {
-      resumeScore: Math.max(avgAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0),
-      atsScore: Math.max(latestAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0),
+      resumeScore: atsReports.length > 0 ? avgAtsScore : (candidateProfile?.strengthScore || (totalResumesCount > 0 ? 60 : 0)),
+      atsScore: atsReports.length > 0 ? (atsReports[0].overallScore || atsReports[0].score || 0) : (candidateProfile?.strengthScore || 0),
       improvementSuggestionsRemaining,
       resumeVersions: resumeVersions.length,
       resumesCreated: totalResumesCount,
