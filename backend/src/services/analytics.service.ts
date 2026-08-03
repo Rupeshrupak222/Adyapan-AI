@@ -67,6 +67,13 @@ export class AnalyticsService {
     const mindmapsCount = await prisma.mindMap.count({ where: { userId } });
     const events = await prisma.learningEvent.findMany({ where: { userId } });
 
+    // Fetch ATS, resume, and interview data
+    const [latestATS, candidateProfile, interviewSessions] = await Promise.all([
+      prisma.aTSReport.findFirst({ where: { userId }, orderBy: { createdAt: "desc" } }).catch(() => null),
+      prisma.candidateProfile.findFirst({ where: { userId }, orderBy: { createdAt: "desc" } }).catch(() => null),
+      prisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }).catch(() => []),
+    ]);
+
     // 2. Extract unique topics studied and last studied timestamps
     const topicMap: Record<string, { count: number; lastStudied: Date }> = {};
 
@@ -416,6 +423,20 @@ Provide the structured analysis in JSON.`;
           status: aiResult.status,
           knowledgeDistribution: aiResult.knowledge_distribution,
           examReadinessBreakdown: aiResult.exam_readiness,
+          atsMetrics: {
+            atsScore: latestATS?.score ?? candidateProfile?.strengthScore ?? 0,
+            formattingScore: latestATS?.formattingScore ?? 0,
+            keywordScore: latestATS?.keywordScore ?? 0,
+            completenessScore: candidateProfile?.completenessScore ?? 0,
+            lastCheckedAt: latestATS?.createdAt || candidateProfile?.updatedAt || null,
+          },
+          interviewMetrics: {
+            totalSessions: interviewSessions.length,
+            completedSessions: interviewSessions.filter((s: any) => s.status === "completed" || s.overallScore != null).length,
+            averageScore: interviewSessions.length > 0
+              ? Math.round(interviewSessions.reduce((acc: number, s: any) => acc + (s.overallScore || 0), 0) / Math.max(1, interviewSessions.length))
+              : 0,
+          },
         } as any,
       },
       create: {
@@ -436,6 +457,20 @@ Provide the structured analysis in JSON.`;
           status: aiResult.status,
           knowledgeDistribution: aiResult.knowledge_distribution,
           examReadinessBreakdown: aiResult.exam_readiness,
+          atsMetrics: {
+            atsScore: latestATS?.score ?? candidateProfile?.strengthScore ?? 0,
+            formattingScore: latestATS?.formattingScore ?? 0,
+            keywordScore: latestATS?.keywordScore ?? 0,
+            completenessScore: candidateProfile?.completenessScore ?? 0,
+            lastCheckedAt: latestATS?.createdAt || candidateProfile?.updatedAt || null,
+          },
+          interviewMetrics: {
+            totalSessions: interviewSessions.length,
+            completedSessions: interviewSessions.filter((s: any) => s.status === "completed" || s.overallScore != null).length,
+            averageScore: interviewSessions.length > 0
+              ? Math.round(interviewSessions.reduce((acc: number, s: any) => acc + (s.overallScore || 0), 0) / Math.max(1, interviewSessions.length))
+              : 0,
+          },
         } as any,
       },
     });

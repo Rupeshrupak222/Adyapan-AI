@@ -159,16 +159,16 @@ class AdminDbService {
 
   async getPerUserCounts(
     userIds: string[]
-  ): Promise<Map<string, { resumes: number; chatSessions: number; interviewSessions: number; codingSessions: number; studySessions: number }>> {
-    const map = new Map<string, { resumes: number; chatSessions: number; interviewSessions: number; codingSessions: number; studySessions: number }>();
+  ): Promise<Map<string, { resumes: number; chatSessions: number; interviewSessions: number; codingSessions: number; studySessions: number; atsReports: number; candidateProfiles: number }>> {
+    const map = new Map<string, { resumes: number; chatSessions: number; interviewSessions: number; codingSessions: number; studySessions: number; atsReports: number; candidateProfiles: number }>();
     userIds.forEach((id) =>
-      map.set(id, { resumes: 0, chatSessions: 0, interviewSessions: 0, codingSessions: 0, studySessions: 0 })
+      map.set(id, { resumes: 0, chatSessions: 0, interviewSessions: 0, codingSessions: 0, studySessions: 0, atsReports: 0, candidateProfiles: 0 })
     );
 
     const dbNames = userIds.map((id) => `user_${id}`);
     const dbs = (await this.listUserDatabasesCached()).filter((db) => dbNames.includes(db.dbName));
 
-    const tables = ["resume", "chatSession", "interviewSession", "codingSession", "studySession"] as const;
+    const tables = ["resume", "chatSession", "interviewSession", "codingSession", "studySession", "aTSReport", "candidateProfile"] as const;
     const perDb: Record<string, Record<string, number>> = {};
 
     await mapLimit(dbs, 4, async (db) => {
@@ -197,6 +197,8 @@ class AdminDbService {
         interviewSessions: counts["interviewSession"] || 0,
         codingSessions: counts["codingSession"] || 0,
         studySessions: counts["studySession"] || 0,
+        atsReports: counts["aTSReport"] || 0,
+        candidateProfiles: counts["candidateProfile"] || 0,
       });
     }
 

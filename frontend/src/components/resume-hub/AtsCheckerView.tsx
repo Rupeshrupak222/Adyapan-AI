@@ -385,7 +385,8 @@ export function AtsCheckerView({ setView }: Props) {
     Promise.allSettled([
       api.get("/resume/list"),
       api.get("/resume-upload/list"),
-    ]).then(([builderRes, uploadRes]) => {
+      api.get("/ats/latest"),
+    ]).then(([builderRes, uploadRes, latestAtsRes]) => {
       const builderResumes = builderRes.status === "fulfilled"
         ? (builderRes.value.data.resumes || [])
         : [];
@@ -401,6 +402,16 @@ export function AtsCheckerView({ setView }: Props) {
       const allIds = new Set(builderResumes.map((r: any) => r.id));
       const merged = [...builderResumes, ...uploadedResumes.filter((u: any) => !allIds.has(u.id))];
       setResumes(merged);
+
+      if (latestAtsRes.status === "fulfilled" && latestAtsRes.value.data?.report) {
+        const rep = latestAtsRes.value.data.report;
+        const repAnalysis = rep.reportJson || rep;
+        if (repAnalysis && repAnalysis.score !== undefined) {
+          setAnalysis(repAnalysis);
+          setUpdScore(rep.score || rep.overallScore || repAnalysis.score || 75);
+          setScreen("dashboard");
+        }
+      }
     }).catch(() => { });
   }, []);
   useEffect(() => {

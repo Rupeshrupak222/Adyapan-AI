@@ -102,9 +102,23 @@ ${languages.filter(Boolean).join(", ")}
 async function getOrCreateResumeId(userId: string, resumeId?: string, userPrisma?: any): Promise<string> {
   if (resumeId) {
     const existing = await userPrisma.resume.findFirst({ where: { id: resumeId, userId } });
-    if (existing) return resumeId;
+    if (existing) return existing.id;
     const uploaded = await userPrisma.uploadedResume.findFirst({ where: { id: resumeId, userId } });
-    if (uploaded) return resumeId;
+    if (uploaded) {
+      const matchingResume = await userPrisma.resume.findFirst({
+        where: { userId, title: uploaded.fileName },
+      });
+      if (matchingResume) return matchingResume.id;
+      const newResume = await userPrisma.resume.create({
+        data: {
+          userId,
+          title: uploaded.fileName,
+          template: "Uploaded",
+          resumeData: { basics: { name: uploaded.fileName } },
+        },
+      });
+      return newResume.id;
+    }
   }
   const latestResume = await userPrisma.resume.findFirst({
     where: { userId },

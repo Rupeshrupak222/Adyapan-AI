@@ -138,7 +138,7 @@ export class ProgressService {
    */
   static async calculateProgress(userId: string, prisma: PrismaClient): Promise<ProgressDashboardPayload> {
     // ── 1. Fetch all raw data ──────────────────────────────────────────────
-    const [docs, notes, quizzes, quizAttempts, flashcards, mindMaps, events, chatSessions] =
+    const [docs, notes, quizzes, quizAttempts, flashcards, mindMaps, events, chatSessions, atsReports, interviewSessions] =
       await Promise.all([
         prisma.uploadedDocument.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
         prisma.generatedNote.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
@@ -148,6 +148,8 @@ export class ProgressService {
         prisma.mindMap.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
         prisma.learningEvent.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
         prisma.chatSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
+        prisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }).catch(() => []),
+        prisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }).catch(() => []),
       ]);
 
     const totalAiGenerations = notes.length + quizzes.length + flashcards.length + mindMaps.length;
@@ -378,7 +380,7 @@ export class ProgressService {
       .sort((a, b) => b.daysSince - a.daysSince);
 
     // ── 12. Timeline ──────────────────────────────────────────────────────
-    const timeline = ProgressService.buildTimeline({ docs, notes, quizAttempts, flashcards, mindMaps });
+    const timeline = ProgressService.buildTimeline({ docs, notes, quizAttempts, flashcards, mindMaps, atsReports, interviewSessions });
 
     // ── 13. Knowledge growth (last 30 days by week) ───────────────────────
     const knowledgeGrowth = ProgressService.buildKnowledgeGrowth({ notes, quizAttempts, docs, events });
@@ -569,6 +571,8 @@ export class ProgressService {
     quizAttempts: any[];
     flashcards: any[];
     mindMaps: any[];
+    atsReports?: any[];
+    interviewSessions?: any[];
   }): TimelineEvent[] {
     const events: TimelineEvent[] = [];
 
@@ -628,7 +632,29 @@ export class ProgressService {
       });
     });
 
-    return events.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 20);
+    (data.atsReports || []).forEach((ats) => {
+      events.push({
+        date: new Date(ats.createdAt).toISOString(),
+        displayDate: new Date(ats.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        title: `ATS Resume Audit`,
+        description: `ATS Compatibility Score: ${ats.score}%`,
+        type: "milestone",
+        icon: "🎯",
+      });
+    });
+
+    (data.interviewSessions || []).forEach((s) => {
+      events.push({
+        date: new Date(s.createdAt).toISOString(),
+        displayDate: new Date(s.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        title: `AI Interview Session (${s.type || "General"})`,
+        description: s.overallScore != null ? `Overall Score: ${s.overallScore}%` : `Status: ${s.status}`,
+        type: "milestone",
+        icon: "🎙️",
+      });
+    });
+
+    return events.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 25);
   }
 
   // ─── Knowledge Growth ─────────────────────────────────────────────────────

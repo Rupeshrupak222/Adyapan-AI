@@ -19,6 +19,18 @@ interface InsightsJson {
   };
   knowledgeDistribution?: { beginner: string[]; intermediate: string[]; advanced: string[] };
   insights?: string[];
+  atsMetrics?: {
+    atsScore: number;
+    formattingScore: number;
+    keywordScore: number;
+    completenessScore: number;
+    lastCheckedAt?: string | null;
+  };
+  interviewMetrics?: {
+    totalSessions: number;
+    completedSessions: number;
+    averageScore: number;
+  };
 }
 
 interface LearningAnalyticsData {
@@ -1068,6 +1080,39 @@ export function LearningAnalyticsDashboard({ setView, theme = "dark" }: Learning
           </div>
         </div>
       </div>
+
+      {/* ─── ATS & CAREER METRICS ROW ─────────────────────────────────────── */}
+      {insightsJson?.atsMetrics && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 border border-white/5 rounded-2xl bg-white/[0.01] backdrop-blur-md flex items-center justify-between">
+            <div>
+              <span className="text-[9px] uppercase tracking-widest font-black text-white/40 block">ATS Resume Score</span>
+              <span className="text-xl font-extrabold text-emerald-400 mt-1 block">
+                {insightsJson.atsMetrics.atsScore > 0 ? `${insightsJson.atsMetrics.atsScore}%` : "Not Scanned"}
+              </span>
+            </div>
+            <Award size={24} className="text-emerald-400" />
+          </div>
+          <div className="p-4 border border-white/5 rounded-2xl bg-white/[0.01] backdrop-blur-md flex items-center justify-between">
+            <div>
+              <span className="text-[9px] uppercase tracking-widest font-black text-white/40 block">Profile Completeness</span>
+              <span className="text-xl font-extrabold text-cyan-400 mt-1 block">
+                {insightsJson.atsMetrics.completenessScore > 0 ? `${insightsJson.atsMetrics.completenessScore}%` : "Complete"}
+              </span>
+            </div>
+            <CheckCircle2 size={24} className="text-cyan-400" />
+          </div>
+          <div className="p-4 border border-white/5 rounded-2xl bg-white/[0.01] backdrop-blur-md flex items-center justify-between">
+            <div>
+              <span className="text-[9px] uppercase tracking-widest font-black text-white/40 block">AI Interviews Practiced</span>
+              <span className="text-xl font-extrabold text-purple-400 mt-1 block">
+                {insightsJson.interviewMetrics?.totalSessions || 0} Sessions
+              </span>
+            </div>
+            <BookMarked size={24} className="text-purple-400" />
+          </div>
+        </div>
+      )}
 
       {/* ─── CHARTS ROW ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 print:grid-cols-2">
