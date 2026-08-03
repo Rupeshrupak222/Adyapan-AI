@@ -95,27 +95,31 @@ export function createPrismaClient(databaseUrl: string): any {
   }) as any;
 }
 
+const pendingClientPromises = new Map<string, Promise<any>>();
+
 export async function getUserPrisma(userId: string): Promise<any> {
   if (clientCache.has(userId)) {
     return clientCache.get(userId)!;
   }
+  if (pendingClientPromises.has(userId)) {
+    return pendingClientPromises.get(userId)!;
+  }
 
-  const dbUrl = await databaseService.getDatabaseUrlForUser(userId);
-  const client = createPrismaClient(dbUrl);
-
-  // Self-healing migration guard: verify the database contains the user tables.
-  // This is non-blocking — a missing table triggers a background sync instead of
-  // holding the event loop while running `prisma db push`.
-  client.uploadedResume.findFirst().catch((err: any) => {
-    if (isTableOrColumnMissing(err)) {
-      console.warn(`[dynamicPrisma] Migration guard: tables missing for user ${userId}. Triggering background sync push...`);
-      triggerSchemaSync(dbUrl);
+  const promise = (async () => {
+    try {
+      const dbUrl = await databaseService.getDatabaseUrlForUser(userId);
+      const client = createPrismaClient(dbUrl);
+      clientCache.set(userId, client);
+      return client;
+    } finally {
+      pendingClientPromises.delete(userId);
     }
-  });
+  })();
 
-  clientCache.set(userId, client);
-  return client;
+  pendingClientPromises.set(userId, promise);
+  return promise;
 }
+
 
 export function clearUserPrismaCache(userId?: string): void {
   if (userId) {

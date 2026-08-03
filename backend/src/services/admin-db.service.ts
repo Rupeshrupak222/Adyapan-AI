@@ -222,11 +222,19 @@ class AdminDbService {
     return results.reduce((a, b) => a + b, 0);
   }
 
+  private countAllCache: { data: Record<string, number>; timestamp: number } | null = null;
+  private COUNT_ALL_TTL_MS = 15_000; // 15s cache
+
   /**
    * Batch count of many tables across all databases — all run in parallel.
    * Returns a map of table -> total count.
    */
   async countAllAcrossAllUserDbs(tables: string[]): Promise<Record<string, number>> {
+    const now = Date.now();
+    if (this.countAllCache && now - this.countAllCache.timestamp < this.COUNT_ALL_TTL_MS) {
+      return { ...this.countAllCache.data };
+    }
+
     const targets = await this.getAllQueryTargets();
     const out: Record<string, number> = {};
     for (const table of tables) out[table] = 0;
@@ -244,8 +252,10 @@ class AdminDbService {
       );
     });
 
+    this.countAllCache = { data: out, timestamp: now };
     return out;
   }
+
 
   /**
    * Find recent rows across the master database and all user databases.

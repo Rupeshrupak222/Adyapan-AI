@@ -173,6 +173,20 @@ export default function AdminDashboard() {
     if (user) setInitialLoading(false);
   }, [user]);
 
+  useEffect(() => {
+    // Preload primary admin section JS modules during idle time for instant tab switching
+    const timer = setTimeout(() => {
+      import("@/components/admin/sections/UserManagement");
+      import("@/components/admin/sections/OrganizationManagement");
+      import("@/components/admin/sections/AIPlatform");
+      import("@/components/admin/sections/PlacementEcosystem");
+      import("@/components/admin/sections/OperationsCenter");
+      import("@/components/admin/sections/AnalyticsBI");
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+
   const handleRefresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
     setToastMsg("Dashboard refreshed");
