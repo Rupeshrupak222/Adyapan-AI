@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 import { requireAuth } from "../middleware/auth";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { generateEngineQuestion, generateEngineEvaluation } from "../lib/ai/engine-question.service";
@@ -709,7 +709,7 @@ engineRouter.post("/:sessionId/end", async (req, res) => {
 });
 
 // ─── Analytics endpoint ──────────────────────────────────────────────────
-engineRouter.get("/analytics", async (req, res) => {
+export async function engineAnalyticsHandler(req: Request, res: Response, _next: NextFunction) {
   try {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
@@ -870,7 +870,9 @@ engineRouter.get("/analytics", async (req, res) => {
   } catch (error) {
     handleRouteError(res, error, "Engine.analytics", "Failed to fetch analytics");
   }
-});
+}
+
+engineRouter.get("/analytics", engineAnalyticsHandler);
 
 // ─── Interview history ───────────────────────────────────────────────────
 engineRouter.get("/history", async (req, res) => {

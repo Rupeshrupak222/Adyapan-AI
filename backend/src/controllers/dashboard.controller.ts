@@ -37,9 +37,9 @@ function invokeHandler(handler: (req: Request, res: Response, next: NextFunction
       setHeader() { return this; },
       getHeader() { return undefined; },
       headersSent: false,
-    } as unknown as Response;
+    };
 
-    handler(req as Request, res, (err?: unknown) => {
+    handler(req as Request, res as unknown as Response, (err?: unknown) => {
       if (err) reject(err instanceof Error ? err : new Error(String(err)));
       else resolve(undefined);
     });
