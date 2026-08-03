@@ -500,7 +500,7 @@ export default function OrganizationManagement() {
       {/* CREATE MODAL */}
       <AnimatePresence>
         {createModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[74px] bg-black/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -616,7 +616,7 @@ export default function OrganizationManagement() {
       {/* EDIT MODAL */}
       <AnimatePresence>
         {editModalOpen && editOrg && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[74px] bg-black/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -724,18 +724,21 @@ export default function OrganizationManagement() {
       {/* VIEW STUDENTS MODAL */}
       <AnimatePresence>
         {studentsModalOpen && selectedOrg && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[74px] bg-black/60 backdrop-blur-md">
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-3xl h-[650px] max-h-[90vh] rounded-3xl border flex flex-col overflow-hidden shadow-2xl"
+              className="w-full max-w-3xl flex flex-col overflow-hidden shadow-2xl rounded-3xl border"
               style={{
+                height: "min(650px, calc(100vh - 90px))",
                 background: isDark ? "#0c131a" : "#ffffff",
                 borderColor: isDark ? "rgba(245,158,11,0.3)" : "rgba(203,213,225,0.8)",
                 boxShadow: isDark ? "0 25px 50px rgba(0,0,0,0.85)" : "0 25px 50px rgba(0,0,0,0.15)",
               }}
             >
+
               {/* Modal Header */}
               <div
                 className="px-6 py-4 border-b flex items-center justify-between shrink-0"
@@ -845,7 +848,7 @@ export default function OrganizationManagement() {
       {/* BULK ADD STUDENTS MODAL */}
       <AnimatePresence>
         {bulkModalOpen && selectedOrg && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[74px] bg-black/60 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
