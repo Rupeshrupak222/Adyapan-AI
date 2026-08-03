@@ -14,6 +14,12 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   const rawName = userRecord?.name || (profile as any)?.name || (profile as any)?.careerGoal || "";
   const userName = rawName ? String(rawName).trim().split(" ")[0] : "Learner";
 
+  let uploadedResumes: any[] = [];
+  try { uploadedResumes = await userPrisma.uploadedResume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }); } catch {}
+
+  let candidateProfile: any = null;
+  try { candidateProfile = await userPrisma.candidateProfile.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } }); } catch {}
+
   let resumes: any[] = [];
   try { resumes = await userPrisma.resume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }); } catch {}
 
@@ -99,11 +105,14 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   try { resumeVersions = await userPrisma.resumeVersion.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }); } catch {}
 
   // ─── Compute Scores ─────────────────────────────────────────────────
+  const candidateScore = candidateProfile?.strengthScore || candidateProfile?.completenessScore || 0;
+  const totalResumesCount = resumes.length + uploadedResumes.length;
+
   const avgAtsScore = atsReports.length
     ? Math.round(atsReports.reduce((s: number, r: any) => s + (r.overallScore || r.score || 0), 0) / atsReports.length)
-    : 0;
+    : candidateScore;
 
-  const latestAtsScore = atsReports.length > 0 ? (atsReports[0].overallScore || atsReports[0].score || 0) : 0;
+  const latestAtsScore = atsReports.length > 0 ? (atsReports[0].overallScore || atsReports[0].score || 0) : candidateScore;
 
   const prevAtsScore = atsReports.length > 1 ? (atsReports[1].overallScore || atsReports[1].score || 0) : latestAtsScore;
   const atsScoreDelta = latestAtsScore - prevAtsScore;
@@ -114,7 +123,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
 
   const latestLinkedinScore = linkedinReports.length > 0 ? linkedinReports[0].score : 0;
 
-  const resumeScore = resumes.length > 0 ? Math.min(100, Math.round(avgAtsScore * 0.6 + (profile ? 20 : 0) + (resumes.length > 0 ? 20 : 0))) : 0;
+  const resumeScore = totalResumesCount > 0 ? Math.min(100, Math.round(avgAtsScore * 0.6 + (candidateProfile || profile ? 20 : 0) + 20)) : 0;
 
   const dsaSolved = dsaProgress?.solved || 0;
   const dsaAccuracy = dsaProgress?.accuracy || 0;
@@ -149,7 +158,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
 
   // Resume readiness (0-100)
   const resumeReadiness = Math.min(100, Math.round(
-    (resumes.length > 0 ? 30 : 0) +
+    (totalResumesCount > 0 ? 30 : 0) +
     avgAtsScore * 0.35 +
     (resumeImprovements.length > 0 ? 15 : 0) +
     (coverLetters.length > 0 ? 10 : 0) +
@@ -248,6 +257,16 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       date: s.createdAt,
       icon: "code",
       color: "#f59e0b"
+    });
+  });
+
+  uploadedResumes.forEach((r: any) => {
+    timelineEvents.push({
+      type: "resume",
+      title: `Uploaded resume: ${r.fileName}`,
+      date: r.createdAt,
+      icon: "file",
+      color: "#3b82f6"
     });
   });
 
@@ -784,7 +803,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       atsScore: latestAtsScore,
       improvementSuggestionsRemaining,
       resumeVersions: resumeVersions.length,
-      resumesCreated: resumes.length,
+      resumesCreated: totalResumesCount,
       coverLettersCount: coverLettersCount,
       resumeAnalyses: resumeAnalyses.length,
       resumeImprovements: resumeImprovements.length,
@@ -986,8 +1005,10 @@ export async function getCareerDashboard(req: Request, res: Response, next: Next
       where: { userId }
     });
 
-    const EXPIRATION_TIME = 2 * 60 * 60 * 1000; // 2 hours cache duration
-    if (snapshot && (Date.now() - new Date(snapshot.createdAt).getTime() < EXPIRATION_TIME)) {
+    const forceRefresh = req.query.refresh === "true";
+    const EXPIRATION_TIME = 15 * 60 * 1000; // 15 minutes cache duration
+    const isMinimalSnapshot = snapshot && (snapshot.overallReadiness === 0 || (snapshot.dashboardJson as any)?.scores?.overall === 0 || (snapshot.dashboardJson as any)?.resumeSummary?.resumesCreated === 0);
+    if (!forceRefresh && snapshot && !isMinimalSnapshot && (Date.now() - new Date(snapshot.createdAt).getTime() < EXPIRATION_TIME)) {
       return res.json({
         success: true,
         dashboard: snapshot.dashboardJson
