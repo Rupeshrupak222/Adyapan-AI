@@ -913,22 +913,34 @@ export async function getAdminNotifications(req: Request, res: Response, next: N
       ];
     }
 
-    const [notifications, total, totalAllUsers, freeUsersCount, premiumUsersCount] = await Promise.all([
-      (prisma as any).systemNotification.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      (prisma as any).systemNotification.count({ where }),
-      prisma.user.count(),
-      prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: null }, { plan: "" }] } }),
-      prisma.user.count({ where: { OR: [{ plan: "pro" }, { plan: "premium" }, { subscriptionStatus: "active" }] } }),
-    ]);
+    let notifications: any[] = [];
+    let total = 0;
+    let activeCount = 0;
+    let totalAllUsers = 0;
+    let freeUsersCount = 0;
+    let premiumUsersCount = 0;
 
-    const activeCount = await (prisma as any).systemNotification.count({
-      where: { isRevoked: false },
-    });
+    try {
+      [notifications, total, totalAllUsers, freeUsersCount, premiumUsersCount] = await Promise.all([
+        (prisma as any).systemNotification.findMany({ where, orderBy: { createdAt: "desc" }, skip, take: limit }),
+        (prisma as any).systemNotification.count({ where }),
+        prisma.user.count(),
+        prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: null }, { plan: "" }] } }),
+        prisma.user.count({ where: { OR: [{ plan: "pro" }, { plan: "premium" }, { subscriptionStatus: "active" }] } }),
+      ]);
+      activeCount = await (prisma as any).systemNotification.count({ where: { isRevoked: false } });
+    } catch (dbErr: any) {
+      if (dbErr?.code === "P2021" || (typeof dbErr?.message === "string" && dbErr.message.includes("does not exist"))) {
+        await ensureSystemNotificationTableExists();
+        [totalAllUsers, freeUsersCount, premiumUsersCount] = await Promise.all([
+          prisma.user.count(),
+          prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: null }, { plan: "" }] } }),
+          prisma.user.count({ where: { OR: [{ plan: "pro" }, { plan: "premium" }, { subscriptionStatus: "active" }] } }),
+        ]);
+      } else {
+        throw dbErr;
+      }
+    }
 
     res.json({
       success: true,
@@ -946,11 +958,46 @@ export async function getAdminNotifications(req: Request, res: Response, next: N
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit) || 1,
       },
     });
   } catch (error) {
     next(error);
+  }
+}
+
+
+async function ensureSystemNotificationTableExists() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "system_notifications" (
+          "id" TEXT NOT NULL,
+          "admin_id" TEXT,
+          "title" TEXT NOT NULL,
+          "message" TEXT NOT NULL,
+          "type" TEXT NOT NULL DEFAULT 'info',
+          "target_audience" TEXT NOT NULL DEFAULT 'ALL',
+          "action_url" TEXT,
+          "priority" TEXT NOT NULL DEFAULT 'normal',
+          "delivery_channel" TEXT NOT NULL DEFAULT 'in_app',
+          "send_email" BOOLEAN NOT NULL DEFAULT false,
+          "is_revoked" BOOLEAN NOT NULL DEFAULT false,
+          "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "system_notifications_pkey" PRIMARY KEY ("id")
+      );
+      CREATE INDEX IF NOT EXISTS "system_notifications_target_audience_idx" ON "system_notifications"("target_audience");
+      CREATE INDEX IF NOT EXISTS "system_notifications_created_at_idx" ON "system_notifications"("created_at");
+      CREATE TABLE IF NOT EXISTS "system_notification_reads" (
+          "id" TEXT NOT NULL,
+          "notification_id" TEXT NOT NULL,
+          "user_id" TEXT NOT NULL,
+          "read_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "system_notification_reads_pkey" PRIMARY KEY ("id")
+      );
+    `);
+  } catch (err) {
+    console.warn("[ensureSystemNotificationTableExists] DDL warn:", err);
   }
 }
 
@@ -963,18 +1010,41 @@ export async function createAdminBroadcastNotification(req: Request, res: Respon
       ? targetAudience.toUpperCase()
       : "ALL";
 
-    const notification = await (prisma as any).systemNotification.create({
-      data: {
-        title: title.trim(),
-        message: message.trim(),
-        type: type || "info",
-        targetAudience: validAudience,
-        actionUrl: actionUrl ? actionUrl.trim() : null,
-        priority: priority || "normal",
-        sendEmail: Boolean(sendEmail),
-        deliveryChannel: sendEmail ? "email_in_app" : "in_app",
-      },
-    });
+    let notification: any;
+    try {
+      notification = await (prisma as any).systemNotification.create({
+        data: {
+          title: title.trim(),
+          message: message.trim(),
+          type: type || "info",
+          targetAudience: validAudience,
+          actionUrl: actionUrl ? actionUrl.trim() : null,
+          priority: priority || "normal",
+          sendEmail: Boolean(sendEmail),
+          deliveryChannel: sendEmail ? "email_in_app" : "in_app",
+        },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2021" || (typeof err?.message === "string" && err.message.includes("does not exist"))) {
+        console.warn("[createAdminBroadcastNotification] Table system_notifications missing, auto-creating...");
+        await ensureSystemNotificationTableExists();
+        notification = await (prisma as any).systemNotification.create({
+          data: {
+            title: title.trim(),
+            message: message.trim(),
+            type: type || "info",
+            targetAudience: validAudience,
+            actionUrl: actionUrl ? actionUrl.trim() : null,
+            priority: priority || "normal",
+            sendEmail: Boolean(sendEmail),
+            deliveryChannel: sendEmail ? "email_in_app" : "in_app",
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
+
 
     // Calculate reach for confirmation message
     let targetCount = 0;
