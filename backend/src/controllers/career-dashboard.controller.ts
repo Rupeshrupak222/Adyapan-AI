@@ -752,18 +752,84 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   }
 
   studySessions.forEach((s: any) => {
-    const key = new Date(s.createdAt).toISOString().split("T")[0];
-    if (weeklyActivity[key]) weeklyActivity[key].learning++;
+    if (s.createdAt) {
+      const key = new Date(s.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].learning++;
+    }
+  });
+  uploadedDocuments.forEach((d: any) => {
+    if (d.createdAt) {
+      const key = new Date(d.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].learning++;
+    }
+  });
+  generatedNotes.forEach((n: any) => {
+    if (n.createdAt) {
+      const key = new Date(n.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].learning++;
+    }
+  });
+  quizAttempts.forEach((q: any) => {
+    if (q.createdAt) {
+      const key = new Date(q.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].learning++;
+    }
   });
 
   solvedSubmissions.forEach((s: any) => {
-    const key = new Date(s.createdAt).toISOString().split("T")[0];
-    if (weeklyActivity[key]) weeklyActivity[key].coding++;
+    if (s.createdAt) {
+      const key = new Date(s.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].coding++;
+    }
+  });
+  userQuestionProgress.forEach((p: any) => {
+    if (p.updatedAt || p.createdAt) {
+      const key = new Date(p.updatedAt || p.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].coding++;
+    }
+  });
+  challengeSubmissions.forEach((c: any) => {
+    if (c.createdAt) {
+      const key = new Date(c.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].coding++;
+    }
+  });
+  streakActivity.forEach((a: any) => {
+    if (a.createdAt || a.activityDate) {
+      const key = new Date(a.createdAt || a.activityDate).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].coding++;
+    }
+  });
+  codingSessions.forEach((cs: any) => {
+    if (cs.createdAt) {
+      const key = new Date(cs.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].coding++;
+    }
   });
 
   atsReports.forEach((r: any) => {
-    const key = new Date(r.createdAt).toISOString().split("T")[0];
-    if (weeklyActivity[key]) weeklyActivity[key].resume++;
+    if (r.createdAt) {
+      const key = new Date(r.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].resume++;
+    }
+  });
+  uploadedResumes.forEach((r: any) => {
+    if (r.createdAt) {
+      const key = new Date(r.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].resume++;
+    }
+  });
+  resumes.forEach((r: any) => {
+    if (r.createdAt) {
+      const key = new Date(r.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].resume++;
+    }
+  });
+  coverLetters.forEach((c: any) => {
+    if (c.createdAt) {
+      const key = new Date(c.createdAt).toISOString().split("T")[0];
+      if (weeklyActivity[key]) weeklyActivity[key].resume++;
+    }
   });
 
   const atsHistory = atsReports.slice().reverse().map((r: any) => ({
@@ -826,7 +892,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       challengesCompleted,
       aiReviewAverage: avgComplexity,
       roadmapProgress: codingRoadmaps.length > 0 ? codingRoadmaps[0].completionPercentage || 0 : 0,
-      accuracy: Math.round(dsaAccuracy * 100),
+      accuracy: dsaAccuracy > 100 ? Math.min(100, Math.round(dsaAccuracy / 100)) : Math.min(100, Math.round(dsaAccuracy)),
       totalSubmissions: submissions.length,
       codingSessions: codingSessions.length,
     },
