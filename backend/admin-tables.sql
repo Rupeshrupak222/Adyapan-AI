@@ -539,4 +539,121 @@ CREATE UNIQUE INDEX "organizations_name_key" ON "organizations"("name");
 CREATE INDEX "organizations_type_idx" ON "organizations"("type");
 CREATE INDEX "organizations_name_idx" ON "organizations"("name");
 
+-- CreateTable: discovery_jobs (full schema matching DiscoveryJob Prisma model)
+CREATE TABLE IF NOT EXISTS "discovery_jobs" (
+    "id" TEXT NOT NULL,
+    "fingerprint" TEXT NOT NULL,
+    "external_id" TEXT,
+    "title" TEXT NOT NULL,
+    "company" TEXT NOT NULL,
+    "company_id" TEXT,
+    "logo_url" TEXT,
+    "location" TEXT NOT NULL DEFAULT '',
+    "country" TEXT NOT NULL DEFAULT '',
+    "state" TEXT NOT NULL DEFAULT '',
+    "city" TEXT NOT NULL DEFAULT '',
+    "description" TEXT NOT NULL DEFAULT '',
+    "salary_min" INTEGER,
+    "salary_max" INTEGER,
+    "salary_currency" TEXT NOT NULL DEFAULT 'INR',
+    "experience_min" INTEGER,
+    "experience_max" INTEGER,
+    "employment_type" TEXT NOT NULL DEFAULT 'Full-Time',
+    "work_mode" TEXT NOT NULL DEFAULT 'Onsite',
+    "skills" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "requirements" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "responsibilities" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "benefits" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "education" TEXT NOT NULL DEFAULT '',
+    "industry" TEXT NOT NULL DEFAULT '',
+    "company_size" TEXT NOT NULL DEFAULT '',
+    "apply_url" TEXT,
+    "source_url" TEXT,
+    "source" TEXT NOT NULL,
+    "posted_at" TIMESTAMP(3),
+    "first_seen_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "last_seen_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "is_featured" BOOLEAN NOT NULL DEFAULT false,
+    "view_count" INTEGER NOT NULL DEFAULT 0,
+    "save_count" INTEGER NOT NULL DEFAULT 0,
+    "source_count" INTEGER NOT NULL DEFAULT 1,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "discovery_jobs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex for discovery_jobs
+CREATE UNIQUE INDEX IF NOT EXISTS "discovery_jobs_fingerprint_key" ON "discovery_jobs"("fingerprint");
+CREATE INDEX IF NOT EXISTS "discovery_jobs_company_idx" ON "discovery_jobs"("company");
+CREATE INDEX IF NOT EXISTS "discovery_jobs_source_idx" ON "discovery_jobs"("source");
+CREATE INDEX IF NOT EXISTS "discovery_jobs_work_mode_idx" ON "discovery_jobs"("work_mode");
+CREATE INDEX IF NOT EXISTS "discovery_jobs_employment_type_idx" ON "discovery_jobs"("employment_type");
+CREATE INDEX IF NOT EXISTS "discovery_jobs_location_idx" ON "discovery_jobs"("location");
+CREATE INDEX IF NOT EXISTS "discovery_jobs_posted_at_idx" ON "discovery_jobs"("posted_at");
+CREATE INDEX IF NOT EXISTS "discovery_jobs_is_active_idx" ON "discovery_jobs"("is_active");
+CREATE INDEX IF NOT EXISTS "discovery_jobs_salary_min_idx" ON "discovery_jobs"("salary_min");
+CREATE INDEX IF NOT EXISTS "discovery_jobs_experience_min_idx" ON "discovery_jobs"("experience_min");
+CREATE INDEX IF NOT EXISTS "discovery_jobs_created_at_idx" ON "discovery_jobs"("created_at");
+
+-- CreateTable: saved_jobs (for bookmarking)
+CREATE TABLE IF NOT EXISTS "saved_jobs" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "job_id" TEXT NOT NULL,
+    "notes" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'saved',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "saved_jobs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex for saved_jobs
+CREATE UNIQUE INDEX IF NOT EXISTS "saved_jobs_user_id_job_id_key" ON "saved_jobs"("user_id", "job_id");
+CREATE INDEX IF NOT EXISTS "saved_jobs_user_id_idx" ON "saved_jobs"("user_id");
+CREATE INDEX IF NOT EXISTS "saved_jobs_job_id_idx" ON "saved_jobs"("job_id");
+
+-- AlterTable: discovery_jobs - Add missing columns for existing installations
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "external_id" TEXT;
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "company_id" TEXT;
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "logo_url" TEXT;
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "country" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "state" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "city" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "experience_min" INTEGER;
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "experience_max" INTEGER;
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "requirements" TEXT[] DEFAULT ARRAY[]::TEXT[];
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "responsibilities" TEXT[] DEFAULT ARRAY[]::TEXT[];
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "benefits" TEXT[] DEFAULT ARRAY[]::TEXT[];
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "education" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "industry" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "company_size" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "first_seen_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE "discovery_jobs" ADD COLUMN IF NOT EXISTS "source_count" INTEGER NOT NULL DEFAULT 1;
+
+-- Fix NOT NULL constraint for apply_url (make it nullable to match schema)
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'discovery_jobs' AND column_name = 'apply_url' AND is_nullable = 'NO'
+  ) THEN
+    ALTER TABLE "discovery_jobs" ALTER COLUMN "apply_url" DROP NOT NULL;
+  END IF;
+END $$;
+
+-- Fix NOT NULL constraint for location (ensure default)
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'discovery_jobs' AND column_name = 'location'
+  ) THEN
+    UPDATE "discovery_jobs" SET "location" = '' WHERE "location" IS NULL;
+  END IF;
+END $$;
+
+
+
+
 

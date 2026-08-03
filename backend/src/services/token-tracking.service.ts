@@ -49,15 +49,15 @@ export class TokenTrackingService {
     message?: string;
   }> {
     // Admin users have unlimited tokens
-    if (userRole === "ADMIN") {
+    if (userRole === "ADMIN" || userPlan?.toLowerCase() === "admin") {
       return { allowed: true, used: 0, limit: Infinity, isFree: false };
     }
 
     const settings = getSystemSettingsMemory();
     const isFree = !userPlan || userPlan.toLowerCase() === "free";
     const limit = isFree
-      ? settings.freeTierTokenLimit || 10000
-      : settings.premiumTierTokenLimit || 100000;
+      ? settings.freeTierTokenLimit || 500000
+      : settings.premiumTierTokenLimit || 5000000;
 
     const used = await this.getTodayTokenUsage(userId);
 

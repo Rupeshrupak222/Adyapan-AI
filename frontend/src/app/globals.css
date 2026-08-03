@@ -225,6 +225,14 @@ button, input, select, textarea {
 .dash-main { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.12) transparent; }
 .dash-sidebar:hover ~ .dash-main { margin-left: 220px; }
 
+/* ── Dashboard Light Theme Scrollbar + Sidebar Overrides ── */
+[data-theme="light"] .dash-sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
+[data-theme="light"] .dash-sidebar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.22); }
+[data-theme="light"] .dash-sidebar { scrollbar-color: rgba(0,0,0,0.12) transparent; }
+[data-theme="light"] .dash-main::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); }
+[data-theme="light"] .dash-main::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+[data-theme="light"] .dash-main { scrollbar-color: rgba(0,0,0,0.1) transparent; }
+
 /* ── Resume Hub Light Theme Overrides ── */
 [data-theme="light"] .resume-hub-theme {
   /* text colors */

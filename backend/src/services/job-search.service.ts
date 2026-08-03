@@ -412,17 +412,31 @@ export class JobSearchService {
       orderBy = { [validSortFields[sortField]]: sortOrder };
     }
 
-    let [total, jobs] = await Promise.all([
-      db.discoveryJob.count({ where }),
-      db.discoveryJob.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-      }),
-    ]);
+    let total = 0;
+    let jobs: any[] = [];
+    try {
+      [total, jobs] = await Promise.all([
+        db.discoveryJob.count({ where }),
+        db.discoveryJob.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+        }),
+      ]);
+    } catch (dbErr: any) {
+      const isMissingTable = dbErr?.code === "P2021" || (typeof dbErr?.message === "string" && (dbErr.message.includes("does not exist") || dbErr.message.includes("relation")));
+      if (isMissingTable) {
+        console.warn("[JobSearchService] discovery_jobs table missing — seeding default jobs...");
+        total = 0;
+        jobs = [];
+      } else {
+        throw dbErr;
+      }
+    }
 
     if (total === 0) {
+
       try {
         const DEFAULT_JOBS = [
           {
