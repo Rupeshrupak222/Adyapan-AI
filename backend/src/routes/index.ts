@@ -56,8 +56,14 @@ import { productivityRouter } from "./productivity.routes";
 import { jobDiscoveryRouter } from "./job-discovery.routes";
 import avatarRouter from "./avatar.routes";
 import { settingsRouter } from "./settings.routes";
+import { usageRouter } from "./usage.routes";
+import { enforceAiTokenLimit } from "../middleware/aiTokenLimit.middleware";
 
 export const apiRouter = Router();
+
+// Global AI plan-limit enforcement. Mounted before sub-routers so it sees the
+// original path; it only acts on AI-generation endpoints (POST/PUT/etc).
+apiRouter.use(enforceAiTokenLimit);
 
 apiRouter.use("/health", healthRouter);
 apiRouter.use("/auth", authRouter);
@@ -167,3 +173,6 @@ apiRouter.use("/avatar", avatarRouter);
 
 // User Settings Routes
 apiRouter.use("/settings", settingsRouter);
+
+// AI Usage / Plan Limits Routes
+apiRouter.use("/usage", usageRouter);

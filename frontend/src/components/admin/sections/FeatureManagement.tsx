@@ -3,17 +3,17 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Plus, Download, RefreshCw, Loader2, Filter, Check, X,
-  ToggleLeft, ToggleRight, Settings2, Trash2, Activity, Globe2,
-  Layers, Sparkles, Zap, AlertTriangle, Rocket, Crown, Clock,
-  ChevronLeft, ChevronRight, ChevronDown, BarChart3, GitBranch,
-  ShieldCheck, KeyRound, Gauge, Users, DollarSign, Cpu, MousePointerClick,
-  CircleDot, Flag, ListFilter, MoreHorizontal, Edit3, Copy, Undo2,
+  Search, Plus, Download, RefreshCw, Loader2, Check, X,
+  ToggleLeft, ToggleRight, Settings2, Trash2, Activity,
+  Sparkles, Zap, AlertTriangle, Rocket, Crown, Clock,
+  ChevronLeft, ChevronRight, BarChart3, GitBranch,
+  ShieldCheck, Gauge, Users, DollarSign, Cpu, MousePointerClick,
+  CircleDot, Flag, ListFilter, MoreHorizontal, Undo2,
   Boxes, Workflow, Eye, Pencil, Ban, Play,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
-  Tooltip, CartesianGrid, Cell,
+  Tooltip, CartesianGrid,
 } from "recharts";
 import { api } from "@/services/api";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
@@ -32,10 +32,10 @@ interface FlagInfo {
   rolloutPct: number;
   status: string;
   targetType: string;
-  targetUsers: any[];
-  targetRoles: any[];
-  targetUniversities: any[];
-  targetCountries: any[];
+  targetUsers: string[];
+  targetRoles: string[];
+  targetUniversities: string[];
+  targetCountries: string[];
   updatedAt?: string;
 }
 
@@ -137,7 +137,7 @@ interface LogRow {
   id: string;
   action: string;
   changedBy?: string;
-  details: any;
+  details: string;
   createdAt: string;
 }
 
@@ -348,6 +348,25 @@ const EMPTY_FORM: FeatureFormValues = {
   notes: "", rolloutPct: 100, isEnabled: true,
 };
 
+type FeatureSavePayload = Omit<FeatureFormValues, "rateLimit"> & { rateLimit: number | null };
+
+type RolloutSavePayload = {
+  rolloutPct: number;
+  isEnabled: boolean;
+  environment: string;
+  targetType: string;
+  targetUsers: string[];
+  targetRoles: string[];
+  targetUniversities: string[];
+  targetCountries: string[];
+  reason: string;
+};
+
+const getErrMsg = (e: unknown, fallback: string) => {
+  const err = e as { response?: { data?: { error?: string } } };
+  return err?.response?.data?.error || fallback;
+};
+
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <label className="block">
@@ -374,7 +393,7 @@ const inputStyle: React.CSSProperties = {
 // Dependency Mini-Graph (React Flow)
 // ═══════════════════════════════════════════════════════════════════
 
-import { ReactFlow, Background, BackgroundVariant, Controls, MarkerType, type Node, type Edge } from "@xyflow/react";
+import { ReactFlow, Background, BackgroundVariant, MarkerType, type Node, type Edge } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 function buildGraph(feature: FeatureDetail) {
@@ -523,6 +542,23 @@ export default function FeatureManagement() {
 
   useEffect(() => { setPage(1); }, [debouncedSearch, statusFilter, categoryFilter, moduleFilter, accessFilter, envFilter, premiumFilter, roleFilter]);
 
+  const handleExport = async () => {
+    try {
+      const res = await api.get("/admin/features/export", { params: { environment: envFilter }, responseType: "blob" });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `features-${envFilter.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      pushToast("Export downloaded", "success");
+    } catch {
+      pushToast("Export failed", "error");
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -573,7 +609,7 @@ export default function FeatureManagement() {
   };
 
   // ── Computed ────────────────────────────────────────────────
-  const features = data?.features ?? [];
+  const features = useMemo(() => data?.features ?? [], [data]);
   const stats = data?.stats;
   const meta = data?.meta;
 
@@ -625,14 +661,14 @@ export default function FeatureManagement() {
         message: `"${f.name}" is required by ${f.dependentCount} other feature(s). Disabling it may break: ${f.dependencies.map((d) => d.name).join(", ") || "dependent features"}. Continue?`,
         confirmLabel: "Disable anyway",
         danger: true,
-        onConfirm: () => performToggle(f, nextEnabled, true),
+        onConfirm: () => performToggle(f, nextEnabled),
       });
       return;
     }
-    performToggle(f, nextEnabled, false);
+    performToggle(f, nextEnabled);
   };
 
-  const performToggle = async (f: FeatureRow, nextEnabled: boolean, confirmed: boolean) => {
+  const performToggle = async (f: FeatureRow, nextEnabled: boolean) => {
     const prevStatus = f.status;
     const wasEnabled = f.flag?.isEnabled;
     setData((d) => d && ({
@@ -680,7 +716,7 @@ export default function FeatureManagement() {
       message: `Delete "${f.name}"? This soft-deletes the feature and disables its flag. You can undo this.`,
       confirmLabel: "Delete",
       danger: true,
-      onConfirm: () => performDelete([f.id], [f.name]),
+      onConfirm: () => performDelete([f.id]),
     });
   };
 
@@ -691,11 +727,11 @@ export default function FeatureManagement() {
       message: `Delete ${ids.length} feature(s)? This soft-deletes them and disables their flags. You can undo this.`,
       confirmLabel: `Delete ${ids.length}`,
       danger: true,
-      onConfirm: () => performDelete(ids, ids.map((id) => features.find((x) => x.id === id)?.name || id)),
+      onConfirm: () => performDelete(ids),
     });
   };
 
-  const performDelete = async (ids: string[], names: string[]) => {
+  const performDelete = async (ids: string[]) => {
     let deletedCount = 0;
     try {
       for (const id of ids) {
@@ -724,23 +760,6 @@ export default function FeatureManagement() {
     }
   };
 
-  const handleExport = async () => {
-    try {
-      const res = await api.get("/admin/features/export", { params: { environment: envFilter }, responseType: "blob" });
-      const url = URL.createObjectURL(new Blob([res.data]));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `features-${envFilter.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      pushToast("Export downloaded", "success");
-    } catch {
-      pushToast("Export failed", "error");
-    }
-  };
-
   const handleBulkExport = () => {
     const ids = Array.from(selected);
     if (!ids.length) return;
@@ -761,7 +780,28 @@ export default function FeatureManagement() {
     pushToast("Exported selected features", "success");
   };
 
-  const handleSaveFeature = async (values: FeatureFormValues, id?: string) => {
+  const bulkUpdateField = async (field: "category" | "owner" | "module", value: string) => {
+    const ids = Array.from(selected);
+    if (!ids.length || !value) return;
+    setConfirmState({
+      message: `Assign "${value}" as ${field} for ${ids.length} selected feature(s)?`,
+      confirmLabel: "Apply",
+      onConfirm: async () => {
+        try {
+          for (const id of ids) {
+            await api.put(`/admin/features/${id}`, { [field]: value });
+          }
+          pushToast(`${ids.length} features updated`, "success");
+          setSelected(new Set());
+          fetchList(true);
+        } catch {
+          pushToast("Bulk update failed", "error");
+        }
+      },
+    });
+  };
+
+  const handleSaveFeature = async (values: FeatureSavePayload, id?: string) => {
     try {
       if (id) {
         await api.put(`/admin/features/${id}`, values);
@@ -772,22 +812,12 @@ export default function FeatureManagement() {
       }
       setFormOpen(false);
       fetchList(true);
-    } catch (e: any) {
-      pushToast(e?.response?.data?.error || "Failed to save feature", "error");
+    } catch (e) {
+      pushToast(getErrMsg(e, "Failed to save feature"), "error");
     }
   };
 
-  const handleRolloutSave = async (payload: {
-    rolloutPct: number;
-    isEnabled: boolean;
-    environment: string;
-    targetType: string;
-    targetUsers: string[];
-    targetRoles: string[];
-    targetUniversities: string[];
-    targetCountries: string[];
-    reason: string;
-  }) => {
+  const handleRolloutSave = async (payload: RolloutSavePayload) => {
     if (!rolloutFeature) return;
     try {
       await api.patch("/admin/features/rollout", { featureId: rolloutFeature.id, ...payload });
@@ -795,8 +825,8 @@ export default function FeatureManagement() {
       setRolloutFeature(null);
       fetchList(true);
       if (detail?.id === rolloutFeature.id) fetchDetail(rolloutFeature.id);
-    } catch (e: any) {
-      pushToast(e?.response?.data?.error || "Failed to update rollout. Only Super Admin can change production flags.", "error");
+    } catch (e) {
+      pushToast(getErrMsg(e, "Failed to update rollout. Only Super Admin can change production flags."), "error");
     }
   };
 
@@ -807,8 +837,8 @@ export default function FeatureManagement() {
       pushToast("Permissions updated", "success");
       setPermFeature(null);
       if (detail?.id === permFeature.id) fetchDetail(permFeature.id);
-    } catch (e: any) {
-      pushToast(e?.response?.data?.error || "Failed to update permissions", "error");
+    } catch (e) {
+      pushToast(getErrMsg(e, "Failed to update permissions"), "error");
     }
   };
 
@@ -985,27 +1015,6 @@ export default function FeatureManagement() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      const bulkUpdateField = async (field: "category" | "owner" | "module", value: string) => {
-        const ids = Array.from(selected);
-        if (!ids.length || !value) return;
-        setConfirmState({
-          message: `Assign "${value}" as ${field} for ${ids.length} selected feature(s)?`,
-          confirmLabel: "Apply",
-          onConfirm: async () => {
-            try {
-              for (const id of ids) {
-                await api.put(`/admin/features/${id}`, { [field]: value });
-              }
-              pushToast(`${ids.length} features updated`, "success");
-              setSelected(new Set());
-              fetchList(true);
-            } catch {
-              pushToast("Bulk update failed", "error");
-            }
-          },
-        });
-      };
 
       {/* ══ Main Grid: Table + Detail Panel ══ */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -1283,7 +1292,7 @@ function FilterSelect({ label, value, onChange, options }: {
   label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[];
 }) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)}
+    <select aria-label={label} value={value} onChange={(e) => onChange(e.target.value)}
       className="rounded-lg px-2.5 py-1.5 text-[10px] font-bold cursor-pointer outline-none appearance-none pr-6 relative"
       style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}>
       {options.map((o) => <option key={o.value} value={o.value} style={{ background: "var(--bg-dark, #0c131a)", color: "var(--text-primary)" }}>{o.label}</option>)}
@@ -1305,7 +1314,7 @@ function BulkSelect({ label, placeholder, options, onApply }: {
   label: string; placeholder: string; options: string[]; onApply: (v: string) => void;
 }) {
   return (
-    <select defaultValue="" onChange={(e) => { if (e.target.value) onApply(e.target.value); }}
+    <select aria-label={label} defaultValue="" onChange={(e) => { if (e.target.value) onApply(e.target.value); }}
       className="rounded-lg px-2.5 py-1.5 text-[10px] font-bold cursor-pointer outline-none"
       style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}>
       <option value="" style={{ background: "var(--bg-dark, #0c131a)", color: "var(--text-muted)" }}>{placeholder}</option>
@@ -1728,9 +1737,9 @@ function PanelBtn({ icon, label, onClick, color, full }: { icon: React.ReactNode
 
 function FeatureModal({ editing, meta, onClose, onSave }: {
   editing: FeatureRow | null;
-  meta?: MetaData;
+  meta: MetaData | undefined;
   onClose: () => void;
-  onSave: (values: FeatureFormValues, id?: string) => void;
+  onSave: (values: FeatureSavePayload, id?: string) => void;
 }) {
   const [values, setValues] = useState<FeatureFormValues>(() => editing ? {
     key: editing.key, name: editing.name, description: editing.description || "",
@@ -1755,10 +1764,10 @@ function FeatureModal({ editing, meta, onClose, onSave }: {
     setSaving(true);
     setErrorMsg(null);
     try {
-      const payload: any = { ...values, rateLimit: values.rateLimit ? Number(values.rateLimit) : null };
+      const payload: FeatureSavePayload = { ...values, rateLimit: values.rateLimit ? Number(values.rateLimit) : null };
       await onSave(payload, editing?.id);
-    } catch (e: any) {
-      setErrorMsg(e?.response?.data?.error || "Failed to save");
+    } catch (e) {
+      setErrorMsg(getErrMsg(e, "Failed to save"));
     } finally {
       setSaving(false);
     }
@@ -1900,7 +1909,7 @@ function FeatureModal({ editing, meta, onClose, onSave }: {
 function RolloutModal({ feature, onClose, onSave }: {
   feature: FeatureRow;
   onClose: () => void;
-  onSave: (payload: any) => void;
+  onSave: (payload: RolloutSavePayload) => void;
 }) {
   const [rolloutPct, setRolloutPct] = useState(feature.flag?.rolloutPct ?? 100);
   const [isEnabled, setIsEnabled] = useState(feature.flag?.isEnabled ?? true);

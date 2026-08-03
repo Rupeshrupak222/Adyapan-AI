@@ -225,7 +225,21 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
         body: JSON.stringify({ sessionId, message: finalMessage, model: selectedModel }),
       });
 
-      if (!res.ok) throw new Error("Request failed");
+      if (!res.ok) {
+        const bodyText = await res.text();
+        let data: unknown = null;
+        try {
+          data = bodyText ? JSON.parse(bodyText) : null;
+        } catch {
+          data = null;
+        }
+        if (data && typeof data === "object" && (data as { code?: string }).code === "LIMIT_EXCEEDED") {
+          import("@/store/usage-store").then(({ useUsageStore }) =>
+            useUsageStore.getState().openLimitModal(data as import("@/store/usage-store").LimitSnapshot)
+          );
+        }
+        throw new Error("Request failed");
+      }
 
       const reader = res.body?.getReader();
       if (!reader) throw new Error("No reader");

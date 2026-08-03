@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
-import { enforceAiTokenLimit } from "../middleware/aiTokenLimit.middleware";
 import { generateNotes } from "../lib/ai/gemini";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { StreakService } from "../services/streak.service";
@@ -11,7 +10,6 @@ import { formatNotesBodyHtml } from "../services/notes-formatter.service";
 export const notesRouter = Router();
 
 notesRouter.use(requireAuth);
-notesRouter.use(enforceAiTokenLimit);
 
 notesRouter.post("/generate", async (req, res) => {
   try {

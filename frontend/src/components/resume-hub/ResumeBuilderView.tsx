@@ -169,7 +169,16 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
     setChatMessages((prev) => [...prev, { role: "ai", text: "" }]);
     try {
       const res = await fetch(`${api.defaults.baseURL}/resume/ai-chat/stream`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ resumeData: resumeJSON, message }) });
-      if (!res.ok) throw new Error("Stream failed");
+      if (!res.ok) {
+        let data: unknown = null;
+        try { data = await res.json(); } catch { data = null; }
+        if (data && typeof data === "object" && (data as { code?: string }).code === "LIMIT_EXCEEDED") {
+          import("@/store/usage-store").then(({ useUsageStore }) =>
+            useUsageStore.getState().openLimitModal(data as import("@/store/usage-store").LimitSnapshot)
+          );
+        }
+        throw new Error("Stream failed");
+      }
       const reader = res.body?.getReader(); if (!reader) throw new Error("No reader");
       const decoder = new TextDecoder(); let buffer = ""; accumulatedTextRef.current = "";
       while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split("\n"); buffer = lines.pop() || ""; for (const line of lines) { const trimmed = line.trim(); if (!trimmed.startsWith("data: ")) continue; try { const data = JSON.parse(trimmed.slice(6)); if (data.type === "chunk") { accumulatedTextRef.current += data.text; setChatMessages((prev) => { const n = [...prev]; n[n.length - 1] = { role: "ai", text: accumulatedTextRef.current }; return n; }); } else if (data.type === "result") { if (data.summary) setSummary(data.summary); if (data.experience) setExperience(data.experience); if (data.projects) setProjects(data.projects); if (data.skills) setSkills(data.skills); const updated = Object.keys({ summary: data.summary, experience: data.experience, projects: data.projects, skills: data.skills }).filter(k => data[k]).join(", "); if (updated) { accumulatedTextRef.current += `\n\nUpdated: ${updated}`; setChatMessages((prev) => { const n = [...prev]; n[n.length - 1] = { role: "ai", text: accumulatedTextRef.current }; return n; }); } } else if (data.type === "error") throw new Error(data.message); } catch {} } }

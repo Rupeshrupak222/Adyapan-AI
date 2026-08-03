@@ -4,6 +4,7 @@ import "./globals.css";
 import LenisProvider from "@/components/providers/LenisProvider";
 import ThemeScript from "@/components/providers/ThemeScript";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { PremiumUpgradeModal } from "@/components/premium/PremiumUpgradeModal";
 
 export const metadata: Metadata = {
   title: "Adyapan AI",
@@ -29,6 +30,7 @@ export default function RootLayout({
         <LenisProvider />
         <Toaster position="top-right" richColors closeButton />
         <QueryProvider>{children}</QueryProvider>
+        <PremiumUpgradeModal />
       </body>
     </html>
   );

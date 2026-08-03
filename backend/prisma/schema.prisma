@@ -91,6 +91,87 @@ model BlacklistedToken {
   @@map("blacklisted_tokens")
 }
 
+// ─── AI Usage / Premium Upgrade Flow ──────────────────────────────────────
+
+// Per-user aggregated usage counters (user_usage). One row per user, held on
+// the master DB so quotas are enforced consistently across all user databases.
+model AiUsage {
+  id                 String    @id @default(cuid())
+  userId             String    @unique @map("user_id")
+  plan               String    @default("free")
+  subscriptionStatus String?   @map("subscription_status")
+  dailyTokensUsed    Int       @default(0) @map("daily_tokens_used")
+  monthlyTokensUsed  Int       @default(0) @map("monthly_tokens_used")
+  dailyRequests      Int       @default(0) @map("daily_requests")
+  monthlyRequests    Int       @default(0) @map("monthly_requests")
+  dailyResetAt       DateTime  @map("daily_reset_at")
+  monthlyResetAt     DateTime  @map("monthly_reset_at")
+  lastRequestAt      DateTime? @map("last_request_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([plan])
+  @@index([dailyResetAt])
+  @@map("ai_usage")
+}
+
+// Granular per-request token/request log (token_usage + ai_requests).
+model AiRequestLog {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  plan          String   @default("free")
+  route         String?
+  method        String?
+  inputTokens   Int      @default(0) @map("input_tokens")
+  outputTokens  Int      @default(0) @map("output_tokens")
+  totalTokens   Int      @default(0) @map("total_tokens")
+  status        String   @default("success")
+  blocked       Boolean  @default(false)
+  blockedReason String?  @map("blocked_reason")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("ai_request_logs")
+}
+
+// Subscription lifecycle rows linked to premium/enterprise purchases.
+model Subscription {
+  id                 String    @id @default(cuid())
+  userId             String    @map("user_id")
+  planId             String?   @map("plan_id")
+  planCode           String    @map("plan_code")
+  status             String    @default("active")
+  price              Float     @default(0)
+  currency           String    @default("INR")
+  currentPeriodStart DateTime  @map("current_period_start")
+  currentPeriodEnd   DateTime  @map("current_period_end")
+  canceledAt         DateTime? @map("canceled_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// Billing ledger events (payment, upgrade, downgrade, cancellation).
+model Billing {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  event     String   @map("billing_event")
+  amount    Float    @default(0)
+  currency  String   @default("INR")
+  plan      String?
+  status    String   @default("completed")
+  reference String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([event])
+  @@map("billing_events")
+}
+
 model PasswordResetToken {
   id        String   @id @default(cuid())
   email     String

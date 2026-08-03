@@ -24,6 +24,10 @@ const DEFAULT_SYSTEM_SETTINGS = {
   aiTemperature: 0.7,
   freeTierTokenLimit: 500000,
   premiumTierTokenLimit: 5000000,
+  freeTierDailyRequests: 20,
+  premiumTierDailyRequests: 200,
+  enterpriseTierDailyTokens: 20000000,
+  enterpriseTierDailyRequests: 1000,
   logoUrl: "/assets/logo.png",
   primaryBrandColor: "#f59e0b",
   faviconUrl: "/favicon.ico",
@@ -1064,6 +1068,116 @@ export async function getAnalyticsBI(_req: Request, res: Response, next: NextFun
         premiumConversionRate,
         totalJobs,
         totalCoding,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── 11a. Premium Conversion & AI Usage Analytics ────────────────
+
+export async function getPremiumAnalytics(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const p = prisma as any;
+    const now = new Date();
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const days14Ago = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    const [users, subCount, subsMonth, subsByPlan, billingEvents, revAgg, requestLogs, reqAgg, blockedAgg, usageRows] =
+      await Promise.all([
+        prisma.user
+          .findMany({ select: { id: true, plan: true, subscriptionStatus: true, createdAt: true } })
+          .catch(() => []),
+        p.subscription ? p.subscription.count().catch(() => 0) : Promise.resolve(0),
+        p.subscription ? p.subscription.count({ where: { createdAt: { gte: monthAgo } } }).catch(() => 0) : Promise.resolve(0),
+        p.subscription ? p.subscription.groupBy({ by: ["planCode"], _count: true }).catch(() => []) : Promise.resolve([]),
+        p.billing ? p.billing.findMany({ select: { event: true, amount: true, status: true, createdAt: true } }).catch(() => []) : Promise.resolve([]),
+        p.billing
+          ? p.billing.aggregate({ _sum: { amount: true }, where: { status: "completed" } }).catch(() => ({ _sum: { amount: 0 } }))
+          : Promise.resolve({ _sum: { amount: 0 } }),
+        p.aiRequestLog ? p.aiRequestLog.findMany({ where: { createdAt: { gte: days14Ago } }, select: { createdAt: true, totalTokens: true, blocked: true, plan: true } }).catch(() => []) : Promise.resolve([]),
+        p.aiRequestLog ? p.aiRequestLog.aggregate({ _sum: { totalTokens: true }, _count: true }).catch(() => ({ _sum: { totalTokens: 0 }, _count: 0 })) : Promise.resolve({ _sum: { totalTokens: 0 }, _count: 0 }),
+        p.aiRequestLog ? p.aiRequestLog.count({ where: { blocked: true } }).catch(() => 0) : Promise.resolve(0),
+        p.aiUsage ? p.aiUsage.findMany({ select: { plan: true, dailyTokensUsed: true, monthlyTokensUsed: true } }).catch(() => []) : Promise.resolve([]),
+      ]);
+
+    const totalUsers = users.length;
+    const freeUsers = users.filter((u: any) => !u.plan || u.plan === "free").length;
+    const premiumUsers = users.filter((u: any) => u.plan && u.plan !== "free" && !String(u.plan).includes("enterprise")).length;
+    const enterpriseUsers = users.filter((u: any) => String(u.plan || "").includes("enterprise")).length;
+    const conversionRate = totalUsers > 0 ? Math.round((premiumUsers / totalUsers) * 1000) / 10 : 0;
+
+    const signupsLast30d = users.filter((u: any) => new Date(u.createdAt) >= monthAgo).length;
+    const upgradedLast30d = subsMonth;
+    const revenueTotal = revAgg._sum.amount ?? 0;
+    const billingEventsArr = billingEvents || [];
+    const revenueLast30d = billingEventsArr
+      .filter((b: any) => b.status === "completed" && new Date(b.createdAt) >= monthAgo)
+      .reduce((s: number, b: any) => s + (b.amount || 0), 0);
+    const upgradesByPlan = Array.isArray(subsByPlan)
+      ? subsByPlan.map((r: any) => ({ plan: r.planCode, value: r._count }))
+      : [];
+
+    // 14-day usage trend across all users
+    const byDay = new Map<string, { tokens: number; requests: number; blocked: number }>();
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(days14Ago.getTime() + i * 24 * 60 * 60 * 1000);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      byDay.set(key, { tokens: 0, requests: 0, blocked: 0 });
+    }
+    for (const log of requestLogs || []) {
+      const d = new Date(log.createdAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const bucket = byDay.get(key);
+      if (!bucket) continue;
+      bucket.tokens += log.totalTokens || 0;
+      bucket.requests += 1;
+      if (log.blocked) bucket.blocked += 1;
+    }
+    const usageTrend = Array.from(byDay.entries()).map(([date, v]) => ({ date, ...v }));
+
+    const totalRequests = reqAgg._count ?? 0;
+    const totalTokens = reqAgg._sum?.totalTokens ?? 0;
+    const blockedRequests = blockedAgg ?? 0;
+
+    const planDist = (users as any[]).reduce((acc: Record<string, number>, u) => {
+      const key = u.plan && u.plan !== "free" ? u.plan : "free";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    const usageByPlan = (usageRows || []).reduce((acc: Record<string, { tokens: number; users: number }>, r: any) => {
+      const key = r.plan && r.plan !== "free" ? r.plan : "free";
+      if (!acc[key]) acc[key] = { tokens: 0, users: 0 };
+      acc[key].tokens += r.monthlyTokensUsed || 0;
+      acc[key].users += 1;
+      return acc;
+    }, {});
+
+    res.json({
+      success: true,
+      analytics: {
+        conversion: {
+          totalUsers,
+          freeUsers,
+          premiumUsers,
+          enterpriseUsers,
+          conversionRate,
+          signupsLast30d,
+          upgradedLast30d,
+          revenueTotal,
+          revenueLast30d,
+          upgradesByPlan,
+        },
+        usage: {
+          totalRequests,
+          totalTokens,
+          blockedRequests,
+          planDist,
+          usageByPlan,
+          trend: usageTrend,
+        },
       },
     });
   } catch (error) {

@@ -1,46 +1,120 @@
-import type { Request, Response, NextFunction } from "express";
-import { TokenTrackingService } from "../services/token-tracking.service";
+import type { NextFunction, Request, Response } from "express";
+import { prisma } from "../config/prisma";
+import { AiUsageService } from "../services/token-tracking.service";
+
+// AI-generation endpoints that are subject to plan limits.
+const AI_ROUTE_PATTERNS: RegExp[] = [
+  /^\/resume(\/|$)/,
+  /^\/ats(\/|$)/,
+  /^\/cover-letter(\/|$)/,
+  /^\/linkedin(\/|$)/,
+  /^\/study(\/|$)/,
+  /^\/notes(\/|$)/,
+  /^\/quiz(\/|$)/,
+  /^\/assignment(\/|$)/,
+  /^\/ppt(\/|$)/,
+  /^\/mindmap(\/|$)/,
+  /^\/coding(\/|$)/,
+  /^\/interview(\/|$)/,
+  /^\/ady-chat(\/|$)/,
+  /^\/flashcards(\/|$)/,
+  /^\/plagiarism(\/|$)/,
+  /^\/research(\/|$)/,
+  /^\/mcq(\/|$)/,
+  /^\/reasoning(\/|$)/,
+  /^\/aptitude(\/|$)/,
+  /^\/technical-engine(\/|$)/,
+  /^\/engine(\/|$)/,
+  /^\/avatar(\/|$)/,
+  /^\/resume-improvements(\/|$)/,
+  /^\/career(\/|$)/,
+  /^\/placement(\/|$)/,
+  /^\/productivity(\/|$)/,
+  /^\/weak-topics(\/|$)/,
+  /^\/recommendations(\/|$)/,
+  /^\/study-planner(\/|$)/,
+];
+
+// Non-generation paths that fall under an AI prefix but must not be charged.
+const EXCLUDE_PATTERNS: RegExp[] = [
+  /^\/export(\/|$)/,
+  /\/export(\/|$)/,
+  /^\/linkedin-jobs(\/|$)/,
+  /^\/job-listing(\/|$)/,
+  /^\/discovery(\/|$)/,
+  /^\/avatar\/voices(\/|$)/,
+];
 
 export async function enforceAiTokenLimit(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId;
-    const role = req.user?.role || "USER";
-    const plan = (req.user as any)?.plan || "free";
-    const email = (req.user as any)?.email || "";
-
-    // If request is unauthenticated or admin/superuser, allow through without token limits
-    if (!userId || role === "ADMIN" || email.toLowerCase().includes("admin") || email.toLowerCase().includes("ashish")) {
+    if (req.method === "GET" || req.method === "OPTIONS" || req.method === "HEAD") {
       return next();
     }
 
-    // Estimate input prompt tokens based on request body payload length
+    const path = req.path || req.url || "";
+    if (!AI_ROUTE_PATTERNS.some((p) => p.test(path))) return next();
+    if (EXCLUDE_PATTERNS.some((p) => p.test(path))) return next();
+
+    const userId = req.user?.userId;
+    const role = req.user?.role || "USER";
+    const email = req.user?.email || "";
+
+    // Unauthenticated or admin accounts are never gated.
+    if (!userId || role === "ADMIN" || /admin|ashish/i.test(email)) {
+      return next();
+    }
+
+    // Resolve the user's current plan from the master DB so quota reflects
+    // the latest upgrade/downgrade even when the JWT is stale.
+    const user = await prisma.user
+      .findUnique({ where: { id: userId }, select: { plan: true, subscriptionStatus: true } })
+      .catch(() => null);
+    const plan = user?.plan || "free";
+    const subscriptionStatus = user?.subscriptionStatus ?? null;
+
     const bodyStr = JSON.stringify(req.body || {});
     const estimatedTokens = Math.max(100, Math.ceil(bodyStr.length / 4));
 
-    const check = await TokenTrackingService.checkTokenLimit(userId, role, plan, estimatedTokens);
+    const check = await AiUsageService.checkAndReserve(userId, plan, subscriptionStatus, estimatedTokens, {
+      route: path,
+      method: req.method,
+    });
 
     if (!check.allowed) {
-      res.status(429).json({
+      const usage = check.usage;
+      res.status(check.status).json({
         success: false,
         message: check.message,
-        code: "TOKEN_LIMIT_EXCEEDED",
-        usage: {
-          used: check.used,
-          limit: check.limit,
-          isFree: check.isFree,
-        },
+        code: "LIMIT_EXCEEDED",
+        reason: check.reason,
+        plan: check.plan,
+        planKind: check.kind,
+        upgrade: check.kind === "free",
+        usage: usage
+          ? {
+              plan: usage.plan,
+              planKind: usage.kind,
+              dailyTokensUsed: usage.dailyTokensUsed,
+              dailyTokensLimit: usage.quota.dailyTokens,
+              dailyTokensRemaining: usage.dailyTokensRemaining,
+              dailyTokensPct: usage.dailyTokensPct,
+              monthlyTokensUsed: usage.monthlyTokensUsed,
+              monthlyTokensLimit: usage.quota.monthlyTokens,
+              dailyRequestsUsed: usage.dailyRequests,
+              dailyRequestsLimit: usage.quota.dailyRequests,
+              dailyRequestsRemaining: usage.dailyRequestsRemaining,
+              dailyRequestsPct: usage.dailyRequestsPct,
+              dailyResetAt: usage.dailyResetAt.toISOString(),
+              monthlyResetAt: usage.monthlyResetAt.toISOString(),
+            }
+          : undefined,
       });
       return;
     }
 
-    // Attach tracking helper to res.locals so controllers can record actual completion tokens
-    res.locals.recordAiTokens = (tokens: number) => {
-      TokenTrackingService.recordTokenUsage(userId, tokens).catch(() => {});
-    };
-
     next();
   } catch (error) {
-    // Fail open if token tracking encounters an internal error
+    // Fail open if enforcement hits an unexpected internal error.
     next();
   }
 }

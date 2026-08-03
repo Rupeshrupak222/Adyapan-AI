@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
-import { enforceAiTokenLimit } from "../middleware/aiTokenLimit.middleware";
 import { generateEnhancedMindMap } from "../lib/ai/gemini";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { StreakService } from "../services/streak.service";
@@ -10,7 +9,6 @@ import { getTimezone } from "../utils/request";
 export const mindMapRouter = Router();
 
 mindMapRouter.use(requireAuth);
-mindMapRouter.use(enforceAiTokenLimit);
 
 mindMapRouter.post("/generate", async (req, res) => {
   try {

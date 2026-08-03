@@ -23,6 +23,10 @@ interface SystemSettingsData {
   aiTemperature: number;
   freeTierTokenLimit: number;
   premiumTierTokenLimit: number;
+  freeTierDailyRequests: number;
+  premiumTierDailyRequests: number;
+  enterpriseTierDailyTokens: number;
+  enterpriseTierDailyRequests: number;
   logoUrl: string;
   primaryBrandColor: string;
   faviconUrl: string;
@@ -81,6 +85,10 @@ const DEFAULT_SETTINGS: SystemSettingsData = {
   aiTemperature: 0.7,
   freeTierTokenLimit: 10000,
   premiumTierTokenLimit: 100000,
+  freeTierDailyRequests: 20,
+  premiumTierDailyRequests: 200,
+  enterpriseTierDailyTokens: 20000000,
+  enterpriseTierDailyRequests: 1000,
   logoUrl: "",
   primaryBrandColor: "#f59e0b",
   faviconUrl: "",
@@ -471,6 +479,10 @@ export default function SystemSettings() {
           aiTemperature: settings.aiTemperature,
           freeTierTokenLimit: settings.freeTierTokenLimit,
           premiumTierTokenLimit: settings.premiumTierTokenLimit,
+          freeTierDailyRequests: settings.freeTierDailyRequests,
+          premiumTierDailyRequests: settings.premiumTierDailyRequests,
+          enterpriseTierDailyTokens: settings.enterpriseTierDailyTokens,
+          enterpriseTierDailyRequests: settings.enterpriseTierDailyRequests,
         })}
         saving={savingSection === "ai"}
       >
@@ -549,16 +561,47 @@ export default function SystemSettings() {
               value={String(settings.freeTierTokenLimit)}
               onChange={(v) => update("freeTierTokenLimit", parseInt(v) || 0)}
               type="number"
-              hint="Daily limit per free user"
+              hint="Daily token limit per free user"
+            />
+            <InputField
+              label="Free Tier Request Limit"
+              value={String(settings.freeTierDailyRequests)}
+              onChange={(v) => update("freeTierDailyRequests", parseInt(v) || 0)}
+              type="number"
+              hint="Daily AI requests per free user"
             />
             <InputField
               label="Premium Tier Token Limit"
               value={String(settings.premiumTierTokenLimit)}
               onChange={(v) => update("premiumTierTokenLimit", parseInt(v) || 0)}
               type="number"
-              hint="Daily limit per premium user"
+              hint="Daily token limit per premium user"
+            />
+            <InputField
+              label="Premium Tier Request Limit"
+              value={String(settings.premiumTierDailyRequests)}
+              onChange={(v) => update("premiumTierDailyRequests", parseInt(v) || 0)}
+              type="number"
+              hint="Daily AI requests per premium user"
+            />
+            <InputField
+              label="Enterprise Tier Token Limit"
+              value={String(settings.enterpriseTierDailyTokens)}
+              onChange={(v) => update("enterpriseTierDailyTokens", parseInt(v) || 0)}
+              type="number"
+              hint="Daily token limit per enterprise user"
+            />
+            <InputField
+              label="Enterprise Tier Request Limit"
+              value={String(settings.enterpriseTierDailyRequests)}
+              onChange={(v) => update("enterpriseTierDailyRequests", parseInt(v) || 0)}
+              type="number"
+              hint="Daily AI requests per enterprise user"
             />
           </div>
+          <p className="mt-3 text-[10px]" style={{ color: "var(--text-muted)" }}>
+            Monthly limits are 30x the daily limits. When a free user hits a limit they are prompted to upgrade to Premium.
+          </p>
         </div>
       </SettingsCard>
 

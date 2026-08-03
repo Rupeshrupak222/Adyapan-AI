@@ -18,6 +18,7 @@ import {
   getAdminSettings,
   updateAdminSettings,
   getAnalyticsBI,
+  getPremiumAnalytics,
   getAdminIntegrations,
   getAdminNotifications,
   createAdminBroadcastNotification,
@@ -89,6 +90,7 @@ adminRouter.post("/users/:id/action", ...can("users", "write"), updateUserPlan);
 adminRouter.get("/analytics/ai", ...can("analytics", "read"), getAiAnalytics);
 adminRouter.get("/analytics/revenue", ...can("analytics", "read"), getRevenueAnalytics);
 adminRouter.get("/analytics/bi", ...can("analytics", "read"), getAnalyticsBI);
+adminRouter.get("/analytics/premium", ...can("analytics", "read"), getPremiumAnalytics);
 adminRouter.get("/system-health", ...can("system", "read"), getSystemHealth);
 adminRouter.get("/modules", ...can("analytics", "read"), getModuleAnalytics);
 adminRouter.get("/security", ...can("security", "read"), getSecurityLogs);

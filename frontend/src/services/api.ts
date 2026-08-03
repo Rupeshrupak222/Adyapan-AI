@@ -25,7 +25,15 @@ api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const { config, response } = err;
-    
+
+    // Surface premium limit enforcement to the upgrade modal (never retried)
+    if (typeof window !== "undefined" && response?.data?.code === "LIMIT_EXCEEDED") {
+      import("@/store/usage-store").then(({ useUsageStore }) =>
+        useUsageStore.getState().openLimitModal(response.data)
+      );
+      return Promise.reject(err);
+    }
+
     // Redirect to login on 401 (only if not already on an authentication page)
     if (typeof window !== "undefined" && response?.status === 401) {
       const path = window.location.pathname;

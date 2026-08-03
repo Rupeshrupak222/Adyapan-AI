@@ -162,6 +162,39 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
       },
     });
 
+    // Record subscription + billing ledger (best-effort, non-blocking).
+    try {
+      const p = prisma as any;
+      if (p.subscription) {
+        await p.subscription.create({
+          data: {
+            userId,
+            planCode: payment.plan,
+            status: "active",
+            price: (payment.amount || 0) / 100,
+            currency: "INR",
+            currentPeriodStart: now,
+            currentPeriodEnd: end,
+          },
+        });
+      }
+      if (p.billing) {
+        await p.billing.create({
+          data: {
+            userId,
+            event: "subscription_activated",
+            amount: (payment.amount || 0) / 100,
+            currency: "INR",
+            plan: payment.plan,
+            status: "completed",
+            reference: orderId,
+          },
+        });
+      }
+    } catch (ledgerErr) {
+      console.warn("[verifyPayment] Failed to record subscription/billing ledger:", ledgerErr);
+    }
+
     // Create notification and emit real-time event
     const userPrisma = await getUserPrisma(userId);
     const notif = await userPrisma.notification.create({

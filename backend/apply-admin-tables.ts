@@ -108,7 +108,7 @@ function parseStatements(sql: string): string[] {
 }
 
 async function main() {
-  const raw = readFileSync("admin-tables.sql", "utf-8");
+  const raw = readFileSync("admin-tables.sql", "utf-8") + "\n" + readFileSync("usage-tables.sql", "utf-8");
   const statements = parseStatements(raw).map(makeIdempotent);
 
   console.log("Statements to execute:", statements.length);

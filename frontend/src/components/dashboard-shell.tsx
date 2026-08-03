@@ -16,6 +16,8 @@ import {
   GraduationCap, LayoutDashboard, Sun, Moon, BookMarked, ClipboardList,
   Star, Zap, LineChart, Trophy, MessageCircle, Users, X,
 } from "lucide-react";
+import { useUsageStore } from "@/store/usage-store";
+import { cn } from "@/lib/cn";
 export interface AdyapanUser {
   name: string;
   email: string;
@@ -28,6 +30,61 @@ export interface SidebarItem {
   icon: ReactNode;
   href?: string;
   submenu?: { label: string; href: string }[];
+}
+
+// ─── Usage Indicator (top nav pill) ────────────────────────────────────────
+function UsageIndicator({ user }: { user: AdyapanUser | null }) {
+  const { usage, fetchUsage } = useUsageStore();
+
+  useEffect(() => {
+    if (user) fetchUsage();
+  }, [user, fetchUsage]);
+
+  if (!user || user.role === "ADMIN") return null;
+  const u = usage;
+  if (!u || !u.dailyRequestsLimit) return null;
+
+  const pct = Math.round(Math.max(u.dailyRequestsPct, u.dailyTokensPct));
+  const isPremium = u.planKind === "premium" || u.planKind === "enterprise";
+  const barColor = pct >= 95 ? "rose" : pct >= 80 ? "amber" : "emerald";
+
+  return (
+    <div
+      className="usage-pill"
+      style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "0.35rem 0.7rem", borderRadius: 10,
+        border: "1px solid rgba(245,158,11,0.25)",
+        background: "rgba(245,158,11,0.06)",
+        cursor: "pointer",
+      }}
+      title={`${u.dailyRequestsUsed.toLocaleString()} / ${u.dailyRequestsLimit.toLocaleString()} requests today · resets ${new Date(u.dailyResetAt).toLocaleDateString()}`}
+      onClick={() => fetchUsage()}
+    >
+      <Crown size={12} style={{ color: isPremium ? "#a855f7" : "#f59e0b" }} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: "0.62rem", fontWeight: 800, color: isPremium ? "#a855f7" : "#f59e0b", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            {isPremium ? "Pro" : "Free"}
+          </span>
+          <span style={{ fontSize: "0.6rem", fontWeight: 700, color: pct >= 80 ? "#ef4444" : "var(--text-muted)" }}>
+            {pct}%
+          </span>
+        </div>
+        <div style={{ width: 64, height: 3, background: "rgba(255,255,255,0.12)", borderRadius: 999, overflow: "hidden", marginTop: 3 }}>
+          <div
+            className={cn(
+              "h-full rounded-full transition-all",
+              barColor === "emerald" && "bg-emerald-500",
+              barColor === "amber" && "bg-amber-500",
+              barColor === "rose" && "bg-rose-500 animate-pulse",
+            )}
+            style={{ width: `${Math.min(100, pct)}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ΓöÇΓöÇΓöÇ Search Index ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
@@ -773,6 +830,7 @@ export function DashboardTopNav({
 
       {/* Right */}
       <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+        <UsageIndicator user={user} />
         <motion.button
           whileHover={{ scale: 1.04, borderColor: "rgba(245,158,11,0.8)", boxShadow: isDarkTheme ? "0 4px 20px rgba(245,158,11,0.4)" : "0 4px 16px rgba(245,158,11,0.28)" }}
           whileTap={{ scale: 0.95 }}
