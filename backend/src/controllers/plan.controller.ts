@@ -48,12 +48,13 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
         amount: p.code.includes("yearly") ? Math.round(p.priceYearly * 100) : Math.round(p.priceMonthly * 100),
         monthlyAmount: Math.round(p.priceMonthly * 100),
         yearlyAmount: Math.round(p.priceYearly * 100),
-        features: p.features && p.features.length > 0 ? p.features : [
+        features: Array.isArray(p.features) && p.features.length > 0 ? p.features : [
           "Unlimited Resumes & ATS Checks",
           "All AI Models (GPT-4o, Claude, Gemini)",
           "Unlimited Cover Letters & LinkedIn Tools",
           "Full Interview & Coding Hub Access",
         ],
+
         currency: "INR",
       }));
       return res.json({ success: true, plans });
