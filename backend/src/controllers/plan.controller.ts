@@ -40,11 +40,20 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
     if (dbPlans.length > 0) {
       const plans = dbPlans.map((p) => ({
         id: p.code,
+        code: p.code,
         label: p.name,
+        name: p.name,
+        priceMonthly: p.priceMonthly,
+        priceYearly: p.priceYearly,
         amount: p.code.includes("yearly") ? Math.round(p.priceYearly * 100) : Math.round(p.priceMonthly * 100),
         monthlyAmount: Math.round(p.priceMonthly * 100),
         yearlyAmount: Math.round(p.priceYearly * 100),
-        features: p.features,
+        features: p.features && p.features.length > 0 ? p.features : [
+          "Unlimited Resumes & ATS Checks",
+          "All AI Models (GPT-4o, Claude, Gemini)",
+          "Unlimited Cover Letters & LinkedIn Tools",
+          "Full Interview & Coding Hub Access",
+        ],
         currency: "INR",
       }));
       return res.json({ success: true, plans });
@@ -54,8 +63,18 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
       success: true,
       plans: Object.entries(DEFAULT_PLANS).map(([id, p]) => ({
         id,
+        code: id,
         label: p.label,
+        name: p.label,
         amount: p.amount,
+        priceMonthly: id === "pro_yearly" ? 166 : 199,
+        priceYearly: 1999,
+        features: [
+          "Unlimited Resumes & ATS Checks",
+          "All AI Models (GPT-4o, Claude, Gemini)",
+          "Unlimited Cover Letters & LinkedIn Tools",
+          "Full Interview & Coding Hub Access",
+        ],
         currency: "INR",
       })),
     });
@@ -63,6 +82,7 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
     next(error);
   }
 }
+
 
 // ─── 2. Admin: list plans ────────────────────────────────────────
 

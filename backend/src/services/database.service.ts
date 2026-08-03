@@ -126,19 +126,29 @@ class DatabaseService {
     }
   }
 
+  private userDbUrlCache = new Map<string, string>();
+  private dbListCache: { databases: NeonDatabase[]; timestamp: number } | null = null;
+  private DB_LIST_TTL_MS = 60_000; // Cache database list for 60 seconds
+
   async listDatabases(): Promise<NeonDatabase[]> {
     if (!this.apiKey || !this.projectId || !this.branchId) {
       return [];
+    }
+    const now = Date.now();
+    if (this.dbListCache && now - this.dbListCache.timestamp < this.DB_LIST_TTL_MS) {
+      return this.dbListCache.databases;
     }
     try {
       const response = await this.request<{ databases: NeonDatabase[] }>(
         "GET",
         `/projects/${this.projectId}/branches/${this.branchId}/databases`
       );
-      return response.databases || [];
+      const databases = response.databases || [];
+      this.dbListCache = { databases, timestamp: now };
+      return databases;
     } catch (err: any) {
       console.warn("[Database] Neon API listDatabases query failed (falling back to primary PostgreSQL):", err.message || err);
-      return [];
+      return this.dbListCache?.databases || [];
     }
   }
 
@@ -180,32 +190,45 @@ class DatabaseService {
   }
 
   async getDatabaseUrlForUser(userId: string): Promise<string> {
+    if (this.userDbUrlCache.has(userId)) {
+      return this.userDbUrlCache.get(userId)!;
+    }
+
     if (!this.apiKey || !this.projectId || !this.branchId) {
+      this.userDbUrlCache.set(userId, env.databaseUrl);
       return env.databaseUrl;
     }
+
     try {
       const dbName = `user_${userId}`;
       const exists = await this.checkDatabaseExists(dbName);
+      let dbUrl: string;
       if (!exists) {
         try {
           await this.createDatabase(dbName);
-          const dbUrl = await this.getConnectionString(dbName);
-          const { execSync } = require("child_process");
-          execSync(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
+          this.dbListCache = null; // invalidate list cache
+          dbUrl = await this.getConnectionString(dbName);
+          const { exec } = require("child_process");
+          // Non-blocking schema push so request is not held up
+          exec(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
             env: { ...process.env, USER_DATABASE_URL: dbUrl },
-            stdio: "inherit"
           });
         } catch (createErr) {
           console.warn("[Database] Dynamic database creation/migration failed, using main database:", createErr);
-          return env.databaseUrl;
+          dbUrl = env.databaseUrl;
         }
+      } else {
+        dbUrl = await this.getConnectionString(dbName);
       }
-      return this.getConnectionString(dbName);
+      this.userDbUrlCache.set(userId, dbUrl);
+      return dbUrl;
     } catch (err: any) {
       console.warn(`[Database] Neon branch query failed for user ${userId}. Falling back to default DATABASE_URL. Error:`, err.message || err);
+      this.userDbUrlCache.set(userId, env.databaseUrl);
       return env.databaseUrl;
     }
   }
+
 
   async getUserDatabaseInfo(userId: string): Promise<NeonDatabase | null> {
     if (!this.apiKey || !this.projectId || !this.branchId) {
