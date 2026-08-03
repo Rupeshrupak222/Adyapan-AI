@@ -410,9 +410,10 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
     return () => obs.disconnect();
   }, []);
 
-  const fetchDashboard = useCallback(async () => {
+  const fetchDashboard = useCallback(async (forceRefresh = false) => {
     try {
-      const res = await api.get("/career/dashboard");
+      const endpoint = forceRefresh ? "/career/dashboard?refresh=true" : "/career/dashboard";
+      const res = await api.get(endpoint);
       if (res.data.success) setData(res.data.dashboard);
     } catch (err) {
       console.error("Failed to load career dashboard:", err);
@@ -429,13 +430,13 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
         setLoadingStep(step);
       }
     }, 700);
-    fetchDashboard();
+    fetchDashboard(true);
     return () => clearInterval(timer);
   }, [fetchDashboard]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchDashboard();
+    await fetchDashboard(true);
     setTimeout(() => setRefreshing(false), 1000);
   };
 

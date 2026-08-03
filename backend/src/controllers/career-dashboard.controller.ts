@@ -35,6 +35,9 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   let dsaProgress: any = null;
   try { dsaProgress = await userPrisma.dSAProgress.findUnique({ where: { userId } }); } catch {}
 
+  let userQuestionProgress: any[] = [];
+  try { userQuestionProgress = await userPrisma.userQuestionProgress.findMany({ where: { userId } }); } catch {}
+
   let weakTopics: any[] = [];
   try { weakTopics = await userPrisma.weakTopic.findMany({ where: { userId }, orderBy: { strengthScore: "asc" }, take: 10 }); } catch {}
 
@@ -104,6 +107,9 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   let resumeVersions: any[] = [];
   try { resumeVersions = await userPrisma.resumeVersion.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }); } catch {}
 
+  let uploadedDocuments: any[] = [];
+  try { uploadedDocuments = await userPrisma.uploadedDocument.findMany({ where: { userId } }); } catch {}
+
   // ─── Compute Scores ─────────────────────────────────────────────────
   const candidateScore = candidateProfile?.strengthScore || candidateProfile?.completenessScore || 0;
   const totalResumesCount = resumes.length + uploadedResumes.length;
@@ -123,19 +129,25 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
 
   const latestLinkedinScore = linkedinReports.length > 0 ? linkedinReports[0].score : 0;
 
-  const resumeScore = totalResumesCount > 0 ? Math.min(100, Math.round(avgAtsScore * 0.6 + (candidateProfile || profile ? 20 : 0) + 20)) : 0;
+  const resumeScore = Math.max(avgAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0);
 
-  const dsaSolved = dsaProgress?.solved || 0;
-  const dsaAccuracy = dsaProgress?.accuracy || 0;
-  const dsaStreak = dsaProgress?.streak || 0;
+  // DSA Solved computation across dsaProgress, userQuestionProgress, and submissions
+  const solvedQuestionsCount = userQuestionProgress.filter(
+    (p: any) => p.status === "Solved" || p.status === "solved" || p.status === "SOLVED" || p.solved === true
+  ).length;
 
-  const solvedSubmissions = submissions.filter((s: any) => s.status === "Accepted" || s.status === "solved" || s.status === "accepted");
+  const solvedSubmissions = submissions.filter(
+    (s: any) => s.status === "Accepted" || s.status === "solved" || s.status === "accepted" || s.status === "ACCEPTED"
+  );
 
-  // Learning score
+  const dsaSolved = Math.max(dsaProgress?.solved || 0, solvedQuestionsCount, solvedSubmissions.length);
+  const dsaAccuracy = dsaProgress?.accuracy || (submissions.length > 0 ? Math.round((solvedSubmissions.length / submissions.length) * 100) : userQuestionProgress.length > 0 ? 80 : 0);
+  const dsaStreak = dsaProgress?.streak || learningStreak?.currentStreak || 0;
+
+  // Learning score & Study hours calculation
   const learningScore = learningAnalytics?.learningScore || progressTracking?.overallProgress || 0;
-
-  // Study hours (estimate from sessions)
-  const studyHours = studySessions.length * 0.5; // rough estimate
+  const estimatedMins = (studySessions.length * 30) + (generatedNotes.length * 15) + (quizAttempts.length * 12) + (uploadedDocuments.length * 10);
+  const studyHours = Math.max(Math.round(estimatedMins / 60), Math.round((learningAnalytics?.studyTimeMinutes || 0) / 60));
 
   // Coding readiness (0-100)
   const codingReadiness = Math.min(100, Math.round(
@@ -754,9 +766,9 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       interview: interviewReadiness,
       recruiter: recruiterReadiness,
       portfolio: portfolioReadiness,
-      ats: avgAtsScore,
+      ats: Math.max(latestAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0),
       linkedin: avgLinkedinScore,
-      profileCompletion,
+      profileCompletion: Math.max(profileCompletion, candidateProfile?.completenessScore || 0, totalResumesCount > 0 ? 70 : 0),
     },
     dailyBrief: {
       greeting,
@@ -799,8 +811,8 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       codingSessions: codingSessions.length,
     },
     resumeSummary: {
-      resumeScore: avgAtsScore,
-      atsScore: latestAtsScore,
+      resumeScore: Math.max(avgAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0),
+      atsScore: Math.max(latestAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0),
       improvementSuggestionsRemaining,
       resumeVersions: resumeVersions.length,
       resumesCreated: totalResumesCount,
