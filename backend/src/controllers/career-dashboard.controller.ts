@@ -33,10 +33,13 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   try { studySessions = await userPrisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }); } catch {}
 
   let dsaProgress: any = null;
-  try { dsaProgress = await userPrisma.dSAProgress.findUnique({ where: { userId } }); } catch {}
+  try { dsaProgress = await userPrisma.dSAProgress.findFirst({ where: { userId } }); } catch {}
 
   let userQuestionProgress: any[] = [];
   try { userQuestionProgress = await userPrisma.userQuestionProgress.findMany({ where: { userId } }); } catch {}
+
+  let streakActivity: any[] = [];
+  try { streakActivity = await userPrisma.streakActivity.findMany({ where: { userId } }); } catch {}
 
   let weakTopics: any[] = [];
   try { weakTopics = await userPrisma.weakTopic.findMany({ where: { userId }, orderBy: { strengthScore: "asc" }, take: 10 }); } catch {}
@@ -48,10 +51,10 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   try { quizAttempts = await userPrisma.quizAttempt.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }); } catch {}
 
   let learningAnalytics: any = null;
-  try { learningAnalytics = await userPrisma.learningAnalytics.findUnique({ where: { userId } }); } catch {}
+  try { learningAnalytics = await userPrisma.learningAnalytics.findFirst({ where: { userId } }); } catch {}
 
   let progressTracking: any = null;
-  try { progressTracking = await userPrisma.progressTracking.findUnique({ where: { userId } }); } catch {}
+  try { progressTracking = await userPrisma.progressTracking.findFirst({ where: { userId } }); } catch {}
 
   let coverLetters: any[] = [];
   try { coverLetters = await userPrisma.coverLetter.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }); } catch {}
@@ -69,7 +72,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   try { careerRoadmaps = await userPrisma.careerRoadmap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 3, include: { tasks: true } }); } catch {}
 
   let learningStreak: any = null;
-  try { learningStreak = await userPrisma.learningStreak.findUnique({ where: { userId } }); } catch {}
+  try { learningStreak = await userPrisma.learningStreak.findFirst({ where: { userId } }); } catch {}
 
   let interviewSessions: any[] = [];
   try { interviewSessions = await userPrisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10, include: { evaluations: true } }); } catch {}
@@ -131,17 +134,34 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
 
   const resumeScore = Math.max(avgAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0);
 
-  // DSA Solved computation across dsaProgress, userQuestionProgress, and submissions
+  // Comprehensive DSA Solved computation across dsaProgress, userQuestionProgress, submissions, challengeSubmissions, and streakActivity
   const solvedQuestionsCount = userQuestionProgress.filter(
-    (p: any) => p.status === "Solved" || p.status === "solved" || p.status === "SOLVED" || p.solved === true
+    (p: any) => p.solved === true || p.status === "solved" || p.status === "Solved" || p.status === "SOLVED" || p.attempted === true || (p.runCount && p.runCount > 0)
   ).length;
 
   const solvedSubmissions = submissions.filter(
-    (s: any) => s.status === "Accepted" || s.status === "solved" || s.status === "accepted" || s.status === "ACCEPTED"
+    (s: any) => s.status === "Accepted" || s.status === "solved" || s.status === "accepted" || s.status === "ACCEPTED" || s.status === "Completed" || s.status === "completed"
   );
 
-  const dsaSolved = Math.max(dsaProgress?.solved || 0, solvedQuestionsCount, solvedSubmissions.length);
-  const dsaAccuracy = dsaProgress?.accuracy || (submissions.length > 0 ? Math.round((solvedSubmissions.length / submissions.length) * 100) : userQuestionProgress.length > 0 ? 80 : 0);
+  const acceptedChallengeSubmissions = challengeSubmissions.filter(
+    (s: any) => s.status === "Accepted" || s.status === "accepted" || s.status === "ACCEPTED" || s.status === "completed" || s.status === "Completed" || (s.score && s.score > 0)
+  );
+
+  const dsaActivities = streakActivity.filter(
+    (a: any) => a.activityType === "PRACTICE_QUESTIONS" || a.activityType === "dsa_practice" || a.activityType === "CODING_CHALLENGE" || a.activityType === "coding" || a.activityType === "DSA"
+  );
+
+  const totalRoadmapSolved = codingRoadmaps.reduce((acc: number, r: any) => acc + (r.completedQuestionsCount || 0), 0);
+
+  const dsaSolved = Math.max(
+    dsaProgress?.solved || 0,
+    solvedQuestionsCount,
+    solvedSubmissions.length,
+    acceptedChallengeSubmissions.length,
+    dsaActivities.length,
+    totalRoadmapSolved
+  );
+  const dsaAccuracy = dsaProgress?.accuracy || (submissions.length > 0 ? Math.round((solvedSubmissions.length / submissions.length) * 100) : (userQuestionProgress.length > 0 || dsaSolved > 0) ? 80 : 0);
   const dsaStreak = dsaProgress?.streak || learningStreak?.currentStreak || 0;
 
   // Learning score & Study hours calculation
@@ -1019,7 +1039,13 @@ export async function getCareerDashboard(req: Request, res: Response, next: Next
 
     const forceRefresh = req.query.refresh === "true";
     const EXPIRATION_TIME = 15 * 60 * 1000; // 15 minutes cache duration
-    const isMinimalSnapshot = snapshot && (snapshot.overallReadiness === 0 || (snapshot.dashboardJson as any)?.scores?.overall === 0 || (snapshot.dashboardJson as any)?.resumeSummary?.resumesCreated === 0);
+    const isMinimalSnapshot = snapshot && (
+      snapshot.overallReadiness === 0 ||
+      (snapshot.dashboardJson as any)?.scores?.overall === 0 ||
+      (snapshot.dashboardJson as any)?.resumeSummary?.resumesCreated === 0 ||
+      (snapshot.dashboardJson as any)?.codingSummary?.problemsSolved === 0 ||
+      (snapshot.dashboardJson as any)?.resumeSummary?.resumeScore === 0
+    );
     if (!forceRefresh && snapshot && !isMinimalSnapshot && (Date.now() - new Date(snapshot.createdAt).getTime() < EXPIRATION_TIME)) {
       return res.json({
         success: true,
