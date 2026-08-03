@@ -90,9 +90,7 @@ export default function PremiumPage() {
   const [user, setUser] = useState<Record<string, any> | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [planPrices, setPlanPrices] = useState<Record<string, number> | null>(null);
-  const [coupon, setCoupon] = useState<{ code: string; plan: string } | null>(null);
-  const [couponInfo, setCouponInfo] = useState<{ code: string; discountPct: number; finalAmount: number } | null>(null);
+  const [dynamicPlans, setDynamicPlans] = useState<any[] | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token");
@@ -118,14 +116,37 @@ export default function PremiumPage() {
     }).catch(() => {}).finally(() => setLoading(false));
 
     api.get("/payment/plans").then((res) => {
-      if (res.data?.success && Array.isArray(res.data.plans)) {
+      if (res.data?.success && Array.isArray(res.data.plans) && res.data.plans.length > 0) {
         const map: Record<string, number> = {};
-        res.data.plans.forEach((p: { id: string; amount: number }) => {
-          map[p.id] = Math.round((p.amount ?? 0) / 100);
+        const formatted = res.data.plans.map((p: any) => {
+          const priceInRupees = Math.round((p.amount ?? (p.priceMonthly ? p.priceMonthly * 100 : 0)) / 100);
+          const pCode = String(p.id || p.code || "").toLowerCase();
+          map[pCode] = priceInRupees;
+          return {
+            id: pCode,
+            name: p.name || p.label || pCode,
+            price: priceInRupees,
+            period: pCode.includes("yearly") ? "/yr" : pCode.includes("monthly") ? "/mo" : "",
+            popular: pCode.includes("monthly") || pCode.includes("pro"),
+            color: pCode.includes("yearly") ? "#8b5cf6" : "#f59e0b",
+            features: Array.isArray(p.features) && p.features.length > 0 ? p.features : [
+              "Unlimited Resumes & ATS Checks",
+              "All AI Models (GPT-4o, Claude, Gemini)",
+              "Unlimited Cover Letters & LinkedIn Tools",
+              "Full Interview & Coding Hub Access",
+            ],
+            missing: [],
+            yearlyNote: pCode.includes("yearly") ? `Billed ₹${priceInRupees.toLocaleString()}/year` : `Billed ₹${priceInRupees.toLocaleString()}/month`,
+          };
         });
+
+        // Always include free tier at the beginning
+        const fullPlans = [PLANS[0], ...formatted];
         setPlanPrices(map);
+        setDynamicPlans(fullPlans);
       }
     }).catch(() => {});
+
 
     // Load Razorpay script
     if (!(window as unknown as Record<string, any>).Razorpay) {
@@ -257,8 +278,9 @@ export default function PremiumPage() {
 
   const isPro = sub?.status === "active";
 
-  const couponPct = couponInfo?.discountPct ?? 0;
-  const resolvedPlans = PLANS.map((plan) => {
+  const activePlanList = dynamicPlans || PLANS;
+  const resolvedPlans = activePlanList.map((plan) => {
+
     const base = planPrices && planPrices[plan.id] != null ? planPrices[plan.id] : plan.price;
     const discounted = couponPct > 0 && base > 0 ? Math.round(base * (1 - couponPct / 100)) : base;
     return {

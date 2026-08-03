@@ -164,15 +164,19 @@ export default function BillingFinance() {
   const handleCreatePlan = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const featList = newPlan.features
+        ? newPlan.features.split(",").map((f) => f.trim()).filter(Boolean)
+        : [];
       const res = await api.post("/admin/plans", {
         name: newPlan.name,
         code: newPlan.code,
         priceMonthly: Number(newPlan.priceMonthly),
         priceYearly: Number(newPlan.priceYearly),
+        features: featList,
       });
       if (res.data?.success) {
         setPlans((prev) => [...prev, res.data.plan]);
-        setNewPlan({ name: "", code: "", priceMonthly: "", priceYearly: "" });
+        setNewPlan({ name: "", code: "", priceMonthly: "", priceYearly: "", features: "" });
         setShowPlanForm(false);
       }
     } catch (err) {
@@ -195,11 +199,15 @@ export default function BillingFinance() {
     e.preventDefault();
     if (!editingPlan) return;
     try {
+      const featList = editingPlan.featuresStr != null
+        ? editingPlan.featuresStr.split(",").map((f) => f.trim()).filter(Boolean)
+        : editingPlan.features;
       const res = await api.put(`/admin/plans/${editingPlan.id}`, {
         name: editingPlan.name,
         code: editingPlan.code,
         priceMonthly: Number(editingPlan.priceMonthly),
         priceYearly: Number(editingPlan.priceYearly),
+        features: featList,
       });
       if (res.data?.success) {
         setPlans((prev) => prev.map((x) => (x.id === editingPlan.id ? res.data.plan : x)));
@@ -538,10 +546,13 @@ export default function BillingFinance() {
 
           {showPlanForm && (
             <form onSubmit={handleCreatePlan} className="grid grid-cols-2 gap-3 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
-              <Input label="Name" value={newPlan.name} onChange={(v) => setNewPlan((s) => ({ ...s, name: v }))} placeholder="Pro Monthly" />
-              <Input label="Code" value={newPlan.code} onChange={(v) => setNewPlan((s) => ({ ...s, code: v }))} placeholder="pro_monthly" />
+              <Input label="Name" value={newPlan.name} onChange={(v) => setNewPlan((s) => ({ ...s, name: v }))} placeholder="e.g. Pro Monthly" />
+              <Input label="Code" value={newPlan.code} onChange={(v) => setNewPlan((s) => ({ ...s, code: v }))} placeholder="e.g. pro_monthly" />
               <Input label="Monthly ₹" type="number" value={newPlan.priceMonthly} onChange={(v) => setNewPlan((s) => ({ ...s, priceMonthly: v }))} placeholder="199" />
               <Input label="Yearly ₹" type="number" value={newPlan.priceYearly} onChange={(v) => setNewPlan((s) => ({ ...s, priceYearly: v }))} placeholder="1999" />
+              <div className="col-span-2">
+                <Input label="Features (comma separated)" value={newPlan.features} onChange={(v) => setNewPlan((s) => ({ ...s, features: v }))} placeholder="Unlimited Resumes, All AI Models, Priority Support" />
+              </div>
               <button
                 type="submit"
                 className="col-span-2 py-2 rounded-lg text-[11px] font-bold cursor-pointer transition-all hover:opacity-90"
@@ -566,6 +577,13 @@ export default function BillingFinance() {
                       <Input label="Code" value={editingPlan.code} onChange={(v) => setEditingPlan((s) => (s ? { ...s, code: v } : s))} />
                       <Input label="Monthly ₹" type="number" value={String(editingPlan.priceMonthly)} onChange={(v) => setEditingPlan((s) => (s ? { ...s, priceMonthly: Number(v) } : s))} />
                       <Input label="Yearly ₹" type="number" value={String(editingPlan.priceYearly)} onChange={(v) => setEditingPlan((s) => (s ? { ...s, priceYearly: Number(v) } : s))} />
+                      <div className="col-span-2">
+                        <Input
+                          label="Features (comma separated)"
+                          value={editingPlan.featuresStr ?? editingPlan.features?.join(", ") ?? ""}
+                          onChange={(v) => setEditingPlan((s) => (s ? { ...s, featuresStr: v } : s))}
+                        />
+                      </div>
                       <div className="col-span-2 flex gap-2">
                         <button type="submit" className="flex-1 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer"
                           style={{ background: "#8b5cf6", color: "#fff" }}>Save</button>
@@ -574,6 +592,7 @@ export default function BillingFinance() {
                       </div>
                     </form>
                   ) : (
+
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                         style={{ background: p.isActive ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.04)" }}>
