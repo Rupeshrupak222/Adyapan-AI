@@ -170,7 +170,14 @@ export default function Notifications() {
     sendEmail: false,
   });
 
+  const inputStyle = {
+    background: isDark ? "rgba(255,255,255,0.06)" : "#f8fafc",
+    borderColor: isDark ? "rgba(255,255,255,0.15)" : "#cbd5e1",
+    color: "var(--text-primary)",
+  };
+
   const fetchData = useCallback(async () => {
+
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -577,13 +584,14 @@ export default function Notifications() {
       {/* ── CREATE BROADCAST NOTIFICATION MODAL ── */}
       <AnimatePresence>
         {modalOpen && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pt-[74px] bg-black/75 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-xl rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="w-full max-w-xl rounded-3xl border shadow-2xl overflow-hidden flex flex-col"
               style={{
+                height: "min(680px, calc(100vh - 90px))",
                 background: isDark ? "#0c131a" : "#ffffff",
                 borderColor: isDark ? "rgba(245,158,11,0.3)" : "rgba(203,213,225,0.8)",
                 boxShadow: isDark ? "0 25px 60px rgba(0,0,0,0.85), 0 0 30px rgba(245,158,11,0.15)" : "0 20px 40px rgba(0,0,0,0.15)",
@@ -612,7 +620,7 @@ export default function Notifications() {
               <form onSubmit={handleCreateBroadcast} className="p-6 space-y-5 overflow-y-auto flex-1">
                 {/* Target Audience Selector */}
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-2">
+                  <label className="block text-xs font-extrabold uppercase tracking-wider mb-2" style={{ color: "var(--text-secondary)" }}>
                     Target Audience Segment *
                   </label>
                   <div className="grid grid-cols-3 gap-3">
@@ -629,15 +637,17 @@ export default function Notifications() {
                           onClick={() => setFormData({ ...formData, targetAudience: seg.id as any })}
                           className={`p-3.5 rounded-2xl border flex flex-col items-center text-center transition-all cursor-pointer ${
                             selected
-                              ? "border-amber-500 bg-amber-500/15 shadow-lg text-amber-400"
-                              : "border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700"
+                              ? "border-amber-500 bg-amber-500/15 shadow-lg text-amber-500 font-extrabold"
+                              : isDark
+                                ? "border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700"
+                                : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
                           }`}
                         >
                           <div className={`p-2 rounded-xl mb-1.5 ${selected ? "bg-amber-500 text-black" : "bg-white/5"}`}>
                             {seg.icon}
                           </div>
                           <span className="text-xs font-black">{seg.label}</span>
-                          <span className="text-[10px] font-bold mt-0.5 text-amber-500/90">{seg.count} Users</span>
+                          <span className="text-[10px] font-bold mt-0.5 text-amber-500">{seg.count} Users</span>
                         </button>
                       );
                     })}
@@ -646,7 +656,7 @@ export default function Notifications() {
 
                 {/* Title */}
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                  <label className="block text-xs font-extrabold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-secondary)" }}>
                     Notification Title *
                   </label>
                   <input
@@ -655,13 +665,14 @@ export default function Notifications() {
                     placeholder="e.g. New AI Feature Released or 50% Off Pro Upgrade!"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl text-xs font-bold border outline-none bg-slate-900 border-slate-800 text-white focus:border-amber-500"
+                    className="w-full px-4 py-2.5 rounded-xl text-xs font-bold border outline-none focus:border-amber-500 transition-colors"
+                    style={inputStyle}
                   />
                 </div>
 
                 {/* Message / Description */}
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                  <label className="block text-xs font-extrabold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-secondary)" }}>
                     Notification Message *
                   </label>
                   <textarea
@@ -670,50 +681,53 @@ export default function Notifications() {
                     placeholder="Provide a descriptive message to be shown in the user's notification drawer..."
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl text-xs font-medium border outline-none bg-slate-900 border-slate-800 text-white focus:border-amber-500"
+                    className="w-full px-4 py-2.5 rounded-xl text-xs font-medium border outline-none focus:border-amber-500 transition-colors"
+                    style={inputStyle}
                   />
                 </div>
 
                 {/* Category Type & Priority */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                    <label className="block text-xs font-extrabold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-secondary)" }}>
                       Category Type
                     </label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                      className="w-full px-3 py-2.5 rounded-xl text-xs font-bold border outline-none bg-slate-900 border-slate-800 text-white focus:border-amber-500"
+                      className="w-full px-3 py-2.5 rounded-xl text-xs font-bold border outline-none focus:border-amber-500 transition-colors"
+                      style={inputStyle}
                     >
-                      <option value="announcement">Announcement</option>
-                      <option value="promotion">Special Offer / Discount</option>
-                      <option value="feature">Feature Release</option>
-                      <option value="alert">Important Alert</option>
-                      <option value="maintenance">Maintenance Notice</option>
-                      <option value="info">General Info</option>
+                      <option value="announcement" style={{ background: isDark ? "#0c131a" : "#ffffff", color: "var(--text-primary)" }}>Announcement</option>
+                      <option value="promotion" style={{ background: isDark ? "#0c131a" : "#ffffff", color: "var(--text-primary)" }}>Special Offer / Discount</option>
+                      <option value="feature" style={{ background: isDark ? "#0c131a" : "#ffffff", color: "var(--text-primary)" }}>Feature Release</option>
+                      <option value="alert" style={{ background: isDark ? "#0c131a" : "#ffffff", color: "var(--text-primary)" }}>Important Alert</option>
+                      <option value="maintenance" style={{ background: isDark ? "#0c131a" : "#ffffff", color: "var(--text-primary)" }}>Maintenance Notice</option>
+                      <option value="info" style={{ background: isDark ? "#0c131a" : "#ffffff", color: "var(--text-primary)" }}>General Info</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                    <label className="block text-xs font-extrabold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-secondary)" }}>
                       Priority Level
                     </label>
                     <select
                       value={formData.priority}
                       onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-                      className="w-full px-3 py-2.5 rounded-xl text-xs font-bold border outline-none bg-slate-900 border-slate-800 text-white focus:border-amber-500"
+                      className="w-full px-3 py-2.5 rounded-xl text-xs font-bold border outline-none focus:border-amber-500 transition-colors"
+                      style={inputStyle}
                     >
-                      <option value="normal">Normal</option>
-                      <option value="high">High Priority</option>
-                      <option value="urgent">Urgent Alert</option>
-                      <option value="low">Low Priority</option>
+                      <option value="normal" style={{ background: isDark ? "#0c131a" : "#ffffff", color: "var(--text-primary)" }}>Normal</option>
+                      <option value="high" style={{ background: isDark ? "#0c131a" : "#ffffff", color: "var(--text-primary)" }}>High Priority</option>
+                      <option value="urgent" style={{ background: isDark ? "#0c131a" : "#ffffff", color: "var(--text-primary)" }}>Urgent Alert</option>
+                      <option value="low" style={{ background: isDark ? "#0c131a" : "#ffffff", color: "var(--text-primary)" }}>Low Priority</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Action Link CTA */}
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                  <label className="block text-xs font-extrabold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-secondary)" }}>
                     Redirect CTA Link (Optional)
                   </label>
                   <input
@@ -721,18 +735,19 @@ export default function Notifications() {
                     placeholder="e.g. /dashboard/interview or /pricing"
                     value={formData.actionUrl}
                     onChange={(e) => setFormData({ ...formData, actionUrl: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl text-xs font-medium border outline-none bg-slate-900 border-slate-800 text-white focus:border-amber-500"
+                    className="w-full px-4 py-2.5 rounded-xl text-xs font-medium border outline-none focus:border-amber-500 transition-colors"
+                    style={inputStyle}
                   />
-                  <p className="text-[10px] text-slate-500 mt-1">Users clicking this notification will be redirected to this route.</p>
+                  <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>Users clicking this notification will be redirected to this route.</p>
                 </div>
 
                 {/* Delivery Options */}
                 <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <Mail size={16} className="text-amber-400" />
+                    <Mail size={16} className="text-amber-500" />
                     <div>
-                      <span className="text-xs font-bold text-amber-200 block">Queue Email Digest</span>
-                      <span className="text-[10px] text-amber-400/80">Simulate email broadcast notice for targeted users</span>
+                      <span className="text-xs font-bold text-amber-500 block">Queue Email Digest</span>
+                      <span className="text-[10px] opacity-80" style={{ color: "var(--text-secondary)" }}>Simulate email broadcast notice for targeted users</span>
                     </div>
                   </div>
                   <input
@@ -744,9 +759,9 @@ export default function Notifications() {
                 </div>
 
                 {/* Live Target Reach Summary */}
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-semibold">Estimated Audience Reach:</span>
-                  <span className="font-black text-amber-400 flex items-center gap-1.5">
+                <div className="p-3 rounded-xl border flex items-center justify-between text-xs" style={inputStyle}>
+                  <span className="font-semibold" style={{ color: "var(--text-secondary)" }}>Estimated Audience Reach:</span>
+                  <span className="font-black text-amber-500 flex items-center gap-1.5">
                     <Users size={13} />
                     {currentAudienceReach} Active Users
                   </span>
@@ -757,20 +772,22 @@ export default function Notifications() {
                   <button
                     type="button"
                     onClick={() => setModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all bg-transparent border-none cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-transparent border-none cursor-pointer"
+                    style={{ color: "var(--text-secondary)" }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 cursor-pointer border-none transition-all shadow-lg"
+                    className="px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 cursor-pointer border-none transition-all shadow-lg hover:scale-[1.02]"
                     style={{
                       background: "linear-gradient(135deg, #f59e0b, #d97706)",
                       color: "#000",
                       boxShadow: "0 6px 20px rgba(245,158,11,0.4)",
                     }}
                   >
+
                     {submitting ? (
                       <>
                         <Loader2 size={15} className="animate-spin" /> Broadcasting...
