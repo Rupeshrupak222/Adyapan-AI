@@ -83,7 +83,22 @@ function isTableOrColumnMissing(err: any): boolean {
 }
 
 export function createPrismaClient(databaseUrl: string): any {
-  const pool = new Pool({ connectionString: databaseUrl, max: 4 });
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    max: 8,
+    connectionTimeoutMillis: 20_000,
+    idleTimeoutMillis: 60_000,
+    keepAlive: true,
+    application_name: "adyapan-api-user",
+  });
+
+  // Eager warm-up: begin establishing the DB connection immediately (a Neon
+  // compute may be asleep and take seconds to wake) so it happens in parallel
+  // with the request instead of blocking the first query. Never awaited.
+  pool.connect().then((client) => {
+    client.query("SELECT 1").catch(() => {}).finally(() => client.release());
+  }).catch(() => {});
+
   const adapter = new PrismaPg(pool);
   const base = new PrismaClient({
     adapter,
@@ -100,15 +115,13 @@ export function createPrismaClient(databaseUrl: string): any {
             result = await query(args);
           } catch (err: any) {
             if (isTableOrColumnMissing(err)) {
-              console.warn(`[dynamicPrisma] Table ${model} missing in user database. Triggering schema sync and retrying...`);
-              const synced = await triggerSchemaSync(databaseUrl);
-              if (synced) {
-                try {
-                  return await query(args);
-                } catch (retryErr) {
-                  throw retryErr;
-                }
-              }
+              console.warn(`[dynamicPrisma] Table ${model} missing in user database. Triggering background schema sync...`);
+              // Fire-and-forget: never block the request on `npx prisma db push`
+              // (it can take many seconds on a cold database). The request fails
+              // fast; once the background push completes, subsequent queries
+              // succeed. The dashboard re-polls on a short interval, so the
+              // empty state self-heals within one cycle.
+              triggerSchemaSync(databaseUrl).catch(() => {});
             }
             throw err;
           }

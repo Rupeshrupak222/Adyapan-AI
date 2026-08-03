@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt, { type SignOptions } from "jsonwebtoken";
-import { execSync } from "child_process";
+import { exec } from "child_process";
 import type { User } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { env } from "../config/env";
@@ -98,15 +98,19 @@ export async function registerUser(input: RegisterInput) {
 
   try {
     const userDbName = `user_${user.id}`;
-    
+
     await databaseService.createDatabase(userDbName);
-    
+
     const dbUrl = await databaseService.getConnectionString(userDbName);
-    
-    execSync(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
+
+    // Non-blocking schema push so registration is not held up (and the event
+    // loop not blocked) by the DDL run. The first request that hits a missing
+    // table triggers its own background sync in dynamicPrisma.
+    exec(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
       cwd: process.cwd(),
-      stdio: "pipe",
       env: { ...process.env, USER_DATABASE_URL: dbUrl },
+    }, (error) => {
+      if (error) console.error(`Failed to sync schema for user ${user.id}:`, error.message);
     });
   } catch (error) {
     console.error(`Failed to create database for user ${user.id}:`, error);
@@ -163,6 +167,7 @@ export async function refreshToken(refreshToken: string) {
 }
 
 export async function logout(token: string) {
+  tokenBlacklistCache.delete(token);
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
@@ -174,7 +179,34 @@ export async function logout(token: string) {
   });
 }
 
+// Negative cache for blacklist checks: the vast majority of tokens are never
+// blacklisted, and checking the master DB on every request adds a roundtrip to
+// each one. `logout` evicts the token so the 60s TTL cannot keep a just-logged
+// out token alive. Bounded, lazily evicted.
+const BLACKLIST_CACHE_TTL_MS = 60_000;
+const BLACKLIST_CACHE_MAX = 10_000;
+const tokenBlacklistCache = new Map<string, number>();
+
+function cacheNotBlacklisted(token: string): void {
+  tokenBlacklistCache.set(token, Date.now());
+  if (tokenBlacklistCache.size <= BLACKLIST_CACHE_MAX) return;
+  const now = Date.now();
+  for (const [cachedToken, ts] of tokenBlacklistCache) {
+    if (now - ts >= BLACKLIST_CACHE_TTL_MS) tokenBlacklistCache.delete(cachedToken);
+  }
+  if (tokenBlacklistCache.size > BLACKLIST_CACHE_MAX) {
+    const oldestToken = tokenBlacklistCache.keys().next().value as string | undefined;
+    if (oldestToken !== undefined) tokenBlacklistCache.delete(oldestToken);
+  }
+}
+
 export async function isTokenBlacklisted(token: string): Promise<boolean> {
+  const cached = tokenBlacklistCache.get(token);
+  if (cached !== undefined) {
+    if (Date.now() - cached < BLACKLIST_CACHE_TTL_MS) return false;
+    tokenBlacklistCache.delete(token);
+  }
+
   try {
     const blacklisted = await prisma.blacklistedToken.findFirst({
       where: {
@@ -183,6 +215,9 @@ export async function isTokenBlacklisted(token: string): Promise<boolean> {
       },
     });
 
+    if (!blacklisted) {
+      cacheNotBlacklisted(token);
+    }
     return !!blacklisted;
   } catch {
     return false;
@@ -384,10 +419,11 @@ export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: bool
       const userDbName = `user_${user.id}`;
       await databaseService.createDatabase(userDbName);
       const dbUrl = await databaseService.getConnectionString(userDbName);
-      execSync("npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss", {
+      exec(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
         cwd: process.cwd(),
-        stdio: "pipe",
         env: { ...process.env, USER_DATABASE_URL: dbUrl },
+      }, (error) => {
+        if (error) console.error(`Failed to sync schema for user ${user.id}:`, error.message);
       });
     } catch (error) {
       console.error(`Failed to create database for user ${user.id}:`, error);
