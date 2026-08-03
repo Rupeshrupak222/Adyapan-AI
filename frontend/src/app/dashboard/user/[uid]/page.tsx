@@ -1128,9 +1128,11 @@ function RecommendedToday({ recommendations, onSelectAction, onRegenerate }: { r
 export default function UserDashboardPage() {
   return (
     <SocketProvider>
-      <Suspense fallback={<DashboardWidgetSkeleton title="Loading Dashboard..." />}>
-        <UserDashboardContent />
-      </Suspense>
+      <HubErrorBoundary>
+        <Suspense fallback={<DashboardWidgetSkeleton title="Loading Dashboard..." />}>
+          <UserDashboardContent />
+        </Suspense>
+      </HubErrorBoundary>
     </SocketProvider>
   );
 }
