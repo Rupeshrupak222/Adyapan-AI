@@ -9,12 +9,24 @@ function makeIdempotent(stmt: string): string {
     return stmt.trim();
   }
 
+  if (/^CREATE TABLE IF NOT EXISTS\b/i.test(singleLine)) {
+    return singleLine;
+  }
+
   if (/^CREATE TABLE\b/i.test(singleLine)) {
     return singleLine.replace(/^CREATE TABLE\b/i, "CREATE TABLE IF NOT EXISTS");
   }
 
+  if (/^CREATE UNIQUE INDEX IF NOT EXISTS\b/i.test(singleLine)) {
+    return singleLine;
+  }
+
   if (/^CREATE UNIQUE INDEX\b/i.test(singleLine)) {
     return singleLine.replace(/^CREATE UNIQUE INDEX\b/i, "CREATE UNIQUE INDEX IF NOT EXISTS");
+  }
+
+  if (/^CREATE INDEX IF NOT EXISTS\b/i.test(singleLine)) {
+    return singleLine;
   }
 
   if (/^CREATE INDEX\b/i.test(singleLine)) {
@@ -29,6 +41,10 @@ function makeIdempotent(stmt: string): string {
   }
 
   // ALTER TABLE ... ADD COLUMN -> use IF NOT EXISTS (PostgreSQL 9.6+)
+  if (/^ALTER TABLE .+ ADD COLUMN IF NOT EXISTS\b/i.test(singleLine)) {
+    return singleLine;
+  }
+
   if (/^ALTER TABLE .+ ADD COLUMN\b/i.test(singleLine)) {
     return singleLine.replace(/^(ALTER TABLE .+ ADD COLUMN)\b/i, "$1 IF NOT EXISTS");
   }

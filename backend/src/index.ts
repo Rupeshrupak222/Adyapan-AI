@@ -26,7 +26,7 @@ initSocketServer(server);
 
 import { JobSchedulerService } from "./services/job-scheduler.service";
 
-server.listen(env.port, "0.0.0.0", () => {
+server.listen(env.port, () => {
   console.log(`Backend server started on port ${env.port}`);
   JobSchedulerService.start();
 });
