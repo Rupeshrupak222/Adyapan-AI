@@ -1,11 +1,10 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "backend/Dockerfile"
+    "buildCommand": "cd backend && npm run build"
   },
   "deploy": {
-    "startCommand": "npm start",
+    "startCommand": "cd backend && npm start",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
