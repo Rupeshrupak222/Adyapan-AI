@@ -6,4 +6,6 @@ coverage
 uploads/*
 !uploads/.gitkeep
 ai_cache/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
 

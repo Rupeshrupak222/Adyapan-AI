@@ -1,4 +1,9 @@
 import { Router } from "express";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { prisma } from "../config/prisma";
+
+const pkg = JSON.parse(readFileSync(join(__dirname, "..", "..", "package.json"), "utf-8"));
 
 export const healthRouter = Router();
 
@@ -8,4 +13,38 @@ healthRouter.get("/", (_req, res) => {
     service: "adyapan-ai-backend",
     status: "ok",
   });
+});
+
+healthRouter.get("/health", (_req, res) => {
+  res.json({
+    success: true,
+    service: "adyapan-ai-backend",
+    status: "ok",
+  });
+});
+
+healthRouter.get("/version", (_req, res) => {
+  res.json({
+    success: true,
+    name: pkg.name ?? "backend",
+    version: pkg.version ?? "0.0.0",
+  });
+});
+
+healthRouter.get("/ready", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      success: true,
+      status: "ready",
+      database: "connected",
+    });
+  } catch (e: any) {
+    res.status(503).json({
+      success: false,
+      status: "not_ready",
+      database: "disconnected",
+      error: e?.message || String(e),
+    });
+  }
 });

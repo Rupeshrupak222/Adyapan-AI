@@ -25,9 +25,13 @@ const server = createServer(app);
 initSocketServer(server);
 
 import { JobSchedulerService } from "./services/job-scheduler.service";
+import { ensureAdminTables } from "./scripts/ensure-admin-tables";
 
 server.listen(env.port, () => {
   console.log(`Backend server started on port ${env.port}`);
+  ensureAdminTables().catch((e) => {
+    console.warn("Admin tables sync skipped (non-fatal):", e?.message || e);
+  });
   JobSchedulerService.start();
 });
 // Touch to reload dev server with regenerated prisma client types

@@ -1,7 +1,10 @@
-FROM node:22-alpine
+FROM node:22-bookworm-slim
 
-# Install OpenSSL & libc requirements for Prisma
-RUN apk add --no-cache openssl ca-certificates libc6-compat
+# OpenSSL + CA certs for Prisma/HTTPS. glibc base (not Alpine) so native
+# prebuilds for bcrypt/sharp/puppeteer work without a musl rebuild.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -9,8 +12,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies cleanly
-RUN npm ci --ignore-scripts || npm install
+# Install dependencies cleanly (runs postinstall: bcrypt/sharp prebuilds,
+# puppeteer browser download)
+RUN npm ci
 
 # Generate Prisma Clients
 RUN npx prisma generate
@@ -19,12 +23,10 @@ RUN npx prisma generate --schema=prisma/schema.user.prisma
 # Copy application source code
 COPY . .
 
-# Build TypeScript code
-RUN npx tsc -p tsconfig.json
+# Compile TypeScript (prisma generate + tsc)
+RUN npm run build
 
-EXPOSE 5000
-
-ENV PORT=5000
 ENV NODE_ENV=production
 
-CMD ["node", "dist/index.js"]
+# PORT is injected by Railway at runtime
+CMD ["npm", "start"]

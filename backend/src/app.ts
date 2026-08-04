@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import compression from "compression";
 import { env } from "./config/env";
 import { apiRouter } from "./routes";
+import { healthRouter } from "./routes/health.routes";
 import { errorHandler } from "./middleware/errorHandler";
 
 export function createApp() {
@@ -63,9 +64,9 @@ export function createApp() {
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));
 
-  app.get("/", (_req, res) => {
-    res.json({ success: true, service: "Adyapan AI API", version: "1.0.0" });
-  });
+  // Health/readiness/version at root and under /api/health
+  app.use("/api/health", healthRouter);
+  app.use(healthRouter);
 
   app.use("/api", apiRouter);
   app.use(errorHandler);

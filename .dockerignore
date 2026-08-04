@@ -1,0 +1,10 @@
+.git
+backend/node_modules
+backend/dist
+backend/coverage
+backend/uploads
+backend/ai_cache
+backend/*.log
+backend/.env
+backend/.env.*
+backend/tsconfig.tsbuildinfo
