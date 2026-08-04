@@ -28,13 +28,21 @@ export function createApp() {
     "http://localhost:3000",
     "http://localhost:3001",
     "https://adyapan-ai-gamma.vercel.app",
+    "https://adyapan-ai.up.railway.app",
+    "http://adyapan-ai.railway.internal:5000",
   ];
 
   app.use(
     cors({
       origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        if (
+          allowedOrigins.includes(origin) ||
+          /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+          /\.railway\.(app|internal)$/.test(origin) ||
+          origin.includes("railway.internal") ||
+          origin.includes("railway.app")
+        ) {
           return callback(null, true);
         }
         return callback(null, false);
@@ -44,6 +52,7 @@ export function createApp() {
       allowedHeaders: ["Content-Type", "Authorization", "x-timezone", "Accept", "Cache-Control"],
     }),
   );
+
 
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: { success: false, error: "Too many authentication requests, please try again later." } });
   const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, message: { success: false, error: "Rate limit exceeded, please slow down." } });

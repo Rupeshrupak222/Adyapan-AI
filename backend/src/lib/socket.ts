@@ -32,15 +32,23 @@ let io: Server;
 export function initSocketServer(server: HttpServer) {
   io = new Server(server, {
     cors: {
-      origin: [
-        env.frontendUrl,
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://adyapan-ai-gamma.vercel.app",
-      ],
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (
+          origin.includes("localhost") ||
+          origin.includes("127.0.0.1") ||
+          origin.includes("vercel.app") ||
+          origin.includes("railway.internal") ||
+          origin.includes("railway.app")
+        ) {
+          return callback(null, true);
+        }
+        return callback(null, true); // Fallback allow socket connections
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },
+
   });
 
   const genAI = new GoogleGenerativeAI(env.geminiApiKey);

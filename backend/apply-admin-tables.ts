@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { prisma } from "./src/config/prisma";
 
-function makeIdempotent(stmt: string): string {
+export function makeIdempotent(stmt: string): string {
   const singleLine = stmt.replace(/\s+/g, " ").trim();
 
   // Pass through dollar-quoted DO blocks unchanged (already safe)
@@ -60,7 +60,7 @@ function makeIdempotent(stmt: string): string {
  * - Regular semicolon-terminated statements
  * - Comments
  */
-function parseStatements(sql: string): string[] {
+export function parseStatements(sql: string): string[] {
   const results: string[] = [];
   let current = "";
   let inDollarQuote = false;
@@ -157,4 +157,6 @@ async function main() {
   failed.forEach((s) => console.log("  !", s));
 }
 
-main().catch((e) => { console.error("SCRIPT ERROR:", e); process.exit(1); });
+if (require.main === module) {
+  main().catch((e) => { console.error("SCRIPT ERROR:", e); process.exit(1); });
+}
