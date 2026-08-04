@@ -2121,4 +2121,4 @@ model LinkedInScrapedJob {
   @@index([userId])
   @@index([savedAt])
   @@map("linkedin_scraped_jobs")
-}
+}
