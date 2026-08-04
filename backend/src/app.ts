@@ -31,6 +31,7 @@ export function createApp() {
     "https://adyapan-ai-gamma.vercel.app",
     "https://adyapan-ai.up.railway.app",
     "http://adyapan-ai.railway.internal:5000",
+    "https://adyapan-ai.onrender.com",
   ];
 
   app.use(
@@ -42,7 +43,8 @@ export function createApp() {
           /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
           /\.railway\.(app|internal)$/.test(origin) ||
           origin.includes("railway.internal") ||
-          origin.includes("railway.app")
+          origin.includes("railway.app") ||
+          /\.onrender\.com$/.test(origin)
         ) {
           return callback(null, true);
         }

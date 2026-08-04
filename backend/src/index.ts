@@ -27,7 +27,7 @@ initSocketServer(server);
 import { JobSchedulerService } from "./services/job-scheduler.service";
 import { ensureAdminTables } from "./scripts/ensure-admin-tables";
 
-server.listen(env.port, () => {
+server.listen(env.port, "0.0.0.0", () => {
   console.log(`Backend server started on port ${env.port}`);
   ensureAdminTables().catch((e) => {
     console.warn("Admin tables sync skipped (non-fatal):", e?.message || e);

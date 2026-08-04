@@ -139,11 +139,41 @@ export function parseStatements(sql: string): string[] {
  * rejects them, and they were already applied on the live database.
  */
 export async function ensureAdminTables(): Promise<{ ok: string[]; failed: string[] }> {
-  const baseDir = join(__dirname, "..", "..", "src", "scripts");
-  const raw = SQL_FILES.map((f) => readFileSync(join(baseDir, f), "utf-8")).join("\n");
+  const possiblePaths = [
+    join(__dirname, "..", "..", "src", "scripts"),
+    join(__dirname, "..", "scripts"),
+    join(__dirname),
+    join(process.cwd(), "src", "scripts"),
+    join(process.cwd(), "backend", "src", "scripts"),
+    join(process.cwd()),
+  ];
+
+  let raw = "";
+  for (const f of SQL_FILES) {
+    let loaded = false;
+    for (const dir of possiblePaths) {
+      try {
+        const filePath = join(dir, f);
+        raw += readFileSync(filePath, "utf-8") + "\n";
+        loaded = true;
+        break;
+      } catch (e) {
+        // try next
+      }
+    }
+    if (!loaded) {
+      console.warn(`[ensureAdminTables] Warning: Could not locate SQL file ${f}`);
+    }
+  }
+
+  if (!raw.trim()) {
+    return { ok: [], failed: ["No SQL files loaded"] };
+  }
+
   const statements = parseStatements(raw)
     .map(makeIdempotent)
     .filter((stmt) => !/^DO\s*\$\$/i.test(stmt));
+
 
   console.log("Admin tables sync: statements to execute:", statements.length);
 
