@@ -69,12 +69,42 @@ interface EngineMessage {
 }
 
 const TOPICS = [
-  { id: "dsa", label: "Data Structures & Algorithms", icon: Code2, desc: "Arrays, Trees, Graphs, Dynamic Programming" },
-  { id: "frontend", label: "Frontend Architecture & React", icon: Layers, desc: "React, Next.js, Performance, State Management" },
-  { id: "backend", label: "Backend Systems & Node.js", icon: Server, desc: "APIs, Microservices, Caching, Databases" },
-  { id: "system-design", label: "System Design & Scalability", icon: Cpu, desc: "Distributed Systems, Load Balancers, Sharding" },
-  { id: "fullstack", label: "Full-Stack Web Development", icon: Terminal, desc: "End-to-end applications & modern frameworks" },
-  { id: "dbms", label: "SQL, DBMS & Data Modeling", icon: Database, desc: "Queries, Normalization, Indexing, Transactions" },
+  { id: "dsa", label: "Data Structures & Algorithms", icon: Code2, desc: "Arrays, Trees, Graphs, DP & Algorithmic Problem Solving" },
+  { id: "frontend", label: "Frontend & React Architecture", icon: Layers, desc: "React 19, Next.js, Performance, State & SSR" },
+  { id: "backend", label: "Backend Systems & Node.js", icon: Server, desc: "REST APIs, Microservices, Caching & Async I/O" },
+  { id: "system-design", label: "System Design & Scalability", icon: Cpu, desc: "Distributed Systems, Load Balancers, Sharding & Caching" },
+  { id: "fullstack", label: "Full-Stack Web Engineering", icon: Terminal, desc: "End-to-end web apps, GraphQL & API integrations" },
+  { id: "dbms", label: "SQL, NoSQL & Data Modeling", icon: Database, desc: "Queries, Indexing, Transactions, Postgres & MongoDB" },
+  { id: "devops", label: "DevOps, Cloud & CI/CD", icon: Server, desc: "Docker, Kubernetes, AWS Services & Infrastructure as Code" },
+  { id: "ai-ml", label: "AI & Machine Learning Engineering", icon: Brain, desc: "LLMs, RAG, PyTorch, Model Deployment & MLOps" },
+  { id: "mobile", label: "Mobile Application Engineering", icon: Sliders, desc: "React Native, Flutter, iOS & Android Architecture" },
+  { id: "cybersecurity", label: "Cybersecurity & Web Defense", icon: Shield, desc: "OWASP Top 10, Auth Protocols, JWT & Cryptography" },
+  { id: "oop-design", label: "OOP & Design Patterns", icon: Target, desc: "SOLID principles, Structural Patterns & Clean Code" },
+  { id: "os-networking", label: "OS, Concurrency & Networking", icon: Terminal, desc: "Multithreading, Memory Locks, Sockets & TCP/IP Protocol" },
+];
+
+const MODE_OPTIONS = [
+  {
+    id: "voice+coding",
+    label: "Voice + Interactive Coding",
+    badge: "Recommended",
+    desc: "Real-time AI voice interviewer with live Monaco code editor & runner",
+    icon: Sparkles,
+  },
+  {
+    id: "voice",
+    label: "Voice Only",
+    badge: "Conversational",
+    desc: "Speech-based technical & architectural conceptual interview",
+    icon: Volume2,
+  },
+  {
+    id: "coding-only",
+    label: "Coding Only / Text",
+    badge: "Silent Mode",
+    desc: "Text-based coding challenges with automated AI code reviews",
+    icon: Terminal,
+  },
 ];
 
 const COMPANY_PRESETS = [
@@ -679,64 +709,148 @@ export default function TechnicalInterviewView({
 
         {/* Step Contents */}
         {step === 0 && (
-          <div className="space-y-4">
-            <h3
-              className={`text-sm font-bold flex items-center space-x-2 ${
-                isDark ? "text-slate-200" : "text-slate-900"
-              }`}
-            >
-              <Terminal className="w-4 h-4 text-purple-500" />
-              <span>Select Technical Skill / Focus Area:</span>
-            </h3>
+          <div className="space-y-6">
+            {/* Interview Mode Selection */}
+            <div className="space-y-3">
+              <h3
+                className={`text-sm font-bold flex items-center space-x-2 ${
+                  isDark ? "text-slate-200" : "text-slate-900"
+                }`}
+              >
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>Select Interview Mode:</span>
+              </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {TOPICS.map((item) => {
-                const Icon = item.icon;
-                const isSelected = config.topic === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setConfig({ ...config, topic: item.id })}
-                    className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between ${
-                      isSelected
-                        ? isDark
-                          ? "bg-purple-600/20 border-purple-500/60 text-white shadow-xl shadow-purple-950/40"
-                          : "bg-purple-50 border-purple-400 text-purple-950 shadow-md font-semibold"
-                        : isDark
-                        ? "bg-slate-900/80 border-slate-800/80 text-slate-400 hover:border-slate-700"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-purple-300 shadow-sm"
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div
-                        className={`p-2.5 rounded-xl ${
-                          isSelected
-                            ? "bg-purple-600 text-white"
-                            : isDark
-                            ? "bg-slate-800 text-slate-400"
-                            : "bg-slate-100 text-slate-600"
-                        }`}
-                      >
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <span
-                        className={`text-xs font-bold block ${
-                          isDark ? "text-slate-100" : "text-slate-900"
-                        }`}
-                      >
-                        {item.label}
-                      </span>
-                    </div>
-                    <span
-                      className={`text-[11px] leading-relaxed block mt-1 ${
-                        isDark ? "text-slate-400" : "text-slate-600 font-medium"
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {MODE_OPTIONS.map((modeOpt) => {
+                  const Icon = modeOpt.icon;
+                  const isSelected = config.mode === modeOpt.id;
+                  return (
+                    <button
+                      key={modeOpt.id}
+                      onClick={() =>
+                        setConfig({
+                          ...config,
+                          mode: modeOpt.id,
+                          aiVoiceEnabled: modeOpt.id !== "coding-only",
+                        })
+                      }
+                      className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between ${
+                        isSelected
+                          ? isDark
+                            ? "bg-gradient-to-br from-purple-900/40 via-slate-900 to-indigo-900/40 border-purple-500/80 text-white shadow-xl shadow-purple-950/50 ring-1 ring-purple-500/50"
+                            : "bg-purple-50 border-purple-400 text-purple-950 shadow-md font-semibold ring-1 ring-purple-400"
+                          : isDark
+                          ? "bg-slate-900/70 border-slate-800 text-slate-400 hover:border-slate-700"
+                          : "bg-white border-slate-200 text-slate-600 hover:border-purple-300 shadow-sm"
                       }`}
                     >
-                      {item.desc}
-                    </span>
-                  </button>
-                );
-              })}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div
+                            className={`p-2 rounded-xl ${
+                              isSelected
+                                ? "bg-purple-600 text-white"
+                                : isDark
+                                ? "bg-slate-800 text-slate-400"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span
+                            className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                              isSelected
+                                ? "bg-purple-500/30 text-purple-300 border border-purple-500/40"
+                                : isDark
+                                ? "bg-slate-800 text-slate-500"
+                                : "bg-slate-200 text-slate-600"
+                            }`}
+                          >
+                            {modeOpt.badge}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-xs font-extrabold block mb-1 ${
+                            isDark ? "text-slate-100" : "text-slate-900"
+                          }`}
+                        >
+                          {modeOpt.label}
+                        </span>
+                        <span
+                          className={`text-[11px] leading-relaxed block ${
+                            isDark ? "text-slate-400" : "text-slate-600"
+                          }`}
+                        >
+                          {modeOpt.desc}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Technical Skills Focus Grid */}
+            <div className="space-y-3">
+              <h3
+                className={`text-sm font-bold flex items-center space-x-2 ${
+                  isDark ? "text-slate-200" : "text-slate-900"
+                }`}
+              >
+                <Terminal className="w-4 h-4 text-purple-500" />
+                <span>Select Technical Skill / Focus Area:</span>
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {TOPICS.map((item) => {
+                  const Icon = item.icon;
+                  const isSelected = config.topic === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setConfig({ ...config, topic: item.id })}
+                      className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                        isSelected
+                          ? isDark
+                            ? "bg-purple-600/20 border-purple-500/60 text-white shadow-xl shadow-purple-950/40"
+                            : "bg-purple-50 border-purple-400 text-purple-950 shadow-md font-semibold"
+                          : isDark
+                          ? "bg-slate-900/80 border-slate-800/80 text-slate-400 hover:border-slate-700"
+                          : "bg-white border-slate-200 text-slate-600 hover:border-purple-300 shadow-sm"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5 mb-2">
+                        <div
+                          className={`p-2 rounded-xl shrink-0 ${
+                            isSelected
+                              ? "bg-purple-600 text-white"
+                              : isDark
+                              ? "bg-slate-800 text-slate-400"
+                              : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span
+                          className={`text-xs font-bold block leading-snug ${
+                            isDark ? "text-slate-100" : "text-slate-900"
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
+                      <span
+                        className={`text-[10px] leading-relaxed block mt-1 ${
+                          isDark ? "text-slate-400" : "text-slate-600 font-medium"
+                        }`}
+                      >
+                        {item.desc}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
