@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { api } from "@/services/api";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -20,8 +21,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Get the base backend URL by stripping /api from the NEXT_PUBLIC_API_URL
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    // Derive the backend origin from the (normalized) API base URL by
+    // stripping the /api path — keeps socket + HTTP calls on the same host.
+    const apiUrl = api.defaults.baseURL || "http://localhost:5000/api";
     const socketUrl = apiUrl.replace(/\/api\/?$/, "");
 
     const token =

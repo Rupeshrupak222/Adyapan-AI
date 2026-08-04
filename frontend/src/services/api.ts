@@ -1,7 +1,39 @@
 import axios from "axios";
 
+const DEFAULT_API_URL = "http://localhost:5000/api";
+
+/**
+ * Normalize the configured API base URL so it always carries an http(s)
+ * scheme and an /api path.
+ *
+ * Guards against misconfigured env values (e.g. NEXT_PUBLIC_API_URL set to
+ * "adyapan-ai-production.up.railway.app" without "https://" and without
+ * "/api"), which would otherwise make every axios request resolve to a broken
+ * relative URL against the frontend origin and fail with a 404.
+ */
+export function normalizeApiBaseUrl(raw?: string): string {
+  const input = (raw ?? "").trim();
+  if (!input) return DEFAULT_API_URL;
+
+  const withScheme = /^https?:\/\//i.test(input) ? input : `https://${input}`;
+
+  let url: URL;
+  try {
+    url = new URL(withScheme);
+  } catch {
+    return DEFAULT_API_URL;
+  }
+
+  const path = url.pathname.replace(/\/+$/, "");
+  if (!path) url.pathname = "/api";
+
+  return url.toString().replace(/\/+$/, "");
+}
+
+export const API_BASE_URL = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
+
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api",
+  baseURL: API_BASE_URL,
   timeout: 120000, // 2 minutes for long AI operations like document analysis
 });
 
@@ -70,4 +102,3 @@ api.interceptors.response.use(
     return Promise.reject(err);
   }
 );
-
