@@ -11,8 +11,13 @@ import HRInterviewActive from "./HRInterviewActive";
 import HRReport from "./HRReport";
 import HRAnalytics from "./HRAnalytics";
 import type { HRConfig, HREvaluation } from "./HRTypes";
+import {
+  useInterviewLifecycle,
+  PermissionGateScreen,
+  InterviewRouteGuard,
+} from "@/components/interview-hub/shared/lifecycle";
 
-type ViewScreen = "landing" | "loading" | "active" | "report" | "analytics";
+type ViewScreen = "landing" | "permission_gate" | "loading" | "active" | "report" | "analytics";
 
 interface HRViewProps {
   theme: string;
@@ -26,10 +31,18 @@ export default function HRView({ theme }: HRViewProps) {
   const [messages, setMessages] = useState<any[]>([]);
   const [config, setConfig] = useState<HRConfig | null>(null);
 
-  const handleStart = useCallback((hrConfig: HRConfig) => {
+  const lifecycle = useInterviewLifecycle({
+    interviewType: "hr",
+    onTerminationCleanup: () => {
+      setSessionId(null);
+    },
+  });
+
+  const handleStart = useCallback(async (hrConfig: HRConfig) => {
     setConfig(hrConfig);
-    setScreen("loading");
-  }, []);
+    setScreen("permission_gate");
+    await lifecycle.validateAndRequestPermissions();
+  }, [lifecycle]);
 
   const handleLoadingComplete = useCallback(async () => {
     if (!config) return;
@@ -53,6 +66,7 @@ export default function HRView({ theme }: HRViewProps) {
         setSessionId(res.data.session.id);
         setMessages(res.data.messages || []);
         setScreen("active");
+        lifecycle.markInterviewStarted();
       } else {
         toast.error("Failed to start HR interview");
         setScreen("landing");
@@ -61,7 +75,7 @@ export default function HRView({ theme }: HRViewProps) {
       toast.error("Failed to start HR interview session");
       setScreen("landing");
     }
-  }, [config]);
+  }, [config, lifecycle]);
 
   const DEFAULT_HR_EVALUATION: HREvaluation = {
     overallScore: 40,
@@ -113,12 +127,23 @@ export default function HRView({ theme }: HRViewProps) {
   }, [sessionId]);
 
   const handleReset = useCallback(() => {
-    setScreen("landing");
-    setSessionId(null);
-    setEvaluation(null);
-    setMessages([]);
-    setConfig(null);
-  }, []);
+    if (screen === "active") {
+      lifecycle.requestExitWithConfirmation(() => {
+        setScreen("landing");
+        setSessionId(null);
+        setEvaluation(null);
+        setMessages([]);
+        setConfig(null);
+      });
+    } else {
+      lifecycle.executeAtomicTerminationSequence();
+      setScreen("landing");
+      setSessionId(null);
+      setEvaluation(null);
+      setMessages([]);
+      setConfig(null);
+    }
+  }, [screen, lifecycle]);
 
   return (
     <div
@@ -129,8 +154,22 @@ export default function HRView({ theme }: HRViewProps) {
         fontFamily: "'Outfit', sans-serif",
       }}
     >
+      <InterviewRouteGuard
+        isOpen={lifecycle.showExitConfirm}
+        onConfirmExit={() => {
+          lifecycle.confirmExitAndTerminate();
+          setScreen("landing");
+          setSessionId(null);
+          setEvaluation(null);
+          setMessages([]);
+          setConfig(null);
+        }}
+        onCancelExit={lifecycle.cancelExit}
+        isDark={isDark}
+      />
+
       {/* Header */}
-      {screen !== "landing" && screen !== "active" && (
+      {screen !== "landing" && screen !== "permission_gate" && screen !== "active" && (
         <div className="sticky top-0 z-50 border-b backdrop-blur-md"
           style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", background: "transparent" }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -169,6 +208,21 @@ export default function HRView({ theme }: HRViewProps) {
         {screen === "landing" && (
           <motion.div key="landing" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }}>
             <HRLanding onStart={handleStart} onViewHistory={() => setScreen("analytics")} onViewAnalytics={() => setScreen("analytics")} theme={theme} />
+          </motion.div>
+        )}
+        {screen === "permission_gate" && (
+          <motion.div key="permission_gate" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }}>
+            <PermissionGateScreen
+              interviewTitle={`${config?.targetRole || "HR"} Behavioral Interview Room`}
+              mediaStatus={lifecycle.mediaStatus}
+              onRequestPermissions={lifecycle.validateAndRequestPermissions}
+              onProceedToInterview={() => setScreen("loading")}
+              onCancel={() => {
+                lifecycle.executeAtomicTerminationSequence();
+                setScreen("landing");
+              }}
+              isDark={isDark}
+            />
           </motion.div>
         )}
         {screen === "loading" && config && (

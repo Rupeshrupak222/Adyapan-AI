@@ -655,20 +655,31 @@ export function useConversationEngine({
     }
   }, []); // Run once on mount
 
+  const destroyEngine = useCallback(() => {
+    stopSpeech();
+    stopMicMonitoring();
+    clearSilenceTimers();
+    clearSpeechWatchdogs();
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.abort();
+        recognitionRef.current = null;
+      } catch {}
+    }
+    isListeningRef.current = false;
+    isSubmittingRef.current = false;
+    logInterview("State", "Conversation Engine fully destroyed");
+  }, [stopSpeech, stopMicMonitoring, clearSilenceTimers, clearSpeechWatchdogs]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopSpeech();
-      stopMicMonitoring();
-      clearSilenceTimers();
-      clearSpeechWatchdogs();
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch {}
-      }
+      destroyEngine();
     };
-  }, [stopSpeech, stopMicMonitoring, clearSilenceTimers, clearSpeechWatchdogs]);
+  }, [destroyEngine]);
 
   return {
     state,
@@ -692,5 +703,6 @@ export function useConversationEngine({
     setTextModeEnabled,
     openMicAuto,
     stopSpeech,
+    destroyEngine,
   };
 }

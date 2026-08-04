@@ -25,6 +25,11 @@ import {
   ConversationMessage,
 } from "@/components/interview-hub/conversation";
 import TechnicalLoading from "./TechnicalLoading";
+import {
+  useInterviewLifecycle,
+  PermissionGateScreen,
+  InterviewRouteGuard,
+} from "@/components/interview-hub/shared/lifecycle";
 
 const LANG_MAP: Record<string, string> = {
   javascript: "javascript",
@@ -551,7 +556,7 @@ export default function TechnicalInterviewView({
   theme?: string;
 }) {
   const isDark = theme === "dark";
-  const [screen, setScreen] = useState<"landing" | "loading" | "active">("landing");
+  const [screen, setScreen] = useState<"landing" | "permission_gate" | "loading" | "active">("landing");
   const [sessionId, setSessionId] = useState<string>("");
   const [initialQuestion, setInitialQuestion] = useState<any>(null);
   const [step, setStep] = useState(0);
@@ -575,9 +580,17 @@ export default function TechnicalInterviewView({
     customInstructions: "",
   });
 
-  const handleStartInterview = useCallback(() => {
-    setScreen("loading");
-  }, []);
+  const lifecycle = useInterviewLifecycle({
+    interviewType: "technical",
+    onTerminationCleanup: () => {
+      setSessionId("");
+    },
+  });
+
+  const handleStartInterview = useCallback(async () => {
+    setScreen("permission_gate");
+    await lifecycle.validateAndRequestPermissions();
+  }, [lifecycle]);
 
   const handleLoadingComplete = useCallback(async () => {
     try {
@@ -604,15 +617,34 @@ export default function TechnicalInterviewView({
           setInitialQuestion({ question: res.data.firstQuestion });
         }
         setScreen("active");
+        lifecycle.markInterviewStarted();
       } else {
         setSessionId(`session-${Date.now()}`);
         setScreen("active");
+        lifecycle.markInterviewStarted();
       }
     } catch {
       setSessionId(`session-${Date.now()}`);
       setScreen("active");
+      lifecycle.markInterviewStarted();
     }
-  }, [config]);
+  }, [config, lifecycle]);
+
+  if (screen === "permission_gate") {
+    return (
+      <PermissionGateScreen
+        interviewTitle={`${config.role} Technical Interview Room`}
+        mediaStatus={lifecycle.mediaStatus}
+        onRequestPermissions={lifecycle.validateAndRequestPermissions}
+        onProceedToInterview={() => setScreen("loading")}
+        onCancel={() => {
+          lifecycle.executeAtomicTerminationSequence();
+          setScreen("landing");
+        }}
+        isDark={isDark}
+      />
+    );
+  }
 
   if (screen === "loading") {
     return (
@@ -626,14 +658,32 @@ export default function TechnicalInterviewView({
 
   if (screen === "active" && sessionId) {
     return (
-      <TechnicalInterviewActive
-        sessionId={sessionId}
-        config={config}
-        initialQuestion={initialQuestion}
-        onComplete={() => setScreen("landing")}
-        onEnd={() => setScreen("landing")}
-        theme={theme}
-      />
+      <>
+        <InterviewRouteGuard
+          isOpen={lifecycle.showExitConfirm}
+          onConfirmExit={() => {
+            lifecycle.confirmExitAndTerminate();
+            setScreen("landing");
+            setSessionId("");
+          }}
+          onCancelExit={lifecycle.cancelExit}
+          isDark={isDark}
+        />
+        <TechnicalInterviewActive
+          sessionId={sessionId}
+          config={config}
+          initialQuestion={initialQuestion}
+          onComplete={() => {
+            lifecycle.executeAtomicTerminationSequence();
+            setScreen("landing");
+          }}
+          onEnd={() => {
+            lifecycle.executeAtomicTerminationSequence();
+            setScreen("landing");
+          }}
+          theme={theme}
+        />
+      </>
     );
   }
 

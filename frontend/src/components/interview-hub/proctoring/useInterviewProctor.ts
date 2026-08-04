@@ -570,15 +570,27 @@ export function useInterviewProctor({
     };
   }, [pauseProctoring, resumeProctoring, proctorState.status]);
 
+  const destroyProctor = useCallback(() => {
+    stopProctoring();
+    if (streamRef.current) {
+      try {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      } catch {}
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    canvasRef.current = null;
+    isDetectingRef.current = false;
+  }, [stopProctoring]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (schedulerRef.current) clearInterval(schedulerRef.current);
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
+      destroyProctor();
     };
-  }, []);
+  }, [destroyProctor]);
 
   return {
     proctorState,
@@ -589,6 +601,7 @@ export function useInterviewProctor({
     pauseProctoring,
     resumeProctoring,
     resetProctoring,
+    destroyProctor,
     requestMediaPermissions,
     isMinimised,
     setIsMinimised,

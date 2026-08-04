@@ -12,8 +12,13 @@ import EngineReport from "./EngineReport";
 import EngineTranscript from "./EngineTranscript";
 import EngineAnalytics from "./EngineAnalytics";
 import type { EngineConfig, EngineEvaluation } from "./EngineTypes";
+import {
+  useInterviewLifecycle,
+  PermissionGateScreen,
+  InterviewRouteGuard,
+} from "@/components/interview-hub/shared/lifecycle";
 
-type ViewScreen = "landing" | "loading" | "active" | "report" | "analytics";
+type ViewScreen = "landing" | "permission_gate" | "loading" | "active" | "report" | "analytics";
 
 interface EngineViewProps {
   theme: string;
@@ -28,10 +33,18 @@ export default function EngineView({ theme }: EngineViewProps) {
   const [config, setConfig] = useState<EngineConfig | null>(null);
   const [launching, setLaunching] = useState(false);
 
-  const handleStart = useCallback((interviewConfig: EngineConfig) => {
+  const lifecycle = useInterviewLifecycle({
+    interviewType: "general",
+    onTerminationCleanup: () => {
+      setSessionId(null);
+    },
+  });
+
+  const handleStart = useCallback(async (interviewConfig: EngineConfig) => {
     setConfig(interviewConfig);
-    setScreen("loading");
-  }, []);
+    setScreen("permission_gate");
+    await lifecycle.validateAndRequestPermissions();
+  }, [lifecycle]);
 
   const handleLoadingComplete = useCallback(async () => {
     if (!config) return;
@@ -57,6 +70,7 @@ export default function EngineView({ theme }: EngineViewProps) {
         setSessionId(res.data.session.id);
         setMessages(res.data.messages || []);
         setScreen("active");
+        lifecycle.markInterviewStarted();
       } else {
         toast.error("Failed to start interview");
         setScreen("landing");
@@ -67,7 +81,7 @@ export default function EngineView({ theme }: EngineViewProps) {
     } finally {
       setLaunching(false);
     }
-  }, [config, launching]);
+  }, [config, lifecycle]);
 
   const DEFAULT_EVALUATION: EngineEvaluation = {
     overallScore: 40,
@@ -127,12 +141,23 @@ export default function EngineView({ theme }: EngineViewProps) {
   }, [sessionId]);
 
   const handleReset = useCallback(() => {
-    setScreen("landing");
-    setSessionId(null);
-    setEvaluation(null);
-    setMessages([]);
-    setConfig(null);
-  }, []);
+    if (screen === "active") {
+      lifecycle.requestExitWithConfirmation(() => {
+        setScreen("landing");
+        setSessionId(null);
+        setEvaluation(null);
+        setMessages([]);
+        setConfig(null);
+      });
+    } else {
+      lifecycle.executeAtomicTerminationSequence();
+      setScreen("landing");
+      setSessionId(null);
+      setEvaluation(null);
+      setMessages([]);
+      setConfig(null);
+    }
+  }, [screen, lifecycle]);
 
   return (
     <div
@@ -143,8 +168,22 @@ export default function EngineView({ theme }: EngineViewProps) {
         fontFamily: "'Outfit', sans-serif",
       }}
     >
+      <InterviewRouteGuard
+        isOpen={lifecycle.showExitConfirm}
+        onConfirmExit={() => {
+          lifecycle.confirmExitAndTerminate();
+          setScreen("landing");
+          setSessionId(null);
+          setEvaluation(null);
+          setMessages([]);
+          setConfig(null);
+        }}
+        onCancelExit={lifecycle.cancelExit}
+        isDark={isDark}
+      />
+
       {/* Header — hidden during active interview (EngineInterview has its own) */}
-      {screen !== "landing" && screen !== "active" && (
+      {screen !== "landing" && screen !== "permission_gate" && screen !== "active" && (
         <div className="sticky top-0 z-50 border-b backdrop-blur-md" style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", background: "transparent" }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -195,6 +234,28 @@ export default function EngineView({ theme }: EngineViewProps) {
               onViewHistory={() => setScreen("analytics")}
               onViewAnalytics={() => setScreen("analytics")}
               theme={theme}
+            />
+          </motion.div>
+        )}
+
+        {screen === "permission_gate" && (
+          <motion.div
+            key="permission_gate"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.3 }}
+          >
+            <PermissionGateScreen
+              interviewTitle={`${config?.targetRole || "AI"} Interview Room`}
+              mediaStatus={lifecycle.mediaStatus}
+              onRequestPermissions={lifecycle.validateAndRequestPermissions}
+              onProceedToInterview={() => setScreen("loading")}
+              onCancel={() => {
+                lifecycle.executeAtomicTerminationSequence();
+                setScreen("landing");
+              }}
+              isDark={isDark}
             />
           </motion.div>
         )}

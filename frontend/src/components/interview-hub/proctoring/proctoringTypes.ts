@@ -59,6 +59,7 @@ export interface InterviewProctorReturn {
   pauseProctoring: () => void;
   resumeProctoring: () => void;
   resetProctoring: () => void;
+  destroyProctor: () => void;
   requestMediaPermissions: () => Promise<boolean>;
   isMinimised: boolean;
   setIsMinimised: (val: boolean | ((prev: boolean) => boolean)) => void;
