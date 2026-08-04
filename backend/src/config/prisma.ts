@@ -15,6 +15,6 @@ const adapter = new PrismaPg(pool);
 
 export const prisma = new PrismaClient({
   adapter,
-  log: env.nodeEnv === "development" ? ["error", "warn"] : ["error"],
+  log: env.nodeEnv === "development" ? ["warn"] : [],
 });
 

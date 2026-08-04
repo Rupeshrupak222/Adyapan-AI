@@ -876,7 +876,13 @@ export class JobDiscoveryService {
       const normalized = config.normalizeResult(items);
       ingestionResult = await this.ingestJobs(normalized, sourceName);
     } catch (err: any) {
-      console.error(`[JobDiscovery] Apify run failed for ${sourceName}:`, err?.message || err);
+      const errMsg = err?.message || String(err);
+      const isQuota = /monthly usage hard limit exceeded/i.test(errMsg);
+      if (isQuota) {
+        console.warn(`[JobDiscovery] Apify quota exceeded for ${sourceName} — skipping.`);
+      } else {
+        console.error(`[JobDiscovery] Apify run failed for ${sourceName}:`, errMsg);
+      }
       ingestionResult = {
         source: sourceName,
         jobsFetched: 0,
@@ -884,7 +890,7 @@ export class JobDiscoveryService {
         jobsUpdated: 0,
         duplicatesRemoved: 0,
         errors: 1,
-        errorDetails: err?.message || String(err),
+        errorDetails: errMsg,
         durationMs: Date.now() - start,
         status: "failed",
       };
@@ -921,11 +927,44 @@ export class JobDiscoveryService {
       return results;
     }
 
+    let apifyQuotaExceeded = false;
+
     for (const name of Object.keys(SOURCE_CONFIGS)) {
+      // If Apify monthly quota is exhausted, skip remaining Apify sources.
+      // remoteok uses a direct HTTP fetch (not Apify) so always run it.
+      if (apifyQuotaExceeded && name !== "remoteok") {
+        results.push({
+          source: name,
+          jobsFetched: 0,
+          jobsInserted: 0,
+          jobsUpdated: 0,
+          duplicatesRemoved: 0,
+          errors: 0,
+          errorDetails: "Skipped: Apify monthly quota exceeded",
+          durationMs: 0,
+          status: "skipped" as any,
+        });
+        continue;
+      }
+
       try {
         const result = await this.runSourceIngestion(name);
+        // Detect quota exhaustion from the result so we skip subsequent Apify calls
+        if (
+          result.status === "failed" &&
+          result.errorDetails &&
+          /monthly usage hard limit exceeded/i.test(result.errorDetails)
+        ) {
+          apifyQuotaExceeded = true;
+          console.warn("[JobDiscovery] Apify monthly quota exceeded — skipping remaining Apify sources for this cycle.");
+        }
         results.push(result);
       } catch (err: any) {
+        const msg = err?.message || String(err);
+        if (/monthly usage hard limit exceeded/i.test(msg)) {
+          apifyQuotaExceeded = true;
+          console.warn("[JobDiscovery] Apify monthly quota exceeded — skipping remaining Apify sources for this cycle.");
+        }
         results.push({
           source: name,
           jobsFetched: 0,
@@ -933,7 +972,7 @@ export class JobDiscoveryService {
           jobsUpdated: 0,
           duplicatesRemoved: 0,
           errors: 1,
-          errorDetails: err?.message || String(err),
+          errorDetails: msg,
           durationMs: 0,
           status: "failed",
         });
