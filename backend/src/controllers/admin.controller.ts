@@ -1302,36 +1302,39 @@ export async function getAdminNotifications(req: Request, res: Response, next: N
 
 
 async function ensureSystemNotificationTableExists() {
-  try {
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "system_notifications" (
-          "id" TEXT NOT NULL,
-          "admin_id" TEXT,
-          "title" TEXT NOT NULL,
-          "message" TEXT NOT NULL,
-          "type" TEXT NOT NULL DEFAULT 'info',
-          "target_audience" TEXT NOT NULL DEFAULT 'ALL',
-          "action_url" TEXT,
-          "priority" TEXT NOT NULL DEFAULT 'normal',
-          "delivery_channel" TEXT NOT NULL DEFAULT 'in_app',
-          "send_email" BOOLEAN NOT NULL DEFAULT false,
-          "is_revoked" BOOLEAN NOT NULL DEFAULT false,
-          "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          CONSTRAINT "system_notifications_pkey" PRIMARY KEY ("id")
-      );
-      CREATE INDEX IF NOT EXISTS "system_notifications_target_audience_idx" ON "system_notifications"("target_audience");
-      CREATE INDEX IF NOT EXISTS "system_notifications_created_at_idx" ON "system_notifications"("created_at");
-      CREATE TABLE IF NOT EXISTS "system_notification_reads" (
-          "id" TEXT NOT NULL,
-          "notification_id" TEXT NOT NULL,
-          "user_id" TEXT NOT NULL,
-          "read_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          CONSTRAINT "system_notification_reads_pkey" PRIMARY KEY ("id")
-      );
-    `);
-  } catch (err) {
-    console.warn("[ensureSystemNotificationTableExists] DDL warn:", err);
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS "system_notifications" (
+        "id" TEXT NOT NULL,
+        "admin_id" TEXT,
+        "title" TEXT NOT NULL,
+        "message" TEXT NOT NULL,
+        "type" TEXT NOT NULL DEFAULT 'info',
+        "target_audience" TEXT NOT NULL DEFAULT 'ALL',
+        "action_url" TEXT,
+        "priority" TEXT NOT NULL DEFAULT 'normal',
+        "delivery_channel" TEXT NOT NULL DEFAULT 'in_app',
+        "send_email" BOOLEAN NOT NULL DEFAULT false,
+        "is_revoked" BOOLEAN NOT NULL DEFAULT false,
+        "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "system_notifications_pkey" PRIMARY KEY ("id")
+    )`,
+    `CREATE INDEX IF NOT EXISTS "system_notifications_target_audience_idx" ON "system_notifications"("target_audience")`,
+    `CREATE INDEX IF NOT EXISTS "system_notifications_created_at_idx" ON "system_notifications"("created_at")`,
+    `CREATE TABLE IF NOT EXISTS "system_notification_reads" (
+        "id" TEXT NOT NULL,
+        "notification_id" TEXT NOT NULL,
+        "user_id" TEXT NOT NULL,
+        "read_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "system_notification_reads_pkey" PRIMARY KEY ("id")
+    )`,
+  ];
+  for (const stmt of statements) {
+    try {
+      await prisma.$executeRawUnsafe(stmt);
+    } catch (err) {
+      console.warn("[ensureSystemNotificationTableExists] DDL warn:", err);
+    }
   }
 }
 
