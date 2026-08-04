@@ -77,12 +77,11 @@ export default function AdminRegisterPage() {
       });
       saveAuthSession(data.token, data.user);
       router.replace("/dashboard/admin");
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        "Registration failed. Check your admin secret.",
-      );
+    } catch (err: any) {
+      const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
+      setError(serverMsg || "Registration failed. Check your admin secret.");
     } finally {
+
       setLoading(false);
     }
   };

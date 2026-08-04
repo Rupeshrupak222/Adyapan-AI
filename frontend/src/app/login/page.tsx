@@ -168,8 +168,9 @@ function LoginPageContent() {
       const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe });
       saveAuthSession(data.token, data.user, rememberMe);
       router.replace(getPostLoginTarget(data.user.role));
-    } catch (err: unknown) {
-      setLoginError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Invalid email or password.");
+    } catch (err: any) {
+      const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
+      setLoginError(serverMsg || "Invalid email or password.");
     } finally { setLoginLoading(false); }
   };
 
@@ -180,10 +181,12 @@ function LoginPageContent() {
     try {
       await api.post("/auth/register", { name: reg.name.trim(), email: reg.email.trim(), password: reg.password, role: "USER" });
       setTab("login"); setLoginEmail(reg.email.trim());
-    } catch (err: unknown) {
-      setRegError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Registration failed.");
+    } catch (err: any) {
+      const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
+      setRegError(serverMsg || "Registration failed.");
     } finally { setRegLoading(false); }
   };
+
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault(); setForgotError(""); setForgotMsg("");
