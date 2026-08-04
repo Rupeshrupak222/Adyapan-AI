@@ -4,7 +4,7 @@
     "buildCommand": "npm install && npx prisma generate && npx prisma generate --schema=prisma/schema.user.prisma && npm run build"
   },
   "deploy": {
-    "startCommand": "node --max-old-space-size=500 dist/index.js",
+    "startCommand": "node --max-old-space-size=900 dist/index.js",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
