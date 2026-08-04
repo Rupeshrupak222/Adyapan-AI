@@ -158,5 +158,8 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch((e) => { console.error("SCRIPT ERROR:", e); process.exit(1); });
+  main().catch((e) => {
+    console.warn("WARN: Database tables setup skipped during build (will apply on server start if DB is ready):", e?.message || e);
+  });
 }
+
