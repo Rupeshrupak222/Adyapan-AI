@@ -24,6 +24,7 @@ import {
   InterviewRoomUI,
   ConversationMessage,
 } from "@/components/interview-hub/conversation";
+import TechnicalLoading from "./TechnicalLoading";
 
 const LANG_MAP: Record<string, string> = {
   javascript: "javascript",
@@ -208,26 +209,30 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
       setMessages((prev) => [...prev, candidateMsg]);
 
       try {
-        // Fast backend response with 10s fallback race condition
+        let timeoutId: any;
+        const timeoutPromise = new Promise((resolve) => {
+          timeoutId = setTimeout(
+            () =>
+              resolve({
+                data: {
+                  nextQuestion: `Great explanation on ${config.topic}. Could you elaborate on the time and space complexity trade-offs of your approach?`,
+                  questionNumber: questionNumber + 1,
+                },
+              }),
+            9500
+          );
+        });
+
         const res = (await Promise.race([
           api.post(`/technical-engine/${sessionId}/answer`, {
             answer: transcript,
             questionNumber,
             codeSubmitted: showCoding ? code : undefined,
           }),
-          new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  data: {
-                    nextQuestion: `Great explanation on ${config.topic}. Could you elaborate on the time and space complexity trade-offs of your approach?`,
-                    questionNumber: questionNumber + 1,
-                  },
-                }),
-              9500
-            )
-          ),
+          timeoutPromise,
         ])) as any;
+
+        if (timeoutId) clearTimeout(timeoutId);
 
         const data = res.data || {};
 
@@ -521,9 +526,11 @@ export default function TechnicalInterviewView({
     customInstructions: "",
   });
 
-  const handleStartInterview = async () => {
+  const handleStartInterview = useCallback(() => {
     setScreen("loading");
+  }, []);
 
+  const handleLoadingComplete = useCallback(async () => {
     try {
       const res = await api.post("/engine/start", {
         interviewType: "technical",
@@ -556,33 +563,15 @@ export default function TechnicalInterviewView({
       setSessionId(`session-${Date.now()}`);
       setScreen("active");
     }
-  };
+  }, [config]);
 
   if (screen === "loading") {
     return (
-      <div
-        className={`h-[calc(100vh-76px)] flex flex-col items-center justify-center p-6 text-center transition-colors ${
-          isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"
-        }`}
-      >
-        <div
-          className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border ${
-            isDark
-              ? "bg-purple-600/20 text-purple-400 border-purple-500/30"
-              : "bg-purple-100 text-purple-700 border-purple-300"
-          }`}
-        >
-          <Loader2 className="w-8 h-8 animate-spin" />
-        </div>
-        <h2 className="text-lg font-extrabold">Initializing AI Technical Recruiter...</h2>
-        <p
-          className={`text-xs mt-1 max-w-sm font-medium ${
-            isDark ? "text-slate-400" : "text-slate-600"
-          }`}
-        >
-          Preparing your VAD Voice Activity Engine, proctoring monitor, and coding workspace.
-        </p>
-      </div>
+      <TechnicalLoading
+        config={config}
+        onComplete={handleLoadingComplete}
+        theme={theme}
+      />
     );
   }
 
