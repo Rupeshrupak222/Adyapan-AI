@@ -8,8 +8,8 @@
   },
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
-    "build": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\" && node --max-old-space-size=1024 node_modules/prisma/build/index.js generate && node --max-old-space-size=1024 node_modules/prisma/build/index.js generate --schema=prisma/schema.user.prisma && node --max-old-space-size=1024 node_modules/typescript/bin/tsc -p tsconfig.json && node -r ts-node/register apply-admin-tables.ts",
-    "start": "node --max-old-space-size=450 dist/index.js",
+    "build": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\" && node --max-old-space-size=512 node_modules/prisma/build/index.js generate && node --max-old-space-size=512 node_modules/prisma/build/index.js generate --schema=prisma/schema.user.prisma && node --max-old-space-size=512 node_modules/typescript/bin/tsc -p tsconfig.json && node -r ts-node/register apply-admin-tables.ts",
+    "start": "node --max-old-space-size=500 dist/index.js",
     "prisma:generate": "prisma generate && prisma generate --schema=prisma/schema.user.prisma",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:user": "prisma migrate deploy --schema=prisma/schema.user.prisma",
