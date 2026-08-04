@@ -81,6 +81,14 @@ const TOPICS = [
   { id: "cybersecurity", label: "Cybersecurity & Web Defense", icon: Shield, desc: "OWASP Top 10, Auth Protocols, JWT & Cryptography" },
   { id: "oop-design", label: "OOP & Design Patterns", icon: Target, desc: "SOLID principles, Structural Patterns & Clean Code" },
   { id: "os-networking", label: "OS, Concurrency & Networking", icon: Terminal, desc: "Multithreading, Memory Locks, Sockets & TCP/IP Protocol" },
+  { id: "cloud-serverless", label: "Cloud Architecture & Serverless", icon: Server, desc: "AWS Lambda, Cloudflare Workers, GCP & Microservices" },
+  { id: "data-engineering", label: "Data Engineering & Pipelines", icon: Database, desc: "ETL, Spark, Airflow, Snowflake & Big Data Processing" },
+  { id: "game-dev", label: "Game Dev & Graphics Engine", icon: Code2, desc: "C++, OpenGL, DirectX, Shader Programming & Physics" },
+  { id: "embedded-iot", label: "Embedded Systems & IoT", icon: Cpu, desc: "C/C++, Microcontrollers, RTOS, Firmware & Protocols" },
+  { id: "blockchain", label: "Web3 & Smart Contracts", icon: Shield, desc: "Solidity, Ethereum, EVM Architecture & DeFi Protocols" },
+  { id: "qa-automation", label: "QA Automation & Testing (SDET)", icon: CheckCircle2, desc: "Cypress, Playwright, Jest, E2E & Test Strategy" },
+  { id: "microservices", label: "Microservices & Message Queues", icon: Layers, desc: "Event-Driven Systems, Kafka, RabbitMQ & gRPC" },
+  { id: "sre-observability", label: "Site Reliability (SRE) & Monitoring", icon: BarChart3, desc: "Prometheus, Grafana, SLOs, Incident Drills & Alerting" },
 ];
 
 const MODE_OPTIONS = [
@@ -117,6 +125,17 @@ const COMPANY_PRESETS = [
   { name: "Uber", color: "#000000" },
   { name: "Flipkart", color: "#2874f0" },
   { name: "TCS / Infosys", color: "#6366f1" },
+  { name: "Adobe", color: "#ff0000" },
+  { name: "Salesforce", color: "#00a1e0" },
+  { name: "Oracle", color: "#f80000" },
+  { name: "Stripe", color: "#635bff" },
+  { name: "Airbnb", color: "#ff5a5f" },
+  { name: "Atlassian", color: "#0052cc" },
+  { name: "Nvidia", color: "#76b900" },
+  { name: "OpenAI", color: "#10a37f" },
+  { name: "Spotify", color: "#1ed760" },
+  { name: "Coinbase", color: "#0052ff" },
+  { name: "Palantir", color: "#101114" },
 ];
 
 const ROLE_PRESETS = [
@@ -675,9 +694,9 @@ export default function TechnicalInterviewView({
               {step + 1}
             </span>
             <span>
-              {step === 0 && "Step 1: Select Technical Focus & Skills"}
-              {step === 1 && "Step 2: Choose Target Company & Role"}
-              {step === 2 && "Step 3: Difficulty, Coding Language & Experience"}
+              {step === 0 && "Step 1: Select Technical Focus & Skills Matrix"}
+              {step === 1 && "Step 2: Choose Target Company (Preset or Custom)"}
+              {step === 2 && "Step 3: Difficulty Level, Coding Workspace Language & Confirmation"}
             </span>
           </div>
 
@@ -809,7 +828,7 @@ export default function TechnicalInterviewView({
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setConfig({ ...config, topic: item.id })}
+                      onClick={() => setConfig({ ...config, topic: item.id, role: item.label })}
                       className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
                         isSelected
                           ? isDark
@@ -857,9 +876,9 @@ export default function TechnicalInterviewView({
 
         {step === 1 && (
           <div className="space-y-6">
-            {/* Target Company */}
+            {/* Target Company (Presets & Custom) */}
             <div
-              className={`p-5 rounded-2xl border space-y-3 ${
+              className={`p-5 rounded-2xl border space-y-4 ${
                 isDark
                   ? "bg-slate-900/80 border-slate-800 text-slate-100"
                   : "bg-white border-slate-200 text-slate-900 shadow-md"
@@ -867,65 +886,54 @@ export default function TechnicalInterviewView({
             >
               <h3 className="text-sm font-bold flex items-center space-x-2">
                 <Building2 className="w-4 h-4 text-cyan-500" />
-                <span>Target Company Presets:</span>
+                <span>Select Target Company Preset or Enter Custom:</span>
               </h3>
-              <div className="flex flex-wrap gap-2.5">
-                {COMPANY_PRESETS.map((comp) => {
-                  const isSelected = config.company === comp.name;
-                  return (
-                    <button
-                      key={comp.name}
-                      onClick={() => setConfig({ ...config, company: comp.name })}
-                      className={`px-4 py-2 rounded-xl border text-xs font-bold transition-all ${
-                        isSelected
-                          ? isDark
-                            ? "bg-cyan-600/20 border-cyan-500 text-cyan-200 shadow-md"
-                            : "bg-cyan-100 border-cyan-400 text-cyan-900 shadow-sm"
-                          : isDark
-                          ? "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
-                          : "bg-slate-50 border-slate-200 text-slate-700 hover:border-cyan-300"
-                      }`}
-                    >
-                      {comp.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
 
-            {/* Target Role */}
-            <div
-              className={`p-5 rounded-2xl border space-y-3 ${
-                isDark
-                  ? "bg-slate-900/80 border-slate-800 text-slate-100"
-                  : "bg-white border-slate-200 text-slate-900 shadow-md"
-              }`}
-            >
-              <h3 className="text-sm font-bold flex items-center space-x-2">
-                <Briefcase className="w-4 h-4 text-purple-500" />
-                <span>Target Role Selection:</span>
-              </h3>
-              <div className="flex flex-wrap gap-2.5">
-                {ROLE_PRESETS.map((role) => {
-                  const isSelected = config.role === role;
-                  return (
-                    <button
-                      key={role}
-                      onClick={() => setConfig({ ...config, role })}
-                      className={`px-4 py-2 rounded-xl border text-xs font-bold transition-all ${
-                        isSelected
-                          ? isDark
-                            ? "bg-purple-600/20 border-purple-500 text-purple-200 shadow-md"
-                            : "bg-purple-100 border-purple-400 text-purple-900 shadow-sm"
-                          : isDark
-                          ? "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
-                          : "bg-slate-50 border-slate-200 text-slate-700 hover:border-purple-300"
-                      }`}
-                    >
-                      {role}
-                    </button>
-                  );
-                })}
+              {/* Custom Company Text Input */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Building2 className={`w-4 h-4 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Enter custom company name (e.g. Acme Corp, Stripe, OpenAI, My Startup)..."
+                  value={config.company}
+                  onChange={(e) => setConfig({ ...config, company: e.target.value })}
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs font-bold focus:outline-none transition-all ${
+                    isDark
+                      ? "bg-slate-950 border-slate-800 text-white placeholder:text-slate-500 focus:border-cyan-500"
+                      : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-cyan-500"
+                  }`}
+                />
+              </div>
+
+              {/* Company Presets Grid */}
+              <div className="space-y-2">
+                <span className={`text-[11px] font-bold block ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                  Popular Company Presets:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {COMPANY_PRESETS.map((comp) => {
+                    const isSelected = config.company === comp.name;
+                    return (
+                      <button
+                        key={comp.name}
+                        onClick={() => setConfig({ ...config, company: comp.name })}
+                        className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                          isSelected
+                            ? isDark
+                              ? "bg-cyan-600/20 border-cyan-500 text-cyan-200 shadow-md ring-1 ring-cyan-500/50"
+                              : "bg-cyan-100 border-cyan-400 text-cyan-900 shadow-sm ring-1 ring-cyan-400"
+                            : isDark
+                            ? "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
+                            : "bg-slate-50 border-slate-200 text-slate-700 hover:border-cyan-300"
+                        }`}
+                      >
+                        {comp.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
