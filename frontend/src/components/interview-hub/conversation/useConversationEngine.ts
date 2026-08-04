@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/services/api";
 import { toast } from "sonner";
+import { logInterview, logInterviewError } from "../shared/interviewLogger";
 import type {
   ConversationState,
   SilenceStage,
@@ -43,9 +44,10 @@ export function useConversationEngine({
 
   const thresholds = { ...DEFAULT_THRESHOLDS, ...config.silenceThresholdMs };
 
-  // Refs for persistent state without triggering re-renders
+  // Persistent Refs
   const stateRef = useRef<ConversationState>(state);
   useEffect(() => {
+    logInterview("State", `Transitioned to -> ${state}`);
     stateRef.current = state;
     callbacks.onStateChange?.(state);
   }, [state, callbacks]);
@@ -75,6 +77,13 @@ export function useConversationEngine({
     isPausedRef.current = isPaused;
   }, [isPaused]);
 
+  // Operational guard refs
+  const isSubmittingRef = useRef<boolean>(false);
+  const isListeningRef = useRef<boolean>(false);
+  const isStartingRef = useRef<boolean>(false);
+  const speechWatchdogRef = useRef<NodeJS.Timeout | null>(null);
+  const speechKeepAliveRef = useRef<NodeJS.Timeout | null>(null);
+
   // Audio / Speech refs
   const recognitionRef = useRef<any>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
@@ -86,6 +95,19 @@ export function useConversationEngine({
   const lastSpeechTimeRef = useRef<number>(Date.now());
   const activeAudioElementRef = useRef<HTMLAudioElement | null>(null);
 
+  // Dynamic voice loading state ref
+  const availableVoicesRef = useRef<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      const updateVoices = () => {
+        availableVoicesRef.current = window.speechSynthesis.getVoices();
+      };
+      updateVoices();
+      window.speechSynthesis.onvoiceschanged = updateVoices;
+    }
+  }, []);
+
   // Clear silence tracking timers
   const clearSilenceTimers = useCallback(() => {
     if (silenceTimerRef.current) {
@@ -95,20 +117,59 @@ export function useConversationEngine({
     setSilenceStage("none");
   }, []);
 
+  // Clear Speech Synthesis Keep-Alive & Watchdog
+  const clearSpeechWatchdogs = useCallback(() => {
+    if (speechWatchdogRef.current) {
+      clearTimeout(speechWatchdogRef.current);
+      speechWatchdogRef.current = null;
+    }
+    if (speechKeepAliveRef.current) {
+      clearInterval(speechKeepAliveRef.current);
+      speechKeepAliveRef.current = null;
+    }
+  }, []);
+
+  // Stop TTS speech or avatar playback
+  const stopSpeech = useCallback(() => {
+    clearSpeechWatchdogs();
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+    if (activeAudioElementRef.current) {
+      try {
+        activeAudioElementRef.current.pause();
+        activeAudioElementRef.current = null;
+      } catch {}
+    }
+    if (avatarPollRef.current) {
+      clearInterval(avatarPollRef.current);
+      avatarPollRef.current = null;
+    }
+    setAvatarAudioUrl(null);
+    setAvatarVideoUrl(null);
+    logInterview("SpeechSynthesis", "Stopped speech");
+  }, [clearSpeechWatchdogs]);
+
   // Finalize and submit accumulated answer
   const triggerAutoSubmit = useCallback(async () => {
+    if (isSubmittingRef.current) return;
     clearSilenceTimers();
+
     const fullText = (
       accumulatedTranscriptRef.current + " " + liveTranscriptRef.current
     ).trim();
 
     if (!fullText) {
-      // If nothing spoken, prompt lightly and resume listening
       toast.info("No response heard. Still listening...");
       setState("WAITING_FOR_CANDIDATE");
       lastSpeechTimeRef.current = Date.now();
       return;
     }
+
+    isSubmittingRef.current = true;
+    logInterview("Turn", "Auto-submitting answer", fullText);
 
     // Stop recognition & set state to PROCESSING
     if (recognitionRef.current) {
@@ -116,6 +177,7 @@ export function useConversationEngine({
         recognitionRef.current.stop();
       } catch {}
     }
+    isListeningRef.current = false;
     setState("PROCESSING");
 
     try {
@@ -123,9 +185,11 @@ export function useConversationEngine({
       setLiveTranscript("");
       setAccumulatedTranscript("");
     } catch (err) {
-      console.warn("Submission error in engine, recovering:", err);
+      logInterviewError("Turn", "Submission error in engine", err);
       setLiveTranscript("");
       setAccumulatedTranscript("");
+    } finally {
+      isSubmittingRef.current = false;
     }
   }, [callbacks, clearSilenceTimers]);
 
@@ -135,7 +199,7 @@ export function useConversationEngine({
     lastSpeechTimeRef.current = Date.now();
 
     silenceTimerRef.current = setInterval(() => {
-      if (isPausedRef.current) return;
+      if (isPausedRef.current || isSubmittingRef.current) return;
       const currentState = stateRef.current;
       if (
         currentState !== "LISTENING" &&
@@ -169,26 +233,10 @@ export function useConversationEngine({
     }, 500);
   }, [clearSilenceTimers, thresholds, triggerAutoSubmit]);
 
-  // Stop TTS speech or avatar playback
-  const stopSpeech = useCallback(() => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
-    if (activeAudioElementRef.current) {
-      activeAudioElementRef.current.pause();
-      activeAudioElementRef.current = null;
-    }
-    if (avatarPollRef.current) {
-      clearInterval(avatarPollRef.current);
-      avatarPollRef.current = null;
-    }
-    setAvatarAudioUrl(null);
-    setAvatarVideoUrl(null);
-  }, []);
-
   // Interruption logic: Candidate starts speaking while AI is speaking
   const handleCandidateInterruption = useCallback(() => {
-    if (stateRef.current === "AI_SPEAKING") {
+    if (stateRef.current === "AI_SPEAKING" && !isSubmittingRef.current) {
+      logInterview("VAD", "Candidate interrupted interviewer");
       stopSpeech();
       callbacks.onInterrupted?.();
       toast.info("Interrupted interviewer — listening to you");
@@ -236,7 +284,7 @@ export function useConversationEngine({
       };
       updateLevel();
     } catch (err) {
-      console.warn("Microphone access failed:", err);
+      logInterviewError("VAD", "Microphone access failed", err);
       setIsMicEnabled(false);
     }
   }, [callbacks, handleCandidateInterruption]);
@@ -259,7 +307,7 @@ export function useConversationEngine({
     setMicLevel(0);
   }, []);
 
-  // Web Speech API initialization
+  // Web Speech API initialization with state guards
   const startSpeechRecognition = useCallback(() => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
@@ -270,8 +318,14 @@ export function useConversationEngine({
       return;
     }
 
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
+
     if (recognitionRef.current) {
       try {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onend = null;
         recognitionRef.current.abort();
       } catch {}
     }
@@ -281,8 +335,14 @@ export function useConversationEngine({
     recognition.interimResults = true;
     recognition.lang = config.language === "hindi" ? "hi-IN" : "en-US";
 
+    recognition.onstart = () => {
+      isListeningRef.current = true;
+      isStartingRef.current = false;
+      logInterview("SpeechRecognition", "Recognition session started");
+    };
+
     recognition.onresult = (event: any) => {
-      if (isPausedRef.current) return;
+      if (isPausedRef.current || isSubmittingRef.current) return;
       lastSpeechTimeRef.current = Date.now();
 
       let currentInterim = "";
@@ -315,6 +375,7 @@ export function useConversationEngine({
 
     recognition.onerror = (event: any) => {
       const err = event.error;
+      logInterviewError("SpeechRecognition", `Error encountered: ${err}`, event);
       if (err === "no-speech" || err === "aborted") return;
       if (err === "not-allowed") {
         toast.error("Microphone permission denied.");
@@ -323,10 +384,15 @@ export function useConversationEngine({
     };
 
     recognition.onend = () => {
-      // Auto-restart recognition if engine is in a listening state
+      isListeningRef.current = false;
+      isStartingRef.current = false;
+      logInterview("SpeechRecognition", "Recognition session ended");
+
+      // Auto-restart recognition if engine is in a listening state and not submitting
       const currentState = stateRef.current;
       if (
         !isPausedRef.current &&
+        !isSubmittingRef.current &&
         isMicEnabledRef.current &&
         (currentState === "WAITING_FOR_CANDIDATE" ||
           currentState === "LISTENING" ||
@@ -335,8 +401,12 @@ export function useConversationEngine({
       ) {
         setTimeout(() => {
           try {
-            recognition.start();
-          } catch {}
+            if (!isListeningRef.current && !isStartingRef.current) {
+              recognition.start();
+            }
+          } catch (e) {
+            logInterviewError("SpeechRecognition", "Auto-restart failed", e);
+          }
         }, 300);
       }
     };
@@ -344,18 +414,22 @@ export function useConversationEngine({
     recognitionRef.current = recognition;
     try {
       recognition.start();
-    } catch {}
+    } catch (e) {
+      isStartingRef.current = false;
+      logInterviewError("SpeechRecognition", "Initial recognition start failed", e);
+    }
   }, [config.language]);
 
   // Open Microphone automatically for natural turn taking
   const openMicAuto = useCallback(async () => {
+    logInterview("Turn", "Opening mic automatically for candidate turn");
     await startMicMonitoring();
     startSpeechRecognition();
     startSilenceMonitor();
     setState("WAITING_FOR_CANDIDATE");
   }, [startMicMonitoring, startSpeechRecognition, startSilenceMonitor]);
 
-  // Core Speak Function (AI Interviewer Voice)
+  // Core Speak Function (AI Interviewer Voice with Watchdogs)
   const speak = useCallback(
     async (text: string) => {
       if (!text) return;
@@ -363,6 +437,7 @@ export function useConversationEngine({
       clearSilenceTimers();
 
       setState("AI_SPEAKING");
+      logInterview("SpeechSynthesis", "AI Speaking started", text.substring(0, 40) + "...");
       const cleaned = text.replace(/[*_#`]/g, "").replace(/\n+/g, ". ");
 
       // Check backend audio avatar service if available
@@ -399,12 +474,8 @@ export function useConversationEngine({
 
           const audio = new Audio(url);
           activeAudioElementRef.current = audio;
-          audio.onended = () => {
-            openMicAuto();
-          };
-          audio.onerror = () => {
-            openMicAuto();
-          };
+          audio.onended = () => openMicAuto();
+          audio.onerror = () => openMicAuto();
           if (!isAiMutedRef.current) {
             audio.play().catch(() => openMicAuto());
           } else {
@@ -418,7 +489,7 @@ export function useConversationEngine({
 
       if (playedAvatarAudio) return;
 
-      // Web Speech API fallback
+      // Web Speech API fallback with Keep-Alive & Safety Watchdog
       if (
         typeof window !== "undefined" &&
         "speechSynthesis" in window &&
@@ -429,7 +500,11 @@ export function useConversationEngine({
         utterance.pitch = config.voicePitch || 1;
         utterance.lang = config.language === "hindi" ? "hi-IN" : "en-US";
 
-        const voices = window.speechSynthesis.getVoices();
+        const voices =
+          availableVoicesRef.current.length > 0
+            ? availableVoicesRef.current
+            : window.speechSynthesis.getVoices();
+
         const preferredVoice = voices.find(
           (v) =>
             v.lang.startsWith(config.language === "hindi" ? "hi" : "en") &&
@@ -439,24 +514,58 @@ export function useConversationEngine({
         );
         if (preferredVoice) utterance.voice = preferredVoice;
 
-        utterance.onend = () => {
-          openMicAuto();
-        };
-        utterance.onerror = () => {
+        // Safety Watchdog: max expected speech time based on word count + buffer
+        const expectedDurationMs = Math.max(
+          4000,
+          Math.min(30000, cleaned.length * 95)
+        );
+
+        const onFinishedSpeech = () => {
+          clearSpeechWatchdogs();
           openMicAuto();
         };
 
+        utterance.onend = () => {
+          logInterview("SpeechSynthesis", "Utterance finished cleanly");
+          onFinishedSpeech();
+        };
+
+        utterance.onerror = (e) => {
+          logInterviewError("SpeechSynthesis", "Utterance error", e);
+          onFinishedSpeech();
+        };
+
+        // Watchdog timeout to prevent stuck AI_SPEAKING state
+        speechWatchdogRef.current = setTimeout(() => {
+          logInterviewError("SpeechSynthesis", "Watchdog triggered: utterance took too long or failed to emit end event");
+          try {
+            window.speechSynthesis.cancel();
+          } catch {}
+          onFinishedSpeech();
+        }, expectedDurationMs + 3000);
+
+        // Chrome keep-alive pulse (pauses and resumes every 8 seconds during speech)
+        speechKeepAliveRef.current = setInterval(() => {
+          if (typeof window !== "undefined" && "speechSynthesis" in window) {
+            if (window.speechSynthesis.speaking) {
+              window.speechSynthesis.pause();
+              window.speechSynthesis.resume();
+            }
+          }
+        }, 8000);
+
         window.speechSynthesis.speak(utterance);
       } else {
-        // If voice muted or unsupported, wait briefly then auto open mic
+        // Muted or unsupported: brief delay then open mic
         setTimeout(() => {
           openMicAuto();
-        }, 2500);
+        }, 2000);
       }
     },
     [
       stopSpeech,
       clearSilenceTimers,
+      clearSpeechWatchdogs,
       openMicAuto,
       config.voiceSpeed,
       config.voicePitch,
@@ -464,6 +573,28 @@ export function useConversationEngine({
       config.voiceGender,
     ]
   );
+
+  // Speech Recognition Heartbeat Watchdog
+  useEffect(() => {
+    const heartbeat = setInterval(() => {
+      if (isPausedRef.current || isSubmittingRef.current) return;
+      const currState = stateRef.current;
+      if (
+        (currState === "WAITING_FOR_CANDIDATE" ||
+          currState === "LISTENING" ||
+          currState === "SHORT_PAUSE" ||
+          currState === "LONG_PAUSE_CONFIRMATION") &&
+        isMicEnabledRef.current &&
+        !isListeningRef.current &&
+        !isStartingRef.current
+      ) {
+        logInterview("SpeechRecognition", "Heartbeat detected stopped recognition, recovering...");
+        startSpeechRecognition();
+      }
+    }, 2000);
+
+    return () => clearInterval(heartbeat);
+  }, [startSpeechRecognition]);
 
   // Manual actions
   const pauseConversation = useCallback(() => {
@@ -475,6 +606,7 @@ export function useConversationEngine({
         recognitionRef.current.stop();
       } catch {}
     }
+    isListeningRef.current = false;
   }, [stopSpeech, clearSilenceTimers]);
 
   const resumeConversation = useCallback(() => {
@@ -492,7 +624,8 @@ export function useConversationEngine({
 
   const submitTextAnswer = useCallback(
     async (text: string) => {
-      if (!text.trim()) return;
+      if (!text.trim() || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
       clearSilenceTimers();
       stopSpeech();
       setState("PROCESSING");
@@ -503,6 +636,8 @@ export function useConversationEngine({
       } catch (err) {
         toast.error("Failed to submit response.");
         setState("WAITING_FOR_CANDIDATE");
+      } finally {
+        isSubmittingRef.current = false;
       }
     },
     [callbacks, clearSilenceTimers, stopSpeech]
@@ -526,13 +661,14 @@ export function useConversationEngine({
       stopSpeech();
       stopMicMonitoring();
       clearSilenceTimers();
+      clearSpeechWatchdogs();
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
         } catch {}
       }
     };
-  }, [stopSpeech, stopMicMonitoring, clearSilenceTimers]);
+  }, [stopSpeech, stopMicMonitoring, clearSilenceTimers, clearSpeechWatchdogs]);
 
   return {
     state,

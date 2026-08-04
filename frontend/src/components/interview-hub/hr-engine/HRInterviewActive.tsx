@@ -122,23 +122,28 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
       setSending(true);
 
       try {
+        let timeoutId: any;
+        const timeoutPromise = new Promise((resolve) => {
+          timeoutId = setTimeout(
+            () =>
+              resolve({
+                data: {
+                  nextQuestion: `That is a strong behavioral example. Can you share a specific situation where you faced conflict in a team and how you resolved it?`,
+                },
+              }),
+            9500
+          );
+        });
+
         const res = (await Promise.race([
           api.post(`/interview/hr/${sessionId}/answer`, {
             answer: transcript,
             questionNumber,
           }),
-          new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  data: {
-                    nextQuestion: `That is a strong behavioral example. Can you share a specific situation where you faced conflict in a team and how you resolved it?`,
-                  },
-                }),
-              9500
-            )
-          ),
+          timeoutPromise,
         ])) as any;
+
+        if (timeoutId) clearTimeout(timeoutId);
 
         if (res.data) {
           if (res.data.currentCompetency) {

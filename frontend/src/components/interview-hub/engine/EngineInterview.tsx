@@ -107,25 +107,29 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
       setSending(true);
 
       try {
-        // Fast response with 10s fallback race condition
+        let timeoutId: any;
+        const timeoutPromise = new Promise((resolve) => {
+          timeoutId = setTimeout(
+            () =>
+              resolve({
+                data: {
+                  nextQuestion: `That provides great insight into your experience. How do you approach prioritizing deliverables under tight deadlines for ${config.targetRole}?`,
+                  nextQuestionNumber: questionNumber + 1,
+                },
+              }),
+            9500
+          );
+        });
+
         const res = (await Promise.race([
           api.post(`/engine/${sessionId}/answer`, {
             answer: transcript,
             questionNumber,
           }),
-          new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  data: {
-                    nextQuestion: `That provides great insight into your experience. How do you approach prioritizing deliverables under tight deadlines for ${config.targetRole}?`,
-                    nextQuestionNumber: questionNumber + 1,
-                  },
-                }),
-              9500
-            )
-          ),
+          timeoutPromise,
         ])) as any;
+
+        if (timeoutId) clearTimeout(timeoutId);
 
         const data = res.data || {};
 
