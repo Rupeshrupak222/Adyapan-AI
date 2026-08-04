@@ -33,11 +33,13 @@ function makeIdempotent(stmt: string): string {
     return singleLine.replace(/^CREATE INDEX\b/i, "CREATE INDEX IF NOT EXISTS");
   }
 
-  // ALTER TABLE ... ADD CONSTRAINT -> wrap in DO block for idempotency
+  // ALTER TABLE ... ADD CONSTRAINT -> plain single statement (extended query
+  // protocol rejects DO blocks); idempotency handled in main() by treating
+  // "already exists" as success
   const alterConstraintMatch = singleLine.match(/^ALTER TABLE "?(\w+)"? ADD CONSTRAINT "?(\w+)"?(.*)$/i);
   if (alterConstraintMatch) {
     const [, table, constraint, rest] = alterConstraintMatch;
-    return `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '${constraint}') THEN ALTER TABLE "${table}" ADD CONSTRAINT "${constraint}"${rest}; END IF; END $$`;
+    return `ALTER TABLE "${table}" ADD CONSTRAINT "${constraint}"${rest.replace(/;\s*$/, "")}`;
   }
 
   // ALTER TABLE ... ADD COLUMN -> use IF NOT EXISTS (PostgreSQL 9.6+)
@@ -141,7 +143,12 @@ async function main() {
         stmt.match(/DO\s*\$\$/i);
       ok.push(m ? (m[1] || "DO block") : stmt.slice(0, 60));
     } catch (e: any) {
-      failed.push(`${stmt.slice(0, 80)} :: ${e.message}`);
+      const msg = e?.message || String(e);
+      if (/already exists/i.test(msg)) {
+        ok.push(`${stmt.slice(0, 60)} (already exists)`);
+      } else {
+        failed.push(`${stmt.slice(0, 80)} :: ${msg}`);
+      }
     }
   }
   console.log("OK:", ok.length);
