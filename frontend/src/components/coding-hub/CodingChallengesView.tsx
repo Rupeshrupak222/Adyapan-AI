@@ -402,6 +402,64 @@ export function CodingChallengesView() {
       className="relative flex flex-col overflow-hidden w-full h-full"
       style={{ background: bg, color: primaryText }}
     >
+      {/* ── Coming Soon Overlay ── */}
+      <div
+        className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-5"
+        style={{
+          backdropFilter: "blur(12px)",
+          background: isDark
+            ? "rgba(10,10,15,0.82)"
+            : "rgba(255,255,255,0.82)",
+        }}
+      >
+        {/* Glow orb */}
+        <div
+          className="absolute w-72 h-72 rounded-full pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%)",
+            top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+          }}
+        />
+
+        {/* Icon */}
+        <motion.div
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="relative w-20 h-20 rounded-2xl flex items-center justify-center"
+          style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: "0 0 40px rgba(245,158,11,0.35)" }}
+        >
+          <Trophy size={36} style={{ color: "#000" }} />
+        </motion.div>
+
+        {/* Text */}
+        <div className="text-center space-y-2 relative z-10">
+          <h2
+            className="text-2xl font-extrabold tracking-tight"
+            style={{ color: primaryText }}
+          >
+            Coding Challenges
+          </h2>
+          <p className="text-sm font-semibold" style={{ color: "#f59e0b" }}>
+            Coming Soon
+          </p>
+          <p className="text-xs max-w-xs mx-auto leading-relaxed" style={{ color: mutedText }}>
+            We&apos;re crafting challenging problems and competitions. Stay tuned — it&apos;ll be worth the wait.
+          </p>
+        </div>
+
+        {/* Pill badge */}
+        <div
+          className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold"
+          style={{
+            border: "1px solid rgba(245,158,11,0.3)",
+            background: "rgba(245,158,11,0.08)",
+            color: "#f59e0b",
+          }}
+        >
+          <Zap size={12} />
+          Under Development
+        </div>
+      </div>
       <ChatBackground isDark={isDark} />
 
       {/* Header */}
