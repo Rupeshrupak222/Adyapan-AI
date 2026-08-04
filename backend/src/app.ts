@@ -29,6 +29,7 @@ export function createApp() {
     "http://localhost:3000",
     "http://localhost:3001",
     "https://adyapan-ai-gamma.vercel.app",
+    "https://adyapan-ai-production.up.railway.app",
     "https://adyapan-ai.up.railway.app",
     "http://adyapan-ai.railway.internal:5000",
     "https://adyapan-ai.onrender.com",
@@ -42,6 +43,7 @@ export function createApp() {
           allowedOrigins.includes(origin) ||
           /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
           /\.railway\.(app|internal)$/.test(origin) ||
+          /\.vercel\.app$/.test(origin) ||
           origin.includes("railway.internal") ||
           origin.includes("railway.app") ||
           /\.onrender\.com$/.test(origin)
@@ -55,6 +57,7 @@ export function createApp() {
       allowedHeaders: ["Content-Type", "Authorization", "x-timezone", "Accept", "Cache-Control"],
     }),
   );
+
 
 
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: { success: false, error: "Too many authentication requests, please try again later." } });
