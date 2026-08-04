@@ -84,37 +84,42 @@ export async function registerUser(input: RegisterInput) {
 
   validatePasswordStrength(input.password);
   const password = await bcrypt.hash(input.password, 12);
-  const user = await prisma.user.create({
-    data: {
-      name: input.name,
-      email,
-      password,
-      role: input.role === "ADMIN" ? "ADMIN" : "USER",
-      profile: {
-        create: {},
+
+  // Use explicit transaction so the pg driver adapter handles user + profile
+  // creation atomically without relying on implicit nested-write transactions.
+  const user = await prisma.$transaction(async (tx) => {
+    const newUser = await tx.user.create({
+      data: {
+        name: input.name,
+        email,
+        password,
+        role: input.role === "ADMIN" ? "ADMIN" : "USER",
       },
-    },
+    });
+    await tx.profile.create({
+      data: { userId: newUser.id },
+    });
+    return newUser;
   });
 
-  try {
+  // Provision per-user database completely asynchronously — never block or
+  // fail registration if the Neon API is slow or rate-limits.
+  setImmediate(() => {
     const userDbName = `user_${user.id}`;
-
-    await databaseService.createDatabase(userDbName);
-
-    const dbUrl = await databaseService.getConnectionString(userDbName);
-
-    // Non-blocking schema push so registration is not held up (and the event
-    // loop not blocked) by the DDL run. The first request that hits a missing
-    // table triggers its own background sync in dynamicPrisma.
-    exec(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
-      cwd: process.cwd(),
-      env: { ...process.env, USER_DATABASE_URL: dbUrl },
-    }, (error) => {
-      if (error) console.error(`Failed to sync schema for user ${user.id}:`, error.message);
-    });
-  } catch (error) {
-    console.error(`Failed to create database for user ${user.id}:`, error);
-  }
+    databaseService.createDatabase(userDbName)
+      .then(() => databaseService.getConnectionString(userDbName))
+      .then((dbUrl) => {
+        exec(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
+          cwd: process.cwd(),
+          env: { ...process.env, USER_DATABASE_URL: dbUrl },
+        }, (error) => {
+          if (error) console.warn(`[Register] User DB schema push failed for ${user.id}:`, error.message);
+        });
+      })
+      .catch((err) => {
+        console.warn(`[Register] User DB provisioning skipped for ${user.id}:`, err?.message || err);
+      });
+  });
 
   return {
     user: publicUser(user),
@@ -400,34 +405,42 @@ export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: bool
       } as any,
     });
   } else {
-    user = await prisma.user.create({
-      data: {
-        name: githubUser.name || githubUser.login,
-        email,
-        githubId,
-        avatarUrl: githubUser.avatar_url,
-        role: "USER",
-        profile: {
-          create: {
-            github: githubUser.login,
-          },
+    user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: githubUser.name || githubUser.login,
+          email,
+          githubId,
+          avatarUrl: githubUser.avatar_url,
+          role: "USER",
+        } as any,
+      });
+      await tx.profile.create({
+        data: {
+          userId: newUser.id,
+          github: githubUser.login,
         },
-      } as any,
+      });
+      return newUser;
     });
 
-    try {
-      const userDbName = `user_${user.id}`;
-      await databaseService.createDatabase(userDbName);
-      const dbUrl = await databaseService.getConnectionString(userDbName);
-      exec(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
-        cwd: process.cwd(),
-        env: { ...process.env, USER_DATABASE_URL: dbUrl },
-      }, (error) => {
-        if (error) console.error(`Failed to sync schema for user ${user.id}:`, error.message);
-      });
-    } catch (error) {
-      console.error(`Failed to create database for user ${user.id}:`, error);
-    }
+    // Fire-and-forget user DB provisioning
+    setImmediate(() => {
+      const userDbName = `user_${user!.id}`;
+      databaseService.createDatabase(userDbName)
+        .then(() => databaseService.getConnectionString(userDbName))
+        .then((dbUrl) => {
+          exec(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
+            cwd: process.cwd(),
+            env: { ...process.env, USER_DATABASE_URL: dbUrl },
+          }, (error) => {
+            if (error) console.warn(`[GitHub] User DB schema push failed for ${user!.id}:`, error.message);
+          });
+        })
+        .catch((err) => {
+          console.warn(`[GitHub] User DB provisioning skipped for ${user!.id}:`, err?.message || err);
+        });
+    });
   }
 
   return {
