@@ -580,9 +580,29 @@ export default function TechnicalInterviewView({
     customInstructions: "",
   });
 
+  const sessionIdRef = useRef<string>("");
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+  }, [sessionId]);
+
   const lifecycle = useInterviewLifecycle({
     interviewType: "technical",
     onTerminationCleanup: () => {
+      if (sessionIdRef.current) {
+        try {
+          const token = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token") || "";
+          const endpoint = `/api/technical-engine/${sessionIdRef.current}/end`;
+          fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ autoEnded: true }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch {}
+      }
       setSessionId("");
     },
   });

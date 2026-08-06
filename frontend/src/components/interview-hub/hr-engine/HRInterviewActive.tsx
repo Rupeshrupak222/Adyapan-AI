@@ -70,6 +70,28 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
     };
   }, []);
 
+  // Auto-end interview on unmount / navigation change
+  const autoEndedRef = useRef(false);
+  useEffect(() => {
+    return () => {
+      if (!autoEndedRef.current && sessionId) {
+        autoEndedRef.current = true;
+        try {
+          const token = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token") || "";
+          fetch(`/api/hr-interview/${sessionId}/end`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ autoEnded: true }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch {}
+      }
+    };
+  }, [sessionId]);
+
   // Set total questions based on duration
   useEffect(() => {
     setTotalQuestions(Math.ceil((config.durationMinutes || 30) / 4));

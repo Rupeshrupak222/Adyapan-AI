@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/services/api";
 import { toast } from "sonner";
@@ -33,9 +33,29 @@ export default function EngineView({ theme }: EngineViewProps) {
   const [config, setConfig] = useState<EngineConfig | null>(null);
   const [launching, setLaunching] = useState(false);
 
+  const sessionIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+  }, [sessionId]);
+
   const lifecycle = useInterviewLifecycle({
     interviewType: "general",
     onTerminationCleanup: () => {
+      if (sessionIdRef.current) {
+        try {
+          const token = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token") || "";
+          const endpoint = `/api/engine/${sessionIdRef.current}/end`;
+          fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ autoEnded: true }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch {}
+      }
       setSessionId(null);
     },
   });

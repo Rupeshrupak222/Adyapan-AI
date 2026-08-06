@@ -227,14 +227,12 @@ export function useInterviewLifecycle({
     };
   }, [lifecycleState, executeAtomicTerminationSequence]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount (when user switches pages or exits interview)
   useEffect(() => {
     return () => {
-      if (lifecycleState === "INTERVIEW_ACTIVE") {
-        executeAtomicTerminationSequence();
-      }
+      executeAtomicTerminationSequence();
     };
-  }, [lifecycleState, executeAtomicTerminationSequence]);
+  }, [executeAtomicTerminationSequence]);
 
   return {
     lifecycleState,

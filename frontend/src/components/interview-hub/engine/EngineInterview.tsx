@@ -62,6 +62,28 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
     };
   }, []);
 
+  // Auto-end interview on unmount / navigation change
+  const autoEndedRef = useRef(false);
+  useEffect(() => {
+    return () => {
+      if (!autoEndedRef.current && sessionId) {
+        autoEndedRef.current = true;
+        try {
+          const token = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token") || "";
+          fetch(`/api/engine/${sessionId}/end`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ autoEnded: true }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch {}
+      }
+    };
+  }, [sessionId]);
+
   // ── Proctoring ──
   const handleProctorAutoSubmit = useCallback(() => {
     toast.error("Proctoring Violation Limit Reached", {
