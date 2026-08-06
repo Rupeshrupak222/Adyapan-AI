@@ -141,9 +141,9 @@ export const sidebarItems: SidebarItem[] = [
   {
     id: "interview", label: "Interview Hub", icon: <Mic size={18} />,
     submenu: [
-      { label: "Interview Engine", href: "/dashboard/interview?tab=engine" },
-      { label: "AI HR Interview", href: "/dashboard/interview?tab=hr" },
-      { label: "AI Technical Interview", href: "/dashboard/interview?tab=technical" },
+      { label: "Interview Engine", href: "/dashboard/interview/engine" },
+      { label: "AI HR Interview", href: "/dashboard/interview/hr" },
+      { label: "AI Technical Interview", href: "/dashboard/interview/technical" },
     ],
   },
   {
