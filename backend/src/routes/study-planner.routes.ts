@@ -28,20 +28,27 @@ studyPlannerRouter.post("/generate", async (req: any, res: any) => {
 
     const userPrisma = await getUserPrismaFromRequest(req);
 
-    // 1. Calculate available days
+    // 1. Calculate available days & validate exam date
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
+    let validExamDate: Date | null = null;
     let daysAvailable = 30; // default
+
     if (examDate) {
-      const exam = new Date(examDate);
-      exam.setHours(0, 0, 0, 0);
-      const diffTime = exam.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays > 0) {
-        daysAvailable = Math.min(180, diffDays); // cap at 6 months
+      const parsedExam = new Date(examDate);
+      if (!isNaN(parsedExam.getTime())) {
+        validExamDate = parsedExam;
+        validExamDate.setHours(0, 0, 0, 0);
+        const diffTime = validExamDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) {
+          daysAvailable = Math.min(180, diffDays); // cap at 6 months
+        }
       }
     }
+
+    const dailyHoursNum = parseFloat(String(dailyHours)) || 2;
 
     // 2. Query user weak topics for optimization
     let weakTopics: string[] = [];
@@ -56,29 +63,30 @@ studyPlannerRouter.post("/generate", async (req: any, res: any) => {
     }
 
     // 3. Construct AI Prompt
+    const safeDocContext = documentText ? String(documentText).slice(0, 10000) : "";
     const userPrompt = `Create a detailed day-by-day study plan.
 Subject/Goal: "${title}"
-Exam Date: ${examDate || "No target date"}
+Exam Date: ${validExamDate ? validExamDate.toISOString().split("T")[0] : "No target date"}
 Days Available: ${daysAvailable} days
-Daily Study Hours: ${dailyHours} hours
+Daily Study Hours: ${dailyHoursNum} hours
 Target Score: ${targetScore}
 Study Mode: "${studyMode}"
 ${weakTopics.length > 0 ? `Weak areas to focus on: ${weakTopics.join(", ")}` : ""}
 ${customTopics ? `Specific topics that must be covered: ${customTopics}` : ""}
-${documentText ? `Learning content context:\n"""\n${documentText.slice(0, 60000)}\n"""` : ""}
+${safeDocContext ? `Learning content context:\n"""\n${safeDocContext}\n"""` : ""}
 
 Provide a complete day-by-day JSON schedule where "total_days" fits within the days available (minimum 3 days, maximum ${daysAvailable} days).
 Ensure topics are logically structured (fundamentals first, followed by applications and practice).
 Return a JSON object with this exact structure (no markdown wrapper, no other text):
 {
   "total_days": ${daysAvailable},
-  "daily_hours": ${dailyHours},
+  "daily_hours": ${dailyHoursNum},
   "estimated_completion": "90%",
   "schedule": [
     {
       "day": 1,
       "topics": ["Topic A", "Topic B"],
-      "study_hours": ${dailyHours},
+      "study_hours": ${dailyHoursNum},
       "priority": "High"
     }
   ]
@@ -86,22 +94,32 @@ Return a JSON object with this exact structure (no markdown wrapper, no other te
 
     const fallbackPlan = {
       total_days: daysAvailable,
-      daily_hours: Number(dailyHours),
+      daily_hours: dailyHoursNum,
       estimated_completion: "85%",
       schedule: Array.from({ length: Math.min(daysAvailable, 10) }, (_, i) => ({
         day: i + 1,
-        topics: [`Introduction to ${title} Part ${i + 1}`, `Review and Practice Part ${i + 1}`],
-        study_hours: Number(dailyHours),
+        topics: [`Introduction to ${title} Part ${i + 1}`, `Review & Practice Part ${i + 1}`],
+        study_hours: dailyHoursNum,
         priority: i % 2 === 0 ? "High" : "Important"
       }))
     };
 
-    const planData = await generateJSON<typeof fallbackPlan>(
-      STUDY_PLANNER_SYSTEM,
-      userPrompt,
-      { model: MODELS.BALANCED },
-      fallbackPlan
-    );
+    let planData: any = null;
+    try {
+      planData = await generateJSON<typeof fallbackPlan>(
+        STUDY_PLANNER_SYSTEM,
+        userPrompt,
+        { model: MODELS.BALANCED },
+        fallbackPlan
+      );
+    } catch (aiErr) {
+      console.warn("[StudyPlanner] AI JSON generation failed, using fallback plan:", aiErr);
+      planData = fallbackPlan;
+    }
+
+    // Normalize schedule list
+    const rawSchedule = planData?.schedule || planData?.daily_schedule || planData?.plan || fallbackPlan.schedule;
+    const scheduleItems = Array.isArray(rawSchedule) && rawSchedule.length > 0 ? rawSchedule : fallbackPlan.schedule;
 
     // 4. Save to Database
     // Archive previous plans by deleting their tasks
@@ -119,12 +137,12 @@ Return a JSON object with this exact structure (no markdown wrapper, no other te
       data: {
         userId,
         title,
-        examDate: examDate ? new Date(examDate) : null,
+        examDate: validExamDate,
         studyMode,
-        dailyHours: Number(dailyHours),
+        dailyHours: dailyHoursNum,
         targetScore: String(targetScore),
         completionPercentage: 0,
-        planJson: planData as any
+        planJson: { ...fallbackPlan, ...planData, schedule: scheduleItems } as any
       }
     });
 
@@ -140,38 +158,44 @@ Return a JSON object with this exact structure (no markdown wrapper, no other te
     const taskData: any[] = [];
     const revisionData: any[] = [];
 
-    for (const item of planData.schedule) {
+    for (const item of scheduleItems) {
+      const dayNum = typeof item.day === "number" ? item.day : (parseInt(String(item.day)) || 1);
       const taskDate = new Date(today);
-      taskDate.setDate(today.getDate() + (item.day - 1));
+      taskDate.setDate(today.getDate() + (dayNum - 1));
 
-      if (item.topics && item.topics.length > 0) {
-        const estTimePerTopic = Math.round((item.study_hours * 60) / item.topics.length);
+      const itemTopics = Array.isArray(item.topics)
+        ? item.topics
+        : (typeof item.topics === "string" ? [item.topics] : [`Study Topic Day ${dayNum}`]);
 
-        for (const topic of item.topics) {
-          taskData.push({
-            studyPlanId: newPlan.id,
-            topicName: topic,
-            scheduledDate: taskDate,
-            priority: item.priority || "Important",
-            status: "Pending",
-            estimatedTime: estTimePerTopic,
-          });
+      const itemHours = parseFloat(String(item.study_hours || dailyHoursNum)) || dailyHoursNum;
+      const estTimePerTopic = Math.max(15, Math.round((itemHours * 60) / Math.max(1, itemTopics.length)));
 
-          // Schedule spaced repetition revisions
-          for (const interval of revisionIntervals) {
-            const revDate = new Date(taskDate);
-            revDate.setDate(taskDate.getDate() + interval.days);
+      for (const topic of itemTopics) {
+        if (!topic || typeof topic !== "string") continue;
 
-            // Cap revision creation inside exam bounds if needed
-            if (!examDate || revDate <= new Date(examDate)) {
-              revisionData.push({
-                userId,
-                topicName: topic,
-                revisionDate: revDate,
-                revisionType: interval.type,
-                status: "Pending",
-              });
-            }
+        taskData.push({
+          studyPlanId: newPlan.id,
+          topicName: topic,
+          scheduledDate: taskDate,
+          priority: item.priority || "Important",
+          status: "Pending",
+          estimatedTime: estTimePerTopic,
+        });
+
+        // Schedule spaced repetition revisions
+        for (const interval of revisionIntervals) {
+          const revDate = new Date(taskDate);
+          revDate.setDate(taskDate.getDate() + interval.days);
+
+          // Cap revision creation inside exam bounds if needed
+          if (!validExamDate || revDate <= validExamDate) {
+            revisionData.push({
+              userId,
+              topicName: topic,
+              revisionDate: revDate,
+              revisionType: interval.type,
+              status: "Pending",
+            });
           }
         }
       }
