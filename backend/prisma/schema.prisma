@@ -9,6 +9,8 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   name      String
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
   email     String   @unique
   password  String?
   role      Role     @default(USER)
@@ -25,6 +27,17 @@ model User {
   subscriptionStatus  String?  @map("subscription_status")
   subscriptionEnd     DateTime? @map("subscription_end")
   payments            Payment[]
+
+  // Registration Workflow Relations
+  settings              UserSettings?
+  aiPreference          AiPreference?
+  notificationPreference NotificationPreference?
+  learningPreference    LearningPreference?
+  activityLogs          ActivityLog[]
+  sessions              Session[]
+  storageUsage          StorageUsage?
+  subscriptions         Subscription[]
+  aiUsage               AiUsage?
 
   @@index([plan, subscriptionStatus])
   @@index([role])
@@ -59,6 +72,20 @@ model Profile {
   username          String?
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Registration Workflow Fields
+  organizationId    String?  @map("organization_id")
+  country           String?
+  state             String?
+  city              String?
+  department        String?
+  course            String?
+  semester          String?
+  studentId         String?  @map("student_id")
+  referralCode      String?  @map("referral_code")
+  profileCompletion Int      @default(0) @map("profile_completion")
+  organization      Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
   @@map("profiles")
 }
 
@@ -118,6 +145,7 @@ model AiUsage {
   lastRequestAt      DateTime? @map("last_request_at")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([plan])
   @@index([dailyResetAt])
@@ -164,6 +192,7 @@ model Subscription {
   endedAt                   DateTime? @map("ended_at")
   createdAt                 DateTime  @default(now()) @map("created_at")
   updatedAt                 DateTime  @updatedAt @map("updated_at")
+  user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
@@ -214,9 +243,252 @@ model Organization {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  // Registration Workflow Statistics
+  country              String?
+  studentCount         Int       @default(0) @map("student_count")
+  activeStudents       Int       @default(0) @map("active_students")
+  courseCount          Int       @default(0) @map("course_count")
+  departmentCount      Int       @default(0) @map("department_count")
+  branchCount          Int       @default(0) @map("branch_count")
+  registrationCount    Int       @default(0) @map("registration_count")
+  latestRegistrationAt DateTime? @map("latest_registration_at")
+
+  profiles    Profile[]
+  departments UniversityDepartment[]
+  courses     UniversityCourse[]
+  branches    UniversityBranch[]
+
   @@index([type])
   @@index([name])
   @@map("organizations")
+}
+
+// ─── Registration Workflow: Per-User Defaults ────────────────────────────
+
+// Persistent settings for the Settings page (theme, privacy, security, ...).
+model UserSettings {
+  id                 String   @id @default(cuid())
+  userId             String   @unique @map("user_id")
+
+  // Appearance
+  themeMode          String   @default("dark")     @map("theme_mode")
+  accentColor        String   @default("#f59e0b")  @map("accent_color")
+  compactMode        Boolean  @default(false)      @map("compact_mode")
+  glassEffect        Boolean  @default(true)       @map("glass_effect")
+  animationsEnabled  Boolean  @default(true)       @map("animations_enabled")
+  sidebarCollapse    Boolean  @default(true)       @map("sidebar_collapse")
+  fontSize           Int      @default(14)         @map("font_size")
+
+  // Privacy
+  publicProfile      Boolean  @default(true)       @map("public_profile")
+  dataCollection     Boolean  @default(true)       @map("data_collection")
+  personalizedAi     Boolean  @default(true)       @map("personalized_ai")
+
+  // Security
+  twoFactorEnabled   Boolean  @default(false)      @map("two_factor_enabled")
+  loginAlerts        Boolean  @default(true)       @map("login_alerts")
+
+  // Connected Accounts
+  googleConnected    Boolean  @default(false)      @map("google_connected")
+  githubConnected    Boolean  @default(false)      @map("github_connected")
+  microsoftConnected Boolean  @default(false)      @map("microsoft_connected")
+  linkedinConnected  Boolean  @default(false)      @map("linkedin_connected")
+
+  createdAt          DateTime @default(now())      @map("created_at")
+  updatedAt          DateTime @updatedAt           @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+// Default AI preferences (model, temperature, output behaviour).
+model AiPreference {
+  id                  String   @id @default(cuid())
+  userId              String   @unique @map("user_id")
+  provider            String   @default("openrouter")
+  aiModel             String   @default("gemini")      @map("ai_model")
+  creativity          Int      @default(70)
+  responseLength      String   @default("balanced")    @map("response_length")
+  aiMemory            Boolean  @default(true)          @map("ai_memory")
+  markdownOutput      Boolean  @default(true)          @map("markdown_output")
+  codeHighlighting    Boolean  @default(true)          @map("code_highlighting")
+  autoCitation        Boolean  @default(false)         @map("auto_citation")
+  autoSaveConversations Boolean @default(true)         @map("auto_save_conversations")
+  maxTokens           Int      @default(4096)          @map("max_tokens")
+  createdAt           DateTime @default(now())         @map("created_at")
+  updatedAt           DateTime @updatedAt              @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_preferences")
+}
+
+// Default notification preferences.
+model NotificationPreference {
+  id             String   @id @default(cuid())
+  userId         String   @unique @map("user_id")
+  email          Boolean  @default(true)
+  push           Boolean  @default(true)
+  assignment     Boolean  @default(true) @map("notif_assignment")
+  interview      Boolean  @default(true) @map("notif_interview")
+  coding         Boolean  @default(false) @map("notif_coding")
+  research       Boolean  @default(false) @map("notif_research")
+  weekly         Boolean  @default(true) @map("notif_weekly")
+  daily          Boolean  @default(true) @map("notif_daily")
+  marketing      Boolean  @default(false)
+  announcements  Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+// Default learning preferences.
+model LearningPreference {
+  id              String   @id @default(cuid())
+  userId          String   @unique @map("user_id")
+  language        String   @default("en")
+  learningStyle   String   @default("visual")       @map("learning_style")
+  dailyGoal       Int      @default(3)              @map("daily_goal")
+  reminderTime    String   @default("09:00")        @map("reminder_time")
+  difficulty      String   @default("intermediate")
+  noteFormat      String   @default("markdown")     @map("note_format")
+  quizDifficulty  String   @default("medium")       @map("quiz_difficulty")
+  tutorPersonality String  @default("friendly")     @map("tutor_personality")
+  studyReminders  Boolean  @default(true)           @map("study_reminders")
+  createdAt       DateTime @default(now())          @map("created_at")
+  updatedAt       DateTime @updatedAt               @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("learning_preferences")
+}
+
+// Persistent trail of significant account / registration actions.
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  action    String
+  category  String   @default("account")
+  details   Json     @default("{}")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// Authenticated sessions (created at registration / login for auditability).
+model Session {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id")
+  tokenHash        String   @unique @map("token_hash")
+  refreshTokenHash String?  @unique @map("refresh_token_hash")
+  userAgent        String?  @map("user_agent")
+  ipAddress        String?  @map("ip_address")
+  expiresAt        DateTime @map("expires_at")
+  lastActiveAt     DateTime? @map("last_active_at")
+  revokedAt        DateTime? @map("revoked_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// Storage allocation snapshot per user (free tier default).
+model StorageUsage {
+  id         String   @id @default(cuid())
+  userId     String   @unique @map("user_id")
+  limitMb    Float    @default(50)  @map("limit_mb")
+  usedMb     Float    @default(0)   @map("used_mb")
+  notes      Int      @default(0)
+  resumes    Int      @default(0)
+  assignments Int     @default(0)
+  sessions   Int      @default(0)
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("storage_usage")
+}
+
+// ─── Registration Workflow: University / Course Statistics ───────────────
+
+model UniversityDepartment {
+  id               String   @id @default(cuid())
+  organizationId   String   @map("organization_id")
+  name             String
+  studentCount     Int      @default(0) @map("student_count")
+  registrationCount Int     @default(0) @map("registration_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("university_departments")
+}
+
+model UniversityCourse {
+  id               String   @id @default(cuid())
+  organizationId   String   @map("organization_id")
+  name             String
+  department       String?
+  studentCount     Int      @default(0) @map("student_count")
+  registrationCount Int     @default(0) @map("registration_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("university_courses")
+}
+
+model UniversityBranch {
+  id               String   @id @default(cuid())
+  organizationId   String   @map("organization_id")
+  name             String
+  department       String?
+  course           String?
+  studentCount     Int      @default(0) @map("student_count")
+  registrationCount Int     @default(0) @map("registration_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("university_branches")
+}
+
+// Daily registration rollup — powers admin registration analytics / growth charts.
+model RegistrationDailyMetric {
+  id             String   @id @default(cuid())
+  date           DateTime @unique
+  registrations  Int      @default(0)
+  newUniversities Int     @default(0) @map("new_universities")
+  newDepartments Int      @default(0) @map("new_departments")
+  newCourses     Int      @default(0) @map("new_courses")
+  newBranches    Int      @default(0) @map("new_branches")
+  newCountries   Int      @default(0) @map("new_countries")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@map("registration_daily_metrics")
 }
 
 enum Role {

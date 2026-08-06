@@ -9,7 +9,6 @@ export const env = {
   adminRegisterSecret: process.env.ADMIN_REGISTER_SECRET ?? "adyapan-admin-secret-2026",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   groqApiKey: process.env.GROQ_API_KEY ?? "",
-  openrouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
   nvidiaApiKey: process.env.NVIDIA_API_KEY ?? "",
   nvidiaApiKey2: process.env.NVIDIA_API_KEY_2 ?? "",
   nvidiaApiKey3: process.env.NVIDIA_API_KEY_3 ?? "",
@@ -64,6 +63,10 @@ export const env = {
   apifyApiKey: process.env.APIFY_API_KEY ?? process.env.APIFY_TOKEN ?? "",
   nodeEnv: process.env.NODE_ENV ?? "development",
   masterDatabaseUrl: process.env.MASTER_DATABASE_URL ?? process.env.DATABASE_URL ?? "",
+  // Registration workflow: when "true", a verification email is queued/attempted
+  // on registration. No SMTP provider is bundled today, so delivery is recorded
+  // in the activity log but never blocks or fails the registration.
+  emailVerificationEnabled: String(process.env.EMAIL_VERIFICATION_ENABLED ?? "").toLowerCase() === "true",
 };
 
 if (env.nodeEnv === "production" && env.jwtSecret === "replace-this-local-secret-before-production") {

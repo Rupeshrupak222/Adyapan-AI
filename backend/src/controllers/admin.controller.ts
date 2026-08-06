@@ -187,10 +187,79 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
   }
 }
 
+// ─── Registration Analytics (RegistrationDailyMetric + Organization counters) ─
+
+export async function getRegistrationAnalytics(req: Request, res: Response, next: NextFunction) {
+  try {
+    const days = Math.min(Math.max(Number(req.query?.days ?? 30) || 30, 1), 90);
+    const since = new Date();
+    since.setDate(since.getDate() - (days - 1));
+    since.setHours(0, 0, 0, 0);
+
+    const [daily, orgAgg, deptAgg, courseAgg, branchAgg] = await Promise.all([
+      prisma.registrationDailyMetric
+        .findMany({
+          where: { date: { gte: since } },
+          orderBy: { date: "asc" },
+        })
+        .catch(() => []),
+      prisma.organization
+        .aggregate({
+          _count: { _all: true },
+          _sum: { studentCount: true, activeStudents: true, registrationCount: true },
+          where: { type: "UNIVERSITY" },
+        })
+        .catch(() => ({ _count: { _all: 0 }, _sum: { studentCount: 0, activeStudents: 0, registrationCount: 0 } })),
+      prisma.universityDepartment.aggregate({ _count: { _all: true } }).catch(() => ({ _count: { _all: 0 } })),
+      prisma.universityCourse.aggregate({ _count: { _all: true } }).catch(() => ({ _count: { _all: 0 } })),
+      prisma.universityBranch.aggregate({ _count: { _all: true } }).catch(() => ({ _count: { _all: 0 } })),
+    ]);
+
+    // Top universities by registration count (drives leaderboards / growth).
+    const topUniversities = await prisma.organization
+      .findMany({
+        where: { type: "UNIVERSITY", registrationCount: { gt: 0 } },
+        orderBy: { registrationCount: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          name: true,
+          country: true,
+          studentCount: true,
+          activeStudents: true,
+          courseCount: true,
+          departmentCount: true,
+          branchCount: true,
+          registrationCount: true,
+          latestRegistrationAt: true,
+        },
+      })
+      .catch(() => []);
+
+    res.json({
+      success: true,
+      analytics: {
+        totals: {
+          universities: orgAgg._count._all,
+          students: orgAgg._sum.studentCount ?? 0,
+          activeStudents: orgAgg._sum.activeStudents ?? 0,
+          registrations: orgAgg._sum.registrationCount ?? 0,
+          departments: deptAgg._count._all,
+          courses: courseAgg._count._all,
+          branches: branchAgg._count._all,
+        },
+        daily,
+        topUniversities,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // ─── 2. Activity Feed ────────────────────────────────────────────
 
-export async function getActivityFeed(_req: Request, res: Response, next: NextFunction) {
-  try {
+export async function getActivityFeed(_req: Request, res: Response, next: NextFunction) {  try {
     let recentUsers: any[] = [];
     let recentPayments: any[] = [];
 
@@ -1187,14 +1256,14 @@ export async function getPremiumAnalytics(_req: Request, res: Response, next: Ne
 
 // ─── 11b. System Integrations Status ─────────────────────────────
 
-const INTEGRATION_KEYS = ["gemini", "openai", "claude", "groq", "openrouter"] as const;
+const INTEGRATION_KEYS = ["gemini", "openai", "claude", "groq", "nvidia"] as const;
 
 export async function getAdminIntegrations(_req: Request, res: Response, next: NextFunction) {
   try {
     const providerKeyMap: Record<string, string> = {
       gemini: env.geminiApiKey,
       groq: env.groqApiKey,
-      openrouter: env.openrouterApiKey,
+      nvidia: env.nvidiaApiKey,
       openai: "",
       claude: "",
     };

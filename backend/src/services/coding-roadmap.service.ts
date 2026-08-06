@@ -173,7 +173,7 @@ ${JSON.stringify(unsolvedPool.slice(0, 80), null, 2)}`;
       guidance: "Welcome to your customized coding roadmap! Focus on mastering fundamental arrays and strings before moving to advanced algorithms."
     };
 
-    // Generate JSON response via OpenRouter/Gemini
+    // Generate JSON response via NVIDIA/Gemini
     const generatedRoadmap = await generateJSON<RoadmapJSON>(
       systemPrompt,
       userPrompt,

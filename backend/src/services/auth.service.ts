@@ -1,19 +1,39 @@
 import bcrypt from "bcrypt";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { exec } from "child_process";
-import type { User } from "@prisma/client";
+import { createHash } from "crypto";
+import { Prisma, type User } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { env } from "../config/env";
 import { httpError, type HttpError } from "../utils/httpError";
 import type { AuthRole } from "../middleware/auth";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { databaseService } from "./database.service";
+import { calculateProfileCompletion } from "../utils/profileCompletion";
 
 type RegisterInput = {
   name: string;
   email: string;
   password: string;
   role?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  college?: string;
+  branch?: string;
+  year?: string;
+  degree?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  department?: string;
+  course?: string;
+  semester?: string;
+  studentId?: string;
+  referralCode?: string;
+  profileImageUrl?: string;
+  userAgent?: string;
+  ipAddress?: string;
 };
 
 type LoginInput = {
@@ -92,6 +112,283 @@ function isUniqueConstraintError(error: unknown): boolean {
   );
 }
 
+const EMAIL_FORMAT_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_FORMAT_REGEX = /^\+?[\d\s()-]{8,15}$/;
+
+function validateEmailFormat(email: string) {
+  if (!EMAIL_FORMAT_REGEX.test(email)) {
+    throw httpError(400, "Please enter a valid email address.");
+  }
+}
+
+function validatePhoneFormat(phone?: string) {
+  if (phone && !PHONE_FORMAT_REGEX.test(phone.trim())) {
+    throw httpError(400, "Please enter a valid phone number.");
+  }
+}
+
+function sha256(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function publicProfile(profile: {
+  id: string;
+  username: string | null;
+  phone: string | null;
+  college: string | null;
+  branch: string | null;
+  year: string | null;
+  degree: string | null;
+  country: string | null;
+  state: string | null;
+  city: string | null;
+  department: string | null;
+  course: string | null;
+  semester: string | null;
+  studentId: string | null;
+  referralCode: string | null;
+  photoUrl: string | null;
+  organizationId: string | null;
+  profileCompletion: number;
+}) {
+  return {
+    id: profile.id,
+    username: profile.username,
+    phone: profile.phone,
+    college: profile.college,
+    branch: profile.branch,
+    year: profile.year,
+    degree: profile.degree,
+    country: profile.country,
+    state: profile.state,
+    city: profile.city,
+    department: profile.department,
+    course: profile.course,
+    semester: profile.semester,
+    studentId: profile.studentId,
+    referralCode: profile.referralCode,
+    photoUrl: profile.photoUrl,
+    organizationId: profile.organizationId,
+    profileCompletion: profile.profileCompletion,
+  };
+}
+
+function publicSubscription(subscription: {
+  planCode: string;
+  status: string;
+  billingCycle: string;
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+}) {
+  return {
+    planCode: subscription.planCode,
+    status: subscription.status,
+    billingCycle: subscription.billingCycle,
+    currentPeriodStart: subscription.currentPeriodStart,
+    currentPeriodEnd: subscription.currentPeriodEnd,
+  };
+}
+
+type RegistrationResult = {
+  user: User;
+  profile: Prisma.ProfileGetPayload<{}>;
+  settings: Prisma.UserSettingsGetPayload<{}>;
+  aiPreference: Prisma.AiPreferenceGetPayload<{}>;
+  notificationPreference: Prisma.NotificationPreferenceGetPayload<{}>;
+  learningPreference: Prisma.LearningPreferenceGetPayload<{}>;
+  storageUsage: Prisma.StorageUsageGetPayload<{}>;
+  aiUsage: Prisma.AiUsageGetPayload<{}>;
+  subscription: Prisma.SubscriptionGetPayload<{}>;
+  verificationEmail: VerificationEmailStatus;
+  refreshToken: string;
+};
+
+type UniversityUpsertResult = {
+  organizationId: string | null;
+  isNewUniversity: boolean;
+  newDepartment: boolean;
+  newCourse: boolean;
+  newBranch: boolean;
+};
+
+async function upsertUniversityWithinTransaction(
+  tx: Prisma.TransactionClient,
+  college: string | undefined,
+  input: Pick<RegisterInput, "department" | "course" | "branch" | "degree" | "country">
+): Promise<UniversityUpsertResult> {
+  const name = (college ?? "").trim();
+  const country = (input.country ?? "").trim() || null;
+
+  if (!name) {
+    return { organizationId: null, isNewUniversity: false, newDepartment: false, newCourse: false, newBranch: false };
+  }
+
+  const existing = await tx.organization.findFirst({
+    where: { name: { equals: name, mode: "insensitive" } },
+    select: { id: true, country: true },
+  });
+
+  const isNewUniversity = !existing;
+
+  const organization = existing ?? (await tx.organization.create({
+    data: {
+      name,
+      type: /(inc|ltd|corp|llc|tech|software|solutions|services|systems|gmbh|pvt|co\.)$/i.test(name) ? "COMPANY" : "UNIVERSITY",
+      status: "ACTIVE",
+      country,
+    },
+    select: { id: true, country: true },
+  }));
+
+  await tx.organization.update({
+    where: { id: organization.id },
+    data: {
+      studentCount: { increment: 1 },
+      activeStudents: { increment: 1 },
+      registrationCount: { increment: 1 },
+      latestRegistrationAt: new Date(),
+      ...(country && organization.country !== country ? { country } : {}),
+    },
+  });
+
+  let newDepartment = false;
+  const department = (input.department ?? "").trim();
+  if (department) {
+    const dept = await tx.universityDepartment.upsert({
+      where: { organizationId_name: { organizationId: organization.id, name: department } },
+      update: { studentCount: { increment: 1 }, registrationCount: { increment: 1 } },
+      create: { organizationId: organization.id, name: department, studentCount: 1, registrationCount: 1 },
+      select: { registrationCount: true },
+    });
+    newDepartment = dept.registrationCount === 1;
+    if (newDepartment) {
+      await tx.organization.update({
+        where: { id: organization.id },
+        data: { departmentCount: { increment: 1 } },
+      });
+    }
+  }
+
+  let newCourse = false;
+  const course = (input.course ?? "").trim();
+  if (course) {
+    const crs = await tx.universityCourse.upsert({
+      where: { organizationId_name: { organizationId: organization.id, name: course } },
+      update: {
+        studentCount: { increment: 1 },
+        registrationCount: { increment: 1 },
+        ...(department ? { department } : {}),
+      },
+      create: { organizationId: organization.id, name: course, department: department || null, studentCount: 1, registrationCount: 1 },
+      select: { registrationCount: true },
+    });
+    newCourse = crs.registrationCount === 1;
+    if (newCourse) {
+      await tx.organization.update({
+        where: { id: organization.id },
+        data: { courseCount: { increment: 1 } },
+      });
+    }
+  }
+
+  let newBranch = false;
+  const branch = (input.branch ?? "").trim();
+  if (branch) {
+    const br = await tx.universityBranch.upsert({
+      where: { organizationId_name: { organizationId: organization.id, name: branch } },
+      update: {
+        studentCount: { increment: 1 },
+        registrationCount: { increment: 1 },
+        ...(department ? { department } : {}),
+        ...(course ? { course } : {}),
+      },
+      create: {
+        organizationId: organization.id,
+        name: branch,
+        department: department || null,
+        course: course || null,
+        studentCount: 1,
+        registrationCount: 1,
+      },
+      select: { registrationCount: true },
+    });
+    newBranch = br.registrationCount === 1;
+    if (newBranch) {
+      await tx.organization.update({
+        where: { id: organization.id },
+        data: { branchCount: { increment: 1 } },
+      });
+    }
+  }
+
+  return { organizationId: organization.id, isNewUniversity, newDepartment, newCourse, newBranch };
+}
+
+async function recordDailyRegistrationMetricWithinTransaction(
+  tx: Prisma.TransactionClient,
+  flags: { isNewUniversity: boolean; newDepartment: boolean; newCourse: boolean; newBranch: boolean; hasCountry: boolean }
+) {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const update: Prisma.RegistrationDailyMetricUpdateInput = { registrations: { increment: 1 } };
+  if (flags.isNewUniversity) update.newUniversities = { increment: 1 };
+  if (flags.newDepartment) update.newDepartments = { increment: 1 };
+  if (flags.newCourse) update.newCourses = { increment: 1 };
+  if (flags.newBranch) update.newBranches = { increment: 1 };
+  if (flags.hasCountry) update.newCountries = { increment: 1 };
+
+  await tx.registrationDailyMetric.upsert({
+    where: { date: startOfDay },
+    update,
+    create: {
+      date: startOfDay,
+      registrations: 1,
+      newUniversities: flags.isNewUniversity ? 1 : 0,
+      newDepartments: flags.newDepartment ? 1 : 0,
+      newCourses: flags.newCourse ? 1 : 0,
+      newBranches: flags.newBranch ? 1 : 0,
+      newCountries: flags.hasCountry ? 1 : 0,
+    },
+  });
+}
+
+type VerificationEmailStatus = { delivered: boolean; reason: string; requestedAt: Date };
+
+async function maybeSendVerificationEmail(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  email: string,
+  ipAddress: string | null
+): Promise<VerificationEmailStatus> {
+  const hasProvider = Boolean(
+    process.env.RESEND_API_KEY ||
+      (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)
+  );
+
+  const status: VerificationEmailStatus = {
+    delivered: false,
+    reason: !env.emailVerificationEnabled
+      ? "email_verification_disabled"
+      : !hasProvider
+        ? "email_provider_not_configured"
+        : "queued",
+    requestedAt: new Date(),
+  };
+
+  await tx.activityLog.create({
+    data: {
+      userId,
+      action: "Verification Email",
+      category: "security",
+      details: { email, delivered: status.delivered, reason: status.reason },
+      ipAddress,
+    },
+  });
+
+  return status;
+}
+
 export async function registerUser(input: RegisterInput) {
   const email = input.email.toLowerCase().trim();
   const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -101,25 +398,180 @@ export async function registerUser(input: RegisterInput) {
   }
 
   validatePasswordStrength(input.password);
-  const password = await bcrypt.hash(input.password, 12);
+  validateEmailFormat(email);
+  validatePhoneFormat(input.phone);
 
-  // Use explicit transaction so the pg driver adapter handles user + profile
-  // creation atomically without relying on implicit nested-write transactions.
-  let user: User;
+  const password = await bcrypt.hash(input.password, 12);
+  const firstName = (input.firstName ?? "").trim() || input.name.trim().split(/\s+/)[0] || null;
+  const lastName = (input.lastName ?? "").trim() || null;
+  const ipAddress = (input.ipAddress ?? "").slice(0, 64) || null;
+  const userAgent = (input.userAgent ?? "").slice(0, 500) || null;
+
+  let created: RegistrationResult;
   try {
-    user = await prisma.$transaction(async (tx) => {
+    // Single all-or-nothing transaction: any failed step rolls back every row
+    // (user, profile, defaults, logs, subscription, session, metrics). Nothing
+    // outside this block may create registration records.
+    created = await prisma.$transaction(async (tx) => {
+      // 1. User record with free-plan defaults.
       const newUser = await tx.user.create({
         data: {
-          name: input.name,
+          name: input.name.trim(),
+          firstName,
+          lastName,
           email,
           password,
           role: input.role === "ADMIN" ? "ADMIN" : "USER",
+          plan: "free",
+          subscriptionStatus: "active",
+          ...(input.profileImageUrl?.trim() ? { avatarUrl: input.profileImageUrl.trim() } : {}),
         },
       });
-      await tx.profile.create({
-        data: { userId: newUser.id },
+
+      // 2. University / organization upsert with department/course/branch counters.
+      const university = await upsertUniversityWithinTransaction(tx, input.college, input);
+
+      // 3. Profile with every captured field + computed completion.
+      const profileFields = {
+        userId: newUser.id,
+        username: email.split("@")[0] ?? `user_${newUser.id.slice(0, 8)}`,
+        phone: (input.phone ?? "").trim() || null,
+        college: (input.college ?? "").trim() || null,
+        branch: (input.branch ?? "").trim() || null,
+        year: (input.year ?? "").trim() || null,
+        degree: (input.degree ?? "").trim() || null,
+        country: (input.country ?? "").trim() || null,
+        state: (input.state ?? "").trim() || null,
+        city: (input.city ?? "").trim() || null,
+        department: (input.department ?? "").trim() || null,
+        course: (input.course ?? "").trim() || null,
+        semester: (input.semester ?? "").trim() || null,
+        studentId: (input.studentId ?? "").trim() || null,
+        referralCode: (input.referralCode ?? "").trim() || null,
+        photoUrl: (input.profileImageUrl ?? "").trim() || null,
+        organizationId: university.organizationId,
+      };
+      const profileData = {
+        ...profileFields,
+        profileCompletion: calculateProfileCompletion(profileFields),
+      };
+      const profile = await tx.profile.create({ data: profileData });
+
+      // 4. Per-user defaults: settings, AI/notification/learning preferences,
+      //    storage allocation and AI usage ledger.
+      const now = new Date();
+      const [settings, aiPreference, notificationPreference, learningPreference, storageUsage, aiUsage] =
+        await Promise.all([
+          tx.userSettings.create({ data: { userId: newUser.id } }),
+          tx.aiPreference.create({ data: { userId: newUser.id } }),
+          tx.notificationPreference.create({ data: { userId: newUser.id } }),
+          tx.learningPreference.create({ data: { userId: newUser.id } }),
+          tx.storageUsage.create({ data: { userId: newUser.id } }),
+          tx.aiUsage.create({
+            data: {
+              userId: newUser.id,
+              plan: "free",
+              subscriptionStatus: "active",
+              dailyResetAt: now,
+              monthlyResetAt: now,
+            },
+          }),
+        ]);
+
+      // 5. Free subscription (30-day current period).
+      const subscription = await tx.subscription.create({
+        data: {
+          userId: newUser.id,
+          planCode: "free",
+          billingCycle: "monthly",
+          status: "active",
+          provider: "free",
+          price: 0,
+          currency: "INR",
+          autoRenew: false,
+          currentPeriodStart: now,
+          currentPeriodEnd: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+        },
       });
-      return newUser;
+
+      // 6. Session (hashed token/refresh pair for auditability).
+      const refreshToken = signRefreshToken(newUser.id);
+      await tx.session.create({
+        data: {
+          userId: newUser.id,
+          tokenHash: sha256(refreshToken),
+          refreshTokenHash: sha256(refreshToken),
+          userAgent,
+          ipAddress,
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      // 7. Activity trail.
+      const activities: Array<Promise<unknown>> = [
+        tx.activityLog.create({
+          data: { userId: newUser.id, action: "User Registered", category: "account", details: { email }, ipAddress },
+        }),
+        tx.activityLog.create({
+          data: {
+            userId: newUser.id,
+            action: "Profile Created",
+            category: "profile",
+            details: { profileCompletion: profileData.profileCompletion },
+            ipAddress,
+          },
+        }),
+        tx.activityLog.create({
+          data: {
+            userId: newUser.id,
+            action: "Subscription Assigned",
+            category: "subscription",
+            details: { planCode: "free", status: "active" },
+            ipAddress,
+          },
+        }),
+      ];
+      if (university.organizationId) {
+        activities.push(
+          tx.activityLog.create({
+            data: {
+              userId: newUser.id,
+              action: "University Assigned",
+              category: "university",
+              details: { organizationId: university.organizationId },
+              ipAddress,
+            },
+          }),
+        );
+      }
+      await Promise.all(activities);
+
+      // 8. Daily registration rollup for admin analytics / growth charts.
+      await recordDailyRegistrationMetricWithinTransaction(tx, {
+        isNewUniversity: university.isNewUniversity,
+        newDepartment: university.newDepartment,
+        newCourse: university.newCourse,
+        newBranch: university.newBranch,
+        hasCountry: Boolean(input.country?.trim()),
+      });
+
+      // 9. Verification email — best-effort inside the transaction so its
+      //    activity-log entry stays atomic; never blocks the registration.
+      const verificationEmail = await maybeSendVerificationEmail(tx, newUser.id, email, ipAddress);
+
+      return {
+        user: newUser,
+        profile,
+        settings,
+        aiPreference,
+        notificationPreference,
+        learningPreference,
+        storageUsage,
+        aiUsage,
+        subscription,
+        verificationEmail,
+        refreshToken,
+      };
     });
   } catch (error) {
     // A concurrent registration can slip past the findUnique check and hit the
@@ -134,7 +586,7 @@ export async function registerUser(input: RegisterInput) {
   // Provision per-user database completely asynchronously — never block or
   // fail registration if the Neon API is slow or rate-limits.
   setImmediate(() => {
-    const userDbName = `user_${user.id}`;
+    const userDbName = `user_${created.user.id}`;
     databaseService.createDatabase(userDbName)
       .then(() => databaseService.getConnectionString(userDbName))
       .then((dbUrl) => {
@@ -142,18 +594,27 @@ export async function registerUser(input: RegisterInput) {
           cwd: process.cwd(),
           env: { ...process.env, USER_DATABASE_URL: dbUrl },
         }, (error) => {
-          if (error) console.warn(`[Register] User DB schema push failed for ${user.id}:`, error.message);
+          if (error) console.warn(`[Register] User DB schema push failed for ${created.user.id}:`, error.message);
         });
       })
       .catch((err) => {
-        console.warn(`[Register] User DB provisioning skipped for ${user.id}:`, err?.message || err);
+        console.warn(`[Register] User DB provisioning skipped for ${created.user.id}:`, err?.message || err);
       });
   });
 
   return {
-    user: publicUser(user),
-    token: signToken(user, false),
-    refreshToken: signRefreshToken(user.id),
+    user: publicUser(created.user),
+    profile: publicProfile(created.profile),
+    subscription: publicSubscription(created.subscription),
+    settings: {
+      userSettings: created.settings,
+      aiPreference: created.aiPreference,
+      notificationPreference: created.notificationPreference,
+      learningPreference: created.learningPreference,
+    },
+    verificationEmail: created.verificationEmail,
+    token: signToken(created.user, false),
+    refreshToken: created.refreshToken,
   };
 }
 

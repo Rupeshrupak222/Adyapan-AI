@@ -50,17 +50,7 @@ export async function streamChat(
     });
   }
 
-  // 3. Add OpenRouter if key exists
-  if (env.openrouterApiKey) {
-    providers.push({
-      name: "OpenRouter",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      key: env.openrouterApiKey,
-      model: model || "openai/gpt-4o-mini"
-    });
-  }
-
-  // 4. Add Groq if key exists
+  // 3. Add Groq if key exists
   if (env.groqApiKey) {
     let groqModel = "llama-3.3-70b-versatile";
     const modelLower = model.toLowerCase();

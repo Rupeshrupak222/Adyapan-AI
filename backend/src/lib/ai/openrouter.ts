@@ -40,7 +40,7 @@ const NVIDIA_NIM_MODELS = [
   { model: "qwen/qwen2.5-72b-instruct", label: "Qwen 2.5 72B" },
 ];
 
-// Sequential fallback completion engine: Gemini (multiple models) → Groq (multiple models) → OpenRouter
+// Sequential fallback completion engine: NVIDIA NIM (primary) → Gemini (multiple models) → Groq
 export async function callAIRobust(
   messages: OpenRouterMessage[],
   options: OpenRouterOptions
@@ -59,7 +59,21 @@ export async function callAIRobust(
     });
   }
 
-  // 1. Add Google Gemini with fallback models (primary)
+  // 1. Add NVIDIA NIM with 5 keys/models (primary) — key rotation across Llama, DeepSeek, Mistral, Qwen
+  if (env.nvidiaApiKeys && env.nvidiaApiKeys.length > 0) {
+    for (let i = 0; i < env.nvidiaApiKeys.length; i++) {
+      const key = env.nvidiaApiKeys[i];
+      const nvidiaModel = NVIDIA_NIM_MODELS[i % NVIDIA_NIM_MODELS.length];
+      providers.push({
+        name: `NVIDIA NIM (${nvidiaModel.label})`,
+        url: "https://integrate.api.nvidia.com/v1/chat/completions",
+        key,
+        model: nvidiaModel.model,
+      });
+    }
+  }
+
+  // 2. Add Google Gemini with fallback models (secondary)
   if (env.geminiApiKey) {
     const modelLower = options.model?.toLowerCase() ?? "";
     const requestedModel = modelLower.includes("gemini")
@@ -81,7 +95,7 @@ export async function callAIRobust(
     }
   }
 
-  // 2. Add Groq with fallback models (secondary)
+  // 3. Add Groq with fallback models (tertiary)
   if (env.groqApiKey) {
     const modelLower = options.model?.toLowerCase() ?? "";
     const isMiniOrFast = (modelLower.includes("mini") && !modelLower.includes("gemini")) ||
@@ -98,40 +112,6 @@ export async function callAIRobust(
       });
     }
   }
-
-  // 3. Add NVIDIA NIM with 5 keys/models (tertiary) — key rotation across Nemotron, DeepSeek, Mistral, Kimi, GLM
-  if (env.nvidiaApiKeys && env.nvidiaApiKeys.length > 0) {
-    for (let i = 0; i < env.nvidiaApiKeys.length; i++) {
-      const key = env.nvidiaApiKeys[i];
-      const nvidiaModel = NVIDIA_NIM_MODELS[i % NVIDIA_NIM_MODELS.length];
-      providers.push({
-        name: `NVIDIA NIM (${nvidiaModel.label})`,
-        url: "https://integrate.api.nvidia.com/v1/chat/completions",
-        key,
-        model: nvidiaModel.model,
-      });
-    }
-  }
-
-  // 4. Add OpenRouter if key exists (quaternary) — ensures valid OpenRouter model IDs
-  if (env.openrouterApiKey) {
-    let openRouterModel = options.model || "openai/gpt-4o-mini";
-    if (isKimiRequested) {
-      openRouterModel = "moonshotai/kimi-k2.6";
-    } else if (openRouterModel.includes("gemini")) {
-      openRouterModel = "google/gemini-2.0-flash-001";
-    } else if (openRouterModel.includes("llama")) {
-      openRouterModel = "meta-llama/llama-3.3-70b-instruct";
-    }
-
-    providers.push({
-      name: "OpenRouter",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      key: env.openrouterApiKey,
-      model: openRouterModel,
-    });
-  }
-
 
   if (providers.length === 0) {
     throw new Error("No AI providers configured. Please check environment keys.");
@@ -160,8 +140,8 @@ export async function callAIRobust(
         };
 
         if (options.responseFormat?.type === "json_object") {
-          // Only Gemini and OpenRouter support response_format; NVIDIA NIM and Groq do not
-          const supportsResponseFormat = provider.name.includes("Gemini") || provider.name.includes("OpenRouter");
+          // Only Gemini supports response_format; NVIDIA NIM and Groq do not
+          const supportsResponseFormat = provider.name.includes("Gemini");
           if (supportsResponseFormat) {
             body.response_format = { type: "json_object" };
           }
@@ -214,8 +194,9 @@ export async function callAIRobust(
       } catch (e: any) {
         const msg = e.message || String(e);
         const isAbort = e?.name === "AbortError" || msg.includes("abort") || msg.includes("This operation was aborted");
-        const isPermanentError = msg.includes("404") || msg.includes("410") || msg.includes("413") || msg.includes("429") || msg.includes("Quota") || msg.includes("Request too large") || msg.includes("not found");
-        const isTransient = (isAbort || msg.includes("500") || msg.includes("502") || msg.includes("503") || msg.includes("overloaded") || msg.includes("unavailable")) && !isPermanentError;
+        const isPermanentError = msg.includes("404") || msg.includes("410") || msg.includes("413") || msg.includes("Quota") || msg.includes("Request too large") || msg.includes("not found");
+        // 429 (rate limit) is transient: back off and retry the same provider.
+        const isTransient = (isAbort || msg.includes("429") || msg.includes("rate limit") || msg.includes("500") || msg.includes("502") || msg.includes("503") || msg.includes("overloaded") || msg.includes("unavailable")) && !isPermanentError;
         lastError = isAbort ? `${provider.name}: Request timed out` : `${provider.name}: ${msg}`;
 
         if (isTransient && attempt < MAX_RETRIES) {

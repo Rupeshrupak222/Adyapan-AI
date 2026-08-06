@@ -197,16 +197,6 @@ export async function streamCodingAssistant(
     });
   }
 
-  const envOpenRouterKey = process.env.OPENROUTER_API_KEY;
-  if (envOpenRouterKey) {
-    providers.push({
-      name: "OpenRouter",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      key: envOpenRouterKey,
-      model: "google/gemini-2.0-flash",
-    });
-  }
-
   if (providers.length === 0) {
     onError(new Error("No AI providers configured"));
     return;

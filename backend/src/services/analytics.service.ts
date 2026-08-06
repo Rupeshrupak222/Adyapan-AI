@@ -323,7 +323,7 @@ ${JSON.stringify(userDataSummary, null, 2)}
 
 Provide the structured analysis in JSON.`;
 
-    // High quality programmatic fallback in case OpenRouter is down or key is not set
+    // High quality programmatic fallback in case the AI provider is down or key is not set
     const fallbackAIResult: AIAnalyticsResult = {
       learning_score: programmaticScore || 0,
       grade:
