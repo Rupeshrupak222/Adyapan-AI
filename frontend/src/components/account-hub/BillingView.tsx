@@ -349,12 +349,23 @@ export function BillingView() {
     }
   };
 
-  const planLabel =
-    subscription?.plan?.includes("yearly") ? "Pro Yearly"
-      : subscription?.plan?.includes("pro") ? "Pro Monthly"
-      : "Free";
   const isActive = Boolean(subscription?.isActive);
   const isCancelAtPeriodEnd = subscription?.subscriptionStatus === "cancel_at_period_end";
+  const rawPlan = String(subscription?.plan || "").toLowerCase();
+
+  let planLabel = "Free";
+  if (rawPlan.includes("yearly")) {
+    planLabel = "Pro Yearly";
+  } else if (rawPlan.includes("pro_monthly") || rawPlan === "pro" || rawPlan.includes("monthly")) {
+    planLabel = "Pro Monthly";
+  } else if (rawPlan === "enterprise" || subscription?.planKind === "enterprise") {
+    planLabel = "Enterprise";
+  } else if (rawPlan === "premium" || subscription?.planKind === "premium" || (isActive && rawPlan !== "free")) {
+    planLabel = "Pro Premium";
+  } else if (isActive) {
+    planLabel = "Pro Premium";
+  }
+
   const renewalDate = subscription?.nextBillingDate
     ? new Date(subscription.nextBillingDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : "N/A";
@@ -384,7 +395,7 @@ export function BillingView() {
           { label: "Current Plan", val: loading ? "..." : planLabel, icon: <Sparkles className="text-amber-500 animate-pulse" /> },
           { label: "Next Renewal", val: loading ? "..." : renewalDate, icon: <Calendar className="text-cyan-500" /> },
           { label: "Status", val: loading ? "..." : isActive ? (isCancelAtPeriodEnd ? "Cancelling" : "Active") : "Inactive", icon: <Award className="text-emerald-500" /> },
-          { label: "Plan Type", val: loading ? "..." : subscription?.planKind === "free" ? "Free" : "Premium", icon: <FileText className="text-purple-500" /> }
+          { label: "Plan Type", val: loading ? "..." : (isActive || subscription?.planKind !== "free") ? (subscription?.planKind === "enterprise" || rawPlan === "enterprise" ? "Enterprise" : "Premium") : "Free", icon: <FileText className="text-purple-500" /> }
         ].map((card, idx) => (
           <motion.div
             key={idx} custom={idx} variants={fadeUp} initial="hidden" animate="visible"
@@ -428,7 +439,7 @@ export function BillingView() {
               </div>
               <div className="flex justify-between border-b pb-2.5" style={{ borderColor: c.border }}>
                 <span style={{ color: c.textSec }}>Billing Interval</span>
-                <span className="font-bold">{subscription?.plan?.includes("yearly") ? "Yearly" : subscription?.plan ? "Monthly" : "N/A"}</span>
+                <span className="font-bold">{subscription?.plan?.includes("yearly") ? "Yearly" : (isActive || (subscription?.plan && subscription?.plan !== "free")) ? "Monthly" : "N/A"}</span>
               </div>
               <div className="flex justify-between border-b pb-2.5" style={{ borderColor: c.border }}>
                 <span style={{ color: c.textSec }}>Next Renewal Date</span>

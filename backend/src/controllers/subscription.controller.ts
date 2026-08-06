@@ -94,27 +94,43 @@ export async function getOverview(req: Request, res: Response, next: NextFunctio
     });
     if (!user) throw httpError(404, "User not found");
 
-    const [activeSub, usage, invoices, paymentMethods, billingAddress] = await Promise.all([
-      getActiveSubscription(userId),
-      AiUsageService.getUsage(userId, user.plan, user.subscriptionStatus),
+    const activeSub = await getActiveSubscription(userId);
+
+    let effectivePlan = user.plan;
+    if (activeSub?.planCode) {
+      effectivePlan = activeSub.planCode;
+    } else if ((user.subscriptionStatus === "active" || user.subscriptionStatus === "cancel_at_period_end") && (!user.plan || user.plan === "free")) {
+      effectivePlan = "premium";
+    }
+
+    const planKind = normalizePlanKind(effectivePlan);
+    const isActive = user.subscriptionStatus === "active" || user.subscriptionStatus === "cancel_at_period_end";
+
+    if (isActive && user.plan === "free") {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { plan: effectivePlan },
+      }).catch(() => {});
+    }
+
+    const [usage, invoices, paymentMethods, billingAddress] = await Promise.all([
+      AiUsageService.getUsage(userId, effectivePlan, user.subscriptionStatus),
       listInvoices(userId),
       (prisma as any).paymentMethod.findMany({ where: { userId }, orderBy: { isDefault: "desc" } }).catch(() => []),
       (prisma as any).billingAddress.findUnique({ where: { userId } }).catch(() => null),
     ]);
 
-    const planKind = normalizePlanKind(user.plan);
-    const isActive = user.subscriptionStatus === "active" || user.subscriptionStatus === "cancel_at_period_end";
     const planLimits = await Promise.all(
       ["ai-requests", "resume-generate", "mock-interview", "ppt-generate", "notes-generate"].map(async (fk) => ({
         featureKey: fk,
-        ...(await getFeatureLimits(fk, user.plan)),
+        ...(await getFeatureLimits(fk, effectivePlan)),
       }))
     );
 
     res.json({
       success: true,
       subscription: {
-        plan: user.plan,
+        plan: effectivePlan,
         planKind,
         subscriptionStatus: user.subscriptionStatus,
         isActive,

@@ -281,7 +281,7 @@ export default function PremiumPage() {
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold"
             style={{ background: colors.badgeProBg, color: colors.badgeProText, border: colors.badgeProBorder }}>
             <Sparkles className="w-3.5 h-3.5" />
-            {sub?.plan?.includes("yearly") ? "Pro Yearly" : "Pro Monthly"} Active
+            {sub?.plan?.includes("yearly") ? "Pro Yearly" : sub?.plan === "enterprise" ? "Enterprise" : "Pro Premium"} Active
           </div>
         )}
       </header>
