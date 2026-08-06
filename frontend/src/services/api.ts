@@ -71,6 +71,15 @@ api.interceptors.response.use(
       const path = window.location.pathname;
       const isAuthPage = path.startsWith("/login") || path.startsWith("/admin-login") || path.startsWith("/admin-register");
       if (!isAuthPage) {
+        // Tolerating temporary 401s during server deployment / container restarts
+        if (config) {
+          config.__401Retry = (config.__401Retry || 0) + 1;
+          if (config.__401Retry <= 2) {
+            await new Promise((r) => setTimeout(r, 1500));
+            return api(config);
+          }
+        }
+
         localStorage.removeItem("adyapan-token");
         localStorage.removeItem("adyapan-user");
         sessionStorage.removeItem("adyapan-token");
