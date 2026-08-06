@@ -1,11 +1,12 @@
 "use client";
 
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/services/api";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
   Code2, Search, BookMarked, CheckCircle2, AlertCircle, Play, Sparkles,
   Trophy, Clock, RefreshCw, X, ChevronRight, HelpCircle, ExternalLink,
@@ -28,6 +29,16 @@ import {
 } from "@/components/dashboard-shell";
 import type { AdyapanUser } from "@/components/dashboard-shell";
 import { renderMarkdown, inlineFormat } from "@/utils/renderMarkdown";
+
+const CodingDashboardView = dynamic(
+  () => import("@/components/coding-hub/CodingDashboardView").then((m) => m.CodingDashboardView),
+  { ssr: false }
+);
+
+const CodingRoadmapPage = dynamic(
+  () => import("@/app/dashboard/coding/roadmap/page").then((m) => m.default),
+  { ssr: false }
+);
 
 // ─── Loading checklist steps ──────────────────────────────────────────────────
 const loadingSteps = [
@@ -62,10 +73,16 @@ function TypewriterText({ text, speed = 4, isDark = true }: { text: string; spee
   );
 }
 
-export default function CodingHubPage() {
+function CodingHubContent() {
   useRequireAuth("USER");
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawTab = searchParams.get("tab") || searchParams.get("view") || "dsa";
+  const currentTab = rawTab === "dashboard" || rawTab === "coding-dashboard" ? "dashboard"
+    : rawTab === "roadmap" || rawTab === "coding-roadmap" ? "roadmap"
+    : "dsa";
+
   const [user, setUser] = useState<AdyapanUser | null>(null);
   const [theme, setTheme] = useState("dark");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -449,6 +466,36 @@ export default function CodingHubPage() {
           </div>
         ) : (
           <>
+            {/* Sub-navigation Tabs with Query Strings */}
+            <div className="flex items-center gap-2 mb-6 border-b border-[var(--border-color)] pb-3">
+              {[
+                { id: "dashboard", label: "Coding Dashboard", href: "/dashboard/coding?tab=dashboard" },
+                { id: "roadmap", label: "Coding Roadmap", href: "/dashboard/coding?tab=roadmap" },
+                { id: "dsa", label: "DSA Practice", href: "/dashboard/coding?tab=dsa" },
+              ].map((tabItem) => {
+                const isActive = currentTab === tabItem.id;
+                return (
+                  <button
+                    key={tabItem.id}
+                    onClick={() => router.push(tabItem.href)}
+                    className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+                      isActive
+                        ? "bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-sm"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]"
+                    }`}
+                  >
+                    {tabItem.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {currentTab === "dashboard" ? (
+              <CodingDashboardView />
+            ) : currentTab === "roadmap" ? (
+              <CodingRoadmapPage />
+            ) : (
+              <>
             {/* Header Overview Hero */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 mt-2">
           <div>
@@ -837,7 +884,9 @@ export default function CodingHubPage() {
             )}
           </PremiumCard>
         </div>
-        </>
+              </>
+            )}
+          </>
         )}
       </main>
 
@@ -1098,5 +1147,13 @@ export default function CodingHubPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function CodingHubPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[var(--bg-dark)] flex items-center justify-center text-[var(--text-secondary)] font-bold text-xs uppercase tracking-widest">Loading...</div>}>
+      <CodingHubContent />
+    </Suspense>
   );
 }
