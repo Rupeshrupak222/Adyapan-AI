@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useSocket } from "@/context/SocketContext";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
+import { getAuthUser } from "@/hooks/useAuth";
 
 const mkColors = (theme: string) => {
   const isDark = theme === "dark";
@@ -85,18 +86,26 @@ export function NotesGeneratorView() {
     return sections;
   }
 
+  const getUserScopedKey = (baseKey: string) => {
+    try {
+      const u = getAuthUser();
+      const id = u?.id || u?.email;
+      return id ? `${baseKey}-${id}` : baseKey;
+    } catch { return baseKey; }
+  };
+
   const addToHistory = useCallback((newNotes: { topic: string; sections: NoteSection[]; wordCount: number; studyTime: string; difficulty: string; rawContent?: string; formattedHtml?: string }, content: string, parsedSections: NoteSection[]) => {
     setHistory(prev => {
       const newItem = { name: topicRef.current, date: "Just now", type: noteTypeRef.current, sections: parsedSections.length, data: newNotes };
       const updated = [newItem, ...prev.filter(h => h.name !== topicRef.current)].slice(0, 10);
-      localStorage.setItem("adyapan-notes-history", JSON.stringify(updated));
+      localStorage.setItem(getUserScopedKey("adyapan-notes-history"), JSON.stringify(updated));
       return updated;
     });
   }, []);
 
   useEffect(() => {
     try { const raw = localStorage.getItem("adyapan-user"); if (raw) userIdRef.current = (JSON.parse(raw) as { id?: string })?.id ?? ""; } catch { }
-    try { const stored = localStorage.getItem("adyapan-notes-history"); if (stored) setHistory(JSON.parse(stored)); } catch {}
+    try { const stored = localStorage.getItem(getUserScopedKey("adyapan-notes-history")); if (stored) setHistory(JSON.parse(stored)); } catch {}
   }, []);
 
   useEffect(() => {
@@ -372,7 +381,7 @@ export function NotesGeneratorView() {
                               const updated = history.filter(h => h.name !== doc.name);
                               setHistory(updated);
                               try {
-                                localStorage.setItem("adyapan-notes-history", JSON.stringify(updated));
+                                localStorage.setItem(getUserScopedKey("adyapan-notes-history"), JSON.stringify(updated));
                                 toast.success(`Removed "${doc.name}" from history`);
                               } catch { /* ignore */ }
                             }}

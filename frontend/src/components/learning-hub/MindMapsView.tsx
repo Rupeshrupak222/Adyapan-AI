@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/cn";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
+import { getAuthUser } from "@/hooks/useAuth";
 
 const mkColors = (theme: string) => {
   const isDark = theme === "dark";
@@ -507,9 +508,17 @@ export function MindMapsView() {
   const [historySearch, setHistorySearch] = useState("");
   const [history, setHistory] = useState<Array<{ name: string; date: string; count: number; nodes: Node[]; edges: Edge[] }>>([]);
 
+  const getUserScopedKey = (baseKey: string) => {
+    try {
+      const u = getAuthUser();
+      const id = u?.id || u?.email;
+      return id ? `${baseKey}-${id}` : baseKey;
+    } catch { return baseKey; }
+  };
+
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("adyapan-map-history");
+      const stored = localStorage.getItem(getUserScopedKey("adyapan-map-history"));
       if (stored) setHistory(JSON.parse(stored));
     } catch {}
   }, []);
@@ -603,7 +612,7 @@ export function MindMapsView() {
       const item = { name: targetTopic, date: "Just now", count: positioned.length, nodes: positioned, edges: flowEdges };
       const updated = [item, ...history.filter(h => h.name !== targetTopic)].slice(0, 10);
       setHistory(updated);
-      localStorage.setItem("adyapan-map-history", JSON.stringify(updated));
+      localStorage.setItem(getUserScopedKey("adyapan-map-history"), JSON.stringify(updated));
 
       toast.success(`Mind map for "${targetTopic}" generated!`);
     } catch (err: unknown) {
@@ -880,7 +889,7 @@ export function MindMapsView() {
                               const updated = history.filter(h => h.name !== doc.name);
                               setHistory(updated);
                               try {
-                                localStorage.setItem("adyapan-mindmap-history", JSON.stringify(updated));
+                                localStorage.setItem(getUserScopedKey("adyapan-map-history"), JSON.stringify(updated));
                                 toast.success(`Removed "${doc.name}" from history`);
                               } catch { /* ignore */ }
                             }}

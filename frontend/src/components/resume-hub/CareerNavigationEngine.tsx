@@ -6,6 +6,7 @@ import { api } from "@/services/api";
 import type { ResumeHubViewType } from "@/types/resume";
 import { useTheme } from "@/hooks/useTheme";
 import { useConfig } from "@/hooks/useConfig";
+import { getAuthUser } from "@/hooks/useAuth";
 import { mkColors } from "@/utils/themeColors";
 import { fadeUp, scaleIn, slideRight, buttonHover } from "@/utils/animations";
 import { EmptyState } from "@/components/ui/PremiumComponents";
@@ -267,9 +268,19 @@ export function CareerNavigationEngine({ setView }: Props) {
   const coach = roadmapData?.coachFeedback;
   const milestones = roadmapData?.milestones || [];
 
+  const getUserScopedKey = (prefix: string, roadmapId?: string) => {
+    try {
+      const u = getAuthUser();
+      const userId = u?.id || u?.email || "guest";
+      return `${prefix}-${userId}-${roadmapId || "default"}`;
+    } catch {
+      return `${prefix}-${roadmapId || "default"}`;
+    }
+  };
+
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(`adyapan-microtasks-${roadmapRecord?.id || "default"}`);
+      const saved = localStorage.getItem(getUserScopedKey("adyapan-microtasks", roadmapRecord?.id));
       if (saved) setCheckedMicroTasks(JSON.parse(saved));
       else setCheckedMicroTasks({});
     } catch { }
@@ -279,13 +290,13 @@ export function CareerNavigationEngine({ setView }: Props) {
     const next = { ...checkedMicroTasks, [taskText]: !checkedMicroTasks[taskText] };
     setCheckedMicroTasks(next);
     try {
-      localStorage.setItem(`adyapan-microtasks-${roadmapRecord?.id || "default"}`, JSON.stringify(next));
+      localStorage.setItem(getUserScopedKey("adyapan-microtasks", roadmapRecord?.id), JSON.stringify(next));
     } catch { }
   };
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(`adyapan-objectives-${roadmapRecord?.id || "default"}`);
+      const saved = localStorage.getItem(getUserScopedKey("adyapan-objectives", roadmapRecord?.id));
       if (saved) setCheckedObjectives(JSON.parse(saved));
       else setCheckedObjectives({});
     } catch { }
@@ -297,7 +308,7 @@ export function CareerNavigationEngine({ setView }: Props) {
     const next = { ...checkedObjectives, [key]: !checkedObjectives[key] };
     setCheckedObjectives(next);
     try {
-      localStorage.setItem(`adyapan-objectives-${roadmapRecord?.id || "default"}`, JSON.stringify(next));
+      localStorage.setItem(getUserScopedKey("adyapan-objectives", roadmapRecord?.id), JSON.stringify(next));
     } catch { }
 
     const phase = phases[phaseIndex];

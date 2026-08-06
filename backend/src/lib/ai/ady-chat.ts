@@ -20,19 +20,21 @@ export async function streamChat(
 ): Promise<void> {
   const providers = [];
 
-  // 1. Add NVIDIA NIM if key exists (primary for chat)
-  if (env.nvidiaApiKey) {
-    let nvidiaModel = "z-ai/glm-5.2";
-    if (model.includes("deepseek-ai/")) nvidiaModel = model;
-    else if (model.includes("z-ai/")) nvidiaModel = model;
-    else if (model.includes("moonshotai/")) nvidiaModel = model;
-    else if (model.includes("mistralai/")) nvidiaModel = model;
-    else if (model.includes("gemini")) nvidiaModel = "deepseek-ai/deepseek-v4-flash";
+  // 1. Add OpenRouter if key exists (primary for chat — fast models)
+  if (env.openrouterApiKey) {
+    let orModel = "openai/gpt-4o-mini";
+    const modelLower = model.toLowerCase();
+    if (modelLower.includes("kimi")) orModel = "moonshotai/kimi-k2";
+    else if (modelLower.includes("gemini")) orModel = "google/gemini-2.0-flash";
+    else if (modelLower.includes("deepseek")) orModel = "deepseek/deepseek-chat";
+    else if (modelLower.includes("llama")) orModel = "meta-llama/llama-3.3-70b-instruct";
+    else if (modelLower.includes("mistral")) orModel = "mistralai/mistral-medium";
+    else if (modelLower.includes("glm")) orModel = "z-ai/glm-4.5";
     providers.push({
-      name: "NVIDIA",
-      url: "https://integrate.api.nvidia.com/v1/chat/completions",
-      key: env.nvidiaApiKey,
-      model: nvidiaModel,
+      name: "OpenRouter",
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      key: env.openrouterApiKey,
+      model: orModel,
     });
   }
 
@@ -65,6 +67,22 @@ export async function streamChat(
       url: "https://api.groq.com/openai/v1/chat/completions",
       key: env.groqApiKey,
       model: groqModel
+    });
+  }
+
+  // 4. Add NVIDIA NIM if key exists (fallback only)
+  if (env.nvidiaApiKey) {
+    let nvidiaModel = "deepseek-ai/deepseek-v4-flash";
+    if (model.includes("deepseek-ai/")) nvidiaModel = model;
+    else if (model.includes("z-ai/")) nvidiaModel = model;
+    else if (model.includes("moonshotai/")) nvidiaModel = model;
+    else if (model.includes("mistralai/")) nvidiaModel = model;
+    else if (model.includes("gemini")) nvidiaModel = "deepseek-ai/deepseek-v4-flash";
+    providers.push({
+      name: "NVIDIA",
+      url: "https://integrate.api.nvidia.com/v1/chat/completions",
+      key: env.nvidiaApiKey,
+      model: nvidiaModel,
     });
   }
 

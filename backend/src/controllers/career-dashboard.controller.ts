@@ -1036,31 +1036,37 @@ Write a personalized dashboard analysis.`;
 
   // Save/update snapshot in database
   try {
-    await userPrisma.careerDashboardSnapshot.upsert({
-      where: { userId },
-      create: {
-        userId,
-        overallReadiness: baseline.scores.overall,
-        codingScore: baseline.scores.coding,
-        learningScore: baseline.scores.learning,
-        resumeScore: baseline.scores.resume,
-        atsScore: baseline.scores.ats,
-        linkedinScore: baseline.scores.linkedin,
-        dashboardJson: baseline,
-      },
-      update: {
-        overallReadiness: baseline.scores.overall,
-        codingScore: baseline.scores.coding,
-        learningScore: baseline.scores.learning,
-        resumeScore: baseline.scores.resume,
-        atsScore: baseline.scores.ats,
-        linkedinScore: baseline.scores.linkedin,
-        dashboardJson: baseline,
-        createdAt: new Date(),
-      }
-    });
+    const existing = await userPrisma.careerDashboardSnapshot.findFirst({ where: { userId } });
+    if (existing) {
+      await userPrisma.careerDashboardSnapshot.update({
+        where: { id: existing.id },
+        data: {
+          overallReadiness: baseline.scores.overall,
+          codingScore: baseline.scores.coding,
+          learningScore: baseline.scores.learning,
+          resumeScore: baseline.scores.resume,
+          atsScore: baseline.scores.ats,
+          linkedinScore: baseline.scores.linkedin,
+          dashboardJson: baseline,
+          createdAt: new Date(),
+        },
+      });
+    } else {
+      await userPrisma.careerDashboardSnapshot.create({
+        data: {
+          userId,
+          overallReadiness: baseline.scores.overall,
+          codingScore: baseline.scores.coding,
+          learningScore: baseline.scores.learning,
+          resumeScore: baseline.scores.resume,
+          atsScore: baseline.scores.ats,
+          linkedinScore: baseline.scores.linkedin,
+          dashboardJson: baseline,
+        },
+      });
+    }
   } catch (dbErr) {
-    console.error("[Career Dashboard Snapshot] Database upsert failed:", dbErr);
+    console.error("[Career Dashboard Snapshot] Database save failed:", dbErr);
   }
 
   return baseline;

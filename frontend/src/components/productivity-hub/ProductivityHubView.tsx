@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { stripMarkdown } from "@/utils/stripMarkdown";
 import { toast } from "sonner";
 import { api } from "@/services/api";
+import { getAuthUser } from "@/hooks/useAuth";
 import {
   Search, Calendar, DollarSign, Send, Sparkles, CheckCircle2,
   XCircle, Info, Heart, ArrowRight, Share2, Trash2, Plus, Clock,
@@ -118,9 +119,17 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
     else if (activeModule === "prod-content") setTab("content");
   }, [activeModule]);
 
+  const getUserScopedKey = (baseKey: string) => {
+    try {
+      const u = getAuthUser();
+      const id = u?.id || u?.email;
+      return id ? `${baseKey}-${id}` : baseKey;
+    } catch { return baseKey; }
+  };
+
   // Load drafts from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("ady-productivity-docs");
+    const saved = localStorage.getItem(getUserScopedKey("ady-productivity-docs"));
     if (saved) {
       try { setSavedDocs(JSON.parse(saved)); } catch { /* ignore */ }
     }
@@ -163,7 +172,7 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
     };
     const updated = [newDoc, ...savedDocs];
     setSavedDocs(updated);
-    localStorage.setItem("ady-productivity-docs", JSON.stringify(updated));
+    localStorage.setItem(getUserScopedKey("ady-productivity-docs"), JSON.stringify(updated));
     setCreditsUsed(prev => Math.min(prev + 2, 100));
     alert("💾 Draft saved successfully to your dashboard history.");
   };

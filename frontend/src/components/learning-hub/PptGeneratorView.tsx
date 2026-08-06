@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useSocket } from "@/context/SocketContext";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
+import { getAuthUser } from "@/hooks/useAuth";
 
 const mkColors = (theme: string) => {
   const isDark = theme === "dark";
@@ -291,18 +292,26 @@ export function PptGeneratorView() {
   useEffect(() => { topicRef.current = topic; }, [topic]);
   useEffect(() => { slideCountRef.current = slideCount; }, [slideCount]);
 
+  const getUserScopedKey = (baseKey: string) => {
+    try {
+      const u = getAuthUser();
+      const id = u?.id || u?.email;
+      return id ? `${baseKey}-${id}` : baseKey;
+    } catch { return baseKey; }
+  };
+
   const addToHistory = useCallback((slideList: Slide[]) => {
     setHistory(prev => {
       const newItem = { name: topicRef.current, date: "Just now", count: slideList.length, data: slideList };
       const updated = [newItem, ...prev.filter(h => h.name !== topicRef.current)].slice(0, 10);
-      localStorage.setItem("adyapan-ppt-history", JSON.stringify(updated));
+      localStorage.setItem(getUserScopedKey("adyapan-ppt-history"), JSON.stringify(updated));
       return updated;
     });
   }, []);
 
   useEffect(() => {
     try { const raw = localStorage.getItem("adyapan-user"); if (raw) userIdRef.current = (JSON.parse(raw) as { id?: string })?.id ?? ""; } catch { }
-    try { const stored = localStorage.getItem("adyapan-ppt-history"); if (stored) setHistory(JSON.parse(stored)); } catch {}
+    try { const stored = localStorage.getItem(getUserScopedKey("adyapan-ppt-history")); if (stored) setHistory(JSON.parse(stored)); } catch {}
   }, []);
 
   useEffect(() => {
@@ -501,7 +510,7 @@ export function PptGeneratorView() {
                               const updated = history.filter(h => h.name !== doc.name);
                               setHistory(updated);
                               try {
-                                localStorage.setItem("adyapan-ppt-history", JSON.stringify(updated));
+                                localStorage.setItem(getUserScopedKey("adyapan-ppt-history"), JSON.stringify(updated));
                                 toast.success(`Removed "${doc.name}" from history`);
                               } catch { /* ignore */ }
                             }}

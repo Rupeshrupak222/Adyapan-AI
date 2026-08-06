@@ -9,6 +9,7 @@ export const env = {
   adminRegisterSecret: process.env.ADMIN_REGISTER_SECRET ?? "adyapan-admin-secret-2026",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   groqApiKey: process.env.GROQ_API_KEY ?? "",
+  openrouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
   nvidiaApiKey: process.env.NVIDIA_API_KEY ?? "",
   nvidiaApiKey2: process.env.NVIDIA_API_KEY_2 ?? "",
   nvidiaApiKey3: process.env.NVIDIA_API_KEY_3 ?? "",

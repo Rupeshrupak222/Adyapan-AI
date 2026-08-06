@@ -68,6 +68,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
+import { getAuthUser } from "@/hooks/useAuth";
 import { renderMarkdown } from "@/utils/renderMarkdown";
 import { ChatBackground } from "@/components/ady-chat/ChatBackground";
 import Editor from "@monaco-editor/react";
@@ -1072,9 +1073,16 @@ export function GithubPortfolioView() {
 
   // Load saved username / PAT
   useEffect(() => {
-    const savedUser = localStorage.getItem("adyapan-github-username");
+    const getUserScopedKey = (baseKey: string) => {
+      try {
+        const u = getAuthUser();
+        const id = u?.id || u?.email;
+        return id ? `${baseKey}-${id}` : baseKey;
+      } catch { return baseKey; }
+    };
+    const savedUser = localStorage.getItem(getUserScopedKey("adyapan-github-username"));
     if (savedUser) setUsername(savedUser);
-    const savedPat = localStorage.getItem("adyapan-github-pat");
+    const savedPat = localStorage.getItem(getUserScopedKey("adyapan-github-pat"));
     if (savedPat) setGithubPat(savedPat);
     refreshHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps

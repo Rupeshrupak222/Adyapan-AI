@@ -40,7 +40,25 @@ const NVIDIA_NIM_MODELS = [
   { model: "qwen/qwen2.5-72b-instruct", label: "Qwen 2.5 72B" },
 ];
 
-// Sequential fallback completion engine: NVIDIA NIM (primary) → Gemini (multiple models) → Groq
+const FAST_OPENROUTER_DEFAULT = "openai/gpt-4o-mini";
+
+// Maps any requested model hint to a valid, fast OpenRouter model id. NVIDIA
+// NIM ids (e.g. "deepseek-ai/deepseek-v4-flash") are not valid on OpenRouter,
+// so they are translated to their fast OpenRouter equivalents.
+function resolveOpenRouterModel(requestedModel?: string): string {
+  const lower = (requestedModel ?? "").toLowerCase();
+  if (!lower) return FAST_OPENROUTER_DEFAULT;
+  if (lower.includes("kimi")) return "moonshotai/kimi-k2";
+  if (lower.includes("gemini")) return "google/gemini-2.0-flash";
+  if (lower.includes("llama")) return "meta-llama/llama-3.3-70b-instruct";
+  if (lower.includes("deepseek")) return "deepseek/deepseek-chat";
+  if (lower.includes("mistral")) return "mistralai/mistral-medium";
+  if (lower.includes("qwen")) return "qwen/qwen-2.5-72b-instruct";
+  if (lower.includes("glm")) return "z-ai/glm-4.5";
+  return FAST_OPENROUTER_DEFAULT;
+}
+
+// Sequential fallback completion engine: OpenRouter (primary, fast models) → Gemini → Groq → NVIDIA NIM (fallback)
 export async function callAIRobust(
   messages: OpenRouterMessage[],
   options: OpenRouterOptions
@@ -59,18 +77,14 @@ export async function callAIRobust(
     });
   }
 
-  // 1. Add NVIDIA NIM with 5 keys/models (primary) — key rotation across Llama, DeepSeek, Mistral, Qwen
-  if (env.nvidiaApiKeys && env.nvidiaApiKeys.length > 0) {
-    for (let i = 0; i < env.nvidiaApiKeys.length; i++) {
-      const key = env.nvidiaApiKeys[i];
-      const nvidiaModel = NVIDIA_NIM_MODELS[i % NVIDIA_NIM_MODELS.length];
-      providers.push({
-        name: `NVIDIA NIM (${nvidiaModel.label})`,
-        url: "https://integrate.api.nvidia.com/v1/chat/completions",
-        key,
-        model: nvidiaModel.model,
-      });
-    }
+  // 1. Add OpenRouter if key exists (primary) — fast models, valid OpenRouter IDs
+  if (env.openrouterApiKey) {
+    providers.push({
+      name: "OpenRouter",
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      key: env.openrouterApiKey,
+      model: isKimiRequested ? "moonshotai/kimi-k2" : resolveOpenRouterModel(options.model),
+    });
   }
 
   // 2. Add Google Gemini with fallback models (secondary)
@@ -113,6 +127,20 @@ export async function callAIRobust(
     }
   }
 
+  // 4. Add NVIDIA NIM (fallback) — key rotation across Llama, DeepSeek, Mistral, Qwen
+  if (env.nvidiaApiKeys && env.nvidiaApiKeys.length > 0) {
+    for (let i = 0; i < env.nvidiaApiKeys.length; i++) {
+      const key = env.nvidiaApiKeys[i];
+      const nvidiaModel = NVIDIA_NIM_MODELS[i % NVIDIA_NIM_MODELS.length];
+      providers.push({
+        name: `NVIDIA NIM (${nvidiaModel.label})`,
+        url: "https://integrate.api.nvidia.com/v1/chat/completions",
+        key,
+        model: nvidiaModel.model,
+      });
+    }
+  }
+
   if (providers.length === 0) {
     throw new Error("No AI providers configured. Please check environment keys.");
   }
@@ -140,8 +168,8 @@ export async function callAIRobust(
         };
 
         if (options.responseFormat?.type === "json_object") {
-          // Only Gemini supports response_format; NVIDIA NIM and Groq do not
-          const supportsResponseFormat = provider.name.includes("Gemini");
+          // Gemini and OpenRouter support response_format; NVIDIA NIM and Groq do not
+          const supportsResponseFormat = provider.name.includes("Gemini") || provider.name.includes("OpenRouter");
           if (supportsResponseFormat) {
             body.response_format = { type: "json_object" };
           }
@@ -434,16 +462,16 @@ function enforceSchema<T>(parsed: any, fallback: T): T {
 }
 
 // Default model presets for different task categories
-// Each module is mapped to its optimal NVIDIA model
+// Fast OpenRouter models are the default; NVIDIA NIM remains as the fallback provider.
 export const MODELS = {
-  FAST: "deepseek-ai/deepseek-v4-flash",       // Study Assistant, Notes, Assignment, ATS fast, Proctoring
-  BALANCED: "z-ai/glm-5.2",                    // Resume Builder, Interview, Coding Assistant, LinkedIn, DSA
-  POWERFUL: "moonshotai/kimi-k2.6",             // Research Paper, Code Generation, PPT, Enhanced MindMap/Quiz
-  CODE: "deepseek-ai/deepseek-v4-flash",        // Code Gen, Debug, Explain, AI Coding Analysis
-  CHEAP: "deepseek-ai/deepseek-v4-flash",       // Cheapest option
-  SUMMARIZATION: "mistralai/mistral-medium-3.5-128b", // Research Summarization, writing
-  CHAT: "z-ai/glm-5.2",                        // AI Chat default
-  EMBEDDING: "nvidia/nemotron-3-embed-1b",      // RAG/Search embeddings
+  FAST: "openai/gpt-4o-mini",              // Study Assistant, Notes, Assignment, ATS fast, Proctoring
+  BALANCED: "openai/gpt-4o-mini",          // Resume Builder, Interview, Coding Assistant, LinkedIn, DSA
+  POWERFUL: "google/gemini-2.0-flash",     // Research Paper, Code Generation, PPT, Enhanced MindMap/Quiz
+  CODE: "openai/gpt-4o-mini",              // Code Gen, Debug, Explain, AI Coding Analysis
+  CHEAP: "openai/gpt-4o-mini",             // Cheapest option
+  SUMMARIZATION: "openai/gpt-4o-mini",     // Research Summarization, writing
+  CHAT: "openai/gpt-4o-mini",              // AI Chat default
+  EMBEDDING: "nvidia/nemotron-3-embed-1b", // RAG/Search embeddings
 } as const;
 
 //Centralized Multi-LLM Orchestration Layer

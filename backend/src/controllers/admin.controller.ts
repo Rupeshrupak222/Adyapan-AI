@@ -1256,14 +1256,14 @@ export async function getPremiumAnalytics(_req: Request, res: Response, next: Ne
 
 // ─── 11b. System Integrations Status ─────────────────────────────
 
-const INTEGRATION_KEYS = ["gemini", "openai", "claude", "groq", "nvidia"] as const;
+const INTEGRATION_KEYS = ["gemini", "openai", "claude", "groq", "openrouter"] as const;
 
 export async function getAdminIntegrations(_req: Request, res: Response, next: NextFunction) {
   try {
     const providerKeyMap: Record<string, string> = {
       gemini: env.geminiApiKey,
       groq: env.groqApiKey,
-      nvidia: env.nvidiaApiKey,
+      openrouter: env.openrouterApiKey,
       openai: "",
       claude: "",
     };

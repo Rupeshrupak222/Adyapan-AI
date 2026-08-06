@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
+import { getAuthUser } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const mkColors = (theme: string) => {
@@ -169,12 +170,26 @@ export function FlashcardsView() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
   const [level, setLevel] = useState(() => {
-    if (typeof window !== "undefined") return Number(localStorage.getItem("flashcard-level") || "4");
-    return 4;
+    if (typeof window !== "undefined") {
+      try {
+        const u = getAuthUser();
+        const key = u?.id ? `flashcard-level-${u.id}` : "flashcard-level";
+        const saved = localStorage.getItem(key);
+        if (saved) return Number(saved);
+      } catch {}
+    }
+    return 1;
   });
   const [studyStreak, setStudyStreak] = useState(() => {
-    if (typeof window !== "undefined") return Number(localStorage.getItem("flashcard-streak") || "3");
-    return 3;
+    if (typeof window !== "undefined") {
+      try {
+        const u = getAuthUser();
+        const key = u?.id ? `flashcard-streak-${u.id}` : "flashcard-streak";
+        const saved = localStorage.getItem(key);
+        if (saved) return Number(saved);
+      } catch {}
+    }
+    return 0;
   });
   const [memoryPackIndices, setMemoryPackIndices] = useState<number[]>([]);
   const [isMemoryModeActive, setIsMemoryModeActive] = useState(false);

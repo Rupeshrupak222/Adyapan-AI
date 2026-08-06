@@ -167,13 +167,13 @@ export async function streamCodingAssistant(
 ) {
   const providers: Array<{ name: string; url: string; key: string; model: string }> = [];
 
-  // 1. NVIDIA NIM (primary for coding)
-  if (env.nvidiaApiKey) {
+  // 1. OpenRouter (primary for coding — fast models)
+  if (env.openrouterApiKey) {
     providers.push({
-      name: "NVIDIA",
-      url: "https://integrate.api.nvidia.com/v1/chat/completions",
-      key: env.nvidiaApiKey,
-      model: "z-ai/glm-5.2",
+      name: "OpenRouter",
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      key: env.openrouterApiKey,
+      model: "openai/gpt-4o-mini",
     });
   }
 
@@ -194,6 +194,16 @@ export async function streamCodingAssistant(
       url: "https://api.groq.com/openai/v1/chat/completions",
       key: envGroqKey,
       model: "llama-3.3-70b-versatile",
+    });
+  }
+
+  // 4. NVIDIA NIM (fallback only)
+  if (env.nvidiaApiKey) {
+    providers.push({
+      name: "NVIDIA",
+      url: "https://integrate.api.nvidia.com/v1/chat/completions",
+      key: env.nvidiaApiKey,
+      model: "z-ai/glm-5.2",
     });
   }
 

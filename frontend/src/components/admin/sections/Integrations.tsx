@@ -21,7 +21,7 @@ interface SettingsData {
     openai: ApiKeyInfo;
     claude: ApiKeyInfo;
     groq: ApiKeyInfo;
-    nvidia: ApiKeyInfo;
+    openrouter: ApiKeyInfo;
   };
   connectedAccounts: {
     google: boolean;
@@ -46,7 +46,7 @@ const PROVIDERS: ProviderDef[] = [
   { id: "gemini", name: "Gemini", icon: <Gem size={16} />, description: "Gemini Pro, Flash multimodal models", kind: "api", color: "#4285f4" },
   { id: "claude", name: "Claude", icon: <Brain size={16} />, description: "Anthropic Claude language models", kind: "api", color: "#d97757" },
   { id: "groq", name: "Groq", icon: <MessageSquare size={16} />, description: "Low-latency inference API", kind: "api", color: "#f55036" },
-  { id: "nvidia", name: "NVIDIA", icon: <Plug size={16} />, description: "NVIDIA NIM — Llama, DeepSeek, Mistral, Qwen models", kind: "api", color: "#76b900" },
+  { id: "openrouter", name: "OpenRouter", icon: <Plug size={16} />, description: "Fast unified models — GPT-4o mini, Gemini Flash, Kimi", kind: "api", color: "#7c3aed" },
   { id: "google", name: "Google", icon: <Globe size={16} />, description: "OAuth sign-in and Google services", kind: "oauth", color: "#ea4335" },
   { id: "github", name: "GitHub", icon: <GitBranch size={16} />, description: "OAuth sign-in and repository access", kind: "oauth", color: "#24292e" },
   { id: "microsoft", name: "Microsoft", icon: <Monitor size={16} />, description: "OAuth sign-in and Microsoft services", kind: "oauth", color: "#00a4ef" },
