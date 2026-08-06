@@ -936,17 +936,8 @@ export function MindMapsView() {
                   <form onSubmit={handleGenerate} className="space-y-5">
                     <div className="space-y-1">
                       <label className="text-xs font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Enter Topic</label>
-                      <input type="text" value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Cellular Respiration, React Lifecycle"
+                      <input type="text" value={topic} onChange={e => setTopic(e.target.value)} placeholder="Enter a topic to generate a mind map..."
                         className="w-full rounded-xl px-4 py-3 text-sm transition-all focus:outline-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }} />
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <span className="text-[10px] font-semibold uppercase" style={{ color: c.textMuted }}>Demo:</span>
-                        {["Gradient Descent", "Neural Networks", "React Lifecycle"].map(t => (
-                          <button key={t} type="button" onClick={() => setTopic(t)}
-                            className="text-xs px-2.5 py-1 rounded-lg border transition-all" style={{ background: topic === t ? c.amberActive : c.pill, borderColor: topic === t ? c.amberBorder : c.pillBorder, color: topic === t ? c.amber : c.textSec }}>
-                            {t}
-                          </button>
-                        ))}
-                      </div>
                     </div>
 
                     <div className="space-y-2">

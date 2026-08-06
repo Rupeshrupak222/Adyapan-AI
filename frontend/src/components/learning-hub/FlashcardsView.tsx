@@ -425,24 +425,12 @@ export function FlashcardsView() {
                       <div className="relative">
                         <input
                           type="text"
-                          placeholder="Enter topic (e.g., Gradient Descent, SQL Joins...)"
+                          placeholder="Enter a topic to generate flashcards..."
                           value={inputTopic}
                           onChange={(e) => setInputTopic(e.target.value)}
                           className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none"
                           style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}
                         />
-                      </div>
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {presets.map((preset) => (
-                          <button
-                            key={preset}
-                            onClick={() => setInputTopic(preset)}
-                            className="px-3 py-1 rounded-lg text-xs transition-all cursor-pointer"
-                            style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textSec }}
-                          >
-                            {preset}
-                          </button>
-                        ))}
                       </div>
                     </div>
 

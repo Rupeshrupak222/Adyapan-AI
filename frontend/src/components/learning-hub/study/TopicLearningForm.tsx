@@ -46,15 +46,6 @@ export function TopicLearningForm({ c, inputTopic, setInputTopic, duration, setD
                 <Sparkles size={16} />
               </button>
             </div>
-            <div className="flex flex-wrap gap-2 pt-1.5">
-              {examples.map(ex => (
-                <button key={ex} onClick={() => { setInputTopic(ex); onGenerate(ex); }}
-                  className="px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer"
-                  style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.textMuted }}>
-                  {ex}
-                </button>
-              ))}
-            </div>
           </div>
           <div className="space-y-6">
             <div className="space-y-3">

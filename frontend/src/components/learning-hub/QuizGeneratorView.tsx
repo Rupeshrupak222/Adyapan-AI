@@ -707,23 +707,10 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
                   <p className="text-xs font-black uppercase tracking-widest" style={{ color: c.textMuted }}>What do you want to be quizzed on?</p>
                   <div className="relative">
                     <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#52525b" }} />
-                    <input type="text" placeholder="e.g. Gradient Descent, SQL Joins, React Hooks…" value={topic}
+                    <input type="text" placeholder="Enter a topic to generate quiz..." value={topic}
                       onChange={e => setTopic(e.target.value)} onKeyDown={e => e.key === "Enter" && topic.trim() && generateQuiz()}
                       className="w-full rounded-xl pl-10 pr-4 py-3 text-sm transition-all focus:outline-none"
                       style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }} />
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {TOPIC_PRESETS.map(ex => (
-                      <button key={ex} onClick={() => setTopic(ex)}
-                        className="px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition-all cursor-pointer"
-                        style={{
-                          background: topic === ex ? accent.bg : c.pill,
-                          border: `1px solid ${topic === ex ? accent.border : c.pillBorder}`,
-                          color: topic === ex ? accent.text : c.textMuted,
-                        }}>
-                        {ex}
-                      </button>
-                    ))}
                   </div>
                 </div>
               </motion.div>
