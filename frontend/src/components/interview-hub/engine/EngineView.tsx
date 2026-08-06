@@ -292,7 +292,7 @@ export default function EngineView({ theme }: EngineViewProps) {
           </motion.div>
         )}
 
-        {screen === "active" && sessionId && config && (
+        {screen === "active" && config && (
           <motion.div
             key="active"
             initial={{ opacity: 0, scale: 0.98 }}
@@ -301,7 +301,7 @@ export default function EngineView({ theme }: EngineViewProps) {
             transition={{ duration: 0.4 }}
           >
             <EngineInterview
-              sessionId={sessionId}
+              sessionId={sessionId || `engine-session-${Date.now()}`}
               config={config}
               onComplete={handleInterviewComplete}
               onEnd={handleInterviewEnd}

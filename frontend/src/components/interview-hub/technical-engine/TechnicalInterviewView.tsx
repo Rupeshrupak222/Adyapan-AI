@@ -676,7 +676,7 @@ export default function TechnicalInterviewView({
     );
   }
 
-  if (screen === "active" && sessionId) {
+  if (screen === "active") {
     return (
       <>
         <InterviewRouteGuard
@@ -690,7 +690,7 @@ export default function TechnicalInterviewView({
           isDark={isDark}
         />
         <TechnicalInterviewActive
-          sessionId={sessionId}
+          sessionId={sessionId || `tech-session-${Date.now()}`}
           config={config}
           initialQuestion={initialQuestion}
           onComplete={() => {

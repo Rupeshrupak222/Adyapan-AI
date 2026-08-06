@@ -227,10 +227,17 @@ export function useInterviewLifecycle({
     };
   }, [lifecycleState, executeAtomicTerminationSequence]);
 
-  // Cleanup on unmount (when user switches pages or exits interview)
+  const lifecycleStateRef = useRef<InterviewLifecycleState>(lifecycleState);
+  useEffect(() => {
+    lifecycleStateRef.current = lifecycleState;
+  }, [lifecycleState]);
+
+  // Cleanup on unmount (when user switches pages or exits an active interview)
   useEffect(() => {
     return () => {
-      executeAtomicTerminationSequence();
+      if (lifecycleStateRef.current === "INTERVIEW_ACTIVE") {
+        executeAtomicTerminationSequence();
+      }
     };
   }, [executeAtomicTerminationSequence]);
 

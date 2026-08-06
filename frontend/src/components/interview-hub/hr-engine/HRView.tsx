@@ -250,9 +250,9 @@ export default function HRView({ theme }: HRViewProps) {
             <HRLoading config={config} onComplete={handleLoadingComplete} theme={theme} />
           </motion.div>
         )}
-        {screen === "active" && sessionId && config && (
+        {screen === "active" && config && (
           <motion.div key="active" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.4 }}>
-            <HRInterviewActive sessionId={sessionId} config={config} initialMessages={messages} onComplete={handleInterviewComplete} onEnd={handleInterviewEnd} theme={theme} />
+            <HRInterviewActive sessionId={sessionId || `hr-session-${Date.now()}`} config={config} initialMessages={messages} onComplete={handleInterviewComplete} onEnd={handleInterviewEnd} theme={theme} />
           </motion.div>
         )}
         {screen === "report" && sessionId && evaluation && config && (
