@@ -82,4 +82,34 @@ describe("errorHandler", () => {
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({ success: false, message: "Unauthorized", error: "Unauthorized" });
   });
+
+  it("passes through a machine-readable code when present", () => {
+    process.env.NODE_ENV = "development";
+    const errorHandler = loadHandler();
+    const res = createMockResponse();
+    const err = Object.assign(new Error("This email is already registered. Please sign in or use another email address."), {
+      statusCode: 409,
+      code: "EMAIL_ALREADY_EXISTS",
+    });
+
+    errorHandler(err, {} as Request, res, jest.fn());
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      message: "This email is already registered. Please sign in or use another email address.",
+      error: "This email is already registered. Please sign in or use another email address.",
+      code: "EMAIL_ALREADY_EXISTS",
+    });
+  });
+
+  it("omits the code from the response when the error has none", () => {
+    process.env.NODE_ENV = "development";
+    const errorHandler = loadHandler();
+    const res = createMockResponse();
+
+    errorHandler(Object.assign(new Error("nope"), { statusCode: 400 }), {} as Request, res, jest.fn());
+
+    expect(res.json).toHaveBeenCalledWith({ success: false, message: "nope", error: "nope" });
+  });
 });

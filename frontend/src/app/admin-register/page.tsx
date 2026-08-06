@@ -26,6 +26,7 @@ export default function AdminRegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState(false);
 
   useEffect(() => {
     const saved = (localStorage.getItem("adyapan-theme") as "dark" | "light") || "dark";
@@ -63,6 +64,7 @@ export default function AdminRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setEmailError(false);
     if (form.password !== form.confirm) {
       setError("Passwords do not match.");
       return;
@@ -77,9 +79,15 @@ export default function AdminRegisterPage() {
       });
       saveAuthSession(data.token, data.user);
       router.replace("/dashboard/admin");
-    } catch (err: any) {
-      const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
-      setError(serverMsg || "Registration failed. Check your admin secret.");
+    } catch (err: unknown) {
+      const data = (err as { response?: { data?: { code?: string; message?: string; error?: string } } })?.response?.data;
+      if (data?.code === "EMAIL_ALREADY_EXISTS") {
+        setEmailError(true);
+        setError("This email is already registered. Please sign in to the Admin Dashboard instead.");
+      } else {
+        const serverMsg = data?.message || data?.error;
+        setError(serverMsg || "Registration failed. Check your admin secret.");
+      }
     } finally {
 
       setLoading(false);
@@ -194,10 +202,10 @@ export default function AdminRegisterPage() {
                   required
                   placeholder={f.placeholder}
                   value={form[f.key]}
-                  onChange={set(f.key)}
-                  style={inpStyle}
+                  onChange={f.key === "email" ? (e) => { if (emailError) setEmailError(false); set(f.key)(e); } : set(f.key)}
+                  style={f.key === "email" && emailError ? { ...inpStyle, border: `1px solid #ef4444` } : inpStyle}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "#f59e0b")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = inputBdr)}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = emailError && f.key === "email" ? "#ef4444" : inputBdr)}
                 />
                 {f.toggle && (
                   <button

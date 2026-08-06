@@ -19,6 +19,7 @@ interface ChatSidebarProps {
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string, e: React.MouseEvent) => void;
   userName?: string;
+  userPlan?: string;
 }
 
 function groupSessionsByDate(sessions: ChatSession[]) {
@@ -55,9 +56,22 @@ export function ChatSidebar({
   onSelectSession,
   onDeleteSession,
   userName,
+  userPlan,
 }: ChatSidebarProps) {
   const [search, setSearch] = useState("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  const normalizedPlan = (userPlan || "").toLowerCase();
+  const isPremiumUser = Boolean(
+    normalizedPlan &&
+    normalizedPlan !== "free" &&
+    normalizedPlan !== "none"
+  );
+  const planLabel = normalizedPlan.includes("yearly")
+    ? "Pro Yearly"
+    : normalizedPlan.includes("enterprise")
+    ? "Enterprise"
+    : "Premium";
 
   const filtered = sessions.filter(s =>
     s.title.toLowerCase().includes(search.toLowerCase())
@@ -99,18 +113,17 @@ export function ChatSidebar({
                 onClick={onToggle}
                 className="flex items-center justify-center rounded-xl flex-shrink-0"
                 style={{
-                  width: 40,
-                  height: 40,
+                  width: 36,
+                  height: 36,
                   background: "linear-gradient(135deg, #f59e0b, #d97706)",
                   color: "#000",
-                  boxShadow: "0 3px 12px rgba(245,158,11,0.3)",
+                  boxShadow: "0 2px 10px rgba(245,158,11,0.3)",
                 }}
-                whileHover={{ scale: 1.05, boxShadow: "0 5px 18px rgba(245,158,11,0.45)" }}
-                whileTap={{ scale: 0.94 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 title="Close sidebar"
               >
-                {/* Hamburger SVG */}
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                   <rect x="2" y="4" width="12" height="1.5" rx="0.75" fill="currentColor" />
                   <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor" />
                   <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="currentColor" />
@@ -120,92 +133,82 @@ export function ChatSidebar({
               {/* New Chat button */}
               <motion.button
                 onClick={onNewChat}
-                className="flex-1 h-8 flex items-center justify-center gap-1.5 px-2.5 rounded-xl font-semibold text-xs transition-all"
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold"
                 style={{
                   background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
-                  color: isDark ? "rgba(255,255,255,0.85)" : "#1e293b",
-                  border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.09)"}`,
+                  color: text,
+                  border: `1px solid ${border}`,
                 }}
                 whileHover={{
-                  scale: 1.02,
-                  background: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
+                  background: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
+                  scale: 1.01,
                 }}
-                whileTap={{ scale: 0.97 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Plus className="w-3 h-3" />
-                <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: 11 }}>New</span>
+                <Plus className="w-3.5 h-3.5 text-amber-500" />
+                <span>New Chat</span>
               </motion.button>
             </div>
 
             {/* Search */}
-            <div
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl"
-              style={{
-                background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
-                border: `1px solid ${border}`,
-              }}
-            >
-              <Search className="w-3 h-3 flex-shrink-0" style={{ color: textMuted }} />
+            <div className="relative">
+              <Search
+                className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2"
+                style={{ color: textMuted }}
+              />
               <input
+                type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search chats..."
-                className="flex-1 bg-transparent border-none outline-none text-[11px]"
-                style={{ color: text }}
+                className="w-full pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none transition-all"
+                style={{
+                  background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+                  border: `1px solid ${border}`,
+                  color: text,
+                }}
               />
             </div>
           </div>
 
-          {/* Sessions list */}
-          <div data-lenis-prevent className="flex-1 overflow-y-auto px-2 pb-2">
-            {sessions.length === 0 ? (
-              <motion.div
-                className="flex flex-col items-center justify-center py-16 px-4 text-center"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-                  style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)" }}
-                >
-                  <MessageSquare className="w-5 h-5" style={{ color: textMuted }} />
-                </div>
-                <div className="text-xs font-semibold mb-1" style={{ color: text }}>No chats yet</div>
-                <div className="text-xs" style={{ color: textMuted }}>Start a conversation to see it here</div>
-              </motion.div>
-            ) : (
-              <div className="space-y-4">
-                {groups.map((group) => (
-                  <div key={group.label}>
-                    <div
-                      className="px-3 py-1 text-[9px] font-semibold uppercase tracking-wider"
-                      style={{ color: textMuted, letterSpacing: "0.08em" }}
-                    >
-                      {group.label}
-                    </div>
-                    <div className="space-y-0.5">
-                      {group.items.map((session, i) => (
-                        <SessionItem
-                          key={session.id}
-                          session={session}
-                          isActive={activeSessionId === session.id}
-                          isHovered={hoveredId === session.id}
-                          isDark={isDark}
-                          index={i}
-                          text={text}
-                          textSec={textSec}
-                          textMuted={textMuted}
-                          surfaceHover={surfaceHover}
-                          activeItem={activeItem}
-                          onSelect={() => onSelectSession(session.id)}
-                          onDelete={(e) => onDeleteSession(session.id, e)}
-                          onHover={setHoveredId}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+          {/* Session history list */}
+          <div className="flex-1 overflow-y-auto px-2 space-y-4 scrollbar-none">
+            {groups.length === 0 ? (
+              <div className="py-8 text-center" style={{ color: textMuted }}>
+                <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-40" />
+                <p className="text-xs">No conversations found</p>
               </div>
+            ) : (
+              groups.map(group => (
+                <div key={group.label} className="space-y-1">
+                  <div
+                    className="px-2 text-[10px] font-bold uppercase tracking-wider"
+                    style={{ color: textMuted }}
+                  >
+                    {group.label}
+                  </div>
+                  <div className="space-y-0.5">
+                    {group.items.map((session, i) => (
+                      <SessionItem
+                        key={session.id}
+                        session={session}
+                        isActive={session.id === activeSessionId}
+                        isHovered={hoveredId === session.id}
+                        isDark={isDark}
+                        index={i}
+                        text={text}
+                        textSec={textSec}
+                        textMuted={textMuted}
+                        surfaceHover={surfaceHover}
+                        activeItem={activeItem}
+                        onSelect={() => onSelectSession(session.id)}
+                        onDelete={(e) => onDeleteSession(session.id, e)}
+                        onHover={setHoveredId}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))
             )}
           </div>
 
@@ -222,20 +225,26 @@ export function ChatSidebar({
             >
               <div
                 className="w-7 h-7 rounded-full flex-shrink-0 overflow-hidden"
-                style={{ boxShadow: "0 0 10px rgba(245,158,11,0.25)" }}
+                style={{ boxShadow: isPremiumUser ? "0 0 10px rgba(245,158,11,0.25)" : "none" }}
               >
-                <img src={getDiceBearUrl(userName || "Ashish")} alt="avatar" width={28} height={28} style={{ borderRadius: "50%", display: "block" }} />
+                <img src={getDiceBearUrl(userName || "User")} alt="avatar" width={28} height={28} style={{ borderRadius: "50%", display: "block" }} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] font-semibold truncate" style={{ color: text }}>
-                  {userName || "Ashish"}
+                  {userName || "User"}
                 </div>
-                <div className="flex items-center gap-0.5">
-                  <Star className="w-2 h-2" style={{ color: "#f59e0b" }} />
-                  <span className="text-[9px] font-medium" style={{ color: "#f59e0b" }}>Premium</span>
-                </div>
+                {isPremiumUser ? (
+                  <div className="flex items-center gap-0.5">
+                    <Star className="w-2 h-2" style={{ color: "#f59e0b" }} />
+                    <span className="text-[9px] font-medium" style={{ color: "#f59e0b" }}>{planLabel}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-[9px] font-medium" style={{ color: textMuted }}>Free</span>
+                  </div>
+                )}
               </div>
-              <Zap className="w-3 h-3 flex-shrink-0" style={{ color: "#f59e0b" }} />
+              {isPremiumUser && <Zap className="w-3 h-3 flex-shrink-0" style={{ color: "#f59e0b" }} />}
             </motion.div>
           </div>
         </motion.aside>

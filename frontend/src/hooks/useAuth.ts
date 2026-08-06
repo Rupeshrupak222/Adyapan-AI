@@ -21,6 +21,11 @@ function deleteCookie(name: string) {
  * When false → persists in sessionStorage only (cleared on browser close).
  */
 export function saveAuthSession(token: string, user: PlatformUser, rememberMe = true) {
+  const prevUser = getAuthUser();
+  if (prevUser && (prevUser.id !== user.id || prevUser.email !== user.email)) {
+    clearAuthSession();
+  }
+
   if (rememberMe) {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -28,10 +33,7 @@ export function saveAuthSession(token: string, user: PlatformUser, rememberMe = 
     setCookie(USER_KEY, JSON.stringify(user), 30);
   } else {
     // Clear any old persistent data
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    deleteCookie(TOKEN_KEY);
-    deleteCookie(USER_KEY);
+    clearAuthSession();
     // Use session storage (clears when browser closes)
     sessionStorage.setItem(TOKEN_KEY, token);
     sessionStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -39,10 +41,24 @@ export function saveAuthSession(token: string, user: PlatformUser, rememberMe = 
 }
 
 export function clearAuthSession() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-  sessionStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(USER_KEY);
+  if (typeof window !== "undefined") {
+    try {
+      const keysToKeep = new Set(["adyapan-theme"]);
+      const localKeys = Object.keys(localStorage);
+      localKeys.forEach((key) => {
+        if (!keysToKeep.has(key)) {
+          localStorage.removeItem(key);
+        }
+      });
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach((key) => {
+        if (!keysToKeep.has(key)) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    } catch { /* ignore */ }
+  }
+
   deleteCookie(TOKEN_KEY);
   deleteCookie(USER_KEY);
 }

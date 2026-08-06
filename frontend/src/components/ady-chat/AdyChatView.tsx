@@ -317,7 +317,19 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
   }, []);
 
   const hasMessages = messages.length > 0 || !!streamingText;
-  const userName = user?.name || "Ashish";
+  const userName = user?.name || "User";
+  const [userPlan, setUserPlan] = useState<string>((user as any)?.plan || "free");
+
+  useEffect(() => {
+    if ((user as any)?.plan) {
+      setUserPlan((user as any).plan);
+    }
+    api.get("/subscription/overview").then(res => {
+      if (res.data?.success && res.data?.subscription?.plan) {
+        setUserPlan(res.data.subscription.plan);
+      }
+    }).catch(() => {});
+  }, [user]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
   // Fixed full height layout — page does not scroll, only chat history and messages list scroll
@@ -383,6 +395,7 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
           onSelectSession={id => setActiveSessionId(id)}
           onDeleteSession={handleDeleteSession}
           userName={userName}
+          userPlan={userPlan}
         />
 
         {/* Main content area */}

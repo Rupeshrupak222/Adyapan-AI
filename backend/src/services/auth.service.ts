@@ -4,7 +4,7 @@ import { exec } from "child_process";
 import type { User } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { env } from "../config/env";
-import { httpError } from "../utils/httpError";
+import { httpError, type HttpError } from "../utils/httpError";
 import type { AuthRole } from "../middleware/auth";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { databaseService } from "./database.service";
@@ -41,6 +41,7 @@ function publicUser(user: User) {
     name: user.name,
     email: user.email,
     role: user.role,
+    plan: (user as any).plan || "free",
     createdAt: user.createdAt,
   };
 }
@@ -74,12 +75,29 @@ function validatePasswordStrength(password: string) {
   }
 }
 
+export const EMAIL_ALREADY_EXISTS_CODE = "EMAIL_ALREADY_EXISTS";
+
+const DUPLICATE_EMAIL_MESSAGE =
+  "This email is already registered. Please sign in or use another email address.";
+
+function duplicateEmailError(): HttpError {
+  return httpError(409, DUPLICATE_EMAIL_MESSAGE, EMAIL_ALREADY_EXISTS_CODE);
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === "P2002"
+  );
+}
+
 export async function registerUser(input: RegisterInput) {
   const email = input.email.toLowerCase().trim();
   const existingUser = await prisma.user.findUnique({ where: { email } });
 
   if (existingUser) {
-    throw httpError(409, "Email is already registered");
+    throw duplicateEmailError();
   }
 
   validatePasswordStrength(input.password);
@@ -87,20 +105,31 @@ export async function registerUser(input: RegisterInput) {
 
   // Use explicit transaction so the pg driver adapter handles user + profile
   // creation atomically without relying on implicit nested-write transactions.
-  const user = await prisma.$transaction(async (tx) => {
-    const newUser = await tx.user.create({
-      data: {
-        name: input.name,
-        email,
-        password,
-        role: input.role === "ADMIN" ? "ADMIN" : "USER",
-      },
+  let user: User;
+  try {
+    user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: input.name,
+          email,
+          password,
+          role: input.role === "ADMIN" ? "ADMIN" : "USER",
+        },
+      });
+      await tx.profile.create({
+        data: { userId: newUser.id },
+      });
+      return newUser;
     });
-    await tx.profile.create({
-      data: { userId: newUser.id },
-    });
-    return newUser;
-  });
+  } catch (error) {
+    // A concurrent registration can slip past the findUnique check and hit the
+    // unique email constraint (P2002). Surface the same friendly 409 instead of
+    // leaking a raw Prisma error to the client.
+    if (isUniqueConstraintError(error)) {
+      throw duplicateEmailError();
+    }
+    throw error;
+  }
 
   // Provision per-user database completely asynchronously — never block or
   // fail registration if the Neon API is slow or rate-limits.

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { api } from "@/services/api";
 import { useSocket } from "@/context/SocketContext";
 import { useTheme } from "@/hooks/useTheme";
+import { getAuthUser } from "@/hooks/useAuth";
 import { mkColors } from "@/utils/themeColors";
 
 import { StudyAssistantHeader } from "./study/StudyAssistantHeader";
@@ -98,13 +99,25 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const getUserScopedKey = (baseKey: string) => {
+    try {
+      const u = getAuthUser();
+      const id = u?.id || u?.email;
+      return id ? `${baseKey}-${id}` : baseKey;
+    } catch {
+      return baseKey;
+    }
+  };
+
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("adyapan-study-history");
+      const docKey = getUserScopedKey("adyapan-study-history");
+      const stored = localStorage.getItem(docKey);
       setHistory(stored ? JSON.parse(stored) : []);
     } catch { setHistory([]); }
     try {
-      const topicStored = localStorage.getItem("adyapan-topic-history");
+      const topicKey = getUserScopedKey("adyapan-topic-history");
+      const topicStored = localStorage.getItem(topicKey);
       setTopicHistory(topicStored ? JSON.parse(topicStored) : []);
     } catch { setTopicHistory([]); }
 
@@ -197,7 +210,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
         const newItem = { name: droppedFile.name, date: "Just now", pages: a.stats?.pages || 1, topics: a.topics?.length || 0, analysis: a };
         const updated = [newItem, ...history.filter(h => h.name !== droppedFile.name)].slice(0, 10);
         setHistory(updated);
-        localStorage.setItem("adyapan-study-history", JSON.stringify(updated));
+        localStorage.setItem(getUserScopedKey("adyapan-study-history"), JSON.stringify(updated));
       } else throw new Error("Invalid response");
     } catch (err: unknown) {
       const e = err as { code?: string; message?: string; response?: { data?: { error?: string } } };
@@ -271,7 +284,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
     const updated = history.filter(h => h.name !== docName);
     setHistory(updated);
     try {
-      localStorage.setItem("adyapan-study-history", JSON.stringify(updated));
+      localStorage.setItem(getUserScopedKey("adyapan-study-history"), JSON.stringify(updated));
       toast.success(`Removed "${docName}" from history`);
     } catch { /* ignore */ }
   };
@@ -280,7 +293,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
     const updated = topicHistory.filter((_, i) => i !== index);
     setTopicHistory(updated);
     try {
-      localStorage.setItem("adyapan-topic-history", JSON.stringify(updated));
+      localStorage.setItem(getUserScopedKey("adyapan-topic-history"), JSON.stringify(updated));
       toast.success("Topic removed from history");
     } catch { /* ignore */ }
   };
@@ -344,7 +357,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
       const newEntry = { topic: targetTopic, date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }), duration, level, lesson: payload.data };
       setTopicHistory(prev => {
         const updated = [newEntry, ...prev.filter(h => h.topic !== targetTopic)].slice(0, 20);
-        localStorage.setItem("adyapan-topic-history", JSON.stringify(updated));
+        localStorage.setItem(getUserScopedKey("adyapan-topic-history"), JSON.stringify(updated));
         return updated;
       });
       if (onViewLesson) {

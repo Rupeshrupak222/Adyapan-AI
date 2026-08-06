@@ -123,7 +123,7 @@ export async function me(req: Request, res: Response, next: NextFunction) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user?.userId },
-      select: { id: true, name: true, email: true, role: true, createdAt: true },
+      select: { id: true, name: true, email: true, role: true, plan: true, createdAt: true },
     });
     res.json({ success: true, user });
   } catch (error) {

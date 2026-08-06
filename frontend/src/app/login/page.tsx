@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/services/api";
@@ -58,6 +58,8 @@ function LoginPageContent() {
   const [reg, setReg] = useState({ name: "", email: "", phone: "", college: "", branch: "", year: "", password: "", confirm: "" });
   const [regError, setRegError] = useState("");
   const [regLoading, setRegLoading] = useState(false);
+  const [regEmailError, setRegEmailError] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
 
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotOtp, setForgotOtp] = useState("");
@@ -168,23 +170,41 @@ function LoginPageContent() {
       const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe });
       saveAuthSession(data.token, data.user, rememberMe);
       router.replace(getPostLoginTarget(data.user.role));
-    } catch (err: any) {
-      const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
+    } catch (err: unknown) {
+      const data = (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data;
+      const serverMsg = data?.message || data?.error;
       setLoginError(serverMsg || "Invalid email or password.");
     } finally { setLoginLoading(false); }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault(); setRegError("");
+    e.preventDefault(); setRegError(""); setRegEmailError(false);
     if (reg.password !== reg.confirm) { setRegError("Passwords do not match."); return; }
     setRegLoading(true);
     try {
       await api.post("/auth/register", { name: reg.name.trim(), email: reg.email.trim(), password: reg.password, role: "USER" });
       setTab("login"); setLoginEmail(reg.email.trim());
-    } catch (err: any) {
-      const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
-      setRegError(serverMsg || "Registration failed.");
+    } catch (err: unknown) {
+      const data = (err as { response?: { data?: { code?: string; message?: string; error?: string } } })?.response?.data;
+      if (data?.code === "EMAIL_ALREADY_EXISTS") {
+        setRegEmailError(true);
+      } else {
+        const serverMsg = data?.message || data?.error;
+        setRegError(serverMsg || "Registration failed.");
+      }
     } finally { setRegLoading(false); }
+  };
+
+  const useAnotherEmail = () => {
+    setRegEmailError(false);
+    setRegError("");
+    setReg(r => ({ ...r, email: "" }));
+    setTimeout(() => emailRef.current?.focus(), 0);
+  };
+
+  const signInFromRegister = () => {
+    if (reg.email.trim()) setLoginEmail(reg.email.trim());
+    switchTab("login");
   };
 
 
@@ -208,7 +228,7 @@ function LoginPageContent() {
     }
   };
 
-  const switchTab = (t: Tab) => { setTab(t); setLoginError(""); setRegError(""); setForgotError(""); setForgotMsg(""); };
+  const switchTab = (t: Tab) => { setTab(t); setLoginError(""); setRegError(""); setRegEmailError(false); setForgotError(""); setForgotMsg(""); };
 
   const tabVariants = {
     enter: { opacity: 0, y: 20, scale: 0.97 },
@@ -306,16 +326,43 @@ function LoginPageContent() {
                       { label: "Phone Number",  key: "phone",   type: "tel",   ph: "9876543210",        icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.6 4.4 2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.11 6.11l.91-.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>, full: false },
                       { label: "College/University", key: "college", type: "text", ph: "State University", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>, full: false },
                       { label: "Branch/Specialization", key: "branch", type: "text", ph: "Computer Science", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, full: false },
-                    ].map(({ label, key, type, ph, icon, full }, fi) => (
-                      <motion.div key={key} className={full ? "col-span-2" : "col-span-1"} custom={fi} variants={staggerItem} initial="hidden" animate="visible">
-                        <label className="mb-0.5 block text-xs font-semibold" style={{ color: labelClr }}>{label}</label>
-                        <div className="relative">
-                          <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}>{icon}</span>
-                          <input type={type} required placeholder={ph} value={reg[key as keyof typeof reg]}
-                            onChange={e => setReg(r => ({ ...r, [key]: e.target.value }))} className={inpReg()} style={inpStyle} />
-                        </div>
-                      </motion.div>
-                    ))}
+                    ].map(({ label, key, type, ph, icon, full }, fi) => {
+                      const isEmail = key === "email";
+                      return (
+                        <motion.div key={key} className={isEmail && regEmailError ? "col-span-2" : full ? "col-span-2" : "col-span-1"} custom={fi} variants={staggerItem} initial="hidden" animate="visible">
+                          <label className="mb-0.5 block text-xs font-semibold" style={{ color: labelClr }}>{label}</label>
+                          <div className="relative">
+                            <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}>{icon}</span>
+                            <input type={type} required placeholder={ph} value={reg[key as keyof typeof reg]}
+                              ref={isEmail ? emailRef : undefined}
+                              onChange={e => {
+                                if (isEmail && regEmailError) setRegEmailError(false);
+                                setReg(r => ({ ...r, [key]: e.target.value }));
+                              }}
+                              className={inpReg()}
+                              style={isEmail && regEmailError ? { ...inpStyle, borderColor: "#ef4444" } : inpStyle}
+                              aria-invalid={isEmail && regEmailError} />
+                          </div>
+                          {isEmail && regEmailError && (
+                            <div className="mt-1.5">
+                              <p className="text-[11px] font-semibold text-red-400">This email is already registered.</p>
+                              <p className="text-[11px]" style={{ color: mutedClr }}>Please log in or use a different email address.</p>
+                              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                                <button type="button" onClick={signInFromRegister}
+                                  className="rounded-md px-2.5 py-1 text-[11px] font-bold text-amber-500 hover:opacity-80"
+                                  style={{ background: "rgba(245,158,11,0.12)" }}>Sign In</button>
+                                <button type="button" onClick={() => switchTab("forgot")}
+                                  className="rounded-md px-2.5 py-1 text-[11px] font-semibold hover:opacity-80"
+                                  style={{ color: labelClr }}>Forgot Password</button>
+                                <button type="button" onClick={useAnotherEmail}
+                                  className="rounded-md px-2.5 py-1 text-[11px] font-semibold hover:opacity-80"
+                                  style={{ color: labelClr }}>Use Another Email</button>
+                              </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })}
                     <motion.div className="col-span-1" custom={5} variants={staggerItem} initial="hidden" animate="visible">
                       <label className="mb-0.5 block text-xs font-semibold" style={{ color: labelClr }}>Academic Year</label>
                       <div className="relative">

@@ -12,6 +12,17 @@ describe("httpError", () => {
     expect(err.statusCode).toBe(403);
   });
 
+  it("attaches an optional machine-readable code", () => {
+    const err = httpError(409, "Already exists", "EMAIL_ALREADY_EXISTS");
+    expect(err.statusCode).toBe(409);
+    expect(err.code).toBe("EMAIL_ALREADY_EXISTS");
+  });
+
+  it("omits the code when not provided", () => {
+    const err = httpError(400, "Bad request");
+    expect(err.code).toBeUndefined();
+  });
+
   it("preserves a stack trace", () => {
     const err = httpError(500, "Boom");
     expect(typeof err.stack).toBe("string");
