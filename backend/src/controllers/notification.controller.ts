@@ -14,15 +14,16 @@ export async function listNotifications(req: Request, res: Response, next: NextF
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
 
-    // Get user details to inspect plan (free vs premium)
+    // Get user details to inspect plan (free vs premium) and registration date
     const user = await masterPrisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, plan: true, subscriptionStatus: true },
+      select: { id: true, plan: true, subscriptionStatus: true, createdAt: true },
     });
 
     const userPlan = (user?.plan || "free").toLowerCase();
     const isPremium = userPlan === "pro" || userPlan === "premium" || user?.subscriptionStatus === "active";
     const targetFilter = isPremium ? ["ALL", "PREMIUM"] : ["ALL", "FREE"];
+    const userRegCutoff = user?.createdAt ? new Date(new Date(user.createdAt).getTime() - 60000) : null;
 
     const userPrisma = await getUserPrismaFromRequest(req);
 
@@ -37,6 +38,7 @@ export async function listNotifications(req: Request, res: Response, next: NextF
         where: {
           isRevoked: false,
           targetAudience: { in: targetFilter },
+          ...(userRegCutoff ? { createdAt: { gte: userRegCutoff } } : {}),
         },
         include: {
           reads: {
@@ -96,12 +98,13 @@ export async function getUnreadCount(req: Request, res: Response, next: NextFunc
 
     const user = await masterPrisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, plan: true, subscriptionStatus: true },
+      select: { id: true, plan: true, subscriptionStatus: true, createdAt: true },
     });
 
     const userPlan = (user?.plan || "free").toLowerCase();
     const isPremium = userPlan === "pro" || userPlan === "premium" || user?.subscriptionStatus === "active";
     const targetFilter = isPremium ? ["ALL", "PREMIUM"] : ["ALL", "FREE"];
+    const userRegCutoff = user?.createdAt ? new Date(new Date(user.createdAt).getTime() - 60000) : null;
 
     const userPrisma = await getUserPrismaFromRequest(req);
 
@@ -111,6 +114,7 @@ export async function getUnreadCount(req: Request, res: Response, next: NextFunc
         where: {
           isRevoked: false,
           targetAudience: { in: targetFilter },
+          ...(userRegCutoff ? { createdAt: { gte: userRegCutoff } } : {}),
         },
         include: {
           reads: { where: { userId } },
@@ -177,16 +181,18 @@ export async function markAllAsRead(req: Request, res: Response, next: NextFunct
     // Mark system broadcasts as read for this user
     const user = await masterPrisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, plan: true, subscriptionStatus: true },
+      select: { id: true, plan: true, subscriptionStatus: true, createdAt: true },
     });
     const userPlan = (user?.plan || "free").toLowerCase();
     const isPremium = userPlan === "pro" || userPlan === "premium" || user?.subscriptionStatus === "active";
     const targetFilter = isPremium ? ["ALL", "PREMIUM"] : ["ALL", "FREE"];
+    const userRegCutoff = user?.createdAt ? new Date(new Date(user.createdAt).getTime() - 60000) : null;
 
     const unreadSystem = await (masterPrisma as any).systemNotification.findMany({
       where: {
         isRevoked: false,
         targetAudience: { in: targetFilter },
+        ...(userRegCutoff ? { createdAt: { gte: userRegCutoff } } : {}),
         reads: { none: { userId } },
       },
       select: { id: true },
