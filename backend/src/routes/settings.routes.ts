@@ -63,12 +63,22 @@ async function auditSettingsAction(
 
 // ─── Helper: get or create UserSettings for a user ───────────────────────────
 async function getOrCreateSettings(prisma: any, userId: string) {
-  // Ensure profile exists first
+  // Ensure profile exists first - but don't use create() since User might not exist in this DB
   let profile = await prisma.profile.findUnique({ where: { userId } });
   if (!profile) {
-    profile = await prisma.profile.create({
-      data: { userId },
-    });
+    // Use createMany + skipDuplicates to avoid foreign key error if User doesn't exist locally
+    await prisma.profile.createMany({
+      data: [{ userId }],
+      skipDuplicates: true,
+    }).catch(() => {});
+    
+    // Re-fetch
+    profile = await prisma.profile.findUnique({ where: { userId } });
+    
+    // If still null, the FK constraint is blocking us — fall back to minimal stub
+    if (!profile) {
+      throw new Error("Profile creation blocked by foreign key — ensure User exists in master DB");
+    }
   }
 
   let settings = await prisma.userSettings.findUnique({
@@ -610,7 +620,7 @@ settingsRouter.get("/activity", async (req: any, res) => {
         where: { userId },
         orderBy: { createdAt: "desc" },
         take: 30,
-        select: { id: true, title: true, message: true, type: true, createdAt: true, isRead: true },
+        select: { id: true, title: true, message: true, type: true, createdAt: true, read: true },
       }),
       prisma.activityLog
         .findMany({

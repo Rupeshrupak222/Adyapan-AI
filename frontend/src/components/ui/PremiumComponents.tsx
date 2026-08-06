@@ -156,7 +156,7 @@ export function PremiumButton({
         variant === "primary" &&
           "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black shadow-amber-500/15 border border-amber-400/20",
         variant === "secondary" &&
-          "bg-white/8 border border-black/8 hover:bg-white/12 dark:bg-white/[0.05] dark:border-white/10 dark:hover:bg-white/[0.08] text-slate-800 dark:text-gray-100",
+          "bg-slate-100 border border-slate-200/80 hover:bg-slate-200 dark:bg-white/[0.05] dark:border-white/10 dark:hover:bg-white/[0.08] text-slate-700 dark:text-gray-100",
         variant === "glow" &&
           "bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.15)]",
         variant === "ghost" &&

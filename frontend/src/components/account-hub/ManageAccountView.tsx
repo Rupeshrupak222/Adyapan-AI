@@ -2413,6 +2413,8 @@ export function ActivitySection({
 // ─── Help Section ────────────────────────────────────────────────────────
 export function HelpSection({ c }: { c: Record<string, string> }) {
   const router = useRouter();
+  const theme = useTheme();
+  const isDark = theme === "dark";
   const [activeModal, setActiveModal] = useState<"faq" | "support" | "bug" | "docs" | "about" | null>(null);
 
   // FAQ state
@@ -2566,15 +2568,15 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
               className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-xl rounded-2xl border p-6 space-y-4 max-h-[85vh] overflow-y-auto"
-              style={{ background: "#0c0d16", borderColor: c.border, color: c.text }}
+              className="relative w-full max-w-xl rounded-2xl border p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl"
+              style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: c.border, color: c.text }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
               <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: c.border }}>
                 <div className="flex items-center gap-2">
                   <HelpCircle size={18} className="text-amber-500" />
-                  <h3 className="text-base font-extrabold capitalize">
+                  <h3 className="text-base font-extrabold capitalize" style={{ color: c.text }}>
                     {activeModal === "faq" && "Frequently Asked Questions"}
                     {activeModal === "support" && "Contact Support Team"}
                     {activeModal === "bug" && "Report a Bug"}
@@ -2582,7 +2584,7 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                     {activeModal === "about" && "About Adyapan AI"}
                   </h3>
                 </div>
-                <button onClick={() => setActiveModal(null)} className="p-1 rounded-lg hover:bg-white/10 cursor-pointer">
+                <button onClick={() => setActiveModal(null)} className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer">
                   <X size={16} style={{ color: c.textMuted }} />
                 </button>
               </div>
@@ -2603,12 +2605,13 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                       return (
                         <div key={index} className="rounded-xl border overflow-hidden" style={{ borderColor: c.border }}>
                           <button onClick={() => setExpandedFaq(isOpen ? null : index)}
-                            className="w-full flex items-center justify-between p-3 text-xs font-bold text-left transition-all hover:bg-white/5 cursor-pointer">
+                            className="w-full flex items-center justify-between p-3 text-xs font-bold text-left transition-all hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                            style={{ color: c.text }}>
                             <span>{faq.q}</span>
                             <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180 text-amber-500" : ""}`} />
                           </button>
                           {isOpen && (
-                            <div className="p-3 text-[11px] border-t leading-relaxed" style={{ borderColor: c.border, color: c.textMuted, background: "rgba(255,255,255,0.02)" }}>
+                            <div className="p-3 text-[11px] border-t leading-relaxed" style={{ borderColor: c.border, color: c.textMuted, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
                               {faq.a}
                             </div>
                           )}
@@ -2634,10 +2637,10 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                     <select value={supportCategory} onChange={(e) => setSupportCategory(e.target.value)}
                       className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
                       style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-                      <option value="General Inquiry">General Inquiry</option>
-                      <option value="Technical Issue">Technical Issue</option>
-                      <option value="Billing & Subscription">Billing & Subscription</option>
-                      <option value="Feature Request">Feature Request</option>
+                      <option value="General Inquiry" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>General Inquiry</option>
+                      <option value="Technical Issue" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Technical Issue</option>
+                      <option value="Billing & Subscription" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Billing & Subscription</option>
+                      <option value="Feature Request" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Feature Request</option>
                     </select>
                   </div>
                   <div className="space-y-1.5">
@@ -2673,10 +2676,10 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                     <select value={bugSeverity} onChange={(e) => setBugSeverity(e.target.value)}
                       className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
                       style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-                      <option value="Low">Low - Minor UI issue</option>
-                      <option value="Medium">Medium - Feature malfunctioning</option>
-                      <option value="High">High - Unable to complete task</option>
-                      <option value="Critical">Critical - System crash or data issue</option>
+                      <option value="Low" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Low - Minor UI issue</option>
+                      <option value="Medium" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Medium - Feature malfunctioning</option>
+                      <option value="High" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>High - Unable to complete task</option>
+                      <option value="Critical" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Critical - System crash or data issue</option>
                     </select>
                   </div>
                   <div className="space-y-1.5">
@@ -2711,24 +2714,24 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                     🚀 Adyapan AI Quick Start Guide
                   </div>
                   <div className="space-y-2">
-                    <h4 className="font-extrabold text-sm text-white">Core Modules & Hubs</h4>
+                    <h4 className="font-extrabold text-sm" style={{ color: c.text }}>Core Modules & Hubs</h4>
                     <ul className="list-disc list-inside space-y-1 text-[11px]" style={{ color: c.textMuted }}>
-                      <li><strong className="text-white">Ady Chat:</strong> Interactive AI assistant for custom queries and instant tutoring.</li>
-                      <li><strong className="text-white">Coding Hub:</strong> Practice DSA problems, generate solutions, and build GitHub portfolios.</li>
-                      <li><strong className="text-white">Interview Hub:</strong> Practice HR and Technical mock interviews with AI evaluation.</li>
-                      <li><strong className="text-white">Resume Hub:</strong> Build ATS-optimized resumes and generate cover letters.</li>
-                      <li><strong className="text-white">Placement Hub:</strong> Practice company MCQs and aptitude tests.</li>
+                      <li><strong style={{ color: c.text }}>Ady Chat:</strong> Interactive AI assistant for custom queries and instant tutoring.</li>
+                      <li><strong style={{ color: c.text }}>Coding Hub:</strong> Practice DSA problems, generate solutions, and build GitHub portfolios.</li>
+                      <li><strong style={{ color: c.text }}>Interview Hub:</strong> Practice HR and Technical mock interviews with AI evaluation.</li>
+                      <li><strong style={{ color: c.text }}>Resume Hub:</strong> Build ATS-optimized resumes and generate cover letters.</li>
+                      <li><strong style={{ color: c.text }}>Placement Hub:</strong> Practice company MCQs and aptitude tests.</li>
                     </ul>
                   </div>
                   <div className="space-y-1.5 border-t pt-3" style={{ borderColor: c.border }}>
-                    <h4 className="font-extrabold text-sm text-white">Keyboard Shortcuts</h4>
+                    <h4 className="font-extrabold text-sm" style={{ color: c.text }}>Keyboard Shortcuts</h4>
                     <div className="flex justify-between items-center text-[11px] py-1 border-b" style={{ borderColor: c.border }}>
                       <span>Quick Search Tool</span>
-                      <kbd className="px-2 py-0.5 rounded bg-white/10 text-[10px] font-mono">Ctrl + K</kbd>
+                      <kbd className="px-2 py-0.5 rounded text-[10px] font-mono border" style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>Ctrl + K</kbd>
                     </div>
                     <div className="flex justify-between items-center text-[11px] py-1 border-b" style={{ borderColor: c.border }}>
                       <span>Close Modals / Overlays</span>
-                      <kbd className="px-2 py-0.5 rounded bg-white/10 text-[10px] font-mono">Esc</kbd>
+                      <kbd className="px-2 py-0.5 rounded text-[10px] font-mono border" style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>Esc</kbd>
                     </div>
                   </div>
                 </div>
@@ -2741,17 +2744,17 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                     A
                   </div>
                   <div>
-                    <h4 className="text-lg font-extrabold">Adyapan AI Platform</h4>
+                    <h4 className="text-lg font-extrabold" style={{ color: c.text }}>Adyapan AI Platform</h4>
                     <span className="text-xs text-amber-500 font-semibold block">Version 2.0.0 (Enterprise Build)</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-left border-y py-3" style={{ borderColor: c.border }}>
-                    <div className="p-3 rounded-xl bg-white/5 border" style={{ borderColor: c.border }}>
+                    <div className="p-3 rounded-xl border" style={{ background: c.cardBg, borderColor: c.border }}>
                       <span className="text-[10px] block" style={{ color: c.textMuted }}>Engine Status</span>
-                      <span className="text-xs font-bold text-emerald-400">● Operational</span>
+                      <span className="text-xs font-bold text-emerald-500">● Operational</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-white/5 border" style={{ borderColor: c.border }}>
+                    <div className="p-3 rounded-xl border" style={{ background: c.cardBg, borderColor: c.border }}>
                       <span className="text-[10px] block" style={{ color: c.textMuted }}>AI Model Integration</span>
-                      <span className="text-xs font-bold text-amber-400">Gemini / Claude / GPT-4</span>
+                      <span className="text-xs font-bold text-amber-500">Gemini / Claude / GPT-4</span>
                     </div>
                   </div>
                   <p className="text-[11px] leading-relaxed" style={{ color: c.textMuted }}>
