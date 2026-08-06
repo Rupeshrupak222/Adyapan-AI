@@ -57,6 +57,7 @@ import { jobDiscoveryRouter } from "./job-discovery.routes";
 import avatarRouter from "./avatar.routes";
 import { settingsRouter } from "./settings.routes";
 import { usageRouter } from "./usage.routes";
+import { subscriptionRouter } from "./subscription.routes";
 import { enforceAiTokenLimit } from "../middleware/aiTokenLimit.middleware";
 
 export const apiRouter = Router();
@@ -176,3 +177,6 @@ apiRouter.use("/settings", settingsRouter);
 
 // AI Usage / Plan Limits Routes
 apiRouter.use("/usage", usageRouter);
+
+// Enterprise Subscription System Routes
+apiRouter.use("/subscription", subscriptionRouter);

@@ -30,7 +30,7 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
   try {
     const userId = requireUserId(req);
 
-    const { plan, couponCode } = req.body;
+    const { plan, couponCode, billingCycle } = req.body;
     const { amount, label } = await resolvePlanPrice(plan);
 
     // Apply coupon discount when provided.
@@ -38,7 +38,17 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
     let appliedCoupon: string | null = null;
     if (couponCode && String(couponCode).trim().length > 0) {
       const coupon = await validateCoupon(String(couponCode));
-      discountAmount = Math.round((amount * coupon.discountPct) / 100);
+      if (coupon.planCodes && coupon.planCodes.length > 0 && !coupon.planCodes.includes(plan)) {
+        throw httpError(400, `This coupon is not valid for the ${plan} plan`);
+      }
+      if (coupon.minAmount != null && amount < coupon.minAmount * 100) {
+        throw httpError(400, `This coupon requires a minimum order of ₹${coupon.minAmount}`);
+      }
+      let disc = Math.round((amount * coupon.discountPct) / 100);
+      if (coupon.maxDiscountAmount != null) {
+        disc = Math.min(disc, Math.round(coupon.maxDiscountAmount * 100));
+      }
+      discountAmount = disc;
       appliedCoupon = coupon.code;
       if (amount - discountAmount <= 0) {
         throw httpError(400, "Coupon makes this order free. Please contact support.");
@@ -67,6 +77,8 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
         amount: finalAmount,
         currency: "INR",
         plan,
+        billingCycle: billingCycle === "yearly" ? "yearly" : "monthly",
+        provider: "razorpay",
         couponCode: appliedCoupon,
         discountAmount,
         status: "created",

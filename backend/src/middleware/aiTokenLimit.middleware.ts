@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../config/prisma";
 import { AiUsageService } from "../services/token-tracking.service";
+import { evaluateFeatureAccess } from "../services/feature-access.service";
 
 // AI-generation endpoints that are subject to plan limits.
 const AI_ROUTE_PATTERNS: RegExp[] = [
@@ -45,6 +46,21 @@ const EXCLUDE_PATTERNS: RegExp[] = [
   /^\/avatar\/voices(\/|$)/,
 ];
 
+function sendLimitResponse(res: Response, body: any) {
+  res.status(body.status || 429).json({
+    success: false,
+    message: body.message,
+    code: "LIMIT_EXCEEDED",
+    reason: body.reason,
+    plan: body.plan,
+    planKind: body.planKind,
+    featureKey: body.featureKey,
+    featureName: body.featureName,
+    upgrade: body.upgrade,
+    usage: body.usage,
+  });
+}
+
 export async function enforceAiTokenLimit(req: Request, res: Response, next: NextFunction) {
   try {
     if (req.method === "GET" || req.method === "OPTIONS" || req.method === "HEAD") {
@@ -72,6 +88,40 @@ export async function enforceAiTokenLimit(req: Request, res: Response, next: Nex
     const plan = user?.plan || "free";
     const subscriptionStatus = user?.subscriptionStatus ?? null;
 
+    // 1. Feature-level plan gate + per-feature usage limits.
+    const featureCheck = await evaluateFeatureAccess({ userId, plan, subscriptionStatus, path }).catch(() => null);
+    if (featureCheck && !featureCheck.allowed) {
+      const reason = featureCheck.reason;
+      const isLimit = reason === "daily-limit" || reason === "monthly-limit";
+      const isFree = plan === "free";
+      const usagePayload = featureCheck.usage
+        ? {
+            dailyUsed: featureCheck.usage.dailyUsed,
+            dailyLimit: featureCheck.usage.dailyLimit,
+            monthlyUsed: featureCheck.usage.monthlyUsed,
+            monthlyLimit: featureCheck.usage.monthlyLimit,
+            dailyResetAt: featureCheck.usage.dailyResetAt?.toISOString(),
+            monthlyResetAt: featureCheck.usage.monthlyResetAt?.toISOString(),
+          }
+        : undefined;
+
+      await AiUsageService.logRequest(userId, plan, path, req.method, 0, true, reason).catch(() => {});
+
+      sendLimitResponse(res, {
+        status: isFree && !isLimit ? 403 : 429,
+        message: featureCheck.message,
+        reason: reason === "plan-gate" ? "feature_plan_required" : reason === "feature-disabled" ? "feature_disabled" : reason,
+        plan,
+        planKind: featureCheck.userPlanKind,
+        featureKey: featureCheck.featureKey,
+        featureName: featureCheck.featureName,
+        upgrade: featureCheck.upgradeRequired,
+        usage: usagePayload,
+      });
+      return;
+    }
+
+    // 2. Global token/request limits (daily + monthly).
     const bodyStr = JSON.stringify(req.body || {});
     const estimatedTokens = Math.max(100, Math.ceil(bodyStr.length / 4));
 
@@ -82,10 +132,9 @@ export async function enforceAiTokenLimit(req: Request, res: Response, next: Nex
 
     if (!check.allowed) {
       const usage = check.usage;
-      res.status(check.status).json({
-        success: false,
+      sendLimitResponse(res, {
+        status: check.status,
         message: check.message,
-        code: "LIMIT_EXCEEDED",
         reason: check.reason,
         plan: check.plan,
         planKind: check.kind,

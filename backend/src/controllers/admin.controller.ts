@@ -24,7 +24,7 @@ const DEFAULT_SYSTEM_SETTINGS = {
   aiTemperature: 0.7,
   freeTierTokenLimit: 500000,
   premiumTierTokenLimit: 5000000,
-  freeTierDailyRequests: 20,
+  freeTierDailyRequests: 50,
   premiumTierDailyRequests: 200,
   enterpriseTierDailyTokens: 20000000,
   enterpriseTierDailyRequests: 1000,

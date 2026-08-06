@@ -5,8 +5,10 @@ import { AdminAuditService } from "../services/admin-audit.service";
 
 // Default prices (paise) used when the plans table is empty.
 export const DEFAULT_PLANS: Record<string, { amount: number; label: string }> = {
+  free: { amount: 0, label: "Free" },
   pro_monthly: { amount: 19900, label: "Pro Monthly" },
   pro_yearly: { amount: 199900, label: "Pro Yearly" },
+  enterprise: { amount: 0, label: "Enterprise" },
 };
 
 // ─── Shared price resolver ───────────────────────────────────────
@@ -14,10 +16,11 @@ export const DEFAULT_PLANS: Record<string, { amount: number; label: string }> = 
 /**
  * Resolves the chargeable amount (in paise) + display label for a plan code.
  * Prefers the admin-managed `plans` table and falls back to DEFAULT_PLANS.
+ * Free and Enterprise plans resolve to 0 (custom / not for self-checkout).
  */
 export async function resolvePlanPrice(planCode: string): Promise<{ amount: number; label: string }> {
   const code = String(planCode || "").toLowerCase().trim();
-  if (!code) throw httpError(400, "Invalid plan. Choose pro_monthly or pro_yearly.");
+  if (!code) throw httpError(400, "Invalid plan code.");
 
   const dbPlan = await prisma.plan.findUnique({ where: { code } });
   if (dbPlan) {
@@ -28,7 +31,7 @@ export async function resolvePlanPrice(planCode: string): Promise<{ amount: numb
   }
 
   const fallback = DEFAULT_PLANS[code];
-  if (!fallback) throw httpError(400, "Invalid plan. Choose pro_monthly or pro_yearly.");
+  if (!fallback) throw httpError(400, "Invalid plan code.");
   return fallback;
 }
 
@@ -36,7 +39,7 @@ export async function resolvePlanPrice(planCode: string): Promise<{ amount: numb
 
 export async function listPlans(_req: Request, res: Response, next: NextFunction) {
   try {
-    const dbPlans = await prisma.plan.findMany({ where: { isActive: true }, orderBy: { createdAt: "asc" } });
+    const dbPlans = await prisma.plan.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
 
     if (dbPlans.length > 0) {
       const plans = dbPlans.map((p) => ({
@@ -55,7 +58,10 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
           "Unlimited Cover Letters & LinkedIn Tools",
           "Full Interview & Coding Hub Access",
         ],
-
+        category: p.category,
+        recommended: p.recommended,
+        sortOrder: p.sortOrder,
+        trialDays: p.trialDays,
         currency: "INR",
       }));
       return res.json({ success: true, plans });
@@ -69,14 +75,39 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
         label: p.label,
         name: p.label,
         amount: p.amount,
-        priceMonthly: id === "pro_yearly" ? 166 : 199,
-        priceYearly: 1999,
-        features: [
-          "Unlimited Resumes & ATS Checks",
-          "All AI Models (GPT-4o, Claude, Gemini)",
-          "Unlimited Cover Letters & LinkedIn Tools",
-          "Full Interview & Coding Hub Access",
-        ],
+        priceMonthly: id === "pro_yearly" ? 166 : id === "pro_monthly" ? 199 : 0,
+        priceYearly: id === "pro_yearly" ? 1999 : id === "pro_monthly" ? 1990 : 0,
+        features:
+          id === "free"
+            ? [
+                "50 AI Requests / day",
+                "5 Resume Generations / day",
+                "3 Mock Interviews / day",
+                "5 PPT Generations / day",
+                "10 Note Generations / day",
+                "Basic Coding Assistant",
+                "Basic Research Tools",
+                "Community Support",
+              ]
+            : id === "enterprise"
+              ? [
+                  "University / Institute License",
+                  "Custom AI Model Access",
+                  "Dedicated Infrastructure",
+                  "SSO / SAML Login",
+                  "Bulk Student Onboarding",
+                  "Dedicated Success Manager",
+                ]
+              : [
+                  "Unlimited Resumes & ATS Checks",
+                  "All AI Models (GPT-4o, Claude, Gemini)",
+                  "Unlimited Cover Letters & LinkedIn Tools",
+                  "Full Interview & Coding Hub Access",
+                ],
+        category: id === "free" ? "free" : id === "enterprise" ? "enterprise" : "premium",
+        recommended: id === "pro_monthly",
+        sortOrder: id === "free" ? 0 : id === "enterprise" ? 3 : 1,
+        trialDays: id === "pro_monthly" ? 7 : 0,
         currency: "INR",
       })),
     });

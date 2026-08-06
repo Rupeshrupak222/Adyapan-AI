@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import {
   DollarSign, TrendingUp, Clock, CreditCard, Users,
   RefreshCw, Loader2, CheckCircle2, XCircle, Crown,
-  FileText, Ticket, Plus, Trash2, Power,
+  FileText, Ticket, Plus, Trash2, Power, BarChart3 as BarChart3Icon,
+  ActivitySquare as ActivitySquareIcon, UserPlus, Ban, Gauge as GaugeIcon,
 } from "lucide-react";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
@@ -58,6 +59,100 @@ interface PlanRow {
   isActive: boolean;
 }
 
+interface SubAnalytics {
+  periodDays: number;
+  mrr: number;
+  arr: number;
+  totalRevenue: number;
+  netRevenue: number;
+  refunds: number;
+  activeSubscriptions: number;
+  activeUsers: number;
+  newSubscribers: number;
+  churned: number;
+  churnRate: number;
+  upgradeRate: number;
+  downgradeRate: number;
+  freeUsers: number;
+  premiumUsers: number;
+  enterpriseUsers: number;
+  subscribersByPlan: Record<string, number>;
+  revenueSeries: {
+    date: string;
+    grossRevenue: number;
+    netRevenue: number;
+    newSubscribers: number;
+    churnCount: number;
+  }[];
+}
+
+interface AdminUserRef {
+  id: string;
+  name: string | null;
+  email: string | null;
+}
+
+interface SubRow {
+  id: string;
+  userId: string;
+  planCode: string;
+  planId: string | null;
+  status: string;
+  billingCycle: string;
+  provider: string;
+  providerSubscriptionId: string | null;
+  price: number;
+  currency: string;
+  autoRenew: boolean;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancellationRequestedAt: string | null;
+  canceledAt: string | null;
+  endedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: AdminUserRef | null;
+}
+
+interface TxnRow {
+  id: string;
+  userId: string;
+  paymentId: string | null;
+  orderId: string | null;
+  type: string;
+  provider: string;
+  providerRef: string | null;
+  amount: number;
+  currency: string;
+  status: string;
+  createdAt: string;
+  user: AdminUserRef | null;
+}
+
+interface FeatureAccessRow {
+  id: string;
+  featureKey: string;
+  name: string;
+  description: string | null;
+  category: string;
+  requiredPlan: string;
+  routePattern: string | null;
+  gated: boolean;
+  updatedAt: string;
+}
+
+interface UsageLimitRow {
+  id: string;
+  featureKey: string;
+  planCode: string;
+  dailyLimit: number | null;
+  monthlyLimit: number | null;
+  tokenLimit: number | null;
+  storageMb: number | null;
+  enabled: boolean;
+  updatedAt: string;
+}
+
 function errMsg(err: unknown, fallback: string): string {
   return (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback;
 }
@@ -100,25 +195,64 @@ export default function BillingFinance() {
   const [newPlan, setNewPlan] = useState({ name: "", code: "", priceMonthly: "", priceYearly: "", features: "" });
   const [editingPlan, setEditingPlan] = useState<PlanRow | null>(null);
 
+  // Subscription analytics + admin management
+  const [analytics, setAnalytics] = useState<SubAnalytics | null>(null);
+  const [subs, setSubs] = useState<SubRow[]>([]);
+  const [subPage, setSubPage] = useState(1);
+  const [subTotal, setSubTotal] = useState(0);
+  const [txns, setTxns] = useState<TxnRow[]>([]);
+  const [txnPage, setTxnPage] = useState(1);
+  const [txnTotal, setTxnTotal] = useState(0);
+  const [features, setFeatures] = useState<FeatureAccessRow[]>([]);
+  const [limits, setLimits] = useState<UsageLimitRow[]>([]);
+  const [editingFeature, setEditingFeature] = useState<FeatureAccessRow | null>(null);
+  const [editingLimit, setEditingLimit] = useState<UsageLimitRow | null>(null);
+  const [showGrant, setShowGrant] = useState(false);
+  const [grantForm, setGrantForm] = useState({ userId: "", plan: "enterprise", billingCycle: "monthly", durationDays: "30" });
+  const [showLimitForm, setShowLimitForm] = useState(false);
+  const [newLimit, setNewLimit] = useState({ featureKey: "", planCode: "", dailyLimit: "", monthlyLimit: "", tokenLimit: "", storageMb: "" });
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [revRes, couponRes, planRes] = await Promise.all([
+      const [revRes, couponRes, planRes, analyticsRes, subsRes, txnRes, accessRes] = await Promise.all([
         api.get("/admin/analytics/revenue"),
         api.get("/admin/coupons"),
         api.get("/admin/plans"),
+        api.get("/admin/subscriptions/analytics"),
+        api.get("/admin/subscriptions", { params: { page: subPage, perPage: 15 } }),
+        api.get("/admin/subscriptions/transactions", { params: { page: txnPage, perPage: 15 } }),
+        api.get("/admin/subscriptions/features"),
       ]);
       if (revRes.data?.success) setRevenue(revRes.data.revenue);
       if (couponRes.data?.success) setCoupons(couponRes.data.coupons ?? []);
       if (planRes.data?.success) setPlans(planRes.data.plans ?? []);
+      if (analyticsRes.data?.success) setAnalytics(analyticsRes.data.analytics);
+      if (subsRes.data?.success) {
+        setSubs(subsRes.data.subscriptions ?? []);
+        setSubTotal(subsRes.data.pagination?.total ?? 0);
+      }
+      if (txnRes.data?.success) {
+        setTxns(txnRes.data.transactions ?? []);
+        setTxnTotal(txnRes.data.pagination?.total ?? 0);
+      }
+      if (accessRes.data?.success) {
+        setFeatures(accessRes.data.features ?? []);
+        setLimits(accessRes.data.usageLimits ?? []);
+      }
     } catch {
       setRevenue(null);
       setCoupons([]);
       setPlans([]);
+      setAnalytics(null);
+      setSubs([]);
+      setTxns([]);
+      setFeatures([]);
+      setLimits([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [subPage, txnPage]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -229,6 +363,115 @@ export default function BillingFinance() {
     }
   };
 
+  // ─── Subscription management handlers ───
+
+  const handleGrant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await api.post(`/admin/subscriptions/users/${grantForm.userId.trim()}/grant`, {
+        plan: grantForm.plan,
+        billingCycle: grantForm.billingCycle,
+        durationDays: Number(grantForm.durationDays) || 30,
+      });
+      if (res.data?.success) {
+        alert(res.data.message || "Plan granted");
+        setShowGrant(false);
+        setGrantForm({ userId: "", plan: "enterprise", billingCycle: "monthly", durationDays: "30" });
+        fetchData();
+      }
+    } catch (err) {
+      alert(errMsg(err, "Failed to grant plan"));
+    }
+  };
+
+  const handleRefund = async (t: TxnRow) => {
+    if (!t.paymentId) return;
+    if (!window.confirm(`Refund ${formatCurrency((t.amount || 0) / 100)} for ${t.user?.name || t.userId}?`)) return;
+    try {
+      const res = await api.post(`/admin/subscriptions/payments/${t.paymentId}/refund`);
+      if (res.data?.success) {
+        alert(res.data.message || "Payment refunded");
+        fetchData();
+      }
+    } catch (err) {
+      alert(errMsg(err, "Failed to refund payment"));
+    }
+  };
+
+  const handleSaveFeature = async (f: FeatureAccessRow) => {
+    try {
+      const res = await api.put(`/admin/subscriptions/features/${f.id}`, {
+        requiredPlan: f.requiredPlan,
+        gated: f.gated,
+        name: f.name,
+      });
+      if (res.data?.success) {
+        setFeatures((prev) => prev.map((x) => (x.id === f.id ? res.data.feature : x)));
+        setEditingFeature(null);
+      }
+    } catch (err) {
+      alert(errMsg(err, "Failed to update feature access"));
+    }
+  };
+
+  const handleRefreshCatalog = async () => {
+    try {
+      const res = await api.post("/admin/subscriptions/features/refresh");
+      if (res.data?.success) alert(res.data.message || "Feature catalog refreshed");
+    } catch (err) {
+      alert(errMsg(err, "Failed to refresh catalog"));
+    }
+  };
+
+  const handleCreateLimit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await api.post("/admin/subscriptions/limits", {
+        featureKey: newLimit.featureKey.trim(),
+        planCode: newLimit.planCode.trim(),
+        dailyLimit: newLimit.dailyLimit ? Number(newLimit.dailyLimit) : null,
+        monthlyLimit: newLimit.monthlyLimit ? Number(newLimit.monthlyLimit) : null,
+        tokenLimit: newLimit.tokenLimit ? Number(newLimit.tokenLimit) : null,
+        storageMb: newLimit.storageMb ? Number(newLimit.storageMb) : null,
+      });
+      if (res.data?.success) {
+        setLimits((prev) => [...prev, res.data.usageLimit]);
+        setNewLimit({ featureKey: "", planCode: "", dailyLimit: "", monthlyLimit: "", tokenLimit: "", storageMb: "" });
+        setShowLimitForm(false);
+      }
+    } catch (err) {
+      alert(errMsg(err, "Failed to create usage limit"));
+    }
+  };
+
+  const handleSaveLimit = async (l: UsageLimitRow) => {
+    try {
+      const res = await api.put(`/admin/subscriptions/limits/${l.id}`, {
+        dailyLimit: l.dailyLimit,
+        monthlyLimit: l.monthlyLimit,
+        tokenLimit: l.tokenLimit,
+        storageMb: l.storageMb,
+        enabled: l.enabled,
+      });
+      if (res.data?.success) {
+        setLimits((prev) => prev.map((x) => (x.id === l.id ? res.data.usageLimit : x)));
+        setEditingLimit(null);
+      }
+    } catch (err) {
+      alert(errMsg(err, "Failed to update usage limit"));
+    }
+  };
+
+  const handleDeleteLimit = async (l: UsageLimitRow) => {
+    if (!window.confirm(`Delete usage limit for ${l.featureKey} / ${l.planCode}?`)) return;
+    try {
+      await api.delete(`/admin/subscriptions/limits/${l.id}`);
+      setLimits((prev) => prev.filter((x) => x.id !== l.id));
+    } catch (err) {
+      alert(errMsg(err, "Failed to delete usage limit"));
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -246,6 +489,12 @@ export default function BillingFinance() {
   const planDist = revenue?.planDist ?? [];
   const planTotal = planDist.reduce((s, p) => s + p.value, 0);
   const couponStats = revenue?.couponStats;
+  const subCount = analytics?.subscribersByPlan ?? {};
+  const subPlanTotal = Object.values(subCount).reduce((s, n) => s + n, 0);
+  const series = analytics?.revenueSeries ?? [];
+  const maxGross = series.reduce((m, r) => Math.max(m, r.grossRevenue), 0);
+  const subPages = Math.max(1, Math.ceil(subTotal / 15));
+  const txnPages = Math.max(1, Math.ceil(txnTotal / 15));
 
   return (
     <div className="space-y-6 pb-12">
@@ -279,6 +528,16 @@ export default function BillingFinance() {
         <KpiCard icon={<CreditCard size={16} />} label="Avg Order Value" value={formatCurrency(revenue?.averageOrderValue ?? 0)} color="#818cf8" delay={0.2} />
         <KpiCard icon={<FileText size={16} />} label="Transactions" value={(revenue?.totalTransactions ?? 0).toLocaleString()} color="#f472b6" delay={0.25} />
         <KpiCard icon={<Crown size={16} />} label="Premium Users" value={(revenue?.premiumUsers ?? 0).toLocaleString()} color="#8b5cf6" delay={0.3} />
+      </div>
+
+      {/* Subscription Growth KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <KpiCard icon={<TrendingUp size={16} />} label="MRR" value={formatCurrency(analytics?.mrr ?? 0)} color="#10b981" delay={0.05} />
+        <KpiCard icon={<BarChart3Icon size={16} />} label="ARR" value={formatCurrency(analytics?.arr ?? 0)} color="#f59e0b" delay={0.1} />
+        <KpiCard icon={<DollarSign size={16} />} label="Net Revenue" value={formatCurrency(analytics?.netRevenue ?? 0)} color="#38bdf8" delay={0.15} />
+        <KpiCard icon={<RefreshCw size={16} />} label="Refunds" value={formatCurrency(analytics?.refunds ?? 0)} color="#ef4444" delay={0.2} />
+        <KpiCard icon={<Users size={16} />} label="Active Subs" value={(analytics?.activeSubscriptions ?? 0).toLocaleString()} color="#818cf8" delay={0.25} />
+        <KpiCard icon={<ActivitySquareIcon size={16} />} label="Churn Rate" value={`${analytics?.churnRate ?? 0}%`} color="#f472b6" delay={0.3} />
       </div>
 
       {/* Plan Distribution + Recent Transactions */}
@@ -642,6 +901,530 @@ export default function BillingFinance() {
           </div>
         </motion.div>
       </div>
+
+      {/* Subscription analytics detail */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35, duration: 0.35 }}
+        className="rounded-2xl border overflow-hidden"
+        style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
+      >
+        <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+          <BarChart3Icon size={16} style={{ color: "#10b981" }} />
+          <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
+            Subscription Analytics
+          </h2>
+          <span className="ml-auto text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
+            Last {analytics?.periodDays ?? 30} days
+          </span>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-5">
+          <div className="lg:col-span-2">
+            <h3 className="text-xs font-bold mb-3" style={{ color: "var(--text-secondary)" }}>
+              Revenue Trend (gross, ₹)
+            </h3>
+            {series.length === 0 ? (
+              <p className="text-[11px] font-medium text-center py-10" style={{ color: "var(--text-muted)" }}>
+                No revenue series data yet
+              </p>
+            ) : (
+              <div className="flex items-end gap-1 h-36">
+                {series.map((r) => {
+                  const h = maxGross > 0 ? Math.max(4, Math.round((r.grossRevenue / maxGross) * 120)) : 4;
+                  return (
+                    <div key={r.date} className="flex-1 flex flex-col items-center gap-1" title={`${new Date(r.date).toLocaleDateString()}: ₹${r.grossRevenue}`}>
+                      <div
+                        className="w-full rounded-t-md transition-all"
+                        style={{ height: h, background: "linear-gradient(180deg, #f59e0b, #b45309)" }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold" style={{ color: "var(--text-secondary)" }}>Subscriber Breakdown</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <MiniStat label="Free" value={(analytics?.freeUsers ?? 0).toLocaleString()} color="#64748b" />
+              <MiniStat label="Premium" value={(analytics?.premiumUsers ?? 0).toLocaleString()} color="#f59e0b" />
+              <MiniStat label="Enterprise" value={(analytics?.enterpriseUsers ?? 0).toLocaleString()} color="#8b5cf6" />
+              <MiniStat label="New (period)" value={(analytics?.newSubscribers ?? 0).toLocaleString()} color="#10b981" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <MiniStat label="Upgrade Rate" value={`${analytics?.upgradeRate ?? 0}%`} color="#10b981" />
+              <MiniStat label="Downgrade Rate" value={`${analytics?.downgradeRate ?? 0}%`} color="#f472b6" />
+              <MiniStat label="Churned" value={(analytics?.churned ?? 0).toLocaleString()} color="#ef4444" />
+              <MiniStat label="Active Users" value={(analytics?.activeUsers ?? 0).toLocaleString()} color="#38bdf8" />
+            </div>
+            {Object.keys(subCount).length > 0 && (
+              <div className="pt-3 border-t space-y-1" style={{ borderColor: "var(--border-color)" }}>
+                {Object.entries(subCount).map(([plan, count]) => {
+                  const pct = subPlanTotal > 0 ? ((count / subPlanTotal) * 100).toFixed(0) : "0";
+                  return (
+                    <div key={plan} className="flex items-center justify-between text-[10px] font-bold">
+                      <span className="font-mono" style={{ color: "var(--text-muted)" }}>{plan}</span>
+                      <span style={{ color: "var(--text-primary)" }}>{count} ({pct}%)</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Subscriptions list */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.35 }}
+        className="rounded-2xl border overflow-hidden"
+        style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
+      >
+        <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+          <Crown size={16} style={{ color: "#8b5cf6" }} />
+          <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
+            Subscriptions
+          </h2>
+          <span className="ml-auto flex items-center gap-2">
+            <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{subTotal} total</span>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setShowGrant((v) => !v)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold cursor-pointer"
+              style={{ background: "rgba(139,92,246,0.12)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.25)" }}
+            >
+              <UserPlus size={11} /> Grant Plan
+            </motion.button>
+          </span>
+        </div>
+
+        {showGrant && (
+          <form onSubmit={handleGrant} className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+            <div className="sm:col-span-1">
+              <Input label="User ID" value={grantForm.userId} onChange={(v) => setGrantForm((s) => ({ ...s, userId: v }))} placeholder="user_..." />
+            </div>
+            <SelectField
+              label="Plan"
+              value={grantForm.plan}
+              onChange={(v) => setGrantForm((s) => ({ ...s, plan: v }))}
+              options={[
+                { value: "enterprise", label: "Enterprise" },
+                { value: "pro_monthly", label: "Pro Monthly" },
+                { value: "pro_yearly", label: "Pro Yearly" },
+                { value: "free", label: "Free" },
+              ]}
+            />
+            <SelectField
+              label="Cycle"
+              value={grantForm.billingCycle}
+              onChange={(v) => setGrantForm((s) => ({ ...s, billingCycle: v }))}
+              options={[
+                { value: "monthly", label: "Monthly" },
+                { value: "yearly", label: "Yearly" },
+              ]}
+            />
+            <Input label="Duration (days)" type="number" value={grantForm.durationDays} onChange={(v) => setGrantForm((s) => ({ ...s, durationDays: v }))} />
+            <button
+              type="submit"
+              className="self-end py-2 rounded-lg text-[11px] font-bold cursor-pointer transition-all hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", color: "#fff" }}
+            >
+              Grant
+            </button>
+          </form>
+        )}
+
+        {subs.length === 0 ? (
+          <p className="text-[11px] font-medium text-center py-10" style={{ color: "var(--text-muted)" }}>
+            No subscriptions recorded yet
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="text-[9px] uppercase tracking-wider border-b" style={{ color: "var(--text-muted)", borderColor: "var(--border-color)" }}>
+                  <th className="px-5 py-2.5 font-bold">User</th>
+                  <th className="px-3 py-2.5 font-bold">Plan</th>
+                  <th className="px-3 py-2.5 font-bold">Status</th>
+                  <th className="px-3 py-2.5 font-bold">Cycle</th>
+                  <th className="px-3 py-2.5 font-bold">Amount</th>
+                  <th className="px-3 py-2.5 font-bold">Period End</th>
+                  <th className="px-3 py-2.5 font-bold">Provider</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y" style={{ borderColor: "var(--border-color)" }}>
+                {subs.map((s) => {
+                  const active = s.status === "active" || s.status === "cancel_at_period_end";
+                  return (
+                    <tr key={s.id} className="text-xs hover:bg-white/[0.02]">
+                      <td className="px-5 py-3">
+                        <div className="font-bold truncate max-w-[160px]" style={{ color: "var(--text-primary)" }}>
+                          {s.user?.name || s.user?.email || "—"}
+                        </div>
+                        <div className="text-[9px] font-mono text-[var(--text-muted)]">{s.user?.email || s.userId}</div>
+                      </td>
+                      <td className="px-3 py-3 font-mono font-bold" style={{ color: "#8b5cf6" }}>{s.planCode}</td>
+                      <td className="px-3 py-3">
+                        <StatusBadge variant={active ? "success" : "default"}>{s.status}</StatusBadge>
+                      </td>
+                      <td className="px-3 py-3 font-mono" style={{ color: "var(--text-secondary)" }}>{s.billingCycle}</td>
+                      <td className="px-3 py-3 font-mono font-bold" style={{ color: "var(--text-primary)" }}>
+                        {s.price > 0 ? `₹${s.price.toLocaleString("en-IN")}` : "—"}
+                      </td>
+                      <td className="px-3 py-3 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                        {new Date(s.currentPeriodEnd).toLocaleDateString()}
+                      </td>
+                      <td className="px-3 py-3 text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{s.provider}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {subPages > 1 && (
+          <div className="flex items-center justify-end gap-2 px-5 py-3 border-t" style={{ borderColor: "var(--border-color)" }}>
+            <button
+              onClick={() => setSubPage((p) => Math.max(1, p - 1))}
+              disabled={subPage === 1}
+              className="px-3 py-1 rounded-lg border text-[10px] font-bold cursor-pointer disabled:opacity-40"
+              style={{ borderColor: "var(--border-color)", color: "var(--text-secondary)" }}
+            >
+              Prev
+            </button>
+            <span className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>
+              Page {subPage} / {subPages}
+            </span>
+            <button
+              onClick={() => setSubPage((p) => Math.min(subPages, p + 1))}
+              disabled={subPage === subPages}
+              className="px-3 py-1 rounded-lg border text-[10px] font-bold cursor-pointer disabled:opacity-40"
+              style={{ borderColor: "var(--border-color)", color: "var(--text-secondary)" }}
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Transactions & refunds */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45, duration: 0.35 }}
+        className="rounded-2xl border overflow-hidden"
+        style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
+      >
+        <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+          <FileText size={16} style={{ color: "#f472b6" }} />
+          <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
+            Transactions & Refunds
+          </h2>
+          <span className="ml-auto text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
+            {txnTotal} total
+          </span>
+        </div>
+        {txns.length === 0 ? (
+          <p className="text-[11px] font-medium text-center py-10" style={{ color: "var(--text-muted)" }}>
+            No transactions recorded yet
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="text-[9px] uppercase tracking-wider border-b" style={{ color: "var(--text-muted)", borderColor: "var(--border-color)" }}>
+                  <th className="px-5 py-2.5 font-bold">User</th>
+                  <th className="px-3 py-2.5 font-bold">Type</th>
+                  <th className="px-3 py-2.5 font-bold">Amount</th>
+                  <th className="px-3 py-2.5 font-bold">Status</th>
+                  <th className="px-3 py-2.5 font-bold">Provider</th>
+                  <th className="px-3 py-2.5 font-bold">Date</th>
+                  <th className="px-3 py-2.5 font-bold"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y" style={{ borderColor: "var(--border-color)" }}>
+                {txns.map((t) => {
+                  const refundable = t.type === "payment" && t.status === "paid" && t.paymentId;
+                  return (
+                    <tr key={t.id} className="text-xs hover:bg-white/[0.02]">
+                      <td className="px-5 py-3">
+                        <div className="font-bold truncate max-w-[160px]" style={{ color: "var(--text-primary)" }}>
+                          {t.user?.name || t.user?.email || "—"}
+                        </div>
+                        <div className="text-[9px] font-mono text-[var(--text-muted)]">{t.user?.email || t.userId}</div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <StatusBadge variant={t.type === "refund" ? "error" : "success"}>{t.type}</StatusBadge>
+                      </td>
+                      <td className={`px-3 py-3 font-mono font-bold ${t.amount < 0 ? "text-red-500" : ""}`} style={{ color: t.amount < 0 ? "#ef4444" : "var(--text-primary)" }}>
+                        {t.amount < 0 ? "-" : ""}₹{Math.abs(t.amount / 100).toLocaleString("en-IN")}
+                      </td>
+                      <td className="px-3 py-3 font-mono" style={{ color: "var(--text-secondary)" }}>{t.status}</td>
+                      <td className="px-3 py-3 text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{t.provider}</td>
+                      <td className="px-3 py-3 text-[10px]" style={{ color: "var(--text-muted)" }}>{formatDate(t.createdAt)}</td>
+                      <td className="px-3 py-3 text-right">
+                        {refundable && (
+                          <button
+                            onClick={() => handleRefund(t)}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[9px] font-bold cursor-pointer transition-all hover:border-red-500 hover:text-red-500"
+                            style={{ borderColor: "var(--border-color)", color: "var(--text-secondary)" }}
+                          >
+                            <Ban size={10} /> Refund
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {txnPages > 1 && (
+          <div className="flex items-center justify-end gap-2 px-5 py-3 border-t" style={{ borderColor: "var(--border-color)" }}>
+            <button
+              onClick={() => setTxnPage((p) => Math.max(1, p - 1))}
+              disabled={txnPage === 1}
+              className="px-3 py-1 rounded-lg border text-[10px] font-bold cursor-pointer disabled:opacity-40"
+              style={{ borderColor: "var(--border-color)", color: "var(--text-secondary)" }}
+            >
+              Prev
+            </button>
+            <span className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>
+              Page {txnPage} / {txnPages}
+            </span>
+            <button
+              onClick={() => setTxnPage((p) => Math.min(txnPages, p + 1))}
+              disabled={txnPage === txnPages}
+              className="px-3 py-1 rounded-lg border text-[10px] font-bold cursor-pointer disabled:opacity-40"
+              style={{ borderColor: "var(--border-color)", color: "var(--text-secondary)" }}
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Feature access + usage limits */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Feature access */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.35 }}
+          className="rounded-2xl border overflow-hidden"
+          style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
+        >
+          <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+            <Crown size={16} style={{ color: "#f59e0b" }} />
+            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
+              Feature Access
+            </h2>
+            <span className="ml-auto">
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={handleRefreshCatalog}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold cursor-pointer"
+                style={{ background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.25)" }}
+              >
+                <RefreshCw size={11} /> Refresh Catalog
+              </motion.button>
+            </span>
+          </div>
+          <div className="divide-y max-h-[420px] overflow-y-auto" style={{ borderColor: "var(--border-color)" }}>
+            {features.length === 0 ? (
+              <p className="text-[11px] font-medium text-center py-10" style={{ color: "var(--text-muted)" }}>
+                Feature catalog is empty. Refresh the catalog from the feature registry.
+              </p>
+            ) : (
+              features.map((f) =>
+                editingFeature?.id === f.id ? (
+                  <div key={f.id} className="px-5 py-3 grid grid-cols-2 gap-3">
+                    <label className="block col-span-2">
+                      <span className="text-[9px] font-bold uppercase tracking-wider mb-1 block" style={{ color: "var(--text-muted)" }}>
+                        Name
+                      </span>
+                      <input
+                        value={editingFeature.name}
+                        onChange={(e) => setEditingFeature((s) => (s ? { ...s, name: e.target.value } : s))}
+                        className="w-full px-3 py-1.5 rounded-lg border text-xs outline-none focus:border-amber-500 transition-colors"
+                        style={{ background: "rgba(255,255,255,0.03)", color: "var(--text-primary)", borderColor: "var(--border-color)" }}
+                      />
+                    </label>
+                    <SelectField
+                      label="Required Plan"
+                      value={editingFeature.requiredPlan}
+                      onChange={(v) => setEditingFeature((s) => (s ? { ...s, requiredPlan: v } : s))}
+                      options={[
+                        { value: "free", label: "Free" },
+                        { value: "premium", label: "Premium" },
+                        { value: "enterprise", label: "Enterprise" },
+                      ]}
+                    />
+                    <label className="flex items-end gap-2 pb-1.5">
+                      <input
+                        type="checkbox"
+                        checked={editingFeature.gated}
+                        onChange={(e) => setEditingFeature((s) => (s ? { ...s, gated: e.target.checked } : s))}
+                        className="accent-amber-500 w-4 h-4"
+                      />
+                      <span className="text-[10px] font-bold" style={{ color: "var(--text-secondary)" }}>Gated</span>
+                    </label>
+                    <div className="col-span-2 flex gap-2">
+                      <button
+                        onClick={() => handleSaveFeature(editingFeature)}
+                        className="flex-1 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer"
+                        style={{ background: "#f59e0b", color: "#000" }}
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingFeature(null)}
+                        className="px-4 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer border"
+                        style={{ borderColor: "var(--border-color)", color: "var(--text-secondary)" }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div key={f.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold truncate" style={{ color: "var(--text-primary)" }}>{f.name}</span>
+                        <StatusBadge variant={f.gated ? "warning" : "success"}>
+                          {f.gated ? "Gated" : "Open"}
+                        </StatusBadge>
+                      </div>
+                      <div className="text-[10px] font-medium mt-0.5 font-mono text-[var(--text-muted)]">
+                        {f.featureKey} · {f.category} · required: {f.requiredPlan}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setEditingFeature(f)}
+                      className="p-2 rounded-lg border cursor-pointer transition-all hover:border-amber-500 hover:text-amber-400"
+                      style={{ borderColor: "var(--border-color)", color: "var(--text-muted)" }}
+                      title="Edit feature access"
+                    >
+                      <Plus size={13} style={{ transform: "rotate(45deg)" }} />
+                    </button>
+                  </div>
+                )
+              )
+            )}
+          </div>
+        </motion.div>
+
+        {/* Usage limits */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55, duration: 0.35 }}
+          className="rounded-2xl border overflow-hidden"
+          style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
+        >
+          <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+            <GaugeIcon size={16} style={{ color: "#10b981" }} />
+            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
+              Usage Limits
+            </h2>
+            <span className="ml-auto">
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => setShowLimitForm((v) => !v)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold cursor-pointer"
+                style={{ background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.25)" }}
+              >
+                <Plus size={11} /> New Limit
+              </motion.button>
+            </span>
+          </div>
+
+          {showLimitForm && (
+            <form onSubmit={handleCreateLimit} className="grid grid-cols-2 gap-3 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+              <Input label="Feature Key" value={newLimit.featureKey} onChange={(v) => setNewLimit((s) => ({ ...s, featureKey: v }))} placeholder="ai_chat" />
+              <Input label="Plan Code" value={newLimit.planCode} onChange={(v) => setNewLimit((s) => ({ ...s, planCode: v }))} placeholder="free" />
+              <Input label="Daily Limit" type="number" value={newLimit.dailyLimit} onChange={(v) => setNewLimit((s) => ({ ...s, dailyLimit: v }))} />
+              <Input label="Monthly Limit" type="number" value={newLimit.monthlyLimit} onChange={(v) => setNewLimit((s) => ({ ...s, monthlyLimit: v }))} />
+              <Input label="Token Limit" type="number" value={newLimit.tokenLimit} onChange={(v) => setNewLimit((s) => ({ ...s, tokenLimit: v }))} />
+              <Input label="Storage (MB)" type="number" value={newLimit.storageMb} onChange={(v) => setNewLimit((s) => ({ ...s, storageMb: v }))} />
+              <button
+                type="submit"
+                className="col-span-2 py-2 rounded-lg text-[11px] font-bold cursor-pointer transition-all hover:opacity-90"
+                style={{ background: "linear-gradient(135deg, #10b981, #047857)", color: "#fff" }}
+              >
+                Create Usage Limit
+              </button>
+            </form>
+          )}
+
+          <div className="divide-y max-h-[420px] overflow-y-auto" style={{ borderColor: "var(--border-color)" }}>
+            {limits.length === 0 ? (
+              <p className="text-[11px] font-medium text-center py-10" style={{ color: "var(--text-muted)" }}>
+                No custom usage limits. Defaults from the seed data apply.
+              </p>
+            ) : (
+              limits.map((l) =>
+                editingLimit?.id === l.id ? (
+                  <div key={l.id} className="px-5 py-3 grid grid-cols-2 gap-2">
+                    <Input label="Daily" type="number" value={l.dailyLimit == null ? "" : String(l.dailyLimit)} onChange={(v) => setEditingLimit((s) => (s ? { ...s, dailyLimit: v === "" ? null : Number(v) } : s))} />
+                    <Input label="Monthly" type="number" value={l.monthlyLimit == null ? "" : String(l.monthlyLimit)} onChange={(v) => setEditingLimit((s) => (s ? { ...s, monthlyLimit: v === "" ? null : Number(v) } : s))} />
+                    <Input label="Tokens" type="number" value={l.tokenLimit == null ? "" : String(l.tokenLimit)} onChange={(v) => setEditingLimit((s) => (s ? { ...s, tokenLimit: v === "" ? null : Number(v) } : s))} />
+                    <Input label="Storage MB" type="number" value={l.storageMb == null ? "" : String(l.storageMb)} onChange={(v) => setEditingLimit((s) => (s ? { ...s, storageMb: v === "" ? null : Number(v) } : s))} />
+                    <label className="flex items-end gap-2 pb-1.5">
+                      <input
+                        type="checkbox"
+                        checked={l.enabled}
+                        onChange={(e) => setEditingLimit((s) => (s ? { ...s, enabled: e.target.checked } : s))}
+                        className="accent-emerald-500 w-4 h-4"
+                      />
+                      <span className="text-[10px] font-bold" style={{ color: "var(--text-secondary)" }}>Enabled</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleSaveLimit(editingLimit)} className="flex-1 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer" style={{ background: "#10b981", color: "#fff" }}>Save</button>
+                      <button onClick={() => setEditingLimit(null)} className="px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer border" style={{ borderColor: "var(--border-color)", color: "var(--text-secondary)" }}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div key={l.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold font-mono truncate" style={{ color: "var(--text-primary)" }}>{l.featureKey}</span>
+                        <StatusBadge variant={l.enabled ? "success" : "default"}>{l.enabled ? "On" : "Off"}</StatusBadge>
+                      </div>
+                      <div className="text-[10px] font-medium mt-0.5 text-[var(--text-muted)]">
+                        {l.planCode} · daily {l.dailyLimit ?? "∞"} · monthly {l.monthlyLimit ?? "∞"} · tokens {l.tokenLimit ?? "∞"} · {l.storageMb ?? "∞"}MB
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setEditingLimit(l)}
+                      className="p-2 rounded-lg border cursor-pointer transition-all hover:border-emerald-500 hover:text-emerald-400"
+                      style={{ borderColor: "var(--border-color)", color: "var(--text-muted)" }}
+                      title="Edit usage limit"
+                    >
+                      <Plus size={13} style={{ transform: "rotate(45deg)" }} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteLimit(l)}
+                      className="p-2 rounded-lg border cursor-pointer transition-all hover:border-red-500 hover:text-red-500"
+                      style={{ borderColor: "var(--border-color)", color: "var(--text-muted)" }}
+                      title="Delete usage limit"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )
+              )
+            )}
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
@@ -685,5 +1468,39 @@ function KpiCard({ icon, label, value, color, delay }: { icon: React.ReactNode; 
       <div className="text-xl font-black font-mono tracking-tight" style={{ color: "var(--text-primary)" }}>{value}</div>
       <div className="text-xs font-semibold mt-1" style={{ color: "var(--text-secondary)" }}>{label}</div>
     </motion.div>
+  );
+}
+
+function MiniStat({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="rounded-xl border p-3" style={{ borderColor: "var(--border-color)" }}>
+      <div className="text-base font-black font-mono" style={{ color }}>{value}</div>
+      <div className="text-[10px] font-semibold mt-0.5" style={{ color: "var(--text-muted)" }}>{label}</div>
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, options }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="block">
+      <span className="text-[9px] font-bold uppercase tracking-wider mb-1 block" style={{ color: "var(--text-muted)" }}>{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-1.5 rounded-lg border text-xs outline-none focus:border-amber-500 transition-colors"
+        style={{ background: "rgba(255,255,255,0.03)", color: "var(--text-primary)", borderColor: "var(--border-color)" }}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value} className="text-slate-900">
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

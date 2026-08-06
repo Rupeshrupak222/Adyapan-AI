@@ -63,20 +63,27 @@ model Profile {
 }
 
 model Payment {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  orderId   String   @unique @map("order_id")
-  paymentId String?  @unique @map("payment_id")
-  signature String?  @map("signature")
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  orderId        String    @unique @map("order_id")
+  paymentId      String?   @unique @map("payment_id")
+  signature      String?   @map("signature")
   amount         Int
-  currency       String   @default("INR")
+  currency       String    @default("INR")
   plan           String
-  couponCode     String?  @map("coupon_code")
-  discountAmount Int?     @map("discount_amount")
-  status         String   @default("created")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billingCycle   String?   @map("billing_cycle")
+  provider       String    @default("razorpay")
+  couponCode     String?   @map("coupon_code")
+  discountAmount Int?      @map("discount_amount")
+  status         String    @default("created")
+  failureReason  String?   @map("failure_reason")
+  invoiceNumber  String?   @map("invoice_number")
+  refundId       String?   @map("refund_id")
+  refundStatus   String?   @map("refund_status")
+  refundedAt     DateTime? @map("refunded_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
@@ -139,21 +146,29 @@ model AiRequestLog {
 
 // Subscription lifecycle rows linked to premium/enterprise purchases.
 model Subscription {
-  id                 String    @id @default(cuid())
-  userId             String    @map("user_id")
-  planId             String?   @map("plan_id")
-  planCode           String    @map("plan_code")
-  status             String    @default("active")
-  price              Float     @default(0)
-  currency           String    @default("INR")
-  currentPeriodStart DateTime  @map("current_period_start")
-  currentPeriodEnd   DateTime  @map("current_period_end")
-  canceledAt         DateTime? @map("canceled_at")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
+  id                        String    @id @default(cuid())
+  userId                    String    @map("user_id")
+  planId                    String?   @map("plan_id")
+  planCode                  String    @map("plan_code")
+  billingCycle              String    @default("monthly") @map("billing_cycle")
+  status                    String    @default("active")
+  provider                  String    @default("razorpay")
+  providerSubscriptionId    String?   @map("provider_subscription_id")
+  price                     Float     @default(0)
+  currency                  String    @default("INR")
+  autoRenew                 Boolean   @default(true) @map("auto_renew")
+  currentPeriodStart        DateTime  @map("current_period_start")
+  currentPeriodEnd          DateTime  @map("current_period_end")
+  cancellationRequestedAt   DateTime? @map("cancellation_requested_at")
+  canceledAt                DateTime? @map("canceled_at")
+  endedAt                   DateTime? @map("ended_at")
+  createdAt                 DateTime  @default(now()) @map("created_at")
+  updatedAt                 DateTime  @updatedAt @map("updated_at")
 
   @@index([userId])
   @@index([status])
+  @@index([planCode])
+  @@index([currentPeriodEnd])
   @@map("subscriptions")
 }
 
@@ -986,14 +1001,17 @@ model FeatureLog {
 }
 
 model Coupon {
-  id           String    @id @default(cuid())
-  code         String    @unique
-  discountPct  Float     @map("discount_pct")
-  validUntil   DateTime? @map("valid_until")
-  maxUses      Int?      @map("max_uses")
-  usedCount    Int       @default(0) @map("used_count")
-  isActive     Boolean   @default(true) @map("is_active")
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id                String    @id @default(cuid())
+  code              String    @unique
+  discountPct       Float     @map("discount_pct")
+  planCodes         String[]  @default([]) @map("plan_codes")
+  minAmount         Float?    @map("min_amount")
+  maxDiscountAmount Float?    @map("max_discount_amount")
+  validUntil        DateTime? @map("valid_until")
+  maxUses           Int?      @map("max_uses")
+  usedCount         Int       @default(0) @map("used_count")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
 
   @@map("coupons")
 }
@@ -1006,6 +1024,10 @@ model Plan {
   priceYearly  Float    @map("price_yearly")
   features     Json     @default("[]")
   isActive     Boolean  @default(true) @map("is_active")
+  category     String   @default("premium")
+  recommended  Boolean  @default(false)
+  sortOrder    Int      @default(0) @map("sort_order")
+  trialDays    Int      @default(0) @map("trial_days")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("plans")
@@ -1033,5 +1055,132 @@ model AdminPreference {
 
   @@unique([adminId])
   @@map("admin_preferences")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENTERPRISE SUBSCRIPTION SYSTEM — Billing, Payments & Feature Access
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Immutable payment/refund ledger rows. One row per charge or refund across
+// any provider (razorpay, stripe, paypal, mock).
+model Transaction {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  paymentId   String?  @map("payment_id")
+  orderId     String?  @map("order_id")
+  type        String   @default("payment") // payment | refund | adjustment
+  provider    String   @default("razorpay")
+  providerRef String?  @map("provider_ref")
+  amount      Int
+  currency    String   @default("INR")
+  status      String   @default("pending") // pending | succeeded | failed | refunded
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([paymentId])
+  @@index([createdAt])
+  @@index([type, status])
+  @@map("transactions")
+}
+
+// Saved payment methods (cards / upi / netbanking / paypal tokens).
+model PaymentMethod {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  provider     String   @default("razorpay")
+  type         String   @default("card") // card | upi | netbanking | paypal
+  brand        String?  @default("") // visa, mastercard, ...
+  last4        String?  @map("last_4")
+  expiryMonth  String?  @map("expiry_month")
+  expiryYear   String?  @map("expiry_year")
+  holderName   String?  @map("holder_name")
+  email        String?
+  providerToken String? @map("provider_token")
+  isDefault    Boolean  @default(false) @map("is_default")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("payment_methods")
+}
+
+// Billing address for invoice generation.
+model BillingAddress {
+  id         String   @id @default(cuid())
+  userId     String   @unique @map("user_id")
+  name       String?
+  email      String?
+  phone      String?
+  line1      String?
+  line2      String?
+  city       String?
+  state      String?
+  postalCode String?  @map("postal_code")
+  country    String   @default("IN")
+  gstin      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("billing_addresses")
+}
+
+// Generated invoice records (one per successful payment/refund).
+model Invoice {
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  invoiceNumber  String    @unique @map("invoice_number")
+  paymentId      String?   @map("payment_id")
+  subscriptionId String?   @map("subscription_id")
+  plan           String?
+  description    String    @default("")
+  amount         Int
+  taxAmount      Int       @default(0) @map("tax_amount")
+  currency       String    @default("INR")
+  status         String    @default("paid") // paid | refunded | void
+  issuedAt       DateTime  @default(now()) @map("issued_at")
+  dueAt          DateTime? @map("due_at")
+  paidAt         DateTime? @map("paid_at")
+  downloadUrl    String?   @map("download_url")
+
+  @@index([userId])
+  @@index([issuedAt])
+  @@map("invoices")
+}
+
+// Admin-configurable per-feature, per-plan usage quotas.
+// featureKey maps to a feature in the FeatureAccess catalog.
+model UsageLimit {
+  id          String   @id @default(cuid())
+  featureKey  String   @map("feature_key")
+  planCode    String   @map("plan_code")
+  dailyLimit  Int?     @map("daily_limit")
+  monthlyLimit Int?    @map("monthly_limit")
+  tokenLimit  Int?     @map("token_limit")
+  storageMb   Float?   @map("storage_mb")
+  enabled     Boolean  @default(true)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([featureKey, planCode])
+  @@index([planCode])
+  @@map("usage_limits")
+}
+
+// Feature → required-plan access catalog. Every AI feature is gated here.
+// requiredPlan: free | premium | enterprise. Admins can toggle `gated`.
+model FeatureAccess {
+  id           String   @id @default(cuid())
+  featureKey   String   @unique @map("feature_key")
+  name         String
+  description  String?  @db.Text
+  category     String   @default("AI Productivity")
+  requiredPlan String   @default("premium") @map("required_plan")
+  routePattern String?  @map("route_pattern")
+  gated        Boolean  @default(true)
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@index([requiredPlan])
+  @@map("feature_access")
 }
 

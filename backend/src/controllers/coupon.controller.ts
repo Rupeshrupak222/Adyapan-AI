@@ -32,6 +32,9 @@ function toPublicCoupon(c: {
   maxUses: number | null;
   usedCount: number;
   isActive: boolean;
+  planCodes?: string[];
+  minAmount?: number | null;
+  maxDiscountAmount?: number | null;
 }) {
   return {
     id: c.id,
@@ -41,6 +44,9 @@ function toPublicCoupon(c: {
     maxUses: c.maxUses,
     usedCount: c.usedCount,
     isActive: c.isActive,
+    planCodes: c.planCodes ?? [],
+    minAmount: c.minAmount ?? null,
+    maxDiscountAmount: c.maxDiscountAmount ?? null,
   };
 }
 
@@ -105,7 +111,7 @@ export async function getCoupons(_req: Request, res: Response, next: NextFunctio
 
 export async function createCoupon(req: Request, res: Response, next: NextFunction) {
   try {
-    const { code, discountPct, validUntil, maxUses, isActive } = req.body;
+    const { code, discountPct, validUntil, maxUses, isActive, planCodes, minAmount, maxDiscountAmount } = req.body;
 
     if (typeof code !== "string" || code.trim().length === 0) {
       throw httpError(400, "Coupon code is required");
@@ -126,6 +132,9 @@ export async function createCoupon(req: Request, res: Response, next: NextFuncti
         validUntil: validUntil ? new Date(validUntil) : null,
         maxUses: maxUses != null ? Math.max(1, Math.floor(Number(maxUses))) : null,
         isActive: isActive !== false,
+        planCodes: Array.isArray(planCodes) ? planCodes.map((p: string) => String(p).toLowerCase()) : [],
+        minAmount: minAmount != null && minAmount !== "" ? Math.max(0, Number(minAmount)) : null,
+        maxDiscountAmount: maxDiscountAmount != null && maxDiscountAmount !== "" ? Math.max(0, Number(maxDiscountAmount)) : null,
       },
     });
 
@@ -153,7 +162,7 @@ export async function updateCoupon(req: Request, res: Response, next: NextFuncti
     const coupon = await prisma.coupon.findUnique({ where: { id } });
     if (!coupon) throw httpError(404, "Coupon not found");
 
-    const { code, discountPct, validUntil, maxUses, isActive, usedCount } = req.body;
+    const { code, discountPct, validUntil, maxUses, isActive, usedCount, planCodes, minAmount, maxDiscountAmount } = req.body;
 
     if (code != null && (typeof code !== "string" || code.trim().length === 0)) {
       throw httpError(400, "Coupon code is required");
@@ -173,6 +182,10 @@ export async function updateCoupon(req: Request, res: Response, next: NextFuncti
       isActive: isActive != null ? Boolean(isActive) : coupon.isActive,
       usedCount: usedCount != null ? Math.max(0, Math.floor(Number(usedCount))) : coupon.usedCount,
     };
+
+    if (planCodes != null) data.planCodes = Array.isArray(planCodes) ? planCodes.map((p: string) => String(p).toLowerCase()) : [];
+    if (minAmount != null) data.minAmount = minAmount === "" ? null : Math.max(0, Number(minAmount));
+    if (maxDiscountAmount != null) data.maxDiscountAmount = maxDiscountAmount === "" ? null : Math.max(0, Number(maxDiscountAmount));
 
     if (code != null) {
       const normalizedCode = String(code).trim().toUpperCase();

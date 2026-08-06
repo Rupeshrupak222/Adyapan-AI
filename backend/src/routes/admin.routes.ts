@@ -70,6 +70,7 @@ import {
   updateFeaturePermissions,
   exportFeatures,
 } from "../controllers/feature.controller";
+import { subscriptionAdminRouter } from "./admin-subscription.routes";
 
 export const adminRouter = Router();
 
@@ -142,6 +143,9 @@ adminRouter.get("/plans", ...can("billing", "read"), getPlans);
 adminRouter.post("/plans", ...can("billing", "write"), createPlan);
 adminRouter.put("/plans/:id", ...can("billing", "write"), updatePlan);
 adminRouter.delete("/plans/:id", ...can("billing", "write"), deletePlan);
+
+// Enterprise Subscription System (analytics, subscriptions, refunds, feature access)
+adminRouter.use("/subscriptions", subscriptionAdminRouter);
 
 adminRouter.get("/performance", ...can("system", "read"), (req, res) => {
   try {
