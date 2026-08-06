@@ -15,11 +15,11 @@ export interface OpenRouterOptions {
 
 // Gemini model fallback chain — tried in order when one is unavailable
 const GEMINI_MODEL_FALLBACKS = [
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-pro",
   "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-1.5-flash",
-  "gemini-1.5-pro",
+  "gemini-2.5-flash-lite",
 ];
 
 // Groq model fallback chain
@@ -49,7 +49,7 @@ function resolveOpenRouterModel(requestedModel?: string): string {
   const lower = (requestedModel ?? "").toLowerCase();
   if (!lower) return FAST_OPENROUTER_DEFAULT;
   if (lower.includes("kimi")) return "moonshotai/kimi-k2";
-  if (lower.includes("gemini")) return "google/gemini-2.0-flash";
+  if (lower.includes("gemini")) return "google/gemini-3.6-flash";
   if (lower.includes("llama")) return "meta-llama/llama-3.3-70b-instruct";
   if (lower.includes("deepseek")) return "deepseek/deepseek-chat";
   if (lower.includes("mistral")) return "mistralai/mistral-medium";
@@ -58,7 +58,7 @@ function resolveOpenRouterModel(requestedModel?: string): string {
   return FAST_OPENROUTER_DEFAULT;
 }
 
-// Sequential fallback completion engine: OpenRouter (primary, fast models) → Gemini → Groq → NVIDIA NIM (fallback)
+// Sequential fallback completion engine: Gemini (primary, latest flash models) → OpenRouter → Groq → NVIDIA NIM (fallback)
 export async function callAIRobust(
   messages: OpenRouterMessage[],
   options: OpenRouterOptions
@@ -77,17 +77,7 @@ export async function callAIRobust(
     });
   }
 
-  // 1. Add OpenRouter if key exists (primary) — fast models, valid OpenRouter IDs
-  if (env.openrouterApiKey) {
-    providers.push({
-      name: "OpenRouter",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      key: env.openrouterApiKey,
-      model: isKimiRequested ? "moonshotai/kimi-k2" : resolveOpenRouterModel(options.model),
-    });
-  }
-
-  // 2. Add Google Gemini with fallback models (secondary)
+  // 1. Add Google Gemini with latest flash models first (primary)
   if (env.geminiApiKey) {
     const modelLower = options.model?.toLowerCase() ?? "";
     const requestedModel = modelLower.includes("gemini")
@@ -107,6 +97,16 @@ export async function callAIRobust(
         model: m,
       });
     }
+  }
+
+  // 2. Add OpenRouter if key exists (secondary) — fast models, valid OpenRouter IDs
+  if (env.openrouterApiKey) {
+    providers.push({
+      name: "OpenRouter",
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      key: env.openrouterApiKey,
+      model: isKimiRequested ? "moonshotai/kimi-k2" : resolveOpenRouterModel(options.model),
+    });
   }
 
   // 3. Add Groq with fallback models (tertiary)
@@ -462,15 +462,15 @@ function enforceSchema<T>(parsed: any, fallback: T): T {
 }
 
 // Default model presets for different task categories
-// Fast OpenRouter models are the default; NVIDIA NIM remains as the fallback provider.
+// Latest Gemini flash models are the default; OpenRouter/Groq/NVIDIA remain as fallback providers.
 export const MODELS = {
-  FAST: "openai/gpt-4o-mini",              // Study Assistant, Notes, Assignment, ATS fast, Proctoring
-  BALANCED: "openai/gpt-4o-mini",          // Resume Builder, Interview, Coding Assistant, LinkedIn, DSA
-  POWERFUL: "google/gemini-2.0-flash",     // Research Paper, Code Generation, PPT, Enhanced MindMap/Quiz
-  CODE: "openai/gpt-4o-mini",              // Code Gen, Debug, Explain, AI Coding Analysis
-  CHEAP: "openai/gpt-4o-mini",             // Cheapest option
-  SUMMARIZATION: "openai/gpt-4o-mini",     // Research Summarization, writing
-  CHAT: "openai/gpt-4o-mini",              // AI Chat default
+  FAST: "gemini-3.5-flash-lite",       // Study Assistant, Notes, Assignment, ATS fast, Proctoring
+  BALANCED: "gemini-3.6-flash",        // Resume Builder, Interview, Coding Assistant, LinkedIn, DSA
+  POWERFUL: "gemini-3.6-flash",        // Research Paper, Code Generation, PPT, Enhanced MindMap/Quiz
+  CODE: "gemini-3.5-flash-lite",       // Code Gen, Debug, Explain, AI Coding Analysis
+  CHEAP: "gemini-3.5-flash-lite",      // Cheapest option
+  SUMMARIZATION: "gemini-3.6-flash",   // Research Summarization, writing
+  CHAT: "gemini-3.6-flash",            // AI Chat default
   EMBEDDING: "nvidia/nemotron-3-embed-1b", // RAG/Search embeddings
 } as const;
 
@@ -538,8 +538,9 @@ export const CHAT_MODELS = [
   { id: "openai/gpt-4o", name: "GPT-4o", provider: "OpenAI", cheap: false },
   { id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4", provider: "Anthropic", cheap: false },
   { id: "anthropic/claude-3.5-haiku", name: "Claude 3.5 Haiku", provider: "Anthropic", cheap: true },
-  { id: "google/gemini-2.0-flash", name: "Gemini 2.0 Flash", provider: "Google", cheap: true },
-  { id: "google/gemini-1.5-pro", name: "Gemini 1.5 Pro", provider: "Google", cheap: false },
+  { id: "google/gemini-3.6-flash", name: "Gemini 3.6 Flash", provider: "Google", cheap: true },
+  { id: "google/gemini-3.5-flash-lite", name: "Gemini 3.5 Flash-Lite", provider: "Google", cheap: true },
+  { id: "google/gemini-3.1-pro", name: "Gemini 3.1 Pro", provider: "Google", cheap: false },
   { id: "deepseek/deepseek-chat", name: "DeepSeek V3", provider: "DeepSeek", cheap: true },
   { id: "deepseek/deepseek-r1", name: "DeepSeek R1", provider: "DeepSeek", cheap: true },
   { id: "meta-llama/llama-3.3-70b", name: "Llama 3.3 70B", provider: "Meta", cheap: true },

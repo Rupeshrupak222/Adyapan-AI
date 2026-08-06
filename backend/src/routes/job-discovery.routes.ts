@@ -266,7 +266,7 @@ Career Goal: ${userProfile?.careerObjective || "Career advancement"}`;
     const analysis = await generateJSON(
       systemPrompt,
       userPrompt,
-      { model: "google/gemini-2.0-flash", temperature: 0.3 },
+      { model: "google/gemini-3.6-flash", temperature: 0.3 },
       {
         overallScore: cvSkills.length > 0 ? 70 : 50,
         activeCvName,
@@ -336,7 +336,7 @@ Resume Text Preview: ${cvText ? cvText.slice(0, 1500) : "No text"}`;
     const analysis = await generateJSON(
       systemPrompt,
       userPrompt,
-      { model: "google/gemini-2.0-flash", temperature: 0.3 },
+      { model: "google/gemini-3.6-flash", temperature: 0.3 },
       {
         skills: finalMissing.map((s) => ({
           name: s,

@@ -115,7 +115,7 @@ Rules:
   const result = await generateJSON<ExtractedProfile>(
     systemPrompt,
     `Resume text:\n\n${truncatedText}`,
-    { model: "google/gemini-2.0-flash" },
+    { model: "google/gemini-3.6-flash" },
     fallbackProfile
   );
 

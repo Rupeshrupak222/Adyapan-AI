@@ -114,7 +114,7 @@ export async function analyzeJobFitHandler(req: Request, res: Response, next: Ne
     }
     const analysis = await analyzeJobFit(userId, jobId, (prompt: string) =>
       callAIRobust([{ role: "user", content: prompt }], {
-        model: "gemini-2.0-flash",
+        model: "gemini-3.6-flash",
         temperature: 0.7,
       })
     );

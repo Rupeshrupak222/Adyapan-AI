@@ -167,7 +167,18 @@ export async function streamCodingAssistant(
 ) {
   const providers: Array<{ name: string; url: string; key: string; model: string }> = [];
 
-  // 1. OpenRouter (primary for coding — fast models)
+  // 1. Gemini (primary for coding — latest flash models)
+  const envGeminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (envGeminiKey) {
+    providers.push({
+      name: "Gemini",
+      url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      key: envGeminiKey,
+      model: "gemini-3.6-flash",
+    });
+  }
+
+  // 2. OpenRouter (secondary)
   if (env.openrouterApiKey) {
     providers.push({
       name: "OpenRouter",
@@ -177,16 +188,7 @@ export async function streamCodingAssistant(
     });
   }
 
-  const envGeminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-  if (envGeminiKey) {
-    providers.push({
-      name: "Gemini",
-      url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      key: envGeminiKey,
-      model: "gemini-2.0-flash",
-    });
-  }
-
+  // 3. Groq
   const envGroqKey = process.env.GROQ_API_KEY;
   if (envGroqKey) {
     providers.push({

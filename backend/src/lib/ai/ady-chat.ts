@@ -20,12 +20,26 @@ export async function streamChat(
 ): Promise<void> {
   const providers = [];
 
-  // 1. Add OpenRouter if key exists (primary for chat — fast models)
+  // 1. Add Google Gemini if key exists (primary for chat — latest flash models)
+  if (env.geminiApiKey) {
+    let geminiModel = "gemini-3.6-flash";
+    if (model.includes("gemini")) {
+      geminiModel = model.split("/").pop() || "gemini-3.6-flash";
+    }
+    providers.push({
+      name: "Gemini",
+      url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      key: env.geminiApiKey,
+      model: geminiModel
+    });
+  }
+
+  // 2. Add OpenRouter if key exists (secondary for chat — fast models)
   if (env.openrouterApiKey) {
     let orModel = "openai/gpt-4o-mini";
     const modelLower = model.toLowerCase();
     if (modelLower.includes("kimi")) orModel = "moonshotai/kimi-k2";
-    else if (modelLower.includes("gemini")) orModel = "google/gemini-2.0-flash";
+    else if (modelLower.includes("gemini")) orModel = "google/gemini-3.6-flash";
     else if (modelLower.includes("deepseek")) orModel = "deepseek/deepseek-chat";
     else if (modelLower.includes("llama")) orModel = "meta-llama/llama-3.3-70b-instruct";
     else if (modelLower.includes("mistral")) orModel = "mistralai/mistral-medium";
@@ -35,20 +49,6 @@ export async function streamChat(
       url: "https://openrouter.ai/api/v1/chat/completions",
       key: env.openrouterApiKey,
       model: orModel,
-    });
-  }
-
-  // 2. Add Google Gemini if key exists
-  if (env.geminiApiKey) {
-    let geminiModel = "gemini-2.0-flash";
-    if (model.includes("gemini")) {
-      geminiModel = model.split("/").pop() || "gemini-2.0-flash";
-    }
-    providers.push({
-      name: "Gemini",
-      url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      key: env.geminiApiKey,
-      model: geminiModel
     });
   }
 

@@ -119,7 +119,7 @@ export function initSocketServer(server: HttpServer) {
         // Try streaming via Gemini SDK first
         if (env.geminiApiKey) {
           try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
             const result = await model.generateContentStream(prompt);
             for await (const chunk of result.stream) {
               const chunkText = chunk.text();
@@ -135,7 +135,7 @@ export function initSocketServer(server: HttpServer) {
                 { role: "system", content: "You are an expert academic tutor. Answer clearly using markdown." },
                 { role: "user", content: prompt },
               ],
-              { model: "gemini-2.0-flash", temperature: 0.7 }
+              { model: "gemini-3.6-flash", temperature: 0.7 }
             );
             // Send the full response as a single chunk
             io.to(sessionId).emit("study:chunk", { text: fullResponse });
@@ -147,7 +147,7 @@ export function initSocketServer(server: HttpServer) {
               { role: "system", content: "You are an expert academic tutor. Answer clearly using markdown." },
               { role: "user", content: prompt },
             ],
-            { model: "gemini-2.0-flash", temperature: 0.7 }
+            { model: "gemini-3.6-flash", temperature: 0.7 }
           );
           io.to(sessionId).emit("study:chunk", { text: fullResponse });
         }
@@ -446,7 +446,7 @@ Keep responses concise for short durations and detailed for longer durations.`;
               { role: "system", content: systemMsg },
               { role: "user", content: lessonPrompt },
             ],
-            { model: "gemini-2.0-flash", temperature: 0.7, maxTokens: 16384 }
+            { model: "gemini-3.6-flash", temperature: 0.7, maxTokens: 16384 }
           );
         } finally {
           clearInterval(progressTimer);
@@ -467,7 +467,7 @@ Keep responses concise for short durations and detailed for longer durations.`;
                 { role: "system", content: "You are a JSON repair assistant. Fix the following JSON and return ONLY valid JSON. No explanation, no markdown." },
                 { role: "user", content: `Fix this JSON and return ONLY the corrected valid JSON:\n${rawResponse}` },
               ],
-              { model: "gemini-2.0-flash", temperature: 0, maxTokens: 16384 }
+              { model: "gemini-3.6-flash", temperature: 0, maxTokens: 16384 }
             );
             data = JSON.parse(stripLessonJson(repairResponse));
           } catch {
