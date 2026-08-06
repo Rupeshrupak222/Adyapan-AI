@@ -1,9 +1,9 @@
 FROM node:22-bookworm-slim
 
-# OpenSSL + CA certs for Prisma/HTTPS. glibc base (not Alpine) so native
-# prebuilds for bcrypt/sharp work without a musl rebuild.
+# OpenSSL + CA certs for Prisma/HTTPS + Python/make/g++ for native modules (bcrypt, sharp)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && apt-get install -y --no-install-recommends \
+       openssl ca-certificates python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -16,10 +16,8 @@ ENV PUPPETEER_SKIP_DOWNLOAD=true
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies (Chromium skipped via env vars above)
-RUN npm ci --omit=dev --ignore-scripts \
-    && npm rebuild bcrypt --build-from-source \
-    && npm rebuild sharp
+# Install all dependencies (including devDeps needed for tsc build)
+RUN npm ci
 
 # Generate Prisma Clients
 RUN npx prisma generate
@@ -30,6 +28,9 @@ COPY . .
 
 # Compile TypeScript
 RUN npm run build
+
+# Prune dev dependencies after build
+RUN npm prune --omit=dev
 
 ENV NODE_ENV=production
 
