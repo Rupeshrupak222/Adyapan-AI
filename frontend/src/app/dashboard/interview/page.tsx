@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +16,21 @@ import {
   Clock, Calendar, Star, TrendingUp, AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
+
+const EngineView = dynamic(
+  () => import("@/components/interview-hub/engine/EngineView").then(m => m.default),
+  { ssr: false }
+);
+
+const HRView = dynamic(
+  () => import("@/components/interview-hub/hr-engine/HRView").then(m => m.default),
+  { ssr: false }
+);
+
+const TechnicalInterviewView = dynamic(
+  () => import("@/components/interview-hub/technical-engine/TechnicalInterviewView").then(m => m.default),
+  { ssr: false }
+);
 
 // ── SCHEMA ──────────────────────────────────────────────────
 const interviewConfigSchema = z.object({
@@ -74,6 +90,11 @@ function InterviewPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const completedSessionId = searchParams?.get("completed");
+  const rawTab = searchParams?.get("tab") || searchParams?.get("type") || searchParams?.get("view") || "general";
+  const activeTab = rawTab === "engine" || rawTab === "interview-engine" ? "engine"
+    : rawTab === "hr" || rawTab === "interview-hr" || rawTab === "behavioral" ? "hr"
+    : rawTab === "technical" || rawTab === "interview-technical" ? "technical"
+    : "general";
 
   const [selectedType, setSelectedType] = useState<"technical" | "behavioral" | "general" | null>(null);
   const [showConfig, setShowConfig] = useState(false);
@@ -199,7 +220,39 @@ function InterviewPageContent() {
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        {/* Navigation Tabs with Query Strings */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-white/8 pb-4">
+          {[
+            { id: "engine", label: "Interview Engine", href: "/dashboard/interview?tab=engine" },
+            { id: "hr", label: "AI HR Interview", href: "/dashboard/interview?tab=hr" },
+            { id: "technical", label: "AI Technical Interview", href: "/dashboard/interview?tab=technical" },
+            { id: "general", label: "Interview Launcher", href: "/dashboard/interview?tab=general" },
+          ].map((tabItem) => {
+            const isActive = activeTab === tabItem.id;
+            return (
+              <button
+                key={tabItem.id}
+                onClick={() => router.push(tabItem.href)}
+                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+                  isActive
+                    ? "bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-sm"
+                    : "text-white/60 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {tabItem.label}
+              </button>
+            );
+          })}
+        </div>
 
+        {activeTab === "engine" ? (
+          <EngineView theme="dark" />
+        ) : activeTab === "hr" ? (
+          <HRView theme="dark" />
+        ) : activeTab === "technical" ? (
+          <TechnicalInterviewView theme="dark" />
+        ) : (
+          <>
         {/* Completed session banner */}
         <AnimatePresence>
           {completedSession && (
@@ -610,6 +663,8 @@ function InterviewPageContent() {
               </div>
             )}
           </motion.div>
+        )}
+        </>
         )}
       </div>
     </div>

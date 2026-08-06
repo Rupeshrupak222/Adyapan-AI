@@ -82,6 +82,27 @@ describe("Challenges Routes", () => {
     app = createApp();
   });
 
+  // ─── GET / ────────────────────────────────────────────────────────────────
+
+  describe("GET /api/challenges", () => {
+    it("returns list of active challenges", async () => {
+      const mockPrisma = createMockPrisma();
+      mockPrisma.challenge.findMany.mockResolvedValue([
+        { id: "ch-1", slug: "two-sum", title: "Two Sum", difficulty: "Easy" },
+      ]);
+      mockGetUserPrismaFromRequest.mockResolvedValue(mockPrisma);
+
+      const res = await request(app).get("/api/challenges");
+
+      expect(res.status).toBe(200);
+      expect(res.body.challenges).toHaveLength(1);
+      expect(mockPrisma.challenge.findMany).toHaveBeenCalledWith({
+        where: { category: { isActive: true } },
+        orderBy: { createdAt: "desc" },
+      });
+    });
+  });
+
   // ─── GET /categories ──────────────────────────────────────────────────────
 
   describe("GET /api/challenges/categories", () => {

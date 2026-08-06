@@ -97,7 +97,7 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
       userPrisma.studySession.count({ where: { userId } }).catch(() => 0),
       userPrisma.codingSession.count({ where: { userId } }).catch(() => 0),
       getUserDsaProgress(userPrisma, userId),
-      userPrisma.challenge.count({ where: { isActive: true } }).catch(() => 0),
+      userPrisma.challenge.count({ where: { category: { isActive: true } } }).catch(() => 0),
     ]);
 
     const avgAtsScore = atsReports.length

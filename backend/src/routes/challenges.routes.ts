@@ -14,7 +14,7 @@ router.get("/", async (req: any, res) => {
   try {
     const userPrisma = await getUserPrismaFromRequest(req);
     const challenges = await userPrisma.challenge.findMany({
-      where: { isActive: true },
+      where: { category: { isActive: true } },
       orderBy: { createdAt: "desc" },
     });
     res.json({ challenges });
