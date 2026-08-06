@@ -560,10 +560,9 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
 
   const intelligence = await generatePlacementIntelligence(userId);
 
-  await userPrisma.placementIntelligence.upsert({
-    where: { userId },
-    create: {
-      userId,
+  try {
+    const existingRec = await userPrisma.placementIntelligence.findFirst({ where: { userId } }).catch(() => null);
+    const dataToSave = {
       placementScore: intelligence.placementScore,
       subScores: intelligence.subScores as any,
       companyMatches: intelligence.companyMatches as any,
@@ -576,22 +575,24 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
       readinessTimeline: intelligence.readinessTimeline as any,
       aiInsights: intelligence.aiInsights as any,
       lastCalculatedAt: new Date(),
-    },
-    update: {
-      placementScore: intelligence.placementScore,
-      subScores: intelligence.subScores as any,
-      companyMatches: intelligence.companyMatches as any,
-      skillWeights: intelligence.skillWeights as any,
-      strengths: intelligence.strengths as any,
-      weaknesses: intelligence.weaknesses as any,
-      recommendations: intelligence.recommendations as any,
-      highestImpactTask: intelligence.highestImpactTask as any,
-      salaryEstimate: intelligence.salaryEstimate as any,
-      readinessTimeline: intelligence.readinessTimeline as any,
-      aiInsights: intelligence.aiInsights as any,
-      lastCalculatedAt: new Date(),
-    },
-  });
+    };
+
+    if (existingRec) {
+      await userPrisma.placementIntelligence.update({
+        where: { id: existingRec.id },
+        data: dataToSave,
+      });
+    } else {
+      await userPrisma.placementIntelligence.create({
+        data: {
+          userId,
+          ...dataToSave,
+        },
+      });
+    }
+  } catch (dbErr) {
+    console.warn("[PlacementIntelligence] DB persistence error, returning generated result directly:", dbErr);
+  }
 
   return { ...intelligence, cached: false };
 }

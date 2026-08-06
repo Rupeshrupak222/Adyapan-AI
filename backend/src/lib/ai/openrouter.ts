@@ -18,8 +18,8 @@ const GEMINI_MODEL_FALLBACKS = [
   "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-2.0-flash-lite",
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-pro-latest",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
 ];
 
 // Groq model fallback chain
@@ -378,6 +378,12 @@ function tryRepairJSON(text: string): string {
     JSON.parse(repaired);
     return repaired;
   } catch {}
+
+  // Fix unterminated string literals (odd unescaped quote count)
+  const quotesCount = (repaired.match(/(?<!\\)"/g) || []).length;
+  if (quotesCount % 2 !== 0) {
+    repaired += '"';
+  }
 
   // Balance open/close brackets
   let openBraces = (repaired.match(/\{/g) || []).length;
