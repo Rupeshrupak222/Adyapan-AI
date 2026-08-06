@@ -189,7 +189,7 @@ export function NotesGeneratorView() {
     }
     setDownloadingDocx(true);
     try {
-      const res = await api.post("/export/notes", {
+      const res = await api.post("/notes/export/docx", {
         content: notesData.rawContent,
         topic: notesData.topic,
         difficulty: notesData.difficulty,
