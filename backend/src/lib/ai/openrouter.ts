@@ -15,10 +15,11 @@ export interface OpenRouterOptions {
 
 // Gemini model fallback chain — tried in order when one is unavailable
 const GEMINI_MODEL_FALLBACKS = [
+  "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-2.0-flash-lite",
-  "gemini-1.5-flash",
-  "gemini-1.5-pro",
+  "gemini-1.5-flash-latest",
+  "gemini-1.5-pro-latest",
 ];
 
 // Groq model fallback chain
@@ -31,13 +32,12 @@ const GROQ_MODEL_FALLBACKS_FAST = [
   "llama-3.3-70b-versatile",
 ];
 
-// NVIDIA NIM model fallback chain — 5 keys, each with a different model
+// NVIDIA NIM model fallback chain
 const NVIDIA_NIM_MODELS = [
-  { model: "nvidia/llama-3.3-70b-instruct", label: "Nemotron" },
-  { model: "deepseek-ai/deepseek-r1", label: "DeepSeek" },
-  { model: "mistralai/mistral-large-2-instruct", label: "Mistral" },
-  { model: "moonshotai/kimi-k2", label: "Kimi" },
-  { model: "z-ai/glm-5.1", label: "GLM" },
+  { model: "meta/llama-3.3-70b-instruct", label: "Llama 3.3 70B" },
+  { model: "deepseek-ai/deepseek-r1", label: "DeepSeek R1" },
+  { model: "mistralai/mistral-large-2-instruct", label: "Mistral Large" },
+  { model: "qwen/qwen2.5-72b-instruct", label: "Qwen 2.5 72B" },
 ];
 
 // Sequential fallback completion engine: Gemini (multiple models) → Groq (multiple models) → OpenRouter
@@ -113,13 +113,22 @@ export async function callAIRobust(
     }
   }
 
-  // 4. Add OpenRouter if key exists (quaternary) — including moonshotai/kimi-k2.6 when requested
+  // 4. Add OpenRouter if key exists (quaternary) — ensures valid OpenRouter model IDs
   if (env.openrouterApiKey) {
+    let openRouterModel = options.model || "openai/gpt-4o-mini";
+    if (isKimiRequested) {
+      openRouterModel = "moonshotai/kimi-k2.6";
+    } else if (openRouterModel.includes("gemini")) {
+      openRouterModel = "google/gemini-2.0-flash-001";
+    } else if (openRouterModel.includes("llama")) {
+      openRouterModel = "meta-llama/llama-3.3-70b-instruct";
+    }
+
     providers.push({
-      name: "OpenRouter (Kimi 2.6 / GPT)",
+      name: "OpenRouter",
       url: "https://openrouter.ai/api/v1/chat/completions",
       key: env.openrouterApiKey,
-      model: isKimiRequested ? "moonshotai/kimi-k2.6" : (options.model || "openai/gpt-4o-mini"),
+      model: openRouterModel,
     });
   }
 
@@ -190,12 +199,7 @@ export async function callAIRobust(
 
         if (!res.ok || data.error) {
           const errMsg = data.error?.message ?? res.statusText;
-          const isRateLimit = res.status === 429;
-          const isServerError = res.status >= 500;
           console.error(`[AI Engine] ${provider.name} error (HTTP ${res.status}):`, JSON.stringify(data).substring(0, 500));
-          if (isRateLimit || isServerError) {
-            throw new Error(`${provider.name} error: ${errMsg}`);
-          }
           throw new Error(`${provider.name} error: ${errMsg}`);
         }
 
@@ -210,7 +214,8 @@ export async function callAIRobust(
       } catch (e: any) {
         const msg = e.message || String(e);
         const isAbort = e?.name === "AbortError" || msg.includes("abort") || msg.includes("This operation was aborted");
-        const isTransient = isAbort || msg.includes("429") || msg.includes("500") || msg.includes("502") || msg.includes("503") || msg.includes("rate") || msg.includes("overloaded") || msg.includes("unavailable");
+        const isPermanentError = msg.includes("404") || msg.includes("410") || msg.includes("413") || msg.includes("429") || msg.includes("Quota") || msg.includes("Request too large") || msg.includes("not found");
+        const isTransient = (isAbort || msg.includes("500") || msg.includes("502") || msg.includes("503") || msg.includes("overloaded") || msg.includes("unavailable")) && !isPermanentError;
         lastError = isAbort ? `${provider.name}: Request timed out` : `${provider.name}: ${msg}`;
 
         if (isTransient && attempt < MAX_RETRIES) {
