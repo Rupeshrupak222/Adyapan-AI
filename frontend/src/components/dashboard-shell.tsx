@@ -128,14 +128,14 @@ export const sidebarItems: SidebarItem[] = [
   {
     id: "resume", label: "Resume Hub", icon: <FileText size={18} />,
     submenu: [
-      { label: "Career Dashboard", href: "/dashboard/career" },
+      { label: "Career Dashboard", href: "/dashboard/career?tab=dashboard" },
       { label: "Upload Resume", href: "/dashboard/user?view=resume-upload" },
       { label: "Resume Builder", href: "/dashboard/user?view=resume-hub" },
       { label: "ATS Score Checker", href: "/dashboard/user?view=ats-checker" },
       { label: "Resume Improvements", href: "/dashboard/user?view=resume-improvements" },
       { label: "Cover Letter Generator", href: "/dashboard/user?view=cover-letter" },
       { label: "LinkedIn Optimizer", href: "/dashboard/user?view=linkedin-optimizer" },
-      { label: "Career Roadmap", href: "/dashboard/resume/career-roadmap" },
+      { label: "Career Roadmap", href: "/dashboard/career?tab=roadmap" },
     ],
   },
   {
