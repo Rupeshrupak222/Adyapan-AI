@@ -417,7 +417,9 @@ export default function PremiumPage() {
             </div>
             {isPro ? (
               <button
-                onClick={() => router.push("/dashboard/user?view=billing")}
+                onClick={() => {
+                  window.location.href = "/dashboard/user?view=billing";
+                }}
                 className="w-full py-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer hover:shadow-lg"
                 style={{ background: colors.badgeProBg, color: colors.badgeProText, border: colors.badgeProBorder }}
               >
@@ -465,45 +467,7 @@ export default function PremiumPage() {
           </motion.div>
         </div>
 
-        {/* Usage dashboard */}
-        {usage && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            className="mt-10 rounded-2xl p-6 backdrop-blur-md transition-colors duration-300"
-            style={{ background: colors.gridCardBg, border: colors.gridCardBorder }}
-          >
-            <h2 className="text-xl font-extrabold mb-5 flex items-center gap-2" style={{ color: colors.text }}>
-              <Gauge className="w-5 h-5 text-amber-500" />
-              Your Usage
-            </h2>
-            <div className="grid sm:grid-cols-2 gap-5">
-              <div className="rounded-xl p-4" style={{ background: colors.itemCardBg, border: colors.itemCardBorder }}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold" style={{ color: colors.text }}>Daily AI Requests</span>
-                  <span className="text-[10px] font-mono font-bold text-amber-500">
-                    {usage.dailyRequestsUsed.toLocaleString()} / {usage.dailyRequestsLimit.toLocaleString()}
-                  </span>
-                </div>
-                <PremiumProgressBar value={usage.dailyRequestsPct} color="amber" height={7} />
-                <div className="text-[10px] mt-2" style={{ color: colors.itemDesc }}>
-                  {isPro ? "Premium gives you a much higher daily allowance." : "Upgrade to Pro for a higher daily allowance."}
-                </div>
-              </div>
-              <div className="rounded-xl p-4" style={{ background: colors.itemCardBg, border: colors.itemCardBorder }}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold" style={{ color: colors.text }}>Daily AI Tokens</span>
-                  <span className="text-[10px] font-mono font-bold text-amber-500">
-                    {usage.dailyTokensUsed.toLocaleString()} / {usage.dailyTokensLimit.toLocaleString()}
-                  </span>
-                </div>
-                <PremiumProgressBar value={usage.dailyTokensPct} color="purple" height={7} />
-                <div className="text-[10px] mt-2" style={{ color: colors.itemDesc }}>
-                  Resets daily at {new Date(usage.dailyResetAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}.
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
+
 
         {/* Categorized feature comparison */}
         {catEntries.length > 0 && (
