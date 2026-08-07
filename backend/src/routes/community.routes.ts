@@ -425,4 +425,46 @@ router.get("/messages/:userId", async (req: any, res) => {
   }
 });
 
+// Delete an entire conversation with a user
+router.delete("/conversations/:otherUserId", async (req: any, res) => {
+  try {
+    const currentUserId = getUserId(req);
+    const targetId = await resolveUserId(req.params.otherUserId);
+
+    await prisma.communityMessage.deleteMany({
+      where: {
+        OR: [
+          { senderId: currentUserId, receiverId: targetId },
+          { senderId: targetId, receiverId: currentUserId },
+        ],
+      },
+    });
+
+    res.json({ success: true, message: "Conversation deleted successfully" });
+  } catch (error) {
+    handleRouteError(res, error, "Community.deleteConversation", "Failed to delete conversation");
+  }
+});
+
+// Delete a single message
+router.delete("/messages/single/:messageId", async (req: any, res) => {
+  try {
+    const currentUserId = getUserId(req);
+    const { messageId } = req.params;
+
+    const msg = await prisma.communityMessage.findUnique({ where: { id: messageId } });
+    if (!msg) {
+      return res.status(404).json({ success: false, error: "Message not found" });
+    }
+    if (msg.senderId !== currentUserId && msg.receiverId !== currentUserId) {
+      return res.status(403).json({ success: false, error: "Unauthorized" });
+    }
+
+    await prisma.communityMessage.delete({ where: { id: messageId } });
+    res.json({ success: true, message: "Message deleted successfully" });
+  } catch (error) {
+    handleRouteError(res, error, "Community.deleteMessage", "Failed to delete message");
+  }
+});
+
 export const communityRouter = router;
