@@ -349,20 +349,21 @@ export function BillingView() {
     }
   };
 
-  const isActive = Boolean(subscription?.isActive);
-  const isCancelAtPeriodEnd = subscription?.subscriptionStatus === "cancel_at_period_end";
   const rawPlan = String(subscription?.plan || "").toLowerCase();
+  const isPaidPlan = rawPlan !== "free" && rawPlan !== "" && (subscription?.planKind ? subscription.planKind !== "free" : true);
+  const isActive = Boolean(subscription?.isActive) && isPaidPlan;
+  const isCancelAtPeriodEnd = subscription?.subscriptionStatus === "cancel_at_period_end";
 
   let planLabel = "Free";
-  if (rawPlan.includes("yearly")) {
+  if (!isPaidPlan || rawPlan === "free") {
+    planLabel = "Free";
+  } else if (rawPlan.includes("yearly")) {
     planLabel = "Pro Yearly";
   } else if (rawPlan.includes("pro_monthly") || rawPlan === "pro" || rawPlan.includes("monthly")) {
     planLabel = "Pro Monthly";
   } else if (rawPlan === "enterprise" || subscription?.planKind === "enterprise") {
     planLabel = "Enterprise";
-  } else if (rawPlan === "premium" || subscription?.planKind === "premium" || (isActive && rawPlan !== "free")) {
-    planLabel = "Pro Premium";
-  } else if (isActive) {
+  } else {
     planLabel = "Pro Premium";
   }
 
@@ -394,8 +395,8 @@ export function BillingView() {
         {[
           { label: "Current Plan", val: loading ? "..." : planLabel, icon: <Sparkles className="text-amber-500 animate-pulse" /> },
           { label: "Next Renewal", val: loading ? "..." : renewalDate, icon: <Calendar className="text-cyan-500" /> },
-          { label: "Status", val: loading ? "..." : isActive ? (isCancelAtPeriodEnd ? "Cancelling" : "Active") : "Inactive", icon: <Award className="text-emerald-500" /> },
-          { label: "Plan Type", val: loading ? "..." : (isActive || subscription?.planKind !== "free") ? (subscription?.planKind === "enterprise" || rawPlan === "enterprise" ? "Enterprise" : "Premium") : "Free", icon: <FileText className="text-purple-500" /> }
+          { label: "Status", val: loading ? "..." : isPaidPlan ? (isCancelAtPeriodEnd ? "Cancelling" : "Active") : "Active", icon: <Award className="text-emerald-500" /> },
+          { label: "Plan Type", val: loading ? "..." : isPaidPlan ? (subscription?.planKind === "enterprise" || rawPlan === "enterprise" ? "Enterprise" : "Premium") : "Free", icon: <FileText className="text-purple-500" /> }
         ].map((card, idx) => (
           <motion.div
             key={idx} custom={idx} variants={fadeUp} initial="hidden" animate="visible"

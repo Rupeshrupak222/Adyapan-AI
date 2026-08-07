@@ -670,7 +670,7 @@ settingsRouter.get("/storage", async (req: any, res) => {
     });
 
     const planLower = (user?.plan || "").toLowerCase();
-    const isPremium = (planLower !== "" && planLower !== "free") || user?.subscriptionStatus === "active";
+    const isPremium = planLower !== "" && planLower !== "free";
     const limitMb = isPremium ? 200 : 50;
 
     // Count each storage category

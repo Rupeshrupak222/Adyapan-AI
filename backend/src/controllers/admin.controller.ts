@@ -419,7 +419,7 @@ export async function getAdminUsers(req: Request, res: Response, next: NextFunct
 
     const enrichedUsers = users.map(user => {
       const planLower = (user.plan || "").toLowerCase();
-      const isPremium = (planLower !== "" && planLower !== "free") || user.subscriptionStatus === "active";
+      const isPremium = planLower !== "" && planLower !== "free";
       const storageLimitMb = isPremium ? 200 : 50;
 
       const counts = perUserCounts.get(user.id) || {};
@@ -1333,7 +1333,7 @@ export async function getAdminNotifications(req: Request, res: Response, next: N
         (prisma as any).systemNotification.count({ where }),
         prisma.user.count(),
         prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: null }, { plan: "" }] } }),
-        prisma.user.count({ where: { OR: [{ plan: "pro" }, { plan: "premium" }, { subscriptionStatus: "active" }] } }),
+        prisma.user.count({ where: { plan: { in: ["pro", "premium", "enterprise", "pro_monthly", "pro_yearly"] } } }),
       ]);
       activeCount = await (prisma as any).systemNotification.count({ where: { isRevoked: false } });
     } catch (dbErr: any) {

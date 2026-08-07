@@ -96,22 +96,13 @@ export async function getOverview(req: Request, res: Response, next: NextFunctio
 
     const activeSub = await getActiveSubscription(userId);
 
-    let effectivePlan = user.plan;
+    let effectivePlan = user.plan || "free";
     if (activeSub?.planCode) {
       effectivePlan = activeSub.planCode;
-    } else if ((user.subscriptionStatus === "active" || user.subscriptionStatus === "cancel_at_period_end") && (!user.plan || user.plan === "free")) {
-      effectivePlan = "premium";
     }
 
     const planKind = normalizePlanKind(effectivePlan);
-    const isActive = user.subscriptionStatus === "active" || user.subscriptionStatus === "cancel_at_period_end";
-
-    if (isActive && user.plan === "free") {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { plan: effectivePlan },
-      }).catch(() => {});
-    }
+    const isActive = (user.subscriptionStatus === "active" || user.subscriptionStatus === "cancel_at_period_end") && effectivePlan !== "free";
 
     const [usage, invoices, paymentMethods, billingAddress] = await Promise.all([
       AiUsageService.getUsage(userId, effectivePlan, user.subscriptionStatus),
