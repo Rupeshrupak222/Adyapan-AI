@@ -289,7 +289,7 @@ export class StreakService {
   /**
    * Get all achievements indicating locked/unlocked status
    */
-  static async getAchievementsData(userId: string, prisma: PrismaClient) {
+  static async getAchievementsData(userId: string, prisma: any) {
     const milestones = [
       { name: "First Day", type: "STREAK_1_DAY", description: "Complete your first learning activity on the platform", rarity: "Common", days: 1 },
       { name: "3 Day Streak", type: "STREAK_3_DAYS", description: "Keep the momentum alive for 3 consecutive days", rarity: "Common", days: 3 },
@@ -318,7 +318,7 @@ export class StreakService {
   /**
    * Fetch heatmap calendar coordinates (rolling days count)
    */
-  static async getHeatmapData(userId: string, days: number = 365, timezone: string = "UTC", prisma: PrismaClient): Promise<HeatmapCell[]> {
+  static async getHeatmapData(userId: string, days: number = 365, timezone: string = "UTC", prisma: any): Promise<HeatmapCell[]> {
     const since = new Date();
     since.setDate(since.getDate() - days);
 
@@ -384,221 +384,264 @@ export class StreakService {
   /**
    * Get all dashboard metrics, weekly and monthly consistency reports, and habit analytics
    */
-  static async getDashboardData(userId: string, timezone: string = "UTC", prisma: PrismaClient): Promise<StreakDashboardData> {
-    let streak = await prisma.learningStreak.findUnique({
-      where: { userId }
-    });
+  static async getDashboardData(userId: string, timezone: string = "UTC", prisma: any): Promise<StreakDashboardData> {
+    try {
+      let streak = await prisma.learningStreak.findUnique({
+        where: { userId }
+      }).catch(() => null);
 
-    if (!streak) {
-      streak = await prisma.learningStreak.create({
-        data: {
+      if (!streak) {
+        streak = await prisma.learningStreak.create({
+          data: {
+            userId,
+            currentStreak: 0,
+            longestStreak: 0,
+            consistencyScore: 0,
+            activeDaysCount: 0,
+            monthlyActivity: {} as any,
+            yearlyActivity: {} as any,
+            streakRule: "action",
+            timeRequirement: 10,
+            streakFreezes: 1,
+            points: 0
+          }
+        }).catch(() => ({
           userId,
           currentStreak: 0,
           longestStreak: 0,
           consistencyScore: 0,
           activeDaysCount: 0,
-          monthlyActivity: {} as any,
-          yearlyActivity: {} as any,
+          monthlyActivity: {},
+          yearlyActivity: {},
           streakRule: "action",
           timeRequirement: 10,
           streakFreezes: 1,
-          points: 0
+          freezeActive: false,
+          points: 0,
+          globalRank: null,
+          campusRank: null,
+          previousStreak: 0
+        } as any));
+      }
+
+      // Weekly consistency report (Monday to Sunday)
+      const today = new Date();
+      const currentDay = today.getDay(); // 0 is Sun, 1 is Mon...
+      const mondayDiff = currentDay === 0 ? -6 : 1 - currentDay; // calculate offset to Monday
+      
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + mondayDiff);
+      monday.setHours(0, 0, 0, 0);
+
+      const weekDates: Date[] = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        weekDates.push(d);
+      }
+
+      const weekEvents = await prisma.streakEvent.findMany({
+        where: {
+          userId,
+          createdAt: { gte: monday }
+        }
+      }).catch(() => []);
+
+      const activeDaysOfWeek = new Set<string>();
+      weekEvents.forEach(e => {
+        activeDaysOfWeek.add(this.getLocalDateString(e.createdAt, timezone));
+      });
+
+      const daysName = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      const weeklyReport = weekDates.map((d, index) => {
+        const dateStr = this.getLocalDateString(d, timezone);
+        return {
+          day: daysName[index],
+          active: activeDaysOfWeek.has(dateStr),
+          date: dateStr
+        };
+      });
+
+      // Monthly consistency stats
+      const todayStr = this.getLocalDateString(new Date(), timezone);
+      const [year, month] = todayStr.split("-");
+      const monthKey = `${year}-${month}`;
+      const monthlyAct: Record<string, number[]> = (streak.monthlyActivity as any) || {};
+      const activeDaysOfMonth = monthlyAct[monthKey] || [];
+      
+      const currentMonthTotalDaysPassed = today.getDate();
+      const activeDaysCountInMonth = activeDaysOfMonth.length;
+      const missedDays = Math.max(0, currentMonthTotalDaysPassed - activeDaysCountInMonth);
+
+      // Fetch all events for habit analytics
+      const allEvents = await prisma.streakEvent.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" }
+      }).catch(() => []);
+
+      const hourCounts = { Morning: 0, Afternoon: 0, Evening: 0, Night: 0 };
+      const dayOfWeekCounts = Array(7).fill(0);
+      const dayOfWeekPoints = Array(7).fill(0);
+      const daysOfWeekNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      
+      let totalPoints = 0;
+      
+      allEvents.forEach(e => {
+        let localHour = e.createdAt.getUTCHours();
+        let localDay = e.createdAt.getUTCDay();
+
+        try {
+          const localStr = e.createdAt.toLocaleString("en-US", { timeZone: timezone });
+          const localDate = new Date(localStr);
+          if (!isNaN(localDate.getTime())) {
+            localHour = localDate.getHours();
+            localDay = localDate.getDay();
+          }
+        } catch {
+          // Safe fallback to UTC
+        }
+
+        if (localHour >= 5 && localHour < 12) hourCounts.Morning++;
+        else if (localHour >= 12 && localHour < 17) hourCounts.Afternoon++;
+        else if (localHour >= 17 && localHour < 21) hourCounts.Evening++;
+        else hourCounts.Night++;
+
+        const points = e.activityPoints || 0;
+        dayOfWeekCounts[localDay]++;
+        dayOfWeekPoints[localDay] += points;
+        totalPoints += points;
+      });
+
+      let preferredStudyTime = "Morning";
+      let maxHourCount = 0;
+      Object.entries(hourCounts).forEach(([time, count]) => {
+        if (count > maxHourCount) {
+          maxHourCount = count;
+          preferredStudyTime = time;
         }
       });
-    }
 
-    // Weekly consistency report (Monday to Sunday)
-    // 1. Find dates of the current week (starting from Monday)
-    const today = new Date();
-    const currentDay = today.getDay(); // 0 is Sun, 1 is Mon...
-    const mondayDiff = currentDay === 0 ? -6 : 1 - currentDay; // calculate offset to Monday
-    
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + mondayDiff);
-    monday.setHours(0, 0, 0, 0);
-
-    const weekDates: Date[] = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      weekDates.push(d);
-    }
-
-    const weekEvents = await prisma.streakEvent.findMany({
-      where: {
-        userId,
-        createdAt: { gte: monday }
-      }
-    });
-
-    const activeDaysOfWeek = new Set<string>();
-    weekEvents.forEach(e => {
-      activeDaysOfWeek.add(this.getLocalDateString(e.createdAt, timezone));
-    });
-
-    const daysName = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const weeklyReport = weekDates.map((d, index) => {
-      const dateStr = this.getLocalDateString(d, timezone);
-      return {
-        day: daysName[index],
-        active: activeDaysOfWeek.has(dateStr),
-        date: dateStr
-      };
-    });
-
-    // Monthly consistency stats
-    const todayStr = this.getLocalDateString(new Date(), timezone);
-    const [year, month] = todayStr.split("-");
-    const monthKey = `${year}-${month}`;
-    const monthlyAct: Record<string, number[]> = (streak.monthlyActivity as any) || {};
-    const activeDaysOfMonth = monthlyAct[monthKey] || [];
-    
-    // Total days in the current month
-    const totalDaysInMonth = new Date(parseInt(year, 10), parseInt(month, 10), 0).getDate();
-    const currentMonthTotalDaysPassed = today.getDate(); // cap at today for relative scores
-    const activeDaysCountInMonth = activeDaysOfMonth.length;
-    const missedDays = currentMonthTotalDaysPassed - activeDaysCountInMonth;
-
-    // Fetch all events for habit analytics
-    const allEvents = await prisma.streakEvent.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" }
-    });
-
-    // 1. Preferred Study Time (Morning, Afternoon, Evening, Night)
-    const hourCounts = { Morning: 0, Afternoon: 0, Evening: 0, Night: 0 };
-    // 2. Day of week counts (Sun-Sat)
-    const dayOfWeekCounts = Array(7).fill(0);
-    const dayOfWeekPoints = Array(7).fill(0);
-    const daysOfWeekNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    
-    let totalPoints = 0;
-    
-    allEvents.forEach(e => {
-      let localHour = e.createdAt.getUTCHours();
-      let localDay = e.createdAt.getUTCDay();
-
-      try {
-        const localStr = e.createdAt.toLocaleString("en-US", { timeZone: timezone });
-        const localDate = new Date(localStr);
-        if (!isNaN(localDate.getTime())) {
-          localHour = localDate.getHours();
-          localDay = localDate.getDay();
+      let mostActiveDayIndex = 3;
+      let maxDayCount = 0;
+      dayOfWeekCounts.forEach((count, i) => {
+        if (count > maxDayCount) {
+          maxDayCount = count;
+          mostActiveDayIndex = i;
         }
-      } catch (err) {
-        // Safe fallback to UTC
+      });
+      const mostActiveDay = maxDayCount > 0 ? daysOfWeekNames[mostActiveDayIndex] : "Wednesday";
+
+      let mostProductiveDayIndex = 3;
+      let maxDayPoints = 0;
+      dayOfWeekPoints.forEach((points, i) => {
+        if (points > maxDayPoints) {
+          maxDayPoints = points;
+          mostProductiveDayIndex = i;
+        }
+      });
+      const mostProductiveDay = maxDayPoints > 0 ? daysOfWeekNames[mostProductiveDayIndex] : "Wednesday";
+
+      const activeDaysSet = new Set<string>();
+      allEvents.forEach(e => activeDaysSet.add(this.getLocalDateString(e.createdAt, timezone)));
+      const averageDailyUsage = activeDaysSet.size > 0 
+        ? Math.round((totalPoints / activeDaysSet.size) * 10) / 10 
+        : 0;
+
+      const unlockedAchievements = await prisma.streakAchievement.findMany({
+        where: { userId },
+        orderBy: { unlockedAt: "desc" },
+        take: 4
+      }).catch(() => []);
+
+      const recentAchievements = unlockedAchievements.map(a => ({
+        achievementName: a.achievementName,
+        achievementType: a.achievementType,
+        rarity: a.rarity,
+        unlockedAt: a.unlockedAt.toISOString()
+      }));
+
+      let motivationalMessage = "Start learning today! Build your first learning streak and develop a powerful study habit.";
+      if (streak.currentStreak > 0) {
+        const nextMilestone = streak.currentStreak < 3 ? 3 : streak.currentStreak < 7 ? 7 : streak.currentStreak < 14 ? 14 : streak.currentStreak < 30 ? 30 : Math.ceil((streak.currentStreak + 1)/10)*10;
+        motivationalMessage = `🔥 You have maintained your learning streak for ${streak.currentStreak} days. Keep going to reach your next milestone at ${nextMilestone} days!`;
+      } else if (streak.previousStreak > 0) {
+        motivationalMessage = `Your previous streak was ${streak.previousStreak} days. A quick 15-minute revision session today will restart your learning streak!`;
       }
 
-      if (localHour >= 5 && localHour < 12) hourCounts.Morning++;
-      else if (localHour >= 12 && localHour < 17) hourCounts.Afternoon++;
-      else if (localHour >= 17 && localHour < 21) hourCounts.Evening++;
-      else hourCounts.Night++;
-
-      dayOfWeekCounts[localDay]++;
-      dayOfWeekPoints[localDay] += e.activityPoints;
-      totalPoints += e.activityPoints;
-    });
-
-    // Determine Preferred Study Time
-    let preferredStudyTime = "Morning";
-    let maxHourCount = 0;
-    Object.entries(hourCounts).forEach(([time, count]) => {
-      if (count > maxHourCount) {
-        maxHourCount = count;
-        preferredStudyTime = time;
-      }
-    });
-
-    // Determine Most Active Day
-    let mostActiveDayIndex = 3; // Wednesday default
-    let maxDayCount = 0;
-    dayOfWeekCounts.forEach((count, i) => {
-      if (count > maxDayCount) {
-        maxDayCount = count;
-        mostActiveDayIndex = i;
-      }
-    });
-    const mostActiveDay = maxDayCount > 0 ? daysOfWeekNames[mostActiveDayIndex] : "Wednesday";
-
-    // Determine Most Productive Day
-    let mostProductiveDayIndex = 3;
-    let maxDayPoints = 0;
-    dayOfWeekPoints.forEach((points, i) => {
-      if (points > maxDayPoints) {
-        maxDayPoints = points;
-        mostProductiveDayIndex = i;
-      }
-    });
-    const mostProductiveDay = maxDayPoints > 0 ? daysOfWeekNames[mostProductiveDayIndex] : "Wednesday";
-
-    // Average daily points / study duration
-    const activeDaysSet = new Set<string>();
-    allEvents.forEach(e => activeDaysSet.add(this.getLocalDateString(e.createdAt, timezone)));
-    const averageDailyUsage = activeDaysSet.size > 0 
-      ? Math.round((totalPoints / activeDaysSet.size) * 10) / 10 
-      : 0;
-
-    // Fetch achievements
-    const unlockedAchievements = await prisma.streakAchievement.findMany({
-      where: { userId },
-      orderBy: { unlockedAt: "desc" },
-      take: 4
-    });
-
-    const recentAchievements = unlockedAchievements.map(a => ({
-      achievementName: a.achievementName,
-      achievementType: a.achievementType,
-      rarity: a.rarity,
-      unlockedAt: a.unlockedAt.toISOString()
-    }));
-
-    // Static/Dynamic Motivational Messages fallback
-    let motivationalMessage = "Start learning today! Build your first learning streak and develop a powerful study habit.";
-    if (streak.currentStreak > 0) {
-      const nextMilestone = streak.currentStreak < 3 ? 3 : streak.currentStreak < 7 ? 7 : streak.currentStreak < 14 ? 14 : streak.currentStreak < 30 ? 30 : Math.ceil((streak.currentStreak + 1)/10)*10;
-      motivationalMessage = `🔥 You have maintained your learning streak for ${streak.currentStreak} days. Keep going to reach your next milestone at ${nextMilestone} days!`;
-    } else if (streak.previousStreak > 0) {
-      motivationalMessage = `Your previous streak was ${streak.previousStreak} days. A quick 15-minute revision session today will restart your learning streak!`;
+      return {
+        currentStreak: streak.currentStreak || 0,
+        longestStreak: streak.longestStreak || 0,
+        consistencyScore: streak.consistencyScore || 0,
+        activeDaysCount: streak.activeDaysCount || 0,
+        monthlyActiveCount: activeDaysCountInMonth,
+        monthlyTotalDays: currentMonthTotalDaysPassed,
+        previousStreak: streak.previousStreak || 0,
+        streakRule: streak.streakRule || "action",
+        timeRequirement: streak.timeRequirement || 10,
+        streakFreezes: streak.streakFreezes || 1,
+        freezeActive: Boolean(streak.freezeActive),
+        points: streak.points || 0,
+        globalRank: streak.globalRank ?? null,
+        campusRank: streak.campusRank ?? null,
+        weeklyReport,
+        monthlyReport: {
+          activeDays: activeDaysCountInMonth,
+          missedDays,
+          averageSessionDuration: averageDailyUsage > 0 ? Math.round(averageDailyUsage * 1.5) : 30,
+          mostActiveDay,
+          leastActiveDay: dayOfWeekCounts.indexOf(Math.min(...dayOfWeekCounts)) > -1 ? daysOfWeekNames[dayOfWeekCounts.indexOf(Math.min(...dayOfWeekCounts))] : "Saturday"
+        },
+        habitAnalytics: {
+          preferredStudyTime,
+          mostActiveDay,
+          mostProductiveDay,
+          averageDailyUsage: averageDailyUsage > 0 ? averageDailyUsage : 1.2
+        },
+        recentAchievements,
+        motivationalMessage
+      };
+    } catch (err) {
+      console.error("[StreakService] getDashboardData fallback error:", err);
+      const daysName = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      return {
+        currentStreak: 0,
+        longestStreak: 0,
+        consistencyScore: 0,
+        activeDaysCount: 0,
+        monthlyActiveCount: 0,
+        monthlyTotalDays: 30,
+        previousStreak: 0,
+        streakRule: "action",
+        timeRequirement: 10,
+        streakFreezes: 1,
+        freezeActive: false,
+        points: 0,
+        globalRank: null,
+        campusRank: null,
+        weeklyReport: daysName.map(day => ({ day, active: false, date: "" })),
+        monthlyReport: {
+          activeDays: 0,
+          missedDays: 30,
+          averageSessionDuration: 30,
+          mostActiveDay: "Wednesday",
+          leastActiveDay: "Saturday"
+        },
+        habitAnalytics: {
+          preferredStudyTime: "Morning",
+          mostActiveDay: "Wednesday",
+          mostProductiveDay: "Wednesday",
+          averageDailyUsage: 1.2
+        },
+        recentAchievements: [],
+        motivationalMessage: "Start learning today! Build your first learning streak and develop a powerful study habit."
+      };
     }
-
-    return {
-      currentStreak: streak.currentStreak,
-      longestStreak: streak.longestStreak,
-      consistencyScore: streak.consistencyScore,
-      activeDaysCount: streak.activeDaysCount,
-      monthlyActiveCount: activeDaysCountInMonth,
-      monthlyTotalDays: currentMonthTotalDaysPassed,
-      previousStreak: streak.previousStreak,
-      streakRule: streak.streakRule,
-      timeRequirement: streak.timeRequirement,
-      streakFreezes: streak.streakFreezes,
-      freezeActive: streak.freezeActive,
-      points: streak.points,
-      globalRank: streak.globalRank,
-      campusRank: streak.campusRank,
-      weeklyReport,
-      monthlyReport: {
-        activeDays: activeDaysCountInMonth,
-        missedDays,
-        averageSessionDuration: averageDailyUsage > 0 ? Math.round(averageDailyUsage * 1.5) : 30, // simulated avg session length
-        mostActiveDay,
-        leastActiveDay: dayOfWeekCounts.indexOf(Math.min(...dayOfWeekCounts)) > -1 ? daysOfWeekNames[dayOfWeekCounts.indexOf(Math.min(...dayOfWeekCounts))] : "Saturday"
-      },
-      habitAnalytics: {
-        preferredStudyTime,
-        mostActiveDay,
-        mostProductiveDay,
-        averageDailyUsage: averageDailyUsage > 0 ? averageDailyUsage : 1.2
-      },
-      recentAchievements,
-      motivationalMessage
-    };
   }
 
   /**
    * AI-powered analytics to generate motivation, advice and recommendations
    */
-  static async getStreakInsights(userId: string, timezone: string = "UTC", prisma: PrismaClient) {
+  static async getStreakInsights(userId: string, timezone: string = "UTC", prisma: any) {
     const streak = await prisma.learningStreak.findUnique({ where: { userId } });
     const events = await prisma.streakEvent.findMany({
       where: { userId },

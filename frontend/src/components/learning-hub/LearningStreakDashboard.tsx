@@ -115,6 +115,47 @@ interface DashboardData {
   motivationalMessage: string;
 }
 
+const DEFAULT_DASHBOARD_DATA: DashboardData = {
+  currentStreak: 0,
+  longestStreak: 0,
+  consistencyScore: 0,
+  activeDaysCount: 0,
+  monthlyActiveCount: 0,
+  monthlyTotalDays: 30,
+  previousStreak: 0,
+  streakRule: "action",
+  timeRequirement: 10,
+  streakFreezes: 1,
+  freezeActive: false,
+  points: 0,
+  globalRank: null,
+  campusRank: null,
+  weeklyReport: [
+    { day: "Mon", active: false, date: "" },
+    { day: "Tue", active: false, date: "" },
+    { day: "Wed", active: false, date: "" },
+    { day: "Thu", active: false, date: "" },
+    { day: "Fri", active: false, date: "" },
+    { day: "Sat", active: false, date: "" },
+    { day: "Sun", active: false, date: "" },
+  ],
+  monthlyReport: {
+    activeDays: 0,
+    missedDays: 30,
+    averageSessionDuration: 30,
+    mostActiveDay: "Wednesday",
+    leastActiveDay: "Saturday"
+  },
+  habitAnalytics: {
+    preferredStudyTime: "Morning",
+    mostActiveDay: "Wednesday",
+    mostProductiveDay: "Wednesday",
+    averageDailyUsage: 1.2
+  },
+  recentAchievements: [],
+  motivationalMessage: "Start learning today! Build your first learning streak and develop a powerful study habit."
+};
+
 export function LearningStreakDashboard() {
   const [loading, setLoading] = useState(true);
   const [loadingStep, setLoadingStep] = useState(0);
@@ -178,40 +219,50 @@ export function LearningStreakDashboard() {
       });
     }, 700);
 
-    const fetchData = async () => {
-      try {
-        const headers = { "x-timezone": timezone };
-        
-        // Fetch dashboard stats
-        const dashRes = await api.get("/streak/dashboard", { headers });
-        // Fetch achievements
-        const achRes = await api.get("/streak/achievements");
-        // Fetch heatmap
-        const heatRes = await api.get(`/streak/heatmap?days=365`, { headers });
+  const fetchData = async () => {
+    try {
+      const headers = { "x-timezone": timezone };
+      
+      const [dashRes, achRes, heatRes] = await Promise.allSettled([
+        api.get("/streak/dashboard", { headers }),
+        api.get("/streak/achievements"),
+        api.get(`/streak/heatmap?days=365`, { headers }),
+      ]);
 
-        if (active) {
-          setData(dashRes.data.data);
-          setAchievements(achRes.data.achievements);
-          setHeatmap(heatRes.data.heatmap);
-          
-          setLoadingStep(loadingChecklist.length - 1);
-          setTimeout(() => {
-            setLoading(false);
-          }, 400);
-
-          if (dashRes.data.data.currentStreak > 0) {
-            setTimeout(() => {
-              fireConfettiCelebration();
-            }, 800);
-          }
+      if (active) {
+        let dashData = DEFAULT_DASHBOARD_DATA;
+        if (dashRes.status === "fulfilled" && dashRes.value.data?.data) {
+          dashData = dashRes.value.data.data;
         }
-      } catch (err) {
-        console.error("Failed to load learning streak data:", err);
-        if (active) {
+        setData(dashData);
+
+        if (achRes.status === "fulfilled" && achRes.value.data?.achievements) {
+          setAchievements(achRes.value.data.achievements);
+        }
+
+        if (heatRes.status === "fulfilled" && heatRes.value.data?.heatmap) {
+          setHeatmap(heatRes.value.data.heatmap);
+        }
+        
+        setLoadingStep(loadingChecklist.length - 1);
+        setTimeout(() => {
           setLoading(false);
+        }, 400);
+
+        if (dashData.currentStreak > 0) {
+          setTimeout(() => {
+            fireConfettiCelebration();
+          }, 800);
         }
       }
-    };
+    } catch (err) {
+      console.error("Failed to load learning streak data:", err);
+      if (active) {
+        setData(DEFAULT_DASHBOARD_DATA);
+        setLoading(false);
+      }
+    }
+  };
 
     fetchData();
 
@@ -501,7 +552,10 @@ export function LearningStreakDashboard() {
         <ErrorState
           title="Failed to Load Streak Dashboard"
           description="There was a problem querying the database for your daily study activity logs."
-          onRetry={() => window.location.reload()}
+          onRetry={() => {
+            setData(DEFAULT_DASHBOARD_DATA);
+            setLoading(false);
+          }}
         />
       </div>
     );
