@@ -623,7 +623,7 @@ export async function loginUser(input: LoginInput & { rememberMe?: boolean }) {
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
-    throw httpError(401, "Invalid email or password");
+    throw httpError(401, "Invalid user credentials. Please try again.");
   }
 
   if (!user.password) {
@@ -633,7 +633,7 @@ export async function loginUser(input: LoginInput & { rememberMe?: boolean }) {
   const isPasswordValid = await bcrypt.compare(input.password, user.password);
 
   if (!isPasswordValid) {
-    throw httpError(401, "Invalid email or password");
+    throw httpError(401, "Invalid user credentials. Please try again.");
   }
 
   return {
@@ -723,7 +723,7 @@ export async function rateLimitAuthRequest(ip: string) {
   try {
     await rateLimiter.consume(ip);
   } catch (err) {
-    throw httpError(429, "Too many requests");
+    throw httpError(429, "Invalid user credentials. Please try again.");
   }
 }
 

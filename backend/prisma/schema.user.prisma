@@ -1076,7 +1076,7 @@ model Profile {
 model UserSettings {
   id                      String   @id @default(cuid())
   userId                  String   @unique @map("user_id")
-  profileId               String   @unique @map("profile_id")
+  profileId               String?  @unique @map("profile_id")
 
   // Appearance
   themeMode               String   @default("dark")        @map("theme_mode")
@@ -1142,7 +1142,7 @@ model UserSettings {
   createdAt               DateTime @default(now())          @map("created_at")
   updatedAt               DateTime @updatedAt               @map("updated_at")
 
-  profile                 Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile                 Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
 }

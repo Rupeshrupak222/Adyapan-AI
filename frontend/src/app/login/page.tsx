@@ -173,7 +173,11 @@ function LoginPageContent() {
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data;
       const serverMsg = data?.message || data?.error;
-      setLoginError(serverMsg || "Invalid email or password.");
+      const isRateLimit = serverMsg && (serverMsg.includes("Rate limit") || serverMsg.includes("Too many") || serverMsg.includes("slow down"));
+      const finalMsg = (isRateLimit || !serverMsg || serverMsg.includes("Invalid email"))
+        ? "Invalid user credentials. Please try again."
+        : serverMsg;
+      setLoginError(finalMsg);
     } finally { setLoginLoading(false); }
   };
 

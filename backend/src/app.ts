@@ -60,7 +60,7 @@ export function createApp() {
 
 
 
-  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: { success: false, error: "Too many authentication requests, please try again later." } });
+  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: { success: false, error: "Invalid user credentials. Please try again." } });
   const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, message: { success: false, error: "Rate limit exceeded, please slow down." } });
 
   app.use("/api/auth", authLimiter);

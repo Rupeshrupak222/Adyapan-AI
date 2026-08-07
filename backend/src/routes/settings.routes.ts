@@ -81,8 +81,8 @@ async function getOrCreateSettings(prisma: any, userId: string) {
     }
   }
 
-  let settings = await prisma.userSettings.findUnique({
-    where: { profileId: profile.id },
+  let settings = await prisma.userSettings.findFirst({
+    where: { OR: [{ userId }, { profileId: profile.id }] },
   });
 
   if (!settings) {
