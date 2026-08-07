@@ -28,7 +28,9 @@ export function CommunityProfilesView({ onViewProfile, onMessage }: { onViewProf
     setSearching(true);
     try {
       const res = await api.get(`/community/users?q=${encodeURIComponent(q)}&limit=50`);
-      if (res.data.success) setUsers(res.data.users);
+      if (res.data.success) {
+        setUsers(res.data.users.filter((u: any) => u.user?.role !== "ADMIN"));
+      }
     } catch { /* silent */ }
     finally { setSearching(false); setLoading(false); }
   }, []);

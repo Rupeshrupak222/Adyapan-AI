@@ -72,7 +72,9 @@ export function CommunityMessagesView({ openChatWith }: { openChatWith?: string 
       setSearching(true);
       try {
         const res = await api.get(`/community/users?q=${encodeURIComponent(userSearch)}&limit=10`);
-        if (res.data.success) setSearchResults(res.data.users);
+        if (res.data.success) {
+          setSearchResults(res.data.users.filter((u: any) => u.user?.role !== "ADMIN"));
+        }
       } catch { /* */ }
       finally { setSearching(false); }
     }, 400);

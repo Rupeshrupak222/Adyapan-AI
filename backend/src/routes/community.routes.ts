@@ -272,9 +272,9 @@ router.get("/users", async (req: any, res) => {
     const { q, page = "1", limit = "20" } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    // Auto-create profile records for any users that don't have one yet
+    // Auto-create profile records for non-admin users that don't have one yet
     const usersWithoutProfile = await prisma.user.findMany({
-      where: { profile: null },
+      where: { profile: null, role: { not: "ADMIN" } },
       select: { id: true, name: true },
     });
     if (usersWithoutProfile.length > 0) {
@@ -290,13 +290,21 @@ router.get("/users", async (req: any, res) => {
       );
     }
 
-    const where: any = {};
+    const where: any = {
+      user: { role: { not: "ADMIN" } },
+    };
     if (q) {
-      where.OR = [
-        { user: { name: { contains: String(q), mode: "insensitive" } } },
-        { username: { contains: String(q), mode: "insensitive" } },
-        { college: { contains: String(q), mode: "insensitive" } },
+      where.AND = [
+        { user: { role: { not: "ADMIN" } } },
+        {
+          OR: [
+            { user: { name: { contains: String(q), mode: "insensitive" } } },
+            { username: { contains: String(q), mode: "insensitive" } },
+            { college: { contains: String(q), mode: "insensitive" } },
+          ],
+        },
       ];
+      delete where.user;
     }
     const [profiles, total] = await Promise.all([
       prisma.profile.findMany({
@@ -308,7 +316,10 @@ router.get("/users", async (req: any, res) => {
       }),
       prisma.profile.count({ where }),
     ]);
-    res.json({ success: true, users: profiles, total });
+
+    const communityProfiles = profiles.filter((p: any) => p.user?.role !== "ADMIN");
+
+    res.json({ success: true, users: communityProfiles, total: communityProfiles.length });
   } catch (error) {
     handleRouteError(res, error, "Community.users", "Failed to fetch users");
   }
@@ -335,7 +346,7 @@ router.get("/users/:userId", async (req: any, res) => {
         where: { id: rawId },
         select: { id: true, name: true, email: true, role: true, createdAt: true },
       });
-      if (!user) return res.status(404).json({ error: "Profile not found" });
+      if (!user || user.role === "ADMIN") return res.status(404).json({ error: "Profile not found" });
 
       profile = await prisma.profile.create({
         data: {
@@ -344,6 +355,10 @@ router.get("/users/:userId", async (req: any, res) => {
         },
         include: { user: { select: { id: true, name: true, email: true, role: true, createdAt: true } } },
       });
+    }
+
+    if (profile.user?.role === "ADMIN" && profile.userId !== currentUserId) {
+      return res.status(404).json({ error: "Profile not found" });
     }
 
     const targetUserId = profile.userId;
@@ -383,16 +398,18 @@ router.get("/conversations", async (req: any, res) => {
     }
     const otherIds = [...convMap.keys()];
     const otherProfiles = await prisma.profile.findMany({
-      where: { userId: { in: otherIds } },
-      select: { userId: true, user: { select: { id: true, name: true } } },
+      where: { userId: { in: otherIds }, user: { role: { not: "ADMIN" } } },
+      select: { userId: true, user: { select: { id: true, name: true, role: true } } },
     });
     const profileMap = new Map<string, any>(otherProfiles.map((p: any) => [p.userId, p]));
-    const conversations = otherIds.map(id => ({
-      userId: id,
-      name: (profileMap.get(id) as any)?.user?.name || "Unknown",
-      lastMessage: convMap.get(id)!.lastMessage,
-      unread: convMap.get(id)!.unread,
-    }));
+    const conversations = otherIds
+      .filter(id => profileMap.has(id))
+      .map(id => ({
+        userId: id,
+        name: (profileMap.get(id) as any)?.user?.name || "Unknown",
+        lastMessage: convMap.get(id)!.lastMessage,
+        unread: convMap.get(id)!.unread,
+      }));
     conversations.sort((a: any, b: any) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime());
     res.json({ success: true, conversations });
   } catch (error) {
