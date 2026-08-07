@@ -9,6 +9,7 @@ async function parsePdfNonBlocking(buffer: Buffer): Promise<string> {
   return extractPdfText(buffer);
 }
 import mammoth from "mammoth";
+import { parseOffice } from "officeparser";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { StreakService } from "../services/streak.service";
 import { handleRouteError } from "../utils/routeError";
@@ -17,7 +18,7 @@ import { generatePdfFromHtml } from "../services/pdf-generator.service";
 
 const uploadMemory = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 15 * 1024 * 1024 },
 });
 
 function escapeXml(text: string): string {
@@ -28,9 +29,11 @@ function escapeXml(text: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
 }
-/** Clean garbled PDF text: fix broken words, collapse whitespace, remove artifacts */
+/** Clean garbled document text: fix broken words, remove control chars, collapse whitespace */
 function cleanExtractedText(text: string): string {
   let cleaned = text
+    // Remove control characters except newline and tab
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "")
     // Fix broken words: "D a t a S t r u c t u r e s" → "Data Structures"
     .replace(/(?:^|\s)([a-zA-Z](?: [a-zA-Z]){2,})/g, (_match, group: string) => {
       const joined = group.replace(/\s+/g, "");
@@ -54,24 +57,69 @@ studyRouter.use(requireAuth);
 
 import { httpError } from "../utils/httpError";
 
+async function parseOfficeText(buffer: Buffer): Promise<string> {
+  const parsed = await parseOffice(buffer);
+  if (typeof parsed === "string") return parsed;
+  if (parsed && typeof parsed === "object") {
+    return (parsed as any).text || (parsed as any).content || String(parsed);
+  }
+  return String(parsed || "");
+}
+
 async function extractTextFromFile(file: Express.Multer.File): Promise<string> {
-  const mimeType = file.mimetype || "";
+  const mimeType = (file.mimetype || "").toLowerCase();
   const fileName = (file.originalname || "").toLowerCase();
-  let rawText: string;
-  
+  let rawText = "";
+
   try {
     if (mimeType === "application/pdf" || fileName.endsWith(".pdf")) {
-      rawText = await parsePdfNonBlocking(file.buffer);
+      try {
+        rawText = await parsePdfNonBlocking(file.buffer);
+      } catch (pdfErr) {
+        console.warn("[Study upload] pdf-parse failed, falling back to officeparser:", pdfErr);
+        rawText = await parseOfficeText(file.buffer);
+      }
     } else if (
-      mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-      mimeType === "application/msword" ||
+      mimeType.includes("presentation") ||
+      mimeType.includes("powerpoint") ||
+      fileName.endsWith(".pptx") ||
+      fileName.endsWith(".ppt")
+    ) {
+      // PowerPoint Presentations (.pptx, .ppt)
+      rawText = await parseOfficeText(file.buffer);
+    } else if (
+      mimeType.includes("wordprocessingml") ||
+      mimeType.includes("msword") ||
       fileName.endsWith(".docx") ||
       fileName.endsWith(".doc")
     ) {
-      const parsed = await mammoth.extractRawText({ buffer: file.buffer });
-      rawText = parsed.value;
-    } else {
+      // Word Documents (.docx, .doc)
+      try {
+        const parsed = await mammoth.extractRawText({ buffer: file.buffer });
+        rawText = parsed.value || "";
+      } catch (docxErr) {
+        console.warn("[Study upload] mammoth failed for DOCX, falling back to officeparser:", docxErr);
+      }
+
+      if (!rawText || rawText.trim().length === 0) {
+        rawText = await parseOfficeText(file.buffer);
+      }
+    } else if (
+      fileName.endsWith(".txt") ||
+      fileName.endsWith(".md") ||
+      fileName.endsWith(".csv") ||
+      fileName.endsWith(".json") ||
+      mimeType.startsWith("text/")
+    ) {
+      // Plain text / Markdown / TXT
       rawText = file.buffer.toString("utf-8");
+    } else {
+      // General Office / Text fallback
+      try {
+        rawText = await parseOfficeText(file.buffer);
+      } catch {
+        rawText = file.buffer.toString("utf-8");
+      }
     }
   } catch (parseErr: any) {
     console.error("[Study upload] Document parsing error:", parseErr);
@@ -79,7 +127,7 @@ async function extractTextFromFile(file: Express.Multer.File): Promise<string> {
   }
 
   if (!rawText || rawText.trim().length === 0) {
-    throw httpError(400, "The document appears to be empty. Scanned image layers with no readable text are not supported.");
+    throw httpError(400, "The document appears to be empty or contains no readable text.");
   }
 
   return cleanExtractedText(rawText);
