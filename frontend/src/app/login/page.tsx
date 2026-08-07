@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/services/api";
+import { toast } from "sonner";
 import { saveAuthSession } from "@/hooks/useAuth";
 import { Navbar } from "@/components/layout/Navbar";
 import ParticleBackground from "@/components/ui/ParticleBackground";
@@ -186,10 +187,17 @@ function LoginPageContent() {
     if (reg.password !== reg.confirm) { setRegError("Passwords do not match."); return; }
     setRegLoading(true);
     try {
-      await api.post("/auth/register", { name: reg.name.trim(), email: reg.email.trim(), password: reg.password, role: "USER" });
+      const { data } = await api.post("/auth/register", { name: reg.name.trim(), email: reg.email.trim(), password: reg.password, role: "USER" });
       sessionStorage.setItem("adyapan-just-registered", "true");
       localStorage.setItem("adyapan-just-registered", "true");
-      setTab("login"); setLoginEmail(reg.email.trim());
+      if (data?.token && data?.user) {
+        saveAuthSession(data.token, data.user, true);
+        toast.success("Account created successfully! Welcome to Adyapan AI.");
+        router.replace(getPostLoginTarget(data.user.role));
+      } else {
+        setTab("login");
+        setLoginEmail(reg.email.trim());
+      }
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { code?: string; message?: string; error?: string } } })?.response?.data;
       if (data?.code === "EMAIL_ALREADY_EXISTS") {

@@ -1072,6 +1072,18 @@ model Profile {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   settings          UserSettings?
 
+  // Registration Workflow Fields
+  organizationId    String?  @map("organization_id")
+  country           String?
+  state             String?
+  city              String?
+  department        String?
+  course            String?
+  semester          String?
+  studentId         String?  @map("student_id")
+  referralCode      String?  @map("referral_code")
+  profileCompletion Int      @default(0) @map("profile_completion")
+
   @@map("profiles")
 }
 

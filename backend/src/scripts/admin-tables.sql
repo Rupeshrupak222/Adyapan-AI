@@ -988,8 +988,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS "feature_access_feature_key_key" ON "feature_a
 CREATE INDEX IF NOT EXISTS "feature_access_category_idx" ON "feature_access"("category");
 CREATE INDEX IF NOT EXISTS "feature_access_required_plan_idx" ON "feature_access"("required_plan");
 
-
-
-
-
-
+-- Profiles Registration Workflow Columns
+ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "organization_id" TEXT;
+ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "country" TEXT;
+ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "state" TEXT;
+ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "city" TEXT;
+ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "department" TEXT;
+ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "course" TEXT;
+ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "semester" TEXT;
+ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "student_id" TEXT;
+ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "referral_code" TEXT;
+ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "profile_completion" INTEGER DEFAULT 0;
