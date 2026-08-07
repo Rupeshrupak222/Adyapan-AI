@@ -1276,7 +1276,7 @@ function UserDashboardContent() {
   });
   const [statsLoading, setStatsLoading] = useState(true);
 
-  // ΓöÇΓöÇ Extended cross-module analytics (fetched in parallel) ΓöÇΓöÇ
+  // ——— Extended cross-module analytics (fetched in parallel) —
   const [aptitudeAnalytics, setAptitudeAnalytics] = useState<any>(null);
   const [interviewAnalytics, setInterviewAnalytics] = useState<any>(null);
   const [streakData, setStreakData] = useState<any>(null);
@@ -1319,27 +1319,49 @@ function UserDashboardContent() {
     setTheme(savedTheme);
     document.documentElement.setAttribute("data-theme", savedTheme);
 
-    // Check if onboarding is needed
-    const onboarded = localStorage.getItem("adyapan-onboarded");
-    if (!onboarded) setShowOnboarding(true);
+    // Check if onboarding is needed (Only show for first time register)
+    const isJustRegistered = sessionStorage.getItem("adyapan-just-registered") === "true" || localStorage.getItem("adyapan-just-registered") === "true";
+    const onboardedGlobal = localStorage.getItem("adyapan-onboarded") === "true";
+
+    if (isJustRegistered && !onboardedGlobal) {
+      setShowOnboarding(true);
+    } else {
+      setShowOnboarding(false);
+      localStorage.setItem("adyapan-onboarded", "true");
+    }
 
     // Seed from localStorage/sessionStorage first (instant display), then refresh from API
     try {
       const raw = localStorage.getItem("adyapan-user") || sessionStorage.getItem("adyapan-user");
-      if (raw) setUser(JSON.parse(raw) as AdyapanUser);
+      if (raw) {
+        const parsed = JSON.parse(raw) as AdyapanUser;
+        setUser(parsed);
+        if (parsed.id && localStorage.getItem(`adyapan-onboarded-${parsed.id}`) === "true") {
+          setShowOnboarding(false);
+        }
+      }
     } catch { /* ignore */ }
 
     // Fetch fresh user data from server
     api.get("/auth/me").then(res => {
       const fresh = (res.data as { user: AdyapanUser }).user;
       setUser(fresh);
+
+      const userOnboardedKey = `adyapan-onboarded-${fresh.id}`;
+      const isUserOnboarded = localStorage.getItem(userOnboardedKey) === "true";
+      if (!isJustRegistered || isUserOnboarded || onboardedGlobal) {
+        setShowOnboarding(false);
+        localStorage.setItem(userOnboardedKey, "true");
+        localStorage.setItem("adyapan-onboarded", "true");
+      }
+
       // Persist in whichever storage already has the token
       if (localStorage.getItem("adyapan-token")) {
         localStorage.setItem("adyapan-user", JSON.stringify(fresh));
       } else {
         sessionStorage.setItem("adyapan-user", JSON.stringify(fresh));
       }
-    }).catch(() => { /* token invalid ΓÇö interceptor will redirect */ });
+    }).catch(() => { /* token invalid */ });
 
     const observer = new MutationObserver(() => {
       const t = document.documentElement.getAttribute("data-theme") ?? "dark";
@@ -1548,7 +1570,7 @@ function UserDashboardContent() {
 
   return (
     <div className="relative overflow-hidden" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
-      {showOnboarding && <OnboardingFlow onComplete={() => setShowOnboarding(false)} />}
+      {showOnboarding && <OnboardingFlow userId={user?.id} onComplete={() => setShowOnboarding(false)} />}
       <FloatingOrbs />
 
       <DashboardTopNav user={user} theme={theme} onThemeToggle={handleThemeToggle} onViewProfile={handleViewProfile} onAdyChat={handleAdyChat} onViewTool={navigateTo} onMenuToggle={() => setSidebarOpen(prev => !prev)} notifications={notifications} setNotifications={setNotifications} unreadCount={unreadCount} onMarkAllRead={async () => { try { await api.put("/notifications/read-all"); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); setUnreadCount(0); } catch { } }} onClearAll={async () => { try { await api.delete("/notifications/clear"); setNotifications([]); setUnreadCount(0); } catch { } }} onPremium={handlePremium} onViewSettings={() => navigateTo("settings")} />

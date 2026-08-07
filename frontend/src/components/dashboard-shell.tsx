@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 export interface AdyapanUser {
+  id?: string;
   name: string;
   email: string;
   role?: string;

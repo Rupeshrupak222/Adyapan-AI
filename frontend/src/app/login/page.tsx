@@ -183,6 +183,8 @@ function LoginPageContent() {
     setRegLoading(true);
     try {
       await api.post("/auth/register", { name: reg.name.trim(), email: reg.email.trim(), password: reg.password, role: "USER" });
+      sessionStorage.setItem("adyapan-just-registered", "true");
+      localStorage.setItem("adyapan-just-registered", "true");
       setTab("login"); setLoginEmail(reg.email.trim());
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { code?: string; message?: string; error?: string } } })?.response?.data;
