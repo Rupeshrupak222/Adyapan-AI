@@ -1196,6 +1196,7 @@ model SupportTicket {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
+  @@index([status])
   @@index([createdAt])
   @@map("support_tickets")
 }
