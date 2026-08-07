@@ -90,9 +90,10 @@ function getUptimeLabel(seconds: number): string {
 }
 
 function formatCurrency(n: number): string {
-  if (n >= 1_000_000) return `₹${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `₹${(n / 1_000).toFixed(1)}K`;
-  return `₹${n.toLocaleString()}`;
+  const val = Number(n || 0);
+  if (val >= 10_000_000) return `₹${(val / 10_000_000).toFixed(2)} Cr`;
+  if (val >= 100_000) return `₹${(val / 100_000).toFixed(2)} Lakh`;
+  return `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
 function formatNumber(n: number): string {

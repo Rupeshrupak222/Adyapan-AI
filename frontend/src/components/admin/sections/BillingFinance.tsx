@@ -158,9 +158,10 @@ function errMsg(err: unknown, fallback: string): string {
 }
 
 function formatCurrency(n: number): string {
-  if (n >= 1_000_000) return `₹${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `₹${(n / 1_000).toFixed(2)}K`;
-  return `₹${n.toLocaleString("en-IN")}`;
+  const val = Number(n || 0);
+  if (val >= 10_000_000) return `₹${(val / 10_000_000).toFixed(2)} Cr`;
+  if (val >= 100_000) return `₹${(val / 100_000).toFixed(2)} Lakh`;
+  return `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
 function formatDate(iso: string): string {
@@ -667,7 +668,7 @@ export default function BillingFinance() {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-xs font-black font-mono" style={{ color: paid ? "#10b981" : "var(--text-secondary)" }}>
-                        ₹{(t.amount / 100).toLocaleString("en-IN")}
+                        ₹{(t.amount / 100).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                         {t.discountAmount ? (
                           <span className="block text-[9px] font-semibold text-red-500">-₹{(t.discountAmount / 100).toLocaleString("en-IN")}</span>
                         ) : null}

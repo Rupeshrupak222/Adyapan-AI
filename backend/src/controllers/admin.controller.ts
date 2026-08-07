@@ -120,8 +120,8 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
       newUsersWeek = nWeek;
       newUsersMonth = nMonth;
       payments = pymts || [];
-      revenueTotal = totalRev?._sum?.amount ?? 0;
-      revenueMonth = monthRev?._sum?.amount ?? 0;
+      revenueTotal = Math.round(((totalRev?._sum?.amount ?? 0) / 100) * 100) / 100;
+      revenueMonth = Math.round(((monthRev?._sum?.amount ?? 0) / 100) * 100) / 100;
     } catch (dbErr) {
       console.error("[getDashboardStats] Master DB query error:", dbErr);
     }
@@ -638,8 +638,8 @@ export async function getRevenueAnalytics(_req: Request, res: Response, next: Ne
     try {
       payments = await prisma.payment.findMany({ where: { status: "paid" }, select: { amount: true, createdAt: true, plan: true } }).catch(() => []);
       monthPayments = payments.filter(p => new Date(p.createdAt) >= monthAgo);
-      totalRevenue = payments.reduce((s, p) => s + (p.amount || 0), 0);
-      monthRevenue = monthPayments.reduce((s, p) => s + (p.amount || 0), 0);
+      totalRevenue = Math.round((payments.reduce((s, p) => s + (p.amount || 0), 0) / 100) * 100) / 100;
+      monthRevenue = Math.round((monthPayments.reduce((s, p) => s + (p.amount || 0), 0) / 100) * 100) / 100;
       premiumUsers = await prisma.user.count({ where: { OR: [{ plan: { not: "free" } }, { subscriptionStatus: "active" }] } }).catch(() => 0);
       planCounts = await prisma.user.groupBy({ by: ["plan"], _count: true }).catch(() => []);
       recentPayments = await prisma.payment.findMany({ take: 20, orderBy: { createdAt: "desc" }, include: { user: { select: { name: true, email: true } } } }).catch(() => []);
@@ -648,7 +648,7 @@ export async function getRevenueAnalytics(_req: Request, res: Response, next: Ne
         coupons = await (prisma as any).coupon.findMany({ orderBy: { createdAt: "desc" } }).catch(() => []);
       }
       const discountAgg = await prisma.payment.aggregate({ _sum: { discountAmount: true }, where: { status: "paid" } }).catch(() => ({ _sum: { discountAmount: 0 } }));
-      totalDiscount = discountAgg._sum.discountAmount ?? 0;
+      totalDiscount = Math.round(((discountAgg._sum.discountAmount ?? 0) / 100) * 100) / 100;
       couponPaymentsCount = await prisma.payment.count({ where: { status: "paid", couponCode: { not: null } } }).catch(() => 0);
     } catch (err) {
       console.error("[getRevenueAnalytics] Query error:", err);
@@ -684,16 +684,18 @@ export async function getRevenueAnalytics(_req: Request, res: Response, next: Ne
       })),
     };
 
+    const todayRevenue = Math.round((payments.filter(p => new Date(p.createdAt) >= todayStart).reduce((s, p) => s + (p.amount || 0), 0) / 100) * 100) / 100;
+
     res.json({
       success: true,
       revenue: {
         total: totalRevenue,
         month: monthRevenue,
-        today: payments.filter(p => new Date(p.createdAt) >= todayStart).reduce((s, p) => s + (p.amount || 0), 0),
+        today: todayRevenue,
         premiumUsers,
         totalTransactions: payments.length,
         monthTransactions: monthPayments.length,
-        averageOrderValue: payments.length > 0 ? Math.round(totalRevenue / payments.length) : 0,
+        averageOrderValue: payments.length > 0 ? Math.round((totalRevenue / payments.length) * 100) / 100 : 0,
         planDist,
         transactions,
         couponStats,
