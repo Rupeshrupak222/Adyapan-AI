@@ -44,15 +44,22 @@ export function ResearchDashboard({
         className="relative overflow-hidden rounded-2xl p-6 md:p-8"
         style={{
           background: c.isDark
-            ? "linear-gradient(135deg, rgba(180,83,9,0.35) 0%, rgba(15,23,42,0.9) 100%)"
-            : "linear-gradient(135deg, rgba(254,243,199,1) 0%, rgba(253,230,138,0.6) 100%)",
-          border: `1px solid ${c.isDark ? "rgba(245,158,11,0.35)" : "rgba(245,158,11,0.5)"}`,
-          boxShadow: "0 10px 30px rgba(245,158,11,0.08)",
+            ? "linear-gradient(135deg, rgba(180,83,9,0.3) 0%, rgba(15,23,42,0.95) 100%)"
+            : "linear-gradient(135deg, #ffffff 0%, rgba(254,243,199,0.45) 50%, #ffffff 100%)",
+          border: `1px solid ${c.isDark ? "rgba(245,158,11,0.35)" : "rgba(245,158,11,0.25)"}`,
+          boxShadow: c.isDark ? "0 10px 30px rgba(0,0,0,0.3)" : "0 8px 24px rgba(245,158,11,0.06)",
         }}
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-extrabold mb-3" style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>
+            <div
+              className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-extrabold mb-3"
+              style={{
+                background: c.isDark ? "rgba(245,158,11,0.18)" : "rgba(245,158,11,0.1)",
+                color: c.isDark ? "#f59e0b" : "#d97706",
+                border: `1px solid ${c.isDark ? "rgba(245,158,11,0.3)" : "rgba(245,158,11,0.25)"}`,
+              }}
+            >
               <Sparkles size={14} /> Peer-Reviewed Research Paper Engine
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
@@ -70,7 +77,7 @@ export function ResearchDashboard({
                 className="px-4 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2"
                 style={{
                   background: c.isDark ? "rgba(245,158,11,0.1)" : "rgba(245,158,11,0.08)",
-                  color: "#f59e0b",
+                  color: c.isDark ? "#f59e0b" : "#d97706",
                   border: `1px solid ${c.isDark ? "rgba(245,158,11,0.3)" : "rgba(245,158,11,0.25)"}`,
                 }}
               >
@@ -83,7 +90,8 @@ export function ResearchDashboard({
               style={{
                 background: c.isDark ? "rgba(255,255,255,0.06)" : "#ffffff",
                 color: c.text,
-                border: `1px solid ${c.isDark ? "rgba(245,158,11,0.2)" : c.border}`,
+                border: `1px solid ${c.isDark ? "rgba(245,158,11,0.2)" : "rgba(203,213,225,0.8)"}`,
+                boxShadow: c.isDark ? "none" : "0 2px 6px rgba(0,0,0,0.03)",
               }}
             >
               <Layers size={16} className="text-amber-500" /> Template Gallery
@@ -110,7 +118,8 @@ export function ResearchDashboard({
             className="p-4 rounded-xl flex items-center gap-4 transition-all hover:border-amber-500/40"
             style={{
               background: c.isDark ? "rgba(255,255,255,0.025)" : "#ffffff",
-              border: `1px solid ${c.isDark ? "rgba(245,158,11,0.15)" : c.border}`,
+              border: `1px solid ${c.isDark ? "rgba(245,158,11,0.15)" : "rgba(226,232,240,0.8)"}`,
+              boxShadow: c.isDark ? "none" : "0 2px 8px rgba(0,0,0,0.02)",
             }}
           >
             <div
@@ -151,15 +160,27 @@ export function ResearchDashboard({
                   className="p-5 rounded-xl transition-all cursor-pointer hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/5 flex flex-col justify-between"
                   style={{
                     background: c.isDark ? "rgba(255,255,255,0.025)" : "#ffffff",
-                    border: `1px solid ${c.isDark ? "rgba(245,158,11,0.15)" : c.border}`,
+                    border: `1px solid ${c.isDark ? "rgba(245,158,11,0.15)" : "rgba(226,232,240,0.8)"}`,
+                    boxShadow: c.isDark ? "none" : "0 2px 8px rgba(0,0,0,0.02)",
                   }}
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 uppercase tracking-wider">
+                      <span
+                        className="text-[10px] font-extrabold px-2.5 py-0.5 rounded uppercase tracking-wider"
+                        style={{
+                          background: c.isDark ? "rgba(245,158,11,0.15)" : "rgba(245,158,11,0.1)",
+                          color: c.isDark ? "#fbbf24" : "#d97706",
+                          border: `1px solid ${c.isDark ? "rgba(245,158,11,0.25)" : "rgba(245,158,11,0.2)"}`,
+                        }}
+                      >
                         {p.template || "IEEE"}
                       </span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${p.status === "PUBLISHED" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"}`}>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                          p.status === "PUBLISHED" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-600"
+                        }`}
+                      >
                         {p.status || "DRAFT"}
                       </span>
                     </div>
