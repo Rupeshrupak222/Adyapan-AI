@@ -418,7 +418,8 @@ export async function getAdminUsers(req: Request, res: Response, next: NextFunct
     const perUserCounts = await adminDbService.getPerUserCounts(users.map(u => u.id));
 
     const enrichedUsers = users.map(user => {
-      const isPremium = user.plan?.toLowerCase() === "premium";
+      const planLower = (user.plan || "").toLowerCase();
+      const isPremium = (planLower !== "" && planLower !== "free") || user.subscriptionStatus === "active";
       const storageLimitMb = isPremium ? 200 : 50;
 
       const counts = perUserCounts.get(user.id) || {};
@@ -545,10 +546,11 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
         details: { ...auditDetails(), from: user.plan, to: targetPlan },
         ipAddress: req.ip,
       });
+      const isUpgradePremium = targetPlan !== "" && targetPlan !== "free";
       return res.json({
         success: true,
         message: `User upgraded to ${targetPlan} (Storage limit assigned: 200 MB)`,
-        storageLimitMb: targetPlan === "premium" ? 200 : 50,
+        storageLimitMb: isUpgradePremium ? 200 : 50,
       });
     }
     if (action === "downgrade" || action === "downgrade_plan") {

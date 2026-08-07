@@ -65,6 +65,9 @@ const roleMap: Record<string, { label: string; variant: "success" | "warning" | 
 
 const planMap: Record<string, { label: string; variant: "success" | "warning" | "error" | "info" | "default" }> = {
   premium: { label: "Premium", variant: "success" },
+  pro: { label: "Pro", variant: "success" },
+  pro_yearly: { label: "Pro Yearly", variant: "success" },
+  pro_monthly: { label: "Pro Monthly", variant: "success" },
   free: { label: "Free", variant: "default" },
   enterprise: { label: "Enterprise", variant: "warning" },
 };
@@ -305,10 +308,14 @@ export default function UserManagement() {
                 <AnimatePresence mode="popLayout">
                   {users.map((user, idx) => {
                     const roleStyle = roleMap[user.role] ?? { label: user.role, variant: "default" as const };
-                    const planStyle = planMap[user.plan] ?? { label: user.plan, variant: "default" as const };
+                    const rawPlan = (user.plan || "").toLowerCase();
+                    const planStyle = planMap[rawPlan] ?? {
+                      label: (user.plan || "Free").replace(/_/g, " ").toUpperCase(),
+                      variant: rawPlan !== "free" && rawPlan !== "" ? ("success" as const) : ("default" as const),
+                    };
                     const statusStyle = statusMap[user.subscriptionStatus] ?? { label: user.subscriptionStatus, variant: "default" as const };
                     const usageTotal = totalUsage(user);
-                    const isPremium = user.plan?.toLowerCase() === "premium";
+                    const isPremium = (rawPlan !== "" && rawPlan !== "free") || user.subscriptionStatus === "active";
                     const storageLimit = user.storage?.limitMb ?? (isPremium ? 200 : 50);
                     const storageUsed = user.storage?.usedMb ?? 0;
                     const storagePercent = user.storage?.percentUsed ?? Math.min(100, Math.round((storageUsed / storageLimit) * 100));
@@ -357,7 +364,7 @@ export default function UserManagement() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <StatusBadge variant={planStyle.variant}>
-                              {user.plan === "premium" ? <Crown size={10} /> : <Star size={10} />}
+                              {isPremium ? <Crown size={10} /> : <Star size={10} />}
                               {planStyle.label}
                             </StatusBadge>
                             <StatusBadge variant={statusStyle.variant} pulse={user.subscriptionStatus === "active"}>

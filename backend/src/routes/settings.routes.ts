@@ -666,10 +666,11 @@ settingsRouter.get("/storage", async (req: any, res) => {
     // Get user plan to assign limit (Free: 50MB, Premium: 200MB)
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { plan: true },
+      select: { plan: true, subscriptionStatus: true },
     });
 
-    const isPremium = user?.plan?.toLowerCase() === "premium";
+    const planLower = (user?.plan || "").toLowerCase();
+    const isPremium = (planLower !== "" && planLower !== "free") || user?.subscriptionStatus === "active";
     const limitMb = isPremium ? 200 : 50;
 
     // Count each storage category

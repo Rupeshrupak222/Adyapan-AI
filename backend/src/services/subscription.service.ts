@@ -165,6 +165,13 @@ export async function checkAndExpire(userId: string): Promise<boolean> {
       })
       .catch(() => null);
 
+    await (prisma as any).storageUsage
+      .update({
+        where: { userId },
+        data: { limitMb: 50 },
+      })
+      .catch(() => {});
+
     await recordBillingEvent({
       userId,
       event: "subscription_expired",
@@ -230,6 +237,15 @@ export async function activateSubscription(params: ActivateSubscriptionParams) {
       subscriptionEnd: params.periodEnd,
     },
   });
+
+  // Assign 200 MB storage limit for active/paid plan
+  await (prisma as any).storageUsage
+    .upsert({
+      where: { userId },
+      create: { userId, limitMb: 200, usedMb: 0 },
+      update: { limitMb: 200 },
+    })
+    .catch(() => {});
 
   await recordBillingEvent({
     userId,
