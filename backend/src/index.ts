@@ -1,4 +1,6 @@
 import "dotenv/config";
+// Suppress pg SSL deprecation warning — we explicitly use sslmode=verify-full
+process.env.NODE_NO_WARNINGS = "1";
 import { createApp } from "./app";
 import { env } from "./config/env";
 import { PerformanceMonitor } from "./utils/monitoring";

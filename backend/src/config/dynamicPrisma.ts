@@ -82,6 +82,10 @@ function isTableOrColumnMissing(err: any): boolean {
   return err?.code === "P2021" || (typeof err?.message === "string" && err.message.includes("does not exist"));
 }
 
+// Track which DBs have an active or recently-completed sync to avoid
+// re-triggering dozens of times while the first push is still running.
+const recentlySynced = new Set<string>();
+
 export function createPrismaClient(databaseUrl: string): any {
   const pool = new Pool({
     connectionString: databaseUrl,
@@ -115,13 +119,19 @@ export function createPrismaClient(databaseUrl: string): any {
             result = await query(args);
           } catch (err: any) {
             if (isTableOrColumnMissing(err)) {
-              console.warn(`[dynamicPrisma] Table ${model} missing in user database. Triggering background schema sync...`);
-              // Fire-and-forget: never block the request on `npx prisma db push`
-              // (it can take many seconds on a cold database). The request fails
-              // fast; once the background push completes, subsequent queries
-              // succeed. The dashboard re-polls on a short interval, so the
-              // empty state self-heals within one cycle.
-              triggerSchemaSync(databaseUrl).catch(() => {});
+              // Only log + trigger once per DB URL, not on every concurrent request
+              if (!recentlySynced.has(databaseUrl)) {
+                recentlySynced.add(databaseUrl);
+                console.warn(`[dynamicPrisma] Table ${model} missing in user database. Triggering background schema sync...`);
+                triggerSchemaSync(databaseUrl).then((ok) => {
+                  if (ok) {
+                    // Keep in set so we don't retrigger, but clear after 10 min
+                    setTimeout(() => recentlySynced.delete(databaseUrl), 10 * 60 * 1000);
+                  } else {
+                    recentlySynced.delete(databaseUrl);
+                  }
+                }).catch(() => { recentlySynced.delete(databaseUrl); });
+              }
             }
             throw err;
           }

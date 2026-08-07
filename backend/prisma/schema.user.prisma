@@ -2122,3 +2122,21 @@ model LinkedInScrapedJob {
   @@index([savedAt])
   @@map("linkedin_scraped_jobs")
 }
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  ticketId  String   @unique @map("ticket_id")
+  subject   String
+  category  String   @default("general")
+  message   String
+  severity  String   @default("medium")
+  status    String   @default("open")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("support_tickets")
+}
