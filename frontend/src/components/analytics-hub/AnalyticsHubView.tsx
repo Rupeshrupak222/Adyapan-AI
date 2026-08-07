@@ -801,71 +801,7 @@ export function AnalyticsHubView({ setView, activeModule = "analytics-hub", them
           </AnimatePresence>
         </div>
 
-        {/* ==================== 4. CENTRAL AI PERFORMANCE INSIGHTS ==================== */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={0}
-          whileHover={{ y: -4, scale: 1.01 }}
-          className="p-5 border rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent border-amber-500/10 space-y-2 shrink-0"
-        >
-          <h4 className="text-xs font-extrabold flex items-center gap-1.5 text-amber-500" style={{ fontFamily: "'Outfit', sans-serif" }}>
-            <motion.div
-              initial={{ scale: 0, rotate: -20 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 280, damping: 18 }}
-            >
-              <Sparkles size={14} />
-            </motion.div> AI Performance Insights
-          </h4>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <motion.li
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              custom={0}
-              className="flex items-start gap-2"
-              style={{ color: c.textSec }}
-            >
-              <span className="text-amber-500 font-bold">•</span>
-              <span>Your interview scores improved by **18%** this month. Keep practicing!</span>
-            </motion.li>
-            <motion.li
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              custom={1}
-              className="flex items-start gap-2"
-              style={{ color: c.textSec }}
-            >
-              <span className="text-amber-500 font-bold">•</span>
-              <span>Continue practicing **Data Structures** to improve placement readiness.</span>
-            </motion.li>
-            <motion.li
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              custom={2}
-              className="flex items-start gap-2"
-              style={{ color: c.textSec }}
-            >
-              <span className="text-amber-500 font-bold">•</span>
-              <span>Completing 2 more mock tests can unlock top tier recruiter readiness levels.</span>
-            </motion.li>
-            <motion.li
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              custom={3}
-              className="flex items-start gap-2"
-              style={{ color: c.textSec }}
-            >
-              <span className="text-amber-500 font-bold">•</span>
-              <span>Focus on **Machine Learning projects** to strengthen your resume match rate.</span>
-            </motion.li>
-          </ul>
-        </motion.div>
+
 
       </div>
 

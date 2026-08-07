@@ -28,6 +28,9 @@ import {
   getAdminSupportTickets,
   updateSupportTicketStatus,
   getAdminUserSettings,
+  getAdminBlogs,
+  updateAdminBlogStatus,
+  deleteAdminBlog,
 } from "../controllers/admin.controller";
 import { requireAdminAuth } from "../middleware/adminAuth";
 import { requireAdminPermission } from "../middleware/adminPermission";
@@ -120,6 +123,11 @@ adminRouter.get("/integrations", ...can("settings", "read"), getAdminIntegration
 adminRouter.get("/support-tickets", ...can("support", "read"), getAdminSupportTickets);
 adminRouter.put("/support-tickets/:ticketId/status", ...can("support", "write"), updateSupportTicketStatus);
 adminRouter.get("/users/:userId/settings", ...can("users", "read"), getAdminUserSettings);
+
+// User Community Blog Management
+adminRouter.get("/blogs", ...can("content", "read"), getAdminBlogs);
+adminRouter.put("/blogs/:id/status", ...can("content", "write"), updateAdminBlogStatus);
+adminRouter.delete("/blogs/:id", ...can("content", "write"), deleteAdminBlog);
 
 // Coupon Management
 adminRouter.get("/coupons", ...can("billing", "read"), getCoupons);

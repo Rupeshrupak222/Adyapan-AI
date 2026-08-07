@@ -38,6 +38,9 @@ const PlacementEcosystem = dynamic(() => import("@/components/admin/sections/Pla
 const ContentManagement = dynamic(() => import("@/components/admin/sections/ContentManagement"), {
   loading: () => <PageLoading />,
 });
+const BlogManagement = dynamic(() => import("@/components/admin/sections/BlogManagement"), {
+  loading: () => <PageLoading />,
+});
 const BillingFinance = dynamic(() => import("@/components/admin/sections/BillingFinance"), {
   loading: () => <PageLoading />,
 });
@@ -117,6 +120,7 @@ const sectionComponents: Record<string, React.ComponentType> = {
   learning: LearningEcosystem,
   placement: PlacementEcosystem,
   content: ContentManagement,
+  "blog-management": BlogManagement,
   billing: BillingFinance,
   analytics: AnalyticsBI,
   monitoring: Monitoring,

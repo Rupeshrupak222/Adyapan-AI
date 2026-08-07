@@ -1694,3 +1694,92 @@ export async function getAdminUserSettings(req: Request, res: Response, next: Ne
   }
 }
 
+// ─── Blog Management ─────────────────────────────────────────────
+export async function getAdminBlogs(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { q, category, status, page = "1", limit = "20" } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+    const where: any = {};
+    if (q) {
+      where.OR = [
+        { title: { contains: String(q), mode: "insensitive" } },
+        { content: { contains: String(q), mode: "insensitive" } },
+        { tags: { has: String(q) } },
+      ];
+    }
+    if (category && category !== "All") where.category = String(category);
+    if (status === "published") where.published = true;
+    if (status === "draft") where.published = false;
+
+    const p = prisma as any;
+
+    const [blogs, total, totalPublished, totalDrafts, aggregateViews] = await Promise.all([
+      p.blog.findMany({
+        where,
+        include: { _count: { select: { comments: true, likes: true } } },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: Number(limit),
+      }).catch(() => []),
+      p.blog.count({ where }).catch(() => 0),
+      p.blog.count({ where: { published: true } }).catch(() => 0),
+      p.blog.count({ where: { published: false } }).catch(() => 0),
+      p.blog.aggregate({ _sum: { views: true } }).catch(() => ({ _sum: { views: 0 } })),
+    ]);
+
+    const userIds = Array.from(new Set(blogs.map((b: any) => b.userId)));
+    const authors = userIds.length > 0 ? await prisma.user.findMany({
+      where: { id: { in: userIds as string[] } },
+      select: { id: true, name: true, email: true },
+    }).catch(() => []) : [];
+    const authorMap = new Map(authors.map((u: any) => [u.id, u]));
+
+    const enrichedBlogs = blogs.map((b: any) => ({
+      ...b,
+      author: authorMap.get(b.userId) || { name: "Unknown User", email: "N/A" },
+    }));
+
+    res.json({
+      success: true,
+      blogs: enrichedBlogs,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / Number(limit)) || 1,
+      stats: {
+        totalBlogs: total,
+        totalPublished,
+        totalDrafts,
+        totalViews: aggregateViews?._sum?.views || 0,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateAdminBlogStatus(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const { published } = req.body;
+    const p = prisma as any;
+    const updated = await p.blog.update({
+      where: { id },
+      data: { published: Boolean(published) },
+    });
+    res.json({ success: true, blog: updated });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteAdminBlog(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const p = prisma as any;
+    await p.blog.delete({ where: { id } });
+    res.json({ success: true, message: "Blog deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
