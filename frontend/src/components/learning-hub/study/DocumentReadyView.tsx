@@ -35,39 +35,7 @@ export function DocumentReadyView({
   handleScrollToTopic, revealedTopics, filteredTopics, contentRef,
   handleCopySummary, handleDownloadPdf, downloadingPdf, onNewUpload
 }: Props) {
-  const [ragQuery, setRagQuery] = useState("Summarize key findings & takeaways");
-  const [isRagRunning, setIsRagRunning] = useState(false);
-  const [ragResult, setRagResult] = useState<{
-    summary: string;
-    retrieved_context: string[];
-    similarity_scores: number[];
-    latency: number;
-    chunks_retrieved: number;
-  } | null>(null);
-  const [activeRagTab, setActiveRagTab] = useState<"summary" | "chunks" | "metrics">("summary");
 
-  const handleRunRAGSummarizer = async () => {
-    if (!summaryData) return;
-    setIsRagRunning(true);
-    try {
-      const fullText = summaryData.topics.map(t => `${t.name}\n${t.overview}`).join("\n\n");
-      const res = await api.post("/study/rag-summarize", {
-        documentText: fullText,
-        query: ragQuery,
-        topK: 3
-      });
-      if (res.data?.success && res.data?.ragResult) {
-        setRagResult(res.data.ragResult);
-        toast.success("RAG Summary generated using retrieval-augmented context!");
-      } else {
-        throw new Error("Failed to generate RAG summary");
-      }
-    } catch {
-      toast.error("RAG Summarization failed. Please try again.");
-    } finally {
-      setIsRagRunning(false);
-    }
-  };
 
   return (
     <motion.div
@@ -222,111 +190,7 @@ export function DocumentReadyView({
         ref={contentRef}
         className="flex-1 flex flex-col min-w-0 pl-4 space-y-4"
       >
-        {/* RAG Document Summarizer Banner (Inspired by Saim-Nadeem RAG Summarizer) */}
-        <div
-          className="p-4 md:p-5 rounded-2xl relative overflow-hidden border"
-          style={{
-            background: c.isDark
-              ? "linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(15,23,42,0.6) 100%)"
-              : "linear-gradient(135deg, rgba(254,243,199,0.9) 0%, rgba(255,255,255,0.9) 100%)",
-            borderColor: c.amberBorder,
-          }}
-        >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase mb-1.5" style={{ background: c.amberBg, color: c.amber, border: `1px solid ${c.amberBorder}` }}>
-                <Cpu size={12} /> RAG Vector Retrieval Summarizer
-              </div>
-              <h2 className="text-base font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
-                Interactive RAG Document Summarizer
-              </h2>
-              <p className="text-xs mt-0.5" style={{ color: c.textMuted }}>
-                Query relevant vector context chunks to synthesize custom RAG summaries & similarity scores.
-              </p>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={ragQuery}
-                onChange={e => setRagQuery(e.target.value)}
-                placeholder="Enter RAG query e.g. Summarize key takeaways..."
-                className="px-3 py-2 rounded-xl text-xs outline-none w-64 border"
-                style={{ background: c.inputBg, color: c.text, borderColor: c.border }}
-              />
-              <button
-                onClick={handleRunRAGSummarizer}
-                disabled={isRagRunning}
-                className="px-4 py-2 rounded-xl text-xs font-black text-slate-950 bg-amber-500 hover:bg-amber-400 flex items-center gap-1.5 shadow-md shadow-amber-500/20 shrink-0"
-              >
-                {isRagRunning ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-                Generate RAG
-              </button>
-            </div>
-          </div>
-
-          {/* RAG Results View Modal/Panel */}
-          {ragResult && (
-            <div className="mt-4 pt-4 border-t space-y-3" style={{ borderColor: c.divider }}>
-              <div className="flex items-center gap-2">
-                {[
-                  { id: "summary", label: "📝 RAG Summary", icon: <FileText size={12} /> },
-                  { id: "chunks", label: `📚 Context Chunks (${ragResult.chunks_retrieved})`, icon: <Layers size={12} /> },
-                  { id: "metrics", label: "📊 RAG Metrics", icon: <BarChart2 size={12} /> },
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveRagTab(tab.id as any)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      activeRagTab === tab.id
-                        ? "bg-amber-500 text-slate-950 shadow-sm"
-                        : "bg-white/5 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    {tab.icon} {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {activeRagTab === "summary" && (
-                <div className="p-4 rounded-xl text-xs leading-relaxed whitespace-pre-wrap border" style={{ background: c.cardBg, borderColor: c.border, color: c.text }}>
-                  {ragResult.summary}
-                </div>
-              )}
-
-              {activeRagTab === "chunks" && (
-                <div className="space-y-2">
-                  {ragResult.retrieved_context.map((chunk, i) => (
-                    <div key={i} className="p-3 rounded-xl border text-xs space-y-1" style={{ background: c.cardBg, borderColor: c.border }}>
-                      <div className="flex items-center justify-between text-[10px] font-mono font-bold" style={{ color: c.amber }}>
-                        <span>CHUNK #{i + 1}</span>
-                        <span>SIMILARITY SCORE: {ragResult.similarity_scores[i]}</span>
-                      </div>
-                      <p style={{ color: c.textSec }}>{chunk}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {activeRagTab === "metrics" && (
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 rounded-xl border text-center" style={{ background: c.cardBg, borderColor: c.border }}>
-                    <div className="text-[10px] font-bold" style={{ color: c.textMuted }}>Processing Time</div>
-                    <div className="text-sm font-black text-amber-500 mt-1">{ragResult.latency}s</div>
-                  </div>
-                  <div className="p-3 rounded-xl border text-center" style={{ background: c.cardBg, borderColor: c.border }}>
-                    <div className="text-[10px] font-bold" style={{ color: c.textMuted }}>Chunks Retrieved</div>
-                    <div className="text-sm font-black text-amber-500 mt-1">{ragResult.chunks_retrieved}</div>
-                  </div>
-                  <div className="p-3 rounded-xl border text-center" style={{ background: c.cardBg, borderColor: c.border }}>
-                    <div className="text-[10px] font-bold" style={{ color: c.textMuted }}>Top Similarity</div>
-                    <div className="text-sm font-black text-amber-500 mt-1">{ragResult.similarity_scores[0] || "0.85"}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
 
         {/* Search Bar */}
         <div className="pb-1">
