@@ -180,11 +180,18 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
   }, []);
 
   const handleFileDrop = async (droppedFile: File) => {
+    const ext = droppedFile.name.substring(droppedFile.name.lastIndexOf(".")).toLowerCase();
+    const allowedExtensions = [".pdf", ".txt", ".md", ".markdown"];
+    if (!allowedExtensions.includes(ext)) {
+      toast.error("Unsupported file type! Only PDF, TXT, and Markdown (.md) files are allowed.");
+      return;
+    }
+
     setFile(droppedFile);
     setFileDetails({ name: droppedFile.name, size: (droppedFile.size / (1024 * 1024)).toFixed(1) + " MB", pages: 0, language: "English", time: "30-60 seconds" });
     setStatus("uploading");
     try {
-      const isBinary = /\.(pdf|docx|doc|pptx|ppt)$/i.test(droppedFile.name);
+      const isBinary = /\.pdf$/i.test(droppedFile.name);
       let res;
       if (isBinary) {
         const formData = new FormData();

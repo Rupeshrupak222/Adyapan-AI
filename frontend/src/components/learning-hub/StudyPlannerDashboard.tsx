@@ -630,11 +630,11 @@ export function StudyPlannerDashboard() {
                       <div className="space-y-1">
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Upload Study Material (Optional)</label>
                         <div className="rounded-2xl p-5 text-center cursor-pointer transition-all relative" style={{ background: c.inputBg, border: `2px dashed ${c.border}` }}>
-                          <input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.md,.rtf" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                          <input type="file" accept=".pdf,.txt,.md,.markdown" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                           <div className="flex flex-col items-center justify-center gap-2">
                             <UploadCloud size={24} style={{ color: c.amber }} />
                             <span className="text-xs font-bold" style={{ color: c.textSec }}>{selectedFile ? selectedFile.name : "Drag or drop file here"}</span>
-                            <span className="text-[10px]" style={{ color: c.textMuted }}>Supports PDF, DOCX, PPT, PPTX, TXT up to 15MB</span>
+                            <span className="text-[10px]" style={{ color: c.textMuted }}>Supports PDF, TXT, Markdown up to 15MB</span>
                           </div>
                         </div>
                       </div>

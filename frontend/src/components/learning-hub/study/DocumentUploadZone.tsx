@@ -44,7 +44,7 @@ export function DocumentUploadZone({ c, isDragging, onDragOver, onDragLeave, onD
             <div className="absolute bottom-4 left-8 w-24 h-24 rounded-full opacity-10 bg-[radial-gradient(circle,#8b5cf6,transparent_70%)] animate-pulse" />
           </div>
           
-          <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.md,.rtf" className="hidden" onChange={onFileInputChange} />
+          <input ref={fileInputRef} type="file" accept=".pdf,.txt,.md,.markdown" className="hidden" onChange={onFileInputChange} />
 
           <motion.div
             animate={{ y: [0, -8, 0] }}
@@ -58,11 +58,11 @@ export function DocumentUploadZone({ c, isDragging, onDragOver, onDragLeave, onD
             {isDragging ? "Drop your file here!" : "Upload Your Study Material"}
           </h3>
           <p className="text-xs text-slate-500 dark:text-gray-400 mb-6 max-w-sm">
-            Drag & Drop or <span className="text-amber-500 font-bold">Browse Files</span> to unlock AI-powered study assistance. Supports PDF, DOCX, PPTX, TXT.
+            Drag & Drop or <span className="text-amber-500 font-bold">Browse Files</span> to unlock AI-powered study assistance. Supports PDF, TXT, Markdown.
           </p>
 
           <div className="flex flex-wrap justify-center gap-2">
-            {["PDF", "DOCX", "PPTX", "TXT", "Markdown"].map((fmt, i) => (
+            {["PDF", "TXT", "Markdown"].map((fmt, i) => (
               <PremiumBadge key={fmt} variant={i % 2 === 0 ? "amber" : "purple"}>
                 {fmt}
               </PremiumBadge>
