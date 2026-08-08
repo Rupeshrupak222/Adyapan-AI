@@ -121,22 +121,34 @@ export function Navbar() {
 
           {/* Hamburger */}
           <button
-            className="ml-2 flex flex-col gap-1.5 md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-full transition-colors md:hidden"
+            style={{ background: loginBg, color: logoColor }}
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Toggle menu"
           >
-            <span className="block h-0.5 w-6 transition-all" style={{
-              background: logoColor,
-              transform: menuOpen ? "translateY(8px) rotate(45deg)" : "none",
-            }} />
-            <span className="block h-0.5 w-6 transition-all" style={{
-              background: logoColor,
-              opacity: menuOpen ? 0 : 1,
-            }} />
-            <span className="block h-0.5 w-6 transition-all" style={{
-              background: logoColor,
-              transform: menuOpen ? "translateY(-8px) rotate(-45deg)" : "none",
-            }} />
+            <div className="flex flex-col gap-1 items-center justify-center">
+              <span
+                className="block h-0.5 w-4 rounded-full transition-all"
+                style={{
+                  background: logoColor,
+                  transform: menuOpen ? "translateY(6px) rotate(45deg)" : "none",
+                }}
+              />
+              <span
+                className="block h-0.5 w-4 rounded-full transition-all"
+                style={{
+                  background: logoColor,
+                  opacity: menuOpen ? 0 : 1,
+                }}
+              />
+              <span
+                className="block h-0.5 w-4 rounded-full transition-all"
+                style={{
+                  background: logoColor,
+                  transform: menuOpen ? "translateY(-6px) rotate(-45deg)" : "none",
+                }}
+              />
+            </div>
           </button>
         </div>
       </div>
