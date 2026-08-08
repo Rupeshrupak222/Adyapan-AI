@@ -22,8 +22,8 @@ export function Navbar() {
     localStorage.setItem("adyapan-theme", next);
   };
 
-  const navBg = theme === "dark" ? "#171717" : "#ffffff";
-  const navBorder = theme === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.08)";
+  const navBg = theme === "dark" ? "rgba(23, 23, 23, 0.85)" : "rgba(255, 255, 255, 0.88)";
+  const navBorder = theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
   const linkColor = theme === "dark" ? "#c5c5c5" : "#475569";
   const linkHover = theme === "dark" ? "#ffffff" : "#0f172a";
   const logoColor = theme === "dark" ? "#ffffff" : "#0f172a";
@@ -33,8 +33,13 @@ export function Navbar() {
 
   return (
     <header
-      className="sticky top-0 z-50 border-b transition-colors"
-      style={{ background: navBg, borderBottomColor: navBorder }}
+      className="sticky top-0 z-50 border-b transition-all duration-200 backdrop-blur-md"
+      style={{
+        background: navBg,
+        borderBottomColor: navBorder,
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+      }}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-12">
 

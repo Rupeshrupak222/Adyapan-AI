@@ -233,7 +233,7 @@ export default function LandingPage() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--landing-bg, #03060b)", color: "var(--landing-text, #f3f4f6)" }} className="overflow-x-hidden font-sans landing">
+    <div style={{ minHeight: "100vh", background: "var(--landing-bg, #03060b)", color: "var(--landing-text, #f3f4f6)" }} className="overflow-x-clip font-sans landing">
       <Navbar />
 
       <GlowBackground />
