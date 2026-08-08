@@ -583,24 +583,7 @@ export async function registerUser(input: RegisterInput) {
     throw error;
   }
 
-  // Provision per-user database completely asynchronously — never block or
-  // fail registration if the Neon API is slow or rate-limits.
-  setImmediate(() => {
-    const userDbName = `user_${created.user.id}`;
-    databaseService.createDatabase(userDbName)
-      .then(() => databaseService.getConnectionString(userDbName))
-      .then((dbUrl) => {
-        exec(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
-          cwd: process.cwd(),
-          env: { ...process.env, USER_DATABASE_URL: dbUrl },
-        }, (error) => {
-          if (error) console.warn(`[Register] User DB schema push failed for ${created.user.id}:`, error.message);
-        });
-      })
-      .catch((err) => {
-        console.warn(`[Register] User DB provisioning skipped for ${created.user.id}:`, err?.message || err);
-      });
-  });
+
 
   return {
     user: publicUser(created.user),
@@ -928,23 +911,7 @@ export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: bool
       return newUser;
     });
 
-    // Fire-and-forget user DB provisioning
-    setImmediate(() => {
-      const userDbName = `user_${user!.id}`;
-      databaseService.createDatabase(userDbName)
-        .then(() => databaseService.getConnectionString(userDbName))
-        .then((dbUrl) => {
-          exec(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
-            cwd: process.cwd(),
-            env: { ...process.env, USER_DATABASE_URL: dbUrl },
-          }, (error) => {
-            if (error) console.warn(`[GitHub] User DB schema push failed for ${user!.id}:`, error.message);
-          });
-        })
-        .catch((err) => {
-          console.warn(`[GitHub] User DB provisioning skipped for ${user!.id}:`, err?.message || err);
-        });
-    });
+
   }
 
   return {

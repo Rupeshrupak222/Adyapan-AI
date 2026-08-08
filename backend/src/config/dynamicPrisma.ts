@@ -147,30 +147,14 @@ export function createPrismaClient(databaseUrl: string): any {
   }) as any;
 }
 
-const pendingClientPromises = new Map<string, Promise<any>>();
+let sharedUserClient: any = null;
 
-export async function getUserPrisma(userId: string): Promise<any> {
-  const cached = getCachedClient(userId);
-  if (cached) {
-    return cached;
+export async function getUserPrisma(_userId?: string): Promise<any> {
+  if (!sharedUserClient) {
+    const { env } = require("./env");
+    sharedUserClient = createPrismaClient(env.databaseUrl);
   }
-  if (pendingClientPromises.has(userId)) {
-    return pendingClientPromises.get(userId)!;
-  }
-
-  const promise = (async () => {
-    try {
-      const dbUrl = await databaseService.getDatabaseUrlForUser(userId);
-      const client = createPrismaClient(dbUrl);
-      cacheClient(userId, client);
-      return client;
-    } finally {
-      pendingClientPromises.delete(userId);
-    }
-  })();
-
-  pendingClientPromises.set(userId, promise);
-  return promise;
+  return sharedUserClient;
 }
 
 

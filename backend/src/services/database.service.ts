@@ -90,29 +90,15 @@ class DatabaseService {
   }
 
   async createDatabase(dbName: string): Promise<NeonDatabase> {
-    try {
-      const response = await this.request<CreateDatabaseResponse>(
-        "POST",
-        `/projects/${this.projectId}/branches/${this.branchId}/databases`,
-        {
-          database: {
-            name: dbName,
-            owner_name: "neondb_owner",
-          },
-        }
-      );
-      return response.database;
-    } catch (err: any) {
-      console.warn(`[Database] Neon API database creation skipped for ${dbName}:`, err.message || err);
-      return {
-        id: Date.now(),
-        branch_id: this.branchId || "default",
-        name: dbName,
-        owner_name: "neondb_owner",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    }
+    console.log(`[Database] Skipping per-user database creation for ${dbName} — all user data is stored in master database (neondb).`);
+    return {
+      id: Date.now(),
+      branch_id: this.branchId || "default",
+      name: dbName,
+      owner_name: "neondb_owner",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
   }
 
   async deleteDatabase(databaseId: number): Promise<void> {
@@ -189,44 +175,9 @@ class DatabaseService {
     return databases.some((db) => db.name === dbName);
   }
 
-  async getDatabaseUrlForUser(userId: string): Promise<string> {
-    if (this.userDbUrlCache.has(userId)) {
-      return this.userDbUrlCache.get(userId)!;
-    }
-
-    if (!this.apiKey || !this.projectId || !this.branchId) {
-      this.userDbUrlCache.set(userId, env.databaseUrl);
-      return env.databaseUrl;
-    }
-
-    try {
-      const dbName = `user_${userId}`;
-      const exists = await this.checkDatabaseExists(dbName);
-      let dbUrl: string;
-      if (!exists) {
-        try {
-          await this.createDatabase(dbName);
-          this.dbListCache = null; // invalidate list cache
-          dbUrl = await this.getConnectionString(dbName);
-          const { exec } = require("child_process");
-          // Non-blocking schema push so request is not held up
-          exec(`npx prisma db push --config=prisma/prisma.config.user.ts --accept-data-loss`, {
-            env: { ...process.env, USER_DATABASE_URL: dbUrl },
-          });
-        } catch (createErr) {
-          console.warn("[Database] Dynamic database creation/migration failed, using main database:", createErr);
-          dbUrl = env.databaseUrl;
-        }
-      } else {
-        dbUrl = await this.getConnectionString(dbName);
-      }
-      this.userDbUrlCache.set(userId, dbUrl);
-      return dbUrl;
-    } catch (err: any) {
-      console.warn(`[Database] Neon branch query failed for user ${userId}. Falling back to default DATABASE_URL. Error:`, err.message || err);
-      this.userDbUrlCache.set(userId, env.databaseUrl);
-      return env.databaseUrl;
-    }
+  async getDatabaseUrlForUser(_userId: string): Promise<string> {
+    // All users save data in the single master database (neondb)
+    return env.databaseUrl;
   }
 
 
