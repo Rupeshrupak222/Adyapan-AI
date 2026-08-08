@@ -62,7 +62,7 @@ export default function AdminLoginPage() {
 
     setLoading(true);
     try {
-      const { data } = await api.post("/auth/login", { email, password });
+      const { data } = await api.post("/auth/admin-login", { email, password, rememberMe, portal: "admin" });
       
       if (data.user?.role !== "ADMIN") {
         setError("Access denied. This account does not have Admin privileges.");
@@ -74,7 +74,8 @@ export default function AdminLoginPage() {
       router.replace("/dashboard/admin");
     } catch (err: unknown) {
       setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message ||
+        (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.error ||
         "Invalid admin credentials. Please try again.",
       );
       setLoading(false);

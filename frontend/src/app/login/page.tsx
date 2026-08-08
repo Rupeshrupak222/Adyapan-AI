@@ -21,12 +21,12 @@ function getPostLoginTarget(role?: string): string {
   if (typeof window !== "undefined") {
     try {
       const from = new URLSearchParams(window.location.search).get("from");
-      if (from && from.startsWith("/") && !from.startsWith("//") && !from.startsWith("/\\")) {
+      if (from && from.startsWith("/") && !from.startsWith("//") && !from.startsWith("/\\") && !from.startsWith("/dashboard/admin") && !from.startsWith("/admin")) {
         return from;
       }
     } catch { /* ignore malformed query */ }
   }
-  return role === "ADMIN" ? "/dashboard/admin" : "/dashboard/user";
+  return "/dashboard/user";
 }
 
 const GoogleIcon = () => (
@@ -96,6 +96,10 @@ function LoginPageContent() {
       if (token && userStr) {
         try {
           const user = JSON.parse(userStr) as PlatformUser;
+          if (user.role === "ADMIN") {
+            setLoginError("Admin accounts cannot log in here. Please use the Admin Login page.");
+            return;
+          }
           saveAuthSession(token, user, true);
           router.replace(getPostLoginTarget(user.role));
           return;
@@ -168,16 +172,20 @@ function LoginPageContent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setLoginError(""); setLoginLoading(true);
     try {
-      const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe });
+      const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe, portal: "user" });
+      if (data.user?.role === "ADMIN") {
+        setLoginError("Admin accounts cannot log in here. Please use the Admin Login page.");
+        return;
+      }
       saveAuthSession(data.token, data.user, rememberMe);
       router.replace(getPostLoginTarget(data.user.role));
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data;
       const serverMsg = data?.message || data?.error;
       const isRateLimit = serverMsg && (serverMsg.includes("Rate limit") || serverMsg.includes("Too many") || serverMsg.includes("slow down"));
-      const finalMsg = (isRateLimit || !serverMsg || serverMsg.includes("Invalid email"))
-        ? "Invalid user credentials. Please try again."
-        : serverMsg;
+      const finalMsg = isRateLimit
+        ? "Too many login attempts. Please slow down and try again later."
+        : (serverMsg || "Invalid user credentials. Please try again.");
       setLoginError(finalMsg);
     } finally { setLoginLoading(false); }
   };

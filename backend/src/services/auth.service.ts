@@ -618,12 +618,17 @@ export async function registerUser(input: RegisterInput) {
   };
 }
 
-export async function loginUser(input: LoginInput & { rememberMe?: boolean }) {
+export async function loginUser(
+  input: LoginInput & { rememberMe?: boolean; expectedRole?: "USER" | "ADMIN"; portal?: "user" | "admin" }
+) {
   const email = input.email.toLowerCase().trim();
   const user = await prisma.user.findUnique({ where: { email } });
 
+  const targetRole = input.expectedRole || (input.portal === "admin" ? "ADMIN" : "USER");
+
   if (!user) {
-    throw httpError(401, "Invalid user credentials. Please try again.");
+    const errorMsg = targetRole === "ADMIN" ? "Invalid admin credentials. Please try again." : "Invalid user credentials. Please try again.";
+    throw httpError(401, errorMsg);
   }
 
   if (!user.password) {
@@ -633,7 +638,16 @@ export async function loginUser(input: LoginInput & { rememberMe?: boolean }) {
   const isPasswordValid = await bcrypt.compare(input.password, user.password);
 
   if (!isPasswordValid) {
-    throw httpError(401, "Invalid user credentials. Please try again.");
+    const errorMsg = targetRole === "ADMIN" ? "Invalid admin credentials. Please try again." : "Invalid user credentials. Please try again.";
+    throw httpError(401, errorMsg);
+  }
+
+  if (targetRole === "ADMIN" && user.role !== "ADMIN") {
+    throw httpError(403, "Access denied. Only admin accounts can log in here.");
+  }
+
+  if (targetRole === "USER" && user.role === "ADMIN") {
+    throw httpError(403, "Admin accounts cannot log in here. Please use the Admin Login page.");
   }
 
   return {

@@ -15,7 +15,7 @@ async function req(path: string, opts: { method?: string; token?: string; body?:
 
 async function main() {
   // 1. Admin login
-  const login = await req("/auth/login", {
+  const login = await req("/auth/admin-login", {
     method: "POST",
     body: { email: "ashish@aaa.com", password: "Adyapan@12345" },
   });

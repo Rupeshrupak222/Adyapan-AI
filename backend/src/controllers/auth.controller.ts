@@ -99,10 +99,72 @@ export async function registerAdmin(req: Request, res: Response, next: NextFunct
 
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
+    const portal = req.body?.portal === "admin" ? "admin" : (req.body?.expectedRole === "ADMIN" ? "admin" : "user");
     const result = await loginUser({
       email: requireString(req.body?.email, "email"),
       password: requireString(req.body?.password, "password"),
       rememberMe: Boolean(req.body?.rememberMe),
+      portal,
+    });
+
+    if (result.user.role === "ADMIN") {
+      (prisma as any).adminLoginHistory.create({
+        data: {
+          adminId: result.user.id,
+          email: result.user.email,
+          ipAddress: req.ip || undefined,
+          userAgent: req.headers["user-agent"] || undefined,
+          status: "SUCCESS",
+        },
+      }).catch(() => {});
+
+      AdminAuditService.log({
+        adminId: result.user.id,
+        adminName: result.user.name,
+        action: "Admin Login",
+        module: "Security",
+        targetId: result.user.id,
+        details: { email: result.user.email },
+        ipAddress: req.ip,
+      }).catch(() => {});
+    }
+
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    const emailRaw = req.body?.email;
+    if (typeof emailRaw === "string" && emailRaw.trim()) {
+      prisma.user
+        .findUnique({ where: { email: emailRaw.trim().toLowerCase() } })
+        .then((u) => {
+          if (u?.role === "ADMIN") {
+            return (prisma as any).adminLoginHistory.create({
+              data: {
+                adminId: u.id,
+                email: u.email,
+                ipAddress: req.ip || undefined,
+                userAgent: req.headers["user-agent"] || undefined,
+                status: "FAILED",
+              },
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
+    next(error);
+  }
+}
+
+export async function adminLogin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await loginUser({
+      email: requireString(req.body?.email, "email"),
+      password: requireString(req.body?.password, "password"),
+      rememberMe: Boolean(req.body?.rememberMe),
+      portal: "admin",
+      expectedRole: "ADMIN",
     });
 
     if (result.user.role === "ADMIN") {
