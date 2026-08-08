@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { stripMarkdown } from "@/utils/stripMarkdown";
+import { AIContent } from "@/components/ai/AIContent";
 import {
   FileText, Search, ChevronRight, BookOpen, Brain, Sparkles,
   Copy, FileDown, RefreshCw, X, Loader2, Cpu, BarChart2, Layers
@@ -284,7 +285,7 @@ export function DocumentReadyView({
                       <div className="p-5 space-y-5">
                         <div>
                           <span className="text-[10px] uppercase tracking-widest font-black block mb-2" style={{ color: c.amber }}>Overview</span>
-                          <p className="text-[15px] leading-[1.75]" style={{ color: c.textSec }}>{t.overview}</p>
+                          <AIContent content={t.overview} />
                         </div>
 
                         {t.subtopics && t.subtopics.length > 0 && (
@@ -296,9 +297,9 @@ export function DocumentReadyView({
                                   <h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
                                     {sub.name}
                                   </h4>
-                                  <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>
-                                    {stripMarkdown(sub.content)}
-                                  </p>
+                                  <div className="text-sm leading-relaxed" style={{ color: c.textSec }}>
+                                    <AIContent content={sub.content} />
+                                  </div>
                                 </div>
                               ))}
                             </div>
