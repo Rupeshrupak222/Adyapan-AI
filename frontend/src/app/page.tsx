@@ -1291,37 +1291,7 @@ export default function LandingPage() {
             ))}
           </motion.div>
 
-          {/* Feature Comparison */}
-          <motion.div
-            variants={staggerItem}
-            className="max-w-4xl mx-auto mt-8 p-6 bg-white/3 border border-white/5 rounded-2xl"
-          >
-            <h3 className="text-center text-sm font-bold text-white mb-6">Feature Comparison</h3>
-            <div className="grid grid-cols-3 gap-4 text-xs">
-              {[
-                { feature: "AI Study Assistant", free: true, pro: true, campus: true },
-                { feature: "ATS Resume Scanner", free: "3/mo", pro: "Unlimited", campus: "Unlimited" },
-                { feature: "AI Mock Interviews", free: "1/mo", pro: "Unlimited", campus: "Unlimited" },
-                { feature: "Premium AI Models", free: false, pro: true, campus: true },
-                { feature: "LinkedIn Optimizer", free: false, pro: true, campus: true },
-                { feature: "Placement Matching", free: "Basic", pro: "Priority", campus: "Custom" },
-                { feature: "Dedicated Support", free: false, pro: "Priority", campus: "24/7" },
-              ].map((row) => (
-                <div key={row.feature} className="contents">
-                  <div className="text-gray-400 py-2 border-b border-white/5">{row.feature}</div>
-                  <div className={`text-center py-2 border-b border-white/5 ${row.free ? "text-green-400" : "text-gray-600"}`}>
-                    {row.free === true ? <Check size={12} className="inline" /> : row.free === false ? "—" : row.free}
-                  </div>
-                  <div className={`text-center py-2 border-b border-white/5 ${row.pro ? "text-green-400" : "text-gray-600"}`}>
-                    {row.pro === true ? <Check size={12} className="inline" /> : row.pro === false ? "—" : row.pro}
-                  </div>
-                  <div className={`text-center py-2 border-b border-white/5 ${row.campus ? "text-green-400" : "text-gray-600"}`}>
-                    {row.campus === true ? <Check size={12} className="inline" /> : row.campus === false ? "—" : row.campus}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+
         </div>
       </Section>
 
