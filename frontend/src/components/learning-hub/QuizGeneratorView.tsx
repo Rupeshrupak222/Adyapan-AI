@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { stripMarkdown } from "@/utils/stripMarkdown";
+import { AIContent } from "@/components/ai/AIContent";
 import CountUp from "react-countup";
 import {
   Sparkles, Brain, AlertTriangle, RotateCcw, Search, Zap,
@@ -385,7 +386,7 @@ function AnswerRow({ index, question, selected, correct, isCorrect, explanation 
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
           className="px-4 pb-4 space-y-2 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           {!isCorrect && <p className="text-[10px]" style={{ color: "#a1a1aa" }}>Correct answer: <span className="text-emerald-400 font-semibold">{correct}</span></p>}
-          <p className="text-xs leading-relaxed" style={{ color: "#a1a1aa" }}>{stripMarkdown(explanation)}</p>
+          <div className="text-xs leading-relaxed" style={{ color: "#a1a1aa" }}><AIContent content={explanation} /></div>
         </motion.div>
       )}
     </motion.div>
@@ -969,13 +970,13 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
                                   <><XCircle size={15} className="text-red-400 shrink-0" /><span className="text-[11px] font-black uppercase tracking-wider text-red-400">Incorrect</span></>
                                 )}
                               </div>
-                              <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{currentQuestion.explanation}</p>
+                              <div className="text-sm leading-relaxed" style={{ color: c.textSec }}><AIContent content={currentQuestion.explanation} /></div>
                               {currentQuestion.follow_up && (
                                 <div className="pt-2 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                                   <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1" style={{ color: c.amber }}>
                                     <Lightbulb size={10} /> Strong Interview Answer
                                   </span>
-                                  <p className="text-xs leading-relaxed italic" style={{ color: c.textMuted }}>{currentQuestion.follow_up}</p>
+                                  <div className="text-xs leading-relaxed italic" style={{ color: c.textMuted }}><AIContent content={currentQuestion.follow_up} /></div>
                                 </div>
                               )}
                             </motion.div>

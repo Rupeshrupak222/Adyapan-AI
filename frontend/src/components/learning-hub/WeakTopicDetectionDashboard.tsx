@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { AIContent } from "@/components/ai/AIContent";
 import { api } from "@/services/api";
 import CountUp from "react-countup";
 import {
@@ -566,7 +567,7 @@ export function WeakTopicDetectionDashboard() {
                                 </div>
                                 <div className="col-span-3">
                                   <p className="text-[10px] text-white/30 font-black tracking-widest uppercase mb-1">Recommended Action</p>
-                                  <p className="text-xs font-semibold" style={{ color: c.text }}>{topic.recommendedAction}</p>
+                                  <div className="text-xs font-semibold" style={{ color: c.text }}><AIContent content={topic.recommendedAction} /></div>
                                 </div>
                               </motion.div>
                             </td>

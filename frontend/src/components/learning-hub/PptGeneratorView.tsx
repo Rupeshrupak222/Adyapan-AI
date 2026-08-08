@@ -11,6 +11,7 @@ import { useSocket } from "@/context/SocketContext";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
 import { getAuthUser } from "@/hooks/useAuth";
+import { AIContent } from "@/components/ai/AIContent";
 
 const mkColors = (theme: string) => {
   const isDark = theme === "dark";
@@ -769,7 +770,7 @@ export function PptGeneratorView() {
                             {currentSlide.bullets?.map((bullet, j) => (
                               <div key={j} className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-200">
                                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: tStyle.bulletDot }} />
-                                <span>{bullet}</span>
+                                <div className="flex-1"><AIContent content={bullet} /></div>
                               </div>
                             ))}
                           </div>
@@ -806,7 +807,7 @@ export function PptGeneratorView() {
                         {(currentSlide.speakerNotes || currentSlide.notes) && (
                           <div className="mt-4 p-3 rounded-xl border" style={{ background: tStyle.notesBg, borderColor: tStyle.notesBorder }}>
                             <span className="text-[10px] uppercase tracking-widest font-black block mb-1" style={{ color: tStyle.notesText }}>🎙️ Speaker Notes</span>
-                            <p className="text-xs italic text-slate-200">&quot;{currentSlide.speakerNotes || currentSlide.notes}&quot;</p>
+                            <div className="text-xs italic text-slate-200"><AIContent content={currentSlide.speakerNotes || currentSlide.notes || ""} /></div>
                           </div>
                         )}
                       </motion.div>

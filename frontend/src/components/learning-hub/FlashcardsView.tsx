@@ -14,6 +14,7 @@ import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
 import { getAuthUser } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { AIContent } from "@/components/ai/AIContent";
 
 const mkColors = (theme: string) => {
   const isDark = theme === "dark";
@@ -994,12 +995,12 @@ function CardFace({
           <div className="my-auto space-y-4 sm:space-y-5 relative z-10 overflow-y-auto max-h-[300px] pr-1">
             <div className="space-y-1.5">
               <span className="text-[10px] uppercase font-bold tracking-wider block" style={{ color: c.green }}>Core Answer</span>
-              <h4 className="text-base sm:text-lg font-bold leading-relaxed" style={{ color: c.text }}>{card.back}</h4>
+              <div className="text-base sm:text-lg font-bold leading-relaxed" style={{ color: c.text }}><AIContent content={card.back} /></div>
             </div>
 
             <div className="space-y-1">
               <span className="text-[10px] uppercase font-bold tracking-wider block" style={{ color: c.textMuted }}>Explanation</span>
-              <p className="text-xs leading-relaxed font-normal" style={{ color: c.textSec }}>{card.explanation}</p>
+              <div className="text-xs leading-relaxed font-normal" style={{ color: c.textSec }}><AIContent content={card.explanation} /></div>
             </div>
 
             {card.memoryTip && (
@@ -1009,7 +1010,7 @@ function CardFace({
                 </div>
                 <div>
                   <span className="text-[9px] uppercase font-bold tracking-wider block mb-0.5" style={{ color: "#f59e0b" }}>Memory Tip</span>
-                  <p className="text-[11px] leading-normal font-medium" style={{ color: c.textSec }}>{card.memoryTip}</p>
+                  <div className="text-[11px] leading-normal font-medium" style={{ color: c.textSec }}><AIContent content={card.memoryTip} /></div>
                 </div>
               </div>
             )}
