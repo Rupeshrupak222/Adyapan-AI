@@ -29,7 +29,7 @@ interface DashboardData {
   };
   modules: {
     resume: { resumes: number; atsReports: number; coverLetters: number; linkedinReports: number };
-    learning: { studySessions: number; notes: number; quizzes: number; assignments: number; ppts: number; mindmaps: number };
+    learning: { studySessions: number; notes: number; quizzes: number; assignments: number; mindmaps: number };
     coding: { sessions: number; submissions: number; challenges: number };
     interview: { sessions: number };
     chat: { sessions: number };

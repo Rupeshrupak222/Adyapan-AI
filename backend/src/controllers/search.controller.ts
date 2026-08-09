@@ -223,10 +223,6 @@ export async function globalSearch(req: Request, res: Response) {
       id: a.id, label: a.topic, category: "Assignments", viewId: "assignment-generator",
       subtitle: a.academicLevel,
     }));
-    addItems(presentations, (p) => ({
-      id: p.id, label: p.topic, category: "Presentations", viewId: "ppt-generator",
-      subtitle: `${p.slideCount} slides`,
-    }));
     addItems(mindMaps, (m) => ({
       id: m.id, label: m.topic, category: "Mind Maps", viewId: "mind-maps",
     }));

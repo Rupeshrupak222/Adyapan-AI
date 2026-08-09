@@ -13,7 +13,6 @@ const AI_ROUTE_PATTERNS: RegExp[] = [
   /^\/notes(\/|$)/,
   /^\/quiz(\/|$)/,
   /^\/assignment(\/|$)/,
-  /^\/ppt(\/|$)/,
   /^\/mindmap(\/|$)/,
   /^\/coding(\/|$)/,
   /^\/interview(\/|$)/,

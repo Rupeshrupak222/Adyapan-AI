@@ -41,7 +41,6 @@ const FEATURE_META: Omit<LearningFeature, "value" | "status">[] = [
   { key: "notes", label: "Notes Generated", short: "Notes", icon: <FileText size={16} />, color: "#818cf8" },
   { key: "quizzes", label: "Quizzes Created", short: "Quizzes", icon: <HelpCircle size={16} />, color: "#f59e0b" },
   { key: "assignments", label: "Assignments", short: "Assign", icon: <ClipboardList size={16} />, color: "#f472b6" },
-  { key: "ppts", label: "PPTs", short: "PPTs", icon: <Presentation size={16} />, color: "#38bdf8" },
   { key: "mindmaps", label: "Mind Maps", short: "Maps", icon: <BrainCircuit size={16} />, color: "#a78bfa" },
   { key: "flashcards", label: "Flashcards", short: "Cards", icon: <Layers size={16} />, color: "#fb923c" },
 ];

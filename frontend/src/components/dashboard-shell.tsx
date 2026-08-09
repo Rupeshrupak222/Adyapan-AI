@@ -50,7 +50,6 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Notes Generator", viewId: "notes-generator", category: "Learning Hub" },
   { label: "Quiz Generator", viewId: "quiz-generator", category: "Learning Hub" },
   { label: "Assignment Generator", viewId: "assignment-generator", category: "Learning Hub" },
-  { label: "PPT Generator", viewId: "ppt-generator", category: "Learning Hub" },
   { label: "Mind Maps", viewId: "mind-maps", category: "Learning Hub" },
   { label: "Flashcards", viewId: "flashcards", category: "Learning Hub" },
   { label: "Study Planner", viewId: "study-planner", category: "Learning Hub" },
@@ -108,7 +107,6 @@ export const sidebarItems: SidebarItem[] = [
       { label: "Notes Generator", href: "/dashboard/user?view=notes-generator" },
       { label: "Quiz Generator", href: "/dashboard/user?view=quiz-generator" },
       { label: "Assignment Generator", href: "/dashboard/user?view=assignment-generator" },
-      { label: "PPT Generator", href: "/dashboard/user?view=ppt-generator" },
       { label: "Mind Maps", href: "/dashboard/user?view=mind-maps" },
       { label: "Flashcards", href: "/dashboard/user?view=flashcards" },
       { label: "Study Planner", href: "/dashboard/user?view=study-planner" },
@@ -345,7 +343,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                         else if (sub.label === "Notes Generator") onViewTool("notes-generator");
                         else if (sub.label === "Quiz Generator") onViewTool("quiz-generator");
                         else if (sub.label === "Assignment Generator") onViewTool("assignment-generator");
-                        else if (sub.label === "PPT Generator") onViewTool("ppt-generator");
                         else if (sub.label === "Mind Maps") onViewTool("mind-maps");
                         else if (sub.label === "Flashcards") onViewTool("flashcards");
                         else if (sub.label === "Coding Assistant") onViewTool("coding-assistant");
@@ -537,7 +534,7 @@ export function DashboardTopNav({
     boxShadow: isDarkTheme ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
     transition: "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
   };
-  const genItems = ["Notes", "Assignment", "PPT", "Quiz", "Research Paper", "Resume"];
+  const genItems = ["Notes", "Assignment", "Quiz", "Research Paper", "Resume"];
   const evalItems = ["ATS Score", "Skill Assessment"];
   return (
     <header style={{
@@ -681,7 +678,6 @@ export function DashboardTopNav({
                   if (item === "Resume") onViewTool("resume-builder");
                   else if (item === "Notes") onViewTool("notes-generator");
                   else if (item === "Assignment") onViewTool("assignment-generator");
-                  else if (item === "PPT") onViewTool("ppt-generator");
                   else if (item === "Quiz") onViewTool("quiz-generator");
                   else if (item === "Research Paper") onViewTool("research-paper-ai");
                 }} style={{
@@ -691,7 +687,6 @@ export function DashboardTopNav({
                 }}>
                   {item === "Notes" && <FileText size={13} style={{ color: "#f59e0b" }} />}
                   {item === "Assignment" && <ClipboardList size={13} style={{ color: "#3b82f6" }} />}
-                  {item === "PPT" && <BookOpen size={13} style={{ color: "#ec4899" }} />}
                   {item === "Quiz" && <Star size={13} style={{ color: "#8b5cf6" }} />}
                   {item === "Research Paper" && <BookMarked size={13} style={{ color: "#06b6d4" }} />}
                   {item === "Resume" && <FileText size={13} style={{ color: "#10b981" }} />}

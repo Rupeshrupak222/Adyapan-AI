@@ -83,7 +83,6 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
                 "50 AI Requests / day",
                 "5 Resume Generations / day",
                 "3 Mock Interviews / day",
-                "5 PPT Generations / day",
                 "10 Note Generations / day",
                 "Basic Coding Assistant",
                 "Basic Research Tools",

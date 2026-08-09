@@ -93,9 +93,6 @@ const QuizGeneratorView = dynamic(() => import("@/components/learning-hub/QuizGe
 const AssignmentGeneratorView = dynamic(() => import("@/components/learning-hub/AssignmentGeneratorView").then(m => m.AssignmentGeneratorView), {
   loading: () => <DashboardWidgetSkeleton title="Assignment Generator" />
 });
-const PptGeneratorView = dynamic(() => import("@/components/learning-hub/PptGeneratorView").then(m => m.PptGeneratorView), {
-  loading: () => <DashboardWidgetSkeleton title="PPT Generator" />
-});
 const MindMapsView = dynamic(() => import("@/components/learning-hub/MindMapsView").then(m => m.MindMapsView), {
   loading: () => <DashboardWidgetSkeleton title="Mind Maps" />
 });
@@ -336,7 +333,7 @@ function WelcomeBanner({
 
 
 // ΓöÇΓöÇΓöÇ Stat Cards Grid ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-function StatCardsGrid({ stats }: { stats: { avgAtsScore: number; resumesCount: number; avgLinkedinScore: number; dsaSolved: number; dsaStreak: number; studySessionsCount: number; notesCount: number; quizzesCount: number; dsaAccuracy: number; assignmentsCount: number; pptsCount: number; mindmapsCount: number } }) {
+function StatCardsGrid({ stats }: { stats: { avgAtsScore: number; resumesCount: number; avgLinkedinScore: number; dsaSolved: number; dsaStreak: number; studySessionsCount: number; notesCount: number; quizzesCount: number; dsaAccuracy: number; assignmentsCount: number; mindmapsCount: number } }) {
   return (
     <div style={{
       display: "grid",
@@ -353,7 +350,7 @@ function StatCardsGrid({ stats }: { stats: { avgAtsScore: number; resumesCount: 
   );
 }
 // ΓöÇΓöÇΓöÇ 3-Column Panel Grid ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resumesCount: number; avgLinkedinScore: number; dsaSolved: number; dsaStreak: number; studySessionsCount: number; notesCount: number; quizzesCount: number; coverLettersCount: number; codingSessionsCount: number; challengesCount: number; profileCompletion: number; targetRole: string; dsaAccuracy: number; assignmentsCount: number; pptsCount: number; mindmapsCount: number }; onViewTool: (v: string) => void }) {
+function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resumesCount: number; avgLinkedinScore: number; dsaSolved: number; dsaStreak: number; studySessionsCount: number; notesCount: number; quizzesCount: number; coverLettersCount: number; codingSessionsCount: number; challengesCount: number; profileCompletion: number; targetRole: string; dsaAccuracy: number; assignmentsCount: number; mindmapsCount: number }; onViewTool: (v: string) => void }) {
   const router = useRouter();
   const quickActions = [
     { label: "Study Assistant", icon: <GraduationCap size={16} />, color: "#8b5cf6", target: "study-assistant", href: null },
@@ -385,7 +382,6 @@ function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resume
             <CompactItem label="Notes Generated" value={stats.notesCount} />
             <CompactItem label="Quizzes Created" value={stats.quizzesCount} />
             <CompactItem label="Assignments Created" value={stats.assignmentsCount} />
-            <CompactItem label="PPTs Generated" value={stats.pptsCount} />
             <CompactItem label="Mind Maps Built" value={stats.mindmapsCount} />
           </div>
         </PanelCard>
@@ -459,187 +455,11 @@ function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resume
     </div>
   );
 }
-// ΓöÇΓöÇΓöÇ Cross-Module Analytics (Placement, Interview, Streak, Weak Topics) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-function CrossModuleAnalytics({ aptitude, interview, streak, placement, weakTopics, onViewTool }: {
-  aptitude: any; interview: any; streak: any; placement: any; weakTopics: any;
-  onViewTool: (v: string) => void;
+function CrossModuleAnalytics(_props: {
+  aptitude?: any; interview?: any; streak?: any; placement?: any; weakTopics?: any;
+  onViewTool?: (v: string) => void;
 }) {
-  const hasAny = aptitude || interview || streak || placement || weakTopics;
-  if (!hasAny) return null;
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.2rem", alignItems: "start", marginTop: "1.2rem" }} className="panel-grid-responsive">
-
-      {/* ΓöÇΓöÇΓöÇ Column 1: Placement Readiness + Interview ΓöÇΓöÇΓöÇ */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
-        {/* Placement Readiness Gauge */}
-        {placement && (
-          <PanelCard title="Placement Readiness">
-            <div style={{ display: "flex", alignItems: "center", gap: "1.2rem", marginBottom: "0.8rem" }}>
-              <div style={{ position: "relative", width: 80, height: 80, flexShrink: 0 }}>
-                <svg viewBox="0 0 36 36" style={{ transform: "rotate(-90deg)", width: 80, height: 80 }}>
-                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" strokeWidth="3" />
-                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={placement.placementScore >= 70 ? "#10b981" : placement.placementScore >= 40 ? "#f59e0b" : "#ef4444"} strokeWidth="3" strokeDasharray={`${placement.placementScore || 0}, 100`} />
-                </svg>
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-                  <span style={{ fontSize: "1.1rem", fontWeight: 800, color: placement.placementScore >= 70 ? "#10b981" : placement.placementScore >= 40 ? "#f59e0b" : "#ef4444" }}>{placement.placementScore || 0}</span>
-                </div>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>Overall Score</div>
-                {placement.subScores && typeof placement.subScores === "object" && Object.entries(placement.subScores).slice(0, 3).map(([k, v]: [string, any]) => (
-                  <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.65rem", color: "var(--text-secondary)", marginBottom: 2 }}>
-                    <span style={{ textTransform: "capitalize" }}>{k.replace(/([A-Z])/g, " $1").trim()}</span>
-                    <span style={{ fontWeight: 700, color: "var(--primary)" }}>{v}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onViewTool("placement-hub")} style={{ width: "100%", padding: "0.45rem", border: "1px solid var(--border-color)", borderRadius: 8, background: "transparent", color: "var(--text-secondary)", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
-              View Placement Hub ΓåÆ
-            </motion.button>
-          </PanelCard>
-        )}
-
-        {/* Interview Performance */}
-        {interview && (
-          <PanelCard title="Interview Performance">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", marginBottom: "0.7rem" }}>
-              <div style={{ padding: "0.5rem", borderRadius: 8, background: "var(--surface-bg)", textAlign: "center" }}>
-                <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Sessions</div>
-                <div style={{ fontSize: "1rem", fontWeight: 800, color: "var(--primary)" }}>{interview.totalInterviews ?? 0}</div>
-              </div>
-              <div style={{ padding: "0.5rem", borderRadius: 8, background: "var(--surface-bg)", textAlign: "center" }}>
-                <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Best Score</div>
-                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#10b981" }}>{interview.bestScore ?? 0}%</div>
-              </div>
-            </div>
-            <CompactItem label="Average Score" value={`${interview.averageScore ?? 0}%`} highlight />
-            {interview.skillAverages && typeof interview.skillAverages === "object" && Object.entries(interview.skillAverages).slice(0, 3).map(([skill, score]: [string, any]) => (
-              <div key={skill} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.7rem", color: "var(--text-secondary)", padding: "0.3rem 0" }}>
-                <span>{skill}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 50, height: 4, borderRadius: 2, background: "var(--border-color)", overflow: "hidden" }}>
-                    <div style={{ width: `${score}%`, height: "100%", borderRadius: 2, background: score >= 70 ? "#10b981" : "#f59e0b" }} />
-                  </div>
-                  <span style={{ fontSize: "0.6rem", fontWeight: 700, color: score >= 70 ? "#10b981" : "#f59e0b" }}>{Math.round(score)}%</span>
-                </div>
-              </div>
-            ))}
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onViewTool("interview-hub")} style={{ width: "100%", padding: "0.45rem", marginTop: "0.5rem", border: "1px solid var(--border-color)", borderRadius: 8, background: "transparent", color: "var(--text-secondary)", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
-              View Interview Hub ΓåÆ
-            </motion.button>
-          </PanelCard>
-        )}
-      </div>
-
-      {/* ΓöÇΓöÇΓöÇ Column 2: Streak + Weekly Activity Chart ΓöÇΓöÇΓöÇ */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
-        {/* Streak & Activity */}
-        {streak && (
-          <PanelCard title="Streak & Activity">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem", marginBottom: "0.8rem" }}>
-              <div style={{ padding: "0.5rem", borderRadius: 8, background: "rgba(239,68,68,0.06)", textAlign: "center" }}>
-                <Flame size={14} style={{ color: "#ef4444", margin: "0 auto 2px" }} />
-                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#ef4444" }}>{streak.currentStreak ?? streak.streak ?? 0}</div>
-                <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Current</div>
-              </div>
-              <div style={{ padding: "0.5rem", borderRadius: 8, background: "rgba(245,158,11,0.06)", textAlign: "center" }}>
-                <Trophy size={14} style={{ color: "#f59e0b", margin: "0 auto 2px" }} />
-                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#f59e0b" }}>{streak.longestStreak ?? streak.bestStreak ?? 0}</div>
-                <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Best</div>
-              </div>
-              <div style={{ padding: "0.5rem", borderRadius: 8, background: "rgba(139,92,246,0.06)", textAlign: "center" }}>
-                <Star size={14} style={{ color: "#8b5cf6", margin: "0 auto 2px" }} />
-                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#8b5cf6" }}>{streak.points ?? streak.xp ?? 0}</div>
-                <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>XP</div>
-              </div>
-            </div>
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onViewTool("learning-streak")} style={{ width: "100%", padding: "0.45rem", border: "1px solid var(--border-color)", borderRadius: 8, background: "transparent", color: "var(--text-secondary)", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
-              View Streak Dashboard ΓåÆ
-            </motion.button>
-          </PanelCard>
-        )}
-
-        {/* Weekly Activity Chart (from aptitude weeklyProgress) */}
-        {aptitude?.weeklyProgress?.length > 0 && (
-          <PanelCard title="Weekly Activity">
-            <div style={{ height: 160 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={aptitude.weeklyProgress.slice(-7).map((w: any) => ({ name: w.week, sessions: w.sessionsCompleted || 0, accuracy: Math.round(w.accuracy || 0) }))}>
-                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "var(--text-muted)" }} />
-                  <YAxis tick={{ fontSize: 9, fill: "var(--text-muted)" }} />
-                  <ReTooltip contentStyle={{ background: "var(--surface-bg)", border: "1px solid var(--border-color)", borderRadius: 8, fontSize: 11 }} />
-                  <Bar dataKey="sessions" name="Sessions" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="accuracy" name="Accuracy %" fill="#10b981" radius={[4, 4, 0, 0]} opacity={0.5} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </PanelCard>
-        )}
-      </div>
-
-      {/* ΓöÇΓöÇΓöÇ Column 3: Weak Topics + Aptitude Overview ΓöÇΓöÇΓöÇ */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
-        {/* Weak Topics */}
-        {weakTopics && (
-          <PanelCard title="Topics Needing Attention">
-            {(weakTopics.weakTopics ?? []).slice(0, 5).length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
-                {(weakTopics.weakTopics ?? []).slice(0, 5).map((wt: any, i: number) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.4rem 0.6rem", borderRadius: 8, background: "rgba(239,68,68,0.04)", borderLeft: "3px solid #ef4444" }}>
-                    <span style={{ fontSize: "0.7rem", fontWeight: 600, color: "var(--text-primary)" }}>{wt.topic || wt.name || "Unknown"}</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      {wt.mastery !== undefined && <span style={{ fontSize: "0.6rem", color: "var(--text-muted)" }}>{Math.round(wt.mastery)}%</span>}
-                      <span style={{ fontSize: "0.55rem", fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: wt.risk === "high" ? "rgba(239,68,68,0.15)" : wt.risk === "medium" ? "rgba(245,158,11,0.15)" : "rgba(148,163,184,0.15)", color: wt.risk === "high" ? "#ef4444" : wt.risk === "medium" ? "#f59e0b" : "var(--text-muted)" }}>
-                        {wt.risk || "needs work"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", textAlign: "center", padding: "0.5rem" }}>No weak topics identified yet. Keep practicing!</p>
-            )}
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onViewTool("weak-topics")} style={{ width: "100%", padding: "0.45rem", marginTop: "0.5rem", border: "1px solid var(--border-color)", borderRadius: 8, background: "transparent", color: "var(--text-secondary)", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
-              View Weak Topics ΓåÆ
-            </motion.button>
-          </PanelCard>
-        )}
-
-        {/* Aptitude Skill Overview */}
-        {aptitude?.topicMastery?.length > 0 && (
-          <PanelCard title="Skill Mastery Overview">
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              {aptitude.topicMastery.sort((a: any, b: any) => b.accuracy - a.accuracy).slice(0, 5).map((t: any, i: number) => {
-                const colors = ["#10b981", "#06b6d4", "#8b5cf6", "#f59e0b", "#ec4899"];
-                return (
-                  <div key={t.topic} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.7rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: "0.55rem", fontWeight: 800, color: "var(--text-muted)", width: 14 }}>#{i + 1}</span>
-                      <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{t.topic}</span>
-                      <span style={{ fontSize: "0.55rem", color: t.trend === "improving" ? "#10b981" : t.trend === "declining" ? "#ef4444" : "var(--text-muted)" }}>
-                        {t.trend === "improving" ? "Γåæ" : t.trend === "declining" ? "Γåô" : "ΓåÆ"}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <div style={{ width: 45, height: 4, borderRadius: 2, background: "var(--border-color)", overflow: "hidden" }}>
-                        <div style={{ width: `${t.accuracy}%`, height: "100%", borderRadius: 2, background: colors[i % colors.length] }} />
-                      </div>
-                      <span style={{ fontSize: "0.6rem", fontWeight: 700, color: colors[i % colors.length], minWidth: 24, textAlign: "right" }}>{Math.round(t.accuracy)}%</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onViewTool("aptitude-hub")} style={{ width: "100%", padding: "0.45rem", marginTop: "0.5rem", border: "1px solid var(--border-color)", borderRadius: 8, background: "transparent", color: "var(--text-secondary)", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
-              View Aptitude Hub ΓåÆ
-            </motion.button>
-          </PanelCard>
-        )}
-      </div>
-    </div>
-  );
+  return null;
 }
 // ΓöÇΓöÇΓöÇ Profile Types & Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 interface ProfileData {
@@ -1263,7 +1083,6 @@ function UserDashboardContent() {
     notesCount: 0,
     quizzesCount: 0,
     assignmentsCount: 0,
-    pptsCount: 0,
     mindmapsCount: 0,
     studySessionsCount: 0,
     codingSessionsCount: 0,
@@ -1383,17 +1202,11 @@ function UserDashboardContent() {
         notesRes,
         quizRes,
         assignRes,
-        pptRes,
         mindmapRes,
         studyRes,
         codingRes,
         dsaRes,
-        challengesRes,
-        aptitudeRes,
-        engineRes,
-        streakRes,
-        placementRes,
-        weakTopicsRes
+        challengesRes
       ] = await Promise.allSettled([
         api.get("/profile/me"),
         api.get("/resume/list"),
@@ -1403,17 +1216,11 @@ function UserDashboardContent() {
         api.get("/notes/history"),
         api.get("/quiz/history"),
         api.get("/assignment/history"),
-        api.get("/ppt/history"),
         api.get("/mindmap/history"),
         api.get("/study/history"),
         api.get("/coding/history"),
         api.get("/dsa/progress"),
-        api.get("/challenges/"),
-        api.get("/aptitude/analytics"),
-        api.get("/engine/analytics"),
-        api.get("/streak/dashboard"),
-        api.get("/placement/intelligence/score"),
-        api.get("/weak-topics/dashboard")
+        api.get("/challenges/")
       ]);
 
       const profileData = profileRes.status === "fulfilled" ? profileRes.value.data.profile : null;
@@ -1428,7 +1235,6 @@ function UserDashboardContent() {
       const notes = notesRes.status === "fulfilled" ? (notesRes.value.data.notes || []) : [];
       const quizzes = quizRes.status === "fulfilled" ? (quizRes.value.data.quizzes || []) : [];
       const assignments = assignRes.status === "fulfilled" ? (assignRes.value.data.assignments || []) : [];
-      const ppts = pptRes.status === "fulfilled" ? (pptRes.value.data.presentations || []) : [];
       const mindmaps = mindmapRes.status === "fulfilled" ? (mindmapRes.value.data.mindmaps || []) : [];
       const studySessions = studyRes.status === "fulfilled" ? (studyRes.value.data.sessions || []) : [];
 
@@ -1452,7 +1258,6 @@ function UserDashboardContent() {
         notesCount: notes.length,
         quizzesCount: quizzes.length,
         assignmentsCount: assignments.length,
-        pptsCount: ppts.length,
         mindmapsCount: mindmaps.length,
         studySessionsCount: studySessions.length,
         codingSessionsCount: codingSessions.length,
@@ -1463,13 +1268,6 @@ function UserDashboardContent() {
         profileCompletion: completion,
         targetRole
       });
-
-      // ΓöÇΓöÇ Extended cross-module analytics ΓöÇΓöÇ
-      if (aptitudeRes.status === "fulfilled" && aptitudeRes.value.data?.success) setAptitudeAnalytics(aptitudeRes.value.data.analytics);
-      if (engineRes.status === "fulfilled" && engineRes.value.data) setInterviewAnalytics(engineRes.value.data);
-      if (streakRes.status === "fulfilled" && streakRes.value.data?.success) setStreakData(streakRes.value.data);
-      if (placementRes.status === "fulfilled" && placementRes.value.data?.success) setPlacementScore(placementRes.value.data);
-      if (weakTopicsRes.status === "fulfilled" && weakTopicsRes.value.data?.success) setWeakTopicsData(weakTopicsRes.value.data);
     } catch (err) {
       console.error("Error fetching dashboard statistics:", err);
     } finally {
@@ -1656,8 +1454,6 @@ function UserDashboardContent() {
             <HubErrorBoundary><QuizGeneratorView onViewTool={navigateTo} /></HubErrorBoundary>
           ) : activeView === "assignment-generator" ? (
             <HubErrorBoundary><AssignmentGeneratorView /></HubErrorBoundary>
-          ) : activeView === "ppt-generator" ? (
-            <HubErrorBoundary><PptGeneratorView /></HubErrorBoundary>
           ) : activeView === "mind-maps" ? (
             <HubErrorBoundary><MindMapsView /></HubErrorBoundary>
           ) : activeView === "flashcards" ? (

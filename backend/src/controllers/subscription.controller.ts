@@ -112,7 +112,7 @@ export async function getOverview(req: Request, res: Response, next: NextFunctio
     ]);
 
     const planLimits = await Promise.all(
-      ["ai-requests", "resume-generate", "mock-interview", "ppt-generate", "notes-generate"].map(async (fk) => ({
+      ["ai-requests", "resume-generate", "mock-interview", "notes-generate"].map(async (fk) => ({
         featureKey: fk,
         ...(await getFeatureLimits(fk, effectivePlan)),
       }))

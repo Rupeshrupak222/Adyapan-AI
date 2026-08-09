@@ -102,7 +102,7 @@ interface ModulesData {
   success: boolean;
   modules?: {
     resumeHub: { total: number; resumes: number; atsReports: number; coverLetters: number; linkedinReports: number };
-    learningHub: { total: number; studySessions: number; notes: number; quizzes: number; assignments: number; ppts: number; mindmaps: number; flashcards: number };
+    learningHub: { total: number; studySessions: number; notes: number; quizzes: number; assignments: number; mindmaps: number; flashcards: number };
     codingHub: { total: number; sessions: number; submissions: number; challenges: number };
     interviewHub: { total: number; completed: number; completionRate: number };
   };
@@ -163,7 +163,7 @@ function buildResponse(prompt: string, data: unknown): string {
   if (has(["feature", "usage", "module", "learning", "coding", "interview", "resume", "hub", "content"])) {
     const m = (data as ModulesData).modules;
     if (!m) return "**No module analytics available.** The modules endpoint returned nothing yet.";
-    return `**Feature Usage Overview** _(live)_\n\n**Resume Hub** — ${m.resumeHub.total}\n- Resumes: ${m.resumeHub.resumes} | ATS reports: ${m.resumeHub.atsReports} | Cover letters: ${m.resumeHub.coverLetters}\n\n**Learning Hub** — ${m.learningHub.total}\n- Study sessions: ${m.learningHub.studySessions} | Notes: ${m.learningHub.notes} | Quizzes: ${m.learningHub.quizzes} | Assignments: ${m.learningHub.assignments} | PPTs: ${m.learningHub.ppts} | Mind maps: ${m.learningHub.mindmaps} | Flashcards: ${m.learningHub.flashcards}\n\n**Coding Hub** — ${m.codingHub.total}\n- Sessions: ${m.codingHub.sessions} | Submissions: ${m.codingHub.submissions} | Challenges: ${m.codingHub.challenges}\n\n**Interview Hub** — ${m.interviewHub.total} (completion rate ${m.interviewHub.completionRate}%)`;
+    return `**Feature Usage Overview** _(live)_\n\n**Resume Hub** — ${m.resumeHub.total}\n- Resumes: ${m.resumeHub.resumes} | ATS reports: ${m.resumeHub.atsReports} | Cover letters: ${m.resumeHub.coverLetters}\n\n**Learning Hub** — ${m.learningHub.total}\n- Study sessions: ${m.learningHub.studySessions} | Notes: ${m.learningHub.notes} | Quizzes: ${m.learningHub.quizzes} | Assignments: ${m.learningHub.assignments} | Mind maps: ${m.learningHub.mindmaps} | Flashcards: ${m.learningHub.flashcards}\n\n**Coding Hub** — ${m.codingHub.total}\n- Sessions: ${m.codingHub.sessions} | Submissions: ${m.codingHub.submissions} | Challenges: ${m.codingHub.challenges}\n\n**Interview Hub** — ${m.interviewHub.total} (completion rate ${m.interviewHub.completionRate}%)`;
   }
 
   if (has(["health", "system", "status", "server", "uptime", "memory", "cpu"])) {
