@@ -137,9 +137,22 @@ studyRouter.post("/upload", async (req, res) => {
   try {
     const { fileName, fileType, fileUrl, content } = req.body;
     const userPrisma = await getUserPrismaFromRequest(req);
+    const userId = req.user!.userId;
+
+    const studySession = await userPrisma.studySession.create({
+      data: {
+        userId,
+        topic: fileName || "Document Study",
+      },
+    }).catch(err => {
+      console.warn("[Study.upload] Failed to create StudySession:", err);
+      return null;
+    });
+
     const doc = await userPrisma.uploadedDocument.create({
       data: {
-        userId: req.user!.userId,
+        userId,
+        sessionId: studySession?.id || null,
         fileName,
         fileType,
         fileUrl,
@@ -148,7 +161,7 @@ studyRouter.post("/upload", async (req, res) => {
 
     // Track Streak Activity
     StreakService.trackActivity(
-      req.user!.userId,
+      userId,
       "UPLOAD_DOCUMENT",
       "study_assistant",
       doc.id,
@@ -497,11 +510,36 @@ studyRouter.post("/analyze", uploadMemory.single("file"), async (req, res) => {
     const analysis = await generateDocumentSummaryAnalysis(documentText);
 
     const userPrisma = await getUserPrismaFromRequest(req);
+    const userId = req.user!.userId;
+
+    // Create StudySession record
+    const studySession = await userPrisma.studySession.create({
+      data: {
+        userId,
+        topic: analysis.title || req.file?.originalname || "Document Study Session",
+      },
+    }).catch(err => {
+      console.warn("[Study.analyze] Failed to create StudySession:", err);
+      return null;
+    });
+
+    if (req.file) {
+      await userPrisma.uploadedDocument.create({
+        data: {
+          userId,
+          sessionId: studySession?.id || null,
+          fileName: req.file.originalname,
+          fileType: req.file.mimetype || "application/pdf",
+          fileUrl: "",
+        },
+      }).catch(err => console.warn("[Study.analyze] Failed to create UploadedDocument:", err));
+    }
+
     StreakService.trackActivity(
-      req.user!.userId,
+      userId,
       "GENERATE_SUMMARY",
       "study_assistant",
-      null,
+      studySession?.id || null,
       15,
       getTimezone(req),
       userPrisma
@@ -668,19 +706,30 @@ studyRouter.post("/generate-lesson", async (req, res) => {
     const { topic, duration, level } = req.body;
     const result = await generateLearnLesson(topic, duration || "10m", level || "intermediate");
     const userPrisma = await getUserPrismaFromRequest(req);
+    const userId = req.user!.userId;
+
+    const studySession = await userPrisma.studySession.create({
+      data: {
+        userId,
+        topic: topic || "Topic Study Lesson",
+      },
+    }).catch(err => {
+      console.warn("[Study.generateLesson] Failed to create StudySession:", err);
+      return null;
+    });
 
     // Track Streak Activity
     StreakService.trackActivity(
-      req.user!.userId,
+      userId,
       "GENERATE_NOTES",
       "study_assistant",
-      null,
+      studySession?.id || null,
       15, // 15 points
       getTimezone(req),
       userPrisma
     ).catch(err => console.error("Streak tracking error:", err));
 
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: result, sessionId: studySession?.id });
   } catch (error) {
     handleRouteError(res, error, "Study.generateLesson", "Lesson generation failed");
   }

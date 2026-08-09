@@ -138,7 +138,7 @@ export class ProgressService {
    */
   static async calculateProgress(userId: string, prisma: PrismaClient): Promise<ProgressDashboardPayload> {
     // ── 1. Fetch all raw data ──────────────────────────────────────────────
-    const [docs, notes, quizzes, quizAttempts, flashcards, mindMaps, events, chatSessions, atsReports, interviewSessions] =
+    const [docs, notes, quizzes, quizAttempts, flashcards, mindMaps, events, chatSessions, atsReports, interviewSessions, dbStudySessions] =
       await Promise.all([
         prisma.uploadedDocument.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
         prisma.generatedNote.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
@@ -150,6 +150,7 @@ export class ProgressService {
         prisma.chatSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
         prisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }).catch(() => []),
         prisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }).catch(() => []),
+        prisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }).catch(() => []),
       ]);
 
     const totalAiGenerations = notes.length + quizzes.length + flashcards.length + mindMaps.length;
@@ -422,7 +423,7 @@ export class ProgressService {
       topicsCompleted,
       documentsCompleted: docs.length,
       questionsPracticed: totalQuestionsPracticed,
-      studySessions: chatSessions.length + events.filter((e) => e.eventType === "session_start").length,
+      studySessions: Math.max(dbStudySessions.length, docs.length, chatSessions.length + events.filter((e) => e.eventType === "session_start").length),
       currentStreak,
       status,
       milestonesJson: milestones as any,

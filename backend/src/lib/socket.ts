@@ -479,11 +479,38 @@ Keep responses concise for short durations and detailed for longer durations.`;
           data = createFallbackLesson(topic, duration, level);
         }
 
+        const uid = socket.data?.userId;
+        if (uid) {
+          try {
+            const userPrisma = await getUserPrisma(uid);
+            await userPrisma.studySession.create({
+              data: {
+                userId: uid,
+                topic: topic || "Topic Study Lesson",
+              },
+            });
+          } catch (err) {
+            console.warn("[Socket] Error creating StudySession on lesson:generate:", err);
+          }
+        }
+
         socket.emit("lesson:complete", { data });
       } catch (error: any) {
         console.error("Lesson generation error:", error?.message || error);
         // Serve smart fallback lesson instead of failing user UI
         const fallbackData = createFallbackLesson(topic, duration, level);
+        const uid = socket.data?.userId;
+        if (uid) {
+          try {
+            const userPrisma = await getUserPrisma(uid);
+            await userPrisma.studySession.create({
+              data: {
+                userId: uid,
+                topic: topic || "Topic Study Lesson",
+              },
+            });
+          } catch {}
+        }
         socket.emit("lesson:complete", { data: fallbackData });
       }
     });

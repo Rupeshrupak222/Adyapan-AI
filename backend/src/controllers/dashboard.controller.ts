@@ -79,7 +79,8 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
       assignmentsCount,
       pptsCount,
       mindmapsCount,
-      studySessionsCount,
+      rawStudySessionsCount,
+      uploadedDocsCount,
       codingSessionsCount,
       dsaProgress,
       challengesCount,
@@ -95,10 +96,13 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
       userPrisma.presentation.count({ where: { userId } }).catch(() => 0),
       userPrisma.mindMap.count({ where: { userId } }).catch(() => 0),
       userPrisma.studySession.count({ where: { userId } }).catch(() => 0),
+      userPrisma.uploadedDocument.count({ where: { userId } }).catch(() => 0),
       userPrisma.codingSession.count({ where: { userId } }).catch(() => 0),
       getUserDsaProgress(userPrisma, userId),
       userPrisma.challenge.count({ where: { category: { isActive: true } } }).catch(() => 0),
     ]);
+
+    const studySessionsCount = Math.max(rawStudySessionsCount, uploadedDocsCount);
 
     const avgAtsScore = atsReports.length
       ? Math.round(atsReports.reduce((sum: number, r: { score: number }) => sum + (r.score || 0), 0) / atsReports.length)
