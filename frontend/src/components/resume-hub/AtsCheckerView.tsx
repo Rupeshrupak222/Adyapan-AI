@@ -654,7 +654,7 @@ export function AtsCheckerView({ setView }: Props) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-h-[calc(100vh-120px)] antialiased relative"
-      style={{ color: c.tx, background: c.bg, backgroundAttachment: "fixed" }}>
+      style={{ color: c.tx, backgroundColor: c.bg, backgroundAttachment: "fixed" }}>
 
       {/* ─── HEADER ──────────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 flex items-center gap-2.5 px-5 pt-3 pb-2 relative z-20"

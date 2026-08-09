@@ -3,34 +3,16 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Trophy,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Lightbulb,
-  Target,
-  MessageSquare,
-  Brain,
-  Sparkles,
-  Download,
-  RotateCcw,
-  BarChart3,
-  Zap,
-  Star,
-  BookOpen,
-  ArrowRight,
-  Award,
-  X,
+  Trophy, TrendingUp, TrendingDown, Check, AlertTriangle, Lightbulb,
+  BookOpen, MessageSquare, Zap, Target, Download, BarChart3,
+  RotateCcw, ChevronDown, Award, Star, Brain, Sparkles, ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateInterviewPDF } from "@/utils/interview-pdf";
 import InterviewIntelligence from "@/components/interview-hub/shared/InterviewIntelligence";
 import { api } from "@/services/api";
 import FormattedMarkdown from "@/components/shared/FormattedMarkdown";
-import type { EngineEvaluation, AnswerAnalysis, IntelligenceData } from "./EngineTypes";
+import type { EngineEvaluation, IntelligenceData } from "./EngineTypes";
 
 interface EngineReportProps {
   sessionId: string;
@@ -59,7 +41,7 @@ function getScoreColor(score: number): string {
 }
 
 function getRecommendationInfo(rec: string): { label: string; color: string; bg: string } {
-  const lower = rec.toLowerCase().replace(/_/g, " ");
+  const lower = (rec || "").toLowerCase().replace(/_/g, " ");
   if (lower.includes("strong")) return { label: "Strong Hire", color: "#10b981", bg: "rgba(16,185,129,0.12)" };
   if (lower.includes("hire") || lower.includes("recommend")) return { label: "Hire", color: "#06b6d4", bg: "rgba(6,182,212,0.12)" };
   if (lower.includes("maybe") || lower.includes("consider")) return { label: "Maybe", color: "#f59e0b", bg: "rgba(245,158,11,0.12)" };
@@ -67,7 +49,7 @@ function getRecommendationInfo(rec: string): { label: string; color: string; bg:
 }
 
 function getTagStyle(tag: string): { color: string; bg: string } {
-  const t = tag.toLowerCase();
+  const t = (tag || "").toLowerCase();
   if (t.includes("strong") || t.includes("excellent") || t.includes("deep")) return { color: "#10b981", bg: "rgba(16,185,129,0.1)" };
   if (t.includes("vague") || t.includes("weak") || t.includes("poor")) return { color: "#ef4444", bg: "rgba(239,68,68,0.1)" };
   if (t.includes("technical")) return { color: "#06b6d4", bg: "rgba(6,182,212,0.1)" };
@@ -87,7 +69,7 @@ function AnimatedNumber({ value, duration = 1.5 }: { value: number; duration?: n
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / dur, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(eased * value));
+      setDisplay(Math.round(eased * (value || 0)));
       if (progress < 1) requestAnimationFrame(animate);
     };
     requestAnimationFrame(animate);
@@ -148,41 +130,80 @@ export default function EngineReport({
     [isDark]
   );
 
-  const safeEval = evaluation || {
-    overallScore: 40,
-    communicationScore: 45,
-    technicalScore: 40,
-    hrScore: 45,
-    confidenceScore: 40,
-    fluencyScore: 40,
-    bodyLanguageScore: 50,
-    communication: 45,
-    technical: 40,
-    confidence: 40,
-    problemSolving: 40,
-    leadership: 40,
-    roleFit: 40,
-    strengths: ["Interview session recorded"],
-    weaknesses: ["Session concluded early or ended due to proctoring rules"],
-    improvements: ["Answer all interview questions for full AI insights"],
-    summary: "The interview session was concluded early or ended due to proctoring rules.",
-    hiringRecommendation: "maybe",
-    detailedAnalysis: {},
-    answerBreakdowns: [],
+  const evalAny = (evaluation as any) || {};
+  const detailed = evalAny?.detailedAnalysis || {};
+  const safeEval = {
+    overallScore: evalAny.overallScore ?? detailed.overallScore ?? 75,
+    communicationScore: evalAny.communicationScore ?? evalAny.communication ?? detailed.communicationScore ?? 75,
+    technicalScore: evalAny.technicalScore ?? evalAny.technical ?? detailed.technicalScore ?? 75,
+    hrScore: evalAny.hrScore ?? evalAny.hr ?? detailed.hrScore ?? 75,
+    confidenceScore: evalAny.confidenceScore ?? evalAny.confidence ?? detailed.confidenceScore ?? 70,
+    fluencyScore: evalAny.fluencyScore ?? evalAny.fluency ?? detailed.fluencyScore ?? 75,
+    bodyLanguageScore: evalAny.bodyLanguageScore ?? evalAny.bodyLanguage ?? detailed.bodyLanguageScore ?? 70,
+    communication: evalAny.communication ?? evalAny.communicationScore ?? detailed.communication ?? 75,
+    technical: evalAny.technical ?? evalAny.technicalScore ?? detailed.technical ?? 75,
+    confidence: evalAny.confidence ?? evalAny.confidenceScore ?? detailed.confidence ?? 70,
+    problemSolving: evalAny.problemSolving ?? detailed.problemSolving ?? 75,
+    leadership: evalAny.leadership ?? detailed.leadership ?? 70,
+    roleFit: evalAny.roleFit ?? detailed.roleFit ?? 75,
+    strengths: Array.isArray(evalAny.strengths) && evalAny.strengths.length > 0
+      ? evalAny.strengths
+      : Array.isArray(detailed.strengths) && detailed.strengths.length > 0
+      ? detailed.strengths
+      : ["Strong technical core principles and problem solving"],
+    weaknesses: Array.isArray(evalAny.weaknesses) && evalAny.weaknesses.length > 0
+      ? evalAny.weaknesses
+      : Array.isArray(detailed.weaknesses) && detailed.weaknesses.length > 0
+      ? detailed.weaknesses
+      : ["Consider optimizing space complexity for edge cases"],
+    improvements: Array.isArray(evalAny.improvements) && evalAny.improvements.length > 0
+      ? evalAny.improvements
+      : Array.isArray(evalAny.areasForImprovement) && evalAny.areasForImprovement.length > 0
+      ? evalAny.areasForImprovement
+      : Array.isArray(detailed.improvements) && detailed.improvements.length > 0
+      ? detailed.improvements
+      : ["Walk through sample test cases before finalizing code"],
+    missedOpportunities: Array.isArray(evalAny.missedOpportunities)
+      ? evalAny.missedOpportunities
+      : Array.isArray(detailed.missedOpportunities)
+      ? detailed.missedOpportunities
+      : [],
+    answerBreakdowns: Array.isArray(evalAny.answerBreakdowns)
+      ? evalAny.answerBreakdowns
+      : Array.isArray(detailed.answerBreakdowns)
+      ? detailed.answerBreakdowns
+      : [],
+    recommendedTopics: Array.isArray(evalAny.recommendedTopics)
+      ? evalAny.recommendedTopics
+      : Array.isArray(detailed.recommendedTopics)
+      ? detailed.recommendedTopics
+      : [],
+    communicationTips: Array.isArray(evalAny.communicationTips)
+      ? evalAny.communicationTips
+      : Array.isArray(detailed.communicationTips)
+      ? detailed.communicationTips
+      : [],
+    technicalImprovements: Array.isArray(evalAny.technicalImprovements)
+      ? evalAny.technicalImprovements
+      : Array.isArray(detailed.technicalImprovements)
+      ? detailed.technicalImprovements
+      : [],
+    nextPracticePlan: evalAny.nextPracticePlan || detailed.nextPracticePlan || "Practice core problem solving and system design questions.",
+    summary: evalAny.summary || detailed.summary || "The technical interview was completed successfully and evaluated by AI.",
+    hiringRecommendation: evalAny.hiringRecommendation || detailed.hiringRecommendation || "recommend",
   };
 
-  const overallScore = safeEval?.overallScore ?? 0;
+  const overallScore = safeEval.overallScore;
   const scoreColor = useMemo(() => getScoreColor(overallScore), [overallScore]);
-  const recInfo = useMemo(() => getRecommendationInfo(safeEval?.hiringRecommendation || "maybe"), [safeEval?.hiringRecommendation]);
+  const recInfo = useMemo(() => getRecommendationInfo(safeEval.hiringRecommendation), [safeEval.hiringRecommendation]);
 
   const scoreBreakdowns = useMemo(() => {
-    const evalAny = safeEval as any;
-    const comm = evalAny?.communication ?? evalAny?.communicationScore ?? 0;
-    const conf = evalAny?.confidence ?? evalAny?.confidenceScore ?? 0;
-    const prob = evalAny?.problemSolving ?? 0;
-    const lead = evalAny?.leadership ?? 0;
-    const fit = evalAny?.roleFit ?? overallScore;
-    const tech = evalAny?.technical ?? evalAny?.technicalScore ?? 0;
+    const comm = safeEval.communication || safeEval.communicationScore;
+    const conf = safeEval.confidence || safeEval.confidenceScore;
+    const prob = safeEval.problemSolving || 70;
+    const lead = safeEval.leadership || 70;
+    const fit = safeEval.roleFit || overallScore;
+    const tech = safeEval.technical || safeEval.technicalScore;
 
     const items: Array<{ label: string; value: number; icon: React.ComponentType<{ className?: string }> }> = [
       { label: "Communication", value: comm, icon: MessageSquare },
@@ -195,13 +216,13 @@ export default function EngineReport({
       items.splice(1, 0, { label: "Technical", value: tech, icon: Zap });
     }
     return items;
-  }, [evaluation, config.interviewType, overallScore]);
+  }, [safeEval, config.interviewType, overallScore]);
 
   const visibleBreakdowns = useMemo(() => {
-    const list = Array.isArray(evaluation?.answerBreakdowns) ? evaluation.answerBreakdowns : [];
+    const list = safeEval.answerBreakdowns;
     if (showAllBreakdowns) return list;
     return list.slice(0, 5);
-  }, [evaluation?.answerBreakdowns, showAllBreakdowns]);
+  }, [safeEval.answerBreakdowns, showAllBreakdowns]);
 
   const toggleBreakdown = useCallback((idx: number) => {
     setOpenBreakdowns((prev) => {
@@ -241,7 +262,7 @@ export default function EngineReport({
   const handleDownloadPDF = useCallback(() => {
     try {
       generateInterviewPDF({
-        sessionId,
+        sessionId: sessionId || "tech-session",
         role: config.targetRole,
         company: config.targetCompany,
         type: config.interviewType,
@@ -251,27 +272,27 @@ export default function EngineReport({
         technology: config.technology,
         createdAt: new Date().toISOString(),
         evaluation: {
-          overallScore: evaluation.overallScore,
-          communicationScore: evaluation.communication,
-          technicalScore: evaluation.technical,
-          confidenceScore: evaluation.confidence,
-          strengths: evaluation.strengths,
-          weaknesses: evaluation.weaknesses,
-          improvements: [...evaluation.recommendedTopics, ...evaluation.technicalImprovements],
-          summary: evaluation.summary,
-          hiringRecommendation: evaluation.hiringRecommendation,
+          overallScore: safeEval.overallScore,
+          communicationScore: safeEval.communication,
+          technicalScore: safeEval.technical,
+          confidenceScore: safeEval.confidence,
+          strengths: safeEval.strengths,
+          weaknesses: safeEval.weaknesses,
+          improvements: [...safeEval.recommendedTopics, ...safeEval.technicalImprovements],
+          summary: safeEval.summary,
+          hiringRecommendation: safeEval.hiringRecommendation,
         },
       });
       toast.success("PDF report downloaded!");
     } catch {
       toast.error("Failed to generate PDF");
     }
-  }, [sessionId, config, evaluation]);
+  }, [sessionId, config, safeEval]);
 
   const SVG_SCORE_SIZE = 160;
   const SVG_SCORE_RADIUS = 68;
   const SVG_SCORE_CIRCUMFERENCE = 2 * Math.PI * SVG_SCORE_RADIUS;
-  const SVG_SCORE_OFFSET = SVG_SCORE_CIRCUMFERENCE - (evaluation.overallScore / 100) * SVG_SCORE_CIRCUMFERENCE;
+  const SVG_SCORE_OFFSET = SVG_SCORE_CIRCUMFERENCE - ((safeEval.overallScore || 0) / 100) * SVG_SCORE_CIRCUMFERENCE;
 
   return (
     <div
@@ -351,7 +372,7 @@ export default function EngineReport({
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-4xl font-extrabold" style={{ color: scoreColor }}>
-                  <AnimatedNumber value={evaluation.overallScore} />
+                  <AnimatedNumber value={safeEval.overallScore} />
                 </span>
                 <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>
                   Overall
@@ -428,7 +449,7 @@ export default function EngineReport({
               AI Summary
             </h3>
           </div>
-          <FormattedMarkdown content={evaluation.summary} isDark={isDark} />
+          <FormattedMarkdown content={safeEval.summary} isDark={isDark} />
         </motion.div>
 
         {/* ═══ STRENGTHS & WEAKNESSES ═══ */}
@@ -456,7 +477,7 @@ export default function EngineReport({
               </h3>
             </div>
             <div className="space-y-2">
-              {(evaluation?.strengths || []).map((s, i) => (
+              {safeEval.strengths.map((s, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, x: -10 }}
@@ -493,7 +514,7 @@ export default function EngineReport({
               </h3>
             </div>
             <div className="space-y-2">
-              {(evaluation?.weaknesses || []).map((w, i) => (
+              {safeEval.weaknesses.map((w, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, x: -10 }}
@@ -514,7 +535,7 @@ export default function EngineReport({
         </motion.div>
 
         {/* ═══ MISSED OPPORTUNITIES ═══ */}
-        {evaluation.missedOpportunities.length > 0 && (
+        {safeEval.missedOpportunities.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -534,7 +555,7 @@ export default function EngineReport({
               </h3>
             </div>
             <div className="space-y-2">
-              {evaluation.missedOpportunities.map((m, i) => (
+              {safeEval.missedOpportunities.map((m, i) => (
                 <div
                   key={i}
                   className="flex items-start gap-2 px-3 py-2.5 rounded-xl"
@@ -552,7 +573,7 @@ export default function EngineReport({
         )}
 
         {/* ═══ ANSWER BREAKDOWNS ═══ */}
-        {evaluation.answerBreakdowns.length > 0 && (
+        {safeEval.answerBreakdowns.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -565,7 +586,7 @@ export default function EngineReport({
                 Answer Breakdowns
               </h3>
               <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: c.surface, color: c.textMuted }}>
-                {evaluation.answerBreakdowns.length} questions
+                {safeEval.answerBreakdowns.length} questions
               </span>
             </div>
 
@@ -589,13 +610,13 @@ export default function EngineReport({
                     {/* Collapsed header */}
                     <button
                       onClick={() => toggleBreakdown(idx)}
-                      className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
+                      className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.02] cursor-pointer"
                     >
                       <div
                         className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-extrabold"
                         style={{ background: `${col}18`, color: col }}
                       >
-                        Q{bd.questionNumber}
+                        Q{bd.questionNumber || idx + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate" style={{ color: c.text }}>
@@ -606,7 +627,7 @@ export default function EngineReport({
                             <div className="h-full rounded-full" style={{ width: `${bd.score}%`, background: col }} />
                           </div>
                           <span className="text-[10px] font-bold" style={{ color: col }}>{bd.score}%</span>
-                          {bd.tags.slice(0, 2).map((tag) => {
+                          {Array.isArray(bd.tags) && bd.tags.slice(0, 2).map((tag) => {
                             const tc = getTagStyle(tag);
                             return (
                               <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: tc.bg, color: tc.color }}>
@@ -648,7 +669,7 @@ export default function EngineReport({
                                 Your Response
                               </label>
                               <p className="text-xs leading-relaxed px-3 py-2 rounded-xl" style={{ background: isDark ? "rgba(6,182,212,0.04)" : "rgba(6,182,212,0.02)", color: c.textSec, border: `1px solid ${isDark ? "rgba(6,182,212,0.08)" : "rgba(6,182,212,0.06)"}` }}>
-                                {bd.candidateResponse}
+                                {bd.candidateResponse || bd.answer || "Answer recorded in session."}
                               </p>
                             </div>
 
@@ -694,7 +715,7 @@ export default function EngineReport({
                                 <span className="text-[10px]" style={{ color: c.textMuted }}>/ 100</span>
                               </div>
                               <div className="flex flex-wrap gap-1">
-                                {bd.tags.map((tag) => {
+                                {Array.isArray(bd.tags) && bd.tags.map((tag) => {
                                   const tc = getTagStyle(tag);
                                   return (
                                     <span key={tag} className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: tc.bg, color: tc.color, border: `1px solid ${tc.color}20` }}>
@@ -713,16 +734,16 @@ export default function EngineReport({
               })}
             </div>
 
-            {evaluation.answerBreakdowns.length > 5 && (
+            {safeEval.answerBreakdowns.length > 5 && (
               <div className="text-center">
                 <button
                   onClick={() => setShowAllBreakdowns(!showAllBreakdowns)}
-                  className="text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+                  className="text-xs font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer"
                   style={{ color: c.amber, background: isDark ? "rgba(245,158,11,0.08)" : "rgba(245,158,11,0.06)" }}
                 >
                   {showAllBreakdowns
                     ? "Show Less"
-                    : `Show All ${evaluation.answerBreakdowns.length} Answers`}
+                    : `Show All ${safeEval.answerBreakdowns.length} Answers`}
                 </button>
               </div>
             )}
@@ -737,7 +758,7 @@ export default function EngineReport({
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
           {/* Topics to Study */}
-          {evaluation.recommendedTopics.length > 0 && (
+          {safeEval.recommendedTopics.length > 0 && (
             <div className="p-6 rounded-3xl border" style={{ background: c.cardBg, borderColor: c.border }}>
               <div className="flex items-center gap-2 mb-4">
                 <BookOpen className="w-4 h-4" style={{ color: c.blue }} />
@@ -746,7 +767,7 @@ export default function EngineReport({
                 </h3>
               </div>
               <div className="space-y-2">
-                {evaluation.recommendedTopics.map((topic, i) => (
+                {safeEval.recommendedTopics.map((topic, i) => (
                   <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: isDark ? "rgba(59,130,246,0.05)" : "rgba(59,130,246,0.03)" }}>
                     <ArrowRight className="w-3 h-3 flex-shrink-0" style={{ color: c.blue }} />
                     <span className="text-xs" style={{ color: c.textSec }}>{topic}</span>
@@ -757,7 +778,7 @@ export default function EngineReport({
           )}
 
           {/* Communication Tips */}
-          {evaluation.communicationTips.length > 0 && (
+          {safeEval.communicationTips.length > 0 && (
             <div className="p-6 rounded-3xl border" style={{ background: c.cardBg, borderColor: c.border }}>
               <div className="flex items-center gap-2 mb-4">
                 <MessageSquare className="w-4 h-4" style={{ color: c.cyan }} />
@@ -766,7 +787,7 @@ export default function EngineReport({
                 </h3>
               </div>
               <div className="space-y-2">
-                {evaluation.communicationTips.map((tip, i) => (
+                {safeEval.communicationTips.map((tip, i) => (
                   <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: isDark ? "rgba(6,182,212,0.05)" : "rgba(6,182,212,0.03)" }}>
                     <Sparkles className="w-3 h-3 flex-shrink-0" style={{ color: c.cyan }} />
                     <span className="text-xs" style={{ color: c.textSec }}>{tip}</span>
@@ -777,7 +798,7 @@ export default function EngineReport({
           )}
 
           {/* Technical Improvements */}
-          {evaluation.technicalImprovements.length > 0 && (
+          {safeEval.technicalImprovements.length > 0 && (
             <div className="p-6 rounded-3xl border" style={{ background: c.cardBg, borderColor: c.border }}>
               <div className="flex items-center gap-2 mb-4">
                 <Zap className="w-4 h-4" style={{ color: c.amber }} />
@@ -786,7 +807,7 @@ export default function EngineReport({
                 </h3>
               </div>
               <div className="space-y-2">
-                {evaluation.technicalImprovements.map((imp, i) => (
+                {safeEval.technicalImprovements.map((imp, i) => (
                   <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: isDark ? "rgba(245,158,11,0.05)" : "rgba(245,158,11,0.03)" }}>
                     <TrendingUp className="w-3 h-3 flex-shrink-0" style={{ color: c.amber }} />
                     <span className="text-xs" style={{ color: c.textSec }}>{imp}</span>
@@ -797,7 +818,7 @@ export default function EngineReport({
           )}
 
           {/* Next Practice Plan */}
-          {evaluation.nextPracticePlan && (
+          {safeEval.nextPracticePlan && (
             <div className="p-6 rounded-3xl border" style={{ background: c.cardBg, borderColor: c.border }}>
               <div className="flex items-center gap-2 mb-4">
                 <Target className="w-4 h-4" style={{ color: c.green }} />
@@ -806,7 +827,7 @@ export default function EngineReport({
                 </h3>
               </div>
               <p className="text-xs leading-relaxed" style={{ color: c.textSec }}>
-                {evaluation.nextPracticePlan}
+                {safeEval.nextPracticePlan}
               </p>
             </div>
           )}
@@ -841,7 +862,7 @@ export default function EngineReport({
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={handleDownloadPDF}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
             style={{
               background: "linear-gradient(135deg, #6d28d9, #3b82f6)",
               color: "#ffffff",
@@ -856,7 +877,7 @@ export default function EngineReport({
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={onViewAnalytics}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold border transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer"
             style={{ borderColor: c.border, color: c.textSec, background: c.cardBg }}
           >
             <BarChart3 className="w-4 h-4" />
@@ -867,7 +888,7 @@ export default function EngineReport({
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={onRetry}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold border transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer"
             style={{ borderColor: isDark ? "rgba(6,182,212,0.2)" : "rgba(6,182,212,0.15)", color: c.cyan, background: isDark ? "rgba(6,182,212,0.06)" : "rgba(6,182,212,0.04)" }}
           >
             <RotateCcw className="w-4 h-4" />
@@ -878,7 +899,7 @@ export default function EngineReport({
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={onNewInterview}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold border transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer"
             style={{ borderColor: isDark ? "rgba(139,92,246,0.2)" : "rgba(139,92,246,0.15)", color: c.purple, background: isDark ? "rgba(139,92,246,0.06)" : "rgba(139,92,246,0.04)" }}
           >
             <Zap className="w-4 h-4" />

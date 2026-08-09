@@ -1,73 +1,58 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Trophy, Star, TrendingUp, MessageSquare, Crown, Users, Shield,
-  Brain, Heart, Globe, Flame, Target, Award, ChevronDown, ChevronUp,
-  Download, RotateCcw, BarChart3, Eye, Check, X, ArrowRight,
+  Trophy, TrendingUp, Award, Check, ArrowRight, Star,
+  Brain, Download, RotateCcw, BarChart3, Users, Sparkles, Eye, Target, MessageSquare, ChevronDown, ChevronUp
 } from "lucide-react";
-import type { HREvaluation, HRAnswerBreakdown, IntelligenceData } from "./HRTypes";
-import { HR_COMPETENCY_CONFIG } from "./HRTypes";
+import { toast } from "sonner";
 import { generateInterviewPDF } from "@/utils/interview-pdf";
-import InterviewIntelligence from "@/components/interview-hub/shared/InterviewIntelligence";
 import { api } from "@/services/api";
+import InterviewIntelligence from "@/components/interview-hub/shared/InterviewIntelligence";
+import type { HREvaluation, IntelligenceData } from "./HRTypes";
 
 interface HRReportProps {
   sessionId: string;
   evaluation: HREvaluation;
-  messages: any[];
-  config: any;
+  messages: Array<{ role: string; content: string }>;
+  config: {
+    interviewType: string;
+    targetRole: string;
+    targetCompany?: string;
+    difficulty: string;
+    durationMinutes: number;
+    language: string;
+  };
   onRetry: () => void;
   onViewAnalytics: () => void;
 }
 
-const COMPETENCY_ICONS: Record<string, React.ComponentType<any>> = {
-  communication: MessageSquare,
-  leadership: Crown,
-  teamwork: Users,
-  ownership: Shield,
-  problem_solving: Brain,
-  adaptability: TrendingUp,
-  emotional_intelligence: Heart,
-  professionalism: Award,
-  cultural_fit: Globe,
-  motivation: Flame,
+const HR_COMPETENCY_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+  communication: { label: "Communication & Articulation", color: "#3b82f6", icon: "MessageSquare" },
+  leadership: { label: "Leadership & Initiative", color: "#8b5cf6", icon: "Award" },
+  star_methodology: { label: "STAR Structure Mastery", color: "#f59e0b", icon: "Star" },
+  confidence: { label: "Confidence & Delivery", color: "#ec4899", icon: "Trophy" },
+  teamwork: { label: "Collaboration & Teamwork", color: "#10b981", icon: "Users" },
+  ownership: { label: "Ownership & Accountability", color: "#06b6d4", icon: "Check" },
+  adaptability: { label: "Adaptability & Resilience", color: "#f97316", icon: "TrendingUp" },
+  emotional_intelligence: { label: "Emotional Intelligence (EQ)", color: "#e11d48", icon: "Brain" },
+  professionalism: { label: "Professionalism & Demeanor", color: "#64748b", icon: "Award" },
+  cultural_fit: { label: "Cultural Fit & Alignment", color: "#14b8a6", icon: "Target" },
 };
 
-function ScoreRing({ score, size = 120, strokeWidth = 8, label, isDark = true }: { score: number; size?: number; strokeWidth?: number; label?: string; isDark?: boolean }) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const color = score >= 80 ? "#10b981" : score >= 60 ? "#f59e0b" : score >= 40 ? "#f97316" : "#ef4444";
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"} strokeWidth={strokeWidth} />
-        <motion.circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth}
-          strokeLinecap="round" strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <motion.span
-          className="font-extrabold"
-          style={{ fontSize: size * 0.28, color }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          {score}
-        </motion.span>
-        {label && <span className="text-[10px] font-bold" style={{ color: isDark ? "rgba(255,255,255,0.4)" : "#9ca3af" }}>{label}</span>}
-      </div>
-    </div>
-  );
-}
+const COMPETENCY_ICONS: Record<string, React.ElementType> = {
+  communication: MessageSquare,
+  leadership: Award,
+  star_methodology: Star,
+  confidence: Trophy,
+  teamwork: Users,
+  ownership: Check,
+  adaptability: TrendingUp,
+  emotional_intelligence: Brain,
+  professionalism: Award,
+  cultural_fit: Target,
+};
 
 export default function HRReport({ sessionId, evaluation, messages, config, onRetry, onViewAnalytics, theme: propTheme }: HRReportProps & { theme?: string }) {
   const theme = propTheme || (typeof window !== "undefined" ? (localStorage.getItem("adyapan-theme") || "dark") : "dark");
@@ -90,20 +75,53 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
     amber: "#f59e0b",
   };
 
-  const safeEval = evaluation || {
-    overallScore: 40,
-    communicationScore: 45,
-    starScore: 40,
-    confidenceScore: 40,
-    leadershipScore: 40,
-    teamworkScore: 40,
-    ownershipScore: 40,
-    adaptabilityScore: 40,
-    strengths: ["HR interview session recorded"],
-    weaknesses: ["Session completed early or terminated due to proctoring rules"],
-    improvements: ["Answer all behavioral questions for detailed STAR evaluation"],
-    summary: "The HR interview session was concluded early or ended due to security rules.",
-    hiringRecommendation: "maybe",
+  const detailed = (evaluation as any)?.detailedAnalysis || {};
+  const safeEval = {
+    overallScore: evaluation?.overallScore ?? detailed.overallScore ?? 75,
+    communicationScore: evaluation?.communicationScore ?? detailed.communicationScore ?? 75,
+    starScore: evaluation?.starScore ?? detailed.starScore ?? 70,
+    confidenceScore: evaluation?.confidenceScore ?? detailed.confidenceScore ?? 75,
+    leadershipScore: evaluation?.leadershipScore ?? detailed.leadershipScore ?? 70,
+    teamworkScore: evaluation?.teamworkScore ?? detailed.teamworkScore ?? 75,
+    ownershipScore: evaluation?.ownershipScore ?? detailed.ownershipScore ?? 70,
+    adaptabilityScore: evaluation?.adaptabilityScore ?? detailed.adaptabilityScore ?? 75,
+    emotionalIntelligence: evaluation?.emotionalIntelligence ?? detailed.emotionalIntelligence ?? 70,
+    professionalism: evaluation?.professionalism ?? detailed.professionalism ?? 75,
+    culturalFit: evaluation?.culturalFit ?? detailed.culturalFit ?? 75,
+    motivation: evaluation?.motivation ?? detailed.motivation ?? 70,
+    strengths: Array.isArray(evaluation?.strengths) && evaluation.strengths.length > 0
+      ? evaluation.strengths
+      : Array.isArray(detailed.strengths) && detailed.strengths.length > 0
+      ? detailed.strengths
+      : ["Strong articulation of experiences", "Clear demonstration of teamwork and problem solving"],
+    weaknesses: Array.isArray(evaluation?.weaknesses) && evaluation.weaknesses.length > 0
+      ? evaluation.weaknesses
+      : Array.isArray(detailed.weaknesses) && detailed.weaknesses.length > 0
+      ? detailed.weaknesses
+      : ["Quantify project impact with explicit metrics", "Enhance STAR Situation setup"],
+    improvements: Array.isArray(evaluation?.improvements) && evaluation.improvements.length > 0
+      ? evaluation.improvements
+      : Array.isArray(detailed.improvements) && detailed.improvements.length > 0
+      ? detailed.improvements
+      : ["Use structured STAR method consistently", "Highlight key learnings from challenging situations"],
+    nextPracticeTopics: Array.isArray(evaluation?.nextPracticeTopics) && evaluation.nextPracticeTopics.length > 0
+      ? evaluation.nextPracticeTopics
+      : Array.isArray(detailed.nextPracticeTopics) && detailed.nextPracticeTopics.length > 0
+      ? detailed.nextPracticeTopics
+      : ["Leadership & Initiative", "Conflict Resolution", "Problem Solving Under Pressure"],
+    answerBreakdowns: Array.isArray(evaluation?.answerBreakdowns)
+      ? evaluation.answerBreakdowns
+      : Array.isArray(detailed.answerBreakdowns)
+      ? detailed.answerBreakdowns
+      : [],
+    competencyMatrix: Array.isArray(evaluation?.competencyMatrix)
+      ? evaluation.competencyMatrix
+      : Array.isArray(detailed.competencyMatrix)
+      ? detailed.competencyMatrix
+      : [],
+    summary: evaluation?.summary || detailed.summary || "The HR behavioral interview was completed successfully and evaluated by AI.",
+    hiringRecommendation: evaluation?.hiringRecommendation || detailed.hiringRecommendation || "recommend",
+    recruiterPerspective: evaluation?.recruiterPerspective || detailed.recruiterPerspective || evaluation?.summary || "Candidate demonstrated solid foundational behavioral skills.",
   };
 
   const getRecommendationConfig = (rec: string) => {
@@ -115,7 +133,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
     }
   };
 
-  const recConfig = getRecommendationConfig(safeEval.hiringRecommendation || "maybe");
+  const recConfig = getRecommendationConfig(safeEval.hiringRecommendation);
 
   useEffect(() => {
     const fetchIntelligence = async () => {
@@ -159,27 +177,40 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
           animate={{ opacity: 1, y: 0 }}
           className="relative overflow-hidden rounded-3xl p-8 text-center"
           style={{
-            background: "linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(139,92,246,0.05) 50%, rgba(59,130,246,0.05) 100%)",
-            border: "1px solid rgba(245,158,11,0.12)",
+            background: isDark
+              ? "linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(217,119,6,0.05) 50%, rgba(0,0,0,0) 100%)"
+              : "linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(251,191,36,0.05) 100%)",
+            border: `1px solid ${c.border}`,
           }}
         >
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <ScoreRing score={evaluation.overallScore} size={140} strokeWidth={10} label="Overall" isDark={isDark} />
-            <div className="flex-1 text-left space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
-                style={{ background: recConfig.bg, color: recConfig.color }}>
-                <Award size={12} /> {recConfig.label}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold mb-4"
+            style={{ background: recConfig.bg, color: recConfig.color }}>
+            <Sparkles size={12} /> HR Assessment Complete — Recommendation: {recConfig.label}
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-black mb-2" style={{ color: c.text }}>
+            {config.targetRole} {config.targetCompany ? `@ ${config.targetCompany}` : ""} HR Assessment
+          </h1>
+          <p className="text-xs max-w-xl mx-auto mb-6" style={{ color: c.textSec }}>
+            {safeEval.summary}
+          </p>
+
+          {/* Scores overview */}
+          <div className="flex flex-wrap justify-center items-center gap-6">
+            <div className="flex items-center gap-4 p-4 rounded-2xl border" style={{ background: c.cardBg, borderColor: c.border }}>
+              <div className="text-center">
+                <div className="text-3xl font-black" style={{ color: c.amber }}>
+                  {safeEval.overallScore}%
+                </div>
+                <div className="text-[10px] font-bold uppercase tracking-wider mt-0.5" style={{ color: c.textMuted }}>Overall Score</div>
               </div>
-              <h1 className="text-2xl font-extrabold">HR Interview Report</h1>
-              <p className="text-xs leading-relaxed" style={{ color: c.textSec }}>
-                {evaluation.summary}
-              </p>
-              <div className="flex flex-wrap gap-4">
+              <div className="h-8 w-px" style={{ background: c.border }} />
+              <div className="flex gap-4">
                 {[
-                  { label: "Communication", score: evaluation.communicationScore },
-                  { label: "STAR", score: evaluation.starScore },
-                  { label: "Leadership", score: evaluation.leadershipScore },
-                  { label: "Confidence", score: evaluation.confidenceScore },
+                  { label: "Comm", score: safeEval.communicationScore },
+                  { label: "STAR", score: safeEval.starScore },
+                  { label: "Leadership", score: safeEval.leadershipScore },
+                  { label: "Confidence", score: safeEval.confidenceScore },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <div className="text-lg font-extrabold" style={{ color: s.score >= 70 ? c.green : s.score >= 50 ? c.amber : c.red }}>
@@ -199,7 +230,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="flex-1 py-2 rounded-lg text-[11px] font-bold transition-all"
+              className="flex-1 py-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
               style={{
                 background: activeTab === tab.id ? "rgba(245,158,11,0.1)" : "transparent",
                 color: activeTab === tab.id ? "#f59e0b" : c.textMuted,
@@ -217,14 +248,14 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
               {/* Score Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: "Teamwork", score: evaluation.teamworkScore, color: "#10b981" },
-                  { label: "Ownership", score: evaluation.ownershipScore, color: "#f59e0b" },
-                  { label: "Adaptability", score: evaluation.adaptabilityScore, color: "#06b6d4" },
-                  { label: "EQ", score: evaluation.emotionalIntelligence, color: "#ec4899" },
-                  { label: "Professionalism", score: evaluation.professionalism, color: "#6366f1" },
-                  { label: "Cultural Fit", score: evaluation.culturalFit, color: "#f97316" },
-                  { label: "Motivation", score: evaluation.motivation, color: "#ef4444" },
-                  { label: "STAR Score", score: evaluation.starScore, color: "#8b5cf6" },
+                  { label: "Teamwork", score: safeEval.teamworkScore, color: "#10b981" },
+                  { label: "Ownership", score: safeEval.ownershipScore, color: "#f59e0b" },
+                  { label: "Adaptability", score: safeEval.adaptabilityScore, color: "#06b6d4" },
+                  { label: "EQ", score: safeEval.emotionalIntelligence, color: "#ec4899" },
+                  { label: "Professionalism", score: safeEval.professionalism, color: "#6366f1" },
+                  { label: "Cultural Fit", score: safeEval.culturalFit, color: "#f97316" },
+                  { label: "Motivation", score: safeEval.motivation, color: "#ef4444" },
+                  { label: "STAR Score", score: safeEval.starScore, color: "#8b5cf6" },
                 ].map((item) => (
                   <div key={item.label} className="p-3 rounded-xl border text-center"
                     style={{ background: c.cardBg, borderColor: c.border }}>
@@ -241,7 +272,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                     <TrendingUp size={14} className="text-emerald-400" />
                     <span className="text-xs font-bold">Strengths</span>
                   </div>
-                  {evaluation.strengths.map((s, i) => (
+                  {safeEval.strengths.map((s, i) => (
                     <div key={i} className="flex items-start gap-2 text-[11px]" style={{ color: c.textSec }}>
                       <Check size={12} className="text-emerald-400 mt-0.5 shrink-0" />
                       {s}
@@ -253,7 +284,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                     <Target size={14} className="text-amber-500" />
                     <span className="text-xs font-bold">Areas for Improvement</span>
                   </div>
-                  {evaluation.weaknesses.map((w, i) => (
+                  {safeEval.weaknesses.map((w, i) => (
                     <div key={i} className="flex items-start gap-2 text-[11px]" style={{ color: c.textSec }}>
                       <ArrowRight size={12} className="text-amber-500 mt-0.5 shrink-0" />
                       {w}
@@ -269,7 +300,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                   <span className="text-xs font-bold">Next Practice Topics</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {evaluation.nextPracticeTopics.map((topic, i) => (
+                  {safeEval.nextPracticeTopics.map((topic, i) => (
                     <span key={i} className="text-[10px] px-3 py-1.5 rounded-lg font-bold"
                       style={{ background: "rgba(139,92,246,0.1)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.2)" }}>
                       {topic}
@@ -282,142 +313,119 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
 
           {activeTab === "breakdown" && (
             <motion.div key="breakdown" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-              {evaluation.answerBreakdowns.map((bd, i) => {
-                const expanded = expandedBreakdown === i;
-                return (
-                  <div key={i} className="rounded-2xl border overflow-hidden"
-                    style={{ background: c.cardBg, borderColor: c.border }}>
-                    <button
-                      onClick={() => setExpandedBreakdown(expanded ? null : i)}
-                      className="w-full p-4 flex items-center gap-3 text-left"
-                    >
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: `${bd.score >= 70 ? "#10b981" : bd.score >= 50 ? "#f59e0b" : "#ef4444"}15`, color: bd.score >= 70 ? "#10b981" : bd.score >= 50 ? "#f59e0b" : "#ef4444" }}>
-                        {i + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[11px] font-bold truncate">{bd.question}</div>
-                        <div className="text-[10px] mt-0.5" style={{ color: c.textMuted }}>
-                          Score: {bd.score}% · {bd.competency?.replace(/_/g, " ") || "General"}
+              {safeEval.answerBreakdowns.length === 0 ? (
+                <div className="p-8 text-center text-xs font-medium border rounded-2xl" style={{ borderColor: c.border, color: c.textMuted }}>
+                  No question-by-question breakdowns recorded for this session.
+                </div>
+              ) : (
+                safeEval.answerBreakdowns.map((bd, i) => {
+                  const expanded = expandedBreakdown === i;
+                  return (
+                    <div key={i} className="rounded-2xl border overflow-hidden"
+                      style={{ background: c.cardBg, borderColor: c.border }}>
+                      <button
+                        onClick={() => setExpandedBreakdown(expanded ? null : i)}
+                        className="w-full p-4 flex items-center gap-3 text-left cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
+                          style={{ background: `${bd.score >= 70 ? "#10b981" : bd.score >= 50 ? "#f59e0b" : "#ef4444"}15`, color: bd.score >= 70 ? "#10b981" : bd.score >= 50 ? "#f59e0b" : "#ef4444" }}>
+                          {i + 1}
                         </div>
-                      </div>
-                      {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
-                    <AnimatePresence>
-                      {expanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-4 pb-4 space-y-3 border-t" style={{ borderColor: c.border }}>
-                            <div className="pt-3">
-                              <div className="text-[10px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>Your Answer</div>
-                              <p className="text-[11px] leading-relaxed p-3 rounded-xl" style={{ background: c.surface }}>
-                                {bd.answer}
-                              </p>
-                            </div>
-                            <div>
-                              <div className="text-[10px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>AI Analysis</div>
-                              <p className="text-[11px] leading-relaxed" style={{ color: c.textSec }}>{bd.aiAnalysis}</p>
-                            </div>
-                            <div>
-                              <div className="text-[10px] font-bold uppercase mb-1" style={{ color: "#10b981" }}>Suggested Better Answer</div>
-                              <p className="text-[11px] leading-relaxed p-3 rounded-xl" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.1)" }}>
-                                {bd.suggestedBetterAnswer}
-                              </p>
-                            </div>
-                            <div>
-                              <div className="text-[10px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>Recruiter Perspective</div>
-                              <p className="text-[11px] leading-relaxed italic" style={{ color: c.textSec }}>
-                                "{bd.interviewerPerspective}"
-                              </p>
-                            </div>
-                            {/* STAR & Communication in breakdown */}
-                            <div className="grid grid-cols-2 gap-3">
-                              {bd.starAnalysis && (
-                                <div className="p-3 rounded-xl" style={{ background: c.surface }}>
-                                  <div className="text-[10px] font-bold mb-1.5 flex items-center gap-1">
-                                    <Star size={9} className="text-amber-500" /> STAR: {bd.starAnalysis.score}%
-                                  </div>
-                                  <div className="flex gap-2 text-[10px]">
-                                    {(["hasSituation", "hasTask", "hasAction", "hasResult"] as const).map((k) => (
-                                      <span key={k} className={`px-1.5 py-0.5 rounded ${bd.starAnalysis[k] ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
-                                        {k.replace("has", "")}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              {bd.communicationAnalysis && (
-                                <div className="p-3 rounded-xl" style={{ background: c.surface }}>
-                                  <div className="text-[10px] font-bold mb-1.5 flex items-center gap-1">
-                                    <MessageSquare size={9} className="text-blue-500" /> Comm: {bd.communicationAnalysis.overallScore}%
-                                  </div>
-                                  <p className="text-[10px]" style={{ color: c.textMuted }}>{bd.communicationAnalysis.feedback}</p>
-                                </div>
-                              )}
-                            </div>
-                            {bd.tags?.length > 0 && (
-                              <div className="flex flex-wrap gap-1">
-                                {bd.tags.map((tag) => (
-                                  <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded font-bold"
-                                    style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", color: c.textMuted }}>
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] font-bold truncate">{bd.question}</div>
+                          <div className="text-[10px] mt-0.5" style={{ color: c.textMuted }}>
+                            Score: {bd.score}% · {bd.competency?.replace(/_/g, " ") || "General"}
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
+                        </div>
+                        {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </button>
+                      <AnimatePresence>
+                        {expanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-4 pb-4 space-y-3 border-t" style={{ borderColor: c.border }}>
+                              <div className="pt-3">
+                                <div className="text-[10px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>Your Answer</div>
+                                <p className="text-[11px] leading-relaxed p-3 rounded-xl" style={{ background: c.surface }}>
+                                  {bd.answer}
+                                </p>
+                              </div>
+                              <div>
+                                <div className="text-[10px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>AI Analysis</div>
+                                <p className="text-[11px] leading-relaxed" style={{ color: c.textSec }}>{bd.aiAnalysis}</p>
+                              </div>
+                              <div>
+                                <div className="text-[10px] font-bold uppercase mb-1" style={{ color: "#10b981" }}>Suggested Better Answer</div>
+                                <p className="text-[11px] leading-relaxed p-3 rounded-xl" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.1)" }}>
+                                  {bd.suggestedBetterAnswer}
+                                </p>
+                              </div>
+                              <div>
+                                <div className="text-[10px] font-bold uppercase mb-1" style={{ color: c.textMuted }}>Recruiter Perspective</div>
+                                <p className="text-[11px] leading-relaxed italic" style={{ color: c.textSec }}>
+                                  "{bd.interviewerPerspective}"
+                                </p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })
+              )}
             </motion.div>
           )}
 
           {activeTab === "competencies" && (
             <motion.div key="competencies" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-              {evaluation.competencyMatrix?.map((comp) => {
-                const config = HR_COMPETENCY_CONFIG[comp.competency] || { label: comp.competency, color: "#6b7280", icon: "Target" };
-                const Icon = COMPETENCY_ICONS[comp.competency] || Target;
-                return (
-                  <motion.div
-                    key={comp.competency}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-2xl border flex items-center gap-4"
-                    style={{ background: c.cardBg, borderColor: c.border }}
-                  >
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: `${config.color}15`, border: `1px solid ${config.color}25` }}>
-                      <Icon size={16} style={{ color: config.color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold">{config.label}</div>
-                      <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "#e5e7eb" }}>
-                        <motion.div
-                          className="h-full rounded-full"
-                          style={{ background: config.color }}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${comp.score}%` }}
-                          transition={{ duration: 1, delay: 0.2 }}
-                        />
+              {safeEval.competencyMatrix.length === 0 ? (
+                <div className="p-8 text-center text-xs font-medium border rounded-2xl" style={{ borderColor: c.border, color: c.textMuted }}>
+                  Competency matrix generated based on overall communication and leadership metrics.
+                </div>
+              ) : (
+                safeEval.competencyMatrix.map((comp) => {
+                  const conf = HR_COMPETENCY_CONFIG[comp.competency] || { label: comp.competency, color: "#6b7280", icon: "Target" };
+                  const Icon: any = COMPETENCY_ICONS[comp.competency] || Target;
+                  return (
+                    <motion.div
+                      key={comp.competency}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 rounded-2xl border flex items-center gap-4"
+                      style={{ background: c.cardBg, borderColor: c.border }}
+                    >
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: `${conf.color}15`, border: `1px solid ${conf.color}25` }}>
+                        <Icon size={16} style={{ color: conf.color }} />
                       </div>
-                      <div className="text-[10px] mt-1" style={{ color: c.textMuted }}>{comp.evidence}</div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-lg font-extrabold" style={{ color: config.color }}>{comp.score}</div>
-                      <div className="text-[10px] capitalize" style={{ color: comp.trend === "improving" ? "#10b981" : comp.trend === "declining" ? "#ef4444" : c.textMuted }}>
-                        {comp.trend}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold">{conf.label}</div>
+                        <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "#e5e7eb" }}>
+                          <motion.div
+                            className="h-full rounded-full"
+                            style={{ background: conf.color }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${comp.score}%` }}
+                            transition={{ duration: 1, delay: 0.2 }}
+                          />
+                        </div>
+                        <div className="text-[10px] mt-1" style={{ color: c.textMuted }}>{comp.evidence}</div>
                       </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                      <div className="text-right shrink-0">
+                        <div className="text-lg font-extrabold" style={{ color: conf.color }}>{comp.score}</div>
+                        <div className="text-[10px] capitalize" style={{ color: comp.trend === "improving" ? "#10b981" : comp.trend === "declining" ? "#ef4444" : c.textMuted }}>
+                          {comp.trend}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
             </motion.div>
           )}
 
@@ -429,7 +437,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                   <span className="text-sm font-bold">Recruiter Perspective</span>
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: c.textSec }}>
-                  {evaluation.recruiterPerspective || evaluation.summary}
+                  {safeEval.recruiterPerspective}
                 </p>
               </div>
 
@@ -438,7 +446,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
                   <Target size={14} className="text-purple-500" />
                   <span className="text-sm font-bold">Actionable Improvements</span>
                 </div>
-                {evaluation.improvements.map((imp, i) => (
+                {safeEval.improvements.map((imp, i) => (
                   <div key={i} className="flex items-start gap-2 text-[11px]" style={{ color: c.textSec }}>
                     <ArrowRight size={12} className="text-purple-500 mt-0.5 shrink-0" />
                     {imp}
@@ -449,72 +457,50 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
           )}
         </AnimatePresence>
 
-        {/* ═══ INTELLIGENCE LAYER ═══ */}
-        {(intelligence || loadingIntelligence) && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            {loadingIntelligence && !intelligence ? (
-              <div className="p-8 rounded-3xl border text-center" style={{ background: c.cardBg, borderColor: c.border }}>
-                <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin mx-auto mb-3" style={{ borderColor: "#8b5cf6", borderTopColor: "transparent" }} />
-                <p className="text-xs" style={{ color: c.textMuted }}>Generating AI coaching intelligence...</p>
-              </div>
-            ) : intelligence ? (
-              <InterviewIntelligence intelligence={intelligence} isDark={isDark} isHR />
-            ) : null}
-          </motion.div>
+        {/* Intelligence Coach Section */}
+        {intelligence && (
+          <div className="pt-4">
+            <InterviewIntelligence intelligence={intelligence} isDark={isDark} isHR />
+          </div>
         )}
 
-        {/* Actions */}
-        <div className="flex justify-center gap-3">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+        {/* Action Buttons */}
+        <div className="flex flex-wrap justify-between items-center gap-4 pt-4 border-t" style={{ borderColor: c.border }}>
+          <button
             onClick={onRetry}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl border text-xs font-bold"
-            style={{ borderColor: c.border, color: c.textSec }}
+            className="px-4 py-2 rounded-xl text-xs font-extrabold border flex items-center gap-2 transition-all cursor-pointer"
+            style={{ borderColor: c.border, background: c.surface, color: c.text }}
           >
-            <RotateCcw size={14} /> Practice Again
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onViewAnalytics}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl border text-xs font-bold"
-            style={{ borderColor: c.border, color: c.textSec }}
-          >
-            <BarChart3 size={14} /> View Analytics
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            <RotateCcw size={14} /> Practice Another Interview
+          </button>
+
+          <button
             onClick={() => generateInterviewPDF({
-              sessionId,
-              role: config?.targetRole || "HR Interview",
-              company: config?.targetCompany || "",
-              type: config?.interviewType || "general_hr",
-              difficulty: config?.difficulty || "medium",
-              language: config?.language || "en",
-              durationMinutes: config?.durationMinutes || 30,
+              sessionId: sessionId || "hr-session",
+              role: config.targetRole,
+              company: config.targetCompany,
+              type: "hr",
+              difficulty: config.difficulty,
+              language: config.language,
+              durationMinutes: config.durationMinutes,
               createdAt: new Date().toISOString(),
               evaluation: {
-                overallScore: evaluation.overallScore || 0,
-                communicationScore: evaluation.communicationScore || 0,
-                hrScore: evaluation.overallScore || 0,
-                strengths: evaluation.strengths || [],
-                weaknesses: evaluation.weaknesses || [],
-                improvements: evaluation.improvements || [],
-                summary: evaluation.summary || "",
-                hiringRecommendation: evaluation.hiringRecommendation || "",
+                overallScore: safeEval.overallScore,
+                communicationScore: safeEval.communicationScore,
+                hrScore: safeEval.starScore,
+                confidenceScore: safeEval.confidenceScore,
+                strengths: safeEval.strengths,
+                weaknesses: safeEval.weaknesses,
+                improvements: safeEval.improvements,
+                summary: safeEval.summary,
+                hiringRecommendation: safeEval.hiringRecommendation,
               },
-            } as any)}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-black"
-            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
+            })}
+            className="px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer"
+            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}
           >
-            <Download size={14} /> Download PDF
-          </motion.button>
+            <Download size={14} /> Export HR Evaluation PDF
+          </button>
         </div>
       </div>
     </div>

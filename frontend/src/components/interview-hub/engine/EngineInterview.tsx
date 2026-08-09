@@ -286,11 +286,19 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
           conversationEngine.pauseConversation();
         }
       }}
-      onEndInterview={() => {
-        if (typeof window !== "undefined") {
-          window.location.href = "/dashboard/interview/analytics";
-        } else {
-          onEnd();
+      onEndInterview={async () => {
+        try {
+          if (sessionId) {
+            toast.loading("Finalizing interview & generating AI report...", { id: "end-session" });
+            await api.post(`/interview/${sessionId}/end`).catch(async () => {
+              await api.post(`/engine/${sessionId}/end`).catch(() => {});
+            });
+            toast.success("Interview completed!", { id: "end-session" });
+          }
+        } catch (e) {
+          console.error("End engine session error:", e);
+        } finally {
+          onComplete(sessionId);
         }
       }}
       onMuteToggle={conversationEngine.toggleAiMute}

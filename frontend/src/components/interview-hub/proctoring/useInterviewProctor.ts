@@ -326,7 +326,12 @@ export function useInterviewProctor({
       ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
       // Perform COCO-SSD object detection directly on video stream/canvas
-      const rawPredictions = await model.detect(videoEl || canvas);
+      let rawPredictions: any[] = [];
+      try {
+        rawPredictions = (await model.detect(videoEl || canvas)) || [];
+      } catch (detErr) {
+        console.warn("[Proctoring] Model detection frame error:", detErr);
+      }
 
       // Apply NMS + Calibrated Confidence (0.35) + Area filtering (0.005)
       const personDetections = filterPersonDetections(

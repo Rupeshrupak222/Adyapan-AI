@@ -375,11 +375,16 @@ export function useConversationEngine({
 
     recognition.onerror = (event: any) => {
       const err = event.error;
-      logInterviewError("SpeechRecognition", `Error encountered: ${err}`, event);
-      if (err === "no-speech" || err === "aborted") return;
+      if (err === "no-speech" || err === "aborted" || err === "network") {
+        logInterview("SpeechRecognition", `Transient notice: ${err}`);
+        return;
+      }
       if (err === "not-allowed") {
+        logInterviewError("SpeechRecognition", "Microphone permission denied", event);
         toast.error("Microphone permission denied.");
         setIsMicEnabled(false);
+      } else {
+        logInterview("SpeechRecognition", `Notice: ${err}`, event);
       }
     };
 
@@ -405,7 +410,7 @@ export function useConversationEngine({
               recognition.start();
             }
           } catch (e) {
-            logInterviewError("SpeechRecognition", "Auto-restart failed", e);
+            logInterview("SpeechRecognition", "Auto-restart notice", e);
           }
         }, 300);
       }
@@ -416,7 +421,7 @@ export function useConversationEngine({
       recognition.start();
     } catch (e) {
       isStartingRef.current = false;
-      logInterviewError("SpeechRecognition", "Initial recognition start failed", e);
+      logInterview("SpeechRecognition", "Initial recognition start notice", e);
     }
   }, [config.language]);
 
@@ -515,9 +520,10 @@ export function useConversationEngine({
         if (preferredVoice) utterance.voice = preferredVoice;
 
         // Safety Watchdog: max expected speech time based on word count + buffer
+        const wordCount = cleaned.split(/\s+/).filter(Boolean).length;
         const expectedDurationMs = Math.max(
-          4000,
-          Math.min(30000, cleaned.length * 95)
+          6000,
+          Math.min(90000, wordCount * 600 + 5000)
         );
 
         const onFinishedSpeech = () => {
@@ -531,18 +537,18 @@ export function useConversationEngine({
         };
 
         utterance.onerror = (e) => {
-          logInterviewError("SpeechSynthesis", "Utterance error", e);
+          logInterview("SpeechSynthesis", "Utterance ended with notice/error", e);
           onFinishedSpeech();
         };
 
         // Watchdog timeout to prevent stuck AI_SPEAKING state
         speechWatchdogRef.current = setTimeout(() => {
-          logInterviewError("SpeechSynthesis", "Watchdog triggered: utterance took too long or failed to emit end event");
+          logInterview("SpeechSynthesis", "Watchdog triggered fallback: opening mic for user turn");
           try {
             window.speechSynthesis.cancel();
           } catch {}
           onFinishedSpeech();
-        }, expectedDurationMs + 3000);
+        }, expectedDurationMs + 5000);
 
         // Chrome keep-alive pulse (pauses and resumes every 8 seconds during speech)
         speechKeepAliveRef.current = setInterval(() => {

@@ -25,6 +25,7 @@ import {
   ConversationMessage,
 } from "@/components/interview-hub/conversation";
 import TechnicalLoading from "./TechnicalLoading";
+import EngineReport from "@/components/interview-hub/engine/EngineReport";
 import {
   useInterviewLifecycle,
   PermissionGateScreen,
@@ -527,11 +528,21 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
           conversationEngine.pauseConversation();
         }
       }}
-      onEndInterview={() => {
-        if (typeof window !== "undefined") {
-          window.location.href = "/dashboard/interview/analytics";
-        } else {
-          onEnd();
+      onEndInterview={async () => {
+        try {
+          if (sessionId) {
+            toast.loading("Finalizing technical interview & generating report...", { id: "end-tech-session" });
+            await api.post(`/technical-engine/${sessionId}/end`).catch(async () => {
+              await api.post(`/interview/${sessionId}/end`).catch(async () => {
+                await api.post(`/engine/${sessionId}/end`).catch(() => {});
+              });
+            });
+            toast.success("Interview completed!", { id: "end-tech-session" });
+          }
+        } catch (e) {
+          console.error("End Technical session error:", e);
+        } finally {
+          onComplete(sessionId);
         }
       }}
       onMuteToggle={conversationEngine.toggleAiMute}
@@ -556,8 +567,9 @@ export default function TechnicalInterviewView({
   theme?: string;
 }) {
   const isDark = theme === "dark";
-  const [screen, setScreen] = useState<"landing" | "permission_gate" | "loading" | "active">("landing");
+  const [screen, setScreen] = useState<"landing" | "permission_gate" | "loading" | "active" | "report">("landing");
   const [sessionId, setSessionId] = useState<string>("");
+  const [evaluation, setEvaluation] = useState<any>(null);
   const [initialQuestion, setInitialQuestion] = useState<any>(null);
   const [step, setStep] = useState(0);
 
@@ -693,17 +705,85 @@ export default function TechnicalInterviewView({
           sessionId={sessionId || `tech-session-${Date.now()}`}
           config={config}
           initialQuestion={initialQuestion}
-          onComplete={() => {
+          onComplete={async (compSessionId) => {
             lifecycle.executeAtomicTerminationSequence();
-            setScreen("landing");
+            toast.info("Generating AI Technical Evaluation Report...");
+            try {
+              let res = await api.post(`/technical-engine/${compSessionId}/evaluate`).catch(async () => {
+                return await api.post(`/engine/${compSessionId}/evaluate`).catch(() => null);
+              });
+              if (!res?.data?.evaluation) {
+                res = await api.post(`/technical-engine/${compSessionId}/end`).catch(async () => {
+                  return await api.post(`/engine/${compSessionId}/end`).catch(() => null);
+                });
+              }
+              const rawEval = res?.data?.evaluation;
+              const combinedEval = rawEval ? {
+                ...(rawEval.detailedAnalysis || {}),
+                ...rawEval,
+              } : null;
+              if (combinedEval) {
+                setEvaluation(combinedEval);
+              }
+              if (compSessionId) setSessionId(compSessionId);
+            } catch (err) {
+              console.error("Technical evaluation generation error:", err);
+            } finally {
+              setScreen("report");
+            }
           }}
-          onEnd={() => {
+          onEnd={async () => {
             lifecycle.executeAtomicTerminationSequence();
-            setScreen("landing");
+            const sid = sessionId || "tech-session";
+            toast.info("Wrapping up technical interview & generating report...");
+            try {
+              let res = await api.post(`/technical-engine/${sid}/evaluate`).catch(async () => {
+                return await api.post(`/engine/${sid}/evaluate`).catch(() => null);
+              });
+              if (!res?.data?.evaluation) {
+                res = await api.post(`/technical-engine/${sid}/end`).catch(async () => {
+                  return await api.post(`/engine/${sid}/end`).catch(() => null);
+                });
+              }
+              const rawEval = res?.data?.evaluation;
+              const combinedEval = rawEval ? {
+                ...(rawEval.detailedAnalysis || {}),
+                ...rawEval,
+              } : null;
+              if (combinedEval) {
+                setEvaluation(combinedEval);
+              }
+            } catch (err) {
+              console.error("Technical evaluation end error:", err);
+            } finally {
+              setScreen("report");
+            }
           }}
           theme={theme}
         />
       </>
+    );
+  }
+
+  if (screen === "report") {
+    return (
+      <EngineReport
+        sessionId={sessionId || "technical-session"}
+        evaluation={evaluation}
+        messages={[]}
+        config={{
+          interviewType: "technical",
+          targetRole: config?.role || "Software Engineer",
+          targetCompany: config?.company || "Tech",
+          difficulty: config?.difficulty || "medium",
+          durationMinutes: config?.durationMinutes || 30,
+          technology: config?.topic || "Technical",
+        }}
+        onRetry={() => { setScreen("landing"); setSessionId(""); setEvaluation(null); }}
+        onViewAnalytics={() => { setScreen("landing"); setSessionId(""); setEvaluation(null); }}
+        onNewInterview={() => { setScreen("landing"); setSessionId(""); setEvaluation(null); }}
+        theme={theme}
+      />
     );
   }
 

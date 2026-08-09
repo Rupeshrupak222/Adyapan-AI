@@ -141,6 +141,9 @@ const ProductivityHubView = dynamic(() => import("@/components/productivity-hub/
 const AnalyticsHubView = dynamic(() => import("@/components/analytics-hub/AnalyticsHubView").then(m => m.AnalyticsHubView), {
   loading: () => <DashboardWidgetSkeleton title="Learning Analytics" />
 });
+const InterviewAnalyticsView = dynamic(() => import("@/components/interview-hub/InterviewAnalyticsView").then(m => m.InterviewAnalyticsView), {
+  loading: () => <DashboardWidgetSkeleton title="Interview Analytics" />
+});
 const ProgressDashboard = dynamic(() => import("@/components/progress-hub/ProgressDashboard").then(m => m.ProgressDashboard), {
   loading: () => <DashboardWidgetSkeleton title="Progress Tracking" />
 });

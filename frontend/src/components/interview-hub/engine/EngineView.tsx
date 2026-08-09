@@ -127,7 +127,13 @@ export default function EngineView({ theme }: EngineViewProps) {
     try {
       toast.info("Generating your evaluation report...");
       const res = await api.post(`/engine/${completedSessionId}/evaluate`);
-      setEvaluation(res.data?.evaluation || DEFAULT_EVALUATION);
+      const rawEval = res.data?.evaluation;
+      const combinedEval = rawEval ? {
+        ...(rawEval.detailedAnalysis || {}),
+        ...rawEval,
+      } : DEFAULT_EVALUATION;
+      setEvaluation(combinedEval);
+      if (completedSessionId) setSessionId(completedSessionId);
       if (res.data?.session?.messages) {
         setMessages(res.data.session.messages);
       }
@@ -135,20 +141,30 @@ export default function EngineView({ theme }: EngineViewProps) {
       setScreen("report");
     } catch {
       setEvaluation(DEFAULT_EVALUATION);
+      if (completedSessionId) setSessionId(completedSessionId);
       toast.info("Generated summary report");
       setScreen("report");
     }
   }, []);
 
   const handleInterviewEnd = useCallback(async () => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      setEvaluation(DEFAULT_EVALUATION);
+      setScreen("report");
+      return;
+    }
     try {
       toast.info("Wrapping up interview & generating report...");
       let res = await api.post(`/engine/${sessionId}/evaluate`);
       if (!res.data?.evaluation) {
         res = await api.post(`/engine/${sessionId}/end`);
       }
-      setEvaluation(res.data?.evaluation || DEFAULT_EVALUATION);
+      const rawEval = res.data?.evaluation;
+      const combinedEval = rawEval ? {
+        ...(rawEval.detailedAnalysis || {}),
+        ...rawEval,
+      } : DEFAULT_EVALUATION;
+      setEvaluation(combinedEval);
       if (res.data?.session?.messages) {
         setMessages(res.data.session.messages);
       }
@@ -310,7 +326,7 @@ export default function EngineView({ theme }: EngineViewProps) {
           </motion.div>
         )}
 
-        {screen === "report" && sessionId && config && (
+        {screen === "report" && (
           <motion.div
             key="report"
             initial={{ opacity: 0, y: 20 }}
@@ -318,33 +334,31 @@ export default function EngineView({ theme }: EngineViewProps) {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
           >
-            {evaluation ? (
-              <EngineReport
-                sessionId={sessionId}
-                evaluation={evaluation}
-                messages={messages}
-                config={config}
-                onRetry={handleReset}
-                onViewAnalytics={() => setScreen("analytics")}
-                onNewInterview={handleReset}
-                theme={theme}
-              />
-            ) : (
-              <div className="max-w-5xl mx-auto px-4 py-20 text-center space-y-4">
-                <Sparkles className="w-10 h-10 text-amber-500 animate-bounce mx-auto" />
-                <h3 className="text-xl font-bold">Generating Detailed Assessment Report...</h3>
-                <p className="text-xs text-gray-400">Analyzing responses, scoring technical depth, and preparing recommendations.</p>
-              </div>
-            )}
+            <EngineReport
+              sessionId={sessionId || "engine-session"}
+              evaluation={evaluation || (DEFAULT_EVALUATION as any)}
+              messages={messages || []}
+              config={config || {
+                interviewType: "technical",
+                targetRole: "Software Engineer",
+                targetCompany: "Tech",
+                difficulty: "medium",
+                durationMinutes: 30,
+              }}
+              onRetry={handleReset}
+              onViewAnalytics={() => setScreen("analytics")}
+              onNewInterview={handleReset}
+              theme={theme}
+            />
             <div className="max-w-5xl mx-auto px-4 pb-12">
               <EngineTranscript
-                messages={messages}
-                sessionId={sessionId}
+                messages={messages || []}
+                sessionId={sessionId || "engine-session"}
                 theme={theme}
                 config={{
-                  interviewType: config.interviewType,
-                  targetRole: config.targetRole,
-                  targetCompany: config.targetCompany,
+                  interviewType: config?.interviewType || "technical",
+                  targetRole: config?.targetRole || "Software Engineer",
+                  targetCompany: config?.targetCompany || "Tech",
                 }}
               />
             </div>

@@ -14,7 +14,6 @@ import {
   ConversationMessage,
 } from "@/components/interview-hub/conversation";
 import type { HRConfig, HRMessage, STARAnalysis, CommunicationAnalysis } from "./HRTypes";
-import { Star, TrendingUp } from "lucide-react";
 
 interface HRInterviewActiveProps {
   sessionId: string;
@@ -280,86 +279,6 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
     <ProctoringHUD proctorState={proctorState} isDark={theme === "dark"} />
   );
 
-  // Custom STAR methodology overlay
-  const starAnalysisOverlay = (liveSTAR || liveComm || true) && (
-    <div
-      className={`p-2.5 px-3.5 rounded-2xl border backdrop-blur-md space-y-2 w-full transition-all ${
-        theme === "dark"
-          ? "bg-slate-900/95 border-amber-500/30 text-amber-200 shadow-xl"
-          : "bg-white border-amber-300 text-amber-950 shadow-md"
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-1.5 font-bold text-xs uppercase tracking-wider text-amber-500">
-          <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-          <span>Live Behavioral Feedback (STAR)</span>
-        </div>
-        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold capitalize">
-          Competency: {currentCompetency.replace(/_/g, " ")}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-4 gap-2.5 text-center text-xs">
-        <div
-          className={`p-2 rounded-xl border font-semibold transition-all ${
-            liveSTAR?.hasSituation
-              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
-              : theme === "dark"
-              ? "bg-slate-950/70 border-slate-800 text-slate-400"
-              : "bg-slate-100 border-slate-200 text-slate-600"
-          }`}
-        >
-          <span className="font-bold block text-[9px] uppercase tracking-wider opacity-80">SITUATION</span>
-          <span className="font-bold">{liveSTAR?.hasSituation ? "✓ Present" : "Missing"}</span>
-        </div>
-        <div
-          className={`p-2 rounded-xl border font-semibold transition-all ${
-            liveSTAR?.hasTask
-              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
-              : theme === "dark"
-              ? "bg-slate-950/70 border-slate-800 text-slate-400"
-              : "bg-slate-100 border-slate-200 text-slate-600"
-          }`}
-        >
-          <span className="font-bold block text-[9px] uppercase tracking-wider opacity-80">TASK</span>
-          <span className="font-bold">{liveSTAR?.hasTask ? "✓ Present" : "Missing"}</span>
-        </div>
-        <div
-          className={`p-2 rounded-xl border font-semibold transition-all ${
-            liveSTAR?.hasAction
-              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
-              : theme === "dark"
-              ? "bg-slate-950/70 border-slate-800 text-slate-400"
-              : "bg-slate-100 border-slate-200 text-slate-600"
-          }`}
-        >
-          <span className="font-bold block text-[9px] uppercase tracking-wider opacity-80">ACTION</span>
-          <span className="font-bold">{liveSTAR?.hasAction ? "✓ Present" : "Missing"}</span>
-        </div>
-        <div
-          className={`p-2 rounded-xl border font-semibold transition-all ${
-            liveSTAR?.hasResult
-              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
-              : theme === "dark"
-              ? "bg-slate-950/70 border-slate-800 text-slate-400"
-              : "bg-slate-100 border-slate-200 text-slate-600"
-          }`}
-        >
-          <span className="font-bold block text-[9px] uppercase tracking-wider opacity-80">RESULT</span>
-          <span className="font-bold">{liveSTAR?.hasResult ? "✓ Present" : "Missing"}</span>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-500/20 font-semibold">
-        <div className="flex items-center space-x-1 text-cyan-400">
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span>Clarity: {liveComm?.clarity || 86}%</span>
-        </div>
-        <span className="text-slate-400 font-medium">Confidence: {liveComm?.confidence || 88}%</span>
-      </div>
-    </div>
-  );
-
   return (
     <InterviewRoomUI
       state={conversationEngine.state}
@@ -381,7 +300,7 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
       elapsedSeconds={elapsedSeconds}
       candidateVideoElement={candidateVideoNode}
       proctoringHUD={proctoringHUDNode}
-      customOverlayContent={starAnalysisOverlay}
+      customOverlayContent={undefined}
       onPauseToggle={() => {
         if (conversationEngine.isPaused) {
           conversationEngine.resumeConversation();
@@ -389,11 +308,19 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
           conversationEngine.pauseConversation();
         }
       }}
-      onEndInterview={() => {
-        if (typeof window !== "undefined") {
-          window.location.href = "/dashboard/interview/analytics";
-        } else {
-          onEnd();
+      onEndInterview={async () => {
+        try {
+          if (sessionId) {
+            toast.loading("Finalizing HR interview & generating AI report...", { id: "end-hr-session" });
+            await api.post(`/interview/${sessionId}/end`).catch(async () => {
+              await api.post(`/interview/hr/${sessionId}/end`).catch(() => {});
+            });
+            toast.success("Interview completed!", { id: "end-hr-session" });
+          }
+        } catch (e) {
+          console.error("End HR session error:", e);
+        } finally {
+          onComplete(sessionId);
         }
       }}
       onMuteToggle={conversationEngine.toggleAiMute}

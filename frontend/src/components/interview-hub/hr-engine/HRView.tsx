@@ -125,11 +125,18 @@ export default function HRView({ theme }: HRViewProps) {
     try {
       toast.info("Generating your HR evaluation...");
       const res = await api.post(`/interview/hr/${completedSessionId}/evaluate`);
-      setEvaluation(res.data?.evaluation || DEFAULT_HR_EVALUATION);
+      const rawEval = res.data?.evaluation;
+      const combinedEval = rawEval ? {
+        ...(rawEval.detailedAnalysis || {}),
+        ...rawEval,
+      } : DEFAULT_HR_EVALUATION;
+      setEvaluation(combinedEval);
+      if (completedSessionId) setSessionId(completedSessionId);
       setScreen("report");
       toast.success("Evaluation complete!");
     } catch {
       setEvaluation(DEFAULT_HR_EVALUATION);
+      if (completedSessionId) setSessionId(completedSessionId);
       setScreen("report");
     }
   }, []);
@@ -138,7 +145,12 @@ export default function HRView({ theme }: HRViewProps) {
     if (!sessionId) return;
     try {
       const res = await api.post(`/interview/hr/${sessionId}/end`);
-      setEvaluation(res.data?.evaluation || DEFAULT_HR_EVALUATION);
+      const rawEval = res.data?.evaluation;
+      const combinedEval = rawEval ? {
+        ...(rawEval.detailedAnalysis || {}),
+        ...rawEval,
+      } : DEFAULT_HR_EVALUATION;
+      setEvaluation(combinedEval);
       setScreen("report");
     } catch {
       setEvaluation(DEFAULT_HR_EVALUATION);
@@ -255,9 +267,17 @@ export default function HRView({ theme }: HRViewProps) {
             <HRInterviewActive sessionId={sessionId || `hr-session-${Date.now()}`} config={config} initialMessages={messages} onComplete={handleInterviewComplete} onEnd={handleInterviewEnd} theme={theme} />
           </motion.div>
         )}
-        {screen === "report" && sessionId && evaluation && config && (
+        {screen === "report" && (
           <motion.div key="report" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
-            <HRReport sessionId={sessionId} evaluation={evaluation} messages={messages} config={config} onRetry={handleReset} onViewAnalytics={() => setScreen("analytics")} theme={theme} />
+            <HRReport
+              sessionId={sessionId || "hr-session"}
+              evaluation={evaluation || (DEFAULT_HR_EVALUATION as any)}
+              messages={messages || []}
+              config={config || { interviewType: "hr", targetRole: "Software Engineer", targetCompany: "Tech", difficulty: "medium", durationMinutes: 15, language: "english" }}
+              onRetry={handleReset}
+              onViewAnalytics={() => setScreen("analytics")}
+              theme={theme}
+            />
           </motion.div>
         )}
         {screen === "analytics" && (

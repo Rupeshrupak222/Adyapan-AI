@@ -252,7 +252,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
           </div>
         </div>
 
-        {/* Bottom Full-Width Section (LIVE BEHAVIORAL FEEDBACK STAR / Code Workspace) */}
+        {/* Bottom Full-Width Section (Custom Workspace / Overlay) */}
         {customOverlayContent && (
           <div className="shrink-0 w-full overflow-hidden">{customOverlayContent}</div>
         )}
