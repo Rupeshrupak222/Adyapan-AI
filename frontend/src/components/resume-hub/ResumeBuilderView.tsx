@@ -243,7 +243,7 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
   const removeSkill = (s: string) => setSkills(skills.filter((x) => x !== s));
   const canContinue = (screenNum: number) => { if (screenNum === 1) return setup.company && setup.profession && setup.careerLevel; if (screenNum === 2) return personalInfo.fullName && personalInfo.email; return true; };
 
-  const inputSx: React.CSSProperties = { width: "100%", background: c.inputBg, border: `1px solid ${c.border}`, borderRadius: 10, padding: "0.6rem 0.85rem", fontSize: "0.82rem", color: c.text, outline: "none", boxSizing: "border-box" as const, transition: "border-color 0.15s, box-shadow 0.15s" };
+  const inputSx: React.CSSProperties = { width: "100%", backgroundColor: c.inputBg, border: `1px solid ${c.border}`, borderRadius: 10, padding: "0.6rem 0.85rem", fontSize: "0.82rem", color: c.text, outline: "none", boxSizing: "border-box" as const, transition: "border-color 0.15s, box-shadow 0.15s" };
 
 
 

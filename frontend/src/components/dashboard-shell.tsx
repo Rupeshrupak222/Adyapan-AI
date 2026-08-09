@@ -131,7 +131,6 @@ export const sidebarItems: SidebarItem[] = [
       { label: "Upload Resume", href: "/dashboard/user?view=resume-upload" },
       { label: "Resume Builder", href: "/dashboard/user?view=resume-hub" },
       { label: "ATS Score Checker", href: "/dashboard/user?view=ats-checker" },
-      { label: "Resume Improvements", href: "/dashboard/user?view=resume-improvements" },
       { label: "Cover Letter Generator", href: "/dashboard/user?view=cover-letter" },
       { label: "LinkedIn Optimizer", href: "/dashboard/user?view=linkedin-optimizer" },
       { label: "Career Roadmap", href: "/dashboard/career?tab=roadmap" },
@@ -335,7 +334,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                         else if (sub.label === "Resume Builder") onViewTool("resume-hub");
                         else if (sub.label === "Upload Resume") onViewTool("resume-upload");
                         else if (sub.label === "ATS Score Checker") onViewTool("ats-checker");
-                        else if (sub.label === "Resume Improvements") onViewTool("resume-improvements");
                         else if (sub.label === "Cover Letter Generator") onViewTool("cover-letter");
                         else if (sub.label === "LinkedIn Optimizer") onViewTool("linkedin-optimizer");
                         else if (sub.label === "Career Roadmap") onViewTool("career-roadmap");

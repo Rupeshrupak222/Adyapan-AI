@@ -340,7 +340,7 @@ export function AssignmentGeneratorView() {
   const [result, setResult] = useState<AssignmentContent | null>(null);
   const [topic, setTopic] = useState("Quantum Computing & Cryptography");
   const [level, setLevel] = useState("Undergraduate");
-  const [wordCount, setWordCount] = useState("4500 words (15-20 pages)");
+  const [wordCount, setWordCount] = useState("");
   const [progress, setProgress] = useState(0);
   const [statusMsg, setStatusMsg] = useState("");
   const [activeSection, setActiveSection] = useState("");
@@ -721,14 +721,14 @@ export function AssignmentGeneratorView() {
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Target Length / Pages</label>
-                        <select value={wordCount} onChange={e => setWordCount(e.target.value)}
-                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>500 words (1-2 pages)</option>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>1500 words (5-6 pages)</option>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>3000 words (10-12 pages)</option>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>4500 words (15-20 pages)</option>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>5500 words (18-22 pages)</option>
-                        </select>
+                        <input
+                          type="text"
+                          value={wordCount}
+                          onChange={e => setWordCount(e.target.value)}
+                          placeholder="e.g. 1500 words or 5-6 pages"
+                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none"
+                          style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}
+                        />
                       </div>
                     </div>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}

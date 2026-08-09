@@ -26,7 +26,6 @@ const AI_ROUTE_PATTERNS: RegExp[] = [
   /^\/technical-engine(\/|$)/,
   /^\/engine(\/|$)/,
   /^\/avatar(\/|$)/,
-  /^\/resume-improvements(\/|$)/,
   /^\/career(\/|$)/,
   /^\/placement(\/|$)/,
   /^\/productivity(\/|$)/,

@@ -519,7 +519,6 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
               c={c}
               onBack={() => setScreen("dashboard")}
               onCheckATS={() => { sessionStorage.setItem("pendingResumeUploadId", selectedResume.id); setView("ats-checker"); }}
-              onImproveResume={() => { sessionStorage.setItem("pendingResumeUploadId", selectedResume.id); setView("resume-improvements"); }}
               onCoverLetter={() => setView("cover-letter")}
               onLinkedIn={() => setView("linkedin-optimizer")}
               showToast={showToast}
@@ -584,13 +583,12 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
 
 // ─── Profile Sub-Component ────────────────────────────────────────────────────
 
-function ProfileScreen({ resume, profile, c, onBack, onCheckATS, onImproveResume, onCoverLetter, onLinkedIn, showToast }: {
+function ProfileScreen({ resume, profile, c, onBack, onCheckATS, onCoverLetter, onLinkedIn, showToast }: {
   resume: UploadedResume;
   profile: CandidateProfile;
   c: ReturnType<typeof mkColors>;
   onBack: () => void;
   onCheckATS: () => void;
-  onImproveResume: () => void;
   onCoverLetter: () => void;
   onLinkedIn: () => void;
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -623,11 +621,6 @@ function ProfileScreen({ resume, profile, c, onBack, onCheckATS, onImproveResume
             className="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1"
             style={{ border: `1px solid ${c.amberBorder}`, background: c.amberBg, color: col }}>
             <Target size={13} /> ATS Score
-          </motion.button>
-          <motion.button whileHover={buttonHover.whileHover} whileTap={buttonHover.whileTap} onClick={onImproveResume}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1"
-            style={{ border: `1px solid ${c.purpleBorder}`, background: c.purpleBg, color: c.purple }}>
-            <Sparkles size={13} /> Improve
           </motion.button>
         </div>
       </div>
@@ -924,10 +917,9 @@ function ProfileScreen({ resume, profile, c, onBack, onCheckATS, onImproveResume
               <h4 className="text-xs font-bold mb-3 flex items-center gap-1.5" style={{ color: c.text }}>
                 <Zap size={13} style={{ color: col }} /> Quick Actions
               </h4>
-              <div className="ru-actions-grid grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="ru-actions-grid grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {[
                   { label: "Check ATS Score", icon: <Target size={18} />, color: col, bg: c.amberBg, border: c.amberBorder, onClick: onCheckATS },
-                  { label: "Improve Resume", icon: <Sparkles size={18} />, color: c.purple, bg: c.purpleBg, border: c.purpleBorder, onClick: onImproveResume },
                   { label: "Cover Letter", icon: <FileText size={18} />, color: c.cyan, bg: c.cyanBg, border: c.cyanBorder, onClick: onCoverLetter },
                   { label: "LinkedIn Optimize", icon: <Globe size={18} />, color: c.green, bg: c.greenBg, border: c.greenBorder, onClick: onLinkedIn },
                 ].map((action) => (

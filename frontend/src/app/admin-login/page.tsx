@@ -155,7 +155,7 @@ export default function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@adyapan.com"
+                placeholder="Email"
                 style={inpStyle}
                 onFocus={(e) => (e.currentTarget.style.borderColor = "#f59e0b")}
                 onBlur={(e) => (e.currentTarget.style.borderColor = inputBdr)}

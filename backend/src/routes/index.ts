@@ -37,7 +37,6 @@ import { resumeUploadRouter } from "./resume-upload.routes";
 import { jobRouter } from "./job.routes";
 import { jobListingRouter } from "./job-listing.routes";
 import { communityRouter } from "./community.routes";
-import { resumeImprovementRouter } from "./resume-improvement.routes";
 import { careerRouter } from "./career.routes";
 import { configRouter } from "./config.routes";
 import { searchRouter } from "./search.routes";
@@ -119,9 +118,6 @@ apiRouter.use("/discovery", jobDiscoveryRouter);
 
 // Community Routes
 apiRouter.use("/community", communityRouter);
-
-// Resume Improvement Engine Routes
-apiRouter.use("/resume-improvements", resumeImprovementRouter);
 
 // Career Navigation Engine Routes
 apiRouter.use("/career", careerRouter);

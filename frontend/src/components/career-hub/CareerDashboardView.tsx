@@ -788,10 +788,6 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
                 <span className="text-sm font-bold" style={{ color: C.text }}>{data.learningSummary.flashcardsCreated}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs" style={{ color: C.textMuted }}>Presentations</span>
-                <span className="text-sm font-bold" style={{ color: C.text }}>{data.learningSummary.presentationsCreated}</span>
-              </div>
-              <div className="flex justify-between items-center">
                 <span className="text-xs" style={{ color: C.textMuted }}>Mind Maps</span>
                 <span className="text-sm font-bold" style={{ color: C.text }}>{data.learningSummary.mindMapsCreated}</span>
               </div>

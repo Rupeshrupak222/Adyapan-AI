@@ -833,7 +833,7 @@ export function AtsCheckerView({ setView }: Props) {
                   className="relative"
                   style={{ zIndex: 30 }}
                 >
-                  <Card className="p-5 relative" style={{
+                  <Card className="p-3 relative" style={{
                     background: c.d
                       ? "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)"
                       : "rgba(255,255,255,0.85)",
@@ -841,7 +841,7 @@ export function AtsCheckerView({ setView }: Props) {
                       ? "0 4px 24px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)"
                       : "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)",
                   }}>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center gap-1.5" style={{ color: c.tx2 }}>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5" style={{ color: c.tx2 }}>
                       <Target size={11} style={{ color: c.am }} /> Target Job Role
                     </label>
                     <CustomRoleDropdown value={role} onChange={setRole} theme={theme} />
@@ -856,14 +856,14 @@ export function AtsCheckerView({ setView }: Props) {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.6, duration: 0.4 }}
                     >
-                      <Card className="p-5" style={{
+                      <Card className="p-3" style={{
                         background: c.d
                           ? "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)"
                           : "rgba(255,255,255,0.85)",
                         backdropFilter: "blur(12px)",
                         WebkitBackdropFilter: "blur(12px)",
                       }}>
-                        <h3 className="text-sm font-bold mb-3 flex items-center gap-2"><FileText size={15} style={{ color: c.am }} /> Choose Resume</h3>
+                        <h3 className="text-xs font-bold mb-2 flex items-center gap-2"><FileText size={13} style={{ color: c.am }} /> Choose Resume</h3>
                         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                           {resumes.map((r, i) => (
                             <motion.button key={r.id}
@@ -903,17 +903,17 @@ export function AtsCheckerView({ setView }: Props) {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.6, duration: 0.4 }}
                   >
-                    <Card className="p-5" style={{
+                    <Card className="p-2" style={{
                       background: c.d
                         ? "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)"
                         : "rgba(255,255,255,0.85)",
                       backdropFilter: "blur(12px)",
                       WebkitBackdropFilter: "blur(12px)",
                     }}>
-                      <h3 className="text-sm font-bold mb-3 flex items-center gap-2"><Upload size={15} style={{ color: c.am }} /> Upload Resume</h3>
+                      <h3 className="text-xs font-bold mb-1.5 flex items-center gap-2"><Upload size={13} style={{ color: c.am }} /> Upload Resume</h3>
                       <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)} onDrop={handleDrop}
                         onClick={() => fileRef.current?.click()}
-                        className="border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all relative overflow-hidden"
+                        className="border-2 border-dashed rounded-xl p-3 text-center cursor-pointer transition-all relative overflow-hidden"
                         style={{ borderColor: drag ? c.am : c.bd, background: drag ? "rgba(245,158,11,0.04)" : c.sf }}>
                         {/* Decorative corner glow on hover */}
                         <motion.div
@@ -938,15 +938,15 @@ export function AtsCheckerView({ setView }: Props) {
                               style={{ background: c.rdBg, color: c.rd, border: `1px solid ${c.rd}30` }}><X size={11} /> Remove</button>
                           </motion.div>
                         ) : (
-                          <div className="space-y-3 relative z-10">
+                          <div className="space-y-1.5 relative z-10">
                             <motion.div
-                              animate={{ y: [0, -6, 0] }}
+                              animate={{ y: [0, -4, 0] }}
                               transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                             >
-                              <Upload size={36} className="mx-auto" style={{ color: drag ? c.am : c.txM }} />
+                              <Upload size={22} className="mx-auto" style={{ color: drag ? c.am : c.txM }} />
                             </motion.div>
-                            <p className="text-sm font-bold" style={{ color: drag ? c.am : c.tx }}>Drag & drop your resume</p>
-                            <p className="text-[10px]" style={{ color: c.txM }}>PDF, DOCX up to 5MB</p>
+                            <p className="text-xs font-bold" style={{ color: drag ? c.am : c.tx }}>Drag & drop your resume</p>
+                            <p className="text-[9px]" style={{ color: c.txM }}>PDF, DOCX up to 5MB</p>
                           </div>
                         )}
                       </div>
@@ -993,9 +993,9 @@ export function AtsCheckerView({ setView }: Props) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.9, duration: 0.4 }}
                 >
-                  <motion.button whileHover={file || selId ? { scale: 1.02, boxShadow: "0 8px 32px rgba(245,158,11,0.3)" } : {}} whileTap={btnT} disabled={!file && !selId}
+                  <motion.button whileHover={file || selId ? { scale: 1.02, boxShadow: "0 6px 20px rgba(245,158,11,0.3)" } : {}} whileTap={btnT} disabled={!file && !selId}
                     onClick={() => setScreen("jd")}
-                    className="w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all"
+                    className="w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all"
                     style={{
                       background: (!file && !selId) ? c.sf : "linear-gradient(135deg,#f59e0b,#d97706)",
                       color: (!file && !selId) ? c.txM : "#000",
@@ -1003,7 +1003,7 @@ export function AtsCheckerView({ setView }: Props) {
                       opacity: (!file && !selId) ? 0.5 : 1,
                       boxShadow: (!file && !selId) ? "none" : "0 4px 16px rgba(245,158,11,0.25)",
                     }}>
-                    <Zap size={15} /> Continue to Analysis <ChevronRight size={16} />
+                    <Zap size={14} /> Continue to Analysis <ChevronRight size={14} />
                   </motion.button>
                 </motion.div>
               </div>

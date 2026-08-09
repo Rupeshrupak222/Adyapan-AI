@@ -65,9 +65,6 @@ const LinkedInView = dynamic(() => import("@/components/resume-hub/LinkedInView"
 const ResumeUploadView = dynamic(() => import("@/components/resume-hub/ResumeUploadView").then(m => m.ResumeUploadView), {
   loading: () => <DashboardWidgetSkeleton title="Resume Upload" />
 });
-const ResumeImprovementsView = dynamic(() => import("@/components/resume-hub/ResumeImprovementsView").then(m => m.ResumeImprovementsView), {
-  loading: () => <DashboardWidgetSkeleton title="Resume Improvements" />
-});
 const CareerNavigationEngine = dynamic(() => import("@/components/resume-hub/CareerNavigationEngine").then(m => m.CareerNavigationEngine), {
   loading: () => <DashboardWidgetSkeleton title="Career Navigation" />
 });
@@ -146,6 +143,9 @@ const AnalyticsHubView = dynamic(() => import("@/components/analytics-hub/Analyt
 });
 const ProgressDashboard = dynamic(() => import("@/components/progress-hub/ProgressDashboard").then(m => m.ProgressDashboard), {
   loading: () => <DashboardWidgetSkeleton title="Progress Tracking" />
+});
+const CommunityComingSoonView = dynamic(() => import("@/components/account-hub/CommunityComingSoonView").then(m => m.CommunityComingSoonView), {
+  loading: () => <DashboardWidgetSkeleton title="Community Hub" />
 });
 const CommunityProfileView = dynamic(() => import("@/components/account-hub/CommunityProfileView").then(m => m.CommunityProfileView), {
   loading: () => <DashboardWidgetSkeleton title="Community Profile" />
@@ -1391,37 +1391,8 @@ function UserDashboardContent() {
             <HubErrorBoundary><ProfileView /></HubErrorBoundary>
           ) : activeView === "career-dashboard" ? (
             <HubErrorBoundary><CareerDashboardView setView={navigateTo} /></HubErrorBoundary>
-          ) : activeView === "community-profile" && communityProfileUserId ? (
-            <HubErrorBoundary>
-              <CommunityProfileView
-                userId={communityProfileUserId}
-                onViewUser={(id) => setCommunityProfileUserId(id)}
-                onBack={() => setCommunityProfileUserId(null)}
-              />
-            </HubErrorBoundary>
-          ) : activeView === "community-profile" ? (
-            <HubErrorBoundary>
-              <CommunityProfileView onViewUser={(id) => setCommunityProfileUserId(id)} />
-            </HubErrorBoundary>
-          ) : activeView === "community-browse" && communityProfileUserId ? (
-            <HubErrorBoundary>
-              <CommunityProfileView
-                userId={communityProfileUserId}
-                onViewUser={(id) => setCommunityProfileUserId(id)}
-                onBack={() => setCommunityProfileUserId(null)}
-              />
-            </HubErrorBoundary>
-          ) : activeView === "community-browse" ? (
-            <HubErrorBoundary>
-              <CommunityProfilesView
-                onViewProfile={(userId) => setCommunityProfileUserId(userId)}
-                onMessage={(userId) => { setOpenChatWith(userId); navigateTo("community-messages"); }}
-              />
-            </HubErrorBoundary>
-          ) : activeView === "community-messages" ? (
-            <HubErrorBoundary><CommunityMessagesView openChatWith={openChatWith} /></HubErrorBoundary>
-          ) : activeView === "community-blog" ? (
-            <HubErrorBoundary><BlogView /></HubErrorBoundary>
+          ) : activeView.startsWith("community") ? (
+            <HubErrorBoundary><CommunityComingSoonView /></HubErrorBoundary>
           ) : activeView === "settings" ? (
             <HubErrorBoundary><ManageAccountView /></HubErrorBoundary>
           ) : activeView === "billing" ? (
@@ -1432,8 +1403,6 @@ function UserDashboardContent() {
             <HubErrorBoundary><ResumeUploadView setView={navigateTo} /></HubErrorBoundary>
           ) : activeView === "ats-checker" ? (
             <HubErrorBoundary><AtsCheckerView setView={navigateTo} /></HubErrorBoundary>
-          ) : activeView === "resume-improvements" ? (
-            <HubErrorBoundary><ResumeImprovementsView setView={navigateTo} /></HubErrorBoundary>
           ) : activeView === "cover-letter" ? (
             <HubErrorBoundary><CoverLetterView setView={navigateTo} /></HubErrorBoundary>
           ) : activeView === "linkedin-optimizer" ? (

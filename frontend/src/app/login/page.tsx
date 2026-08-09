@@ -7,7 +7,6 @@ import { api } from "@/services/api";
 import { toast } from "sonner";
 import { saveAuthSession } from "@/hooks/useAuth";
 import { Navbar } from "@/components/layout/Navbar";
-import ParticleBackground from "@/components/ui/ParticleBackground";
 import { AnimatedCheckCircle } from "@/components/ui/AnimatedIcons";
 import type { PlatformUser } from "@/types/user";
 
@@ -261,7 +260,6 @@ function LoginPageContent() {
 
   return (
     <div className="min-h-screen transition-colors relative" style={{ background: "var(--bg-dark)" }}>
-      <ParticleBackground />
       <Navbar />
 
       <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-6 relative z-10">
@@ -295,7 +293,7 @@ function LoginPageContent() {
                   </div>
                   <form onSubmit={handleLogin} className="flex flex-col gap-3">
                     {[
-                      { label: "Email Address", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, ph: "you@university.edu", val: loginEmail, set: (v: string) => setLoginEmail(v), type: "email" },
+                      { label: "Email Address", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, ph: "Email", val: loginEmail, set: (v: string) => setLoginEmail(v), type: "email" },
                       { label: "Password", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, ph: "••••••••", val: loginPassword, set: (v: string) => setLoginPassword(v), type: "password" },
                     ].map((f, i) => (
                       <motion.div key={f.label} custom={i} variants={staggerItem} initial="hidden" animate="visible">
@@ -340,7 +338,7 @@ function LoginPageContent() {
                   <form onSubmit={handleRegister} className="grid grid-cols-2 gap-2">
                     {[
                       { label: "Full Name",     key: "name",    type: "text",  ph: "John Doe",         icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, full: false },
-                      { label: "Email Address", key: "email",   type: "email", ph: "john.doe@college.edu", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, full: false },
+                      { label: "Email Address", key: "email",   type: "email", ph: "Email", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, full: false },
                       { label: "Phone Number",  key: "phone",   type: "tel",   ph: "9876543210",        icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.6 4.4 2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.11 6.11l.91-.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>, full: false },
                       { label: "College/University", key: "college", type: "text", ph: "State University", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>, full: false },
                       { label: "Branch/Specialization", key: "branch", type: "text", ph: "Computer Science", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, full: false },
@@ -445,7 +443,7 @@ function LoginPageContent() {
                   ) : (
                     <form onSubmit={handleForgot} className="flex flex-col gap-3">
                       {[
-                        { label: "Email Address", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, ph: "you@university.edu", type: "email", val: forgotEmail, set: (v: string) => setForgotEmail(v) },
+                        { label: "Email Address", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, ph: "Email", type: "email", val: forgotEmail, set: (v: string) => setForgotEmail(v) },
                         ...(forgotStep === "otp" ? [
                           { label: "Email OTP", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, ph: "6-digit OTP", type: "text", val: forgotOtp, set: (v: string) => setForgotOtp(v) },
                           { label: "New Password", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, ph: "New password", type: "password", val: forgotNew, set: (v: string) => setForgotNew(v) },

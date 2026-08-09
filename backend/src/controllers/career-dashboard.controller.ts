@@ -64,7 +64,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     q(() => userPrisma.coverLetter.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }), []),
     q(() => userPrisma.submission.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }), []),
     q(() => userPrisma.resumeAnalysis.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }), []),
-    q(() => userPrisma.resumeImprovement.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }), []),
+    [],
     q(() => userPrisma.careerRoadmap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 3, include: { tasks: true } }), []),
     q(() => userPrisma.learningStreak.findFirst({ where: { userId } }), null),
     q(() => userPrisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10, include: { evaluations: true } }), []),

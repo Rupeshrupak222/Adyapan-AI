@@ -56,7 +56,6 @@ export async function generateRoadmap(req: Request, res: Response, next: NextFun
     try { resumeAnalyses = await userPrisma.resumeAnalysis.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 3 }); } catch (e) { console.warn("[Career] resumeAnalyses query failed:", (e as Error)?.message); }
 
     let resumeImprovements: any[] = [];
-    try { resumeImprovements = await userPrisma.resumeImprovement.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }); } catch (e) { console.warn("[Career] resumeImprovements query failed:", (e as Error)?.message); }
 
     const avgAtsScore = atsReports.length
       ? Math.round(atsReports.reduce((s: number, r: any) => s + (r.score || 0), 0) / atsReports.length)

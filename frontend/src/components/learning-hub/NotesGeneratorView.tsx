@@ -48,7 +48,7 @@ export function NotesGeneratorView() {
   const [progress, setProgress] = useState(0);
   const [statusMsg, setStatusMsg] = useState("");
   const [notesData, setNotesData] = useState<{ topic: string; sections: NoteSection[]; wordCount: number; studyTime: string; difficulty: string; rawContent?: string; formattedHtml?: string; } | null>(null);
-  const [topic, setTopic] = useState("Database Management Systems");
+  const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("Intermediate");
   const [noteType, setNoteType] = useState("Detailed Notes");
   const [activeSection, setActiveSection] = useState("");
@@ -429,22 +429,32 @@ export function NotesGeneratorView() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Difficulty</label>
-                        <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
-                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Beginner</option>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Intermediate</option>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Advanced</option>
-                        </select>
+                        <div className="relative">
+                          <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
+                            className="w-full rounded-xl px-4 py-2.5 pr-10 text-sm transition-all focus:outline-none appearance-none cursor-pointer" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Beginner</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Intermediate</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Advanced</option>
+                          </select>
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" style={{ color: c.textSec }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                          </span>
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Note Type</label>
-                        <select value={noteType} onChange={e => setNoteType(e.target.value)}
-                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none appearance-none" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Detailed Notes</option>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Short Revision</option>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Formulas Only</option>
-                          <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Exam Cheat Sheet</option>
-                        </select>
+                        <div className="relative">
+                          <select value={noteType} onChange={e => setNoteType(e.target.value)}
+                            className="w-full rounded-xl px-4 py-2.5 pr-10 text-sm transition-all focus:outline-none appearance-none cursor-pointer" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Detailed Notes</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Short Revision</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Formulas Only</option>
+                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Exam Cheat Sheet</option>
+                          </select>
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" style={{ color: c.textSec }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
