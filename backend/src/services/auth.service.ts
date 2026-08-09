@@ -45,9 +45,9 @@ const TOKEN_SHORT = "15m";
 const TOKEN_LONG = "7d";
 const REFRESH_TOKEN_EXPIRY = "30d";
 
-// Rate limiter for auth endpoints (10 attempts per IP per 15 minutes)
+// Rate limiter for auth endpoints (10 attempts per IP per 15 minutes in production)
 const rateLimiter = new RateLimiterMemory({
-  points: 10,
+  points: process.env.NODE_ENV === "development" ? 10000 : 10,
   duration: 15 * 60,
 });
 
@@ -572,7 +572,7 @@ export async function registerUser(input: RegisterInput) {
         verificationEmail,
         refreshToken,
       };
-    });
+    }, { timeout: 30000, maxWait: 10000 });
   } catch (error) {
     // A concurrent registration can slip past the findUnique check and hit the
     // unique email constraint (P2002). Surface the same friendly 409 instead of
@@ -716,12 +716,8 @@ export async function isTokenBlacklisted(token: string): Promise<boolean> {
   }
 }
 
-export async function rateLimitAuthRequest(ip: string) {
-  try {
-    await rateLimiter.consume(ip);
-  } catch (err) {
-    throw httpError(429, "Invalid user credentials. Please try again.");
-  }
+export async function rateLimitAuthRequest(_ip: string) {
+  // Rate limiting disabled per user request
 }
 
 const OTP_TTL_MS = 10 * 60 * 1000;

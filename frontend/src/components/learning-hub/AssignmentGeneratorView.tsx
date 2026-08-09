@@ -374,9 +374,14 @@ export function AssignmentGeneratorView() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success("Assignment PDF downloaded successfully!");
-    } catch (err) {
-      console.error("PDF export error:", err);
-      toast.error("PDF export failed. Downloading Markdown fallback.");
+    } catch (err: any) {
+      const isNetwork = !err?.response;
+      if (isNetwork) {
+        console.warn("PDF export failed: backend unavailable or request aborted. Downloading Markdown fallback.");
+      } else {
+        console.warn("PDF export failed:", err?.response?.data?.message || err?.message || "Unknown error");
+      }
+      toast.error(isNetwork ? "Could not reach the server to generate the PDF. Downloading Markdown fallback." : "PDF export failed. Downloading Markdown fallback.");
       const txt = `# ${result.title || topic}\n\n` + sections.map(s => `## ${s.title}\n\n${s.content}`).join("\n\n");
       const blob = new Blob([txt], { type: "text/markdown" });
       const url = URL.createObjectURL(blob);
@@ -411,9 +416,14 @@ export function AssignmentGeneratorView() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success("Assignment DOCX downloaded successfully!");
-    } catch (err) {
-      console.error("DOCX export error:", err);
-      toast.error("Failed to generate DOCX. Try downloading PDF or copying content.");
+    } catch (err: any) {
+      const isNetwork = !err?.response;
+      if (isNetwork) {
+        console.warn("DOCX export failed: backend unavailable or request aborted. Please try again.");
+      } else {
+        console.warn("DOCX export failed:", err?.response?.data?.message || err?.message || "Unknown error");
+      }
+      toast.error(isNetwork ? "Could not reach the server to generate the DOCX. Please try again." : "Failed to generate DOCX. Try downloading PDF or copying content.");
     } finally {
       setExportingDocx(false);
     }

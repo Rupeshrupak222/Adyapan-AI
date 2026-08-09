@@ -327,11 +327,13 @@ function ScoreRing({ score, mode, size }: { score: number; mode: QuizMode; size:
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (score / 100) * circumference;
   const accent = getModeAccent(mode);
+  const theme = useTheme();
+  const c = mkColors(theme);
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="rotate-[-90deg]">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={6} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={c.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)"} strokeWidth={6} />
         <motion.circle cx={size / 2} cy={size / 2} r={radius} fill="none"
           stroke={accent.text} strokeWidth={6} strokeLinecap="round"
           strokeDasharray={circumference}
@@ -344,8 +346,8 @@ function ScoreRing({ score, mode, size }: { score: number; mode: QuizMode; size:
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5, type: "spring", stiffness: 260, damping: 20 }}
-          className="text-xl sm:text-2xl font-black text-white leading-none">{score}%</motion.span>
-        <span className="text-[9px] text-zinc-500 font-mono mt-0.5">SCORE</span>
+          className="text-xl sm:text-2xl font-black leading-none" style={{ color: c.text }}>{score}%</motion.span>
+        <span className="text-[9px] font-mono mt-0.5" style={{ color: c.textMuted }}>SCORE</span>
       </div>
     </div>
   );
@@ -368,25 +370,31 @@ function AnswerRow({ index, question, selected, correct, isCorrect, explanation 
   index: number; question: string; selected: string; correct: string; isCorrect: boolean; explanation: string;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const theme = useTheme();
+  const c = mkColors(theme);
+
   return (
     <motion.div initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }}
-      style={{ border: `1px solid ${isCorrect ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)"}`, background: isCorrect ? "rgba(16,185,129,0.04)" : "rgba(239,68,68,0.03)" }}
+      style={{
+        border: `1px solid ${isCorrect ? (c.isDark ? "rgba(16,185,129,0.15)" : "rgba(16,185,129,0.3)") : (c.isDark ? "rgba(239,68,68,0.15)" : "rgba(239,68,68,0.3)")}`,
+        background: isCorrect ? (c.isDark ? "rgba(16,185,129,0.04)" : "rgba(16,185,129,0.08)") : (c.isDark ? "rgba(239,68,68,0.03)" : "rgba(239,68,68,0.06)")
+      }}
       className="rounded-xl border overflow-hidden transition-colors duration-200">
       <button onClick={() => setExpanded(v => !v)} className="w-full flex items-start gap-3 p-4 text-left cursor-pointer group">
         <span className="shrink-0 mt-0.5">
-          {isCorrect ? <CheckCircle size={15} className="text-emerald-400" /> : <XCircle size={15} className="text-red-400" />}
+          {isCorrect ? <CheckCircle size={15} className="text-emerald-500" /> : <XCircle size={15} className="text-red-500" />}
         </span>
         <div className="flex-1 space-y-0.5 min-w-0">
-          <p className="text-xs font-semibold leading-snug line-clamp-2" style={{ color: "#e5e7eb" }}>{index + 1}. {question}</p>
-          {!isCorrect && <p className="text-[10px]" style={{ color: "#71717a" }}>Your answer: <span className="text-red-400 font-semibold">{selected}</span></p>}
+          <p className="text-xs font-semibold leading-snug line-clamp-2" style={{ color: c.text }}>{index + 1}. {question}</p>
+          {!isCorrect && <p className="text-[10px]" style={{ color: c.textSec }}>Your answer: <span className="text-red-500 font-semibold">{selected}</span></p>}
         </div>
-        <ChevronRight size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`} style={{ color: "#52525b" }} />
+        <ChevronRight size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`} style={{ color: c.textMuted }} />
       </button>
       {expanded && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-          className="px-4 pb-4 space-y-2 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          {!isCorrect && <p className="text-[10px]" style={{ color: "#a1a1aa" }}>Correct answer: <span className="text-emerald-400 font-semibold">{correct}</span></p>}
-          <div className="text-xs leading-relaxed" style={{ color: "#a1a1aa" }}><AIContent content={explanation} /></div>
+          className="px-4 pb-4 space-y-2 pt-3" style={{ borderTop: `1px solid ${c.divider}` }}>
+          {!isCorrect && <p className="text-[10px]" style={{ color: c.textSec }}>Correct answer: <span className="text-emerald-500 font-semibold">{correct}</span></p>}
+          <div className="text-xs leading-relaxed" style={{ color: c.text }}><AIContent content={explanation} /></div>
         </motion.div>
       )}
     </motion.div>
@@ -1082,36 +1090,36 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
                   <TrendingUp size={12} style={{ color: accent.text }} /> AI Performance Insights
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="p-4 rounded-xl border space-y-3" style={{ border: "1px solid rgba(16,185,129,0.15)", background: "rgba(16,185,129,0.04)" }}>
-                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                  <div className="p-4 rounded-xl border space-y-3" style={{ border: `1px solid ${c.isDark ? "rgba(16,185,129,0.15)" : "rgba(16,185,129,0.3)"}`, background: c.isDark ? "rgba(16,185,129,0.04)" : "rgba(16,185,129,0.08)" }}>
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
                       <Star size={11} /> Your Strengths
                     </div>
                     <ul className="space-y-2">
                       {quizData.performance_insights_template.strengths.map((s, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs leading-relaxed" style={{ color: "#d4d4d8" }}>
-                          <CheckCircle size={12} className="text-emerald-400 shrink-0 mt-0.5" />{s}
+                        <li key={i} className="flex items-start gap-2 text-xs leading-relaxed" style={{ color: c.text }}>
+                          <CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" />{s}
                         </li>
                       ))}
                     </ul>
                   </div>
-                  <div className="p-4 rounded-xl border space-y-3" style={{ border: "1px solid rgba(245,158,11,0.15)", background: "rgba(245,158,11,0.04)" }}>
-                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-400">
+                  <div className="p-4 rounded-xl border space-y-3" style={{ border: `1px solid ${c.isDark ? "rgba(245,158,11,0.15)" : "rgba(245,158,11,0.3)"}`, background: c.isDark ? "rgba(245,158,11,0.04)" : "rgba(245,158,11,0.08)" }}>
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
                       <AlertTriangle size={11} /> Areas to Review
                     </div>
                     <ul className="space-y-2">
                       {quizData.performance_insights_template.weak_areas.map((w, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs leading-relaxed" style={{ color: "#d4d4d8" }}>
-                          <AlertTriangle size={12} className="text-amber-400 shrink-0 mt-0.5" />{w}
+                        <li key={i} className="flex items-start gap-2 text-xs leading-relaxed" style={{ color: c.text }}>
+                          <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-0.5" />{w}
                         </li>
                       ))}
                     </ul>
                   </div>
                 </div>
-                <div className="p-4 rounded-xl border space-y-1.5" style={{ background: accent.bg, border: `1px solid ${accent.border}` }}>
+                <div className="p-4 rounded-xl border space-y-1.5" style={{ background: c.isDark ? accent.bg : "rgba(245,158,11,0.08)", border: `1px solid ${accent.border}` }}>
                   <div className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5" style={{ color: accent.text }}>
                     <ArrowRight size={11} /> Recommended Next Step
                   </div>
-                  <p className="text-xs leading-relaxed" style={{ color: "#d4d4d8" }}>{quizData.performance_insights_template.recommended_next_step}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: c.text }}>{quizData.performance_insights_template.recommended_next_step}</p>
                 </div>
               </motion.div>
 

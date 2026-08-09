@@ -182,11 +182,7 @@ function LoginPageContent() {
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data;
       const serverMsg = data?.message || data?.error;
-      const isRateLimit = serverMsg && (serverMsg.includes("Rate limit") || serverMsg.includes("Too many") || serverMsg.includes("slow down"));
-      const finalMsg = isRateLimit
-        ? "Too many login attempts. Please slow down and try again later."
-        : (serverMsg || "Invalid user credentials. Please try again.");
-      setLoginError(finalMsg);
+      setLoginError(serverMsg || "Invalid user credentials. Please try again.");
     } finally { setLoginLoading(false); }
   };
 

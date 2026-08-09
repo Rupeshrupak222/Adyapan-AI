@@ -531,7 +531,8 @@ export function DashboardTopNav({
   const navBtnBase: React.CSSProperties = {
     display: "inline-flex", alignItems: "center", gap: 6,
     padding: "0.45rem 0.85rem", borderRadius: 10, fontWeight: 600,
-    fontSize: "0.8rem", cursor: "pointer", border: `1px solid ${navBorder}`,
+    fontSize: "0.8rem", cursor: "pointer",
+    borderWidth: 1, borderStyle: "solid", borderColor: navBorder,
     background: navBtnBg, color: navBtnColor, backdropFilter: "blur(12px)",
     boxShadow: isDarkTheme ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
     transition: "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -588,7 +589,8 @@ export function DashboardTopNav({
             transition={{ duration: 0.15 }}
             style={{
               width: "100%", padding: "0.45rem 2.5rem 0.45rem 2rem",
-              background: navInputBg, border: `1px solid ${navBorder}`,
+              background: navInputBg,
+              borderWidth: 1, borderStyle: "solid", borderColor: navBorder,
               borderRadius: 10, color: navInputColor, fontSize: "0.82rem", outline: "none",
               boxSizing: "border-box", backdropFilter: "blur(8px)",
             }}
@@ -771,7 +773,7 @@ export function DashboardTopNav({
             background: isDarkTheme
               ? "linear-gradient(135deg, rgba(147,51,234,0.28), rgba(236,72,153,0.2))"
               : "linear-gradient(135deg, rgba(147,51,234,0.14), rgba(236,72,153,0.12))",
-            border: `1px solid ${isDarkTheme ? "rgba(168,85,247,0.5)" : "rgba(168,85,247,0.4)"}`,
+            borderColor: isDarkTheme ? "rgba(168,85,247,0.5)" : "rgba(168,85,247,0.4)",
             color: isDarkTheme ? "#f3e8ff" : "#581c87",
             fontWeight: 700,
           }}
@@ -794,7 +796,7 @@ export function DashboardTopNav({
             background: isDarkTheme
               ? "linear-gradient(135deg, rgba(245,158,11,0.25), rgba(234,88,12,0.18))"
               : "linear-gradient(135deg, #fffbeb, #fef3c7)",
-            border: `1px solid ${isDarkTheme ? "rgba(245,158,11,0.5)" : "rgba(245,158,11,0.5)"}`,
+            borderColor: isDarkTheme ? "rgba(245,158,11,0.5)" : "rgba(245,158,11,0.5)",
             color: isDarkTheme ? "#fef08a" : "#92400e",
             fontWeight: 700,
             boxShadow: isDarkTheme ? "0 2px 12px rgba(245,158,11,0.2)" : "0 2px 10px rgba(245,158,11,0.15)",
@@ -809,7 +811,7 @@ export function DashboardTopNav({
           whileTap={{ scale: 0.9 }} transition={{ duration: 0.12 }}
           onClick={onThemeToggle} aria-label="Toggle theme"
           style={{
-            background: navBtnBg, border: `1px solid ${navBorder}`, borderRadius: 10,
+            background: navBtnBg, borderWidth: 1, borderStyle: "solid", borderColor: navBorder, borderRadius: 10,
             width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", color: navBtnColor, boxShadow: isDarkTheme ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
           }}>
@@ -825,7 +827,7 @@ export function DashboardTopNav({
             onClick={() => setNotificationsOpen(prev => !prev)}
             aria-label="Notifications"
             style={{
-              background: navBtnBg, border: `1px solid ${navBorder}`, borderRadius: 10,
+              background: navBtnBg, borderWidth: 1, borderStyle: "solid", borderColor: navBorder, borderRadius: 10,
               width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", position: "relative", color: navBtnColor,
               boxShadow: isDarkTheme ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",

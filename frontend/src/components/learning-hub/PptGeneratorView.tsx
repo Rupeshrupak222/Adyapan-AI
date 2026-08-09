@@ -232,9 +232,14 @@ export function PptGeneratorView() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success("Presentation PDF downloaded successfully!");
-    } catch (err) {
-      console.error("PDF export error:", err);
-      toast.error("Failed to generate PDF file.");
+    } catch (err: any) {
+      const isNetwork = !err?.response;
+      if (isNetwork) {
+        console.warn("PDF export failed: backend unavailable or request aborted. Please try again.");
+      } else {
+        console.warn("PDF export failed:", err?.response?.data?.message || err?.message || "Unknown error");
+      }
+      toast.error(isNetwork ? "Could not reach the server to generate the PDF. Please try again." : "Failed to generate PDF file.");
     } finally {
       setExportingPdf(false);
     }
@@ -275,9 +280,14 @@ export function PptGeneratorView() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success("PowerPoint (.pptx) downloaded successfully!");
-    } catch (err) {
-      console.error("PPTX export error:", err);
-      toast.error("Failed to generate PPTX file.");
+    } catch (err: any) {
+      const isNetwork = !err?.response;
+      if (isNetwork) {
+        console.warn("PPTX export failed: backend unavailable or request aborted. Please try again.");
+      } else {
+        console.warn("PPTX export failed:", err?.response?.data?.message || err?.message || "Unknown error");
+      }
+      toast.error(isNetwork ? "Could not reach the server to generate the PPTX. Please try again." : "Failed to generate PPTX file.");
     } finally {
       setExportingPptx(false);
     }

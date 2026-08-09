@@ -19,13 +19,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className="h-full antialiased"
       style={{
         ["--font-outfit" as any]: "'Outfit', system-ui, -apple-system, sans-serif",
         ["--font-plus-jakarta" as any]: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
       }}
     >
-      <body className="flex min-h-full flex-col font-sans">
+      <body suppressHydrationWarning className="flex min-h-full flex-col font-sans">
         <ThemeScript />
         <LenisProvider />
         <Toaster position="top-right" richColors closeButton />

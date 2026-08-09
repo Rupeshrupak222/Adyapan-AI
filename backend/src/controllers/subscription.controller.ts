@@ -327,15 +327,8 @@ export async function verifyAndActivate(req: Request, res: Response, next: NextF
       paymentOrderId: orderId,
     });
 
-    // Mark payment paid + create invoice
+    // Mark payment paid
     await prisma.payment.update({ where: { orderId }, data: { paymentId, signature, status: "paid" } });
-    await createInvoiceRecord({
-      userId,
-      plan: planCode,
-      description: `${planCode} ${cycle} subscription`,
-      amount: payment.amount || 0,
-      paymentId: payment.id,
-    });
 
     await createTransaction({
       userId,
