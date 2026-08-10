@@ -58,12 +58,12 @@ function AnimatedFace({
       {/* Background circle */}
       <defs>
         <radialGradient id="faceGrad" cx="50%" cy="42%" r="55%">
-          <stop offset="0%" stopColor={isDark ? "#7c3aed" : "#8b5cf6"} />
-          <stop offset="100%" stopColor={isDark ? "#1e1b4b" : "#4c1d95"} />
+          <stop offset="0%" stopColor={isDark ? "#f59e0b" : "#fbbf24"} />
+          <stop offset="100%" stopColor={isDark ? "#78350f" : "#92400e"} />
         </radialGradient>
         <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
+          <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
         </radialGradient>
         <filter id="glow">
           <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
@@ -166,7 +166,7 @@ function AnimatedFace({
         <>
           <motion.path
             d="M 14 68 Q 6 80 14 92"
-            stroke="#a78bfa"
+            stroke="#fbbf24"
             strokeWidth="2"
             fill="none"
             strokeLinecap="round"
@@ -175,7 +175,7 @@ function AnimatedFace({
           />
           <motion.path
             d="M 8 62 Q -2 80 8 98"
-            stroke="#a78bfa"
+            stroke="#fbbf24"
             strokeWidth="1.5"
             fill="none"
             strokeLinecap="round"
@@ -184,7 +184,7 @@ function AnimatedFace({
           />
           <motion.path
             d="M 146 68 Q 154 80 146 92"
-            stroke="#a78bfa"
+            stroke="#fbbf24"
             strokeWidth="2"
             fill="none"
             strokeLinecap="round"
@@ -193,7 +193,7 @@ function AnimatedFace({
           />
           <motion.path
             d="M 152 62 Q 162 80 152 98"
-            stroke="#a78bfa"
+            stroke="#fbbf24"
             strokeWidth="1.5"
             fill="none"
             strokeLinecap="round"
@@ -267,8 +267,8 @@ function SpeakingWaveform({
             style={{
               height: `${Math.max(minH, h)}px`,
               background: isDark
-                ? "rgba(167,139,250,0.8)"
-                : "rgba(109,40,217,0.7)",
+                ? "rgba(251,191,36,0.85)"
+                : "rgba(217,119,6,0.75)",
               transition: "height 0.08s ease-out",
             }}
           />
@@ -313,7 +313,7 @@ export default function AIAvatar({
   const statusColors: Record<AIStatus, string> = {
     speaking: isDark ? "#22c55e" : "#16a34a",
     thinking: isDark ? "#f59e0b" : "#d97706",
-    listening: isDark ? "#8b5cf6" : "#7c3aed",
+    listening: isDark ? "#fbbf24" : "#d97706",
     idle: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.2)",
   };
 
@@ -345,8 +345,8 @@ export default function AIAvatar({
               transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
               style={{
                 background: isDark
-                  ? "radial-gradient(circle, rgba(139,92,246,0.4) 0%, transparent 70%)"
-                  : "radial-gradient(circle, rgba(109,40,217,0.25) 0%, transparent 70%)",
+                  ? "radial-gradient(circle, rgba(251,191,36,0.45) 0%, transparent 70%)"
+                  : "radial-gradient(circle, rgba(217,119,6,0.3) 0%, transparent 70%)",
                 borderRadius: "50%",
               }}
             />
@@ -360,10 +360,10 @@ export default function AIAvatar({
             animate={{ opacity: 1 }}
             className="w-full h-full rounded-full overflow-hidden"
             style={{
-              border: `3px solid ${isDark ? "rgba(139,92,246,0.6)" : "rgba(109,40,217,0.4)"}`,
+              border: `3px solid ${isDark ? "rgba(251,191,36,0.65)" : "rgba(217,119,6,0.45)"}`,
               boxShadow: isDark
-                ? "0 0 32px rgba(139,92,246,0.4), 0 8px 32px rgba(0,0,0,0.5)"
-                : "0 0 24px rgba(109,40,217,0.2), 0 8px 24px rgba(0,0,0,0.15)",
+                ? "0 0 32px rgba(251,191,36,0.45), 0 8px 32px rgba(0,0,0,0.5)"
+                : "0 0 24px rgba(217,119,6,0.25), 0 8px 24px rgba(0,0,0,0.15)",
             }}
           >
             <video
@@ -379,10 +379,10 @@ export default function AIAvatar({
           <motion.div
             className="w-full h-full rounded-full overflow-hidden flex items-center justify-center"
             style={{
-              border: `3px solid ${isDark ? "rgba(139,92,246,0.5)" : "rgba(109,40,217,0.35)"}`,
+              border: `3px solid ${isDark ? "rgba(251,191,36,0.55)" : "rgba(217,119,6,0.4)"}`,
               boxShadow: isDark
-                ? "0 0 32px rgba(139,92,246,0.35), 0 8px 32px rgba(0,0,0,0.45)"
-                : "0 0 24px rgba(109,40,217,0.2), 0 6px 20px rgba(0,0,0,0.12)",
+                ? "0 0 32px rgba(251,191,36,0.4), 0 8px 32px rgba(0,0,0,0.45)"
+                : "0 0 24px rgba(217,119,6,0.2), 0 6px 20px rgba(0,0,0,0.12)",
             }}
             animate={
               aiStatus === "speaking"
