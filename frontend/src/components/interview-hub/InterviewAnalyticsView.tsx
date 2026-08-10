@@ -243,11 +243,11 @@ export function InterviewAnalyticsView({ setView, showBackBtn = false, initialSe
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider"
                   style={{
-                    background: selectedSession.status === "completed" ? c.greenBg : c.amberBg,
-                    color: selectedSession.status === "completed" ? c.green : c.amber,
-                    borderColor: selectedSession.status === "completed" ? c.greenBorder : c.amberBorder,
+                    background: (selectedSession.status === "completed" || selectedSession.evaluation || selectedSession.endedAt) ? c.greenBg : c.amberBg,
+                    color: (selectedSession.status === "completed" || selectedSession.evaluation || selectedSession.endedAt) ? c.green : c.amber,
+                    borderColor: (selectedSession.status === "completed" || selectedSession.evaluation || selectedSession.endedAt) ? c.greenBorder : c.amberBorder,
                   }}>
-                  {selectedSession.status === "completed" ? "COMPLETED" : "IN PROGRESS"}
+                  {(selectedSession.status === "completed" || selectedSession.evaluation || selectedSession.endedAt) ? "COMPLETED" : "IN PROGRESS"}
                 </span>
                 <span className="text-xs capitalize font-semibold" style={{ color: c.textMuted }}>
                   {selectedSession.type} · {selectedSession.difficulty}
@@ -561,16 +561,16 @@ export function InterviewAnalyticsView({ setView, showBackBtn = false, initialSe
                           <AlertTriangle size={11} /> {session.violationCount}
                         </div>
                       )}
-                      {session.evaluation?.overallScore != null || session.status === "completed" ? (
+                      {session.evaluation != null || session.overallScore != null || session.status === "completed" || session.endedAt != null ? (
                         <div
                           className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 border"
                           style={{
-                            background: `${scoreColor(session.evaluation?.overallScore || 75)}18`,
-                            color: scoreColor(session.evaluation?.overallScore || 75),
-                            borderColor: `${scoreColor(session.evaluation?.overallScore || 75)}30`,
+                            background: `${scoreColor(session.evaluation?.overallScore ?? session.overallScore ?? 75)}18`,
+                            color: scoreColor(session.evaluation?.overallScore ?? session.overallScore ?? 75),
+                            borderColor: `${scoreColor(session.evaluation?.overallScore ?? session.overallScore ?? 75)}30`,
                           }}
                         >
-                          {session.evaluation?.overallScore || 75}%
+                          {session.evaluation?.overallScore ?? session.overallScore ?? 75}%
                         </div>
                       ) : (
                         <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-lg border uppercase tracking-wider"

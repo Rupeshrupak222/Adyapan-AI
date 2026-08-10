@@ -63,38 +63,37 @@ async function auditSettingsAction(
 
 // ─── Helper: get or create UserSettings for a user ───────────────────────────
 async function getOrCreateSettings(prisma: any, userId: string) {
-  // Ensure profile exists first - but don't use create() since User might not exist in this DB
-  let profile = await prisma.profile.findUnique({ where: { userId } });
+  const [profileRes, settingsRes, aiPrefRes, notifPrefRes] = await Promise.all([
+    prisma.profile.findUnique({ where: { userId } }).catch(() => null),
+    prisma.userSettings.findUnique({ where: { userId } }).catch(() => null),
+    prisma.aiPreference.findUnique({ where: { userId } }).catch(() => null),
+    prisma.notificationPreference.findUnique({ where: { userId } }).catch(() => null),
+  ]);
+
+  let profile = profileRes;
+  let settings = settingsRes;
+  let aiPref = aiPrefRes;
+  let notifPref = notifPrefRes;
+
   if (!profile) {
-    // Use createMany + skipDuplicates to avoid foreign key error if User doesn't exist locally
-    await prisma.profile.createMany({
-      data: [{ userId }],
-      skipDuplicates: true,
-    }).catch(() => {});
-    
-    // Re-fetch
-    profile = await prisma.profile.findUnique({ where: { userId } });
-    
-    // If still null, the FK constraint is blocking us — fall back to minimal stub
-    if (!profile) {
-      throw new Error("Profile creation blocked by foreign key — ensure User exists in master DB");
-    }
+    profile = await prisma.profile.create({ data: { userId } }).catch(() => null);
   }
-
-  let settings = await prisma.userSettings.findFirst({
-    where: { OR: [{ userId }, { profileId: profile.id }] },
-  });
-
   if (!settings) {
-    settings = await prisma.userSettings.create({
-      data: {
-        userId,
-        profileId: profile.id,
-      },
-    });
+    settings = await prisma.userSettings.create({ data: { userId } }).catch(() => null);
+  }
+  if (!aiPref) {
+    aiPref = await prisma.aiPreference.create({ data: { userId } }).catch(() => null);
+  }
+  if (!notifPref) {
+    notifPref = await prisma.notificationPreference.create({ data: { userId } }).catch(() => null);
   }
 
-  return { settings, profile };
+  return {
+    settings: settings || {},
+    profile: profile || {},
+    aiPref: aiPref || {},
+    notifPref: notifPref || {},
+  };
 }
 
 // ─── Mask an API key for safe display ────────────────────────────────────────
@@ -110,69 +109,69 @@ settingsRouter.get("/", async (req: any, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const userId = req.user?.userId || req.user?.id;
 
-    const { settings, profile } = await getOrCreateSettings(prisma, userId);
+    const [settingsData, user, notificationCount] = await Promise.all([
+      getOrCreateSettings(prisma, userId),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true, createdAt: true, plan: true },
+      }).catch(() => null),
+      prisma.notification.count({
+        where: { userId },
+      }).catch(() => 0),
+    ]);
 
-    // Get user info for account section
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { name: true, email: true, createdAt: true, plan: true },
-    });
-
-    // Get notification count for activity
-    const notificationCount = await prisma.notification.count({
-      where: { userId },
-    });
+    const { settings, profile, aiPref, notifPref } = settingsData;
 
     res.json({
       success: true,
       settings: {
         // Appearance
-        themeMode: settings.themeMode,
-        accentColor: settings.accentColor,
-        compactMode: settings.compactMode,
-        glassEffect: settings.glassEffect,
-        animationsEnabled: settings.animationsEnabled,
-        sidebarCollapse: settings.sidebarCollapse,
-        fontSize: settings.fontSize,
+        themeMode: settings.themeMode || "dark",
+        accentColor: settings.accentColor || "#f59e0b",
+        compactMode: settings.compactMode ?? false,
+        glassEffect: settings.glassEffect ?? true,
+        animationsEnabled: settings.animationsEnabled ?? true,
+        sidebarCollapse: settings.sidebarCollapse ?? true,
+        fontSize: settings.fontSize || 14,
 
         // AI Preferences
-        aiModel: settings.aiModel,
-        responseLength: settings.responseLength,
-        creativity: settings.creativity,
-        aiMemory: settings.aiMemory,
-        markdownOutput: settings.markdownOutput,
-        codeHighlighting: settings.codeHighlighting,
-        autoCitation: settings.autoCitation,
-        autoSaveConversations: settings.autoSaveConversations,
+        aiModel: aiPref.aiModel || "gemini",
+        responseLength: aiPref.responseLength || "balanced",
+        creativity: aiPref.creativity ?? 70,
+        aiMemory: aiPref.aiMemory ?? true,
+        markdownOutput: aiPref.markdownOutput ?? true,
+        codeHighlighting: aiPref.codeHighlighting ?? true,
+        autoCitation: aiPref.autoCitation ?? false,
+        autoSaveConversations: aiPref.autoSaveConversations ?? true,
 
         // Learning
-        language: settings.language,
-        learningStyle: settings.learningStyle,
-        dailyGoal: settings.dailyGoal,
-        reminderTime: settings.reminderTime,
-        difficulty: settings.difficulty,
-        noteFormat: settings.noteFormat,
-        quizDifficulty: settings.quizDifficulty,
-        tutorPersonality: settings.tutorPersonality,
+        language: settings.language || "english",
+        learningStyle: settings.learningStyle || "visual",
+        dailyGoal: settings.dailyGoal || 30,
+        reminderTime: settings.reminderTime || "09:00",
+        difficulty: settings.difficulty || "medium",
+        noteFormat: settings.noteFormat || "markdown",
+        quizDifficulty: settings.quizDifficulty || "medium",
+        tutorPersonality: settings.tutorPersonality || "encouraging",
 
         // Notifications
-        notifEmail: settings.notifEmail,
-        notifPush: settings.notifPush,
-        notifAssignment: settings.notifAssignment,
-        notifInterview: settings.notifInterview,
-        notifCoding: settings.notifCoding,
-        notifResearch: settings.notifResearch,
-        notifWeekly: settings.notifWeekly,
-        notifDaily: settings.notifDaily,
+        notifEmail: notifPref.email ?? true,
+        notifPush: notifPref.push ?? true,
+        notifAssignment: notifPref.assignment ?? true,
+        notifInterview: notifPref.interview ?? true,
+        notifCoding: notifPref.coding ?? false,
+        notifResearch: notifPref.research ?? false,
+        notifWeekly: notifPref.weekly ?? true,
+        notifDaily: notifPref.daily ?? true,
 
         // Privacy
-        publicProfile: settings.publicProfile,
-        dataCollection: settings.dataCollection,
-        personalizedAI: settings.personalizedAI,
+        publicProfile: settings.publicProfile ?? true,
+        dataCollection: settings.dataCollection ?? true,
+        personalizedAI: settings.personalizedAi ?? true,
 
         // Security
-        twoFactorEnabled: settings.twoFactorEnabled,
-        loginAlerts: settings.loginAlerts,
+        twoFactorEnabled: settings.twoFactorEnabled ?? false,
+        loginAlerts: settings.loginAlerts ?? true,
 
         // API Keys (masked)
         apiKeys: {
@@ -185,15 +184,15 @@ settingsRouter.get("/", async (req: any, res) => {
 
         // Connected Accounts
         connectedAccounts: {
-          google: settings.googleConnected,
-          github: settings.githubConnected,
-          microsoft: settings.microsoftConnected,
-          linkedin: settings.linkedinConnected,
+          google: settings.googleConnected ?? false,
+          github: settings.githubConnected ?? false,
+          microsoft: settings.microsoftConnected ?? false,
+          linkedin: settings.linkedinConnected ?? false,
         },
       },
       profile: {
-        fullName: user?.name || "",
-        email: user?.email || "",
+        fullName: user?.name || req.user?.name || "",
+        email: user?.email || req.user?.email || "",
         phone: profile.phone || "",
         college: profile.college || "",
         degree: profile.degree || "",
@@ -209,7 +208,7 @@ settingsRouter.get("/", async (req: any, res) => {
         photoUrl: profile.photoUrl || "",
       },
       meta: {
-        notificationCount,
+        notificationCount: notificationCount || 0,
       },
     });
   } catch (error) {
@@ -316,20 +315,26 @@ settingsRouter.put("/ai", async (req: any, res) => {
   try {
     const prisma = await getUserPrismaFromRequest(req);
     const userId = req.user?.userId || req.user?.id;
-    const { settings } = await getOrCreateSettings(prisma, userId);
 
     const {
       aiModel, responseLength, creativity, aiMemory,
       markdownOutput, codeHighlighting, autoCitation, autoSaveConversations,
     } = req.body;
 
-    if (aiModel !== undefined && !["gemini", "openai", "claude", "groq", "openrouter"].includes(aiModel)) {
-      return res.status(400).json({ success: false, error: "Invalid AI model selected" });
-    }
-
-    const updated = await prisma.userSettings.update({
-      where: { id: settings.id },
-      data: {
+    const updated = await prisma.aiPreference.upsert({
+      where: { userId },
+      create: {
+        userId,
+        ...(aiModel !== undefined && { aiModel }),
+        ...(responseLength !== undefined && { responseLength }),
+        ...(creativity !== undefined && { creativity: clampInt(creativity, 0, 100, 70) }),
+        ...(aiMemory !== undefined && { aiMemory }),
+        ...(markdownOutput !== undefined && { markdownOutput }),
+        ...(codeHighlighting !== undefined && { codeHighlighting }),
+        ...(autoCitation !== undefined && { autoCitation }),
+        ...(autoSaveConversations !== undefined && { autoSaveConversations }),
+      },
+      update: {
         ...(aiModel !== undefined && { aiModel }),
         ...(responseLength !== undefined && { responseLength }),
         ...(creativity !== undefined && { creativity: clampInt(creativity, 0, 100, 70) }),
@@ -358,24 +363,34 @@ settingsRouter.put("/notifications", async (req: any, res) => {
   try {
     const prisma = await getUserPrismaFromRequest(req);
     const userId = req.user?.userId || req.user?.id;
-    const { settings } = await getOrCreateSettings(prisma, userId);
 
     const {
       notifEmail, notifPush, notifAssignment, notifInterview,
       notifCoding, notifResearch, notifWeekly, notifDaily,
     } = req.body;
 
-    const updated = await prisma.userSettings.update({
-      where: { id: settings.id },
-      data: {
-        ...(notifEmail !== undefined && { notifEmail }),
-        ...(notifPush !== undefined && { notifPush }),
-        ...(notifAssignment !== undefined && { notifAssignment }),
-        ...(notifInterview !== undefined && { notifInterview }),
-        ...(notifCoding !== undefined && { notifCoding }),
-        ...(notifResearch !== undefined && { notifResearch }),
-        ...(notifWeekly !== undefined && { notifWeekly }),
-        ...(notifDaily !== undefined && { notifDaily }),
+    const updated = await prisma.notificationPreference.upsert({
+      where: { userId },
+      create: {
+        userId,
+        ...(notifEmail !== undefined && { email: notifEmail }),
+        ...(notifPush !== undefined && { push: notifPush }),
+        ...(notifAssignment !== undefined && { assignment: notifAssignment }),
+        ...(notifInterview !== undefined && { interview: notifInterview }),
+        ...(notifCoding !== undefined && { coding: notifCoding }),
+        ...(notifResearch !== undefined && { research: notifResearch }),
+        ...(notifWeekly !== undefined && { weekly: notifWeekly }),
+        ...(notifDaily !== undefined && { daily: notifDaily }),
+      },
+      update: {
+        ...(notifEmail !== undefined && { email: notifEmail }),
+        ...(notifPush !== undefined && { push: notifPush }),
+        ...(notifAssignment !== undefined && { assignment: notifAssignment }),
+        ...(notifInterview !== undefined && { interview: notifInterview }),
+        ...(notifCoding !== undefined && { coding: notifCoding }),
+        ...(notifResearch !== undefined && { research: notifResearch }),
+        ...(notifWeekly !== undefined && { weekly: notifWeekly }),
+        ...(notifDaily !== undefined && { daily: notifDaily }),
       },
     });
 

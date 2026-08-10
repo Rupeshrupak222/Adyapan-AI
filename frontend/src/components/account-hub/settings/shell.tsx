@@ -70,13 +70,18 @@ export function useSettingsData() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 800);
+
     try {
       const res = await api.get("/settings");
-      setSettings(res.data?.settings || {});
-      setProfile(res.data?.profile || {});
+      if (res.data?.settings) setSettings(res.data.settings);
+      if (res.data?.profile) setProfile(res.data.profile);
     } catch {
       // silent
     } finally {
+      clearTimeout(safetyTimer);
       setLoading(false);
     }
   }, []);
@@ -296,19 +301,13 @@ export function SettingsShell({
         </AnimatePresence>
 
         {/* Main content */}
-        <div className="flex-1 min-w-0">
-          {loading ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-72 gap-4">
-              <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-              <p className="text-sm font-semibold" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "#64748b" }}>
-                Loading your settings...
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div key={pathname} {...sectionTransition}>
-              {children}
-            </motion.div>
+        <div className="flex-1 min-w-0 relative">
+          {loading && (
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 animate-pulse rounded-full z-10" />
           )}
+          <motion.div key={pathname} {...sectionTransition}>
+            {children}
+          </motion.div>
         </div>
       </div>
 

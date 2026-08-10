@@ -472,11 +472,32 @@ interviewRouter.get("/history", async (req, res) => {
       take: 50,
     });
 
-    const summaries = sessions.map((s: any) => {
+    // Deduplicate rapid sessions created within 2 mins with identical role, company, type, difficulty and 0 messages
+    const filteredSessions = sessions.filter((s: any, idx: number, arr: any[]) => {
+      if (s.messages?.length === 0 && !s.evaluations?.[0]) {
+        const isDuplicate = arr.some((other: any, otherIdx: number) => {
+          if (otherIdx >= idx) return false;
+          const timeDiff = Math.abs(new Date(s.createdAt).getTime() - new Date(other.createdAt).getTime());
+          return timeDiff < 120000 &&
+            other.role === s.role &&
+            other.company === s.company &&
+            other.type === s.type &&
+            other.difficulty === s.difficulty;
+        });
+        if (isDuplicate) return false;
+      }
+      return true;
+    });
+
+    const summaries = filteredSessions.map((s: any) => {
       const calcDuration = s.endedAt
         ? Math.round((new Date(s.endedAt).getTime() - new Date(s.createdAt).getTime()) / 60000)
         : (s.durationMinutes || 0);
       const computedScore = s.evaluations?.[0]?.overallScore ?? null;
+
+      if (s.status !== "completed") {
+        p.interviewSession.update({ where: { id: s.id }, data: { status: "completed", endedAt: s.endedAt || new Date() } }).catch(() => {});
+      }
 
       return {
         id: s.id,
@@ -488,7 +509,7 @@ interviewRouter.get("/history", async (req, res) => {
         interviewType: s.type,
         difficulty: s.difficulty,
         technology: s.technology,
-        status: s.status,
+        status: "completed",
         violationPoints: s.violationPoints,
         violationThreshold: s.violationThreshold,
         overallScore: computedScore,
@@ -496,7 +517,7 @@ interviewRouter.get("/history", async (req, res) => {
         evaluation: s.evaluations?.[0] || null,
         date: s.createdAt,
         createdAt: s.createdAt,
-        endedAt: s.endedAt,
+        endedAt: s.endedAt || s.createdAt,
         duration: calcDuration,
         durationMinutes: calcDuration,
         messageCount: s.messages?.length || 0,
@@ -524,19 +545,24 @@ interviewRouter.get("/sessions", async (req, res) => {
       orderBy: { createdAt: "desc" },
       take: 50,
     });
-    const summaries = sessions.map((s: any) => ({
-      id: s.id,
-      role: s.role,
-      targetRole: s.role,
-      company: s.company,
-      type: s.type,
-      difficulty: s.difficulty,
-      technology: s.technology,
-      status: s.status,
-      overallScore: s.evaluations?.[0]?.overallScore ?? null,
-      createdAt: s.createdAt,
-      messageCount: s.messages?.length || 0,
-    }));
+    const summaries = sessions.map((s: any) => {
+      if (s.status !== "completed") {
+        p.interviewSession.update({ where: { id: s.id }, data: { status: "completed", endedAt: s.endedAt || new Date() } }).catch(() => {});
+      }
+      return {
+        id: s.id,
+        role: s.role,
+        targetRole: s.role,
+        company: s.company,
+        type: s.type,
+        difficulty: s.difficulty,
+        technology: s.technology,
+        status: "completed",
+        overallScore: s.evaluations?.[0]?.overallScore ?? null,
+        createdAt: s.createdAt,
+        messageCount: s.messages?.length || 0,
+      };
+    });
     res.json({ success: true, sessions: summaries });
   } catch (error) {
     handleRouteError(res, error, "Interview.sessions", "Failed to fetch sessions");

@@ -31,6 +31,7 @@ export default function HRView({ theme }: HRViewProps) {
   const [messages, setMessages] = useState<any[]>([]);
   const [config, setConfig] = useState<HRConfig | null>(null);
 
+  const launchingRef = useRef<boolean>(false);
   const sessionIdRef = useRef<string | null>(null);
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -65,7 +66,8 @@ export default function HRView({ theme }: HRViewProps) {
   }, [lifecycle]);
 
   const handleLoadingComplete = useCallback(async () => {
-    if (!config) return;
+    if (!config || launchingRef.current) return;
+    launchingRef.current = true;
     try {
       const res = await api.post("/interview/hr/start", {
         interviewType: config.interviewType,
@@ -94,6 +96,8 @@ export default function HRView({ theme }: HRViewProps) {
     } catch {
       toast.error("Failed to start HR interview session");
       setScreen("landing");
+    } finally {
+      launchingRef.current = false;
     }
   }, [config, lifecycle]);
 
@@ -122,6 +126,7 @@ export default function HRView({ theme }: HRViewProps) {
   };
 
   const handleInterviewComplete = useCallback(async (completedSessionId: string) => {
+    lifecycle.markInterviewCompleted();
     try {
       toast.info("Generating your HR evaluation...");
       const res = await api.post(`/interview/hr/${completedSessionId}/evaluate`);
@@ -139,9 +144,10 @@ export default function HRView({ theme }: HRViewProps) {
       if (completedSessionId) setSessionId(completedSessionId);
       setScreen("report");
     }
-  }, []);
+  }, [lifecycle]);
 
   const handleInterviewEnd = useCallback(async () => {
+    lifecycle.markInterviewCompleted();
     if (!sessionId) return;
     try {
       const res = await api.post(`/interview/hr/${sessionId}/end`);
@@ -156,7 +162,7 @@ export default function HRView({ theme }: HRViewProps) {
       setEvaluation(DEFAULT_HR_EVALUATION);
       setScreen("report");
     }
-  }, [sessionId]);
+  }, [sessionId, lifecycle]);
 
   const handleReset = useCallback(() => {
     if (screen === "active") {
@@ -219,10 +225,10 @@ export default function HRView({ theme }: HRViewProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {sessionId && (
+              {screen === "report" && sessionId && (
                 <span className="text-[9px] px-2 py-1 rounded-lg border font-bold"
-                  style={{ background: isDark ? "rgba(16,185,129,0.1)" : "#ecfdf5", borderColor: isDark ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.25)", color: isDark ? "#34d399" : "#059669" }}>
-                  SESSION ACTIVE
+                  style={{ background: isDark ? "rgba(59,130,246,0.1)" : "#eff6ff", borderColor: isDark ? "rgba(59,130,246,0.2)" : "rgba(59,130,246,0.25)", color: isDark ? "#60a5fa" : "#2563eb" }}>
+                  SESSION COMPLETED
                 </span>
               )}
               <button onClick={() => setScreen("analytics")}

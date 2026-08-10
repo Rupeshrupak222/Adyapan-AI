@@ -212,65 +212,86 @@ export async function endInterviewSession(
     throw httpError(404, "Interview session not found");
   }
 
-  if (session.status === "completed" || session.status === "terminated") {
-    return { session, evaluation: session.evaluations[0] || null };
+  let updatedSession = session;
+  if (session.status !== "completed") {
+    updatedSession = await (prisma as any).interviewSession.update({
+      where: { id: sessionId },
+      data: {
+        status: "completed",
+        endedAt: session.endedAt || new Date(),
+      },
+    });
   }
 
-  const evaluation = await generateInterviewFeedback(
-    session.role,
-    session.company,
-    session.type,
-    session.messages.map((m) => ({ role: m.role, content: m.content }))
-  );
+  if (session.evaluations && session.evaluations.length > 0) {
+    return { session: updatedSession, evaluation: session.evaluations[0] };
+  }
 
-  let comprehensiveEvaluation: any = null;
+  let savedEvaluation: any = null;
   try {
-    comprehensiveEvaluation = await generateComprehensiveEvaluation(
+    const evaluation = await generateInterviewFeedback(
       session.role,
       session.company,
       session.type,
-      session.difficulty,
-      session.messages.map((m) => ({ role: m.role, content: m.content })),
-      evaluation
+      session.messages.map((m) => ({ role: m.role, content: m.content }))
     );
+
+    let comprehensiveEvaluation: any = null;
+    try {
+      comprehensiveEvaluation = await generateComprehensiveEvaluation(
+        session.role,
+        session.company,
+        session.type,
+        session.difficulty,
+        session.messages.map((m) => ({ role: m.role, content: m.content })),
+        evaluation
+      );
+    } catch (error) {
+      console.error("[InterviewSession] Comprehensive evaluation failed, using basic:", error);
+    }
+
+    const strengths = comprehensiveEvaluation?.strengths || evaluation.strengths;
+    const weaknesses = comprehensiveEvaluation?.weaknesses || evaluation.weaknesses;
+    const improvements =
+      comprehensiveEvaluation?.improvements || evaluation.areasForImprovement;
+
+    savedEvaluation = await (prisma as any).interviewEvaluation.create({
+      data: {
+        sessionId,
+        overallScore: comprehensiveEvaluation?.overallScore || evaluation.overallScore || 65,
+        communicationScore: comprehensiveEvaluation?.communicationScore || 70,
+        technicalScore: comprehensiveEvaluation?.technicalScore || null,
+        hrScore: comprehensiveEvaluation?.hrScore || null,
+        confidenceScore: comprehensiveEvaluation?.confidenceScore || null,
+        fluencyScore: comprehensiveEvaluation?.fluencyScore || null,
+        bodyLanguageScore: comprehensiveEvaluation?.bodyLanguageScore || null,
+        strengths: strengths as any,
+        weaknesses: weaknesses as any,
+        improvements: improvements as any,
+        summary: comprehensiveEvaluation?.summary || generateSummaryFromFeedback(evaluation),
+        hiringRecommendation:
+          comprehensiveEvaluation?.hiringRecommendation ||
+          (evaluation.overallScore >= 70 ? "recommend" : "maybe"),
+        detailedAnalysis: comprehensiveEvaluation?.detailedAnalysis || null,
+      },
+    });
   } catch (error) {
-    console.error("[InterviewSession] Comprehensive evaluation failed, using basic:", error);
+    console.error("[InterviewSession] Evaluation generation failed, saving default evaluation:", error);
+    try {
+      savedEvaluation = await (prisma as any).interviewEvaluation.create({
+        data: {
+          sessionId,
+          overallScore: 65,
+          communicationScore: 70,
+          strengths: ["Completed interview session"],
+          weaknesses: ["Session concluded early or evaluated with partial responses"],
+          improvements: ["Complete full interview responses for deeper analysis"],
+          summary: "Interview session concluded and saved.",
+          hiringRecommendation: "maybe",
+        },
+      });
+    } catch {}
   }
-
-  const strengths = comprehensiveEvaluation?.strengths || evaluation.strengths;
-  const weaknesses = comprehensiveEvaluation?.weaknesses || evaluation.weaknesses;
-  const improvements =
-    comprehensiveEvaluation?.improvements || evaluation.areasForImprovement;
-
-  const savedEvaluation = await prisma.interviewEvaluation.create({
-    data: {
-      sessionId,
-      overallScore: comprehensiveEvaluation?.overallScore || evaluation.overallScore,
-      communicationScore: comprehensiveEvaluation?.communicationScore || 70,
-      technicalScore: comprehensiveEvaluation?.technicalScore || null,
-      hrScore: comprehensiveEvaluation?.hrScore || null,
-      confidenceScore: comprehensiveEvaluation?.confidenceScore || null,
-      fluencyScore: comprehensiveEvaluation?.fluencyScore || null,
-      bodyLanguageScore: comprehensiveEvaluation?.bodyLanguageScore || null,
-      strengths: strengths as any,
-      weaknesses: weaknesses as any,
-      improvements: improvements as any,
-      summary: comprehensiveEvaluation?.summary || generateSummaryFromFeedback(evaluation),
-      hiringRecommendation:
-        comprehensiveEvaluation?.hiringRecommendation ||
-        (evaluation.overallScore >= 70 ? "recommend" : "maybe"),
-      detailedAnalysis: comprehensiveEvaluation?.detailedAnalysis || null,
-    },
-  });
-
-  const updatedSession = await prisma.interviewSession.update({
-    where: { id: sessionId },
-    data: {
-      status: "completed",
-      endedAt: new Date(),
-      feedback: evaluation as any,
-    },
-  });
 
   return { session: updatedSession, evaluation: savedEvaluation };
 }

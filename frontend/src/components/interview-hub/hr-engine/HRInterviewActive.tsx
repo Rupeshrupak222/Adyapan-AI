@@ -92,12 +92,26 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
   }, [sessionId]);
 
   // Set total questions based on duration
+  const initialQuestionText =
+    (initialMessages && initialMessages.find((m) => m.role === "interviewer")?.content) ||
+    messages.find((m) => m.role === "interviewer")?.content ||
+    `Welcome to your HR behavioral interview for ${config.targetRole}. Could you start by introducing yourself and sharing your career highlights?`;
+
   useEffect(() => {
     setTotalQuestions(Math.ceil((config.durationMinutes || 30) / 4));
     if (initialMessages && initialMessages.length > 0) {
       setMessages(initialMessages);
+    } else if (messages.length === 0) {
+      const initMsg: HRMessage = {
+        id: `ai-init-${Date.now()}`,
+        role: "interviewer",
+        content: initialQuestionText,
+        timestamp: Date.now(),
+        questionNumber: 1,
+      };
+      setMessages([initMsg]);
     }
-  }, [config, initialMessages, setMessages, setTotalQuestions]);
+  }, [config, initialMessages, initialQuestionText, messages.length, setMessages, setTotalQuestions]);
 
   // ── Proctoring ──
   const handleProctorAutoSubmit = useCallback(() => {
@@ -123,9 +137,6 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
     };
   }, [startProctoring, stopProctoring]);
 
-  const initialQuestionText =
-    messages.find((m) => m.role === "interviewer")?.content ||
-    `Welcome to your HR behavioral interview for ${config.targetRole}. Could you start by introducing yourself and sharing your career highlights?`;
 
   // ── Answer Submission with Fast Fallback Recovery ──
   const handleAnswerSubmit = useCallback(
@@ -309,6 +320,7 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
         }
       }}
       onEndInterview={async () => {
+        conversationEngine.destroyEngine();
         try {
           if (sessionId) {
             toast.loading("Finalizing HR interview & generating AI report...", { id: "end-hr-session" });

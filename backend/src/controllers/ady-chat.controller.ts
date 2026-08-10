@@ -241,11 +241,15 @@ export async function sendMessage(req: Request, res: Response, next: NextFunctio
         res.write(`data: ${JSON.stringify({ type: "chunk", text })}\n\n`);
         if (typeof (res as any).flush === "function") (res as any).flush();
       },
-      onDone() {
+      async onDone() {
         // Save assistant message
-        userPrisma.chatMessage.create({
-          data: { sessionId: session.id, role: "assistant", content: fullResponse },
-        }).catch(err => console.error("Failed to save chat message:", err));
+        try {
+          await userPrisma.chatMessage.create({
+            data: { sessionId: session.id, role: "assistant", content: fullResponse },
+          });
+        } catch (err) {
+          console.error("Failed to save chat message:", err);
+        }
 
         res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
         if (typeof (res as any).flush === "function") (res as any).flush();

@@ -413,6 +413,13 @@ engineRouter.post("/:sessionId/evaluate", async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
     if (existingEvaluation) {
+      if (session.status !== "completed") {
+        await p.interviewSession.update({
+          where: { id: sessionId },
+          data: { status: "completed", endedAt: session.endedAt || new Date() },
+        });
+        session.status = "completed";
+      }
       res.json({
         success: true,
         evaluation: formatEngineEvaluation(existingEvaluation),
@@ -596,7 +603,7 @@ engineRouter.post("/:sessionId/end", async (req, res) => {
     const updatedSession = await p.interviewSession.update({
       where: { id: sessionId },
       data: {
-        status: "terminated",
+        status: "completed",
         endedAt,
       },
     });

@@ -33,6 +33,7 @@ export default function EngineView({ theme }: EngineViewProps) {
   const [config, setConfig] = useState<EngineConfig | null>(null);
   const [launching, setLaunching] = useState(false);
 
+  const launchingRef = useRef<boolean>(false);
   const sessionIdRef = useRef<string | null>(null);
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -67,7 +68,8 @@ export default function EngineView({ theme }: EngineViewProps) {
   }, [lifecycle]);
 
   const handleLoadingComplete = useCallback(async () => {
-    if (!config) return;
+    if (!config || launchingRef.current) return;
+    launchingRef.current = true;
     setLaunching(true);
     try {
       const res = await api.post("/engine/start", {
@@ -100,6 +102,7 @@ export default function EngineView({ theme }: EngineViewProps) {
       setScreen("landing");
     } finally {
       setLaunching(false);
+      launchingRef.current = false;
     }
   }, [config, lifecycle]);
 
@@ -124,6 +127,7 @@ export default function EngineView({ theme }: EngineViewProps) {
   };
 
   const handleInterviewComplete = useCallback(async (completedSessionId: string) => {
+    lifecycle.markInterviewCompleted();
     try {
       toast.info("Generating your evaluation report...");
       const res = await api.post(`/engine/${completedSessionId}/evaluate`);
@@ -145,9 +149,10 @@ export default function EngineView({ theme }: EngineViewProps) {
       toast.info("Generated summary report");
       setScreen("report");
     }
-  }, []);
+  }, [lifecycle]);
 
   const handleInterviewEnd = useCallback(async () => {
+    lifecycle.markInterviewCompleted();
     if (!sessionId) {
       setEvaluation(DEFAULT_EVALUATION);
       setScreen("report");
@@ -174,7 +179,7 @@ export default function EngineView({ theme }: EngineViewProps) {
       toast.info("Generated summary report");
       setScreen("report");
     }
-  }, [sessionId]);
+  }, [sessionId, lifecycle]);
 
   const handleReset = useCallback(() => {
     if (screen === "active") {
@@ -238,9 +243,9 @@ export default function EngineView({ theme }: EngineViewProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {sessionId && (
-                <span className="text-[10px] px-2 py-1 rounded-lg border font-bold" style={{ background: isDark ? "rgba(16,185,129,0.1)" : "#ecfdf5", borderColor: isDark ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.25)", color: isDark ? "#34d399" : "#059669" }}>
-                  SESSION ACTIVE
+              {screen === "report" && sessionId && (
+                <span className="text-[10px] px-2 py-1 rounded-lg border font-bold" style={{ background: isDark ? "rgba(59,130,246,0.1)" : "#eff6ff", borderColor: isDark ? "rgba(59,130,246,0.2)" : "rgba(59,130,246,0.25)", color: isDark ? "#60a5fa" : "#2563eb" }}>
+                  SESSION COMPLETED
                 </span>
               )}
               <button
@@ -319,6 +324,7 @@ export default function EngineView({ theme }: EngineViewProps) {
             <EngineInterview
               sessionId={sessionId || `engine-session-${Date.now()}`}
               config={config}
+              initialMessages={messages}
               onComplete={handleInterviewComplete}
               onEnd={handleInterviewEnd}
               theme={theme}

@@ -202,6 +202,26 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
     },
   ]);
 
+  useEffect(() => {
+    if (initialQuestion?.question) {
+      setCurrentQuestion(initialQuestion);
+      setMessages((prev) => {
+        if (prev.length === 0 || (prev.length === 1 && prev[0].id === "init-q")) {
+          return [
+            {
+              id: "init-q",
+              role: "interviewer",
+              content: initialQuestion.question,
+              timestamp: Date.now(),
+              questionNumber: 1,
+            },
+          ];
+        }
+        return prev;
+      });
+    }
+  }, [initialQuestion]);
+
   const [questionNumber, setQuestionNumber] = useState(1);
   const [totalQuestions, setTotalQuestions] = useState(5);
   const [currentQuestion, setCurrentQuestion] = useState<any>(initialQuestion || null);
@@ -529,6 +549,7 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
         }
       }}
       onEndInterview={async () => {
+        conversationEngine.destroyEngine();
         try {
           if (sessionId) {
             toast.loading("Finalizing technical interview & generating report...", { id: "end-tech-session" });

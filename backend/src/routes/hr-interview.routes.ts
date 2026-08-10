@@ -306,6 +306,25 @@ hrInterviewRouter.post("/:sessionId/evaluate", async (req, res) => {
       return;
     }
 
+    const existingEvaluation = await p.interviewEvaluation.findFirst({
+      where: { sessionId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (existingEvaluation) {
+      if (session.status !== "completed") {
+        await p.interviewSession.update({
+          where: { id: sessionId },
+          data: { status: "completed", endedAt: session.endedAt || new Date() },
+        });
+        session.status = "completed";
+      }
+      res.json({
+        success: true,
+        evaluation: existingEvaluation,
+      });
+      return;
+    }
+
     const messages = await p.interviewMessage.findMany({
       where: { sessionId },
       orderBy: { createdAt: "asc" },
@@ -465,7 +484,7 @@ hrInterviewRouter.post("/:sessionId/end", async (req, res) => {
 
     await p.interviewSession.update({
       where: { id: sessionId },
-      data: { status: "terminated", endedAt: new Date() },
+      data: { status: "completed", endedAt: new Date() },
     });
 
     const messages = await p.interviewMessage.findMany({

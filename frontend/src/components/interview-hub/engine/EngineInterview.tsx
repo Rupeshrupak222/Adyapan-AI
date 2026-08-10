@@ -19,6 +19,7 @@ import type { EngineConfig, EngineMessage } from "./EngineTypes";
 interface EngineInterviewProps {
   sessionId: string;
   config: EngineConfig;
+  initialMessages?: EngineMessage[];
   onComplete: (sessionId: string) => void;
   onEnd: () => void;
   theme?: string;
@@ -27,6 +28,7 @@ interface EngineInterviewProps {
 export const EngineInterview: React.FC<EngineInterviewProps> = ({
   sessionId,
   config,
+  initialMessages,
   onComplete,
   onEnd,
   theme: propTheme,
@@ -110,8 +112,24 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
 
   // Initial Question Setup
   const initialQuestionText =
+    (initialMessages && initialMessages.find((m) => m.role === "interviewer")?.content) ||
     messages.find((m) => m.role === "interviewer")?.content ||
     `Tell me about your background and interest in the ${config.targetRole} role.`;
+
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages(initialMessages);
+    } else if (messages.length === 0) {
+      const initMsg: EngineMessage = {
+        id: `ai-init-${Date.now()}`,
+        role: "interviewer",
+        content: initialQuestionText,
+        timestamp: Date.now(),
+        questionNumber: 1,
+      };
+      setMessages([initMsg]);
+    }
+  }, [initialMessages, initialQuestionText, setMessages]);
 
   // ── Conversation Engine Integration with Fast Fallback ──
   const handleAnswerSubmit = useCallback(
@@ -287,6 +305,7 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
         }
       }}
       onEndInterview={async () => {
+        conversationEngine.destroyEngine();
         try {
           if (sessionId) {
             toast.loading("Finalizing interview & generating AI report...", { id: "end-session" });

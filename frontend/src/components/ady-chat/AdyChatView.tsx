@@ -108,8 +108,14 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
     }
   }, []);
 
+  const isNewSessionCreatedRef = useRef(false);
+
   useEffect(() => {
     if (activeSessionId) {
+      if (isNewSessionCreatedRef.current) {
+        isNewSessionCreatedRef.current = false;
+        return;
+      }
       loadMessages(activeSessionId);
     } else {
       setMessages([]);
@@ -189,6 +195,7 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
         });
         if (res.data.success) {
           sessionId = res.data.session.id;
+          isNewSessionCreatedRef.current = true;
           setActiveSessionId(sessionId);
           setSessions(prev => [res.data.session, ...prev]);
         }

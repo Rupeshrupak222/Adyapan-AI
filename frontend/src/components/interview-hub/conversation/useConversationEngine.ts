@@ -78,6 +78,7 @@ export function useConversationEngine({
   }, [isPaused]);
 
   // Operational guard refs
+  const isDestroyedRef = useRef<boolean>(false);
   const isSubmittingRef = useRef<boolean>(false);
   const isListeningRef = useRef<boolean>(false);
   const isStartingRef = useRef<boolean>(false);
@@ -235,7 +236,8 @@ export function useConversationEngine({
 
   // Interruption logic: Candidate starts speaking while AI is speaking
   const handleCandidateInterruption = useCallback(() => {
-    if (stateRef.current === "AI_SPEAKING" && !isSubmittingRef.current) {
+    if (isDestroyedRef.current || isPausedRef.current || isSubmittingRef.current) return;
+    if (stateRef.current === "AI_SPEAKING") {
       logInterview("VAD", "Candidate interrupted interviewer");
       stopSpeech();
       callbacks.onInterrupted?.();
@@ -267,7 +269,7 @@ export function useConversationEngine({
 
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       const updateLevel = () => {
-        if (!analyserRef.current) return;
+        if (isDestroyedRef.current || !analyserRef.current) return;
         analyserRef.current.getByteFrequencyData(dataArray);
         const sum = dataArray.reduce((acc, val) => acc + val, 0);
         const avg = sum / dataArray.length;
@@ -276,11 +278,13 @@ export function useConversationEngine({
         callbacks.onMicLevelChange?.(level);
 
         // Voice Activity Detection threshold for interruption
-        if (level > 25 && stateRef.current === "AI_SPEAKING") {
+        if (level > 25 && stateRef.current === "AI_SPEAKING" && !isDestroyedRef.current && !isSubmittingRef.current) {
           handleCandidateInterruption();
         }
 
-        animFrameRef.current = requestAnimationFrame(updateLevel);
+        if (!isDestroyedRef.current && analyserRef.current) {
+          animFrameRef.current = requestAnimationFrame(updateLevel);
+        }
       };
       updateLevel();
     } catch (err) {
@@ -295,6 +299,7 @@ export function useConversationEngine({
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = null;
     }
+    analyserRef.current = null;
     if (micStreamRef.current) {
       micStreamRef.current.getTracks().forEach((track) => track.stop());
       micStreamRef.current = null;
@@ -662,6 +667,7 @@ export function useConversationEngine({
   }, []); // Run once on mount
 
   const destroyEngine = useCallback(() => {
+    isDestroyedRef.current = true;
     stopSpeech();
     stopMicMonitoring();
     clearSilenceTimers();
