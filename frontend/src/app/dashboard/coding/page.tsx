@@ -280,7 +280,7 @@ function CodingHubContent() {
 
   const handleSolveQuestion = (q: any) => {
     if (!q || !q.id) return;
-    router.push(`/dashboard/coding/problem/${q.id}`);
+    window.open(`/dashboard/coding/problem/${q.id}`, "_blank");
   };
 
   const handleBookmarkToggle = async () => {
@@ -792,8 +792,12 @@ function CodingHubContent() {
                               <PremiumButton variant="ghost" onClick={() => handleOpenQuestion(q)} className="p-1 px-2.5">
                                 Details
                               </PremiumButton>
-                              <PremiumButton variant="primary" onClick={() => handleSolveQuestion(q)} className="p-1 px-3">
-                                Solve
+                              <PremiumButton 
+                                variant={isSolved ? "ghost" : isAttempted ? "secondary" : "primary"} 
+                                onClick={() => handleSolveQuestion(q)} 
+                                className={`p-1 px-3 ${isAttempted ? "bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 font-bold" : ""}`}
+                              >
+                                {isSolved ? "Solved" : isAttempted ? "Try Again" : "Solve"}
                               </PremiumButton>
                             </div>
                           </td>
@@ -1075,9 +1079,6 @@ function CodingHubContent() {
                   </PremiumButton>
                   <PremiumButton variant="secondary" onClick={handleMarkAttempted} className="bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-color)]">
                     Mark Attempted
-                  </PremiumButton>
-                  <PremiumButton variant="primary" onClick={handleMarkSolved} icon={<CheckCircle2 size={13} />}>
-                    Mark Solved
                   </PremiumButton>
                 </div>
               </div>
