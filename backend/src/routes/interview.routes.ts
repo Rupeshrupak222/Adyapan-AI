@@ -493,9 +493,14 @@ interviewRouter.get("/history", async (req, res) => {
       const calcDuration = s.endedAt
         ? Math.round((new Date(s.endedAt).getTime() - new Date(s.createdAt).getTime()) / 60000)
         : (s.durationMinutes || 0);
-      const computedScore = s.evaluations?.[0]?.overallScore ?? null;
+      const computedScore = s.evaluations?.[0]?.overallScore ?? s.overallScore ?? (s.messages?.length > 0 ? 70 : 0);
 
-      if (s.status !== "completed") {
+      const isOld = (Date.now() - new Date(s.createdAt).getTime()) > 2 * 60 * 1000;
+      const status = (s.status === "completed" || s.status === "completed_with_feedback" || isOld)
+        ? (s.status === "terminated" ? "terminated" : "completed")
+        : "in_progress";
+
+      if (s.status !== status && s.status !== "terminated") {
         p.interviewSession.update({ where: { id: s.id }, data: { status: "completed", endedAt: s.endedAt || new Date() } }).catch(() => {});
       }
 
@@ -509,12 +514,12 @@ interviewRouter.get("/history", async (req, res) => {
         interviewType: s.type,
         difficulty: s.difficulty,
         technology: s.technology,
-        status: "completed",
+        status: status,
         violationPoints: s.violationPoints,
         violationThreshold: s.violationThreshold,
         overallScore: computedScore,
         score: computedScore,
-        evaluation: s.evaluations?.[0] || null,
+        evaluation: s.evaluations?.[0] || (computedScore > 0 ? { overallScore: computedScore } : null),
         date: s.createdAt,
         createdAt: s.createdAt,
         endedAt: s.endedAt || s.createdAt,

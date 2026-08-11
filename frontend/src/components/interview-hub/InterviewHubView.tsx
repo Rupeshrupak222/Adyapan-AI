@@ -729,14 +729,24 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                         </div>
                         {h.status === "terminated" && <span className="text-[10px] font-bold text-red-500">Terminated</span>}
                       </div>
-                      {h.evaluation?.overallScore ? (
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-[11px] shrink-0"
-                          style={{ background: scoreBg(h.evaluation.overallScore), color: scoreColor(h.evaluation.overallScore) }}>
-                          {h.evaluation.overallScore}%
-                        </div>
-                      ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">In Progress</span>
-                      )}
+                      {(() => {
+                        const score = h.evaluation?.overallScore ?? (h as any).overallScore ?? (h as any).score;
+                        if (score != null && score > 0) {
+                          return (
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-[11px] shrink-0"
+                              style={{ background: scoreBg(score), color: scoreColor(score) }}>
+                              {score}%
+                            </div>
+                          );
+                        }
+                        if (h.status === "terminated") {
+                          return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20">Terminated</span>;
+                        }
+                        if (h.status === "in_progress" || h.status === "active") {
+                          return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">In Progress</span>;
+                        }
+                        return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Completed</span>;
+                      })()}
                     </div>
                   ))}
                 </div>

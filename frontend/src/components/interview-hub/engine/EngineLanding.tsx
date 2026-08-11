@@ -1120,16 +1120,23 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                         })()}
                       </div>
                     </div>
-                    {h.score != null ? (
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-[11px] shrink-0"
-                        style={{ background: `${scoreColor}15`, color: scoreColor }}
-                      >
-                        {h.score}%
-                      </div>
-                    ) : (
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">In Progress</span>
-                    )}
+                    {(() => {
+                      const score = h.score ?? (h as any).overallScore ?? h.evaluation?.overallScore;
+                      if (score != null && score > 0) {
+                        return (
+                          <div
+                            className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-[11px] shrink-0"
+                            style={{ background: `${scoreColor}15`, color: scoreColor }}
+                          >
+                            {score}%
+                          </div>
+                        );
+                      }
+                      if (h.status === "in_progress" || h.status === "active") {
+                        return <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">In Progress</span>;
+                      }
+                      return <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Completed</span>;
+                    })()}
                   </motion.div>
                 );
               })}

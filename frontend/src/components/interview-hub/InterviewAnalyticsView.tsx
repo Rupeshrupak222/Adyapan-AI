@@ -561,23 +561,37 @@ export function InterviewAnalyticsView({ setView, showBackBtn = false, initialSe
                           <AlertTriangle size={11} /> {session.violationCount}
                         </div>
                       )}
-                      {session.evaluation != null || session.overallScore != null || session.status === "completed" || session.endedAt != null ? (
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 border"
-                          style={{
-                            background: `${scoreColor(session.evaluation?.overallScore ?? session.overallScore ?? 75)}18`,
-                            color: scoreColor(session.evaluation?.overallScore ?? session.overallScore ?? 75),
-                            borderColor: `${scoreColor(session.evaluation?.overallScore ?? session.overallScore ?? 75)}30`,
-                          }}
-                        >
-                          {session.evaluation?.overallScore ?? session.overallScore ?? 75}%
-                        </div>
-                      ) : (
-                        <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-lg border uppercase tracking-wider"
-                          style={{ background: c.amberBg, color: c.amber, borderColor: c.amberBorder }}>
-                          IN PROGRESS
-                        </span>
-                      )}
+                      {(() => {
+                        const score = session.evaluation?.overallScore ?? session.overallScore ?? (session as any).score;
+                        if (score != null && score > 0) {
+                          return (
+                            <div
+                              className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 border"
+                              style={{
+                                background: `${scoreColor(score)}18`,
+                                color: scoreColor(score),
+                                borderColor: `${scoreColor(score)}30`,
+                              }}
+                            >
+                              {score}%
+                            </div>
+                          );
+                        }
+                        if (session.status === "in_progress" || session.status === "active") {
+                          return (
+                            <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-lg border uppercase tracking-wider"
+                              style={{ background: c.amberBg, color: c.amber, borderColor: c.amberBorder }}>
+                              IN PROGRESS
+                            </span>
+                          );
+                        }
+                        return (
+                          <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-lg border uppercase tracking-wider"
+                            style={{ background: c.greenBg, color: c.green, borderColor: c.greenBorder }}>
+                            COMPLETED
+                          </span>
+                        );
+                      })()}
                       <ChevronRight size={14} style={{ color: c.textMuted }} />
                     </div>
                   </div>
