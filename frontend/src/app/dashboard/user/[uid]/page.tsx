@@ -96,9 +96,6 @@ const MindMapsView = dynamic(() => import("@/components/learning-hub/MindMapsVie
 const FlashcardsView = dynamic(() => import("@/components/learning-hub/FlashcardsView").then(m => m.FlashcardsView), {
   loading: () => <DashboardWidgetSkeleton title="Flashcards" />
 });
-const CodingAssistantView = dynamic(() => import("@/components/coding-hub/CodingAssistantView"), {
-  loading: () => <DashboardWidgetSkeleton title="Coding Assistant" />
-});
 const DsaPracticeView = dynamic(() => import("@/components/coding-hub/DsaPracticeView").then(m => m.DsaPracticeView), {
   loading: () => <DashboardWidgetSkeleton title="DSA Practice" />
 });
@@ -1432,8 +1429,6 @@ function UserDashboardContent() {
             <HubErrorBoundary><MindMapsView /></HubErrorBoundary>
           ) : activeView === "flashcards" ? (
             <HubErrorBoundary><FlashcardsView /></HubErrorBoundary>
-          ) : activeView === "coding-assistant" ? (
-            <HubErrorBoundary><CodingAssistantView /></HubErrorBoundary>
           ) : activeView === "dsa-practice" ? (
             <HubErrorBoundary><DsaPracticeView /></HubErrorBoundary>
           ) : activeView === "coding-challenges" ? (

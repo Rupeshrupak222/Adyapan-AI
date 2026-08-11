@@ -16,7 +16,6 @@ export type ResumeHubViewType =
   | "quiz-generator"
   | "assignment-generator"
   | "mind-maps"
-  | "coding-assistant"
   | "dsa-practice"
   | "coding-challenges"
   | "github-portfolio"

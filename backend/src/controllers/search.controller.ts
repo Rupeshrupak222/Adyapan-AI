@@ -233,7 +233,7 @@ export async function globalSearch(req: Request, res: Response) {
       id: i.id, label: `${i.role}${i.company ? ` @ ${i.company}` : ""}`, category: "Interviews", viewId: "interview-hub",
     }));
     addItems(codingSessions, (s) => ({
-      id: s.id, label: s.title, category: "Coding Sessions", viewId: "coding-assistant",
+      id: s.id, label: s.title, category: "Coding Sessions", viewId: "dsa-practice",
     }));
     addItems(resumes, (r) => ({
       id: r.id, label: r.title, category: "Resumes", viewId: "resume-builder",

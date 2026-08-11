@@ -423,15 +423,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
   }, []);
 
   useEffect(() => {
-    let step = 0;
-    const timer = setInterval(() => {
-      if (step < LOADING_STEPS.length - 1) {
-        step++;
-        setLoadingStep(step);
-      }
-    }, 700);
     fetchDashboard(true);
-    return () => clearInterval(timer);
   }, [fetchDashboard]);
 
   const handleRefresh = async () => {

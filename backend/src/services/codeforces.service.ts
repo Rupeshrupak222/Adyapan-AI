@@ -221,26 +221,24 @@ export class CodeforcesService {
           topicBuckets[topic] = [];
         }
         
-        if (topicBuckets[topic].length < 45) {
-          const externalId = `${p.contestId}-${p.index}`;
-          const stat = stats.find((s: any) => s.contestId === p.contestId && s.index === p.index);
-          const solvedCount = stat ? stat.solvedCount : 0;
-          
-          topicBuckets[topic].push({
-            externalId,
-            source: "codeforces",
-            title,
-            problemUrl: `https://codeforces.com/problemset/problem/${p.contestId}/${p.index}`,
-            difficulty: mapRatingToDifficulty(p.rating),
-            rating: p.rating,
-            topic,
-            tagsJson: generatePlacementTags(p.rating, p.tags),
-            // placementImportance is true if high frequency / placement fav
-            placementImportance: p.rating >= 1200 && p.rating <= 1800,
-            interviewImportance: p.rating >= 1400 && p.rating <= 2000,
-            solvedCount
-          });
-        }
+        const externalId = `${p.contestId}-${p.index}`;
+        const stat = stats.find((s: any) => s.contestId === p.contestId && s.index === p.index);
+        const solvedCount = stat ? stat.solvedCount : 0;
+        
+        topicBuckets[topic].push({
+          externalId,
+          source: "codeforces",
+          title,
+          problemUrl: `https://codeforces.com/problemset/problem/${p.contestId}/${p.index}`,
+          difficulty: mapRatingToDifficulty(p.rating),
+          rating: p.rating,
+          topic,
+          tagsJson: generatePlacementTags(p.rating, p.tags),
+          // placementImportance is true if high frequency / placement fav
+          placementImportance: p.rating >= 1200 && p.rating <= 1800,
+          interviewImportance: p.rating >= 1400 && p.rating <= 2000,
+          solvedCount
+        });
       }
 
       // Flatten buckets

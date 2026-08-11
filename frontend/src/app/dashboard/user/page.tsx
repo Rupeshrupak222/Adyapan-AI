@@ -96,9 +96,6 @@ const MindMapsView = dynamic(() => import("@/components/learning-hub/MindMapsVie
 const FlashcardsView = dynamic(() => import("@/components/learning-hub/FlashcardsView").then(m => m.FlashcardsView), {
   loading: () => <DashboardWidgetSkeleton title="Flashcards" />
 });
-const CodingAssistantView = dynamic(() => import("@/components/coding-hub/CodingAssistantView"), {
-  loading: () => <DashboardWidgetSkeleton title="Coding Assistant" />
-});
 const DsaPracticeView = dynamic(() => import("@/components/coding-hub/DsaPracticeView").then(m => m.DsaPracticeView), {
   loading: () => <DashboardWidgetSkeleton title="DSA Practice" />
 });
@@ -1369,8 +1366,19 @@ function UserDashboardContent() {
   const handleViewDashboard = () => navigateTo("dashboard");
   const handleAdyChat = () => navigateTo("ady-chat");
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) {
+    return (
+      <div className="relative overflow-hidden flex items-center justify-center p-6" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
+        <DashboardWidgetSkeleton title="Loading Dashboard" />
+      </div>
+    );
+  }
+
   return (
-    <div className="relative overflow-hidden" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
+    <div suppressHydrationWarning className="relative overflow-hidden" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
       {showOnboarding && <OnboardingFlow userId={user?.id} onComplete={() => setShowOnboarding(false)} />}
       <FloatingOrbs />
 
@@ -1430,8 +1438,6 @@ function UserDashboardContent() {
             <HubErrorBoundary><MindMapsView /></HubErrorBoundary>
           ) : activeView === "flashcards" ? (
             <HubErrorBoundary><FlashcardsView /></HubErrorBoundary>
-          ) : activeView === "coding-assistant" ? (
-            <HubErrorBoundary><CodingAssistantView /></HubErrorBoundary>
           ) : activeView === "dsa-practice" ? (
             <HubErrorBoundary><DsaPracticeView /></HubErrorBoundary>
           ) : activeView === "coding-challenges" ? (

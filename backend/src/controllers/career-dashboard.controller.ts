@@ -133,7 +133,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     dsaActivities.length,
     totalRoadmapSolved
   );
-  const dsaAccuracy = dsaProgress?.accuracy || (submissions.length > 0 ? Math.round((solvedSubmissions.length / submissions.length) * 100) : (userQuestionProgress.length > 0 || dsaSolved > 0) ? 80 : 0);
+  const dsaAccuracy = dsaProgress?.accuracy || (submissions.length > 0 ? Math.round((solvedSubmissions.length / submissions.length) * 100) : 0);
   const dsaStreak = dsaProgress?.streak || learningStreak?.currentStreak || 0;
 
   // Learning score & Study hours calculation
@@ -231,8 +231,8 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   const codeReviews = submissions.filter((s: any) => s.aiReview).length;
   const avgComplexity = codeReviews > 0 ? Math.round(submissions.reduce((s: number, sub: any) => {
     const review = sub.aiReview as any;
-    return s + (review?.efficiencyScore || review?.score || 70);
-  }, 0) / codeReviews) : 70;
+    return s + (review?.efficiencyScore || review?.score || 0);
+  }, 0) / codeReviews) : 0;
 
   // ─── Resume Summary ───────────────────────────────────────────
   const improvementSuggestionsRemaining = resumeImprovements.reduce((s: number, r: any) => s + ((r.totalCount || 0) - (r.appliedCount || 0)), 0);
@@ -1076,26 +1076,6 @@ export async function getCareerDashboard(req: Request, res: Response, next: Next
   try {
     const userId = requireUserId(req);
     const userPrisma = await getUserPrismaFromRequest(req);
-
-    const snapshot = await userPrisma.careerDashboardSnapshot.findUnique({
-      where: { userId }
-    });
-
-    const forceRefresh = req.query.refresh === "true";
-    const EXPIRATION_TIME = 15 * 60 * 1000; // 15 minutes cache duration
-    const isMinimalSnapshot = snapshot && (
-      snapshot.overallReadiness === 0 ||
-      (snapshot.dashboardJson as any)?.scores?.overall === 0 ||
-      (snapshot.dashboardJson as any)?.resumeSummary?.resumesCreated === 0 ||
-      (snapshot.dashboardJson as any)?.codingSummary?.problemsSolved === 0 ||
-      (snapshot.dashboardJson as any)?.resumeSummary?.resumeScore === 0
-    );
-    if (!forceRefresh && snapshot && !isMinimalSnapshot && (Date.now() - new Date(snapshot.createdAt).getTime() < EXPIRATION_TIME)) {
-      return res.json({
-        success: true,
-        dashboard: snapshot.dashboardJson
-      });
-    }
 
     const dashboard = await generateAndSaveDashboard(userId, userPrisma);
     return res.json({

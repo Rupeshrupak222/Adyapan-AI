@@ -381,19 +381,21 @@ ${JSON.stringify(unsolvedPool.slice(0, 80), null, 2)}`;
     const topicCoverage = uniqueTopics.size;
     // --- PLACEMENT READINESS SCORE ---
     // Formula: Roadmap (40%), Solved Count (30% -> target 60 solved), Complexity (15%), Challenges (15% -> target 3 challenges)
+    const complexityScore = avgComplexity || 0;
     const roadmapWeight = roadmapProgress * 0.40;
     const solvedWeight = Math.min(30, (solvedCount / 60) * 30);
-    const complexityWeight = (avgComplexity || 70) * 0.15;
+    const complexityWeight = complexityScore * 0.15;
     const challengeWeight = Math.min(15, challengesCompleted * 5);
 
     const placementReadiness = Math.min(100, Math.round(roadmapWeight + solvedWeight + complexityWeight + challengeWeight));
 
     // --- INTERVIEW READINESS SCORE ---
     // Formula: Topic Coverage (35% -> target 10 topics), Code Review score (35%), Accuracy (30% -> solved/attempted)
-    const accuracy = attemptedCount > 0 ? (solvedCount / attemptedCount) * 100 : 0;
+    const accuracyScore = attemptedCount > 0 ? (solvedCount / attemptedCount) * 100 : 0;
+    const reviewScore = avgReview || 0;
     const coverageWeight = Math.min(35, (topicCoverage / 10) * 35);
-    const reviewWeight = (avgReview || 65) * 0.35;
-    const accuracyWeight = (accuracy || 70) * 0.30;
+    const reviewWeight = reviewScore * 0.35;
+    const accuracyWeight = accuracyScore * 0.30;
 
     const interviewReadiness = Math.min(100, Math.round(coverageWeight + reviewWeight + accuracyWeight));
 

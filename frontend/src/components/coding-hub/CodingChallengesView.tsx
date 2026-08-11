@@ -169,11 +169,9 @@ function CategoryCard({
               {category.difficultyRange}
             </span>
           </div>
-          {category.solved > 0 && (
-            <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-0.5">
-              <CheckCircle2 size={10} /> {category.solved}
-            </span>
-          )}
+          <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-0.5">
+            <CheckCircle2 size={10} /> {category.solved}/{category.challengeCount} solved
+          </span>
         </div>
 
         {/* Progress bar */}

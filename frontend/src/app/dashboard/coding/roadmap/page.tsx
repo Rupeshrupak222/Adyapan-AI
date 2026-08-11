@@ -200,31 +200,16 @@ export default function CodingRoadmapPage() {
   const triggerGeneration = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsGenerating(true);
-    setLoadingStepIdx(0);
-
-    const stepInterval = setInterval(() => {
-      setLoadingStepIdx((prev) => prev < LOADING_STEPS.length - 2 ? prev + 1 : prev);
-    }, 700);
 
     try {
       const res = await api.post("/coding/roadmap/generate", formData);
-
-      clearInterval(stepInterval);
-      setLoadingStepIdx(LOADING_STEPS.length - 2);
-
-      setTimeout(() => {
-        setLoadingStepIdx(LOADING_STEPS.length - 1);
-        setTimeout(() => {
-          setRoadmap(res.data.roadmap);
-          confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-          setIsGenerating(false);
-          fetchData();
-        }, 600);
-      }, 500);
+      setRoadmap(res.data.roadmap);
+      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+      fetchData();
     } catch (err) {
-      clearInterval(stepInterval);
-      setIsGenerating(false);
       toast.error("AI Roadmap generation failed. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -274,42 +259,14 @@ export default function CodingRoadmapPage() {
   const optionStyle = { background: isDark ? "#0e1025" : "#ffffff", color: isDark ? "#e5e7eb" : "#1f2937" };
 
   return (
-    <div className="relative overflow-hidden font-sans" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
-      <FloatingOrbs />
-
-      <DashboardSidebar
-        activeView="coding"
-        onViewDashboard={handleViewDashboard}
-        onViewTool={handleViewTool}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
-
-      <DashboardTopNav
-        user={user}
-        theme={theme}
-        onThemeToggle={handleThemeToggle}
-        onViewProfile={handleViewProfile}
-        onAdyChat={handleAdyChat}
-        onViewTool={handleViewTool}
-        onMenuToggle={() => setSidebarOpen(prev => !prev)}
-        notifications={notifications}
-        setNotifications={setNotifications}
-        unreadCount={unreadCount}
-        onMarkAllRead={() => {}}
-        onClearAll={() => {}}
-        onPremium={handlePremium}
-        onViewSettings={() => handleViewTool("settings")}
-      />
-
-      <main className="dash-main relative z-10 font-sans">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+    <div className="w-full font-sans relative">
+      <div className="w-full py-2">
 
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 mb-8" style={{ borderBottom: "1px solid var(--border-color)" }}>
             <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-3" style={{ backgroundImage: "linear-gradient(135deg, #f59e0b, #d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                <Compass className="w-8 h-8 text-amber-500" style={{ WebkitTextFillColor: "#f59e0b" }} />
+              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-3" style={{ color: "var(--text-primary)" }}>
+                <Compass className="w-8 h-8" style={{ color: "var(--text-primary)" }} />
                 AI Coding Roadmap
               </h1>
               <p className="text-xs md:text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
@@ -339,106 +296,13 @@ export default function CodingRoadmapPage() {
           <AnimatePresence mode="wait">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 min-h-[50vh]">
-                <div className="relative w-full max-w-md p-8 rounded-2xl backdrop-blur-xl shadow-2xl flex flex-col items-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
-                    className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20 mb-6"
-                  >
-                    <Compass size={32} className="text-black" />
-                  </motion.div>
-                  <h2 className="text-xl font-black mb-1" style={{ backgroundImage: "linear-gradient(135deg, var(--text-primary), var(--text-secondary))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                    Adyapan Roadmap Engine
-                  </h2>
-                  <p className="text-[10px] text-amber-500 uppercase tracking-widest font-black mb-6">
-                    Building Personalized Path
-                  </p>
-                  <div className="w-full flex flex-col gap-3">
-                    {LOADING_STEPS.slice(0, 5).map((step, idx) => {
-                      const isDone = idx < loadingStepIdx;
-                      const isCurrent = idx === loadingStepIdx;
-                      return (
-                        <div key={idx} className="flex items-center justify-between text-xs font-semibold py-1">
-                          <span className={isDone ? "line-through" : ""} style={{ color: isDone ? "var(--text-primary)" : isCurrent ? "#f59e0b" : "var(--text-primary)", opacity: isDone ? 0.4 : isCurrent ? 1 : 0.2 }}>
-                            {step}
-                          </span>
-                          <div>
-                            {isDone ? (
-                              <Check size={14} className="text-emerald-500" />
-                            ) : isCurrent ? (
-                              <RefreshCw size={12} className="animate-spin text-amber-500" />
-                            ) : (
-                              <div className="w-3.5 h-3.5 rounded-full" style={{ border: "1px solid var(--border-color)" }} />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                <RefreshCw size={24} className="animate-spin text-amber-500 mb-3" />
+                <p className="text-xs font-bold text-[var(--text-secondary)]">Loading Coding Roadmap...</p>
               </div>
             ) : isGenerating ? (
-              <div className="flex flex-col items-center justify-center py-16 min-h-[50vh]">
-                <div className="relative w-full max-w-lg p-10 rounded-2xl backdrop-blur-xl shadow-2xl flex flex-col items-center text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
-                  <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-                    <div className="absolute -top-20 -right-20 w-60 h-60 bg-amber-500/10 rounded-full blur-[80px] animate-pulse" />
-                    <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-orange-500/10 rounded-full blur-[80px] animate-pulse" />
-                  </div>
-
-                  <motion.div
-                    animate={{ scale: [1, 1.08, 1] }}
-                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                    className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30 mb-6 relative z-10"
-                  >
-                    <BrainCircuit size={32} className="text-black" />
-                  </motion.div>
-
-                  <h3 className="text-lg font-black mb-1 relative z-10" style={{ backgroundImage: "linear-gradient(135deg, var(--text-primary), var(--text-secondary))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                    Building Your Personalized Path
-                  </h3>
-                  <p className="text-[10px] text-amber-500 uppercase tracking-widest font-black mb-8 relative z-10">
-                    AI Roadmap Generation
-                  </p>
-
-                  <div className="w-full space-y-3 text-left max-w-xs mx-auto mb-8 relative z-10">
-                    {LOADING_STEPS.map((step, idx) => {
-                      const isDone = idx < loadingStepIdx;
-                      const isActive = idx === loadingStepIdx;
-                      return (
-                        <motion.div
-                          key={step}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: isDone || isActive ? 1 : 0.25, x: 0 }}
-                          transition={{ delay: idx * 0.05 }}
-                          className="flex items-center justify-between text-xs font-semibold py-1"
-                        >
-                          <span className={isDone ? "line-through" : ""} style={{ color: isDone ? "var(--text-primary)" : isActive ? "#f59e0b" : "var(--text-primary)", opacity: isDone ? 0.4 : isActive ? 1 : 0.2 }}>
-                            {step}
-                          </span>
-                          <div className="flex-shrink-0 ml-3">
-                            {isDone ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                            ) : isActive ? (
-                              <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <div className="w-4 h-4 rounded-full" style={{ border: "1px solid var(--border-color)" }} />
-                            )}
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="w-full rounded-full h-1.5 overflow-hidden relative z-10" style={{ background: "rgba(255,255,255,0.06)" }}>
-                    <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500"
-                      style={{ backgroundSize: "200% 100%" }}
-                      initial={{ width: "0%" }}
-                      animate={{ width: `${(loadingStepIdx / (LOADING_STEPS.length - 1)) * 100}%` }}
-                      transition={{ ease: "easeInOut", duration: 0.5 }}
-                    />
-                  </div>
-                </div>
+              <div className="flex flex-col items-center justify-center py-20 min-h-[50vh]">
+                <RefreshCw size={24} className="animate-spin text-amber-500 mb-3" />
+                <p className="text-xs font-bold text-[var(--text-secondary)]">Generating AI Coding Roadmap...</p>
               </div>
             ) : !roadmap ? (
               <motion.div
@@ -894,8 +758,6 @@ export default function CodingRoadmapPage() {
             )}
           </AnimatePresence>
         </div>
-      </main>
-
       {confirmModal}
     </div>
   );

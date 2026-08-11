@@ -56,7 +56,6 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Learning Streak", viewId: "learning-streak", category: "Learning Hub" },
   { label: "DSA Practice", viewId: "dsa-practice", category: "Coding Hub" },
   { label: "Coding Dashboard", viewId: "coding-dashboard", category: "Coding Hub" },
-  { label: "Coding Assistant", viewId: "coding-assistant", category: "Coding Hub" },
   { label: "Coding Challenges", viewId: "coding-challenges", category: "Coding Hub" },
   { label: "GitHub Portfolio", viewId: "github-portfolio", category: "Coding Hub" },
   { label: "Resume Builder", viewId: "resume-builder", category: "Resume Hub" },
@@ -119,7 +118,6 @@ export const sidebarItems: SidebarItem[] = [
       { label: "Coding Dashboard", href: "/dashboard/coding?tab=dashboard" },
       { label: "Coding Roadmap", href: "/dashboard/coding?tab=roadmap" },
       { label: "DSA Practice", href: "/dashboard/coding?tab=dsa" },
-      { label: "Coding Assistant", href: "/dashboard/user?view=coding-assistant" },
       { label: "Coding Challenges", href: "/dashboard/user?view=coding-challenges" },
       { label: "GitHub Portfolio Builder", href: "/dashboard/user?view=github-portfolio" },
     ],
@@ -343,7 +341,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                         else if (sub.label === "Assignment Generator") onViewTool("assignment-generator");
                         else if (sub.label === "Mind Maps") onViewTool("mind-maps");
                         else if (sub.label === "Flashcards") onViewTool("flashcards");
-                        else if (sub.label === "Coding Assistant") onViewTool("coding-assistant");
                         else if (sub.label === "DSA Practice") onViewTool("dsa-practice");
                         else if (sub.label === "Coding Dashboard") router.push("/dashboard/coding/dashboard");
                         else if (sub.label === "Coding Challenges") onViewTool("coding-challenges");

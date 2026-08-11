@@ -197,7 +197,6 @@ const USAGE_LIMITS: UsageLimitEntry[] = [
   { featureKey: "mock-interview", planCode: "free", dailyLimit: 3, monthlyLimit: 90, tokenLimit: null },
   { featureKey: "ppt-generate", planCode: "free", dailyLimit: 5, monthlyLimit: 150, tokenLimit: null },
   { featureKey: "notes-generate", planCode: "free", dailyLimit: 10, monthlyLimit: 300, tokenLimit: null },
-  { featureKey: "coding-assistant", planCode: "free", dailyLimit: 20, monthlyLimit: 600, tokenLimit: null },
   { featureKey: "research", planCode: "free", dailyLimit: 10, monthlyLimit: 300, tokenLimit: null },
   { featureKey: "ady-chat", planCode: "free", dailyLimit: 50, monthlyLimit: 1500, tokenLimit: null },
 

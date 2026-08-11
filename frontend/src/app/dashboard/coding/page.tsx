@@ -150,22 +150,13 @@ function CodingHubContent() {
         setUnreadCount(res.data.notifications?.filter((n: any) => !n.read).length || 0);
       })
       .catch(() => {});
-  }, []);
 
-  // Loading screen checklist simulation
-  useEffect(() => {
-    if (loadingIndex < loadingSteps.length) {
-      const timer = setTimeout(() => {
-        setLoadingIndex(prev => prev + 1);
-      }, 500);
-      return () => clearTimeout(timer);
-    } else {
+    // Fetch initial data immediately
+    setIsLoading(true);
+    Promise.all([fetchDashboardData(), fetchQuestions()]).finally(() => {
       setIsLoading(false);
-      // Fetch initial data
-      fetchDashboardData();
-      fetchQuestions();
-    }
-  }, [loadingIndex]);
+    });
+  }, []);
 
   // Timer logic for selected question time spent tracking
   useEffect(() => {
@@ -386,11 +377,19 @@ function CodingHubContent() {
     return () => clearTimeout(delayDebounce);
   }, [searchQuery, topicFilter, difficultyFilter, statusFilter, bookmarkFilter, placementFilter, isLoading]);
 
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   // Active view layout shell
   return (
-    <div className="relative overflow-hidden" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
+    <div suppressHydrationWarning className="relative overflow-hidden" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
       <FloatingOrbs />
       
       {/* Top Navbar */}
@@ -424,71 +423,12 @@ function CodingHubContent() {
       <main className="dash-main relative z-10 font-sans px-4 md:px-8 py-6">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 min-h-[50vh]">
-            <div className="relative w-full max-w-md p-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl backdrop-blur-xl shadow-2xl flex flex-col items-center">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
-                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20 mb-6"
-              >
-                <Code2 size={32} className="text-black" />
-              </motion.div>
-              
-              <h2 className="text-xl font-black mb-1 bg-gradient-to-r from-[var(--text-primary)] to-[var(--text-primary)]/70 bg-clip-text text-transparent">
-                Adyapan Coding Engine
-              </h2>
-              <p className="text-[10px] text-amber-500 uppercase tracking-widest font-black mb-6">
-                Building DSA Intelligence Layer
-              </p>
-
-              <div className="w-full flex flex-col gap-3">
-                {loadingSteps.map((step, idx) => {
-                  const isDone = idx < loadingIndex;
-                  const isCurrent = idx === loadingIndex;
-                  return (
-                    <div key={idx} className="flex items-center justify-between text-xs font-semibold py-1">
-                      <span className={isDone ? "text-[var(--text-primary)]/40 line-through" : isCurrent ? "text-amber-500" : "text-[var(--text-primary)]/20"}>
-                        {step}
-                      </span>
-                      <div>
-                        {isDone ? (
-                          <Check size={14} className="text-emerald-500" />
-                        ) : isCurrent ? (
-                          <RefreshCw size={12} className="animate-spin text-amber-500" />
-                        ) : (
-                          <div className="w-3.5 h-3.5 rounded-full border border-[var(--border-color)]" />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <RefreshCw size={24} className="animate-spin text-amber-500 mb-3" />
+            <p className="text-xs font-bold text-[var(--text-secondary)]">Loading Coding Hub...</p>
           </div>
         ) : (
           <>
-            {/* Sub-navigation Tabs with Query Strings */}
-            <div className="flex items-center gap-2 mb-6 border-b border-[var(--border-color)] pb-3">
-              {[
-                { id: "dashboard", label: "Coding Dashboard", href: "/dashboard/coding?tab=dashboard" },
-                { id: "roadmap", label: "Coding Roadmap", href: "/dashboard/coding?tab=roadmap" },
-                { id: "dsa", label: "DSA Practice", href: "/dashboard/coding?tab=dsa" },
-              ].map((tabItem) => {
-                const isActive = currentTab === tabItem.id;
-                return (
-                  <button
-                    key={tabItem.id}
-                    onClick={() => router.push(tabItem.href)}
-                    className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                      isActive
-                        ? "bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-sm"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]"
-                    }`}
-                  >
-                    {tabItem.label}
-                  </button>
-                );
-              })}
-            </div>
+
 
             {currentTab === "dashboard" ? (
               <CodingDashboardView />
