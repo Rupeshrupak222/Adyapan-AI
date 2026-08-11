@@ -52,8 +52,7 @@ export type ResumeHubViewType =
   | "research-paper-ai"
   | "research-plagiarism"
   | "progress-hub"
-  | "study-planner"
-  | "career-roadmap";
+  | "study-planner";
 
 // ─── JSON Resume Types (https://jsonresume.org/schema/) ─────────────────────
 

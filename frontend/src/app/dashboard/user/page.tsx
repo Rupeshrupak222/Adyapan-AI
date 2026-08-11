@@ -65,9 +65,6 @@ const LinkedInView = dynamic(() => import("@/components/resume-hub/LinkedInView"
 const ResumeUploadView = dynamic(() => import("@/components/resume-hub/ResumeUploadView").then(m => m.ResumeUploadView), {
   loading: () => <DashboardWidgetSkeleton title="Resume Upload" />
 });
-const CareerNavigationEngine = dynamic(() => import("@/components/resume-hub/CareerNavigationEngine").then(m => m.CareerNavigationEngine), {
-  loading: () => <DashboardWidgetSkeleton title="Career Navigation" />
-});
 const AdyChatView = dynamic(() => import("@/components/ady-chat/AdyChatView").then(m => m.AdyChatView), {
   loading: () => <DashboardWidgetSkeleton title="Ady Chat" />
 });
@@ -1418,8 +1415,6 @@ function UserDashboardContent() {
             <HubErrorBoundary><CoverLetterView setView={navigateTo} /></HubErrorBoundary>
           ) : activeView === "linkedin-optimizer" ? (
             <HubErrorBoundary><LinkedInView setView={navigateTo} /></HubErrorBoundary>
-          ) : activeView === "career-roadmap" ? (
-            <HubErrorBoundary><CareerNavigationEngine setView={navigateTo} /></HubErrorBoundary>
           ) : activeView === "study-assistant" ? (
             <HubErrorBoundary><StudyAssistantView onViewLesson={(data) => { setLessonResult(data); navigateTo("lesson-view"); }} /></HubErrorBoundary>
           ) : activeView === "lesson-view" && lessonResult ? (

@@ -262,10 +262,6 @@ export async function globalSearch(req: Request, res: Response) {
       id: c.id, label: c.title, category: "DSA Problems", viewId: "dsa-practice",
       subtitle: `${c.difficulty} · ${c.topic}`,
     }));
-    addItems(careerRoadmaps, (r) => ({
-      id: r.id, label: r.targetRole, category: "Career Roadmaps", viewId: "career-roadmap",
-      subtitle: r.timeline,
-    }));
     addItems(researchPapers, (p) => ({
       id: p.id, label: p.title, category: "Research Papers", viewId: "research-hub",
       subtitle: `${p.domain} · ${p.status}`,

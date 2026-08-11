@@ -1193,7 +1193,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
             <Rocket size={16} className="text-amber-500" />
             <h3 className="text-xs font-extrabold text-amber-500 uppercase tracking-wider">Quick Actions</h3>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
             {[
               { label: "Continue Learning", icon: GraduationCap, color: "#8b5cf6", target: "study-assistant" },
               { label: "Coding Dashboard", icon: Code2, color: "#f59e0b", target: "dsa-practice" },
@@ -1201,7 +1201,6 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
               { label: "Run ATS Analysis", icon: BarChart3, color: "#10b981", target: "ats-checker" },
               { label: "Cover Letter", icon: Send, color: "#ec4899", target: "cover-letter" },
               { label: "Optimize LinkedIn", icon: Globe, color: "#0077b5", target: "linkedin-optimizer" },
-              { label: "Career Roadmap", icon: MapPin, color: "#f43f5e", target: "career-roadmap" },
             ].map((action) => (
               <motion.button
                 key={action.label}

@@ -63,7 +63,6 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "ATS Score Checker", viewId: "ats-checker", category: "Resume Hub" },
   { label: "Cover Letter Generator", viewId: "cover-letter", category: "Resume Hub" },
   { label: "LinkedIn Optimizer", viewId: "linkedin-optimizer", category: "Resume Hub" },
-  { label: "Career Roadmap", viewId: "career-roadmap", category: "Resume Hub" },
   { label: "AI HR Interview", viewId: "interview-hub", category: "Interview Hub" },
   { label: "AI Technical Interview", viewId: "interview-hub", category: "Interview Hub" },
   { label: "Interview Engine", viewId: "interview-engine", category: "Interview Hub" },
@@ -131,7 +130,6 @@ export const sidebarItems: SidebarItem[] = [
       { label: "ATS Score Checker", href: "/dashboard/user?view=ats-checker" },
       { label: "Cover Letter Generator", href: "/dashboard/user?view=cover-letter" },
       { label: "LinkedIn Optimizer", href: "/dashboard/user?view=linkedin-optimizer" },
-      { label: "Career Roadmap", href: "/dashboard/career?tab=roadmap" },
     ],
   },
   {
@@ -334,7 +332,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                         else if (sub.label === "ATS Score Checker") onViewTool("ats-checker");
                         else if (sub.label === "Cover Letter Generator") onViewTool("cover-letter");
                         else if (sub.label === "LinkedIn Optimizer") onViewTool("linkedin-optimizer");
-                        else if (sub.label === "Career Roadmap") onViewTool("career-roadmap");
                         else if (sub.label === "Study Assistant") onViewTool("study-assistant");
                         else if (sub.label === "Notes Generator") onViewTool("notes-generator");
                         else if (sub.label === "Quiz Generator") onViewTool("quiz-generator");
