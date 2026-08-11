@@ -1121,7 +1121,7 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                       </div>
                     </div>
                     {(() => {
-                      const score = h.score ?? (h as any).overallScore ?? h.evaluation?.overallScore;
+                      const score = h.score ?? (h as any).overallScore ?? (h as any).evaluation?.overallScore;
                       if (score != null && score > 0) {
                         return (
                           <div
@@ -1132,7 +1132,7 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                           </div>
                         );
                       }
-                      if (h.status === "in_progress" || h.status === "active") {
+                      if ((h as any).status === "in_progress" || (h as any).status === "active") {
                         return <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">In Progress</span>;
                       }
                       return <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Completed</span>;
