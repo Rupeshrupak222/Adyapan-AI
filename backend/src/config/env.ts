@@ -57,11 +57,8 @@ export const env = {
     apiSecret: process.env.CODEFORCES_API_SECRET ?? "",
   },
   pistonUrl: process.env.PISTON_URL ?? "http://localhost:2000",
-  adzuna: {
-    appId: process.env.ADZUNA_APP_ID ?? "",
-    appKey: process.env.ADZUNA_APP_KEY ?? "",
-  },
   apifyApiKey: process.env.APIFY_API_KEY ?? process.env.APIFY_TOKEN ?? "",
+  scrapflyApiKey: process.env.SCRAPFLY_API_KEY ?? "",
   nodeEnv: process.env.NODE_ENV ?? "development",
   masterDatabaseUrl: process.env.MASTER_DATABASE_URL ?? process.env.DATABASE_URL ?? "",
   // Registration workflow: when "true", a verification email is queued/attempted

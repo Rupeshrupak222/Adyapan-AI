@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireAdminAuth } from "../middleware/adminAuth";
 import { handleRouteError } from "../utils/routeError";
 import { JobSearchService } from "../services/job-search.service";
 import { JobDiscoveryService } from "../services/job-discovery.service";
@@ -356,20 +357,8 @@ Resume Text Preview: ${cvText ? cvText.slice(0, 1500) : "No text"}`;
   }
 });
 
-// ─── POST /sync - Trigger auto-update & sync ───────────────────────────
-jobDiscoveryRouter.post("/sync", async (req: Request, res: Response) => {
-  try {
-    await JobSearchService.autoUpdateStaleJobs(true);
-    const sourceName = req.query.source as string | undefined;
-    const results = await JobDiscoveryService.syncSources(sourceName);
-    res.json({ success: true, message: "Jobs updated and synchronized successfully", results });
-  } catch (error) {
-    handleRouteError(res, error, "Discovery.sync", "Failed to sync jobs");
-  }
-});
-
-// ─── POST /admin/sync - Trigger ingestion sync ─────────────────────────
-jobDiscoveryRouter.post("/admin/sync", async (req: Request, res: Response) => {
+// ─── POST /admin/sync - Trigger ingestion sync (admin only) ────────────
+jobDiscoveryRouter.post("/admin/sync", requireAdminAuth, async (req: Request, res: Response) => {
   try {
     await JobSearchService.autoUpdateStaleJobs(true);
     const sourceName = req.query.source as string | undefined;
@@ -380,8 +369,8 @@ jobDiscoveryRouter.post("/admin/sync", async (req: Request, res: Response) => {
   }
 });
 
-// ─── GET /admin/sources - Source statuses ──────────────────────────────
-jobDiscoveryRouter.get("/admin/sources", async (_req: Request, res: Response) => {
+// ─── GET /admin/sources - Source statuses (admin only) ─────────────────
+jobDiscoveryRouter.get("/admin/sources", requireAdminAuth, async (_req: Request, res: Response) => {
   try {
     const sources = await JobDiscoveryService.getSourceStatuses();
     res.json({ success: true, sources });
@@ -390,8 +379,8 @@ jobDiscoveryRouter.get("/admin/sources", async (_req: Request, res: Response) =>
   }
 });
 
-// ─── GET /admin/logs - Ingestion logs ──────────────────────────────────
-jobDiscoveryRouter.get("/admin/logs", async (req: Request, res: Response) => {
+// ─── GET /admin/logs - Ingestion logs (admin only) ─────────────────────
+jobDiscoveryRouter.get("/admin/logs", requireAdminAuth, async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 50;
     const logs = await JobDiscoveryService.getIngestionLogs(limit);
@@ -401,8 +390,8 @@ jobDiscoveryRouter.get("/admin/logs", async (req: Request, res: Response) => {
   }
 });
 
-// ─── POST /admin/seed - Seed initial sources ──────────────────────────
-jobDiscoveryRouter.post("/admin/seed", async (_req: Request, res: Response) => {
+// ─── POST /admin/seed - Seed initial sources (admin only) ──────────────
+jobDiscoveryRouter.post("/admin/seed", requireAdminAuth, async (_req: Request, res: Response) => {
   try {
     await JobDiscoveryService.seedSources();
     res.json({ success: true, message: "Sources seeded successfully" });

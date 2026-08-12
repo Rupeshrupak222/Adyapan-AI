@@ -94,64 +94,6 @@ function simpleHash(str: string): string {
 export class JobSearchService {
   private static lastAutoUpdateCheck = 0;
 
-  static async fetchLiveRemoteOKJobs(): Promise<void> {
-    try {
-      const res = await fetch("https://remoteok.com/api", {
-        headers: { "User-Agent": "AdyapanAI/1.0" },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      const rawJobs = Array.isArray(data) ? data.slice(1, 40) : [];
-      const db = getDb();
-
-      for (const item of rawJobs) {
-        if (!item.position || !item.company) continue;
-        const title = item.position || "Software Engineer";
-        const company = item.company || "Remote Company";
-        const location = item.location || "Remote";
-        const applyUrl = item.url || item.apply_url || `https://remoteok.com/remote-jobs/${item.id}`;
-        const desc = item.description || `${title} position at ${company}.`;
-        const fp = simpleHash(`${company.toLowerCase()}|${title.toLowerCase()}|${location.toLowerCase()}|${applyUrl.toLowerCase()}`);
-        
-        const tags: string[] = Array.isArray(item.tags) ? item.tags : [];
-        const skills = tags.length > 0 ? tags.slice(0, 15) : ["Software Development", "Remote"];
-
-        await db.discoveryJob.upsert({
-          where: { fingerprint: fp },
-          update: {
-            lastSeenAt: new Date(),
-            description: desc,
-            salaryMin: item.salary_min || (item.salary ? parseInt(item.salary) : undefined),
-            salaryMax: item.salary_max || undefined,
-          },
-          create: {
-            fingerprint: fp,
-            externalId: String(item.id || fp),
-            title,
-            company,
-            logoUrl: item.logo || item.company_logo || null,
-            location,
-            country: "Global",
-            description: desc,
-            salaryMin: item.salary_min || (item.salary ? parseInt(item.salary) : null),
-            salaryMax: item.salary_max || null,
-            salaryCurrency: "USD",
-            employmentType: item.type && String(item.type).toLowerCase().includes("contract") ? "Contract" : "Full-Time",
-            workMode: "Remote",
-            skills,
-            applyUrl,
-            sourceUrl: applyUrl,
-            source: "remoteok",
-            postedAt: item.date ? new Date(item.date) : new Date(),
-            isActive: true,
-          },
-        }).catch(() => {});
-      }
-    } catch (err: any) {
-      console.warn("[JobSearchService] Live RemoteOK fetch warning:", err?.message || err);
-    }
-  }
-
   static async autoUpdateStaleJobs(force = false): Promise<void> {
     const now = Date.now();
     if (!force && now - this.lastAutoUpdateCheck < 5 * 60 * 1000) return;
@@ -196,8 +138,7 @@ export class JobSearchService {
       const db = getDb();
       const count = await db.discoveryJob.count();
       if (count === 0) {
-        console.log("[JobSearchService] Database has 0 jobs. Auto-seeding jobs & fetching live feeds...");
-        await this.fetchLiveRemoteOKJobs().catch(() => {});
+        console.log("[JobSearchService] Database has 0 jobs. Auto-seeding jobs...");
         
         const defaultJobs = [
           {
@@ -735,9 +676,6 @@ export class JobSearchService {
           data: DEFAULT_JOBS,
           skipDuplicates: true,
         });
-
-        // Trigger background live RemoteOK fetch
-        this.fetchLiveRemoteOKJobs().catch(() => {});
 
         const recheck = await Promise.all([
           db.discoveryJob.count({ where }),

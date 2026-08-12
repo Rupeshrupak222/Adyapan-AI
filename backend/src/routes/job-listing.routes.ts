@@ -5,7 +5,6 @@ import { prisma as masterPrisma } from "../config/prisma";
 import { handleRouteError } from "../utils/routeError";
 import { mapDiscoveryJobToListing } from "../utils/jobListingMapper";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
-import { searchAdzunaJobs, getAdzunaCategories, getSupportedCountries, type NormalizedJob } from "../services/adzuna.service";
 import { JobSearchService } from "../services/job-search.service";
 
 export const jobListingRouter = Router();
@@ -111,7 +110,6 @@ jobListingRouter.get("/", async (req: Request, res: Response) => {
 
     // ── Fetch from DB ──
     const shouldFetchDB = source === "all" || source === "db";
-    const shouldFetchAdzuna = source === "all" || source === "adzuna";
 
     let [dbRawJobs, dbTotal] = shouldFetchDB
       ? await Promise.all([
@@ -139,42 +137,17 @@ jobListingRouter.get("/", async (req: Request, res: Response) => {
     }
 
     const dbJobs = dbRawJobs.map(mapDiscoveryJobToListing);
-
-    // ── Fetch from Adzuna ──
-    let adzunaJobs: NormalizedJob[] = [];
-    let adzunaCount = 0;
-
-    if (shouldFetchAdzuna) {
-      const adzunaCountry = (country && typeof country === "string") ? country.trim().toLowerCase() : undefined;
-
-      const adzunaResult = await searchAdzunaJobs({
-        keywords: (search as string) || undefined,
-        location: (location as string) || undefined,
-        country: adzunaCountry || "gb",
-      });
-
-      adzunaJobs = adzunaResult.jobs;
-      adzunaCount = adzunaResult.count;
-    }
-
-    // ── Merge results ──
-    const allJobs = [
-      ...dbJobs.map((j: any) => ({ ...j, isAdzuna: false })),
-      ...adzunaJobs,
-    ];
-
-    const totalCount = dbTotal + adzunaCount;
+    const totalCount = dbTotal;
     const totalPages = Math.ceil(totalCount / limitNum);
 
     res.json({
       success: true,
-      jobs: allJobs,
+      jobs: dbJobs,
       total: totalCount,
       page: pageNum,
       totalPages,
       sources: {
         db: dbTotal,
-        adzuna: adzunaCount,
       },
     });
   } catch (error) {
@@ -280,45 +253,19 @@ jobListingRouter.get("/stats", async (req: Request, res: Response) => {
   }
 });
 
-// ─── GET /adzuna/countries ─ Supported Adzuna countries ────────────────────
-jobListingRouter.get("/adzuna/countries", async (_req: Request, res: Response) => {
+// ─── GET /countries ─ Supported countries ──────────────────────────────────
+jobListingRouter.get("/countries", async (_req: Request, res: Response) => {
   try {
-    const countries = getSupportedCountries();
+    // Static list of countries supported for job search
+    const countries = [
+      { code: "in", name: "India" }, { code: "us", name: "United States" },
+      { code: "gb", name: "United Kingdom" }, { code: "de", name: "Germany" },
+      { code: "ca", name: "Canada" }, { code: "au", name: "Australia" },
+      { code: "sg", name: "Singapore" }, { code: "ae", name: "UAE" },
+    ];
     res.json({ success: true, countries });
   } catch (error) {
-    handleRouteError(res, error, "JobListing.adzunaCountries", "Failed to fetch countries");
-  }
-});
-
-// ─── GET /adzuna/categories ─ Adzuna job categories for a country ──────────
-jobListingRouter.get("/adzuna/categories", async (req: Request, res: Response) => {
-  try {
-    const country = (req.query.country as string) || "gb";
-    const categories = await getAdzunaCategories(country);
-    res.json({ success: true, categories });
-  } catch (error) {
-    handleRouteError(res, error, "JobListing.adzunaCategories", "Failed to fetch categories");
-  }
-});
-
-// ─── GET /adzuna/search ─ Direct Adzuna job search ──────────────────────────
-jobListingRouter.get("/adzuna/search", async (req: Request, res: Response) => {
-  try {
-    const { keywords, location, country = "gb" } = req.query;
-
-    const result = await searchAdzunaJobs({
-      keywords: keywords as string,
-      location: location as string,
-      country: country as string,
-    });
-
-    res.json({
-      success: true,
-      jobs: result.jobs,
-      count: result.count,
-    });
-  } catch (error) {
-    handleRouteError(res, error, "JobListing.adzunaSearch", "Failed to search Adzuna");
+    handleRouteError(res, error, "JobListing.countries", "Failed to fetch countries");
   }
 });
 

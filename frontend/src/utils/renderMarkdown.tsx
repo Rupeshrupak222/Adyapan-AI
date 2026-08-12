@@ -3,8 +3,40 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check } from "lucide-react";
+import katex from "katex";
 
-// ─── Inline formatting (bold, italic, code, links) ───────────────────────────
+// ─── KaTeX Math Component ─────────────────────────────────────────────────────
+
+export function KatexMath({ math, displayMode = false }: { math: string; displayMode?: boolean }) {
+  let html = "";
+  try {
+    html = katex.renderToString(math.trim(), {
+      displayMode,
+      throwOnError: false,
+      output: "htmlAndMathml",
+    });
+  } catch {
+    html = math;
+  }
+
+  if (displayMode) {
+    return (
+      <div
+        className="my-3 overflow-x-auto py-2 px-3 rounded-xl bg-white/[0.03] border border-white/10 text-center text-sm leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
+  }
+
+  return (
+    <span
+      className="inline-block px-1"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+// ─── Inline formatting (math, bold, italic, code, links) ───────────────────────
 
 export function inlineFormat(text: string): React.ReactNode {
   const parts: React.ReactNode[] = [];
@@ -12,47 +44,89 @@ export function inlineFormat(text: string): React.ReactNode {
   let key = 0;
 
   while (remaining.length > 0) {
-    // Bold
-    const boldMatch = remaining.match(/^([\s\S]*?)\*\*([\s\S]+?)\*\*([\s\S]*)/);
-    if (boldMatch) {
-      if (boldMatch[1]) parts.push(<span key={key++}>{boldMatch[1]}</span>);
-      parts.push(<strong key={key++} style={{ color: "inherit", fontWeight: 700 }}>{boldMatch[2]}</strong>);
-      remaining = boldMatch[3];
-      continue;
-    }
+    let earliestMatch: {
+      index: number;
+      length: number;
+      node: React.ReactNode;
+    } | null = null;
 
-    // Italic
-    const italicMatch = remaining.match(/^([\s\S]*?)\*([\s\S]+?)\*([\s\S]*)/);
-    if (italicMatch) {
-      if (italicMatch[1]) parts.push(<span key={key++}>{italicMatch[1]}</span>);
-      parts.push(<em key={key++}>{italicMatch[2]}</em>);
-      remaining = italicMatch[3];
-      continue;
-    }
+    const checkMatch = (
+      regex: RegExp,
+      createNode: (match: RegExpMatchArray) => React.ReactNode
+    ) => {
+      const match = remaining.match(regex);
+      if (match && match.index !== undefined) {
+        const prefixLength = match[1] ? match[1].length : 0;
+        const totalIndex = match.index + prefixLength;
+        const totalLength = match[0].length - prefixLength;
 
-    // Inline code
-    const codeMatch = remaining.match(/^([\s\S]*?)`([\s\S]+?)`([\s\S]*)/);
-    if (codeMatch) {
-      if (codeMatch[1]) parts.push(<span key={key++}>{codeMatch[1]}</span>);
-      parts.push(
-        <code
-          key={key++}
-          className="px-1.5 py-0.5 rounded text-xs font-mono"
-          style={{
-            background: "rgba(245,158,11,0.12)",
-            color: "#f59e0b",
-            border: "1px solid rgba(245,158,11,0.2)",
-          }}
-        >
-          {codeMatch[2]}
-        </code>
-      );
-      remaining = codeMatch[3];
-      continue;
-    }
+        if (!earliestMatch || totalIndex < earliestMatch.index) {
+          earliestMatch = {
+            index: totalIndex,
+            length: totalLength,
+            node: createNode(match),
+          };
+        }
+      }
+    };
 
-    parts.push(<span key={key++}>{remaining}</span>);
-    break;
+    // 1. Block math $$...$$
+    checkMatch(/^([\s\S]*?)\$\$([\s\S]+?)\$\$/, (m) => (
+      <KatexMath key={key++} math={m[2]} displayMode={true} />
+    ));
+
+    // 2. Block math \[...\]
+    checkMatch(/^([\s\S]*?)\\\[([\s\S]+?)\\\]/, (m) => (
+      <KatexMath key={key++} math={m[2]} displayMode={true} />
+    ));
+
+    // 3. Inline math \(...\)
+    checkMatch(/^([\s\S]*?)\\\(([\s\S]+?)\\\)/, (m) => (
+      <KatexMath key={key++} math={m[2]} displayMode={false} />
+    ));
+
+    // 4. Inline math $...$
+    checkMatch(/^([\s\S]*?)\$([^\$\n]+?)\$/, (m) => (
+      <KatexMath key={key++} math={m[2]} displayMode={false} />
+    ));
+
+    // 5. Code `...`
+    checkMatch(/^([\s\S]*?)`([^`]+)`/, (m) => (
+      <code
+        key={key++}
+        className="px-1.5 py-0.5 rounded text-xs font-mono"
+        style={{
+          background: "rgba(245,158,11,0.12)",
+          color: "#f59e0b",
+          border: "1px solid rgba(245,158,11,0.2)",
+        }}
+      >
+        {m[2]}
+      </code>
+    ));
+
+    // 6. Bold **...**
+    checkMatch(/^([\s\S]*?)\*\*([\s\S]+?)\*\*/, (m) => (
+      <strong key={key++} style={{ color: "inherit", fontWeight: 700 }}>
+        {inlineFormat(m[2])}
+      </strong>
+    ));
+
+    // 7. Italic *...*
+    checkMatch(/^([\s\S]*?)\*([^\*]+)\*/, (m) => (
+      <em key={key++}>{inlineFormat(m[2])}</em>
+    ));
+
+    if (earliestMatch) {
+      if (earliestMatch.index > 0) {
+        parts.push(<span key={key++}>{remaining.slice(0, earliestMatch.index)}</span>);
+      }
+      parts.push(earliestMatch.node);
+      remaining = remaining.slice(earliestMatch.index + earliestMatch.length);
+    } else {
+      parts.push(<span key={key++}>{remaining}</span>);
+      break;
+    }
   }
 
   return <>{parts}</>;
@@ -131,7 +205,7 @@ export function CodeBlock({
   );
 }
 
-// ─── Lightweight markdown renderer ───────────────────────────────────────────
+// ─── Lightweight markdown renderer with KaTeX math support ───────────────────
 
 export function renderMarkdown(content: string, isDark: boolean): React.ReactNode {
   const text = isDark ? "#e2e8f0" : "#1e293b";
@@ -147,6 +221,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
 
   while (i < lines.length) {
     const line = lines[i];
+    const trimmed = line.trim();
 
     // Code block
     if (line.startsWith("```")) {
@@ -162,6 +237,57 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
         <CodeBlock key={i} code={code} lang={lang} isDark={isDark} blockBg={blockBg} blockBorder={blockBorder} />
       );
       i++;
+      continue;
+    }
+
+    // Block math $$ ... $$ or \[ ... \]
+    if (
+      trimmed === "$$" ||
+      trimmed === "\\[" ||
+      (trimmed.startsWith("$$") && (!trimmed.slice(2).includes("$$") || trimmed.endsWith("$$"))) ||
+      (trimmed.startsWith("\\[") && (!trimmed.slice(2).includes("\\]") || trimmed.endsWith("\\]")))
+    ) {
+      // Single line block math: $$math$$ or \[math\]
+      if (
+        (trimmed.startsWith("$$") && trimmed.endsWith("$$") && trimmed.length > 4) ||
+        (trimmed.startsWith("\\[") && trimmed.endsWith("\\]") && trimmed.length > 4)
+      ) {
+        const mathContent = trimmed.startsWith("$$") ? trimmed.slice(2, -2) : trimmed.slice(2, -2);
+        elements.push(
+          <KatexMath key={i} math={mathContent} displayMode={true} />
+        );
+        i++;
+        continue;
+      }
+
+      // Multi-line block math
+      const mathLines: string[] = [];
+      const isSquare = trimmed.startsWith("\\[");
+      const endMarker = isSquare ? "\\]" : "$$";
+
+      let firstContent = isSquare ? trimmed.slice(2) : trimmed.slice(2);
+      if (firstContent) mathLines.push(firstContent);
+
+      i++;
+      while (i < lines.length) {
+        const curTrim = lines[i].trim();
+        if (curTrim === endMarker) {
+          i++;
+          break;
+        }
+        if (curTrim.endsWith(endMarker)) {
+          const contentBeforeEnd = curTrim.slice(0, -endMarker.length);
+          if (contentBeforeEnd) mathLines.push(contentBeforeEnd);
+          i++;
+          break;
+        }
+        mathLines.push(lines[i]);
+        i++;
+      }
+
+      elements.push(
+        <KatexMath key={i} math={mathLines.join("\n")} displayMode={true} />
+      );
       continue;
     }
 

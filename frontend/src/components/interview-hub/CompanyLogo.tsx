@@ -271,27 +271,32 @@ export default function CompanyLogo({
     sources.push(explicitLogo);
   }
 
-  // 2. High-res Brand SVG
+  // 2. High-res Brand SVG (Wikimedia / official)
   if (BRAND_SVGS[key]) {
     sources.push(BRAND_SVGS[key]);
   }
 
-  // 3. Clearbit Logo API (most reliable high-res company logo API)
+  // 3. Logo.dev API (most reliable free company logo API, no auth needed)
   if (domain) {
-    sources.push(`https://logo.clearbit.com/${domain}`);
+    sources.push(`https://img.logo.dev/${domain}?token=pk_X6D7oqEASZ6tAIOG41dEoQ&size=128`);
   }
 
   // 4. Simple Icons SVG Repository
   if (key) {
-    sources.push(`https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/${key}.svg`);
+    sources.push(`https://cdn.simpleicons.org/${key}`);
   }
 
-  // 5. Unavatar API
+  // 5. Unavatar API (multiple social sources aggregated)
   if (domain) {
     sources.push(`https://unavatar.io/${domain}?fallback=false`);
   }
 
-  // 6. Google Favicons 128px API
+  // 6. DuckDuckGo favicon API (128px)
+  if (domain) {
+    sources.push(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
+  }
+
+  // 7. Google Favicons API (128px, most reliable)
   if (domain) {
     sources.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
   }
