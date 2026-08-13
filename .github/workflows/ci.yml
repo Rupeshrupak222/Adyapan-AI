@@ -7,7 +7,7 @@ on:
 
 jobs:
   frontend:
-    name: Frontend (typecheck + build + lint)
+    name: Frontend (typecheck + build + tests + lint)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,6 +25,8 @@ jobs:
         run: npx tsc --noEmit
       - name: Production build
         run: npm run build
+      - name: Tests
+        run: npm test
       - name: Lint
         # Non-blocking: repo currently has ~567 pre-existing lint errors
         # (mostly @typescript-eslint/no-explicit-any). Fix those before
