@@ -148,25 +148,25 @@ function LoginPageContent() {
   }, [router]);
 
   const isDark = theme === "dark";
-  const cardBg    = isDark ? "rgba(18,18,30,0.92)"      : "rgba(255,255,255,0.96)";
-  const cardBorder= isDark ? "rgba(255,255,255,0.1)"    : "rgba(0,0,0,0.1)";
-  const cardText  = isDark ? "#ffffff"                   : "#0f172a";
-  const labelClr  = isDark ? "rgba(255,255,255,0.65)"   : "#475569";
-  const mutedClr  = isDark ? "rgba(255,255,255,0.45)"   : "#64748b";
-  const iconClr   = isDark ? "rgba(255,255,255,0.75)"   : "#475569";
-  const inputBg   = isDark ? "rgba(255,255,255,0.06)"   : "rgba(0,0,0,0.04)";
-  const inputBdr  = isDark ? "rgba(255,255,255,0.12)"   : "rgba(0,0,0,0.12)";
-  const socialBg  = isDark ? "rgba(255,255,255,0.06)"   : "rgba(0,0,0,0.04)";
+  const cardBg    = "rgba(18,18,30,0.15)";
+  const cardBorder= "rgba(255,255,255,0.15)";
+  const cardText  = "#ffffff";
+  const labelClr  = "rgba(255,255,255,0.75)";
+  const mutedClr  = "rgba(255,255,255,0.6)";
+  const iconClr   = "rgba(255,255,255,0.85)";
+  const inputBg   = "rgba(255,255,255,0.1)";
+  const inputBdr  = "rgba(255,255,255,0.2)";
+  const socialBg  = "rgba(255,255,255,0.12)";
 
   const inp = (extra = "") =>
-    `w-full rounded-lg border bg-transparent px-3 py-2 pl-9 text-sm outline-none transition placeholder:text-[${mutedClr}] focus:border-amber-500 ${extra}`;
+    `w-full rounded-lg border bg-transparent px-3 py-2 pl-9 text-sm outline-none transition placeholder:text-[${mutedClr}] focus:border-indigo-500 ${extra}`;
 
   const inpReg = (extra = "") =>
-    `w-full rounded-md border bg-transparent px-3 py-2 pl-8 text-xs outline-none transition focus:border-amber-500 ${extra}`;
+    `w-full rounded-md border bg-transparent px-3 py-2 pl-8 text-xs outline-none transition focus:border-indigo-500 ${extra}`;
 
   const inpStyle = { background: inputBg, borderColor: inputBdr, color: cardText };
   const socialStyle = { background: socialBg, border: `1px solid ${inputBdr}`, color: cardText };
-  const submitStyle = { background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#000" };
+  const submitStyle = { background: "linear-gradient(135deg,#fbbf24,#f59e0b)", color: "#000" };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setLoginError(""); setLoginLoading(true);
@@ -259,7 +259,27 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="min-h-screen transition-colors relative" style={{ background: "var(--bg-dark)" }}>
+    <div className="min-h-screen transition-colors relative overflow-hidden">
+      {/* Video Background */}
+      <video
+        autoPlay
+        muted
+        loop
+        className="fixed inset-0 w-full h-full object-cover"
+        style={{ zIndex: 0 }}
+      >
+        <source src="/login-bg.mp4" type="video/mp4" />
+      </video>
+
+      {/* Overlay for better readability */}
+      <div
+        className="fixed inset-0"
+        style={{
+          background: "rgba(0, 0, 0, 0.35)",
+          zIndex: 1,
+        }}
+      />
+
       <Navbar />
 
       <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-6 relative z-10">
@@ -267,7 +287,6 @@ function LoginPageContent() {
           initial={{ opacity: 0, y: 40, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          whileHover={{ scale: 1.02, boxShadow: "0 0 60px rgba(245,158,11,0.15), 0 20px 60px rgba(0,0,0,0.3)", borderColor: "rgba(245,158,11,0.3)" }}
           className={`w-full rounded-2xl border shadow-2xl transition-shadow duration-300 ${tab === "register" ? "max-w-md" : "max-w-sm"}`}
           style={{ background: cardBg, borderColor: cardBorder, backdropFilter: "blur(24px)", color: cardText }}
         >
@@ -308,7 +327,7 @@ function LoginPageContent() {
                       <label className="flex cursor-pointer items-center gap-1.5">
                         <input type="checkbox" className="accent-amber-500" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} /> Remember me
                       </label>
-                      <button type="button" onClick={() => switchTab("forgot")} className="font-semibold text-amber-500">Forgot password?</button>
+                      <button type="button" onClick={() => switchTab("forgot")} className="font-semibold text-amber-400">Forgot password?</button>
                     </motion.div>
                     {loginError && <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-xs text-red-400">{loginError}</motion.p>}
                     <motion.button type="submit" disabled={loginLoading} className="w-full rounded-full py-2.5 text-sm font-bold disabled:opacity-60" style={submitStyle} custom={3} variants={staggerItem} initial="hidden" animate="visible" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -323,7 +342,7 @@ function LoginPageContent() {
                       <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
                     </motion.div>
                     <motion.p className="text-center text-xs" style={{ color: labelClr }} custom={6} variants={staggerItem} initial="hidden" animate="visible">
-                      Don&apos;t have an account? <button type="button" onClick={() => switchTab("register")} className="font-bold text-amber-500">Register here</button>
+                      Don&apos;t have an account? <button type="button" onClick={() => switchTab("register")} className="font-bold text-amber-400">Register here</button>
                     </motion.p>
                   </form>
                 </motion.div>
@@ -365,7 +384,7 @@ function LoginPageContent() {
                               <p className="text-[11px]" style={{ color: mutedClr }}>Please log in or use a different email address.</p>
                               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                                 <button type="button" onClick={signInFromRegister}
-                                  className="rounded-md px-2.5 py-1 text-[11px] font-bold text-amber-500 hover:opacity-80"
+                                  className="rounded-md px-2.5 py-1 text-[11px] font-bold text-amber-400 hover:opacity-80"
                                   style={{ background: "rgba(245,158,11,0.12)" }}>Sign In</button>
                                 <button type="button" onClick={() => switchTab("forgot")}
                                   className="rounded-md px-2.5 py-1 text-[11px] font-semibold hover:opacity-80"
@@ -419,7 +438,7 @@ function LoginPageContent() {
                       <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
                     </motion.div>
                     <motion.p className="col-span-2 text-center text-xs" style={{ color: labelClr }} custom={11} variants={staggerItem} initial="hidden" animate="visible">
-                      Already have an account? <button type="button" onClick={() => switchTab("login")} className="font-bold text-amber-500">Sign in</button>
+                      Already have an account? <button type="button" onClick={() => switchTab("login")} className="font-bold text-amber-400">Sign in</button>
                     </motion.p>
                   </form>
                 </motion.div>
@@ -466,7 +485,7 @@ function LoginPageContent() {
                         {forgotLoading ? "Please wait…" : forgotStep === "email" ? "Send OTP →" : "Reset Password →"}
                       </motion.button>
                       <motion.p className="text-center text-xs" style={{ color: labelClr }} custom={4} variants={staggerItem} initial="hidden" animate="visible">
-                        Remember your password? <button type="button" onClick={() => { switchTab("login"); setForgotStep("email"); }} className="font-bold text-amber-500">Sign in</button>
+                        Remember your password? <button type="button" onClick={() => { switchTab("login"); setForgotStep("email"); }} className="font-bold text-amber-400">Sign in</button>
                       </motion.p>
                     </form>
                   )}
@@ -484,7 +503,7 @@ function LoginPageContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#080710] text-amber-500 font-bold text-sm">
+      <div className="min-h-screen flex items-center justify-center bg-[#080710] text-indigo-500 font-bold text-sm">
         Loading Login...
       </div>
     }>

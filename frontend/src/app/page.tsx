@@ -98,6 +98,38 @@ function AnimatedNumber({ value }: { value: number }) {
   return <>{display}</>;
 }
 
+// ─── Typing Animation Component ───────────────────────────────────────────
+function TypingAnimation({ text }: { text: string }) {
+  const [displayedText, setDisplayedText] = useState("");
+
+  useEffect(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      setDisplayedText(text.substring(0, index + 1));
+      index++;
+      if (index >= text.length) {
+        clearInterval(interval);
+      }
+    }, 50);
+    return () => clearInterval(interval);
+  }, [text]);
+
+  return (
+    <>
+      {displayedText}
+      {displayedText.length < text.length && (
+        <motion.span
+          animate={{ opacity: [1, 0] }}
+          transition={{ duration: 0.6, repeat: Infinity }}
+          className="ml-0.5"
+        >
+          |
+        </motion.span>
+      )}
+    </>
+  );
+}
+
 // ─── Section Wrapper ──────────────────────────────────────────────────────
 function Section({
   children, className, bg, id, variant = "fadeUp",
@@ -169,6 +201,7 @@ function MouseParallaxCard({ children }: { children: React.ReactNode }) {
 }
 
 export default function LandingPage() {
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [faqSearch, setFaqSearch] = useState("");
   const [pricingPeriod, setPricingPeriod] = useState<"monthly" | "annually">("annually");
   const [activeFAQ, setActiveFAQ] = useState<number | null>(null);
@@ -181,6 +214,13 @@ export default function LandingPage() {
   const [terminalStep, setTerminalStep] = useState(0);
   const [terminalText, setTerminalText] = useState("");
   const promptString = "Build a microservices-based Netflix Clone using React...";
+
+  // Set video playback speed
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 1.5;
+    }
+  }, []);
 
   // Scroll
   const { scrollY } = useScroll();
@@ -234,6 +274,14 @@ export default function LandingPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--landing-bg, #03060b)", color: "var(--landing-text, #f3f4f6)" }} className="overflow-x-clip font-sans landing">
+      <svg style={{ display: "none" }}>
+        <defs>
+          <filter id="smoothing">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" />
+            <feColorMatrix type="saturate" values="1.1" />
+          </filter>
+        </defs>
+      </svg>
       <Navbar />
 
       <GlowBackground />
@@ -242,198 +290,144 @@ export default function LandingPage() {
       <motion.section
         id="home"
         style={{ scale: heroScale, opacity: heroOpacity, y: heroY }}
-        className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-16 px-4 md:px-8 z-10"
+        className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-20 px-4 md:px-8 z-10 overflow-hidden bg-[#030712]"
       >
-        <div className="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Hero Content */}
-          <motion.div
-            className="lg:col-span-6 text-left space-y-6"
-            initial={{ opacity: 0, x: -80 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              <Sparkles size={12} className="animate-spin" /> The Future of Learning is Agentic AI
-            </motion.div>
-
-            <motion.h1
-              className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-[1.1] tracking-tight text-white"
-              style={{ fontFamily: "'Outfit', sans-serif" }}
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35, duration: 0.7 }}
-            >
-              One AI <span className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 bg-clip-text text-transparent">Operating System</span> For Careers
-            </motion.h1>
-
-            <motion.p
-              className="text-sm sm:text-base text-gray-400 leading-relaxed max-w-lg"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.55, duration: 0.6 }}
-            >
-              One central system for learning, smart coding, automated resume building, AI behavioral interviews, and placement channels.
-            </motion.p>
-
-            <motion.div
-              className="flex flex-wrap gap-2 text-xs font-bold text-gray-300"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
-            >
-              {["Learn Faster", "Build Smarter", "Get Hired"].map((tag, i) => (
-                <motion.span
-                  key={tag}
-                  className="px-2.5 py-1 bg-white/5 border border-white/5 rounded-full"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.8 + i * 0.12, type: "spring", stiffness: 200 }}
-                >
-                  {tag}
-                </motion.span>
-              ))}
-            </motion.div>
-
-            <motion.div
-              className="flex flex-col sm:flex-row gap-4 pt-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1, duration: 0.5 }}
-            >
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 px-6 py-3 font-semibold text-black transition-all transform hover:-translate-y-0.5 shadow-lg shadow-amber-500/20"
-              >
-                Start Free Today <ArrowRight size={16} />
-              </Link>
-              <a
-                href="#features"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/5 hover:bg-white/10 px-6 py-3 font-semibold text-white border border-white/10 transition-colors"
-              >
-                Watch Demo <Play size={14} />
-              </a>
-            </motion.div>
-          </motion.div>
-
-          {/* Hero Dashboard Mockup */}
-          <motion.div
-            className="lg:col-span-6 flex justify-center relative"
-            initial={{ opacity: 0, x: 80 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-          >
-            <motion.div
-              className="absolute inset-0 z-0 opacity-40 pointer-events-none"
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <DeferredScene />
-            </motion.div>
-            <motion.div
-              className="absolute -inset-4 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl opacity-10 blur-xl"
-              animate={{ opacity: [0.05, 0.15, 0.05], scale: [1, 1.02, 1] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            />
-
-            <MouseParallaxCard>
-              <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <motion.div className="w-3 h-3 rounded-full bg-red-500" animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2, repeat: Infinity }} />
-                  <motion.div className="w-3 h-3 rounded-full bg-yellow-500" animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2, delay: 0.3, repeat: Infinity }} />
-                  <motion.div className="w-3 h-3 rounded-full bg-green-500" animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2, delay: 0.6, repeat: Infinity }} />
-                </div>
-                <div className="text-[10px] text-gray-500 font-mono">dashboard.adyapan.ai</div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2 space-y-4">
-                  <motion.div
-                    className="p-3 bg-white/3 border border-white/5 rounded-xl space-y-1"
-                    whileHover={{ scale: 1.02, borderColor: "rgba(245,158,11,0.3)" }}
-                  >
-                    <div className="text-[9px] uppercase tracking-wider text-gray-500">Learning Speed</div>
-                    <div className="text-xl font-bold text-amber-400">
-                      <AnimatedNumber value={94} />x Faster
-                    </div>
-                  </motion.div>
-                  <motion.div
-                    className="p-3 bg-white/3 border border-white/5 rounded-xl space-y-2"
-                    whileHover={{ scale: 1.02, borderColor: "rgba(245,158,11,0.3)" }}
-                  >
-                    <div className="text-[9px] uppercase tracking-wider text-gray-500 font-bold">AI Agent Action Graph</div>
-                    <div className="h-16 flex items-end gap-1 pt-2">
-                      {[40, 75, 60, 90].map((h, i) => (
-                        <motion.div
-                          key={i}
-                          className={`w-full rounded-t ${["bg-amber-500/40", "bg-orange-500/60", "bg-yellow-400/80", "bg-amber-500"][i]}`}
-                          style={{ height: `${h}%` }}
-                          animate={{ height: [`${h}%`, `${h + 15}%`, `${h}%`] }}
-                          transition={{ duration: 2, delay: i * 0.3, repeat: Infinity, ease: "easeInOut" }}
-                        />
-                      ))}
-                    </div>
-                  </motion.div>
-                </div>
-
-                <div className="space-y-4">
-                  <motion.div
-                    className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-center space-y-1"
-                    animate={{ borderColor: ["rgba(245,158,11,0.2)", "rgba(245,158,11,0.5)", "rgba(245,158,11,0.2)"] }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  >
-                    <Brain className="w-6 h-6 text-amber-400 mx-auto" />
-                    <span className="block text-[8px] text-gray-400">Skills Verified</span>
-                    <span className="block text-xs font-bold text-white">18 Mastered</span>
-                  </motion.div>
-                  <motion.div
-                    className="p-3 bg-white/3 border border-white/5 rounded-xl text-center space-y-1"
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    <motion.div
-                      animate={{ y: [0, -6, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <Trophy className="w-6 h-6 text-yellow-400 mx-auto" />
-                    </motion.div>
-                    <span className="block text-[8px] text-gray-400">Rank</span>
-                    <span className="block text-xs font-bold text-white">Top 2%</span>
-                  </motion.div>
-                </div>
-              </div>
-
-              {/* Floating badges */}
-              <motion.div
-                className="absolute top-1/4 right-[-20px] px-3 py-1.5 bg-[#0d0f17] border border-white/10 rounded-lg text-[9px] text-white flex items-center gap-1.5 shadow-lg shadow-black/40"
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-green-400" /> Study Assistant
-              </motion.div>
-              <motion.div
-                className="absolute bottom-1/4 left-[-15px] px-3 py-1.5 bg-[#0d0f17] border border-white/10 rounded-lg text-[9px] text-white flex items-center gap-1.5 shadow-lg shadow-black/40"
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              >
-                <Terminal className="w-3.5 h-3.5 text-amber-400" /> Coding Copilot
-              </motion.div>
-            </MouseParallaxCard>
-          </motion.div>
+        {/* Large "ADYAPAN" text background */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+          <div className="text-9xl md:text-[200px] font-black text-amber-500/25 whitespace-nowrap select-none" style={{ letterSpacing: "0.05em", textShadow: "0 0 30px rgba(249, 115, 22, 0.2)" }}>
+            ADYAPAN
+          </div>
         </div>
 
-        {/* Scroll indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <ChevronDown size={24} className="text-gray-500" />
-        </motion.div>
+        <div className="max-w-7xl w-full mx-auto relative z-10">
+          {/* Main heading */}
+          <motion.div
+            className="text-center space-y-0 mb-0 -mb-16"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
+            <motion.h1
+              className="text-6xl sm:text-7xl md:text-8xl font-black leading-tight tracking-tighter text-white"
+              style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900 }}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.7 }}
+            >
+              One AI
+            </motion.h1>
+            <motion.h1
+              className="text-6xl sm:text-7xl md:text-8xl font-black leading-tight tracking-tighter"
+              style={{
+                fontFamily: "'Outfit', sans-serif",
+                fontWeight: 900,
+                background: "linear-gradient(90deg, #ea580c 0%, #f59e0b 50%, #ea580c 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.7 }}
+            >
+              <TypingAnimation text="Operating System" />
+            </motion.h1>
+            <motion.h1
+              className="text-6xl sm:text-7xl md:text-8xl font-black leading-tight tracking-tighter text-white"
+              style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900 }}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.7 }}
+            >
+              For Careers
+            </motion.h1>
+          </motion.div>
+
+          {/* Hero content with robot image */}
+          <motion.div
+            className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative pt-0 -mt-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+          >
+            {/* Left side text */}
+            <motion.div
+              className="lg:col-span-3 text-left space-y-2"
+              initial={{ opacity: 0, x: -60 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+            >
+              <div className="space-y-2">
+                <p className="text-sm md:text-base font-bold text-white tracking-wide">//LEARN SMARTER</p>
+                <p className="text-sm md:text-base font-bold text-white tracking-wide">BUILD FASTER</p>
+                <p className="text-sm md:text-base font-bold text-white tracking-wide">GROW LIMITLESS</p>
+                <p className="text-sm md:text-base font-bold text-white tracking-wide">WITH ADYAPAN AI</p>
+              </div>
+            </motion.div>
+
+            {/* Center robot image */}
+            <motion.div
+              className="lg:col-span-6 flex justify-center relative"
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.7, duration: 0.8, type: "spring", stiffness: 80 }}
+            >
+              <motion.div
+                animate={{ y: [0, -20, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                className="relative w-full max-w-md"
+              >
+                <img
+                  src="/robo.png"
+                  alt="Adyapan AI Robot"
+                  className="w-full h-auto object-contain drop-shadow-2xl"
+                  style={{ filter: "url(#smoothing) contrast(1.05) brightness(1.02)" }}
+                />
+              </motion.div>
+            </motion.div>
+
+            {/* Right side text */}
+            <motion.div
+              className="lg:col-span-3 text-right space-y-2"
+              initial={{ opacity: 0, x: 60 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+            >
+              <div className="space-y-2">
+                <p className="text-sm md:text-base font-bold text-white tracking-wide">//POWERING</p>
+                <p className="text-sm md:text-base font-bold text-white tracking-wide">THE NEXT GENERATION</p>
+                <p className="text-sm md:text-base font-bold text-white tracking-wide">OF CAREER SUCCESS</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
       </motion.section>
+
+      {/* ════════════════ TRANSPARENT VIDEO SECTION ════════════════ */}
+      <Section bg="bg-[#030712]" variant="fadeUp" className="py-8 md:py-12">
+        <motion.div
+          className="flex justify-center items-center -mx-4 md:-mx-12"
+          initial={{ opacity: 0, scale: 0.92, y: 40 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        >
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            preload="metadata"
+            className="w-screen h-auto relative z-10"
+            style={{
+              maxHeight: "600px",
+              objectFit: "contain",
+            }}
+          >
+            <source src="/ai-character.webm" type="video/webm" />
+          </video>
+        </motion.div>
+      </Section>
 
       {/* ════════════════ HOW IT WORKS ════════════════ */}
       <Section id="how-it-works" bg="bg-[#05070c]" variant="section3D">
