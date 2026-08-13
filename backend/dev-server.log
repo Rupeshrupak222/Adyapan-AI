@@ -7,11 +7,32 @@
 [33m[nodemon] watching path(s): src\**\*[39m
 [33m[nodemon] watching extensions: ts[39m
 [32m[nodemon] starting `ts-node src/index.ts`[39m
+Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at node:net:2275:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 5000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
 Backend server started on port 5000
 Admin tables sync: statements to execute: 217
 [JobScheduler] Starting 24-Hour Automated Job Scraping Scheduler...
-[JobScheduler] [2026-08-12T06:08:14.683Z] Initiating 24-hour multi-portal job scraping...
-[JobScheduler] Current active jobs in database: 572
+[JobScheduler] [2026-08-13T06:48:28.168Z] Initiating 24-hour multi-portal job scraping...
+[JobScheduler] Current active jobs in database: 597
 [JobDiscovery] Running Apify actor curious_coder/linkedin-jobs-scraper for linkedin...
 [JobDiscovery] Apify actor warning for linkedin: Monthly usage hard limit exceeded
 [JobDiscovery] Scrapfly fallback fetch for source 'linkedin'...
@@ -80,6 +101,7 @@ Admin tables sync: statements to execute: 217
 [Scrapfly/Internshala] Page 1 failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
 [Scrapfly/Wellfound] Scraping...
 [Scrapfly/Wellfound] Failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
+Admin tables sync: OK: 217 FAILED: 0
 [JobDiscovery] Running Apify actor shahidirfan/Remoteok-Job-Scraper for remoteok...
 [JobDiscovery] Apify actor warning for remoteok: Monthly usage hard limit exceeded
 [JobDiscovery] Scrapfly fallback fetch for source 'remoteok'...
@@ -113,7 +135,7 @@ Admin tables sync: statements to execute: 217
 [Scrapfly/Internshala] Scraping page 1...
 [Scrapfly/Internshala] Page 1 failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
 [Scrapfly/Wellfound] Scraping...
-[Scrapfly/Wellfound] Failed: Scrapfly error 429: {"error_id":"da94e7b8-81b0-4f19-b6fb-52adc1f8b881","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
+[Scrapfly/Wellfound] Failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
 [JobDiscovery] Running Apify actor shahidirfan/foundit-jobs-scraper for foundit...
 [JobDiscovery] Apify actor warning for foundit: Monthly usage hard limit exceeded
 [JobDiscovery] Scrapfly fallback fetch for source 'foundit'...
@@ -125,42 +147,27 @@ Admin tables sync: statements to execute: 217
 [Scrapfly/Naukri] Page 1 failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
 [Scrapfly/Naukri] Scraping page 1...
 [Scrapfly/Naukri] Page 1 failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
-Admin tables sync: OK: 216 FAILED: 1
-  ! CREATE UNIQUE INDEX IF NOT EXISTS "discovery_job_views_user_id_job_id_key" ON "d :: 
-Invalid `prisma.$executeRawUnsafe()` invocation:
-
-
-Raw query failed. Code: `N/A`. Message: `Server has closed the connection.`
 [Scrapfly/Indeed] Scraping page 1...
-[Scrapfly/Indeed] Page 1 failed: Scrapfly error 429: {"error_id":"55c2b3cf-6eb9-426e-8933-5c9a7b73bb72","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
+[Scrapfly/Indeed] Page 1 failed: Scrapfly error 429: {"error_id":"74695d07-b616-4cd6-9d0b-66ea835fcb8a","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
 [Scrapfly/Internshala] Scraping page 1...
-[Scrapfly/Internshala] Page 1 failed: Scrapfly error 429: {"error_id":"4f4735f1-6697-4351-bed5-2b893ae3d451","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
+[Scrapfly/Internshala] Page 1 failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
 [Scrapfly/Wellfound] Scraping...
-[Scrapfly/Wellfound] Failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
+[Scrapfly/Wellfound] Failed: Scrapfly error 429: {"error_id":"5dd3f691-1582-4358-ac15-7486307b1917","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
 [JobDiscovery] Starting Scrapfly multi-source scraping...
 [Scrapfly/LinkedIn] Scraping page 1...
-[Scrapfly/LinkedIn] Page 1 failed: Scrapfly error 429: {"error_id":"01f7f30b-bcf2-4011-8b92-708f5b2d23fa","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
+[Scrapfly/LinkedIn] Page 1 failed: Scrapfly error 429: {"error_id":"ef510cdf-352f-4dae-82ec-2e19d49e5e4d","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
 [Scrapfly/LinkedIn] Scraping page 1...
-[Scrapfly/LinkedIn] Page 1 failed: Scrapfly error 429: {"error_id":"05e915e0-725c-49c4-97ea-b9d137723395","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
+[Scrapfly/LinkedIn] Page 1 failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
 [Scrapfly/Naukri] Scraping page 1...
-[Scrapfly/Naukri] Page 1 failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
+[Scrapfly/Naukri] Page 1 failed: Scrapfly error 429: {"error_id":"bb82a771-a13b-48e3-842c-71d9af811560","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
 [Scrapfly/Naukri] Scraping page 1...
-[Scrapfly/Naukri] Page 1 failed: Scrapfly error 429: {"error_id":"e0cabb77-3712-4e35-b844-26db5d532ac1","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
+[Scrapfly/Naukri] Page 1 failed: Scrapfly error 429: {"error_id":"13773878-85bd-427d-9ad5-edac51ae44d9","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
 [Scrapfly/Indeed] Scraping page 1...
-[Scrapfly/Indeed] Page 1 failed: Scrapfly error 429: {"config":{"asp":true,"auto_scroll":false,"body":null,"browser_brand":null,"cache":false,"cache_clear":false,"cache_ttl":86400,"compliance":{"client_ip":"183.82.100.60","client_user_agent":"node","hip
+[Scrapfly/Indeed] Page 1 failed: Scrapfly error 429: {"error_id":"84f505e7-ef32-430b-8a28-8c5ab97af34e","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
 [Scrapfly/Internshala] Scraping page 1...
-[Scrapfly/Internshala] Page 1 failed: Scrapfly error 429: {"error_id":"22b7200e-9489-4a10-95cb-74ede4f9e754","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
+[Scrapfly/Internshala] Page 1 failed: Scrapfly error 429: {"error_id":"8f2cbc06-ceb3-4a80-8d51-e189648ea4c4","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
 [Scrapfly/Wellfound] Scraping...
-[Scrapfly/Wellfound] Failed: Scrapfly error 429: {"error_id":"f59aa9a4-2702-45c4-ae11-78dbd66751a4","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
+[Scrapfly/Wellfound] Failed: Scrapfly error 429: {"error_id":"a3343b17-99af-45c9-ace8-a7eefc7051a0","http_code":429,"message":"Your account is currently throttled. You sent too many request on failed status code (400, 499, 402) \u003e= 25/min (This 
 [JobScheduler] 24-hour job sync complete. Inserted 0 new jobs, updated 0 jobs.
 [JobDiscoveryService] Starting 24-hour company logo check & auto-fetch...
-[JobDiscoveryService] 24-Hour company logo check completed: Checked 572 jobs, updated 0 company logos.
-[AI Engine] Success with Gemini (gemini-3.5-flash-lite)
-[AI Engine] Initial JSON parsing/validation failed (AI call succeeded): SyntaxError: Bad escaped character in JSON at position 84 (line 2 column 83)
-    at JSON.parse (<anonymous>)
-    at generateJSON (F:\Adyapan AI\backend\src\lib\ai\openrouter.ts:337:25)
-    at processTicksAndRejections (node:internal/process/task_queues:104:5)
-    at async AICodingService.getAnalysis (F:\Adyapan AI\backend\src\services\ai-coding.service.ts:123:25)
-    at async F:\Adyapan AI\backend\src\routes\coding.routes.ts:680:28
-[AI Engine] Success with Gemini (gemini-3.5-flash-lite)
-[AI Engine] Success with Gemini (gemini-3.5-flash-lite)
+[JobDiscoveryService] 24-Hour company logo check completed: Checked 597 jobs, updated 0 company logos.

@@ -331,6 +331,14 @@ function WelcomeBanner({
 
 // ΓöÇΓöÇΓöÇ Stat Cards Grid ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function StatCardsGrid({ stats }: { stats: { avgAtsScore: number; resumesCount: number; avgLinkedinScore: number; dsaSolved: number; dsaStreak: number; studySessionsCount: number; notesCount: number; quizzesCount: number; dsaAccuracy: number; assignmentsCount: number; mindmapsCount: number } }) {
+  // Check if user has any activity at all
+  const hasAnyActivity = stats.resumesCount > 0 || stats.dsaSolved > 0 || stats.studySessionsCount > 0 || stats.notesCount > 0 || stats.quizzesCount > 0 || stats.assignmentsCount > 0 || stats.mindmapsCount > 0;
+
+  // Don't show stat cards for completely new users
+  if (!hasAnyActivity) {
+    return null;
+  }
+
   return (
     <div style={{
       display: "grid",
@@ -349,6 +357,56 @@ function StatCardsGrid({ stats }: { stats: { avgAtsScore: number; resumesCount: 
 // ΓöÇΓöÇΓöÇ 3-Column Panel Grid ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resumesCount: number; avgLinkedinScore: number; dsaSolved: number; dsaStreak: number; studySessionsCount: number; notesCount: number; quizzesCount: number; coverLettersCount: number; codingSessionsCount: number; challengesCount: number; profileCompletion: number; targetRole: string; dsaAccuracy: number; assignmentsCount: number; mindmapsCount: number }; onViewTool: (v: string) => void }) {
   const router = useRouter();
+  
+  // Check if user has any activity at all
+  const hasAnyActivity = stats.resumesCount > 0 || stats.dsaSolved > 0 || stats.studySessionsCount > 0 || stats.notesCount > 0 || stats.quizzesCount > 0 || stats.assignmentsCount > 0 || stats.mindmapsCount > 0;
+
+  // For new users, show a welcoming message instead of empty stats
+  if (!hasAnyActivity) {
+    return (
+      <div className="mb-8">
+        <PremiumCard glow={true} className="p-8 text-center">
+          <div className="max-w-2xl mx-auto space-y-4">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <Sparkles className="text-amber-500" size={32} />
+              </div>
+            </div>
+            <h2 className="text-2xl font-extrabold text-slate-800 dark:text-white">
+              Welcome to Adyapan AI! 🎉
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-gray-300 leading-relaxed">
+              Your learning journey starts here. Choose from the quick actions above to get started with study sessions, resume building, or DSA practice.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <PremiumCard variant="interactive" className="p-4 cursor-pointer" onClick={() => onViewTool("study-assistant")}>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <GraduationCap className="text-purple-500" size={24} />
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-white">Start Learning</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-gray-400">Generate notes, quizzes, and study materials</p>
+                </div>
+              </PremiumCard>
+              <PremiumCard variant="interactive" className="p-4 cursor-pointer" onClick={() => onViewTool("resume-hub")}>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <FileText className="text-blue-500" size={24} />
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-white">Build Resume</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-gray-400">Create ATS-friendly resumes instantly</p>
+                </div>
+              </PremiumCard>
+              <PremiumCard variant="interactive" className="p-4 cursor-pointer" onClick={() => onViewTool("dsa-practice")}>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <Code2 className="text-amber-500" size={24} />
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-white">Practice DSA</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-gray-400">Solve coding problems with AI help</p>
+                </div>
+              </PremiumCard>
+            </div>
+          </div>
+        </PremiumCard>
+      </div>
+    );
+  }
+  
   const quickActions = [
     { label: "Study Assistant", icon: <GraduationCap size={16} />, color: "#8b5cf6", target: "study-assistant", href: null },
     { label: "DSA Practice", icon: <Code2 size={16} />, color: "var(--primary)", target: "dsa-practice", href: null },
@@ -760,181 +818,7 @@ function SettingsView({ user, onViewDashboard }: { user: AdyapanUser | null; onV
   );
 }
 
-// ΓöÇΓöÇΓöÇ AI Recommendation Components ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-function RecommendationLoadingProgress() {
-  const steps = [
-    "Analyzing Learning Behavior",
-    "Detecting Weak Areas",
-    "Evaluating Retention",
-    "Generating Recommendations",
-    "Prioritizing Actions",
-    "Building Study Plan",
-    "Complete"
-  ];
-  const [currentStep, setCurrentStep] = useState(0);
-
-  useEffect(() => {
-    const intervals = [800, 1000, 900, 1100, 900, 800, 600];
-    let step = 0;
-    const run = () => {
-      if (step < steps.length - 1) {
-        const timer = setTimeout(() => {
-          step++;
-          setCurrentStep(step);
-          run();
-        }, intervals[step]);
-        return () => clearTimeout(timer);
-      }
-    };
-    run();
-  }, []);
-
-  return (
-    <div className="w-full max-w-lg mx-auto my-8">
-      <AIThinkingScreen
-        steps={steps}
-        currentStep={currentStep}
-        title="Personalizing Your Dashboard Recommendations..."
-        subtitle="AI recommendation engine is calculating learning statistics"
-      />
-    </div>
-  );
-}
-
-function AIDailyBriefing({ brief }: { brief: { text?: string; metrics?: { scoreChange?: string; strongestArea?: string; urgentRevision?: string } } | null }) {
-  const [typedText, setTypedText] = useState("");
-  const fullText = (brief?.text || "").replace(/go[od]d?\s+(morning|afternoon|evening|day)/gi, (match, p1) => "Good " + p1.toLowerCase());
-
-
-  useEffect(() => {
-    let index = 0;
-    setTypedText("");
-    const timer = setInterval(() => {
-      setTypedText((prev) => prev + (fullText[index] || ""));
-      index++;
-      if (index >= fullText.length) {
-        clearInterval(timer);
-      }
-    }, 20);
-    return () => clearInterval(timer);
-  }, [fullText]);
-
-  if (!brief) return null;
-
-  return (
-    <PremiumCard glow={true} className="p-5 mb-6 border-amber-500/20 dark:border-amber-500/10">
-      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-        <div className="flex-1 min-w-[280px]">
-          <h4 className="text-xs font-bold text-amber-500 uppercase tracking-widest flex items-center gap-1.5 mb-2.5">
-            <Zap size={14} className="animate-pulse" />
-            AI Daily Briefing
-          </h4>
-          <p className="text-xs text-slate-800 dark:text-gray-200 leading-relaxed font-medium">
-            {typedText}
-          </p>
-        </div>
-
-        <div className="flex gap-2 shrink-0">
-          <div className="bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/15 rounded-xl p-2.5 text-center min-w-[90px]">
-            <div className="text-[9px] uppercase tracking-wider text-slate-500 dark:text-gray-400 font-bold mb-0.5">Score Change</div>
-            <div className="text-xs font-extrabold text-emerald-500">{brief.metrics?.scoreChange}</div>
-          </div>
-          <div className="bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/15 rounded-xl p-2.5 text-center min-w-[90px]">
-            <div className="text-[9px] uppercase tracking-wider text-slate-500 dark:text-gray-400 font-bold mb-0.5">Strongest Area</div>
-            <div className="text-xs font-extrabold text-blue-500">{brief.metrics?.strongestArea}</div>
-          </div>
-          <div className="bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/15 rounded-xl p-2.5 text-center min-w-[90px]">
-            <div className="text-[9px] uppercase tracking-wider text-slate-500 dark:text-gray-400 font-bold mb-0.5">Urgent Revise</div>
-            <div className="text-xs font-extrabold text-rose-500">{brief.metrics?.urgentRevision}</div>
-          </div>
-        </div>
-      </div>
-    </PremiumCard>
-  );
-}
-
-function RecommendedToday({ recommendations, onSelectAction, onRegenerate }: { recommendations: Array<{ id?: string; priority: string; recommendationType: string; topicName?: string; reason?: string; impactScore?: number; urgencyScore?: number }>; onSelectAction: (type: string) => void; onRegenerate: () => void }) {
-  return (
-    <div className="mb-8">
-      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-        <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-wider uppercase flex items-center gap-2">
-          <Award size={16} className="text-amber-500" />
-          Recommended Today
-        </h3>
-        <PremiumButton variant="secondary" onClick={onRegenerate} icon={<RefreshCw size={11} />} className="py-1.5 px-3">
-          Refresh Recommendations
-        </PremiumButton>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {recommendations.map((rec, idx) => {
-          const priorityColors = {
-            Critical: "rose" as const,
-            High: "amber" as const,
-            Medium: "purple" as const,
-            Low: "green" as const,
-          };
-          const badgeColor = priorityColors[rec.priority as keyof typeof priorityColors] || "purple";
-
-          const typeLabels = {
-            study_next: "Study Next",
-            revision: "Revise",
-            practice: "Practice",
-            weak_recovery: "Weak Topic",
-            textbook: "Reference",
-            exam_prep: "Exam Prep",
-            interview_prep: "Interview",
-            retention_recovery: "Retention Recovery",
-            productivity: "Habit",
-            habit: "Consistency"
-          };
-          const label = typeLabels[rec.recommendationType as keyof typeof typeLabels] || "Recommendation";
-
-          return (
-            <PremiumCard
-              key={rec.id || idx}
-              tilt={true}
-              glow={true}
-              variant="interactive"
-              className="p-4 flex flex-col justify-between h-full gap-4 group"
-            >
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">
-                    {label}
-                  </span>
-                  <PremiumBadge variant={badgeColor} pulse={rec.priority === "Critical" || rec.priority === "High"}>
-                    {rec.priority}
-                  </PremiumBadge>
-                </div>
-                <h4 className="text-xs font-bold text-slate-800 dark:text-gray-200 mb-1 group-hover:text-amber-500 transition-colors">
-                  {rec.topicName}
-                </h4>
-                <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-normal">
-                  {rec.reason}
-                </p>
-              </div>
-
-              <div className="flex justify-between items-center pt-3 border-t border-black/5 dark:border-white/5 mt-auto">
-                <div className="flex gap-2">
-                  <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500">
-                    Impact: <span className="text-slate-700 dark:text-gray-300 font-extrabold">{rec.impactScore}%</span>
-                  </span>
-                  <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500">
-                    Urgency: <span className="text-slate-700 dark:text-gray-300 font-extrabold">{rec.urgencyScore}%</span>
-                  </span>
-                </div>
-                <PremiumButton variant="primary" onClick={() => onSelectAction(rec.recommendationType)} className="py-1 px-3.5">
-                  Start
-                </PremiumButton>
-              </div>
-            </PremiumCard>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // ΓöÇΓöÇΓöÇ Main Page (Security Redirect) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // All named exports (DashboardSidebar, DashboardTopNav, AdyapanUser, etc.)
@@ -979,30 +863,8 @@ function UserDashboardContent() {
   const [notifLoading, setNotifLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  const [recommendations, setRecommendations] = useState<Array<{ id?: string; priority: string; recommendationType: string; topicName?: string; reason?: string; impactScore?: number; urgencyScore?: number }>>([]);
-  const [dailyBrief, setDailyBrief] = useState<{ text?: string } | null>(null);
   const [coachInsight, setCoachInsight] = useState<Record<string, any> | null>(null);
   const [learningPaths, setLearningPaths] = useState<Record<string, any>[]>([]);
-  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
-
-  const fetchRecommendations = useCallback(async (forceGenerate = false) => {
-    setRecommendationsLoading(true);
-    try {
-      const url = forceGenerate ? "/recommendations/generate" : "/recommendations/dashboard";
-      const method = forceGenerate ? "POST" : "GET";
-      const res = await api({ method, url });
-      if (res.data.success) {
-        setRecommendations(res.data.recommendations || []);
-        setDailyBrief(res.data.dailyBrief || null);
-        setCoachInsight(res.data.coachInsight || null);
-        setLearningPaths(res.data.learningPaths || []);
-      }
-    } catch (err) {
-      console.error("Error loading recommendations:", err);
-    } finally {
-      setRecommendationsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     try {
@@ -1281,7 +1143,6 @@ function UserDashboardContent() {
     if (activeView !== "dashboard") return;
 
     fetchDashboardStats(false);
-    fetchRecommendations();
 
     // 10-second periodic background polling for realtime sync across all hubs
     const interval = setInterval(() => {
@@ -1289,7 +1150,7 @@ function UserDashboardContent() {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [activeView, fetchDashboardStats, fetchRecommendations]);
+  }, [activeView, fetchDashboardStats]);
 
   // Realtime Socket listeners for all hubs
   useEffect(() => {
@@ -1496,26 +1357,6 @@ function UserDashboardContent() {
                   onPracticeDsa={() => navigateTo("dsa-practice")}
                 />
                 <StatCardsGrid stats={dashboardStats} />
-                {recommendationsLoading ? (
-                  <RecommendationLoadingProgress />
-                ) : (
-                  <>
-                    <AIDailyBriefing brief={dailyBrief} />
-                    <RecommendedToday
-                      recommendations={recommendations}
-                      onRegenerate={() => fetchRecommendations(true)}
-                      onSelectAction={(type) => {
-                        if (type === "study_next" || type === "retention_recovery") navigateTo("study-assistant");
-                        else if (type === "revision") navigateTo("progress-hub");
-                        else if (type === "practice") navigateTo("dsa-practice");
-                        else if (type === "weak_recovery") navigateTo("weak-topics");
-                        else if (type === "exam_prep") navigateTo("study-planner");
-                        else if (type === "interview_prep") navigateTo("interview-hub");
-                        else navigateTo("study-assistant");
-                      }}
-                    />
-                  </>
-                )}
                 <PanelGrid stats={dashboardStats} onViewTool={navigateTo} />
 
                 {/* ΓòÉΓòÉΓòÉ CROSS-MODULE ANALYTICS ΓòÉΓòÉΓòÉ */}

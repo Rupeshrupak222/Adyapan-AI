@@ -147,6 +147,121 @@ const COMPANY_DOMAINS: Record<string, string> = {
   gupshup: "gupshup.io",
   inmobi: "inmobi.com",
   hasura: "hasura.io",
+
+  // Additional commonly scraped companies
+  swiggyinstamart: "swiggy.com",
+  dunzo: "dunzo.com",
+  delhivery: "delhivery.com",
+  shiprocket: "shiprocket.in",
+  shadowfax: "shadowfax.in",
+  ecom: "ecomexpress.in",
+  bluedart: "bluedart.com",
+  dtdc: "dtdc.com",
+  jio: "jio.com",
+  reliance: "relianceindustries.com",
+  reliancejio: "jio.com",
+  relianceretail: "relianceretail.com",
+  tatadigital: "tata.com",
+  tata: "tata.com",
+  mahindra: "mahindra.com",
+  bajaj: "bajaj.com",
+  bajajfinserv: "bajajfinserv.in",
+  hdfc: "hdfc.com",
+  hdfcbank: "hdfcbank.com",
+  icicibank: "icicibank.com",
+  axisbank: "axisbank.com",
+  sbi: "sbi.co.in",
+  kotak: "kotak.com",
+  kotakbank: "kotak.com",
+  indusindbank: "indusind.com",
+  yesbank: "yesbank.in",
+  navi: "navi.com",
+  jupiter: "jupiter.money",
+  slice: "sliceit.com",
+  niyo: "niyo.co",
+  fi: "fi.money",
+  mswipe: "mswipe.com",
+  cashfree: "cashfree.com",
+  payu: "payu.in",
+  juspay: "juspay.in",
+  setu: "setu.co",
+  openfinancial: "open.money",
+  smallcase: "smallcase.com",
+  kuvera: "kuvera.in",
+  angelbroking: "angelbroking.com",
+  angelone: "angelone.in",
+  sharekhan: "sharekhan.com",
+  fivepaisa: "5paisa.com",
+  icici: "icicibank.com",
+  icicisecurities: "icicisecurities.com",
+  motilaloswal: "motilaloswal.com",
+  zebpay: "zebpay.com",
+  wazirx: "wazirx.com",
+  coindcx: "coindcx.com",
+  bybit: "bybit.com",
+  binance: "binance.com",
+  shopify: "shopify.com",
+  razorpayx: "razorpay.com",
+  freshdesk: "freshdesk.com",
+  zendesk: "zendesk.com",
+  intercom: "intercom.com",
+  hubspot: "hubspot.com",
+  notion: "notion.so",
+  figma: "figma.com",
+  canva: "canva.com",
+  miro: "miro.com",
+  airtable: "airtable.com",
+  asana: "asana.com",
+  jira: "atlassian.com",
+  confluence: "atlassian.com",
+  trello: "trello.com",
+  clickup: "clickup.com",
+  linear: "linear.app",
+  vercel: "vercel.com",
+  netlify: "netlify.com",
+  heroku: "heroku.com",
+  digitalocean: "digitalocean.com",
+  linode: "linode.com",
+  vultr: "vultr.com",
+  hetzner: "hetzner.com",
+  docker: "docker.com",
+  kubernetes: "kubernetes.io",
+  terraform: "hashicorp.com",
+  hashicorp: "hashicorp.com",
+  ansible: "ansible.com",
+  redhat: "redhat.com",
+  vmware: "vmware.com",
+  paloalto: "paloaltonetworks.com",
+  crowdstrike: "crowdstrike.com",
+  sentinelone: "sentinelone.com",
+  splunk: "splunk.com",
+  dynatrace: "dynatrace.com",
+  newrelic: "newrelic.com",
+  grafana: "grafana.com",
+  supabase: "supabase.com",
+  planetscale: "planetscale.com",
+  neon: "neon.tech",
+  cockroachdb: "cockroachlabs.com",
+  tidb: "pingcap.com",
+  confluent: "confluent.io",
+  dbt: "getdbt.com",
+  airbyte: "airbyte.com",
+  fivetran: "fivetran.com",
+  talend: "talend.com",
+  informatica: "informatica.com",
+  mulesoft: "mulesoft.com",
+  boomi: "boomi.com",
+  apigee: "cloud.google.com",
+  kong: "konghq.com",
+  openai: "openai.com",
+  anthropic: "anthropic.com",
+  cohere: "cohere.com",
+  huggingface: "huggingface.co",
+  mistral: "mistral.ai",
+  perplexity: "perplexity.ai",
+  replicate: "replicate.com",
+  stability: "stability.ai",
+  midjourney: "midjourney.com",
 };
 
 const BRAND_SVGS: Record<string, string> = {
@@ -189,6 +304,19 @@ const BRAND_SVGS: Record<string, string> = {
   atlassian: "https://upload.wikimedia.org/wikipedia/commons/0/00/Atlassian-logo-blue-medium.svg",
   github: "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg",
   gitlab: "https://upload.wikimedia.org/wikipedia/commons/e/e1/GitLab_logo.svg",
+  shopify: "https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopify_logo_2018.svg",
+  figma: "https://upload.wikimedia.org/wikipedia/commons/3/33/Figma-logo.svg",
+  slack: "https://upload.wikimedia.org/wikipedia/commons/b/b9/Slack_Technologies_Logo.svg",
+  docker: "https://upload.wikimedia.org/wikipedia/commons/4/4e/Docker_%28container_engine%29_logo.svg",
+  mongodb: "https://upload.wikimedia.org/wikipedia/commons/9/93/MongoDB_Logo.svg",
+  postgresql: "https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg",
+  redis: "https://upload.wikimedia.org/wikipedia/en/6/6b/Redis_Logo.svg",
+  zoom: "https://upload.wikimedia.org/wikipedia/commons/1/11/Zoom_Logo_2022.svg",
+  samsung: "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg",
+  intel: "https://upload.wikimedia.org/wikipedia/commons/c/c9/Intel-logo.svg",
+  airbnb: "https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_Bélo.svg",
+  dropbox: "https://upload.wikimedia.org/wikipedia/commons/7/74/Dropbox_Icon.svg",
+  coinbase: "https://upload.wikimedia.org/wikipedia/commons/1/1a/24x7ndef.svg",
 };
 
 interface CompanyLogoProps {
@@ -266,37 +394,42 @@ export default function CompanyLogo({
   // Candidate sources in order of preference
   const sources: string[] = [];
 
-  // 1. Explicit passed logo URL (if provided and valid)
-  if (explicitLogo && explicitLogo.startsWith("http")) {
-    sources.push(explicitLogo);
-  }
-
-  // 2. High-res Brand SVG (Wikimedia / official)
+  // 1. High-res Brand SVG (Wikimedia / official) — most reliable, no network dependency issues
   if (BRAND_SVGS[key]) {
     sources.push(BRAND_SVGS[key]);
   }
 
-  // 3. Logo.dev API (most reliable free company logo API, no auth needed)
+  // 2. Explicit passed logo URL (if provided and valid) — after brand SVG since many scraped URLs are broken
+  if (explicitLogo && explicitLogo.startsWith("http")) {
+    sources.push(explicitLogo);
+  }
+
+  // 3. Clearbit Logo API (free, no auth, high quality PNG, very reliable)
+  if (domain) {
+    sources.push(`https://logo.clearbit.com/${domain}`);
+  }
+
+  // 4. Logo.dev API
   if (domain) {
     sources.push(`https://img.logo.dev/${domain}?token=pk_X6D7oqEASZ6tAIOG41dEoQ&size=128`);
   }
 
-  // 4. Simple Icons SVG Repository
+  // 5. Simple Icons SVG Repository
   if (key) {
     sources.push(`https://cdn.simpleicons.org/${key}`);
   }
 
-  // 5. Unavatar API (multiple social sources aggregated)
+  // 6. Unavatar API (multiple social sources aggregated)
   if (domain) {
     sources.push(`https://unavatar.io/${domain}?fallback=false`);
   }
 
-  // 6. DuckDuckGo favicon API (128px)
+  // 7. DuckDuckGo favicon API
   if (domain) {
     sources.push(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
   }
 
-  // 7. Google Favicons API (128px, most reliable)
+  // 8. Google Favicons API (most reliable fallback)
   if (domain) {
     sources.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
   }

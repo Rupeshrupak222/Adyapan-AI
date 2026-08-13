@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Settings, Palette, Bell, Sparkles, BookOpen, Shield, Lock,
   CreditCard, Globe, Zap, HardDrive, Activity, HelpCircle, Search,
@@ -23,17 +22,6 @@ import { getDiceBearUrl } from "@/lib/avatar";
 import { useTheme } from "@/hooks/useTheme";
 import { api } from "@/services/api";
 
-// ─── Animation Variants ──────────────────────────────────────────────────
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.04, duration: 0.35 } }),
-};
-
-const sectionTransition = {
-  initial: { opacity: 0, x: 20 },
-  animate: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
-  exit: { opacity: 0, x: -20, transition: { duration: 0.15 } },
-};
 
 // ─── Navigation Config ───────────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -593,18 +581,15 @@ export function ManageAccountView() {
   // ── Loading skeleton ──
   if (loading) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-72 gap-4">
+      <div className="flex flex-col items-center justify-center h-72 gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
         <p className="text-sm font-semibold" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "#64748b" }}>Loading your settings...</p>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+    <div
       className="space-y-5"
       style={{ color: c.text }}
     >
@@ -629,23 +614,19 @@ export function ManageAccountView() {
               style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
             />
           </div>
-          <motion.button
+          <button
             onClick={handleReset}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all"
             style={{ borderColor: c.border, color: c.textSec, background: c.cardBg }}
           >
             <RotateCcw size={13} /> Reset
-          </motion.button>
-          <motion.button
+          </button>
+          <button
             onClick={handleSave}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-lg shadow-amber-500/20 transition-all"
           >
             <Save size={13} /> Save Changes
-          </motion.button>
+          </button>
         </div>
       </div>
 
@@ -680,11 +661,9 @@ export function ManageAccountView() {
               const isActive = activeSection === item.id;
               const Icon = item.icon;
               return (
-                <motion.button
+                <button
                   key={item.id}
                   onClick={() => handleSectionChange(item.id)}
-                  whileHover={{ x: 2 }}
-                  whileTap={{ scale: 0.98 }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all relative cursor-pointer"
                   style={{
                     background: isActive
@@ -694,17 +673,15 @@ export function ManageAccountView() {
                   }}
                 >
                   {isActive && (
-                    <motion.div
-                      layoutId="settings-nav-glow"
+                    <div
                       className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-amber-500 to-orange-500"
                       style={{ boxShadow: "0 0 8px rgba(245,158,11,0.5)" }}
-                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
                     />
                   )}
                   <Icon size={15} className="shrink-0" />
                   <span className="text-[11px] font-bold truncate">{item.label}</span>
                   {isActive && <ChevronRight size={12} className="ml-auto shrink-0 opacity-50" />}
-                </motion.button>
+                </button>
               );
             })}
           </div>
@@ -712,32 +689,22 @@ export function ManageAccountView() {
 
         {/* ── Mobile Nav Toggle ── */}
         <div className="lg:hidden fixed bottom-5 right-5 z-50">
-          <motion.button
+          <button
             onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             className="w-12 h-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-black flex items-center justify-center shadow-lg shadow-amber-500/30"
           >
             <Menu size={20} />
-          </motion.button>
+          </button>
         </div>
 
         {/* ── Mobile Nav Drawer ── */}
-        <AnimatePresence>
           {mobileNavOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <div
               className="fixed inset-0 z-[60] lg:hidden"
               onClick={() => setMobileNavOpen(false)}
             >
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-              <motion.nav
-                initial={{ x: -280 }}
-                animate={{ x: 0 }}
-                exit={{ x: -280 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              <nav
                 onClick={(e) => e.stopPropagation()}
                 className="absolute left-0 top-0 bottom-0 w-[280px] border-r p-4 space-y-1 overflow-y-auto"
                 style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: c.border }}
@@ -766,15 +733,13 @@ export function ManageAccountView() {
                     </button>
                   );
                 })}
-              </motion.nav>
-            </motion.div>
+              </nav>
+            </div>
           )}
-        </AnimatePresence>
 
         {/* ── Main Content ── */}
         <div className="flex-1 min-w-0">
-          <AnimatePresence mode="wait">
-            <motion.div key={activeSection} {...sectionTransition}>
+            <div key={activeSection}>
               {activeSection === "profile" && <ProfileSection c={c} fullName={fullName} setFullName={setFullName} username={username} setUsername={setUsername} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} college={college} setCollege={setCollege} degree={degree} setDegree={setDegree} branch={branch} setBranch={setBranch} gradYear={gradYear} setGradYear={setGradYear} bio={bio} setBio={setBio} photoUrl={photoUrl} photoInputRef={photoInputRef} uploadingPhoto={uploadingPhoto} onPhotoUpload={handlePhotoUpload} onPhotoRemove={handlePhotoRemove} markChanged={markChanged} onSave={handleSaveProfile} saving={saving} />}
               {activeSection === "account" && <AccountSection c={c} email={email} plan={plan} memberSince={memberSince} markChanged={markChanged} onDeleteAccount={() => setShowDeleteModal(true)} onChangePassword={() => setShowChangePassword(true)} />}
               {activeSection === "appearance" && <AppearanceSection c={c} isDark={isDark} themeMode={themeMode} setThemeMode={setThemeMode} accentColor={accentColor} setAccentColor={setAccentColor} compactMode={compactMode} setCompactMode={setCompactMode} glassEffect={glassEffect} setGlassEffect={setGlassEffect} animationsEnabled={animationsEnabled} setAnimationsEnabled={setAnimationsEnabled} sidebarCollapse={sidebarCollapse} setSidebarCollapse={setSidebarCollapse} fontSize={fontSize} setFontSize={setFontSize} markChanged={markChanged} onAutoSave={scheduleAppearanceSave} onApplyTheme={applyTheme} onApplyAccent={applyAccentColor} onSave={handleSaveAppearance} saving={saving} />}
@@ -788,17 +753,13 @@ export function ManageAccountView() {
               {activeSection === "storage" && <StorageSection c={c} storageUsed={storageUsed} storageTotal={storageTotal} storagePercent={storagePercent} categories={storageCategories} />}
               {activeSection === "activity" && <ActivitySection c={c} activityLog={activityLog} />}
               {activeSection === "help" && <HelpSection c={c} />}
-            </motion.div>
-          </AnimatePresence>
+            </div>
         </div>
 
         {/* ── Right Sidebar (Desktop) ── */}
         <aside className="hidden xl:block w-[260px] shrink-0 sticky top-0 space-y-4 max-h-[calc(100vh-160px)] overflow-y-auto pb-4" style={{ scrollbarWidth: "thin" }}>
           {/* Profile Summary Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+          <div
             className="rounded-2xl border p-5 space-y-4"
             style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
           >
@@ -817,13 +778,10 @@ export function ManageAccountView() {
                 <span className="font-bold">{storageUsed} MB / {storageTotal} MB</span>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Quick Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+          <div
             className="rounded-2xl border p-4 space-y-2"
             style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
           >
@@ -834,29 +792,23 @@ export function ManageAccountView() {
               { label: "Export Chats", icon: FileText, color: "text-purple-500", action: handleExportData },
               { label: "Invite Friend", icon: Link2, color: "text-emerald-500", action: () => { navigator.clipboard.writeText(window.location.origin + "/register?ref=" + username); toast.success("Invite link copied!"); } },
             ].map((action) => (
-              <motion.button
+              <button
                 key={action.label}
                 onClick={action.action}
-                whileHover={{ x: 3 }}
-                whileTap={{ scale: 0.98 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-xs font-bold transition-all hover:bg-white/5"
                 style={{ color: c.textSec }}
               >
                 <action.icon size={14} className={action.color} />
                 {action.label}
-              </motion.button>
+              </button>
             ))}
-          </motion.div>
+          </div>
         </aside>
       </div>
 
       {/* ── Changes indicator ── */}
-      <AnimatePresence>
         {hasChanges && (
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
+          <div
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl border shadow-2xl"
             style={{
               background: isDark ? "rgba(12,13,22,0.95)" : "rgba(255,255,255,0.95)",
@@ -866,33 +818,23 @@ export function ManageAccountView() {
             }}
           >
             <span className="text-xs font-bold" style={{ color: c.text }}>You have unsaved changes</span>
-            <motion.button
+            <button
               onClick={handleSave}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
               className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold"
             >
               Save Now
-            </motion.button>
-          </motion.div>
+            </button>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* ── Change Password Modal ── */}
-      <AnimatePresence>
         {showChangePassword && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
             className="fixed inset-0 z-[80] flex items-center justify-center p-4"
             onClick={() => setShowChangePassword(false)}
           >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
+            <div
               onClick={(e) => e.stopPropagation()}
               className="relative rounded-2xl border p-6 space-y-4 w-full max-w-md"
               style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: c.border }}
@@ -937,37 +879,27 @@ export function ManageAccountView() {
                   className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all"
                   style={{ borderColor: c.border, color: c.textSec }}
                 >Cancel</button>
-                <motion.button
+                <button
                   onClick={handleChangePassword}
                   disabled={saving}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {saving ? <Loader2 size={13} className="animate-spin" /> : <Key size={13} />}
                   Change Password
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* ── Delete Account Modal ── */}
-      <AnimatePresence>
         {showDeleteModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
             className="fixed inset-0 z-[80] flex items-center justify-center p-4"
             onClick={() => setShowDeleteModal(false)}
           >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
+            <div
               onClick={(e) => e.stopPropagation()}
               className="relative rounded-2xl border p-6 space-y-4 w-full max-w-md"
               style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: "rgba(239,68,68,0.3)" }}
@@ -1002,37 +934,27 @@ export function ManageAccountView() {
                   className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all"
                   style={{ borderColor: c.border, color: c.textSec }}
                 >Cancel</button>
-                <motion.button
+                <button
                   onClick={handleDeleteAccount}
                   disabled={saving || !deletePassword}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40"
                 >
                   {saving ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   Delete Forever
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* ── Delete Chat History Modal ── */}
-      <AnimatePresence>
         {showDeleteChatModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
             className="fixed inset-0 z-[80] flex items-center justify-center p-4"
             onClick={() => setShowDeleteChatModal(false)}
           >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
+            <div
               onClick={(e) => e.stopPropagation()}
               className="relative rounded-2xl border p-6 space-y-4 w-full max-w-md"
               style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: "rgba(249,115,22,0.3)" }}
@@ -1056,37 +978,27 @@ export function ManageAccountView() {
                   className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all"
                   style={{ borderColor: c.border, color: c.textSec }}
                 >Cancel</button>
-                <motion.button
+                <button
                   onClick={handleDeleteChatHistory}
                   disabled={saving}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40"
                 >
                   {saving ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   Delete All Chats
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* ── Logout All Devices Modal ── */}
-      <AnimatePresence>
         {showLogoutModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
             className="fixed inset-0 z-[80] flex items-center justify-center p-4"
             onClick={() => setShowLogoutModal(false)}
           >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
+            <div
               onClick={(e) => e.stopPropagation()}
               className="relative rounded-2xl border p-6 space-y-4 w-full max-w-md"
               style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: "rgba(239,68,68,0.3)" }}
@@ -1110,22 +1022,19 @@ export function ManageAccountView() {
                   className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all"
                   style={{ borderColor: c.border, color: c.textSec }}
                 >Cancel</button>
-                <motion.button
+                <button
                   onClick={handleLogoutDevices}
                   disabled={saving}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40"
                 >
                   {saving ? <Loader2 size={13} className="animate-spin" /> : <LogOut size={13} />}
                   Logout All
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 
@@ -1162,7 +1071,7 @@ function ProfileSection({
   return (
     <div className="space-y-5">
       {/* Photo Card */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1183,27 +1092,27 @@ function ProfileSection({
             <span className="text-xs font-bold block" style={{ color: c.text }}>{fullName}</span>
             <span className="text-[10px] block mt-0.5" style={{ color: c.textMuted }}>JPG, PNG or GIF. Max 2MB.</span>
             <div className="flex gap-2 mt-2">
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              <button
                 onClick={() => photoInputRef.current?.click()}
                 disabled={uploadingPhoto}
                 className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold disabled:opacity-50">
                 {uploadingPhoto ? "Uploading..." : "Upload Photo"}
-              </motion.button>
+              </button>
               {photoUrl && (
-                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                <button
                   onClick={onPhotoRemove}
                   className="px-3 py-1.5 rounded-lg border text-[10px] font-bold"
                   style={{ borderColor: c.border, color: c.textMuted }}>
                   Remove
-                </motion.button>
+                </button>
               )}
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Personal Information */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1240,10 +1149,10 @@ function ProfileSection({
               style={inputStyle} />
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Education */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1276,10 +1185,10 @@ function ProfileSection({
               style={inputStyle} />
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Bio */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1293,23 +1202,21 @@ function ProfileSection({
         <div className="flex justify-end">
           <span className="text-[10px]" style={{ color: c.textMuted }}>{bio.length}/300</span>
         </div>
-      </motion.div>
+      </div>
 
       {/* Save/Cancel */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4}
+      <div
         className="flex justify-end gap-2.5">
         <PremiumButton variant="secondary" onClick={() => window.location.reload()}>Cancel</PremiumButton>
-        <motion.button
+        <button
           onClick={onSave}
           disabled={saving}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold disabled:opacity-60"
         >
           {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
           Save Profile
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
     </div>
   );
 }
@@ -1328,7 +1235,7 @@ export function AccountSection({
 }) {
   return (
     <div className="space-y-5">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1364,20 +1271,18 @@ export function AccountSection({
             <span className="text-xs font-bold" style={{ color: c.textSec }}>English (IN)</span>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Account Actions */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+      <div
         className="rounded-2xl border p-6 space-y-3"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
         <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.primary }}>
           <Shield size={16} /> Account Actions
         </h3>
-        <motion.button
+        <button
           onClick={onChangePassword}
-          whileHover={{ x: 3 }}
-          whileTap={{ scale: 0.98 }}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left text-xs font-bold transition-all hover:border-amber-500/30"
           style={{ borderColor: c.border, color: c.textSec }}
         >
@@ -1387,11 +1292,9 @@ export function AccountSection({
             <span className="text-[10px] font-normal" style={{ color: c.textMuted }}>Update your account password securely</span>
           </div>
           <ChevronRight size={14} className="ml-auto opacity-40" />
-        </motion.button>
-        <motion.button
+        </button>
+        <button
           onClick={onDeleteAccount}
-          whileHover={{ x: 3 }}
-          whileTap={{ scale: 0.98 }}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left text-xs font-bold transition-all border-red-500/20 hover:border-red-500/40"
           style={{ color: "#ef4444" }}
         >
@@ -1401,8 +1304,8 @@ export function AccountSection({
             <span className="text-[10px] font-normal text-red-400">Permanently delete your account and all data</span>
           </div>
           <ChevronRight size={14} className="ml-auto opacity-40" />
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
     </div>
   );
 }
@@ -1434,7 +1337,7 @@ export function AppearanceSection({
   return (
     <div className="space-y-5">
       {/* Theme Mode */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1449,11 +1352,9 @@ export function AppearanceSection({
           ].map((mode) => {
             const isActive = themeMode === mode.id;
             return (
-              <motion.button
+              <button
                 key={mode.id}
                 onClick={() => change(() => { setThemeMode(mode.id); onApplyTheme?.(mode.id); })}
-                whileHover={{ y: -2, scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
                 className="p-4 rounded-xl border text-center space-y-2 transition-all cursor-pointer"
                 style={{
                   background: isActive
@@ -1469,20 +1370,20 @@ export function AppearanceSection({
                   <span className="text-[9px]" style={{ color: c.textMuted }}>{mode.desc}</span>
                 </div>
                 {isActive && (
-                  <motion.div layoutId="theme-active-dot"
+                  <div
                     className="w-1.5 h-1.5 rounded-full bg-amber-500 mx-auto"
                     style={{ boxShadow: "0 0 6px rgba(245,158,11,0.6)" }} />
                 )}
-              </motion.button>
+              </button>
             );
           })}
         </div>
-      </motion.div>
+      </div>
 
 
 
       {/* Toggles */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
+      <div
         className="rounded-2xl border p-6 space-y-1 divide-y"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1493,10 +1394,10 @@ export function AppearanceSection({
         <SettingsToggle enabled={glassEffect} onToggle={() => change(() => setGlassEffect(!glassEffect))} label="Glass Effect" description="Enable glassmorphism backdrop blur" icon={<Eye size={14} />} />
         <SettingsToggle enabled={animationsEnabled} onToggle={() => change(() => setAnimationsEnabled(!animationsEnabled))} label="Animations" description="Smooth transitions and motion effects" icon={<Sparkles size={14} />} />
         <SettingsToggle enabled={sidebarCollapse} onToggle={() => change(() => setSidebarCollapse(!sidebarCollapse))} label="Sidebar Auto Collapse" description="Collapse sidebar when not hovered" icon={<Menu size={14} />} />
-      </motion.div>
+      </div>
 
       {/* Font Size */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1514,10 +1415,10 @@ export function AppearanceSection({
           />
           <span className="text-sm font-bold" style={{ color: c.text }}>{fontSize}px</span>
         </div>
-      </motion.div>
+      </div>
 
       {/* Live Preview */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1537,7 +1438,7 @@ export function AppearanceSection({
             <div className="px-3 py-1 rounded-lg text-[10px] font-bold border" style={{ borderColor: c.border, color: c.textSec }}>Secondary</div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -1581,7 +1482,7 @@ export function NotificationsSection({
 
   return (
     <div className="space-y-5">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-1 divide-y"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1591,7 +1492,7 @@ export function NotificationsSection({
         {toggles.map((t) => (
           <SettingsToggle key={t.label} enabled={t.enabled} onToggle={t.toggle} label={t.label} description={t.desc} icon={t.icon} />
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -1627,7 +1528,7 @@ export function AIPreferencesSection({
   return (
     <div className="space-y-5">
       {/* Default Model */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1638,11 +1539,9 @@ export function AIPreferencesSection({
           {models.map((model) => {
             const isActive = aiModel === model.id;
             return (
-              <motion.button
+              <button
                 key={model.id}
                 onClick={() => { setAiModel(model.id); markChanged(); }}
-                whileHover={{ y: -2, scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
                 className="p-3 rounded-xl border text-center space-y-1.5 transition-all"
                 style={{
                   background: isActive ? "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(234,88,12,0.08))" : c.cardBg,
@@ -1656,14 +1555,14 @@ export function AIPreferencesSection({
                 </div>
                 <span className="text-[11px] font-bold block" style={{ color: isActive ? "#f59e0b" : c.text }}>{model.name}</span>
                 <span className="text-[9px] block" style={{ color: c.textMuted }}>{model.desc}</span>
-              </motion.button>
+              </button>
             );
           })}
         </div>
-      </motion.div>
+      </div>
 
       {/* Response Length */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1674,11 +1573,9 @@ export function AIPreferencesSection({
           {["short", "balanced", "detailed"].map((len) => {
             const isActive = responseLength === len;
             return (
-              <motion.button
+              <button
                 key={len}
                 onClick={() => { setResponseLength(len); markChanged(); }}
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.97 }}
                 className="flex-1 py-2.5 rounded-xl border text-xs font-bold capitalize transition-all"
                 style={{
                   background: isActive ? "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(234,88,12,0.08))" : "transparent",
@@ -1687,14 +1584,14 @@ export function AIPreferencesSection({
                 }}
               >
                 {len}
-              </motion.button>
+              </button>
             );
           })}
         </div>
-      </motion.div>
+      </div>
 
       {/* Creativity Slider */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1713,10 +1610,10 @@ export function AIPreferencesSection({
           <span className="text-[10px]" style={{ color: c.textMuted }}>Creative</span>
           <span className="text-xs font-bold w-8 text-right" style={{ color: c.text }}>{creativity}%</span>
         </div>
-      </motion.div>
+      </div>
 
       {/* Toggles */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}
+      <div
         className="rounded-2xl border p-6 space-y-1 divide-y"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1728,7 +1625,7 @@ export function AIPreferencesSection({
         <SettingsToggle enabled={codeHighlighting} onToggle={() => { setCodeHighlighting(!codeHighlighting); markChanged(); }} label="Code Highlighting" description="Syntax highlighting for code blocks" icon={<Code size={14} />} />
         <SettingsToggle enabled={autoCitation} onToggle={() => { setAutoCitation(!autoCitation); markChanged(); }} label="Auto Citation" description="Automatically cite sources in responses" icon={<BookOpen size={14} />} />
         <SettingsToggle enabled={autoSaveConversations} onToggle={() => { setAutoSaveConversations(!autoSaveConversations); markChanged(); }} label="Auto Save Conversations" description="Save chat history automatically" icon={<Save size={14} />} />
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -1755,7 +1652,7 @@ export function LearningSection({
 }) {
   return (
     <div className="space-y-5">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-5"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1808,10 +1705,10 @@ export function LearningSection({
               { value: "motivational", label: "Motivational" },
             ]} icon={<Heart size={11} />} />
         </div>
-      </motion.div>
+      </div>
 
       {/* Daily Goal */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1830,10 +1727,10 @@ export function LearningSection({
           <span className="text-[10px]" style={{ color: c.textMuted }}>12 hrs</span>
           <span className="text-xs font-bold w-12 text-right" style={{ color: c.text }}>{dailyGoal}h/day</span>
         </div>
-      </motion.div>
+      </div>
 
       {/* Reminder Time */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1848,7 +1745,7 @@ export function LearningSection({
           />
           <span className="text-[10px]" style={{ color: c.textMuted }}>Daily reminder time</span>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -1892,7 +1789,7 @@ export function SecuritySection({
   return (
     <div className="space-y-5">
       {/* Change Password */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1929,20 +1826,18 @@ export function SecuritySection({
             </div>
           </div>
         </div>
-        <motion.button
+        <button
           onClick={handleInlinePasswordChange}
           disabled={secSaving}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold disabled:opacity-60"
         >
           {secSaving ? <Loader2 size={13} className="animate-spin" /> : <Key size={13} />}
           Update Password
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
 
       {/* 2FA & Login Alerts */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+      <div
         className="rounded-2xl border p-6 space-y-1 divide-y"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1951,10 +1846,10 @@ export function SecuritySection({
         </h3>
         <SettingsToggle enabled={twoFactor} onToggle={() => { setTwoFactor(!twoFactor); markChanged(); }} label="Two-Factor Authentication" description="Add an extra layer of security with SMS/email verification" icon={<Fingerprint size={14} />} />
         <SettingsToggle enabled={loginAlerts} onToggle={() => { setLoginAlerts(!loginAlerts); markChanged(); }} label="Login Alerts" description="Get notified of new sign-ins to your account" icon={<Smartphone size={14} />} />
-      </motion.div>
+      </div>
 
       {/* Active Devices */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -1963,7 +1858,7 @@ export function SecuritySection({
         </h3>
         <div className="space-y-2.5">
           {activeDevices.map((device, i) => (
-            <motion.div key={i} variants={fadeUp} initial="hidden" animate="visible" custom={i}
+            <div key={i}
               className="flex items-center justify-between p-3 rounded-xl border"
               style={{ borderColor: c.border }}
             >
@@ -1978,19 +1873,17 @@ export function SecuritySection({
                 </div>
               </div>
               {device.current && <PremiumBadge variant="green" pulse>Current</PremiumBadge>}
-            </motion.div>
+            </div>
           ))}
         </div>
-        <motion.button
+        <button
           onClick={onLogoutDevices}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           className="w-full py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all"
           style={{ borderColor: "rgba(239,68,68,0.3)", color: "#ef4444", background: "rgba(239,68,68,0.05)" }}
         >
           <LogOut size={14} /> Logout All Devices
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
     </div>
   );
 }
@@ -2020,7 +1913,7 @@ export function PrivacySection({
 
   return (
     <div className="space-y-5">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-1 divide-y"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -2030,10 +1923,10 @@ export function PrivacySection({
         <SettingsToggle enabled={publicProfile} onToggle={() => handleToggle("publicProfile", publicProfile, setPublicProfile)} label="Public Profile" description="Allow others to view your community profile" icon={<Globe size={14} />} />
         <SettingsToggle enabled={dataCollection} onToggle={() => handleToggle("dataCollection", dataCollection, setDataCollection)} label="Data Collection" description="Help improve Adyapan with anonymous usage data" icon={<Database size={14} />} />
         <SettingsToggle enabled={personalizedAI} onToggle={() => handleToggle("personalizedAI", personalizedAI, setPersonalizedAI)} label="Personalized AI" description="AI uses your learning history for better recommendations" icon={<Brain size={14} />} />
-      </motion.div>
+      </div>
 
       {/* Data Actions */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -2041,7 +1934,7 @@ export function PrivacySection({
           <Database size={16} /> Data Management
         </h3>
         <div className="space-y-2.5">
-          <motion.button whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
+          <button
             onClick={onExportData}
             className="w-full flex items-center justify-between p-3 rounded-xl border transition-all hover:bg-white/5"
             style={{ borderColor: c.border }}>
@@ -2053,8 +1946,8 @@ export function PrivacySection({
               </div>
             </div>
             <ChevronRight size={14} style={{ color: c.textMuted }} />
-          </motion.button>
-          <motion.button whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
+          </button>
+          <button
             onClick={onDeleteChatHistory}
             className="w-full flex items-center justify-between p-3 rounded-xl border transition-all hover:bg-white/5"
             style={{ borderColor: c.border }}>
@@ -2066,8 +1959,8 @@ export function PrivacySection({
               </div>
             </div>
             <ChevronRight size={14} style={{ color: c.textMuted }} />
-          </motion.button>
-          <motion.button whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
+          </button>
+          <button
             onClick={onDeleteAccount}
             className="w-full flex items-center justify-between p-3 rounded-xl border transition-all"
             style={{ borderColor: "rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.03)" }}>
@@ -2079,9 +1972,9 @@ export function PrivacySection({
               </div>
             </div>
             <ChevronRight size={14} className="text-rose-500" />
-          </motion.button>
+          </button>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -2180,7 +2073,7 @@ export function ConnectedAccountsSection({
 
   return (
     <div className="space-y-5">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -2189,7 +2082,7 @@ export function ConnectedAccountsSection({
         </h3>
         <div className="space-y-2.5">
           {accounts.map((acct, i) => (
-            <motion.div key={acct.name} variants={fadeUp} initial="hidden" animate="visible" custom={i}
+            <div key={acct.name}
               className="flex items-center justify-between p-3.5 rounded-xl border" style={{ borderColor: c.border }}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center border shadow-sm shrink-0"
@@ -2203,10 +2096,8 @@ export function ConnectedAccountsSection({
                   </span>
                 </div>
               </div>
-              <motion.button
+              <button
                 onClick={() => toggleAccount(i)}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
                 className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
                 style={{
                   background: acct.connected ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)",
@@ -2216,11 +2107,11 @@ export function ConnectedAccountsSection({
               >
                 {!acct.connected && <ExternalLink size={10} />}
                 {acct.connected ? "Disconnect" : "Connect"}
-              </motion.button>
-            </motion.div>
+              </button>
+            </div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -2262,7 +2153,7 @@ export function APISection({
 
   return (
     <div className="space-y-5">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -2271,7 +2162,7 @@ export function APISection({
         </h3>
         <div className="space-y-3">
           {apiKeys.map((api, i) => (
-            <motion.div key={api.name} variants={fadeUp} initial="hidden" animate="visible" custom={i}
+            <div key={api.name}
               className="p-4 rounded-xl border space-y-3" style={{ borderColor: c.border }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -2300,22 +2191,22 @@ export function APISection({
                     style={inputStyle}
                   />
                 </div>
-                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                <button
                   onClick={() => handleUpdateKey(i)}
                   className="px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold shrink-0">
                   Update
-                </motion.button>
-                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                </button>
+                <button
                   onClick={() => handleRemoveKey(i)}
                   className="px-3 py-2 rounded-lg border text-[10px] font-bold shrink-0"
                   style={{ borderColor: "rgba(239,68,68,0.2)", color: "#ef4444" }}>
                   Remove
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -2357,7 +2248,7 @@ export function StorageSection({
   return (
     <div className="space-y-5">
       {/* Usage Overview */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-5"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -2382,22 +2273,22 @@ export function StorageSection({
           ))}
         </div>
         <div className="flex gap-2.5">
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+          <button
             onClick={handleDownloadBackup}
             className="flex-1 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2"
             style={{ borderColor: c.border, color: c.textSec, background: c.cardBg }}>
             <Download size={13} /> Download Backup
-          </motion.button>
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+          </button>
+          <button
             onClick={handleClearCache}
             disabled={clearingCache}
             className="flex-1 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-50"
             style={{ borderColor: "rgba(239,68,68,0.25)", color: "#ef4444", background: "rgba(239,68,68,0.05)" }}>
             {clearingCache ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
             {clearingCache ? "Clearing..." : "Clear Cache"}
-          </motion.button>
+          </button>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -2418,7 +2309,7 @@ export function ActivitySection({
 
   return (
     <div className="space-y-5">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -2445,7 +2336,7 @@ export function ActivitySection({
             {filtered.map((item, i) => {
               const Icon = item.icon;
               return (
-                <motion.div key={i} variants={fadeUp} initial="hidden" animate="visible" custom={i}
+                <div key={i}
                   className="relative flex items-start gap-3">
                   <div className="absolute left-[-15px] top-1 w-[10px] h-[10px] rounded-full border-2"
                     style={{ borderColor: c.border, background: c.cardBg }} />
@@ -2454,12 +2345,12 @@ export function ActivitySection({
                     <span className="text-[10px]" style={{ color: c.textMuted }}>{item.time}</span>
                   </div>
                   <Icon size={14} className={item.color} />
-                </motion.div>
+                </div>
               );
             })}
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -2582,7 +2473,7 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
 
   return (
     <div className="space-y-5">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+      <div
         className="rounded-2xl border p-6 space-y-4"
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
@@ -2593,9 +2484,7 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
           {cards.map((item, i) => {
             const Icon = item.icon;
             return (
-              <motion.div key={item.title} variants={fadeUp} initial="hidden" animate="visible" custom={i}
-                whileHover={{ y: -2, scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
+              <div key={item.title}
                 onClick={item.onClick}
                 className="p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition-all"
                 style={{ borderColor: c.border, background: c.cardBgHover }}>
@@ -2607,21 +2496,20 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                   <span className="text-xs font-bold block">{item.title}</span>
                   <span className="text-[10px] leading-relaxed" style={{ color: c.textMuted }}>{item.desc}</span>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
-      </motion.div>
+      </div>
 
       {/* ── Modal Popups ── */}
-      <AnimatePresence>
         {activeModal && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            <div
               onClick={() => setActiveModal(null)}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            <div
               className="relative w-full max-w-xl rounded-2xl border p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl"
               style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: c.border, color: c.text }}
               onClick={(e) => e.stopPropagation()}
@@ -2706,11 +2594,11 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
                     <PremiumButton variant="secondary" onClick={() => setActiveModal(null)} type="button">Cancel</PremiumButton>
-                    <motion.button type="submit" disabled={submittingSupport} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    <button type="submit" disabled={submittingSupport}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold disabled:opacity-60 cursor-pointer">
                       {submittingSupport ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
                       Submit Ticket
-                    </motion.button>
+                    </button>
                   </div>
                 </form>
               )}
@@ -2752,11 +2640,11 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
                     <PremiumButton variant="secondary" onClick={() => setActiveModal(null)} type="button">Cancel</PremiumButton>
-                    <motion.button type="submit" disabled={submittingBug} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    <button type="submit" disabled={submittingBug}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 text-white text-xs font-bold disabled:opacity-60 cursor-pointer">
                       {submittingBug ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
                       Report Bug
-                    </motion.button>
+                    </button>
                   </div>
                 </form>
               )}
@@ -2816,10 +2704,9 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                   </p>
                 </div>
               )}
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
