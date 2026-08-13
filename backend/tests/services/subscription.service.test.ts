@@ -28,6 +28,10 @@ jest.mock("../../src/config/prisma", () => ({
     },
     billing: { create: jest.fn().mockResolvedValue({}) },
     transaction: { create: jest.fn().mockResolvedValue({}) },
+    storageUsage: {
+      update: jest.fn().mockResolvedValue({}),
+      upsert: jest.fn().mockResolvedValue({}),
+    },
   },
 }));
 

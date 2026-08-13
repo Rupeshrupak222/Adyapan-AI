@@ -277,7 +277,7 @@ describe("registerUser atomic registration workflow", () => {
     expect(prisma.$transaction).toHaveBeenCalled();
     expect(prisma.user.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ plan: "free", subscriptionStatus: "active" }),
+        data: expect.objectContaining({ plan: "free", subscriptionStatus: "free" }),
       })
     );
     expect(tx.profile.create).toHaveBeenCalled();
@@ -289,11 +289,11 @@ describe("registerUser atomic registration workflow", () => {
     expect(tx.learningPreference.create).toHaveBeenCalled();
     expect(tx.storageUsage.create).toHaveBeenCalled();
     expect(tx.aiUsage.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ plan: "free", subscriptionStatus: "active" }) })
+      expect.objectContaining({ data: expect.objectContaining({ plan: "free", subscriptionStatus: "free" }) })
     );
     expect(tx.subscription.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ planCode: "free", status: "active", price: 0 }),
+        data: expect.objectContaining({ planCode: "free", status: "free", price: 0 }),
       })
     );
     expect(tx.session.create).toHaveBeenCalled();

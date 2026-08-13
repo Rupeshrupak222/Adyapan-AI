@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  frontend:
+    name: Frontend (typecheck + build + lint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Production build
+        run: npm run build
+      - name: Lint
+        # Non-blocking: repo currently has ~567 pre-existing lint errors
+        # (mostly @typescript-eslint/no-explicit-any). Fix those before
+        # making this a required check.
+        run: npm run lint
+        continue-on-error: true
+
+  backend:
+    name: Backend (typecheck + build + tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build (prisma generate + compile)
+        run: npm run build
+      - name: Tests
+        run: npm test
