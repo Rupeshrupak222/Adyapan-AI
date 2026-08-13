@@ -160,7 +160,7 @@ function getDifficultyInstructions(difficulty: string): string {
 
 function computeAnswerQualityScore(history: Message[]): number {
   const answers = history.filter((m) => m.role === "candidate");
-  if (answers.length === 0) return 50;
+  if (answers.length === 0) return 0;
   let total = 0;
   for (const a of answers) {
     const len = a.content.trim().length;
@@ -383,73 +383,101 @@ Be specific and reference actual responses from the candidate. Avoid generic fee
   const fallbackBreakdowns: AnswerBreakdown[] = interviewerMessages.map((q, i) => ({
     question: q.content,
     answer: candidateMessages[i]?.content || "No answer provided",
-    aiAnalysis: `Answer ${i + 1}: ${avgQuality >= 60 ? "Demonstrates adequate understanding." : "Could benefit from more depth and structure."}`,
-    suggestedBetterAnswer: `A stronger answer would include more specific examples, clearer structure, and deeper technical detail relevant to the ${config.role} role.`,
-    interviewerPerspective: avgQuality >= 70
-      ? "This answer shows competence. I would move forward with this candidate."
-      : "This answer needs improvement. I would want to see more depth before advancing.",
-    score: Math.min(100, Math.max(20, Math.round(avgQuality))),
-    tags: avgQuality >= 70 ? ["adequate", "relevant"] : ["needs-improvement", "vague"],
+    aiAnalysis: avgQuality === 0 
+      ? "No candidate response was provided for this question."
+      : `Answer ${i + 1}: ${avgQuality >= 60 ? "Demonstrates adequate understanding." : "Could benefit from more depth and structure."}`,
+    suggestedBetterAnswer: avgQuality === 0 
+      ? "A response is required to provide evaluation and suggestions."
+      : `A stronger answer would include more specific examples, clearer structure, and deeper technical detail relevant to the ${config.role} role.`,
+    interviewerPerspective: avgQuality === 0 
+      ? "Without a response, I cannot assess the candidate's suitability for the role."
+      : avgQuality >= 70
+        ? "This answer shows competence. I would move forward with this candidate."
+        : "This answer needs improvement. I would want to see more depth before advancing.",
+    score: avgQuality > 0 ? Math.min(100, Math.max(20, Math.round(avgQuality))) : 0,
+    tags: avgQuality === 0 ? ["no-response"] : avgQuality >= 70 ? ["adequate", "relevant"] : ["needs-improvement", "vague"],
   }));
 
   const fallback: EngineEvaluation = {
     overallScore: avgQuality,
-    communicationScore: Math.min(100, avgQuality + 5),
+    communicationScore: avgQuality > 0 ? Math.min(100, avgQuality + 5) : 0,
     technicalScore: config.type === "technical" || config.type === "coding" || config.type === "system-design" ? avgQuality : null,
     hrScore: config.type === "behavioral" || config.type === "hr" ? avgQuality : null,
-    confidenceScore: Math.min(100, Math.max(20, avgQuality - 3)),
-    fluencyScore: Math.min(100, avgQuality + 2),
-    bodyLanguageScore: Math.min(100, Math.max(20, avgQuality - 5)),
-    strengths: [
-      `Candidate completed ${totalQuestions} questions`,
-      avgQuality >= 60 ? "Demonstrated adequate response length" : "Showed willingness to engage",
-    ],
-    weaknesses: [
-      avgQuality < 60 ? "Answers lacked sufficient depth" : "Could improve answer structure",
-      "Some answers could benefit from more specific examples",
-    ],
-    improvements: [
-      "Practice structuring answers with clear beginning, middle, and end",
-      "Use the STAR method for behavioral questions",
-      "Include quantified results when describing achievements",
-    ],
-    summary: `Candidate completed a ${config.type} interview for a ${config.role} role${config.company ? ` at ${config.company}` : ""} with an overall score of ${avgQuality}/100.`,
-    hiringRecommendation:
+    confidenceScore: avgQuality > 0 ? Math.min(100, Math.max(20, avgQuality - 3)) : 0,
+    fluencyScore: avgQuality > 0 ? Math.min(100, avgQuality + 2) : 0,
+    bodyLanguageScore: avgQuality > 0 ? Math.min(100, Math.max(20, avgQuality - 5)) : 0,
+    strengths: avgQuality === 0 
+      ? ["No candidate responses were provided in the transcript.", "Unable to evaluate competencies without answers."]
+      : [
+          `Candidate completed ${totalQuestions} questions`,
+          avgQuality >= 60 ? "Demonstrated adequate response length" : "Showed willingness to engage",
+        ],
+    weaknesses: avgQuality === 0 
+      ? ["No candidate response was provided in the transcript, making evaluation impossible.", "Unable to assess skills, experience, or fit without answers."]
+      : [
+          avgQuality < 60 ? "Answers lacked sufficient depth" : "Could improve answer structure",
+          "Some answers could benefit from more specific examples",
+        ],
+    improvements: avgQuality === 0 
+      ? ["Provide responses to all interview questions to enable proper evaluation", "Ensure audio/video setup is working properly", "Practice interview responses before the session"]
+      : [
+          "Practice structuring answers with clear beginning, middle, and end",
+          "Use the STAR method for behavioral questions",
+          "Include quantified results when describing achievements",
+        ],
+    summary: avgQuality === 0 
+      ? `The transcript contains only the interviewer's questions with no candidate responses provided. As a result, no evaluation could be performed. A complete interview record is required for assessment.`
+      : `Candidate completed a ${config.type} interview for a ${config.role} role${config.company ? ` at ${config.company}` : ""} with an overall score of ${avgQuality}/100.`,
+    hiringRecommendation: avgQuality === 0 ? "do_not_recommend" :
       avgQuality >= 80 ? "strong_recommend" :
       avgQuality >= 60 ? "recommend" :
       avgQuality >= 40 ? "maybe" : "do_not_recommend",
     detailedAnalysis: {
       answerQuality: avgQuality,
-      technicalDepth: config.type === "technical" || config.type === "coding" ? avgQuality - 5 : 50,
-      communicationClarity: Math.min(100, avgQuality + 3),
-      problemSolving: Math.max(20, avgQuality - 2),
-      culturalFit: Math.min(100, avgQuality + 5),
+      technicalDepth: config.type === "technical" || config.type === "coding" ? (avgQuality > 0 ? avgQuality - 5 : 0) : 50,
+      communicationClarity: avgQuality > 0 ? Math.min(100, avgQuality + 3) : 0,
+      problemSolving: avgQuality > 0 ? Math.max(20, avgQuality - 2) : 0,
+      culturalFit: avgQuality > 0 ? Math.min(100, avgQuality + 5) : 0,
     },
     subScores: {
-      communication: Math.min(100, avgQuality + 5),
-      technical: config.type === "technical" || config.type === "coding" || config.type === "system-design" ? avgQuality : Math.round(avgQuality * 0.6),
-      confidence: Math.min(100, Math.max(20, avgQuality - 3)),
-      problemSolving: Math.min(100, Math.max(20, avgQuality + 2)),
-      leadership: config.type === "managerial" ? avgQuality : Math.round(avgQuality * 0.5),
-      roleFit: Math.min(100, Math.max(20, avgQuality + 4)),
+      communication: avgQuality > 0 ? Math.min(100, avgQuality + 5) : 0,
+      technical: config.type === "technical" || config.type === "coding" || config.type === "system-design" ? avgQuality : (avgQuality > 0 ? Math.round(avgQuality * 0.6) : 0),
+      confidence: avgQuality > 0 ? Math.min(100, Math.max(20, avgQuality - 3)) : 0,
+      problemSolving: avgQuality > 0 ? Math.min(100, Math.max(20, avgQuality + 2)) : 0,
+      leadership: config.type === "managerial" ? avgQuality : (avgQuality > 0 ? Math.round(avgQuality * 0.5) : 0),
+      roleFit: avgQuality > 0 ? Math.min(100, Math.max(20, avgQuality + 4)) : 0,
     },
-    missedOpportunities: [
-      "Could have referenced resume projects more explicitly",
-      "Missed opportunity to quantify achievements",
-    ],
-    recommendedTopics: [`Core concepts for ${config.role} role`, `Common ${config.type} interview patterns`],
-    communicationTips: [
-      "Practice structuring answers with clear beginning, middle, and end",
-      "Use the STAR method for behavioral questions",
-    ],
-    technicalImprovements: config.type === "technical" || config.type === "coding"
-      ? ["Review data structures and algorithms", "Practice explaining technical concepts clearly"]
-      : ["Strengthen domain-specific knowledge", "Practice articulating experience more precisely"],
+    missedOpportunities: avgQuality === 0 
+      ? ["No responses provided to evaluate opportunities"]
+      : [
+          "Could have referenced resume projects more explicitly",
+          "Missed opportunity to quantify achievements",
+        ],
+    recommendedTopics: avgQuality === 0 
+      ? ["Complete interview sessions with responses", `Core concepts for ${config.role} role`, "Interview communication skills"]
+      : [`Core concepts for ${config.role} role`, `Common ${config.type} interview patterns`],
+    communicationTips: avgQuality === 0 
+      ? ["Ensure proper audio/video setup before interviews", "Practice responding to questions aloud"]
+      : [
+          "Practice structuring answers with clear beginning, middle, and end",
+          "Use the STAR method for behavioral questions",
+        ],
+    technicalImprovements: avgQuality === 0 
+      ? ["Complete interview sessions to receive technical feedback"]
+      : config.type === "technical" || config.type === "coding"
+        ? ["Review data structures and algorithms", "Practice explaining technical concepts clearly"]
+        : ["Strengthen domain-specific knowledge", "Practice articulating experience more precisely"],
     nextPracticePlan: {
-      focusAreas: [`Weak areas from ${config.type} interview`, "Communication structure"],
-      dailyTasks: ["Practice 1 interview question aloud", "Review feedback on weak areas"],
-      weeklyGoals: ["Complete a full mock interview", "Improve scores on weak sub-dimensions"],
-      estimatedTimeline: "2-3 weeks of focused practice",
+      focusAreas: avgQuality === 0 
+        ? ["Complete full interview sessions", "Audio/video setup", "Interview fundamentals"]
+        : [`Weak areas from ${config.type} interview`, "Communication structure"],
+      dailyTasks: avgQuality === 0 
+        ? ["Test interview setup", "Practice answering questions aloud", "Review interview basics"]
+        : ["Practice 1 interview question aloud", "Review feedback on weak areas"],
+      weeklyGoals: avgQuality === 0 
+        ? ["Complete a full mock interview with responses", "Master interview technology setup"]
+        : ["Complete a full mock interview", "Improve scores on weak sub-dimensions"],
+      estimatedTimeline: avgQuality === 0 ? "Start with basic interview preparation" : "2-3 weeks of focused practice",
     },
     answerBreakdowns: fallbackBreakdowns,
   };

@@ -576,58 +576,79 @@ Return as JSON:
     buildDefaultBreakdown(q, candidateMessages[i] || { role: "candidate", content: "No answer" }, i)
   );
 
-  const baseScore = Math.min(100, Math.max(20, Math.round(avgAnswerLength / 5)));
+  // If no candidate responses, score should be 0
+  const hasResponses = candidateMessages.length > 0 && avgAnswerLength > 0;
+  const baseScore = hasResponses ? Math.min(100, Math.max(20, Math.round(avgAnswerLength / 5))) : 0;
 
   const fallback: HREvaluation = {
     overallScore: baseScore,
-    communicationScore: Math.min(100, baseScore + 5),
-    leadershipScore: Math.round(baseScore * 0.7),
-    starScore: Math.round(baseScore * 0.8),
-    confidenceScore: Math.min(100, Math.max(20, baseScore - 3)),
-    teamworkScore: Math.round(baseScore * 0.75),
-    ownershipScore: Math.round(baseScore * 0.7),
-    adaptabilityScore: Math.round(baseScore * 0.72),
-    emotionalIntelligence: Math.round(baseScore * 0.68),
-    professionalism: Math.min(100, baseScore + 8),
-    culturalFit: Math.min(100, baseScore + 5),
-    motivation: Math.min(100, baseScore + 10),
-    strengths: [
+    communicationScore: baseScore > 0 ? Math.min(100, baseScore + 5) : 0,
+    leadershipScore: baseScore > 0 ? Math.round(baseScore * 0.7) : 0,
+    starScore: baseScore > 0 ? Math.round(baseScore * 0.8) : 0,
+    confidenceScore: baseScore > 0 ? Math.min(100, Math.max(20, baseScore - 3)) : 0,
+    teamworkScore: baseScore > 0 ? Math.round(baseScore * 0.75) : 0,
+    ownershipScore: baseScore > 0 ? Math.round(baseScore * 0.7) : 0,
+    adaptabilityScore: baseScore > 0 ? Math.round(baseScore * 0.72) : 0,
+    emotionalIntelligence: baseScore > 0 ? Math.round(baseScore * 0.68) : 0,
+    professionalism: baseScore > 0 ? Math.min(100, baseScore + 8) : 0,
+    culturalFit: baseScore > 0 ? Math.min(100, baseScore + 5) : 0,
+    motivation: baseScore > 0 ? Math.min(100, baseScore + 10) : 0,
+    strengths: baseScore === 0 ? [
+      "No candidate responses were provided in the transcript.",
+      "Unable to evaluate behavioral competencies without answers."
+    ] : [
       `Completed ${totalQuestions} questions`,
       baseScore >= 60 ? "Demonstrated adequate response depth" : "Showed willingness to engage",
     ],
-    weaknesses: [
+    weaknesses: baseScore === 0 ? [
+      "No candidate response was provided in the transcript, making it impossible to evaluate spoken communication skills.",
+      "Unable to assess the candidate's professional background, technical history, or experience.",
+      "No evidence was provided regarding cultural fit, behavioral competency, or interest."
+    ] : [
       baseScore < 60 ? "Answers lacked sufficient depth and STAR structure" : "Could improve answer structure with clearer outcomes",
       "Some answers could benefit from more specific examples and metrics",
     ],
-    improvements: [
+    improvements: baseScore === 0 ? [
+      "Provide responses to all interview questions to enable proper evaluation",
+      "Practice structured STAR method responses before the interview",
+      "Ensure audio/video setup is working properly to capture responses"
+    ] : [
       "Practice structuring answers using the STAR method consistently",
       "Include quantified results and measurable outcomes in responses",
       "Prepare 3-5 strong behavioral stories that cover leadership, teamwork, and conflict",
     ],
-    summary: `Candidate completed a ${config.interviewType} interview for a ${config.targetRole} role${config.targetCompany ? ` at ${config.targetCompany}` : ""} with an overall score of ${baseScore}/100.`,
-    hiringRecommendation:
+    summary: baseScore === 0 
+      ? `The transcript contains only the interviewer's opening question with no candidate responses provided. As a result, no evaluation of communication, behavioral alignment, or professional experience could be performed. A complete interview record is required for a hiring assessment.`
+      : `Candidate completed a ${config.interviewType} interview for a ${config.targetRole} role${config.targetCompany ? ` at ${config.targetCompany}` : ""} with an overall score of ${baseScore}/100.`,
+    hiringRecommendation: baseScore === 0 ? "do_not_recommend" :
       baseScore >= 80 ? "strong_recommend" :
       baseScore >= 60 ? "recommend" :
       baseScore >= 40 ? "maybe" : "do_not_recommend",
     competencyMatrix: [
-      { competency: "Communication", score: Math.min(100, baseScore + 5), evidence: "Based on response analysis", trend: "stable" },
-      { competency: "Leadership", score: Math.round(baseScore * 0.7), evidence: "Limited leadership examples in responses", trend: "stable" },
-      { competency: "Teamwork", score: Math.round(baseScore * 0.75), evidence: "Some collaboration examples shared", trend: "stable" },
-      { competency: "Ownership", score: Math.round(baseScore * 0.7), evidence: "Accountability indicators present", trend: "stable" },
-      { competency: "Problem Solving", score: Math.round(baseScore * 0.72), evidence: "Analytical approach demonstrated", trend: "stable" },
-      { competency: "Adaptability", score: Math.round(baseScore * 0.72), evidence: "Flexibility indicators present", trend: "stable" },
-      { competency: "Emotional Intelligence", score: Math.round(baseScore * 0.68), evidence: "Self-awareness signals noted", trend: "stable" },
-      { competency: "Professionalism", score: Math.min(100, baseScore + 8), evidence: "Professional demeanor maintained", trend: "stable" },
-      { competency: "Cultural Fit", score: Math.min(100, baseScore + 5), evidence: "Values alignment indicators", trend: "stable" },
-      { competency: "Motivation", score: Math.min(100, baseScore + 10), evidence: "Career interest demonstrated", trend: "stable" },
+      { competency: "Communication", score: baseScore > 0 ? Math.min(100, baseScore + 5) : 0, evidence: baseScore === 0 ? "No response provided" : "Based on response analysis", trend: "stable" },
+      { competency: "Leadership", score: baseScore > 0 ? Math.round(baseScore * 0.7) : 0, evidence: baseScore === 0 ? "No response provided" : "Limited leadership examples in responses", trend: "stable" },
+      { competency: "Teamwork", score: baseScore > 0 ? Math.round(baseScore * 0.75) : 0, evidence: baseScore === 0 ? "No response provided" : "Some collaboration examples shared", trend: "stable" },
+      { competency: "Ownership", score: baseScore > 0 ? Math.round(baseScore * 0.7) : 0, evidence: baseScore === 0 ? "No response provided" : "Accountability indicators present", trend: "stable" },
+      { competency: "Problem Solving", score: baseScore > 0 ? Math.round(baseScore * 0.72) : 0, evidence: baseScore === 0 ? "No response provided" : "Analytical approach demonstrated", trend: "stable" },
+      { competency: "Adaptability", score: baseScore > 0 ? Math.round(baseScore * 0.72) : 0, evidence: baseScore === 0 ? "No response provided" : "Flexibility indicators present", trend: "stable" },
+      { competency: "Emotional Intelligence", score: baseScore > 0 ? Math.round(baseScore * 0.68) : 0, evidence: baseScore === 0 ? "No response provided" : "Self-awareness signals noted", trend: "stable" },
+      { competency: "Professionalism", score: baseScore > 0 ? Math.min(100, baseScore + 8) : 0, evidence: baseScore === 0 ? "No response provided" : "Professional demeanor maintained", trend: "stable" },
+      { competency: "Cultural Fit", score: baseScore > 0 ? Math.min(100, baseScore + 5) : 0, evidence: baseScore === 0 ? "No response provided" : "Values alignment indicators", trend: "stable" },
+      { competency: "Motivation", score: baseScore > 0 ? Math.min(100, baseScore + 10) : 0, evidence: baseScore === 0 ? "No response provided" : "Career interest demonstrated", trend: "stable" },
     ],
     answerBreakdowns: fallbackBreakdowns,
-    nextPracticeTopics: [
+    nextPracticeTopics: baseScore === 0 ? [
+      "Complete interview sessions with audio/video enabled",
+      "STAR method behavioral questions",
+      "Effective communication in interviews"
+    ] : [
       "STAR method behavioral questions",
       "Leadership scenario responses",
       "Conflict resolution stories",
     ],
-    recruiterPerspective: `Based on this ${totalQuestions}-question interview, the candidate ${baseScore >= 70 ? "shows solid potential" : "needs improvement"} for the ${config.targetRole} role.`,
+    recruiterPerspective: baseScore === 0 
+      ? `Without a response, I cannot assess communication skills, candidate technical trajectory, or motivation for the role.`
+      : `Based on this ${totalQuestions}-question interview, the candidate ${baseScore >= 70 ? "shows solid potential" : "needs improvement"} for the ${config.targetRole} role.`,
     suggestedBetterAnswers: fallbackBreakdowns.map((b) => b.suggestedBetterAnswer),
   };
 

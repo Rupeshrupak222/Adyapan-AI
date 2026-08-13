@@ -218,6 +218,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
   const lines = content.split("\n");
   const elements: React.ReactNode[] = [];
   let i = 0;
+  let elementKey = 0;
 
   while (i < lines.length) {
     const line = lines[i];
@@ -234,7 +235,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
       }
       const code = codeLines.join("\n");
       elements.push(
-        <CodeBlock key={i} code={code} lang={lang} isDark={isDark} blockBg={blockBg} blockBorder={blockBorder} />
+        <CodeBlock key={elementKey++} code={code} lang={lang} isDark={isDark} blockBg={blockBg} blockBorder={blockBorder} />
       );
       i++;
       continue;
@@ -254,7 +255,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
       ) {
         const mathContent = trimmed.startsWith("$$") ? trimmed.slice(2, -2) : trimmed.slice(2, -2);
         elements.push(
-          <KatexMath key={i} math={mathContent} displayMode={true} />
+          <KatexMath key={elementKey++} math={mathContent} displayMode={true} />
         );
         i++;
         continue;
@@ -286,7 +287,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
       }
 
       elements.push(
-        <KatexMath key={i} math={mathLines.join("\n")} displayMode={true} />
+        <KatexMath key={elementKey++} math={mathLines.join("\n")} displayMode={true} />
       );
       continue;
     }
@@ -294,7 +295,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     // Heading 1
     if (line.startsWith("# ")) {
       elements.push(
-        <h1 key={i} className="text-2xl font-black mb-3 mt-5 first:mt-0" style={{ color: text, fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.02em" }}>
+        <h1 key={elementKey++} className="text-2xl font-black mb-3 mt-5 first:mt-0" style={{ color: text, fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.02em" }}>
           {inlineFormat(line.slice(2))}
         </h1>
       );
@@ -305,7 +306,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     // Heading 2
     if (line.startsWith("## ")) {
       elements.push(
-        <h2 key={i} className="text-xl font-bold mb-2 mt-4 first:mt-0" style={{ color: text, fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.01em" }}>
+        <h2 key={elementKey++} className="text-xl font-bold mb-2 mt-4 first:mt-0" style={{ color: text, fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.01em" }}>
           {inlineFormat(line.slice(3))}
         </h2>
       );
@@ -316,7 +317,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     // Heading 3
     if (line.startsWith("### ")) {
       elements.push(
-        <h3 key={i} className="text-base font-bold mb-2 mt-3 first:mt-0" style={{ color: text }}>
+        <h3 key={elementKey++} className="text-base font-bold mb-2 mt-3 first:mt-0" style={{ color: text }}>
           {inlineFormat(line.slice(4))}
         </h3>
       );
@@ -332,7 +333,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
         i++;
       }
       elements.push(
-        <ul key={i} className="space-y-1.5 my-3 pl-1">
+        <ul key={elementKey++} className="space-y-1.5 my-3 pl-1">
           {items.map((item, j) => (
             <li key={j} className="flex gap-2.5 text-sm items-start" style={{ color: textSec }}>
               <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#f59e0b" }} />
@@ -352,7 +353,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
         i++;
       }
       elements.push(
-        <ol key={i} className="space-y-1.5 my-3 pl-1">
+        <ol key={elementKey++} className="space-y-1.5 my-3 pl-1">
           {items.map((item, j) => (
             <li key={j} className="flex gap-2.5 text-sm items-start" style={{ color: textSec }}>
               <span
@@ -379,7 +380,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
         i++;
       }
       elements.push(
-        <div key={i} className="overflow-x-auto my-4">
+        <div key={elementKey++} className="overflow-x-auto my-4">
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr>
@@ -411,7 +412,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     if (line.startsWith("> ")) {
       elements.push(
         <blockquote
-          key={i}
+          key={elementKey++}
           className="pl-4 my-3 text-sm italic"
           style={{
             borderLeft: "3px solid rgba(245,158,11,0.5)",
@@ -431,7 +432,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     // Horizontal rule
     if (line.trim() === "---" || line.trim() === "***") {
       elements.push(
-        <hr key={i} className="my-4" style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }} />
+        <hr key={elementKey++} className="my-4" style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }} />
       );
       i++;
       continue;
@@ -439,14 +440,14 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
 
     // Empty line
     if (line.trim() === "") {
-      elements.push(<div key={i} className="h-2" />);
+      elements.push(<div key={elementKey++} className="h-2" />);
       i++;
       continue;
     }
 
     // Regular paragraph
     elements.push(
-      <p key={i} className="text-sm leading-relaxed mb-1" style={{ color: textSec }}>
+      <p key={elementKey++} className="text-sm leading-relaxed mb-1" style={{ color: textSec }}>
         {inlineFormat(line)}
       </p>
     );

@@ -637,7 +637,6 @@ export function AtsCheckerView({ setView }: Props) {
     <motion.div
       variants={AP.card} initial="init" animate="in"
       transition={{ duration: 0.35 }}
-      whileHover={hov}
       className={`rounded-2xl ${className}`}
       style={{ background: c.cardBg, border: `1px solid ${c.border}`, boxShadow: c.shadow, ...style }}
       {...motionProps}
@@ -1184,7 +1183,7 @@ export function AtsCheckerView({ setView }: Props) {
                       { l: "Readability", v: analysis.readability, ic: <Activity size={14} />, cl: c.am },
                       { l: "Recruiter Score", v: `${analysis.recruiterScore}/10`, ic: <Users size={14} />, cl: c.bl },
                     ].map((s, i) => (
-                      <motion.div key={s.l} variants={AP.card} whileHover={hov} className="p-4 rounded-xl" style={{ background: c.cb, border: `1px solid ${c.bd}`, boxShadow: c.cs }}>
+                      <motion.div key={s.l} variants={AP.card} className="p-4 rounded-xl" style={{ background: c.cb, border: `1px solid ${c.bd}`, boxShadow: c.cs }}>
                         <div className="flex items-center gap-2 mb-2">
                           <span style={{ color: s.cl }}>{s.ic}</span>
                           <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: c.txM }}>{s.l}</span>
@@ -1282,7 +1281,7 @@ export function AtsCheckerView({ setView }: Props) {
                       ["education", "Education", <GraduationCap size={15} />, analysis.sectionScores?.education || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
                     ] as const).map(([k, lbl, ic, data], i) => (
                       <motion.div key={k} variants={AP.card} initial="init" animate="in" transition={{ delay: i * 0.06 }}
-                        whileHover={hov} className="p-4 rounded-xl" style={{ background: c.cb, border: `1px solid ${c.bd}`, boxShadow: c.cs }}>
+                        className="p-4 rounded-xl" style={{ background: c.cb, border: `1px solid ${c.bd}`, boxShadow: c.cs }}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <span style={{ color: c.am }}>{ic}</span>
@@ -1597,7 +1596,7 @@ export function AtsCheckerView({ setView }: Props) {
                 <div className="space-y-3">
                   {history.map((r, i) => (
                     <motion.div key={r.id} variants={AP.card} initial="init" animate="in" transition={{ delay: i * 0.04 }}
-                      whileHover={hov} className="p-4 rounded-xl flex items-center gap-4"
+                      className="p-4 rounded-xl flex items-center gap-4"
                       style={{ background: c.cb, border: `1px solid ${c.bd}`, boxShadow: c.cs }}>
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: scBg(r.score) }}>
                         <span className="text-lg font-extrabold" style={{ color: sc(r.score) }}>{r.score}</span>

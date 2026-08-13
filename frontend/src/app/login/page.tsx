@@ -190,7 +190,16 @@ function LoginPageContent() {
     if (reg.password !== reg.confirm) { setRegError("Passwords do not match."); return; }
     setRegLoading(true);
     try {
-      const { data } = await api.post("/auth/register", { name: reg.name.trim(), email: reg.email.trim(), password: reg.password, role: "USER" });
+      const { data } = await api.post("/auth/register", { 
+        name: reg.name.trim(), 
+        email: reg.email.trim(), 
+        password: reg.password, 
+        role: "USER",
+        phone: reg.phone.trim() || undefined,
+        college: reg.college.trim() || undefined,
+        branch: reg.branch.trim() || undefined,
+        year: reg.year.trim() || undefined,
+      });
       sessionStorage.setItem("adyapan-just-registered", "true");
       localStorage.setItem("adyapan-just-registered", "true");
       if (data?.token && data?.user) {
