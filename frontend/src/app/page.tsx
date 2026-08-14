@@ -423,7 +423,9 @@ export default function LandingPage() {
             style={{
               maxHeight: "600px",
               objectFit: "contain",
-              mixBlendMode: "lighten",
+              WebkitMaskImage: "radial-gradient(ellipse 92% 85% at 50% 50%, black 65%, transparent 100%)",
+              maskImage: "radial-gradient(ellipse 92% 85% at 50% 50%, black 65%, transparent 100%)",
+              filter: "drop-shadow(0 0 35px rgba(245, 158, 11, 0.25)) contrast(1.05)",
             }}
           >
             <source src="/Adyapan-ai-character.webm" type="video/webm" />
