@@ -126,7 +126,7 @@ const COMPANY_FOCUS: Record<string, string> = {
 
 function computeAnswerQuality(history: Message[]): number {
   const answers = history.filter((m) => m.role === "candidate");
-  if (answers.length === 0) return 50;
+  if (answers.length === 0) return 0;
   let total = 0;
   for (const a of answers) {
     const len = a.content.trim().length;
@@ -523,25 +523,37 @@ Return as JSON:
     questionNumber: i + 1,
     question: q.content,
     answer: candidateMessages[i]?.content || "No answer provided",
-    score: Math.min(100, Math.max(20, Math.round(avgQuality))),
-    analysis: `Answer ${i + 1}: ${avgQuality >= 60 ? "Demonstrates adequate understanding." : "Could benefit from more depth."}`,
-    tags: avgQuality >= 60 ? ["adequate"] : ["needs-improvement"],
+    score: avgQuality > 0 ? Math.min(100, Math.max(20, Math.round(avgQuality))) : 0,
+    analysis: avgQuality === 0 
+      ? "No candidate response was provided for this question."
+      : `Answer ${i + 1}: ${avgQuality >= 60 ? "Demonstrates adequate understanding." : "Could benefit from more depth."}`,
+    tags: avgQuality === 0 ? ["no-response"] : avgQuality >= 60 ? ["adequate"] : ["needs-improvement"],
   }));
 
   const fallback: TechnicalEvaluation = {
     overallScore: avgQuality,
-    technicalDepth: Math.max(20, avgQuality - 5),
+    technicalDepth: avgQuality > 0 ? Math.max(20, avgQuality - 5) : 0,
     codeQuality: codeReviews?.length ? Math.round(codeReviews.reduce((a, cr) => a + cr.score, 0) / codeReviews.length) : avgQuality,
-    problemSolving: Math.max(20, avgQuality + 2),
-    communication: Math.min(100, avgQuality + 5),
-    timeComplexity: "Varies",
-    spaceComplexity: "Varies",
-    strengths: [`Completed ${totalQuestions} questions`, avgQuality >= 60 ? "Adequate response quality" : "Engaged with questions"],
-    weaknesses: [avgQuality < 60 ? "Answers lacked depth" : "Could improve structure", "Some answers need more specifics"],
-    improvements: ["Practice explaining complex concepts clearly", "Review time/space complexity analysis", "Study common patterns for " + topic],
-    recommendedTopics: [`${topic} fundamentals`, "Common interview patterns"],
-    hiringRecommendation: avgQuality >= 80 ? "strong_recommend" : avgQuality >= 60 ? "recommend" : avgQuality >= 40 ? "maybe" : "do_not_recommend",
-    summary: `Candidate completed a ${topic} technical interview for a ${role} role${company ? ` at ${company}` : ""} with an overall score of ${avgQuality}/100.`,
+    problemSolving: avgQuality > 0 ? Math.max(20, avgQuality + 2) : 0,
+    communication: avgQuality > 0 ? Math.min(100, avgQuality + 5) : 0,
+    timeComplexity: avgQuality === 0 ? "N/A" : "Varies",
+    spaceComplexity: avgQuality === 0 ? "N/A" : "Varies",
+    strengths: avgQuality === 0 
+      ? ["No candidate responses were provided in the transcript.", "Unable to evaluate technical competencies without answers."]
+      : [`Completed ${totalQuestions} questions`, avgQuality >= 60 ? "Adequate response quality" : "Engaged with questions"],
+    weaknesses: avgQuality === 0 
+      ? ["No candidate response was provided in the transcript, making it impossible to evaluate technical skills.", "Unable to assess the candidate's problem-solving approach or coding knowledge."]
+      : [avgQuality < 60 ? "Answers lacked depth" : "Could improve structure", "Some answers need more specifics"],
+    improvements: avgQuality === 0 
+      ? ["Provide responses to all interview questions to enable proper evaluation", "Ensure audio/video setup is working properly to capture responses", "Practice technical concepts before the interview"]
+      : ["Practice explaining complex concepts clearly", "Review time/space complexity analysis", "Study common patterns for " + topic],
+    recommendedTopics: avgQuality === 0 
+      ? ["Complete interview sessions with responses", `${topic} fundamentals`, "Technical communication skills"]
+      : [`${topic} fundamentals`, "Common interview patterns"],
+    hiringRecommendation: avgQuality === 0 ? "do_not_recommend" : avgQuality >= 80 ? "strong_recommend" : avgQuality >= 60 ? "recommend" : avgQuality >= 40 ? "maybe" : "do_not_recommend",
+    summary: avgQuality === 0 
+      ? `The transcript contains only the interviewer's questions with no candidate responses provided. As a result, no evaluation of technical skills, problem-solving ability, or coding knowledge could be performed. A complete interview record is required for assessment.`
+      : `Candidate completed a ${topic} technical interview for a ${role} role${company ? ` at ${company}` : ""} with an overall score of ${avgQuality}/100.`,
     answerBreakdowns: fallbackBreakdowns,
   };
 

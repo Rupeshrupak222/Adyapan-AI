@@ -1,4 +1,112 @@
 import { env } from "../config/env";
+import { spawn } from "child_process";
+import fs from "fs";
+import path from "path";
+import os from "os";
+
+async function executeNativeCode(
+  language: string,
+  code: string,
+  stdin: string = "",
+  timeout: number = 10000
+): Promise<ExecutionResult> {
+  const norm = normalizeLanguage(language);
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "adyapan-exec-"));
+
+  let cmd = "";
+  let args: string[] = [];
+  let filePath = "";
+
+  if (norm === "python") {
+    filePath = path.join(tmpDir, "solution.py");
+    fs.writeFileSync(filePath, code, "utf-8");
+    cmd = "python";
+    args = [filePath];
+  } else if (norm === "javascript" || norm === "typescript") {
+    filePath = path.join(tmpDir, "solution.js");
+    fs.writeFileSync(filePath, code, "utf-8");
+    cmd = "node";
+    args = [filePath];
+  } else {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+    return {
+      stdout: "",
+      stderr: "",
+      compile_output: `Piston execution engine for ${language} requires Docker container to be active. Please ensure Docker Desktop is running.`,
+      executionTime: 0,
+      memory: 0,
+      status: "Internal Error",
+      signal: null,
+      success: false,
+    };
+  }
+
+  const startTime = Date.now();
+
+  return new Promise<ExecutionResult>((resolve) => {
+    try {
+      const child = spawn(cmd, args, { timeout });
+      let stdout = "";
+      let stderr = "";
+
+      if (stdin) {
+        child.stdin.write(stdin);
+        child.stdin.end();
+      }
+
+      child.stdout.on("data", (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr.on("data", (data) => {
+        stderr += data.toString();
+      });
+
+      child.on("error", (err) => {
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+        resolve({
+          stdout: "",
+          stderr: err.message,
+          compile_output: `Failed to execute ${cmd}: ${err.message}`,
+          executionTime: (Date.now() - startTime) / 1000,
+          memory: 0,
+          status: "Runtime Error",
+          signal: null,
+          success: false,
+        });
+      });
+
+      child.on("close", (code) => {
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+        const executionTime = (Date.now() - startTime) / 1000;
+        const success = code === 0;
+
+        resolve({
+          stdout: stdout.trim(),
+          stderr: stderr.trim(),
+          compile_output: stderr.trim(),
+          executionTime,
+          memory: 0,
+          status: success ? "Accepted" : "Runtime Error",
+          signal: null,
+          success,
+        });
+      });
+    } catch (err: any) {
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+      resolve({
+        stdout: "",
+        stderr: err.message || "Native execution failed",
+        compile_output: err.message || "Native execution failed",
+        executionTime: 0,
+        memory: 0,
+        status: "Internal Error",
+        signal: null,
+        success: false,
+      });
+    }
+  });
+}
 
 const LANGUAGE_MAP: Record<string, string> = {
   python: "python",
@@ -73,17 +181,64 @@ function normalizeLanguage(lang: string): string {
   return LANGUAGE_MAP[lower] || lower;
 }
 
-function getVersion(lang: string): string | undefined {
-  const normalized = normalizeLanguage(lang);
-  return VERSION_MAP[normalized];
+interface RuntimeInfo {
+  language: string;
+  version: string;
+  aliases: string[];
 }
 
+let cachedRuntimes: { endpoint: string; runtimes: RuntimeInfo[] } | null = null;
+let lastRuntimesFetch = 0;
+
 function getApiBase(): string {
-  const url = (process.env.PISTON_URL || "http://localhost:2000").replace(/\/+$/, "");
+  const envUrl = process.env.PISTON_URL || "http://localhost:2000";
+  const url = envUrl.replace(/\/+$/, "");
   if (url.includes("emkc.org")) {
     return `${url}/api/v2/piston`;
   }
+  if (url.endsWith("/api/v2") || url.endsWith("/api/v2/piston")) {
+    return url;
+  }
   return `${url}/api/v2`;
+}
+
+function getCandidateEndpoints(): string[] {
+  const primary = getApiBase();
+  const candidates = [
+    primary,
+    "http://localhost:2000/api/v2",
+    "http://127.0.0.1:2000/api/v2",
+    "https://emkc.org/api/v2/piston",
+    "https://piston.engineering/api/v2"
+  ];
+  return Array.from(new Set(candidates));
+}
+
+async function getInstalledRuntimes(): Promise<{ endpoint: string; runtimes: RuntimeInfo[] } | null> {
+  const now = Date.now();
+  if (cachedRuntimes && now - lastRuntimesFetch < 1800000) {
+    return cachedRuntimes;
+  }
+
+  const endpoints = getCandidateEndpoints();
+
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(`${ep}/runtimes`, { signal: AbortSignal.timeout(3500) });
+      if (res.ok) {
+        const list = (await res.json()) as RuntimeInfo[];
+        if (Array.isArray(list) && list.length > 0) {
+          cachedRuntimes = { endpoint: ep, runtimes: list };
+          lastRuntimesFetch = now;
+          return cachedRuntimes;
+        }
+      }
+    } catch {
+      // try next candidate
+    }
+  }
+
+  return null;
 }
 
 const FILE_EXTENSIONS: Record<string, string> = {
@@ -113,12 +268,25 @@ export async function executeCode(
   timeout: number = 10000
 ): Promise<ExecutionResult> {
   const pistonLang = normalizeLanguage(language);
-  const version = getVersion(language);
-  const apiBase = getApiBase();
+  const runtimeInfo = await getInstalledRuntimes();
+
+  let targetApi = getApiBase();
+  let targetVersion = VERSION_MAP[pistonLang] || "*";
+
+  if (runtimeInfo && runtimeInfo.runtimes.length > 0) {
+    targetApi = runtimeInfo.endpoint;
+    const match = runtimeInfo.runtimes.find(r => 
+      r.language.toLowerCase() === pistonLang || 
+      (r.aliases && r.aliases.map(a => a.toLowerCase()).includes(pistonLang))
+    );
+    if (match) {
+      targetVersion = match.version;
+    }
+  }
 
   const payload: Record<string, unknown> = {
     language: pistonLang,
-    version,
+    version: targetVersion,
     files: [{ name: getFileName(pistonLang), content: code }],
   };
 
@@ -126,93 +294,86 @@ export async function executeCode(
     payload.stdin = stdin;
   }
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const endpointsToTry = Array.from(new Set([targetApi, ...getCandidateEndpoints()]));
 
-    const res = await fetch(`${apiBase}/execute`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
+  for (const ep of endpointsToTry) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    clearTimeout(timeoutId);
+      const res = await fetch(`${ep}/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
-    if (!res.ok) {
-      const errorText = await res.text().catch(() => "Unknown error");
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        continue; // Try next mirror endpoint if this one fails
+      }
+
+      const data = (await res.json()) as any;
+      if (data.message && data.message.includes("whitelist")) {
+        // Public API is whitelisted; try next candidate endpoint
+        continue;
+      }
+
+      const compile = data.compile || {};
+      const run = data.run || {};
+
+      const stdout = run.stdout || "";
+      const stderr = run.stderr || "";
+      const compileOutput = compile.stderr || compile.stdout || "";
+      const compileCode = compile.code;
+      const runCode = run.code;
+      const totalTime = run.wall_time || run.cpu_time || 0;
+
+      const success = (compileCode === 0 || compileCode === null || compileCode === undefined) && runCode === 0;
+
+      let status: string;
+      if (success) {
+        status = "Accepted";
+      } else if (run.signal === "SIGKILL" || run.status === "TO") {
+        status = "Time Limit Exceeded";
+      } else if (compileCode !== 0 && compileCode !== null && compileCode !== undefined) {
+        status = "Compilation Error";
+      } else if (runCode !== 0) {
+        status = run.stderr ? "Runtime Error" : `Exit Code ${runCode}`;
+      } else {
+        status = "Internal Error";
+      }
+
       return {
-        stdout: "",
-        stderr: "",
-        compile_output: `Piston API error (${res.status}): ${errorText}`,
-        executionTime: 0,
-        memory: 0,
-        status: "Internal Error",
-        signal: null,
-        success: false,
+        stdout,
+        stderr,
+        compile_output: compileOutput,
+        executionTime: totalTime,
+        memory: run.memory || 0,
+        status,
+        signal: run.signal || null,
+        success,
       };
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        return {
+          stdout: "",
+          stderr: "",
+          compile_output: `Execution timed out after ${timeout}ms`,
+          executionTime: timeout,
+          memory: 0,
+          status: "Time Limit Exceeded",
+          signal: null,
+          success: false,
+        };
+      }
+      // Continue to next mirror endpoint
     }
-
-    const data = await res.json() as any;
-    const compile = data.compile || {};
-    const run = data.run || {};
-
-    const stdout = run.stdout || "";
-    const stderr = run.stderr || "";
-    const compileOutput = compile.stderr || compile.stdout || "";
-    const compileCode = compile.code;
-    const runCode = run.code;
-    const totalTime = (run.wall_time || run.cpu_time || 0);
-
-    const success = (compileCode === 0 || compileCode === null || compileCode === undefined) && runCode === 0;
-
-    let status: string;
-    if (success) {
-      status = "Accepted";
-    } else if (run.signal === "SIGKILL" || run.status === "TO") {
-      status = "Time Limit Exceeded";
-    } else if (compileCode !== 0 && compileCode !== null && compileCode !== undefined) {
-      status = "Compilation Error";
-    } else if (runCode !== 0) {
-      status = run.stderr ? "Runtime Error" : `Exit Code ${runCode}`;
-    } else {
-      status = "Internal Error";
-    }
-
-    return {
-      stdout,
-      stderr,
-      compile_output: compileOutput,
-      executionTime: totalTime,
-      memory: run.memory || 0,
-      status,
-      signal: run.signal || null,
-      success,
-    };
-  } catch (err: any) {
-    if (err.name === "AbortError") {
-      return {
-        stdout: "",
-        stderr: "",
-        compile_output: `Execution timed out after ${timeout}ms`,
-        executionTime: timeout,
-        memory: 0,
-        status: "Time Limit Exceeded",
-        signal: null,
-        success: false,
-      };
-    }
-    return {
-      stdout: "",
-      stderr: "",
-      compile_output: `Piston connection error: ${err.message}`,
-      executionTime: 0,
-      memory: 0,
-      status: "Internal Error",
-      signal: null,
-      success: false,
-    };
   }
+
+  // Fallback to local native execution (Python / Node.js) if all Piston endpoints are offline/whitelisted
+  return executeNativeCode(language, code, stdin, timeout);
 }
 
 export async function runTestCases(

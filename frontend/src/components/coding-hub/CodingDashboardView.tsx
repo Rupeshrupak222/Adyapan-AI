@@ -782,7 +782,7 @@ export function CodingDashboardView() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.3 + i * 0.05 }}
                         className="p-3 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] hover:border-amber-500/30 transition-all cursor-pointer"
-                        onClick={() => router.push(`/dashboard/coding/problem/${activity.questionId}`)}
+                        onClick={() => window.open(`/dashboard/coding/problem/${activity.questionId}`, "_blank")}
                       >
                         <div className="flex items-center gap-2 mb-1.5">
                           {activity.status === "solved" ? (

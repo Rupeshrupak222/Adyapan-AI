@@ -20,16 +20,16 @@ echo   API is ready!
 
 echo [3/4] Installing language runtimes...
 echo   Installing Python 3.10.0...
-curl -s -X POST http://localhost:2000/api/v2/packages/install -H "Content-Type: application/json" -d "{\"language\":\"python\",\"version\":\"3.10.0\"}" >nul
+curl -s -X POST http://localhost:2000/api/v2/packages -H "Content-Type: application/json" -d "{\"language\":\"python\",\"version\":\"3.10.0\"}" >nul
 
 echo   Installing Node.js 18.15.0...
-curl -s -X POST http://localhost:2000/api/v2/packages/install -H "Content-Type: application/json" -d "{\"language\":\"nodejs\",\"version\":\"18.15.0\"}" >nul
+curl -s -X POST http://localhost:2000/api/v2/packages -H "Content-Type: application/json" -d "{\"language\":\"node\",\"version\":\"18.15.0\"}" >nul
 
 echo   Installing C++ 10.2.0...
-curl -s -X POST http://localhost:2000/api/v2/packages/install -H "Content-Type: application/json" -d "{\"language\":\"c\",\"version\":\"10.2.0\"}" >nul
+curl -s -X POST http://localhost:2000/api/v2/packages -H "Content-Type: application/json" -d "{\"language\":\"gcc\",\"version\":\"10.2.0\"}" >nul
 
 echo   Installing Java 15.0.2...
-curl -s -X POST http://localhost:2000/api/v2/packages/install -H "Content-Type: application/json" -d "{\"language\":\"java\",\"version\":\"15.0.2\"}" >nul
+curl -s -X POST http://localhost:2000/api/v2/packages -H "Content-Type: application/json" -d "{\"language\":\"java\",\"version\":\"15.0.2\"}" >nul
 
 echo [4/4] Verifying installed runtimes...
 curl -s http://localhost:2000/api/v2/runtimes

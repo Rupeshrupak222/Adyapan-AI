@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import {
   Briefcase, Building2, Star, MapPin,
   Search, Loader2, Trash2, Plus, Play,
-  CheckCircle, XCircle, Globe, X,
+  CheckCircle, XCircle, Globe, X, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { api } from "@/services/api";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
@@ -436,27 +436,86 @@ export default function PlacementEcosystem() {
 
             {/* Pagination */}
             {pagination && pagination.pages > 1 && (
-              <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: "var(--border-color)" }}>
-                <span className="text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
-                  Page {pagination.page} of {pagination.pages} ({pagination.total} total)
+              <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-4 border-t gap-3" style={{ borderColor: "var(--border-color)" }}>
+                <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                  Showing {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} jobs
                 </span>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((p) => (
-                    <motion.button
-                      key={p}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setPage(p)}
-                      className="w-7 h-7 rounded-lg text-[11px] font-bold transition-all"
-                      style={{
-                        background: p === page ? "rgba(245,158,11,0.15)" : "transparent",
-                        color: p === page ? "#f59e0b" : "var(--text-muted)",
-                        border: p === page ? "1px solid rgba(245,158,11,0.3)" : "1px solid transparent",
-                      }}
-                    >
-                      {p}
-                    </motion.button>
-                  ))}
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      if (page > 1) {
+                        setPage(page - 1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+                    }}
+                    disabled={page === 1 || loading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ 
+                      borderColor: "var(--border-color)", 
+                      color: "var(--text-primary)", 
+                      background: "var(--card-bg)" 
+                    }}
+                  >
+                    <ChevronLeft size={13} />
+                    Previous
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(pagination.pages, 5) }, (_, i) => {
+                      const totalPages = pagination.pages;
+                      let pageNum;
+                      
+                      // Show first 5 pages, or pages around current page
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (page <= 3) {
+                        pageNum = i + 1;
+                      } else if (page >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = page - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => {
+                            setPage(pageNum);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          disabled={loading}
+                          className="w-8 h-8 rounded-lg text-xs font-bold transition-all disabled:cursor-not-allowed"
+                          style={{
+                            background: page === pageNum ? 'linear-gradient(135deg, #f59e0b, #ea580c)' : 'transparent',
+                            color: page === pageNum ? '#000' : 'var(--text-muted)',
+                            border: page === pageNum ? 'none' : '1px solid var(--border-color)',
+                          }}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (page < pagination.pages) {
+                        setPage(page + 1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+                    }}
+                    disabled={page >= pagination.pages || loading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ 
+                      borderColor: "var(--border-color)", 
+                      color: "var(--text-primary)", 
+                      background: "var(--card-bg)" 
+                    }}
+                  >
+                    Next
+                    <ChevronRight size={13} />
+                  </button>
                 </div>
               </div>
             )}
@@ -464,95 +523,6 @@ export default function PlacementEcosystem() {
         )}
       </motion.div>
 
-      {/* Job Stats by Type & Location */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.3 }}
-          className="rounded-2xl border overflow-hidden"
-          style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
-        >
-          <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
-            <Briefcase size={16} style={{ color: "#818cf8" }} />
-            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
-              Jobs by Type
-            </h2>
-          </div>
-          <div className="p-5 space-y-4">
-            {jobsByType.length === 0 ? (
-              <p className="text-xs font-medium text-center py-8" style={{ color: "var(--text-muted)" }}>No jobs to display</p>
-            ) : jobsByType.map(([label, count], i) => {
-              const total = jobsByType.reduce((s, [, c]) => s + c, 0);
-              const color = STAT_COLORS[i % STAT_COLORS.length];
-              const pct = ((count / total) * 100).toFixed(1);
-              return (
-                <div key={label}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{label}</span>
-                    <span className="text-xs font-mono font-bold" style={{ color }}>{count}</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="h-full rounded-full"
-                      style={{ background: color }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{pct}% of shown</span>
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.3 }}
-          className="rounded-2xl border overflow-hidden"
-          style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}
-        >
-          <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
-            <Globe size={16} style={{ color: "#f59e0b" }} />
-            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
-              Jobs by Location
-            </h2>
-          </div>
-          <div className="p-5 space-y-4">
-            {jobsByLocation.length === 0 ? (
-              <p className="text-xs font-medium text-center py-8" style={{ color: "var(--text-muted)" }}>No locations to display</p>
-            ) : jobsByLocation.map(([label, count], i) => {
-              const total = jobsByLocation.reduce((s, [, c]) => s + c, 0);
-              const color = STAT_COLORS[i % STAT_COLORS.length];
-              const pct = ((count / total) * 100).toFixed(1);
-              return (
-                <div key={label}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <MapPin size={11} style={{ color }} />
-                      <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{label}</span>
-                    </div>
-                    <span className="text-xs font-mono font-bold" style={{ color }}>{count}</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="h-full rounded-full"
-                      style={{ background: color }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{pct}% of shown</span>
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
-      </div>
 
       {showCreate && (
         <motion.div

@@ -2,6 +2,7 @@ import { ApifyClient } from "apify-client";
 import { env } from "../config/env";
 import { getMasterPrisma } from "../config/dynamicPrisma";
 import { autoResolveCompanyLogo } from "../utils/companyLogoResolver";
+import { scrapeAllJobSources, ScrapflyJob } from "./scrapfly.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -376,23 +377,56 @@ const REMOTEOK_CONFIG: SourceConfig = {
   }),
   normalizeResult: (data: any) => {
     const items = Array.isArray(data) ? data : data?.items || [];
-    return items.map((item: any): NormalizedJob => ({
-      title: item.position || item.title || "",
-      company: item.company || "",
-      location: item.location || "Remote",
-      description: item.description || "",
-      salaryMin: item.salary_min || undefined,
-      salaryMax: item.salary_max || undefined,
-      employmentType: mapEmploymentType(item.type || item.employment_type || ""),
-      workMode: "Remote",
-      skills: extractSkills(`${item.position || ""} ${item.description || ""} ${(item.tags || []).join(" ")}`),
-      source: "remoteok",
-      sourceUrl: item.url || item.link || "",
-      applyUrl: item.url || item.applyUrl || "",
-      postedAt: item.date || item.created || undefined,
-      companyLogo: item.logo || item.company_logo || undefined,
-      externalId: item.id ? String(item.id) : undefined,
-    }));
+
+    // Patterns that indicate spam, HTML error pages, or non-tech job listings
+    const JUNK_TITLE_PATTERNS = [
+      /^page not found$/i,
+      /^oops/i,
+      /^404/i,
+      /^how (to )?apply/i,
+      /^\d+th pass/i,
+      /^jobs?$/i,
+      /^current jobs? opening/i,
+      /^\$[\d.]+/i,
+      /^(labourer|cleaner|assembler|helper|waiter|guard)$/i,
+      /^general staff/i,
+      /^holly can fix it/i,
+    ];
+
+    const isValidTitle = (t: string) => {
+      if (!t || t.trim().length < 4) return false;
+      return !JUNK_TITLE_PATTERNS.some(p => p.test(t.trim()));
+    };
+
+    return items
+      .filter((item: any) => {
+        const title = (item.position || item.title || "").trim();
+        const company = (item.company || "").trim();
+        return isValidTitle(title) && company.length > 1;
+      })
+      .map((item: any): NormalizedJob => {
+        const title = (item.position || item.title || "").trim();
+        const tags: string[] = Array.isArray(item.tags) ? item.tags : [];
+        // RemoteOK often returns "City, " with trailing comma — clean it
+        const rawLoc = (item.location || "").trim().replace(/,\s*$/, "").trim();
+        return {
+          title,
+          company: item.company || "",
+          location: rawLoc || "Remote",
+          description: item.description || "",
+          salaryMin: item.salary_min || undefined,
+          salaryMax: item.salary_max || undefined,
+          employmentType: mapEmploymentType(item.type || item.employment_type || ""),
+          workMode: "Remote",
+          skills: extractSkills(`${title} ${item.description || ""} ${tags.join(" ")}`),
+          source: "remoteok",
+          sourceUrl: item.url || item.link || "",
+          applyUrl: item.url || item.applyUrl || "",
+          postedAt: item.date || item.created || undefined,
+          companyLogo: item.logo || item.company_logo || undefined,
+          externalId: item.id ? String(item.id) : undefined,
+        };
+      });
   },
 };
 
@@ -824,65 +858,62 @@ export class JobDiscoveryService {
       };
     }
 
-    if (sourceName === "remoteok") {
-      try {
-        console.log(`[JobDiscovery] Fetching live jobs directly from RemoteOK API...`);
-        const res = await fetch("https://remoteok.com/api", {
-          headers: { "User-Agent": "AdyapanAI/1.0" },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const rawJobs = Array.isArray(data) ? data.slice(1, 40) : [];
-          const normalized = REMOTEOK_CONFIG.normalizeResult(rawJobs);
-          const ingestionResult = await this.ingestJobs(normalized, "remoteok");
-          await this.logIngestion(ingestionResult);
-          await this.updateSourceStatus("remoteok", ingestionResult);
-          return ingestionResult;
-        }
-      } catch (err: any) {
-        console.warn("[JobDiscovery] RemoteOK direct fetch warning:", err?.message || err);
-      }
-    }
+    // 1. Direct API: RemoteOK — REMOVED
 
+    // 2. Web Scraper Sources (Apify with automatic multi-API fallback)
     const apifyToken = process.env.APIFY_API_KEY || process.env.APIFY_TOKEN || env.apifyApiKey || "";
-    if (!apifyToken) {
-      return {
-        source: sourceName,
-        jobsFetched: 0,
-        jobsInserted: 0,
-        jobsUpdated: 0,
-        duplicatesRemoved: 0,
-        errors: 1,
-        errorDetails: "APIFY_TOKEN / APIFY_API_KEY is not configured",
-        durationMs: Date.now() - start,
-        status: "failed",
-      };
+    let ingestionResult: IngestionResult | null = null;
+
+    if (apifyToken) {
+      try {
+        const apify = new ApifyClient({ token: apifyToken });
+        const input = config.buildInput({});
+        console.log(`[JobDiscovery] Running Apify actor ${config.actorId} for ${sourceName}...`);
+
+        const run = await apify.actor(config.actorId).call(input, { waitSecs: 180 });
+        const { items } = await apify.dataset(run.defaultDatasetId).listItems();
+        console.log(`[JobDiscovery] Apify returned ${items.length} items for ${sourceName}`);
+
+        const normalized = config.normalizeResult(items);
+        ingestionResult = await this.ingestJobs(normalized, sourceName);
+      } catch (err: any) {
+        const errMsg = err?.message || String(err);
+        console.warn(`[JobDiscovery] Apify actor warning for ${sourceName}:`, errMsg);
+      }
     }
 
-    const apify = new ApifyClient({ token: apifyToken });
-
-    let ingestionResult: IngestionResult;
-    try {
-      const input = config.buildInput({});
-      console.log(`[JobDiscovery] Running Apify actor ${config.actorId} for ${sourceName}...`);
-
-      const run = await apify.actor(config.actorId).call(input, {
-        waitSecs: 180,
-      });
-
-      const { items } = await apify.dataset(run.defaultDatasetId).listItems();
-      console.log(`[JobDiscovery] Actor returned ${items.length} items for ${sourceName}`);
-
-      const normalized = config.normalizeResult(items);
-      ingestionResult = await this.ingestJobs(normalized, sourceName);
-    } catch (err: any) {
-      const errMsg = err?.message || String(err);
-      const isQuota = /monthly usage hard limit exceeded/i.test(errMsg);
-      if (isQuota) {
-        console.warn(`[JobDiscovery] Apify quota exceeded for ${sourceName} — skipping.`);
-      } else {
-        console.error(`[JobDiscovery] Apify run failed for ${sourceName}:`, errMsg);
+    // Fallback: Apify quota exceeded ya token missing — Scrapfly se fetch karo
+    if (!ingestionResult || ingestionResult.status === "failed" || ingestionResult.jobsFetched === 0) {
+      try {
+        console.log(`[JobDiscovery] Scrapfly fallback fetch for source '${sourceName}'...`);
+        const scrapflyResults = await scrapeAllJobSources();
+        const sourceData = scrapflyResults.find(s => s.source === sourceName);
+        if (sourceData && sourceData.jobs.length > 0) {
+          const fallbackJobs: NormalizedJob[] = sourceData.jobs.map(j => ({
+            title: j.title,
+            company: j.company,
+            location: j.location,
+            description: j.description || "",
+            salaryMin: j.salaryMin,
+            salaryMax: j.salaryMax,
+            employmentType: j.employmentType,
+            workMode: j.workMode,
+            skills: j.skills,
+            source: sourceName,
+            sourceUrl: j.sourceUrl,
+            applyUrl: j.applyUrl,
+            postedAt: j.postedAt,
+            companyLogo: j.companyLogo,
+            externalId: j.externalId,
+          }));
+          ingestionResult = await this.ingestJobs(fallbackJobs, sourceName);
+        }
+      } catch (fallbackErr: any) {
+        console.warn(`[JobDiscovery] Scrapfly fallback failed for ${sourceName}:`, fallbackErr?.message);
       }
+    }
+
+    if (!ingestionResult) {
       ingestionResult = {
         source: sourceName,
         jobsFetched: 0,
@@ -890,7 +921,7 @@ export class JobDiscoveryService {
         jobsUpdated: 0,
         duplicatesRemoved: 0,
         errors: 1,
-        errorDetails: errMsg,
+        errorDetails: `Could not fetch jobs for ${sourceName}`,
         durationMs: Date.now() - start,
         status: "failed",
       };
@@ -922,49 +953,24 @@ export class JobDiscoveryService {
     const results: IngestionResult[] = [];
 
     if (sourceName) {
+      // Scrapfly-specific source name
+      if (sourceName === "scrapfly") {
+        const result = await this.runScrapflyIngestion();
+        results.push(result);
+        return results;
+      }
       const result = await this.runSourceIngestion(sourceName);
       results.push(result);
       return results;
     }
 
-    let apifyQuotaExceeded = false;
-
+    // 1. Run all standard sources
     for (const name of Object.keys(SOURCE_CONFIGS)) {
-      // If Apify monthly quota is exhausted, skip remaining Apify sources.
-      // remoteok uses a direct HTTP fetch (not Apify) so always run it.
-      if (apifyQuotaExceeded && name !== "remoteok") {
-        results.push({
-          source: name,
-          jobsFetched: 0,
-          jobsInserted: 0,
-          jobsUpdated: 0,
-          duplicatesRemoved: 0,
-          errors: 0,
-          errorDetails: "Skipped: Apify monthly quota exceeded",
-          durationMs: 0,
-          status: "skipped" as any,
-        });
-        continue;
-      }
-
       try {
         const result = await this.runSourceIngestion(name);
-        // Detect quota exhaustion from the result so we skip subsequent Apify calls
-        if (
-          result.status === "failed" &&
-          result.errorDetails &&
-          /monthly usage hard limit exceeded/i.test(result.errorDetails)
-        ) {
-          apifyQuotaExceeded = true;
-          console.warn("[JobDiscovery] Apify monthly quota exceeded — skipping remaining Apify sources for this cycle.");
-        }
         results.push(result);
       } catch (err: any) {
         const msg = err?.message || String(err);
-        if (/monthly usage hard limit exceeded/i.test(msg)) {
-          apifyQuotaExceeded = true;
-          console.warn("[JobDiscovery] Apify monthly quota exceeded — skipping remaining Apify sources for this cycle.");
-        }
         results.push({
           source: name,
           jobsFetched: 0,
@@ -979,7 +985,99 @@ export class JobDiscoveryService {
       }
     }
 
+    // 2. Run Scrapfly scraping (runs in parallel after standard sources)
+    const scrapflyKey = env.scrapflyApiKey || process.env.SCRAPFLY_API_KEY || "";
+    if (scrapflyKey) {
+      try {
+        const scrapflyResult = await this.runScrapflyIngestion();
+        results.push(scrapflyResult);
+      } catch (err: any) {
+        results.push({
+          source: "scrapfly",
+          jobsFetched: 0,
+          jobsInserted: 0,
+          jobsUpdated: 0,
+          duplicatesRemoved: 0,
+          errors: 1,
+          errorDetails: err?.message || String(err),
+          durationMs: 0,
+          status: "failed",
+        });
+      }
+    }
+
     return results;
+  }
+
+  static async runScrapflyIngestion(): Promise<IngestionResult> {
+    const start = Date.now();
+    console.log("[JobDiscovery] Starting Scrapfly multi-source scraping...");
+
+    try {
+      const scrapflyResults = await scrapeAllJobSources();
+
+      // Flatten all ScrapflyJob → NormalizedJob per source
+      let totalInserted = 0;
+      let totalUpdated = 0;
+      let totalFetched = 0;
+
+      for (const sr of scrapflyResults) {
+        if (sr.jobs.length === 0) continue;
+
+        const normalized = sr.jobs.map((j: ScrapflyJob) => ({
+          title: j.title,
+          company: j.company,
+          location: j.location,
+          description: j.description,
+          employmentType: j.employmentType,
+          workMode: j.workMode,
+          salaryMin: j.salaryMin,
+          salaryMax: j.salaryMax,
+          skills: j.skills,
+          source: j.source,
+          sourceUrl: j.sourceUrl,
+          applyUrl: j.applyUrl,
+          postedAt: j.postedAt,
+          companyLogo: j.companyLogo,
+          externalId: j.externalId,
+        }));
+
+        const sourceResult = await this.ingestJobs(normalized as any, sr.source);
+        totalFetched += sourceResult.jobsFetched;
+        totalInserted += sourceResult.jobsInserted;
+        totalUpdated += sourceResult.jobsUpdated;
+      }
+
+      const ingestionResult: IngestionResult = {
+        source: "scrapfly",
+        jobsFetched: totalFetched,
+        jobsInserted: totalInserted,
+        jobsUpdated: totalUpdated,
+        duplicatesRemoved: 0,
+        errors: 0,
+        durationMs: Date.now() - start,
+        status: "success",
+      };
+
+      await this.logIngestion(ingestionResult);
+      await this.updateSourceStatus("scrapfly", ingestionResult);
+      return ingestionResult;
+    } catch (err: any) {
+      const ingestionResult: IngestionResult = {
+        source: "scrapfly",
+        jobsFetched: 0,
+        jobsInserted: 0,
+        jobsUpdated: 0,
+        duplicatesRemoved: 0,
+        errors: 1,
+        errorDetails: err?.message || String(err),
+        durationMs: Date.now() - start,
+        status: "failed",
+      };
+      await this.logIngestion(ingestionResult).catch(() => {});
+      await this.updateSourceStatus("scrapfly", ingestionResult).catch(() => {});
+      return ingestionResult;
+    }
   }
 
   static async getIngestionLogs(limit: number = 50): Promise<any[]> {

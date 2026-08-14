@@ -588,7 +588,8 @@ export default function CodingRoadmapPage() {
                                         <div className="text-xxs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Recommended Workspace Tasks</div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                           {week.recommended_questions?.map((q: any) => {
-                                            const isSolved = q.solved;
+                                            const isSolved = q.solved || q.progress?.status === "solved";
+                                            const isAttempted = q.progress?.status === "attempted";
                                             return (
                                               <motion.div
                                                 key={q.id}
@@ -617,9 +618,9 @@ export default function CodingRoadmapPage() {
                                                 <PremiumButton
                                                   variant={isSolved ? "ghost" : "glow"}
                                                   className="text-[10px] py-1 px-3"
-                                                  onClick={() => router.push(`/dashboard/coding/problem/${q.id}`)}
+                                                  onClick={() => window.open(`/dashboard/coding/problem/${q.id}`, "_blank")}
                                                 >
-                                                  {isSolved ? "Review" : "Solve"} <Play className="w-2.5 h-2.5 ml-1 fill-current" />
+                                                  {isSolved ? "Solved" : isAttempted ? "Try Again" : "Solve"} <Play className="w-2.5 h-2.5 ml-1 fill-current" />
                                                 </PremiumButton>
                                               </motion.div>
                                             );
@@ -703,7 +704,7 @@ export default function CodingRoadmapPage() {
                             <PremiumButton
                               variant="primary"
                               className="text-[10px] py-1 px-3 mt-3 w-full"
-                              onClick={() => router.push(`/dashboard/coding/problem/${recommendations.practiceNext.id}`)}
+                              onClick={() => window.open(`/dashboard/coding/problem/${recommendations.practiceNext.id}`, "_blank")}
                             >
                               Solve Problem <ChevronRight className="w-3.5 h-3.5 ml-1" />
                             </PremiumButton>

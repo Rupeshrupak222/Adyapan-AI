@@ -82,6 +82,7 @@ export default function ProblemWorkspacePage() {
   // Panel settings (resizable)
   const [leftWidth, setLeftWidth] = useState(30); // percentages
   const [rightWidth, setRightWidth] = useState(30);
+  const [showRightPanel, setShowRightPanel] = useState(true);
   const [activeTabLeft, setActiveTabLeft] = useState<"statement" | "notes" | "discussion">("statement");
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +112,7 @@ export default function ProblemWorkspacePage() {
   const [activeHintIndex, setActiveHintIndex] = useState(0);
   const [hints, setHints] = useState<Record<number, string>>({});
   const [commonMistakes, setCommonMistakes] = useState<string[]>([]);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
 
   // Code execution state
   const [stdin, setStdin] = useState("");
@@ -263,6 +265,7 @@ export default function ProblemWorkspacePage() {
       setProgress(data.progress);
       setNotes(data.notes || []);
       setDiscussions(data.discussions || []);
+      setAiAnalysis(data.aiAnalysis || null);
       
       // Load restored session
       if (data.session) {
@@ -273,27 +276,6 @@ export default function ProblemWorkspacePage() {
       }
 
       await fetchExecutions();
-
-      // Fetch review history
-      try {
-        const historyRes = await api.get(`/coding/reviews/history?questionId=${problemId}`);
-        if (historyRes.data.success) {
-          setReviewHistory(historyRes.data.history || []);
-        }
-      } catch (err) {
-        console.error("Failed to load history reviews:", err);
-      }
-
-      // Fetch complexity history
-      try {
-        const compHistoryRes = await api.get(`/coding/complexity/history?questionId=${problemId}`);
-        if (compHistoryRes.data.success) {
-          setComplexityHistory(compHistoryRes.data.history || []);
-        }
-      } catch (err) {
-        console.error("Failed to load history complexity:", err);
-      }
-
 
       setLoading(false);
 
@@ -319,20 +301,41 @@ export default function ProblemWorkspacePage() {
     }
   };
 
-  const handleManualSaveCode = async () => {
+  const handleEndSession = async () => {
     if (!problem) return;
-    const savePromise = api.post(`/coding/workspace/${problemId}/save`, {
-      codeContent: code,
-      language,
-      status: progress.status === "solved" ? "solved" : "attempted",
-      timeSpent: 0
-    });
-    
-    toast.promise(savePromise, {
-      loading: "Saving code in Neon cloud...",
-      success: "Workspace synced and backup saved!",
-      error: "Failed to save code"
-    });
+    const hasPassedAll = (testResults.length > 0 && testResults.every(t => t.passed)) || runDetails?.success === true || progress.status === "solved";
+    const nextStatus = hasPassedAll ? "solved" : "attempted";
+
+    try {
+      await api.post(`/coding/workspace/${problemId}/save`, {
+        codeContent: code,
+        language,
+        status: nextStatus,
+        timeSpent: 0
+      });
+      
+      setProgress((prev: any) => ({
+        ...prev,
+        status: nextStatus,
+        solved: hasPassedAll
+      }));
+
+      if (hasPassedAll) {
+        toast.success("Session ended! Question solved successfully! 🎉");
+      } else {
+        toast.info("Session ended! Question marked as Attempted (Try Again).");
+      }
+
+      setTimeout(() => {
+        if (window.history.length > 1 && window.opener) {
+          window.close();
+        } else {
+          router.push("/dashboard/coding");
+        }
+      }, 400);
+    } catch (err) {
+      toast.error("Failed to save and end session");
+    }
   };
 
   // Toggle Theme
@@ -663,10 +666,19 @@ Answer the student's question based on the coding problem. Provide hints or feed
       });
       if (data.allPassed) {
         setProgress((prev: any) => ({ ...prev, status: "solved", solved: true }));
-        toast.success(`All ${data.totalTests} test cases passed!`);
+        toast.success(`All ${data.totalTests} test cases passed! Question marked as Solved.`);
       } else {
         toast.warning(`${data.passedTests}/${data.totalTests} test cases passed`);
       }
+
+      // Auto-sync code backup to database on submit
+      api.post(`/coding/workspace/${problemId}/save`, {
+        codeContent: code,
+        language,
+        status: data.allPassed ? "solved" : (progress.status === "solved" ? "solved" : "attempted"),
+        timeSpent: 0
+      }).catch(err => console.error("Auto submit sync error:", err));
+
       fetchExecutions();
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Failed to submit code");
@@ -2026,29 +2038,131 @@ Answer the student's question based on the coding problem. Provide hints or feed
     );
   };
 
+  // Render structured explanation (Description, Input Spec, Output Spec, Note)
+  const cleanMath = (txt: string) => {
+    if (!txt) return "";
+    return txt
+      .replace(/\$\$([\s\S]*?)\$\$/g, "$1")
+      .replace(/\$([^$]+)\$/g, "$1")
+      .replace(/([a-zA-Z0-9]+)_\{([^}]+)\}/g, "$1[$2]")
+      .replace(/([a-zA-Z0-9]+)_([a-zA-Z0-9])/g, "$1$2")
+      .replace(/([a-zA-Z0-9]+)\^\{([^}]+)\}/g, "$1^$2")
+      .replace(/\\le\b|\\leq\b/g, "≤")
+      .replace(/\\ge\b|\\geq\b/g, "≥")
+      .replace(/\\to\b|\\rightarrow\b/g, "→")
+      .replace(/\\gets\b|\\leftarrow\b/g, "←")
+      .replace(/\\neq\b|\\ne\b/g, "≠")
+      .replace(/\\dots\b|\\cdots\b|\\ldots\b/g, "...")
+      .replace(/\\cdot\b/g, "·")
+      .replace(/\\infty\b/g, "∞")
+      .replace(/\\times\b/g, "×")
+      .replace(/\\pm\b/g, "±")
+      .replace(/\\in\b/g, "∈")
+      .replace(/\\sum\b/g, "Σ")
+      .replace(/\\prod\b/g, "∏")
+      .replace(/\\lfloor\s*([\s\S]*?)\s*\\rfloor/g, "⌊$1⌋")
+      .replace(/\\ceil\s*([\s\S]*?)\s*\\rceil/g, "⌈$1⌉")
+      .replace(/\\text\{([^}]+)\}/g, "$1")
+      .replace(/\\mathrm\{([^}]+)\}/g, "$1")
+      .replace(/\\mathbf\{([^}]+)\}/g, "$1")
+      .replace(/\\mathbb\{([^}]+)\}/g, "$1")
+      .replace(/\\/g, "");
+  };
+
+  const renderStructuredExplanation = (text: string) => {
+    if (!text) return null;
+    const cleanRaw = cleanMath(text);
+    
+    if (cleanRaw.includes("INPUT SPECIFICATION:") || cleanRaw.includes("OUTPUT SPECIFICATION:")) {
+      const parts = cleanRaw.split(/(INPUT SPECIFICATION:|OUTPUT SPECIFICATION:|NOTE:)/g);
+      let desc = "";
+      let inputSpec = "";
+      let outputSpec = "";
+      let noteSpec = "";
+
+      let currentSection = "desc";
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        if (p === "INPUT SPECIFICATION:") currentSection = "input";
+        else if (p === "OUTPUT SPECIFICATION:") currentSection = "output";
+        else if (p === "NOTE:") currentSection = "note";
+        else {
+          if (currentSection === "desc") desc += p;
+          else if (currentSection === "input") inputSpec += p;
+          else if (currentSection === "output") outputSpec += p;
+          else if (currentSection === "note") noteSpec += p;
+        }
+      }
+
+      return (
+        <div className="flex flex-col gap-5">
+          {desc.trim() && (
+            <div className="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)] font-medium bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
+              {desc.trim()}
+            </div>
+          )}
+
+          {inputSpec.trim() && (
+            <div className="flex flex-col gap-2">
+              <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider">Input Specification</h4>
+              <div className="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)] font-medium bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
+                {inputSpec.trim()}
+              </div>
+            </div>
+          )}
+
+          {outputSpec.trim() && (
+            <div className="flex flex-col gap-2">
+              <h4 className="text-xs font-bold text-teal-400 uppercase tracking-wider">Output Specification</h4>
+              <div className="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)] font-medium bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
+                {outputSpec.trim()}
+              </div>
+            </div>
+          )}
+
+          {noteSpec.trim() && (
+            <div className="flex flex-col gap-2">
+              <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider">Note & Walkthrough</h4>
+              <div className="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)] font-medium bg-purple-500/5 p-4 rounded-xl border border-purple-500/20">
+                {noteSpec.trim()}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)] font-medium bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
+        {cleanRaw}
+      </div>
+    );
+  };
+
   // Parse examples if present
   const renderExamples = () => {
-
-    if (!problem?.examples) return null;
+    const rawExamples = problem?.examples || aiAnalysis?.examples;
+    if (!rawExamples) return null;
     let parsed: any[] = [];
     try {
-      parsed = typeof problem.examples === 'string' ? JSON.parse(problem.examples) : problem.examples;
+      parsed = typeof rawExamples === 'string' ? JSON.parse(rawExamples) : rawExamples;
     } catch {
-      return <pre className="text-xs bg-black/40 p-3 rounded-lg border border-[var(--border-color)] overflow-x-auto text-[var(--text-secondary)]">{JSON.stringify(problem.examples)}</pre>;
+      return <pre className="text-xs bg-black/40 p-3 rounded-lg border border-[var(--border-color)] overflow-x-auto text-[var(--text-secondary)]">{JSON.stringify(rawExamples)}</pre>;
     }
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
 
     return (
       <div className="flex flex-col gap-4 mt-2">
         {parsed.map((ex: any, idx: number) => (
-          <div key={idx} className="bg-black/40 p-4 rounded-xl border border-[var(--border-color)]">
-            <p className="text-xs font-bold text-amber-500 mb-2">Example {idx + 1}:</p>
-            <div className="flex flex-col gap-1.5 text-xs font-mono text-[var(--text-primary)]">
-              <div><span className="text-[var(--text-secondary)]">Input:</span> {ex.input}</div>
-              <div><span className="text-[var(--text-secondary)]">Output:</span> {ex.output}</div>
+          <div key={idx} className="bg-black/40 p-4 rounded-xl border border-[var(--border-color)] font-mono text-xs">
+            <p className="font-bold text-amber-500 mb-2 font-sans">Example {idx + 1}:</p>
+            <div className="flex flex-col gap-1.5 text-[var(--text-primary)]">
+              <div><span className="text-[var(--text-secondary)] font-sans">Input:</span> {ex.input}</div>
+              <div><span className="text-[var(--text-secondary)] font-sans">Output:</span> {ex.output}</div>
               {ex.explanation && (
-                <div className="mt-1 text-[var(--text-secondary)] italic">
-                  <span className="text-amber-500/80 font-semibold font-sans not-italic">Explanation: </span>
-                  {inlineFormat(ex.explanation)}
+                <div className="mt-1 text-[var(--text-secondary)] italic font-sans">
+                  <span className="text-amber-500/80 font-semibold not-italic">Explanation: </span>
+                  {ex.explanation}
                 </div>
               )}
             </div>
@@ -2084,40 +2198,23 @@ Answer the student's question based on the coding problem. Provide hints or feed
 
 
 
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  };
+
   // Active view layout shell
   return (
-    <div className="relative overflow-hidden font-sans" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
+    <div className="relative overflow-hidden font-sans w-screen h-screen" style={{ background: "var(--bg-dark)", color: "var(--text-primary)" }}>
       <FloatingOrbs />
       
-      {/* Top Navbar */}
-      <DashboardTopNav
-        user={user}
-        theme={theme}
-        onThemeToggle={handleThemeToggle}
-        onViewProfile={handleViewProfile}
-        onAdyChat={handleAdyChat}
-        onViewTool={handleViewTool}
-        onMenuToggle={() => setSidebarOpen(prev => !prev)}
-        notifications={notifications}
-        setNotifications={setNotifications}
-        unreadCount={unreadCount}
-        onMarkAllRead={() => {}}
-        onClearAll={() => {}}
-        onPremium={handlePremium}
-        onViewSettings={() => handleViewTool("settings")}
-      />
-
-      {/* Sidebar */}
-      <DashboardSidebar
-        activeView="coding"
-        onViewDashboard={handleViewDashboard}
-        onViewTool={handleViewTool}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
-
-      {/* Three panel workspace container */}
-      <main className="dash-main relative z-10 flex flex-col font-sans" style={{ height: "calc(100vh - 70px)", padding: 0 }}>
+      {/* Fullscreen Three panel workspace container */}
+      <main className="relative z-10 flex flex-col font-sans w-full h-full overflow-hidden" style={{ padding: 0 }}>
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[70vh]">
             <div className="relative w-full max-w-md p-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl backdrop-blur-xl shadow-2xl flex flex-col items-center">
@@ -2163,11 +2260,17 @@ Answer the student's question based on the coding problem. Provide hints or feed
         ) : (
           <>
             {/* Workspace Toolbar (Header) */}
-        <div className="h-12 border-b border-[var(--border-color)] bg-black/35 backdrop-blur-md px-6 flex items-center justify-between z-20">
+        <div className="h-12 border-b border-[var(--border-color)] bg-black/35 backdrop-blur-md px-6 flex items-center justify-between z-20 shrink-0">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => router.push("/dashboard/coding")}
-              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-white/5 transition"
+              onClick={() => {
+                if (window.history.length > 1 && window.opener) {
+                  window.close();
+                } else {
+                  router.push("/dashboard/coding");
+                }
+              }}
+              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-white/5 transition cursor-pointer"
             >
               <ChevronLeft size={14} />
               <span>Back</span>
@@ -2198,6 +2301,14 @@ Answer the student's question based on the coding problem. Provide hints or feed
             </div>
 
             <button
+              onClick={toggleFullscreen}
+              className="p-1.5 rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 transition flex items-center gap-1 cursor-pointer"
+              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+            >
+              {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            </button>
+
+            <button
               onClick={handleBookmarkToggle}
               className={`p-1.5 rounded-lg border transition ${
                 progress.bookmarked 
@@ -2210,18 +2321,25 @@ Answer the student's question based on the coding problem. Provide hints or feed
             </button>
 
             <button
-              onClick={handleManualSaveCode}
-              className="text-xs bg-white/5 hover:bg-white/10 text-[var(--text-primary)] font-semibold px-3 py-1.5 rounded-lg border border-[var(--border-color)] transition flex items-center gap-1.5"
+              onClick={handleEndSession}
+              className="text-xs bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white font-black px-4 py-1.5 rounded-lg shadow-lg shadow-rose-600/20 transition flex items-center gap-1.5 cursor-pointer"
+              title="End Session & Mark Solved"
             >
-              <span>Sync Backup</span>
+              <CheckCircle2 size={14} className="fill-white/10" />
+              <span>End</span>
             </button>
 
             <button
-              onClick={handleMarkSolved}
-              className="text-xs bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-black font-black px-4 py-1.5 rounded-lg shadow-lg shadow-emerald-500/10 transition flex items-center gap-1.5"
+              onClick={() => setShowRightPanel(prev => !prev)}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition flex items-center gap-1.5 cursor-pointer ${
+                showRightPanel
+                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400 font-bold"
+                  : "bg-white/5 border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5"
+              }`}
+              title="Toggle AI DSA Coach Panel"
             >
-              <CheckCircle2 size={14} className="fill-black/10" />
-              <span>Mark Solved</span>
+              <Sparkles size={13} className={showRightPanel ? "text-amber-400 animate-pulse" : "text-[var(--text-secondary)]"} />
+              <span>AI Coach</span>
             </button>
           </div>
         </div>
@@ -2287,9 +2405,26 @@ Answer the student's question based on the coding problem. Provide hints or feed
                   </div>
 
                   {/* Problem Description */}
-                  <div className="prose prose-invert max-w-none text-sm text-[var(--text-secondary)] leading-relaxed space-y-4">
-                    <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-2">Description</h3>
-                    <p className="whitespace-pre-line">{problem?.problemUrl ? `This problem is imported from Codeforces (${problem.externalId}). Link: ${problem.problemUrl}\n\n` : ""}{problem?.title}. Walk through the statements and build an optimal algorithm.</p>
+                  <div className="flex flex-col gap-3">
+                    <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-1">Description</h3>
+                    {aiAnalysis?.problem_explanation ? (
+                      renderStructuredExplanation(aiAnalysis.problem_explanation)
+                    ) : problem?.description ? (
+                      renderStructuredExplanation(problem.description)
+                    ) : (
+                      <div className="text-xs text-[var(--text-muted)] animate-pulse bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
+                        Loading exact Codeforces problem statement...
+                      </div>
+                    )}
+                    
+                    {problem?.problemUrl && (
+                      <div className="pt-2 text-[11px] text-[var(--text-secondary)]">
+                        <span>Original Platform: </span>
+                        <a href={problem.problemUrl} target="_blank" rel="noreferrer" className="text-amber-400 font-semibold underline hover:text-amber-300">
+                          Codeforces Problem {problem.externalId}
+                        </a>
+                      </div>
+                    )}
                   </div>
 
                   {/* Constraints */}
@@ -2478,12 +2613,13 @@ Answer the student's question based on the coding problem. Provide hints or feed
                     setLanguage(e.target.value);
                     setCode(DEFAULT_CODE[e.target.value as keyof typeof DEFAULT_CODE] || "");
                   }}
-                  className="bg-white/5 text-xs text-[var(--text-primary)] border border-[var(--border-color)] rounded-lg px-2.5 py-1 focus:outline-none focus:border-white/20 transition cursor-pointer"
+                  style={{ colorScheme: "dark" }}
+                  className="bg-[#09090b] dark:bg-zinc-950 text-xs text-white border border-[var(--border-color)] rounded-lg px-2.5 py-1 focus:outline-none focus:border-amber-500/50 transition cursor-pointer font-bold shadow-sm [color-scheme:dark] [&>option]:bg-[#09090b] [&>option]:text-white"
                 >
-                  <option value="python" className="bg-zinc-950 text-white">Python 3</option>
-                  <option value="cpp" className="bg-zinc-950 text-white">C++ (GCC 17)</option>
-                  <option value="java" className="bg-zinc-950 text-white">Java (JDK 21)</option>
-                  <option value="javascript" className="bg-zinc-950 text-white">JavaScript (Node.js)</option>
+                  <option value="python" className="bg-[#09090b] text-white font-semibold">Python 3</option>
+                  <option value="cpp" className="bg-[#09090b] text-white font-semibold">C++ (GCC 17)</option>
+                  <option value="java" className="bg-[#09090b] text-white font-semibold">Java (JDK 21)</option>
+                  <option value="javascript" className="bg-[#09090b] text-white font-semibold">JavaScript (Node.js)</option>
                 </select>
 
                 <div className="h-4 w-px bg-[var(--border-color)]" />
@@ -2516,7 +2652,7 @@ Answer the student's question based on the coding problem. Provide hints or feed
               <div className="flex items-center gap-3">
                 <span className="text-[10px] text-emerald-500 font-mono flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Auto-saved to Neon</span>
+                  <span>Auto-saved</span>
                 </span>
               </div>
             </div>
@@ -2614,26 +2750,6 @@ Answer the student's question based on the coding problem. Provide hints or feed
                         title="Copy Output"
                       >
                         <Copy size={10} />
-                      </button>
-                      <div className="h-4 w-px bg-[var(--border-color)] mr-1 shrink-0" />
-                      <select
-                        value={reviewMode}
-                        onChange={(e) => setReviewMode(e.target.value)}
-                        disabled={isReviewing}
-                        className="bg-white/5 text-[9px] text-[var(--text-primary)] border border-[var(--border-color)] rounded-lg px-2 py-0.5 focus:outline-none focus:border-white/20 transition cursor-pointer font-bold shrink-0"
-                      >
-                        <option value="interview" className="bg-zinc-950 text-white">Interview</option>
-                        <option value="beginner" className="bg-zinc-950 text-white">Beginner</option>
-                        <option value="competitive" className="bg-zinc-950 text-white">Competitive</option>
-                        <option value="professional" className="bg-zinc-950 text-white">Professional</option>
-                      </select>
-                      <button
-                        onClick={handleRequestReview}
-                        disabled={isRunning || isSubmitting || isReviewing}
-                        className="flex items-center gap-1 text-[9px] sm:text-[10px] px-2 sm:px-3 py-1 bg-violet-600 hover:bg-violet-700 disabled:bg-white/10 disabled:text-[var(--text-muted)] text-white font-black rounded-lg transition shrink-0 whitespace-nowrap"
-                      >
-                        {isReviewing ? <RefreshCw size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                        <span>{isReviewing ? "Reviewing..." : "Review Code"}</span>
                       </button>
 
                       <button
@@ -2759,26 +2875,6 @@ Answer the student's question based on the coding problem. Provide hints or feed
                   >
                     <Copy size={12} />
                   </button>
-                  <div className="h-5 w-px bg-[var(--border-color)] mr-1 sm:mr-2 shrink-0" />
-                  <select
-                    value={reviewMode}
-                    onChange={(e) => setReviewMode(e.target.value)}
-                    disabled={isReviewing}
-                    className="bg-white/5 text-[10px] text-[var(--text-primary)] border border-[var(--border-color)] rounded-lg px-2 py-1 focus:outline-none focus:border-white/20 transition cursor-pointer font-bold shrink-0"
-                  >
-                    <option value="interview" className="bg-zinc-950 text-white">Interview</option>
-                    <option value="beginner" className="bg-zinc-950 text-white">Beginner</option>
-                    <option value="competitive" className="bg-zinc-950 text-white">Competitive</option>
-                    <option value="professional" className="bg-zinc-950 text-white">Professional</option>
-                  </select>
-                  <button
-                    onClick={handleRequestReview}
-                    disabled={isRunning || isSubmitting || isReviewing}
-                    className="flex items-center gap-1 text-[10px] sm:text-xs bg-violet-600 hover:bg-violet-700 disabled:bg-white/10 disabled:text-[var(--text-muted)] text-white font-bold px-2.5 sm:px-4 py-1.5 rounded-lg transition shrink-0 whitespace-nowrap"
-                  >
-                    {isReviewing ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                    <span>{isReviewing ? "Reviewing..." : "Review Code"}</span>
-                  </button>
 
                   <button
                     onClick={handleRun}
@@ -2802,25 +2898,35 @@ Answer the student's question based on the coding problem. Provide hints or feed
             )}
           </div>
 
-          {/* Right panel resize handler */}
-          <div 
-            onMouseDown={startResizeRight}
-            className="w-1 hover:w-1.5 bg-[var(--border-color)] hover:bg-amber-500/50 cursor-col-resize transition-all z-10 shrink-0"
-          />
+          {/* Right panel (AI assistant - Collapsible) */}
+          {showRightPanel && (
+            <>
+              <div 
+                onMouseDown={startResizeRight}
+                className="w-1 hover:w-1.5 bg-[var(--border-color)] hover:bg-amber-500/50 cursor-col-resize transition-all z-10 shrink-0"
+              />
 
-          {/* Right panel (AI assistant) */}
-          <div 
-            style={{ width: `${rightWidth}%` }} 
-            className="flex flex-col border-l border-[var(--border-color)] bg-black/15 backdrop-blur-sm overflow-hidden"
-          >
-            {/* AI Assistant Header */}
-            <div className="h-10 border-b border-[var(--border-color)] flex items-center justify-between px-4 bg-black/25">
-              <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
-                <Sparkles size={14} className="text-amber-500 animate-pulse" />
-                <span>AI DSA Coach</span>
-              </div>
-              <PremiumBadge variant="amber">Coaching Mode</PremiumBadge>
-            </div>
+              <div 
+                style={{ width: `${rightWidth}%` }} 
+                className="flex flex-col border-l border-[var(--border-color)] bg-black/15 backdrop-blur-sm overflow-hidden"
+              >
+                {/* AI Assistant Header */}
+                <div className="h-10 border-b border-[var(--border-color)] flex items-center justify-between px-4 bg-black/25">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
+                    <Sparkles size={14} className="text-amber-500 animate-pulse" />
+                    <span>AI DSA Coach</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PremiumBadge variant="amber">Coaching Mode</PremiumBadge>
+                    <button
+                      onClick={() => setShowRightPanel(false)}
+                      className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/10 transition cursor-pointer"
+                      title="Collapse AI Coach Panel"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
 
             {/* AI assistant messages viewport */}
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
@@ -2939,6 +3045,8 @@ Answer the student's question based on the coding problem. Provide hints or feed
             </div>
 
           </div>
+            </>
+          )}
 
         </div>
         </>

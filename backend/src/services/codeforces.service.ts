@@ -290,3 +290,148 @@ export class CodeforcesService {
     }
   }
 }
+
+export async function scrapeCodeforcesProblem(externalId: string): Promise<{
+  description?: string;
+  inputSpecification?: string;
+  outputSpecification?: string;
+  timeLimit?: string;
+  memoryLimit?: string;
+  examples?: Array<{ input: string; output: string; explanation?: string }>;
+  note?: string;
+} | null> {
+  try {
+    const parts = externalId.split("-");
+    if (parts.length !== 2) return null;
+    const [contestId, index] = parts;
+    const url = `https://codeforces.com/problemset/problem/${contestId}/${index}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9"
+      }
+    });
+
+    if (!response.ok) return null;
+    const html = await response.text();
+
+    const formatMathText = (txt: string) => {
+      if (!txt) return "";
+      return txt
+        .replace(/\$\$([\s\S]*?)\$\$/g, "$1")
+        .replace(/\$([^$]+)\$/g, "$1")
+        .replace(/([a-zA-Z0-9]+)_\{([^}]+)\}/g, "$1[$2]")
+        .replace(/([a-zA-Z0-9]+)_([a-zA-Z0-9])/g, "$1$2")
+        .replace(/([a-zA-Z0-9]+)\^\{([^}]+)\}/g, "$1^$2")
+        .replace(/\\le\b|\\leq\b/g, "≤")
+        .replace(/\\ge\b|\\geq\b/g, "≥")
+        .replace(/\\to\b|\\rightarrow\b/g, "→")
+        .replace(/\\gets\b|\\leftarrow\b/g, "←")
+        .replace(/\\neq\b|\\ne\b/g, "≠")
+        .replace(/\\dots\b|\\cdots\b|\\ldots\b/g, "...")
+        .replace(/\\cdot\b/g, "·")
+        .replace(/\\infty\b/g, "∞")
+        .replace(/\\times\b/g, "×")
+        .replace(/\\pm\b/g, "±")
+        .replace(/\\in\b/g, "∈")
+        .replace(/\\sum\b/g, "Σ")
+        .replace(/\\prod\b/g, "∏")
+        .replace(/\\lfloor\s*([\s\S]*?)\s*\\rfloor/g, "⌊$1⌋")
+        .replace(/\\ceil\s*([\s\S]*?)\s*\\rceil/g, "⌈$1⌉")
+        .replace(/\\text\{([^}]+)\}/g, "$1")
+        .replace(/\\mathrm\{([^}]+)\}/g, "$1")
+        .replace(/\\mathbf\{([^}]+)\}/g, "$1")
+        .replace(/\\mathbb\{([^}]+)\}/g, "$1")
+        .replace(/\\/g, "");
+    };
+
+    const cleanText = (str: string) => {
+      const rawClean = str
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/p>/gi, "\n\n")
+        .replace(/<\/li>/gi, "\n")
+        .replace(/<li>/gi, "\n• ")
+        .replace(/<\/div>/gi, "\n")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, " ")
+        .replace(/<\/?(div|p|span|a|ul|ol|li|sub|sup|pre|code|strong|b|em|i|table|tbody|tr|td|th|h1|h2|h3|h4|h5|h6)[^>]*>/gi, "")
+        .replace(/\n\s*\n\s*\n+/g, "\n\n")
+        .trim();
+      return formatMathText(rawClean);
+    };
+
+    // Time & Memory limits
+    const timeMatch = html.match(/class="time-limit"[^>]*>[\s\S]*?<div[^>]*>([\s\S]*?)<\/div>/i);
+    const memoryMatch = html.match(/class="memory-limit"[^>]*>[\s\S]*?<div[^>]*>([\s\S]*?)<\/div>/i);
+    const timeLimit = timeMatch ? cleanText(timeMatch[1]) : "1 second";
+    const memoryLimit = memoryMatch ? cleanText(memoryMatch[1]) : "256 megabytes";
+
+    // Extract problem statement container
+    const statementMatch = html.match(/class="problem-statement"[\s\S]*?>([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>\s*<div/i) || html.match(/class="problem-statement"[\s\S]*?>([\s\S]*?)<\/div>\s*<div class="input-file"/i);
+    
+    // Description (between header and input-specification)
+    let description = "";
+    const descMatch = html.match(/<div class="header">[\s\S]*?<\/div>([\s\S]*?)<div class="input-specification">/i);
+    if (descMatch) {
+      description = cleanText(descMatch[1]);
+    }
+
+    // Input specification
+    let inputSpecification = "";
+    const inputMatch = html.match(/<div class="input-specification">[\s\S]*?<div class="section-title"[^>]*>[\s\S]*?<\/div>([\s\S]*?)<div class="output-specification">/i);
+    if (inputMatch) {
+      inputSpecification = cleanText(inputMatch[1]);
+    }
+
+    // Output specification
+    let outputSpecification = "";
+    const outputMatch = html.match(/<div class="output-specification">[\s\S]*?<div class="section-title"[^>]*>[\s\S]*?<\/div>([\s\S]*?)(?:<div class="sample-tests">|<div class="sample-test">)/i);
+    if (outputMatch) {
+      outputSpecification = cleanText(outputMatch[1]);
+    }
+
+    // Sample test cases
+    const sampleTestsMatch = html.match(/<div class="sample-test"[^>]*>([\s\S]*?)(?:<div class="note">|<\/div>\s*<\/div>\s*<\/div>\s*<\/div>)/i) || html.match(/class="sample-tests"[\s\S]*?>([\s\S]*?)(?:<div class="note">|<\/div>\s*<\/div>)/i);
+    const examples: Array<{ input: string; output: string }> = [];
+
+    if (sampleTestsMatch) {
+      const samplesHtml = sampleTestsMatch[1];
+      const inputs = Array.from(samplesHtml.matchAll(/class="input"[\s\S]*?<pre[^>]*>([\s\S]*?)<\/pre>/gi)).map(m => cleanText(m[1]));
+      const outputs = Array.from(samplesHtml.matchAll(/class="output"[\s\S]*?<pre[^>]*>([\s\S]*?)<\/pre>/gi)).map(m => cleanText(m[1]));
+
+      for (let i = 0; i < Math.min(inputs.length, outputs.length); i++) {
+        examples.push({
+          input: inputs[i],
+          output: outputs[i]
+        });
+      }
+    }
+
+    // Note explanation
+    let note = "";
+    const noteMatch = html.match(/<div class="note">[\s\S]*?<div class="section-title"[^>]*>[\s\S]*?<\/div>([\s\S]*?)(?:<\/div>\s*<\/div>\s*<\/div>|$)/i);
+    if (noteMatch) {
+      note = cleanText(noteMatch[1]);
+    }
+
+    return {
+      description,
+      inputSpecification,
+      outputSpecification,
+      timeLimit,
+      memoryLimit,
+      examples,
+      note
+    };
+  } catch (err) {
+    console.error("[Codeforces Scraper] Error scraping problem:", err);
+    return null;
+  }
+}

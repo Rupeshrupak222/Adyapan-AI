@@ -9,3 +9,12 @@ ai_cache/
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 
+# runtime logs & one-off dev scripts
+*.log
+probe-*.ts
+test-*.js
+test-admin-endpoints.ts
+check-db.js
+setup-db.js
+smoke-test.js
+

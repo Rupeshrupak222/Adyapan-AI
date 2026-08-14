@@ -15,13 +15,13 @@ for i in $(seq 1 30); do
 done
 
 echo "Installing language runtimes..."
-curl -s -X POST http://localhost:2000/api/v2/packages/install -H "Content-Type: application/json" -d '{"language":"python","version":"3.10.0"}'
+curl -s -X POST http://localhost:2000/api/v2/packages -H "Content-Type: application/json" -d '{"language":"python","version":"3.10.0"}'
 echo ""
-curl -s -X POST http://localhost:2000/api/v2/packages/install -H "Content-Type: application/json" -d '{"language":"nodejs","version":"18.15.0"}'
+curl -s -X POST http://localhost:2000/api/v2/packages -H "Content-Type: application/json" -d '{"language":"node","version":"18.15.0"}'
 echo ""
-curl -s -X POST http://localhost:2000/api/v2/packages/install -H "Content-Type: application/json" -d '{"language":"c","version":"10.2.0"}'
+curl -s -X POST http://localhost:2000/api/v2/packages -H "Content-Type: application/json" -d '{"language":"gcc","version":"10.2.0"}'
 echo ""
-curl -s -X POST http://localhost:2000/api/v2/packages/install -H "Content-Type: application/json" -d '{"language":"java","version":"15.0.2"}'
+curl -s -X POST http://localhost:2000/api/v2/packages -H "Content-Type: application/json" -d '{"language":"java","version":"15.0.2"}'
 echo ""
 
 echo "All packages installed. Stopping temporary API..."

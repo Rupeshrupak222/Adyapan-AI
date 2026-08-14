@@ -1,7 +1,11 @@
 import { PrismaClient } from "@prisma/user-client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const DATABASE_URL = process.env.USER_DATABASE_URL || process.env.DIRECT_URL || process.env.DATABASE_URL || "postgresql://neondb_owner:npg_9flEcHbU6gjz@ep-weathered-fog-atm1x7qr.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require";
+const DATABASE_URL = process.env.USER_DATABASE_URL || process.env.DIRECT_URL || process.env.DATABASE_URL || "";
+
+if (!DATABASE_URL) {
+  throw new Error("DATABASE_URL must be set to run the challenge categories seed script");
+}
 
 const adapter = new PrismaPg(DATABASE_URL);
 const prisma = new PrismaClient({ adapter });

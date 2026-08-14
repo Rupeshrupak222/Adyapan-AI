@@ -3,8 +3,40 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check } from "lucide-react";
+import katex from "katex";
 
-// ─── Inline formatting (bold, italic, code, links) ───────────────────────────
+// ─── KaTeX Math Component ─────────────────────────────────────────────────────
+
+export function KatexMath({ math, displayMode = false }: { math: string; displayMode?: boolean }) {
+  let html = "";
+  try {
+    html = katex.renderToString(math.trim(), {
+      displayMode,
+      throwOnError: false,
+      output: "htmlAndMathml",
+    });
+  } catch {
+    html = math;
+  }
+
+  if (displayMode) {
+    return (
+      <div
+        className="my-3 overflow-x-auto py-2 px-3 rounded-xl bg-white/[0.03] border border-white/10 text-center text-sm leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
+  }
+
+  return (
+    <span
+      className="inline-block px-1"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+// ─── Inline formatting (math, bold, italic, code, links) ───────────────────────
 
 export function inlineFormat(text: string): React.ReactNode {
   const parts: React.ReactNode[] = [];
@@ -12,47 +44,89 @@ export function inlineFormat(text: string): React.ReactNode {
   let key = 0;
 
   while (remaining.length > 0) {
-    // Bold
-    const boldMatch = remaining.match(/^([\s\S]*?)\*\*([\s\S]+?)\*\*([\s\S]*)/);
-    if (boldMatch) {
-      if (boldMatch[1]) parts.push(<span key={key++}>{boldMatch[1]}</span>);
-      parts.push(<strong key={key++} style={{ color: "inherit", fontWeight: 700 }}>{boldMatch[2]}</strong>);
-      remaining = boldMatch[3];
-      continue;
-    }
+    let earliestMatch: {
+      index: number;
+      length: number;
+      node: React.ReactNode;
+    } | null = null;
 
-    // Italic
-    const italicMatch = remaining.match(/^([\s\S]*?)\*([\s\S]+?)\*([\s\S]*)/);
-    if (italicMatch) {
-      if (italicMatch[1]) parts.push(<span key={key++}>{italicMatch[1]}</span>);
-      parts.push(<em key={key++}>{italicMatch[2]}</em>);
-      remaining = italicMatch[3];
-      continue;
-    }
+    const checkMatch = (
+      regex: RegExp,
+      createNode: (match: RegExpMatchArray) => React.ReactNode
+    ) => {
+      const match = remaining.match(regex);
+      if (match && match.index !== undefined) {
+        const prefixLength = match[1] ? match[1].length : 0;
+        const totalIndex = match.index + prefixLength;
+        const totalLength = match[0].length - prefixLength;
 
-    // Inline code
-    const codeMatch = remaining.match(/^([\s\S]*?)`([\s\S]+?)`([\s\S]*)/);
-    if (codeMatch) {
-      if (codeMatch[1]) parts.push(<span key={key++}>{codeMatch[1]}</span>);
-      parts.push(
-        <code
-          key={key++}
-          className="px-1.5 py-0.5 rounded text-xs font-mono"
-          style={{
-            background: "rgba(245,158,11,0.12)",
-            color: "#f59e0b",
-            border: "1px solid rgba(245,158,11,0.2)",
-          }}
-        >
-          {codeMatch[2]}
-        </code>
-      );
-      remaining = codeMatch[3];
-      continue;
-    }
+        if (!earliestMatch || totalIndex < earliestMatch.index) {
+          earliestMatch = {
+            index: totalIndex,
+            length: totalLength,
+            node: createNode(match),
+          };
+        }
+      }
+    };
 
-    parts.push(<span key={key++}>{remaining}</span>);
-    break;
+    // 1. Block math $$...$$
+    checkMatch(/^([\s\S]*?)\$\$([\s\S]+?)\$\$/, (m) => (
+      <KatexMath key={key++} math={m[2]} displayMode={true} />
+    ));
+
+    // 2. Block math \[...\]
+    checkMatch(/^([\s\S]*?)\\\[([\s\S]+?)\\\]/, (m) => (
+      <KatexMath key={key++} math={m[2]} displayMode={true} />
+    ));
+
+    // 3. Inline math \(...\)
+    checkMatch(/^([\s\S]*?)\\\(([\s\S]+?)\\\)/, (m) => (
+      <KatexMath key={key++} math={m[2]} displayMode={false} />
+    ));
+
+    // 4. Inline math $...$
+    checkMatch(/^([\s\S]*?)\$([^\$\n]+?)\$/, (m) => (
+      <KatexMath key={key++} math={m[2]} displayMode={false} />
+    ));
+
+    // 5. Code `...`
+    checkMatch(/^([\s\S]*?)`([^`]+)`/, (m) => (
+      <code
+        key={key++}
+        className="px-1.5 py-0.5 rounded text-xs font-mono"
+        style={{
+          background: "rgba(245,158,11,0.12)",
+          color: "#f59e0b",
+          border: "1px solid rgba(245,158,11,0.2)",
+        }}
+      >
+        {m[2]}
+      </code>
+    ));
+
+    // 6. Bold **...**
+    checkMatch(/^([\s\S]*?)\*\*([\s\S]+?)\*\*/, (m) => (
+      <strong key={key++} style={{ color: "inherit", fontWeight: 700 }}>
+        {inlineFormat(m[2])}
+      </strong>
+    ));
+
+    // 7. Italic *...*
+    checkMatch(/^([\s\S]*?)\*([^\*]+)\*/, (m) => (
+      <em key={key++}>{inlineFormat(m[2])}</em>
+    ));
+
+    if (earliestMatch) {
+      if (earliestMatch.index > 0) {
+        parts.push(<span key={key++}>{remaining.slice(0, earliestMatch.index)}</span>);
+      }
+      parts.push(earliestMatch.node);
+      remaining = remaining.slice(earliestMatch.index + earliestMatch.length);
+    } else {
+      parts.push(<span key={key++}>{remaining}</span>);
+      break;
+    }
   }
 
   return <>{parts}</>;
@@ -131,7 +205,7 @@ export function CodeBlock({
   );
 }
 
-// ─── Lightweight markdown renderer ───────────────────────────────────────────
+// ─── Lightweight markdown renderer with KaTeX math support ───────────────────
 
 export function renderMarkdown(content: string, isDark: boolean): React.ReactNode {
   const text = isDark ? "#e2e8f0" : "#1e293b";
@@ -144,9 +218,11 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
   const lines = content.split("\n");
   const elements: React.ReactNode[] = [];
   let i = 0;
+  let elementKey = 0;
 
   while (i < lines.length) {
     const line = lines[i];
+    const trimmed = line.trim();
 
     // Code block
     if (line.startsWith("```")) {
@@ -159,16 +235,67 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
       }
       const code = codeLines.join("\n");
       elements.push(
-        <CodeBlock key={i} code={code} lang={lang} isDark={isDark} blockBg={blockBg} blockBorder={blockBorder} />
+        <CodeBlock key={elementKey++} code={code} lang={lang} isDark={isDark} blockBg={blockBg} blockBorder={blockBorder} />
       );
       i++;
+      continue;
+    }
+
+    // Block math $$ ... $$ or \[ ... \]
+    if (
+      trimmed === "$$" ||
+      trimmed === "\\[" ||
+      (trimmed.startsWith("$$") && (!trimmed.slice(2).includes("$$") || trimmed.endsWith("$$"))) ||
+      (trimmed.startsWith("\\[") && (!trimmed.slice(2).includes("\\]") || trimmed.endsWith("\\]")))
+    ) {
+      // Single line block math: $$math$$ or \[math\]
+      if (
+        (trimmed.startsWith("$$") && trimmed.endsWith("$$") && trimmed.length > 4) ||
+        (trimmed.startsWith("\\[") && trimmed.endsWith("\\]") && trimmed.length > 4)
+      ) {
+        const mathContent = trimmed.startsWith("$$") ? trimmed.slice(2, -2) : trimmed.slice(2, -2);
+        elements.push(
+          <KatexMath key={elementKey++} math={mathContent} displayMode={true} />
+        );
+        i++;
+        continue;
+      }
+
+      // Multi-line block math
+      const mathLines: string[] = [];
+      const isSquare = trimmed.startsWith("\\[");
+      const endMarker = isSquare ? "\\]" : "$$";
+
+      let firstContent = isSquare ? trimmed.slice(2) : trimmed.slice(2);
+      if (firstContent) mathLines.push(firstContent);
+
+      i++;
+      while (i < lines.length) {
+        const curTrim = lines[i].trim();
+        if (curTrim === endMarker) {
+          i++;
+          break;
+        }
+        if (curTrim.endsWith(endMarker)) {
+          const contentBeforeEnd = curTrim.slice(0, -endMarker.length);
+          if (contentBeforeEnd) mathLines.push(contentBeforeEnd);
+          i++;
+          break;
+        }
+        mathLines.push(lines[i]);
+        i++;
+      }
+
+      elements.push(
+        <KatexMath key={elementKey++} math={mathLines.join("\n")} displayMode={true} />
+      );
       continue;
     }
 
     // Heading 1
     if (line.startsWith("# ")) {
       elements.push(
-        <h1 key={i} className="text-2xl font-black mb-3 mt-5 first:mt-0" style={{ color: text, fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.02em" }}>
+        <h1 key={elementKey++} className="text-2xl font-black mb-3 mt-5 first:mt-0" style={{ color: text, fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.02em" }}>
           {inlineFormat(line.slice(2))}
         </h1>
       );
@@ -179,7 +306,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     // Heading 2
     if (line.startsWith("## ")) {
       elements.push(
-        <h2 key={i} className="text-xl font-bold mb-2 mt-4 first:mt-0" style={{ color: text, fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.01em" }}>
+        <h2 key={elementKey++} className="text-xl font-bold mb-2 mt-4 first:mt-0" style={{ color: text, fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.01em" }}>
           {inlineFormat(line.slice(3))}
         </h2>
       );
@@ -190,7 +317,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     // Heading 3
     if (line.startsWith("### ")) {
       elements.push(
-        <h3 key={i} className="text-base font-bold mb-2 mt-3 first:mt-0" style={{ color: text }}>
+        <h3 key={elementKey++} className="text-base font-bold mb-2 mt-3 first:mt-0" style={{ color: text }}>
           {inlineFormat(line.slice(4))}
         </h3>
       );
@@ -206,7 +333,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
         i++;
       }
       elements.push(
-        <ul key={i} className="space-y-1.5 my-3 pl-1">
+        <ul key={elementKey++} className="space-y-1.5 my-3 pl-1">
           {items.map((item, j) => (
             <li key={j} className="flex gap-2.5 text-sm items-start" style={{ color: textSec }}>
               <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#f59e0b" }} />
@@ -226,7 +353,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
         i++;
       }
       elements.push(
-        <ol key={i} className="space-y-1.5 my-3 pl-1">
+        <ol key={elementKey++} className="space-y-1.5 my-3 pl-1">
           {items.map((item, j) => (
             <li key={j} className="flex gap-2.5 text-sm items-start" style={{ color: textSec }}>
               <span
@@ -253,7 +380,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
         i++;
       }
       elements.push(
-        <div key={i} className="overflow-x-auto my-4">
+        <div key={elementKey++} className="overflow-x-auto my-4">
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr>
@@ -285,7 +412,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     if (line.startsWith("> ")) {
       elements.push(
         <blockquote
-          key={i}
+          key={elementKey++}
           className="pl-4 my-3 text-sm italic"
           style={{
             borderLeft: "3px solid rgba(245,158,11,0.5)",
@@ -305,7 +432,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     // Horizontal rule
     if (line.trim() === "---" || line.trim() === "***") {
       elements.push(
-        <hr key={i} className="my-4" style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }} />
+        <hr key={elementKey++} className="my-4" style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }} />
       );
       i++;
       continue;
@@ -313,14 +440,14 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
 
     // Empty line
     if (line.trim() === "") {
-      elements.push(<div key={i} className="h-2" />);
+      elements.push(<div key={elementKey++} className="h-2" />);
       i++;
       continue;
     }
 
     // Regular paragraph
     elements.push(
-      <p key={i} className="text-sm leading-relaxed mb-1" style={{ color: textSec }}>
+      <p key={elementKey++} className="text-sm leading-relaxed mb-1" style={{ color: textSec }}>
         {inlineFormat(line)}
       </p>
     );

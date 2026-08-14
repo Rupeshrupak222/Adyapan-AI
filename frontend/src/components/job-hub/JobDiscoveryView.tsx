@@ -6,7 +6,7 @@ import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Briefcase, Search, Filter, MapPin, Building2, Globe, Clock, DollarSign, GraduationCap,
-  Sparkles, ExternalLink, Share2, Copy, X, ChevronDown,
+  Sparkles, ExternalLink, Share2, Copy, X, ChevronDown, ChevronLeft, ChevronRight,
   Loader2, SlidersHorizontal, Users, Target, Zap, FileText,
   Star, Bookmark, BookmarkCheck, BarChart3,
   Lightbulb, ArrowRight, CheckCircle2,
@@ -121,7 +121,7 @@ interface AnalyticsData {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const PAGE_LIMIT = 12;
+const PAGE_LIMIT = 20;
 
 function formatCap99(val: number | string | undefined | null): string {
   if (val == null) return "0";
@@ -509,7 +509,6 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
   const [savedPage, setSavedPage] = useState<"browse" | "saved">("browse");
-  const [syncing, setSyncing] = useState(false);
 
   // ─── Job Detail State ───────────────────────────────────────────────────
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -646,24 +645,6 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     } catch { /* silent */ }
   }, []);
 
-  const handleSyncJobs = useCallback(async () => {
-    setSyncing(true);
-    try {
-      const res = await api.post("/discovery/sync");
-      if (res.data.success) {
-        toast.success("Jobs synchronized & updated successfully!");
-        await fetchJobs(1, false);
-        fetchSidebarData();
-      } else {
-        toast.error(res.data.message || "Failed to sync jobs");
-      }
-    } catch {
-      toast.error("Failed to trigger job sync");
-    } finally {
-      setSyncing(false);
-    }
-  }, [fetchJobs, fetchSidebarData]);
-
   const fetchJobDetail = useCallback(async (jobId: string) => {
     setDetailLoading(true);
     try {
@@ -724,21 +705,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   useEffect(() => { if (savedPage === "saved") fetchSavedJobs(); }, [savedPage]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { fetchSidebarData(); }, [fetchSidebarData]);
 
-  useEffect(() => {
-    if (savedPage === "saved") return;
-    if (observerRef.current) observerRef.current.disconnect();
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
-          const nextPage = page + 1;
-          setPage(nextPage);
-          fetchJobs(nextPage, true);
-        }
-      }, { threshold: 0.1 }
-    );
-    if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
-    return () => { if (observerRef.current) observerRef.current.disconnect(); };
-  }, [hasMore, loading, loadingMore, page, fetchJobs, savedPage]);
+  // Removed IntersectionObserver - using manual pagination instead
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -1984,17 +1951,6 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleSyncJobs} disabled={syncing}
-              className="px-3 py-2 rounded-xl text-xs font-bold border transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              style={{
-                background: "rgba(245,158,11,0.1)",
-                borderColor: "rgba(245,158,11,0.3)",
-                color: c.primary,
-              }}
-              title="Sync & refresh job listings from multi-portal job engines">
-              <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
-              {syncing ? "Syncing..." : "Sync Jobs"}
-            </button>
             <button onClick={() => setSavedPage(prev => prev === "saved" ? "browse" : "saved")}
               className="px-3 py-2 rounded-xl text-xs font-bold border transition-all hover:scale-105 flex items-center gap-1.5 relative"
               style={{
@@ -2197,20 +2153,97 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                     {jobs.map((job, i) => viewMode === "grid" ? renderJobCard(job, i) : renderJobListCard(job, i))}
                   </div>
 
-                  {/* Infinite scroll sentinel */}
-                  <div ref={loadMoreRef} className="py-6 flex items-center justify-center">
-                    {loadingMore && (
-                      <div className="flex items-center gap-2">
-                        <Loader2 size={18} className="animate-spin" style={{ color: c.primary }} />
-                        <span className="text-xs font-bold" style={{ color: c.textMuted }}>Loading more jobs...</span>
+                  {/* Pagination Controls */}
+                  {jobs.length > 0 && (
+                    <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t mt-6 pt-6" style={{ borderColor: c.border }}>
+                      <div className="text-xs font-semibold" style={{ color: c.textMuted }}>
+                        Showing {((page - 1) * PAGE_LIMIT) + 1} - {Math.min(page * PAGE_LIMIT, total)} of {formatCap99(total)} jobs
                       </div>
-                    )}
-                    {!hasMore && jobs.length > 0 && (
-                      <span className="text-[11px] font-semibold" style={{ color: c.textMuted }}>
-                        You&apos;ve seen all {formatCap99(total)} jobs
-                      </span>
-                    )}
-                  </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            if (page > 1) {
+                              const newPage = page - 1;
+                              setPage(newPage);
+                              fetchJobs(newPage, false);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                          }}
+                          disabled={page === 1 || loading}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          style={{ 
+                            borderColor: c.border, 
+                            color: c.text, 
+                            background: c.cardBg 
+                          }}
+                        >
+                          <ChevronLeft size={14} />
+                          Previous
+                        </button>
+
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(Math.ceil(total / PAGE_LIMIT), 5) }, (_, i) => {
+                            const totalPages = Math.ceil(total / PAGE_LIMIT);
+                            let pageNum;
+                            
+                            // Show first 5 pages, or pages around current page
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (page <= 3) {
+                              pageNum = i + 1;
+                            } else if (page >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = page - 2 + i;
+                            }
+
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => {
+                                  setPage(pageNum);
+                                  fetchJobs(pageNum, false);
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                disabled={loading}
+                                className="w-8 h-8 rounded-lg text-xs font-bold transition-all disabled:cursor-not-allowed"
+                                style={{
+                                  background: page === pageNum ? 'linear-gradient(135deg, #f59e0b, #ea580c)' : c.surface,
+                                  color: page === pageNum ? '#000' : c.textSec,
+                                  border: page === pageNum ? 'none' : `1px solid ${c.border}`,
+                                }}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            const totalPages = Math.ceil(total / PAGE_LIMIT);
+                            if (page < totalPages) {
+                              const newPage = page + 1;
+                              setPage(newPage);
+                              fetchJobs(newPage, false);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                          }}
+                          disabled={page >= Math.ceil(total / PAGE_LIMIT) || loading}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          style={{ 
+                            borderColor: c.border, 
+                            color: c.text, 
+                            background: c.cardBg 
+                          }}
+                        >
+                          Next
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </>

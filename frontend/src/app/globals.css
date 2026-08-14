@@ -887,10 +887,23 @@ canvas {
 }
 
 /* ── Performance: Will-change for animated elements ── */
-.will-change-transform {
-  will-change: transform;
+
+/* ── KaTeX Math Theme Adaptations ── */
+.katex {
+  font-size: 1.05em;
+  color: inherit;
 }
-.will-change-opacity {
-  will-change: opacity;
+.katex-display {
+  margin: 0.75em 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25em 0;
 }
+[data-theme="dark"] .katex {
+  color: #f3f4f6;
+}
+[data-theme="light"] .katex {
+  color: #1f2937;
+}
+
 

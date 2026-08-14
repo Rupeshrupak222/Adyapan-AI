@@ -4,7 +4,7 @@ import { generateCode, debugCode, explainCode, generateProject, generateMultiLan
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { handleRouteError } from "../utils/routeError";
 import { prisma as masterPrisma } from "../config/prisma";
-import { CodeforcesService } from "../services/codeforces.service";
+import { CodeforcesService, scrapeCodeforcesProblem } from "../services/codeforces.service";
 import { AICodingService } from "../services/ai-coding.service";
 import { executeCode, runTestCases, checkPistonHealth } from "../services/piston.service";
 import { AIReviewService } from "../services/ai-review.service";
@@ -655,6 +655,35 @@ router.get("/workspace/:id", async (req: any, res) => {
       orderBy: { createdAt: 'asc' }
     });
 
+    // 7. Fetch or auto-generate AI Analysis for full problem explanation and examples
+    let aiAnalysisData: any = null;
+
+    if (question.externalId && (question.source === "codeforces" || question.externalId.includes("-"))) {
+      try {
+        const scraped = await scrapeCodeforcesProblem(question.externalId);
+        if (scraped && scraped.description) {
+          aiAnalysisData = {
+            ...(question.aiAnalyses[0] ? (question.aiAnalyses[0].explanationJson as any) : {}),
+            problem_explanation: `${scraped.description}\n\nINPUT SPECIFICATION:\n${scraped.inputSpecification}\n\nOUTPUT SPECIFICATION:\n${scraped.outputSpecification}${scraped.note ? `\n\nNOTE:\n${scraped.note}` : ""}`,
+            examples: scraped.examples
+          };
+        }
+      } catch (err) {
+        console.warn("Failed to scrape live Codeforces problem:", err);
+      }
+    }
+
+    if (!aiAnalysisData) {
+      aiAnalysisData = question.aiAnalyses[0] ? (question.aiAnalyses[0].explanationJson as any) : null;
+      if (!aiAnalysisData || !aiAnalysisData.problem_explanation || !aiAnalysisData.examples || aiAnalysisData.examples.length === 0 || aiAnalysisData.problem_explanation.includes("You are given an array of integers")) {
+        try {
+          aiAnalysisData = await AICodingService.getAnalysis(questionId);
+        } catch (err) {
+          console.warn("Failed to generate AI analysis on workspace load:", err);
+        }
+      }
+    }
+
     res.json({
       question,
       progress: {
@@ -669,7 +698,7 @@ router.get("/workspace/:id", async (req: any, res) => {
       notes,
       isBookmarked: !!bookmarkRecord,
       discussions,
-      aiAnalysis: question.aiAnalyses[0] ? question.aiAnalyses[0].explanationJson : null
+      aiAnalysis: aiAnalysisData
     });
   } catch (error) {
     handleRouteError(res, error, "Coding.workspace", "Failed to retrieve workspace details");
@@ -1242,6 +1271,23 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
       }
     });
 
+    // Auto save workspace session snapshot
+    await userPrisma.problemWorkspaceSession.upsert({
+      where: { userId_questionId: { userId, questionId } },
+      update: {
+        codeContent: code,
+        language,
+        status: finalStatus
+      },
+      create: {
+        userId,
+        questionId,
+        codeContent: code,
+        language,
+        status: finalStatus
+      }
+    });
+
     res.json({
       allPassed: submission.allPassed,
       totalTests: submission.totalTests,
@@ -1341,92 +1387,7 @@ router.post("/workspace/:id/execution/restore", async (req: any, res) => {
   }
 });
 
-// ─── Day 14 AI Code Review Engine API Endpoints ──────────────────────────────
 
-// POST /api/coding/review
-// Trigger code review generation
-router.post("/review", async (req: any, res) => {
-  try {
-    const { questionId, code, language, reviewMode = "interview" } = req.body;
-    const userId = req.user.userId;
-
-    if (!questionId || !code || !language) {
-      return res.status(400).json({ error: "questionId, code, and language are required" });
-    }
-
-    const userPrisma = await getUserPrismaFromRequest(req);
-
-    // Generate Code Review from service
-    const reviewJson = await AIReviewService.generateReview(
-      userPrisma,
-      userId,
-      questionId,
-      code,
-      language,
-      reviewMode
-    );
-
-    // Save review record to Database
-    const review = await userPrisma.codeReview.create({
-      data: {
-        userId,
-        questionId,
-        reviewMode,
-        reviewJson: reviewJson as any,
-        overallScore: reviewJson.overall_score || 0,
-      }
-    });
-
-    res.json({ success: true, review });
-  } catch (error) {
-    handleRouteError(res, error, "Coding.review.generate", "Failed to generate code review");
-  }
-});
-
-// GET /api/coding/reviews/history
-// Fetch history of previous reviews for a specific user and question
-router.get("/reviews/history", async (req: any, res) => {
-  try {
-    const { questionId } = req.query;
-    const userId = req.user.userId;
-    const userPrisma = await getUserPrismaFromRequest(req);
-
-    const whereClause: any = { userId };
-    if (questionId) {
-      whereClause.questionId = questionId as string;
-    }
-
-    const history = await userPrisma.codeReview.findMany({
-      where: whereClause,
-      orderBy: { generatedAt: "desc" }
-    });
-
-    res.json({ success: true, history });
-  } catch (error) {
-    handleRouteError(res, error, "Coding.review.history", "Failed to retrieve reviews history");
-  }
-});
-
-// GET /api/coding/review/:id
-// Get details of a specific code review
-router.get("/review/:id", async (req: any, res) => {
-  try {
-    const reviewId = req.params.id;
-    const userPrisma = await getUserPrismaFromRequest(req);
-
-    const review = await userPrisma.codeReview.findUnique({
-      where: { id: reviewId }
-    });
-
-    if (!review) {
-      return res.status(404).json({ error: "Code review not found" });
-    }
-
-    res.json({ success: true, review });
-  } catch (error) {
-    handleRouteError(res, error, "Coding.review.getDetails", "Failed to retrieve code review details");
-  }
-});
 
 // ─── Day 15 AI Complexity Analysis Engine API Endpoints ─────────────────────
 

@@ -1,5 +1,6 @@
 import { prisma } from "../config/prisma";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
+import { scrapeCodeforcesProblem } from "./codeforces.service";
 
 export interface Example {
   input: string;
@@ -23,24 +24,6 @@ export interface AIAnalysisSchema {
 
 export class AICodingService {
   static async getAnalysis(questionId: string): Promise<AIAnalysisSchema> {
-    const cached = await prisma.questionAIAnalysis.findFirst({
-      where: { questionId }
-    });
-
-    if (cached) {
-      const data = cached.explanationJson as unknown as AIAnalysisSchema;
-      if (data && data.examples && data.examples.length > 0) {
-        return data;
-      }
-      try {
-        await prisma.questionAIAnalysis.delete({
-          where: { id: cached.id }
-        });
-      } catch (err) {
-        console.warn(`[AICodingService] Failed to delete incomplete cache:`, err);
-      }
-    }
-
     const question = await prisma.codingQuestion.findUnique({
       where: { id: questionId }
     });
@@ -49,8 +32,41 @@ export class AICodingService {
       throw new Error(`Question with ID ${questionId} not found`);
     }
 
+    // Scrape exact problem statement directly from Codeforces for Codeforces questions
+    let scrapedData: any = null;
+    if (question.externalId && (question.source === "codeforces" || question.externalId.includes("-"))) {
+      try {
+        scrapedData = await scrapeCodeforcesProblem(question.externalId);
+      } catch (err) {
+        console.warn("[AICodingService] Codeforces scraping error:", err);
+      }
+    }
+
+    // Check cache (only if non-Codeforces or if cache contains real scraped data)
+    const cached = await prisma.questionAIAnalysis.findFirst({
+      where: { questionId }
+    });
+
+    if (cached) {
+      const data = cached.explanationJson as unknown as AIAnalysisSchema;
+      if (data && data.examples && data.examples.length > 0 && data.problem_explanation && !data.problem_explanation.includes("A structured explanation of the problem")) {
+        if (!scrapedData || (data.problem_explanation.includes("INPUT SPECIFICATION") && data.problem_explanation.length > 100)) {
+          return data;
+        }
+      }
+      try {
+        await prisma.questionAIAnalysis.delete({
+          where: { id: cached.id }
+        });
+      } catch (err) {
+        console.warn(`[AICodingService] Failed to delete stale cache:`, err);
+      }
+    }
+
     const fallback: AIAnalysisSchema = {
-      problem_explanation: `A structured explanation of the problem: "${question.title}" (${question.topic}). We need to solve it efficiently.`,
+      problem_explanation: scrapedData?.description
+        ? `${scrapedData.description}\n\nINPUT SPECIFICATION:\n${scrapedData.inputSpecification}\n\nOUTPUT SPECIFICATION:\n${scrapedData.outputSpecification}${scrapedData.note ? `\n\nNOTE:\n${scrapedData.note}` : ""}`
+        : `A structured explanation of the problem: "${question.title}" (${question.topic}). We need to solve it efficiently.`,
       hint_1: "Think about the naive brute-force method first.",
       hint_2: "Can we use a hash map or sorting to optimize?",
       hint_3: "Consider using two pointers or sliding window to achieve optimal time complexity.",
@@ -64,7 +80,7 @@ export class AICodingService {
         "Using excessive space when an in-place modification is possible.",
         "Integer overflow during sum calculations."
       ],
-      examples: [
+      examples: scrapedData?.examples && scrapedData.examples.length > 0 ? scrapedData.examples : [
         {
           input: "5\n1 2 3 4 5",
           output: "15",
@@ -78,7 +94,7 @@ You must analyze the given coding question and generate a structured preparation
 Return ONLY valid JSON mapping exactly to the schema keys.
 
 Keys to include:
-1. "problem_explanation" (string) - Plain English explanation of the problem statement and what it asks. Keep it clear, friendly, and structured.
+1. "problem_explanation" (string) - Plain English explanation of the problem statement and what it asks. Keep it clear, friendly, and structured. Include input/output rules if provided.
 2. "hint_1" (string) - First progressive hint (conceptual/getting started).
 3. "hint_2" (string) - Second progressive hint (direction/algorithm ideas).
 4. "hint_3" (string) - Third progressive hint (close to solution/data structure choices).
@@ -100,7 +116,8 @@ Title: ${question.title}
 Topic: ${question.topic}
 Difficulty: ${question.difficulty}
 Rating: ${question.rating || "N/A"}
-Tags: ${JSON.stringify(question.tagsJson)}`;
+Tags: ${JSON.stringify(question.tagsJson)}
+${scrapedData ? `\nExact Codeforces Problem Details:\nDescription:\n${scrapedData.description}\nInput Spec:\n${scrapedData.inputSpecification}\nOutput Spec:\n${scrapedData.outputSpecification}\nExamples:\n${JSON.stringify(scrapedData.examples)}\nNote:\n${scrapedData.note}` : ""}`;
 
     try {
       const generated = await generateJSON<AIAnalysisSchema>(
@@ -110,8 +127,13 @@ Tags: ${JSON.stringify(question.tagsJson)}`;
         fallback
       );
 
-      if (!generated.examples || generated.examples.length === 0) {
-        generated.examples = fallback.examples;
+      if (scrapedData) {
+        if (scrapedData.description) {
+          generated.problem_explanation = `${scrapedData.description}\n\nINPUT SPECIFICATION:\n${scrapedData.inputSpecification}\n\nOUTPUT SPECIFICATION:\n${scrapedData.outputSpecification}${scrapedData.note ? `\n\nNOTE:\n${scrapedData.note}` : ""}`;
+        }
+        if (scrapedData.examples && scrapedData.examples.length > 0) {
+          generated.examples = scrapedData.examples;
+        }
       }
 
       await prisma.questionAIAnalysis.create({
