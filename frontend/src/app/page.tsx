@@ -416,15 +416,19 @@ export default function LandingPage() {
             ref={videoRef}
             autoPlay
             muted
+            loop
             playsInline
-            preload="metadata"
+            preload="auto"
             className="w-screen h-auto relative z-10"
             style={{
               maxHeight: "600px",
               objectFit: "contain",
+              mixBlendMode: "lighten",
             }}
           >
-            <source src="/ai-character.webm" type="video/webm" />
+            <source src="/Adyapan-ai-character.webm" type="video/webm" />
+            <source src="/Adyapan-ai-character.mp4" type="video/mp4" />
+            <source src="/Adyapan-ai-character.mov" type="video/quicktime" />
           </video>
         </motion.div>
       </Section>
