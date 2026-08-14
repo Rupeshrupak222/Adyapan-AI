@@ -122,7 +122,7 @@ export function ThinkingIndicator({ isDark }: ThinkingIndicatorProps) {
       <div>
         <motion.div
           className="text-xs font-medium"
-          style={{ color: isDark ? "rgba(255,255,255,0.5)" : "#64748b", fontFamily: "'Outfit', sans-serif" }}
+          style={{ color: isDark ? "rgba(255,255,255,0.5)" : "#64748b", fontFamily: "var(--font-sans)" }}
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 1.8, repeat: Infinity }}
         >

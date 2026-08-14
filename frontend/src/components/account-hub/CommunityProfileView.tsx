@@ -318,7 +318,7 @@ export function CommunityProfileView({ userId, onViewUser, onBack }: { userId?: 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="space-y-5 min-h-screen"
-      style={{ fontFamily: "'Inter', 'Plus Jakarta Sans', sans-serif" }}
+      style={{ fontFamily: "var(--font-sans), sans-serif" }}
     >
       {!isOwnProfile && (
         <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 rounded-2xl">

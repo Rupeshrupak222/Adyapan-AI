@@ -604,7 +604,7 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
           )}
           <div>
             <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">AI Technical Engine</p>
-            <h2 className="text-base font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <h2 className="text-base font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>
               {view === "home" && activeTab === "home" && "Technical MCQs Hub"}
               {view === "home" && activeTab === "analytics" && "Performance Analytics"}
               {view === "topic_select" && "Select Technology"}

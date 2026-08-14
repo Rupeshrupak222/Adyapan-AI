@@ -432,7 +432,7 @@ export default function InterviewRoomPage() {
   const isTimeCritical = timeLeft < 300;
 
   return (
-    <div className="min-h-screen bg-[#060611] text-white flex flex-col" style={{ fontFamily: "'Outfit', sans-serif" }}>
+    <div className="min-h-screen bg-[#060611] text-white flex flex-col" style={{ fontFamily: "var(--font-sans)" }}>
       {/* ── TOP BAR ─────────────────────────── */}
       <div className={`flex items-center justify-between px-4 py-2.5 border-b border-white/8 ${urgency > 0.7 ? "bg-red-950/30" : "bg-[#0a0a1a]"} shrink-0`}>
         {/* Session info */}

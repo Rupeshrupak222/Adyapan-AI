@@ -130,7 +130,7 @@ const EngineLoading: React.FC<EngineLoadingProps> = ({ config, onComplete, theme
     <div
       className="fixed inset-0 flex items-center justify-center overflow-hidden"
       style={{
-        fontFamily: "'Outfit', sans-serif",
+        fontFamily: "var(--font-sans)",
         background: isDark ? "#080710" : "#f9fafb",
       }}
     >

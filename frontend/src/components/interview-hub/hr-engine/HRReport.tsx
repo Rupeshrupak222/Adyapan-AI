@@ -169,7 +169,7 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
   ];
 
   return (
-    <div className="min-h-full" style={{ background: c.bg, fontFamily: "'Outfit', sans-serif" }}>
+    <div className="min-h-full" style={{ background: c.bg, fontFamily: "var(--font-sans)" }}>
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         {/* Hero */}
         <motion.div

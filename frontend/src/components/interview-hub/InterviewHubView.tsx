@@ -633,7 +633,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider">
                   <Flame size={12} className="animate-pulse" /> AI Interview Coach
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                <h2 className="text-2xl sm:text-3xl font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>
                   {activeModule === "interview-hr" && "AI HR Interview"}
                   {activeModule === "interview-technical" && "AI Technical Interview"}
                   {activeModule === "interview-mock" && "Mock Interview Simulator"}
@@ -671,7 +671,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:border-amber-500/20 group-hover:bg-amber-500/5 transition-all" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
                         {card.icon}
                       </div>
-                      <h3 className="font-extrabold text-base" style={{ fontFamily: "'Outfit', sans-serif" }}>{card.title}</h3>
+                      <h3 className="font-extrabold text-base" style={{ fontFamily: "var(--font-sans)" }}>{card.title}</h3>
                       <p className="text-xs leading-relaxed" style={{ color: c.textSec }}>{card.desc}</p>
                     </div>
                     <div className="mt-6 flex items-center justify-between text-[11px] font-bold text-amber-500">
@@ -697,7 +697,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
 
             {/* History */}
             <div className="space-y-4">
-              <h3 className="text-base font-extrabold flex items-center justify-between gap-2" style={{ fontFamily: "'Outfit', sans-serif" }}>
+              <h3 className="text-base font-extrabold flex items-center justify-between gap-2" style={{ fontFamily: "var(--font-sans)" }}>
                 <span className="flex items-center gap-2"><History size={16} className="text-amber-500" /> Interview History</span>
                 <button onClick={() => setView("analytics-interview")} className="text-[10px] font-bold flex items-center gap-1 px-2.5 py-1.5 rounded-lg border" style={{ borderColor: c.border, color: c.primary }}>
                   <BarChart3 size={11} /> Analytics
@@ -763,7 +763,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                 <ArrowLeft size={16} />
               </button>
               <div>
-                <h1 className="text-xl font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                <h1 className="text-xl font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>
                   {config.type === "behavioral" ? "AI HR Interview" : config.type === "technical" ? "AI Technical Interview" : "Mock Interview"}
                 </h1>
               </div>
@@ -859,7 +859,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
           <motion.div key="identity" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="flex-1 max-w-2xl mx-auto w-full space-y-6">
             <div className="text-center">
               <Camera size={32} className="mx-auto mb-3 text-amber-500" />
-              <h1 className="text-xl font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>Identity Verification</h1>
+              <h1 className="text-xl font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>Identity Verification</h1>
               <p className="text-xs mt-1" style={{ color: c.textSec }}>Camera will capture your face for verification</p>
             </div>
 
@@ -927,7 +927,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
           <motion.div key="syscheck" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="flex-1 max-w-2xl mx-auto w-full space-y-6">
             <div className="text-center">
               <Monitor size={32} className="mx-auto mb-3 text-amber-500" />
-              <h1 className="text-xl font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>System Compatibility Check</h1>
+              <h1 className="text-xl font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>System Compatibility Check</h1>
               <p className="text-xs mt-1" style={{ color: c.textSec }}>Verifying camera, microphone, and system requirements</p>
             </div>
 
@@ -978,7 +978,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
           <motion.div key="envscan" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="flex-1 max-w-2xl mx-auto w-full space-y-6">
             <div className="text-center">
               <Smartphone size={32} className="mx-auto mb-3 text-amber-500" />
-              <h1 className="text-xl font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>AI Proctoring Environment Scan</h1>
+              <h1 className="text-xl font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>AI Proctoring Environment Scan</h1>
               <p className="text-xs mt-1" style={{ color: c.textSec }}>AI analyzes your surroundings for a fair interview</p>
             </div>
 
@@ -1031,7 +1031,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
           <motion.div key="rules" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="flex-1 max-w-2xl mx-auto w-full space-y-6">
             <div className="text-center">
               <Shield size={32} className="mx-auto mb-3 text-amber-500" />
-              <h1 className="text-xl font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>Interview Rules & Consent</h1>
+              <h1 className="text-xl font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>Interview Rules & Consent</h1>
               <p className="text-xs mt-1" style={{ color: c.textSec }}>Please read and accept the interview rules</p>
             </div>
 
@@ -1084,7 +1084,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
             className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-4">
               <Loader2 size={48} className="animate-spin text-amber-500 mx-auto" />
-              <h2 className="text-lg font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>Initializing Interview Room</h2>
+              <h2 className="text-lg font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>Initializing Interview Room</h2>
               <div className="space-y-2 text-xs" style={{ color: c.textMuted }}>
                 <p>Generating AI questions...</p>
                 <p>Preparing WebSocket connection...</p>
@@ -1198,7 +1198,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                 <ArrowLeft size={16} />
               </button>
               <div>
-                <h1 className="text-xl font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>Performance Report</h1>
+                <h1 className="text-xl font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>Performance Report</h1>
               </div>
             </div>
 

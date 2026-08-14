@@ -54,7 +54,7 @@ export default function HRLoading({ config, onComplete, theme: propTheme }: HRLo
         background: isDark
           ? "radial-gradient(ellipse at center, rgba(245,158,11,0.05) 0%, #080710 70%)"
           : "radial-gradient(ellipse at center, rgba(245,158,11,0.03) 0%, #f9fafb 70%)",
-        fontFamily: "'Outfit', sans-serif",
+        fontFamily: "var(--font-sans)",
       }}
     >
       <motion.div

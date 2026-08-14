@@ -119,7 +119,7 @@ export function ChatGreeting({ userName, isDark, onSuggestionClick }: ChatGreeti
         className="text-4xl sm:text-5xl font-black text-center mb-3"
         style={{
           color: headingColor,
-          fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+          fontFamily: "var(--font-sans)",
           letterSpacing: "-0.025em",
           lineHeight: 1.1,
         }}
@@ -138,7 +138,7 @@ export function ChatGreeting({ userName, isDark, onSuggestionClick }: ChatGreeti
         className="text-sm sm:text-base text-center mb-8"
         style={{
           color: subtitleColor,
-          fontFamily: "'Outfit', sans-serif",
+          fontFamily: "var(--font-sans)",
           fontWeight: 400,
         }}
         initial={{ opacity: 0, y: 16 }}
@@ -199,7 +199,7 @@ export function ChatGreeting({ userName, isDark, onSuggestionClick }: ChatGreeti
               className="text-xs font-semibold leading-tight"
               style={{
                 color: cardText,
-                fontFamily: "'Outfit', sans-serif",
+                fontFamily: "var(--font-sans)",
                 letterSpacing: "0.005em",
               }}
             >

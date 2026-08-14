@@ -597,7 +597,7 @@ export default function InterviewIntelligence({
   }, [followUpAnalysis]);
 
   return (
-    <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6 font-['Outfit',sans-serif]">
+    <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6 font-sans">
 
       {/* ─── IMPROVEMENT & DELTA BANNER ────────────────────────────────── */}
       {improvementSinceLast && improvementSinceLast.scoreDelta !== 0 && (

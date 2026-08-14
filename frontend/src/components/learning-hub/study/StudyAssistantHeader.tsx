@@ -40,7 +40,7 @@ export function StudyAssistantHeader({ c, mode, onSwitchToDocument, onSwitchToTo
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             className="text-base font-extrabold leading-tight"
-            style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}
+            style={{ color: c.text, fontFamily: "var(--font-sans)" }}
           >
             Study Assistant
           </motion.h1>

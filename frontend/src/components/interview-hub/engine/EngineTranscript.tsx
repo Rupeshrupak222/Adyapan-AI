@@ -220,7 +220,7 @@ export default function EngineTranscript({
   return (
     <div
       className="flex flex-col h-full"
-      style={{ fontFamily: "'Outfit', sans-serif", background: c.bg }}
+      style={{ fontFamily: "var(--font-sans)", background: c.bg }}
     >
       {/* ═══ HEADER ═══ */}
       <motion.div

@@ -53,7 +53,7 @@ export function UserMessage({ message, index, isDark, userName, onEdit }: UserMe
               borderRadius: "20px 20px 4px 20px",
               color: text,
               boxShadow: shadow,
-              fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+              fontFamily: "var(--font-sans)",
               lineHeight: 1.6,
               wordBreak: "break-word",
             }}
@@ -64,7 +64,7 @@ export function UserMessage({ message, index, isDark, userName, onEdit }: UserMe
             {/* Timestamp */}
             <div
               className="text-[9px] mt-1 text-right opacity-50 font-medium"
-              style={{ fontFamily: "'Outfit', sans-serif" }}
+              style={{ fontFamily: "var(--font-sans)" }}
             >
               {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </div>

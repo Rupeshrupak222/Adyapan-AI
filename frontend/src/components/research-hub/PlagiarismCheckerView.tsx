@@ -567,7 +567,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
           <span style={{ color }}>{icon}</span>
           <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>{label}</span>
         </div>
-        <div className="text-xl font-black" style={{ color, fontFamily: "'Outfit', sans-serif" }}>
+        <div className="text-xl font-black" style={{ color, fontFamily: "var(--font-sans)" }}>
           {typeof value === "number" ? `${value}` : value}
           {typeof value === "number" && <span className="text-xs font-bold ml-0.5">{suffix}</span>}
         </div>
@@ -614,7 +614,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-sm font-black" style={{ color, fontFamily: "'Outfit', sans-serif" }}>{value}%</span>
+            <span className="text-sm font-black" style={{ color, fontFamily: "var(--font-sans)" }}>{value}%</span>
           </div>
         </div>
         <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>{label}</span>
@@ -913,7 +913,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
         >
           <Shield size={28} style={{ color: c.amber }} />
         </motion.div>
-        <h1 className="text-2xl font-extrabold" style={{ fontFamily: "'Outfit', sans-serif", color: c.text }}>
+        <h1 className="text-2xl font-extrabold" style={{ fontFamily: "var(--font-sans)", color: c.text }}>
           Research Integrity Checker
         </h1>
         <p className="text-sm" style={{ color: c.textSec }}>
@@ -1042,7 +1042,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
         >
           <Scan size={24} style={{ color: c.amber }} />
         </motion.div>
-        <h2 className="text-lg font-extrabold" style={{ fontFamily: "'Outfit', sans-serif", color: c.text }}>
+        <h2 className="text-lg font-extrabold" style={{ fontFamily: "var(--font-sans)", color: c.text }}>
           Analyzing Document
         </h2>
         <p className="text-xs" style={{ color: c.textSec }}>{progress.message}</p>
@@ -1136,7 +1136,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
             </motion.button>
             <div>
               <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: c.amber }}>Analysis Complete</p>
-              <h3 className="text-xs font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+              <h3 className="text-xs font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                 Research Integrity Report
               </h3>
             </div>
@@ -1201,7 +1201,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
               <span
                 className="text-sm font-black"
                 style={{
-                  fontFamily: "'Outfit', sans-serif",
+                  fontFamily: "var(--font-sans)",
                   color: report.writingQuality.label === "Excellent" ? "#10b981" : report.writingQuality.label === "Good" ? "#3b82f6" : "#f59e0b",
                 }}
               >
@@ -1280,7 +1280,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
             <div
               ref={documentViewerRef}
               className="flex-1 overflow-y-auto p-5 leading-relaxed text-[11px] custom-scrollbar select-text"
-              style={{ color: c.textSec, fontFamily: "'Outfit', sans-serif", lineHeight: "1.8" }}
+              style={{ color: c.textSec, fontFamily: "var(--font-sans)", lineHeight: "1.8" }}
             >
               {renderHighlightedDocument()}
             </div>
@@ -1421,7 +1421,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
       className="relative flex flex-col h-full min-h-[calc(100vh-120px)]"
-      style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}
+      style={{ color: c.text, fontFamily: "var(--font-sans)" }}
     >
       {/* Header */}
       <div className="flex justify-between items-center border-b pb-2.5 shrink-0" style={{ borderColor: c.border }}>
@@ -1439,7 +1439,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
             <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: c.amber }}>
               {step === "upload" ? "Document Analysis" : step === "analyzing" ? "Processing" : "Integrity Report"}
             </p>
-            <h2 className="text-base font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <h2 className="text-base font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>
               Research Integrity Checker
             </h2>
           </div>

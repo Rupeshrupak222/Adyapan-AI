@@ -751,7 +751,7 @@ export function MindMapsView() {
             <Network size={18} style={{ color: "#000" }} />
           </motion.div>
           <div>
-            <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Mind Maps</motion.h1>
+            <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Mind Maps</motion.h1>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="text-xs leading-tight" style={{ color: c.textMuted }}>Interactive AI-powered knowledge graphs</motion.p>
           </div>
         </div>
@@ -929,7 +929,7 @@ export function MindMapsView() {
                     <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: c.amber }}>
                       <Sparkles size={12} className="animate-pulse" /> Interactive Knowledge Graph
                     </motion.div>
-                    <h3 className="text-xl font-extrabold text-center" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>AI Mind Map Generator</h3>
+                    <h3 className="text-xl font-extrabold text-center" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>AI Mind Map Generator</h3>
                     <p className="text-sm" style={{ color: c.textSec }}>Compile any topic into an interactive, animated knowledge network graph.</p>
                   </div>
 
@@ -989,7 +989,7 @@ export function MindMapsView() {
                       onClick={() => setTopic(item.title)} className="p-5 rounded-2xl cursor-pointer group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                       <div className="flex items-start gap-3 mb-2">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
-                        <h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{item.title}</h4>
+                        <h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4>
                       </div>
                       <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
                     </motion.div>
@@ -1008,7 +1008,7 @@ export function MindMapsView() {
                     <motion.div key={item.step} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }} className="p-5 rounded-2xl transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                       <div className="flex items-start gap-3 mb-2">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
-                        <div><span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Step {item.step}</span><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{item.title}</h4></div>
+                        <div><span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Step {item.step}</span><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4></div>
                       </div>
                       <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
                     </motion.div>

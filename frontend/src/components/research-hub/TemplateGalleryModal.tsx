@@ -77,7 +77,7 @@ export function TemplateGalleryModal({
                 <Layers size={22} />
               </div>
               <div>
-                <h2 className="text-lg font-black tracking-tight" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+                <h2 className="text-lg font-black tracking-tight" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                   Academic Publication Template Gallery
                 </h2>
                 <p className="text-xs" style={{ color: c.textMuted }}>

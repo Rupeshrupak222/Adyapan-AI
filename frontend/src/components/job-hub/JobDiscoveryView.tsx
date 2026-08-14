@@ -344,7 +344,7 @@ function EmptyState({ c, onClearFilters }: { c: Record<string, string>; onClearF
       <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6" style={{ background: "rgba(245,158,11,0.08)" }}>
         <Search size={40} style={{ color: c.primary }} />
       </div>
-      <h3 className="text-lg font-bold mb-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>No jobs found</h3>
+      <h3 className="text-lg font-bold mb-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>No jobs found</h3>
       <p className="text-sm mb-6 max-w-sm" style={{ color: c.textMuted }}>
         We could not find any jobs matching your criteria. Try adjusting your filters or search terms.
       </p>
@@ -821,7 +821,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         onClick={e => e.stopPropagation()}>
 
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
             <Filter size={14} style={{ color: c.primary }} /> Filters
           </h3>
           <button onClick={isMobile ? () => setMobileFiltersOpen(false) : () => setFilterOpen(false)}
@@ -1223,7 +1223,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           {sidebarTab === "insights" && (
             <motion.div key="insights" initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -15 }} className="space-y-4">
               <div className="rounded-2xl border p-4 space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
-                <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                   <Activity size={14} style={{ color: c.primary }} /> Job Market
                 </h4>
                 {analytics ? (
@@ -1252,7 +1252,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
               {analytics?.bySkill && analytics.bySkill.length > 0 && (
                 <div className="rounded-2xl border p-4 space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
-                  <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                  <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                     <Code2 size={14} style={{ color: c.primary }} /> Top Skills
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
@@ -1272,7 +1272,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
               {analytics?.byLocation && analytics.byLocation.length > 0 && (
                 <div className="rounded-2xl border p-4 space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
-                  <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                  <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                     <MapPin size={14} style={{ color: c.primary }} /> Top Locations
                   </h4>
                   <div className="space-y-2">
@@ -1294,7 +1294,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           {sidebarTab === "recommended" && (
             <motion.div key="recommended" initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -15 }}
               className="rounded-2xl border p-4 space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
-              <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+              <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                 <Sparkles size={14} style={{ color: c.primary }} /> Recommended for You
               </h4>
               {recommendedJobs.length > 0 ? (
@@ -1322,7 +1322,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           {sidebarTab === "trending" && (
             <motion.div key="trending" initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -15 }}
               className="rounded-2xl border p-4 space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
-              <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+              <h4 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                 <Flame size={14} style={{ color: "#ef4444" }} /> Trending Jobs
               </h4>
               {trendingJobs.length > 0 ? (
@@ -1377,7 +1377,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             <div className="flex items-start gap-4 p-6 pb-4 border-b shrink-0" style={{ borderColor: c.border, background: isDark ? "rgba(15, 23, 42, 0.98)" : "rgba(255, 255, 255, 0.98)" }}>
               <CompanyLogo company={selectedJob.company} logoUrl={selectedJob.logoUrl} size={56} />
               <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-bold" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>{selectedJob.title}</h2>
+                <h2 className="text-lg font-bold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{selectedJob.title}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-sm font-semibold" style={{ color: c.textSec }}>{selectedJob.company}</span>
                   {selectedJob.location && (<>
@@ -1453,7 +1453,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                 {detailTab === "overview" && (
                   <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
                     <div>
-                      <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                      <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                         <Briefcase size={16} style={{ color: c.primary }} />
                         About this role
                       </h4>
@@ -1505,7 +1505,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                               return (
                                 <div key={idx} className="mt-5 mb-2 pt-2 border-t first:mt-0 first:pt-0 first:border-0" style={{ borderColor: c.border }}>
                                   <h5 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2"
-                                    style={{ color: c.primary, fontFamily: "Outfit, sans-serif" }}>
+                                    style={{ color: c.primary, fontFamily: "var(--font-sans)" }}>
                                     <span className="w-1.5 h-3 rounded-full" style={{ background: c.primary }} />
                                     {title}
                                   </h5>
@@ -1537,7 +1537,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
                     {selectedJob.benefits && selectedJob.benefits.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                        <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                           <Sparkles size={16} style={{ color: "#34d399" }} />
                           Perks & Benefits
                         </h4>
@@ -1577,7 +1577,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                         <>
                           {reqsList.length > 0 && (
                             <div>
-                              <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                              <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                                 <Target size={16} style={{ color: c.primary }} />
                                 Key Requirements & Qualifications ({reqsList.length})
                               </h4>
@@ -1594,7 +1594,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
                           {respsList.length > 0 && (
                             <div>
-                              <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                              <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                                 <Zap size={16} style={{ color: "#818cf8" }} />
                                 Core Responsibilities ({respsList.length})
                               </h4>
@@ -1625,7 +1625,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                 {detailTab === "skills" && (
                   <motion.div key="skills" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                      <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                         <Code2 size={16} style={{ color: c.primary }} />
                         Required Skills & Competencies ({selectedJob.skills?.length || 0})
                       </h4>
@@ -1669,7 +1669,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                       <div className="flex items-center gap-4">
                         <CompanyLogo company={selectedJob.company} logoUrl={selectedJob.logoUrl} size={64} />
                         <div>
-                          <h4 className="text-lg font-bold" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>{selectedJob.company}</h4>
+                          <h4 className="text-lg font-bold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{selectedJob.company}</h4>
                           <p className="text-xs mt-0.5 flex items-center gap-2" style={{ color: c.textMuted }}>
                             {selectedJob.industry && <span>{selectedJob.industry}</span>}
                             {selectedJob.industry && selectedJob.location && <span>•</span>}
@@ -1749,7 +1749,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                       <div className="flex items-center gap-5 p-5 rounded-2xl border" style={{ background: c.surface, borderColor: c.border }}>
                         <ScoreCircle score={aiMatch.overallScore} size={72} />
                         <div>
-                          <h4 className="text-base font-bold" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                          <h4 className="text-base font-bold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                             {aiMatch.overallScore >= 80 ? "Excellent Match!" : aiMatch.overallScore >= 60 ? "Good Match" : aiMatch.overallScore >= 40 ? "Moderate Match" : "Low Match"}
                           </h4>
                           <p className="text-xs mt-1 leading-relaxed" style={{ color: c.textMuted }}>
@@ -1765,7 +1765,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
                       {aiMatch.reasons && aiMatch.reasons.length > 0 && (
                         <div className="space-y-2">
-                          <h5 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                          <h5 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                             <Lightbulb size={14} style={{ color: c.primary }} /> Key Match Insights
                           </h5>
                           <div className="space-y-2">
@@ -1781,7 +1781,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
                       {aiMatch.preparationTips && aiMatch.preparationTips.length > 0 && (
                         <div className="space-y-2">
-                          <h5 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                          <h5 className="text-xs font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                             <Zap size={14} style={{ color: c.primary }} /> Recommendations & Next Steps
                           </h5>
                           <div className="space-y-2">
@@ -1944,7 +1944,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
               <Briefcase size={20} style={{ color: c.primary }} />
             </div>
             <div>
-              <h1 className="text-xl font-bold" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>Job Discovery</h1>
+              <h1 className="text-xl font-bold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Job Discovery</h1>
               <p className="text-[11px]" style={{ color: c.textMuted }}>
                 {formatCap99(total)} jobs found {activeFilters.length > 0 ? `· ${activeFilters.length} filters` : ""}
               </p>
@@ -2080,7 +2080,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           {savedPage === "saved" ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "Outfit, sans-serif" }}>
+                <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                   <BookmarkCheck size={16} style={{ color: c.primary }} /> Saved Jobs ({formatCap99(savedJobs.length)})
                 </h2>
                 <button onClick={() => setSavedPage("browse")}

@@ -185,7 +185,7 @@ export function AnalyticsHubView({ setView, activeModule = "analytics-hub", them
         <div className="flex justify-between items-center border-b pb-2.5 shrink-0" style={{ borderColor: c.border }}>
           <div>
             <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">Analytics Workspace</p>
-            <h2 className="text-base font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <h2 className="text-base font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>
               {tab === "interview" && "Interview Progress"}
               {tab === "resume" && "Resume Score"}
               {tab === "skills" && "Skill Growth"}
@@ -493,7 +493,7 @@ export function AnalyticsHubView({ setView, activeModule = "analytics-hub", them
               style={{ background: isDark ? "#0d1117" : "#ffffff", borderColor: c.border }}
             >
               <div className="flex items-start justify-between">
-                <h3 className="font-extrabold text-sm" style={{ fontFamily: "'Outfit', sans-serif" }}>Session Details</h3>
+                <h3 className="font-extrabold text-sm" style={{ fontFamily: "var(--font-sans)" }}>Session Details</h3>
                 <motion.button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-white" whileTap={{ scale: 0.96 }}>
                   <XCircle size={16} />
                 </motion.button>

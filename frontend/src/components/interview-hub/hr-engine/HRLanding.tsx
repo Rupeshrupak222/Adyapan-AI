@@ -107,7 +107,7 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
   };
 
   return (
-    <div className="relative min-h-full overflow-hidden" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+    <div className="relative min-h-full overflow-hidden" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
       {/* Background orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div className="absolute -top-32 -left-32 w-96 h-96 rounded-full"

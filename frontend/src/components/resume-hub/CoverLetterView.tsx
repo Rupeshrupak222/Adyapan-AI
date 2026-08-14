@@ -799,7 +799,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
           ticks: { display: false },
           grid: { color: c.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" },
           angleLines: { color: c.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" },
-          pointLabels: { color: c.textSec, font: { size: 10, family: "'Outfit', sans-serif", weight: "bold" as const } },
+          pointLabels: { color: c.textSec, font: { size: 10, family: "'Inter', sans-serif", weight: "bold" as const } },
         },
       },
     };
@@ -846,7 +846,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
       </motion.div>
       <div className="flex-1 min-w-0">
         <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-          className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+          className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
           AI Cover Letter Intelligence
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
@@ -891,7 +891,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
         <motion.div variants={fadeUp} initial="hidden" animate="visible" className="rounded-2xl p-5" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
           <div className="flex items-center gap-2 mb-3">
             <FileText size={16} style={{ color: c.amber }} />
-            <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Select Resume</h3>
+            <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Select Resume</h3>
           </div>
           {resumes.length > 0 && (
             <div className="space-y-2 mb-3">
@@ -934,7 +934,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
         <motion.div variants={fadeUp} custom={1} initial="hidden" animate="visible" className="rounded-2xl p-5" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2"><Briefcase size={16} style={{ color: c.amber }} />
-              <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Job Description</h3></div>
+              <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Job Description</h3></div>
             <button onClick={() => setJdExpanded(!jdExpanded)} className="p-1 rounded" style={{ color: c.textMuted }}>{jdExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</button>
           </div>
           <AnimatePresence>
@@ -973,7 +973,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
         {/* Company & Role */}
         <motion.div variants={fadeUp} custom={2} initial="hidden" animate="visible" className="rounded-2xl p-5" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
           <div className="flex items-center gap-2 mb-3"><Building2 size={16} style={{ color: c.amber }} />
-            <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Company & Role</h3></div>
+            <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Company & Role</h3></div>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
               <label className="block text-[10px] uppercase font-semibold mb-1.5" style={{ color: c.textSec }}>Company</label>
@@ -1019,7 +1019,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
         {/* Generation Settings */}
         <motion.div variants={fadeUp} custom={3} initial="hidden" animate="visible" className="rounded-2xl p-5" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
           <div className="flex items-center gap-2 mb-3"><Sparkles size={16} style={{ color: c.amber }} />
-            <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Generation Settings</h3></div>
+            <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Generation Settings</h3></div>
           <div className="space-y-4">
             <div>
               <label className="block text-[10px] uppercase font-semibold mb-1.5" style={{ color: c.textSec }}>Tone</label>
@@ -1093,7 +1093,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
             <Sparkles size={32} style={{ color: c.amber }} />
           </motion.div>
         </div>
-        <h2 className="text-xl font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Generating Cover Letter</h2>
+        <h2 className="text-xl font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Generating Cover Letter</h2>
         <div className="space-y-2">
           {GENERATING_STEPS.map((step, i) => (
             <motion.div key={step} className="flex items-center gap-3 p-3 rounded-xl transition-all"
@@ -1200,7 +1200,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
         {/* Improvements Panel */}
         <motion.div variants={fadeUp} initial="hidden" animate="visible" className="rounded-2xl p-5" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2"><Lightbulb size={16} style={{ color: c.amber }} /><span className="text-xs font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Improvements</span></div>
+            <div className="flex items-center gap-2"><Lightbulb size={16} style={{ color: c.amber }} /><span className="text-xs font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Improvements</span></div>
             <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={handleGetImprovements} disabled={loadingImprovements}
               className="px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1"
               style={{ background: c.amberBg, color: c.amber, border: `1px solid ${c.amberBorder}` }}>
@@ -1244,7 +1244,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
   const renderHistoryPanel = () => (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+        <h3 className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
           <History size={14} style={{ color: c.amber }} /> Library
         </h3>
         <div className="flex gap-1">
@@ -1291,7 +1291,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
     <div className="space-y-4">
       <div className="rounded-2xl p-5" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+          <h3 className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
             <BarChart3 size={14} style={{ color: c.amber }} /> Quality Score
           </h3>
           <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={handleScoreLetter} disabled={scoringLetter}
@@ -1303,7 +1303,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
         {scores ? (
           <>
             <div className="text-center mb-4">
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-4xl font-extrabold" style={{ color: c.amber, fontFamily: "'Outfit', sans-serif" }}>{scores.overallScore}<span className="text-lg">/100</span></motion.div>
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-4xl font-extrabold" style={{ color: c.amber, fontFamily: "var(--font-sans)" }}>{scores.overallScore}<span className="text-lg">/100</span></motion.div>
               <div className="text-[10px] font-semibold" style={{ color: c.textMuted }}>Overall Score</div>
             </div>
             <div className="h-[200px]"><Radar data={radarData!} options={radarOptions} /></div>
@@ -1333,10 +1333,10 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
       </div>
       {roleMatch && (
         <div className="rounded-2xl p-5" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
-          <h3 className="text-xs font-extrabold mb-3 flex items-center gap-1.5" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+          <h3 className="text-xs font-extrabold mb-3 flex items-center gap-1.5" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
             <Target size={14} style={{ color: c.amber }} /> Role Match</h3>
           <div className="text-center mb-3">
-            <div className="text-3xl font-extrabold" style={{ color: c.amber, fontFamily: "'Outfit', sans-serif" }}>{roleMatch.matchScore}%</div>
+            <div className="text-3xl font-extrabold" style={{ color: c.amber, fontFamily: "var(--font-sans)" }}>{roleMatch.matchScore}%</div>
             <div className="text-[10px] font-semibold" style={{ color: c.textMuted }}>Match Score</div>
           </div>
           <div className="h-[60px]"><Bar data={matchBarData!} options={matchBarOptions} /></div>
@@ -1359,7 +1359,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
 
   const renderHighlightsPanel = () => (
     <div className="rounded-2xl p-5 space-y-3" style={{ background: c.surface, border: `1px solid ${c.border}` }}>
-      <h3 className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+      <h3 className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
         <Layers size={14} style={{ color: c.amber }} /> Highlight Map
       </h3>
       <p className="text-[10px]" style={{ color: c.textMuted }}>Shows where AI sourced each part of your cover letter from your resume.</p>

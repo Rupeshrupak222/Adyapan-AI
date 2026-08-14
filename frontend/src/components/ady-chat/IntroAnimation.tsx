@@ -285,7 +285,7 @@ export function IntroAnimation({ isDark, onComplete }: IntroAnimationProps) {
                   className="text-5xl font-black tracking-tight"
                   style={{
                     color: isDark ? "#ffffff" : "#0f172a",
-                    fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                    fontFamily: "var(--font-sans)",
                     letterSpacing: "-0.02em",
                   }}
                 >
@@ -309,7 +309,7 @@ export function IntroAnimation({ isDark, onComplete }: IntroAnimationProps) {
                     className="text-lg font-bold"
                     style={{
                       color: isDark ? "#cbd5e1" : "#334155",
-                      fontFamily: "'Outfit', sans-serif",
+                      fontFamily: "var(--font-sans)",
                       letterSpacing: "0.01em",
                     }}
                   >

@@ -32,7 +32,7 @@ export const InterviewRouteGuard: React.FC<InterviewRouteGuardProps> = ({
               ? "bg-slate-900 text-white border-red-500/30"
               : "bg-white text-slate-900 border-red-300"
           }`}
-          style={{ fontFamily: "'Outfit', sans-serif" }}
+          style={{ fontFamily: "var(--font-sans)" }}
         >
           <div className="flex items-center space-x-3 mb-4">
             <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400">

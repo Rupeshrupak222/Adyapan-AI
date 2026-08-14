@@ -369,8 +369,8 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
     borderWidth: 1,
     cornerRadius: 10,
     padding: 10,
-    titleFont: { family: "'Outfit', sans-serif", weight: "bold" as const, size: 12 },
-    bodyFont: { family: "'Outfit', sans-serif", size: 11 },
+    titleFont: { family: "'Inter', sans-serif", weight: "bold" as const, size: 12 },
+    bodyFont: { family: "'Inter', sans-serif", size: 11 },
   };
 
   const gridColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)";
@@ -380,7 +380,7 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
     return (
       <div
         className="flex items-center justify-center min-h-[60vh]"
-        style={{ fontFamily: "'Outfit', sans-serif" }}
+        style={{ fontFamily: "var(--font-sans)" }}
       >
         <div className="text-center space-y-4">
           <Loader2 size={32} className="animate-spin mx-auto" style={{ color: c.primary }} />
@@ -394,7 +394,7 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
     return (
       <div
         className="flex items-center justify-center min-h-[60vh]"
-        style={{ fontFamily: "'Outfit', sans-serif" }}
+        style={{ fontFamily: "var(--font-sans)" }}
       >
         <div className="text-center space-y-4">
           <AlertTriangle size={32} className="mx-auto" style={{ color: c.red }} />
@@ -447,7 +447,7 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
   return (
     <div
       className="relative min-h-full overflow-hidden"
-      style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}
+      style={{ color: c.text, fontFamily: "var(--font-sans)" }}
     >
       {/* Background orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -617,14 +617,14 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                     scales: {
                       x: {
                         grid: { color: gridColor },
-                        ticks: { color: tickColor, font: { family: "'Outfit', sans-serif", size: 10 }, maxRotation: 45 },
+                        ticks: { color: tickColor, font: { family: "'Inter', sans-serif", size: 10 }, maxRotation: 45 },
                         border: { display: false },
                       },
                       y: {
                         min: 0,
                         max: 100,
                         grid: { color: gridColor },
-                        ticks: { color: tickColor, font: { family: "'Outfit', sans-serif", size: 10 }, stepSize: 20 },
+                        ticks: { color: tickColor, font: { family: "'Inter', sans-serif", size: 10 }, stepSize: 20 },
                         border: { display: false },
                       },
                     },
@@ -678,13 +678,13 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                           stepSize: 20,
                           color: tickColor,
                           backdropColor: "transparent",
-                          font: { family: "'Outfit', sans-serif", size: 9 },
+                          font: { family: "'Inter', sans-serif", size: 9 },
                         },
                         grid: { color: gridColor },
                         angleLines: { color: gridColor },
                         pointLabels: {
                           color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)",
-                          font: { family: "'Outfit', sans-serif", size: 10, weight: "bold" as const },
+                          font: { family: "'Inter', sans-serif", size: 10, weight: "bold" as const },
                         },
                       },
                     },
@@ -740,14 +740,14 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                     scales: {
                       x: {
                         grid: { color: gridColor },
-                        ticks: { color: tickColor, font: { family: "'Outfit', sans-serif", size: 10 }, stepSize: 1 },
+                        ticks: { color: tickColor, font: { family: "'Inter', sans-serif", size: 10 }, stepSize: 1 },
                         border: { display: false },
                       },
                       y: {
                         grid: { display: false },
                         ticks: {
                           color: tickColor,
-                          font: { family: "'Outfit', sans-serif", size: 10, weight: "bold" as const },
+                          font: { family: "'Inter', sans-serif", size: 10, weight: "bold" as const },
                         },
                         border: { display: false },
                       },
@@ -887,24 +887,24 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
                     scales: {
                       x: {
                         grid: { color: gridColor },
-                        ticks: { color: tickColor, font: { family: "'Outfit', sans-serif", size: 10 } },
+                        ticks: { color: tickColor, font: { family: "'Inter', sans-serif", size: 10 } },
                         border: { display: false },
                       },
                       y: {
                         position: "left",
                         grid: { color: gridColor },
-                        ticks: { color: tickColor, font: { family: "'Outfit', sans-serif", size: 10 }, stepSize: 1 },
+                        ticks: { color: tickColor, font: { family: "'Inter', sans-serif", size: 10 }, stepSize: 1 },
                         border: { display: false },
-                        title: { display: true, text: "Count", color: tickColor, font: { family: "'Outfit', sans-serif", size: 10 } },
+                        title: { display: true, text: "Count", color: tickColor, font: { family: "'Inter', sans-serif", size: 10 } },
                       },
                       y1: {
                         position: "right",
                         min: 0,
                         max: 100,
                         grid: { drawOnChartArea: false },
-                        ticks: { color: tickColor, font: { family: "'Outfit', sans-serif", size: 10 }, callback: (v) => `${v}%` },
+                        ticks: { color: tickColor, font: { family: "'Inter', sans-serif", size: 10 }, callback: (v) => `${v}%` },
                         border: { display: false },
-                        title: { display: true, text: "Score", color: tickColor, font: { family: "'Outfit', sans-serif", size: 10 } },
+                        title: { display: true, text: "Score", color: tickColor, font: { family: "'Inter', sans-serif", size: 10 } },
                       },
                     },
                 }}

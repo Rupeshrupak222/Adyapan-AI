@@ -208,7 +208,7 @@ export function ChatInput({
           style={{
             color: text,
             maxHeight: 160,
-            fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+            fontFamily: "var(--font-sans)",
           }}
         />
 

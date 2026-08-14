@@ -189,7 +189,7 @@ export default function HRView({ theme }: HRViewProps) {
       style={{
         background: "var(--bg-dark)",
         color: "var(--text-primary)",
-        fontFamily: "'Outfit', sans-serif",
+        fontFamily: "var(--font-sans)",
       }}
     >
       <InterviewRouteGuard

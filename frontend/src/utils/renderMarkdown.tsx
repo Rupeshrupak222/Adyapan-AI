@@ -295,7 +295,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     // Heading 1
     if (line.startsWith("# ")) {
       elements.push(
-        <h1 key={elementKey++} className="text-2xl font-black mb-3 mt-5 first:mt-0" style={{ color: text, fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.02em" }}>
+        <h1 key={elementKey++} className="text-2xl font-black mb-3 mt-5 first:mt-0" style={{ color: text, fontFamily: "var(--font-display), sans-serif", letterSpacing: "-0.02em" }}>
           {inlineFormat(line.slice(2))}
         </h1>
       );
@@ -306,7 +306,7 @@ export function renderMarkdown(content: string, isDark: boolean): React.ReactNod
     // Heading 2
     if (line.startsWith("## ")) {
       elements.push(
-        <h2 key={elementKey++} className="text-xl font-bold mb-2 mt-4 first:mt-0" style={{ color: text, fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.01em" }}>
+        <h2 key={elementKey++} className="text-xl font-bold mb-2 mt-4 first:mt-0" style={{ color: text, fontFamily: "var(--font-display), sans-serif", letterSpacing: "-0.01em" }}>
           {inlineFormat(line.slice(3))}
         </h2>
       );

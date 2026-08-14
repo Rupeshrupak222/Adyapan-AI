@@ -679,7 +679,7 @@ export function AtsCheckerView({ setView }: Props) {
         </motion.div>
         <div className="flex-1 min-w-0">
           <motion.h1 key={screen} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-            className="text-base font-extrabold" style={{ fontFamily: "'Outfit',sans-serif" }}>
+            className="text-base font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>
             {screen === "home" ? "ATS Intelligence Engine" : screen === "jd" ? "Job Description" :
               screen === "loading" ? "Analyzing..." : screen === "dashboard" ? "ATS Dashboard" :
                 screen === "history" ? "Analysis History" : screen === "compare" ? "Resume Comparison" : "Complete"}
@@ -746,7 +746,7 @@ export function AtsCheckerView({ setView }: Props) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.25, duration: 0.5 }}
                   className="text-2xl font-extrabold mb-2"
-                  style={{ fontFamily: "'Outfit',sans-serif", color: c.tx }}
+                  style={{ fontFamily: "var(--font-sans)", color: c.tx }}
                 >
                   ATS Intelligence Engine
                 </motion.h1>

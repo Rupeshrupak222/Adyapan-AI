@@ -272,7 +272,7 @@ export default function PremiumPage() {
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
-        <div className="flex items-center gap-2 font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+        <div className="flex items-center gap-2 font-bold" style={{ fontFamily: "var(--font-display), sans-serif" }}>
           <Crown className="w-5 h-5 text-amber-500" />
           Premium
         </div>
@@ -292,7 +292,7 @@ export default function PremiumPage() {
           <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
             <Crown className="w-8 h-8 text-amber-500" />
           </div>
-          <h1 className="text-4xl font-extrabold mb-3" style={{ fontFamily: "'Outfit', sans-serif" }}>
+          <h1 className="text-4xl font-extrabold mb-3" style={{ fontFamily: "var(--font-display), sans-serif" }}>
             Unlock <span style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Premium</span>
           </h1>
           <p className="text-sm max-w-lg mx-auto transition-colors duration-300" style={{ color: colors.subtext }}>

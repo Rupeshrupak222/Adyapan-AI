@@ -90,7 +90,7 @@ export function ModelSelector({ selectedModel, isDark, onModelChange }: ModelSel
         <span style={{ color: "#f59e0b" }}>
           <ModelIcon iconKey={current.iconKey} size={12} />
         </span>
-        <span style={{ fontFamily: "'Outfit', sans-serif" }}>{current.displayName}</span>
+        <span style={{ fontFamily: "var(--font-sans)" }}>{current.displayName}</span>
         <motion.div
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2 }}
@@ -185,7 +185,7 @@ function ModelOption({
       <div className="flex-1 min-w-0">
         <div
           className="text-[11px] font-semibold"
-          style={{ color: isSelected ? "#f59e0b" : text, fontFamily: "'Outfit', sans-serif" }}
+          style={{ color: isSelected ? "#f59e0b" : text, fontFamily: "var(--font-sans)" }}
         >
           {model.displayName}
         </div>

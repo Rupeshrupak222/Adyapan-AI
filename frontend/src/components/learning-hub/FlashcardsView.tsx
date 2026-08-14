@@ -370,7 +370,7 @@ export function FlashcardsView() {
             <Layers size={18} style={{ color: "#fff" }} />
           </motion.div>
           <div>
-            <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>AI Flashcards</motion.h1>
+            <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>AI Flashcards</motion.h1>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="text-xs leading-tight" style={{ color: c.textMuted }}>Spaced repetition accelerated by AI.</motion.p>
           </div>
         </div>
@@ -409,7 +409,7 @@ export function FlashcardsView() {
                     <div className="inline-flex h-12 w-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-orange-600 items-center justify-center text-white shadow-lg mb-1">
                       <Brain size={22} />
                     </div>
-                    <h2 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Flashcard Generator</h2>
+                    <h2 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Flashcard Generator</h2>
                     <p className="text-xs" style={{ color: c.textMuted }}>Provide any study topic to receive tailored flashcards.</p>
                   </div>
 
@@ -527,7 +527,7 @@ export function FlashcardsView() {
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
                         <div>
                           <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: "#f59e0b" }}>Step {item.step}</span>
-                          <h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{item.title}</h4>
+                          <h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4>
                         </div>
                       </div>
                       <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>

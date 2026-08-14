@@ -23,6 +23,10 @@ const Scene = dynamic(() => import("@/components/3d/Scene"), {
   loading: () => <div style={{ width: "100%", height: "100%", minHeight: 300 }} />,
 });
 
+const WarpText = dynamic(() => import("@/components/ui/WarpText"), {
+  ssr: false,
+});
+
 function DeferredScene() {
   const [show, setShow] = useState(false);
   useEffect(() => {
@@ -294,7 +298,7 @@ export default function LandingPage() {
       >
         {/* Large "ADYAPAN" text background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-          <div className="text-9xl md:text-[200px] font-black text-amber-500/25 whitespace-nowrap select-none" style={{ letterSpacing: "0.05em", textShadow: "0 0 30px rgba(249, 115, 22, 0.2)" }}>
+          <div className="text-9xl md:text-[200px] font-bold text-amber-500/25 whitespace-nowrap select-none" style={{ letterSpacing: "0.05em", textShadow: "0 0 30px rgba(249, 115, 22, 0.2)" }}>
             ADYAPAN
           </div>
         </div>
@@ -308,33 +312,40 @@ export default function LandingPage() {
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
             <motion.h1
-              className="text-6xl sm:text-7xl md:text-8xl font-black leading-tight tracking-tighter text-white"
-              style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900 }}
+              className="text-6xl sm:text-7xl md:text-8xl font-bold leading-tight tracking-tighter text-white"
+              style={{ fontFamily: "var(--font-display), sans-serif", fontWeight: 900 }}
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.7 }}
             >
               One AI
             </motion.h1>
-            <motion.h1
-              className="text-6xl sm:text-7xl md:text-8xl font-black leading-tight tracking-tighter"
-              style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontWeight: 900,
-                background: "linear-gradient(90deg, #ea580c 0%, #f59e0b 50%, #ea580c 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
+            <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.7 }}
+              className="w-full flex justify-center items-center -my-2"
             >
-              <TypingAnimation text="Operating System" />
-            </motion.h1>
+              <WarpText
+                text="Operating System"
+                color="#f59e0b"
+                warpStrength={0.08}
+                warpScale={1.7}
+                speed={0.55}
+                pointerInfluence={0.42}
+                pointerStrength={0.38}
+                refraction={0.018}
+                ripple
+                fontSize="clamp(3rem, 7.5vw, 7.5rem)"
+                fontWeight={900}
+                fontFamily="'Space Grotesk', sans-serif"
+                letterSpacing="-0.03em"
+                style={{ height: "140px", width: "100%", maxWidth: "900px" }}
+              />
+            </motion.div>
             <motion.h1
-              className="text-6xl sm:text-7xl md:text-8xl font-black leading-tight tracking-tighter text-white"
-              style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900 }}
+              className="text-6xl sm:text-7xl md:text-8xl font-bold leading-tight tracking-tighter text-white"
+              style={{ fontFamily: "var(--font-display), sans-serif", fontWeight: 900 }}
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.7 }}
@@ -442,7 +453,7 @@ export default function LandingPage() {
             <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
               <Layers size={12} /> Automated Pipeline
             </motion.div>
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-4xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Adyapan AI Builds Your Journey Automatically
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base">
@@ -468,7 +479,7 @@ export default function LandingPage() {
                 whileHover={{ y: -6, borderColor: `rgba(245,158,11,0.25)`, transition: { type: "spring", stiffness: 200 } }}
                 className="p-6 bg-white/2 border border-white/5 rounded-2xl space-y-4 flex flex-col justify-between relative overflow-hidden group"
               >
-                <div className="absolute top-0 right-0 text-6xl font-extrabold text-white/5 select-none leading-none pr-3 pt-1">{item.step}</div>
+                <div className="absolute top-0 right-0 text-6xl font-bold text-white/5 select-none leading-none pr-3 pt-1">{item.step}</div>
                 <div className={`text-xs uppercase text-${item.color}-400 font-bold tracking-wider relative z-10`}>{item.title}</div>
                 {"steps" in item ? (
                   <div className="space-y-2 relative z-10">
@@ -525,7 +536,7 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-4xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               The Agent Ecosystem
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base leading-relaxed">
@@ -633,7 +644,7 @@ export default function LandingPage() {
             <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
               <Brain size={12} /> Personalized Academy
             </motion.div>
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Explore the Learning Hub
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base max-w-xl mx-auto">
@@ -689,7 +700,7 @@ export default function LandingPage() {
             <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
               <Terminal size={12} /> Tech & Execution
             </motion.div>
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Coding Assistant & Workspace
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base leading-relaxed">
@@ -870,7 +881,7 @@ export default function LandingPage() {
             <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
               <FileText size={12} /> Conversion & Profile
             </motion.div>
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Most Important Conversion: Resume Hub
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base leading-relaxed">
@@ -916,7 +927,7 @@ export default function LandingPage() {
             <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
               <MessageSquare size={12} /> Behavioral Drills
             </motion.div>
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               AI Interview Simulation
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base leading-relaxed">
@@ -1029,7 +1040,7 @@ export default function LandingPage() {
             <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
               <Trophy size={12} /> Opportunities
             </motion.div>
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Placement Hub & Opportunities
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base max-w-xl mx-auto">
@@ -1084,7 +1095,7 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Live Platform Statistics
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base leading-relaxed">
@@ -1111,7 +1122,7 @@ export default function LandingPage() {
                   className="p-5 bg-white/5 border border-white/10 rounded-2xl text-center space-y-1"
                   whileHover={{ scale: 1.03, borderColor: "rgba(245,158,11,0.3)" }}
                 >
-                  <span className="block text-2xl font-extrabold text-white">
+                  <span className="block text-2xl font-bold text-white">
                     <AnimatedNumber value={stat.value} />
                     {stat.suffix}
                   </span>
@@ -1181,7 +1192,7 @@ export default function LandingPage() {
             <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
               <Zap size={12} /> Simple Pricing
             </motion.div>
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Transparent, Flexible Plans
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base max-w-xl mx-auto">
@@ -1261,7 +1272,7 @@ export default function LandingPage() {
                 <div className="space-y-2 pt-2">
                   <span className={`text-sm font-bold ${plan.popular ? "text-amber-400" : "text-gray-400"}`}>{plan.title}</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold text-white">{plan.price}</span>
+                    <span className="text-4xl font-bold text-white">{plan.price}</span>
                     {plan.period && <span className="text-xs text-gray-500">{plan.period}</span>}
                   </div>
                   {plan.annualNote && <div className="text-[10px] text-green-400 font-semibold">{plan.annualNote}</div>}
@@ -1309,7 +1320,7 @@ export default function LandingPage() {
             <motion.div variants={staggerItem} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
               <Quote size={12} /> Student Success
             </motion.div>
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Loved by Students &amp; Professionals
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base max-w-xl mx-auto">
@@ -1377,7 +1388,7 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={staggerItem} className="text-3xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Frequently Asked Questions
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base max-w-xl mx-auto">
@@ -1485,7 +1496,7 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          <motion.h2 variants={staggerItem} className="text-4xl md:text-6xl font-extrabold text-white" style={{ fontFamily: "'Outfit', sans-serif" }}>
+          <motion.h2 variants={staggerItem} className="text-4xl md:text-6xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
             Your Learning. Your Skills.<br />
             <span className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 bg-clip-text text-transparent">Your Future. Powered by AI.</span>
           </motion.h2>

@@ -319,7 +319,7 @@ export default function CodingIDEPage() {
         </motion.button>
 
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
-          <h1 className="text-sm font-black truncate" style={{ fontFamily: "'Outfit', sans-serif" }}>
+          <h1 className="text-sm font-black truncate" style={{ fontFamily: "var(--font-sans)" }}>
             {challenge?.title || "Challenge"}
           </h1>
           {challenge && <DifficultyBadge difficulty={challenge.difficulty} />}

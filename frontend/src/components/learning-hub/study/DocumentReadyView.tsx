@@ -253,7 +253,7 @@ export function DocumentReadyView({
                       <BookOpen size={14} style={{ color: c.amber }} />
                     </div>
                     <div>
-                      <h3 className="text-base font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{t.name}</h3>
+                      <h3 className="text-base font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{t.name}</h3>
                       {!isOpen && (
                         <p className="text-xs mt-0.5 line-clamp-1" style={{ color: c.textMuted }}>{t.overview.slice(0, 80)}…</p>
                       )}
@@ -294,7 +294,7 @@ export function DocumentReadyView({
                             <div className="space-y-4 pl-4 border-l-2" style={{ borderColor: c.border }}>
                               {t.subtopics.map((sub, sIdx) => (
                                 <div key={sIdx} className="space-y-1">
-                                  <h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+                                  <h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
                                     {sub.name}
                                   </h4>
                                   <div className="text-sm leading-relaxed" style={{ color: c.textSec }}>

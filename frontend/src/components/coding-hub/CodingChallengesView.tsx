@@ -487,7 +487,7 @@ export function CodingChallengesView() {
             <Trophy size={16} />
           </div>
           <div>
-            <h1 className="text-sm font-black" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <h1 className="text-sm font-black" style={{ fontFamily: "var(--font-sans)" }}>
               {view === "categories" ? "Coding Challenges" : selectedCategory?.category?.name || "Loading..."}
             </h1>
             <p className="text-[10px] font-semibold" style={{ color: mutedText }}>

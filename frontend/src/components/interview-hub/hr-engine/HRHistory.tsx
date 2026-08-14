@@ -78,7 +78,7 @@ export default function HRHistory({ onBack, onSelectSession }: HRHistoryProps) {
   }
 
   return (
-    <div className="min-h-full" style={{ background: c.bg, fontFamily: "'Outfit', sans-serif" }}>
+    <div className="min-h-full" style={{ background: c.bg, fontFamily: "var(--font-sans)" }}>
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

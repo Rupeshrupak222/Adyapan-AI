@@ -206,7 +206,7 @@ export default function EngineView({ theme }: EngineViewProps) {
       style={{
         background: "var(--bg-dark)",
         color: "var(--text-primary)",
-        fontFamily: "'Outfit', sans-serif",
+        fontFamily: "var(--font-sans)",
       }}
     >
       <InterviewRouteGuard

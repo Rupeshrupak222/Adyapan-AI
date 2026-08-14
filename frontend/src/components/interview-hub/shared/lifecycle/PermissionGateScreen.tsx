@@ -60,7 +60,7 @@ export const PermissionGateScreen: React.FC<PermissionGateScreenProps> = ({
       className={`min-h-[calc(100vh-76px)] flex items-center justify-center p-4 md:p-6 transition-colors ${
         isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"
       }`}
-      style={{ fontFamily: "'Outfit', sans-serif" }}
+      style={{ fontFamily: "var(--font-sans)" }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 15 }}

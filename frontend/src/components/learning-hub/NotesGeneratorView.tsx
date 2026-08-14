@@ -246,7 +246,7 @@ export function NotesGeneratorView() {
             <BookOpen size={18} style={{ color: "#000" }} />
           </motion.div>
           <div>
-            <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Notes Generator</motion.h1>
+            <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Notes Generator</motion.h1>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="text-xs leading-tight" style={{ color: c.textMuted }}>AI-powered comprehensive study notes</motion.p>
           </div>
         </div>
@@ -419,7 +419,7 @@ export function NotesGeneratorView() {
                   <div className="absolute bottom-4 left-8 w-16 h-16 rounded-full" style={{ opacity: c.isDark ? 0.04 : 0.06, background: "radial-gradient(circle, #8b5cf6, transparent)" }} />
                 </div>
                 <div className="relative z-10 space-y-4">
-                  <h3 className="text-lg font-extrabold text-center" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Configure Notes Outline</h3>
+                  <h3 className="text-lg font-extrabold text-center" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Configure Notes Outline</h3>
                   <div className="space-y-3 max-w-xl mx-auto">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold" style={{ color: c.textSec }}>Topic or Subject</label>
@@ -479,7 +479,7 @@ export function NotesGeneratorView() {
                       onClick={() => setTopic(item.title)} className="p-5 rounded-2xl relative overflow-hidden cursor-pointer group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
-                        <div><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{item.title}</h4></div>
+                        <div><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4></div>
                       </div>
                       <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
                     </motion.div>
@@ -499,7 +499,7 @@ export function NotesGeneratorView() {
                     <motion.div key={item.step} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }} className="p-5 rounded-2xl relative overflow-hidden group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
-                        <div><span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Step {item.step}</span><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{item.title}</h4></div>
+                        <div><span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Step {item.step}</span><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4></div>
                       </div>
                       <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
                     </motion.div>
@@ -531,7 +531,7 @@ export function NotesGeneratorView() {
                 <div className="absolute inset-0 flex items-center justify-center"><Brain size={28} style={{ color: c.amber }} /></div>
               </div>
               <div className="text-center space-y-1">
-                <h3 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Generating Notes...</h3>
+                <h3 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Generating Notes...</h3>
                 <p className="text-sm" style={{ color: c.textMuted }}>{statusMsg}</p>
               </div>
               <div className="w-full max-w-lg grid grid-cols-3 gap-3">
@@ -695,7 +695,7 @@ export function NotesGeneratorView() {
                               <Layers size={14} style={{ color: c.amber }} />
                             </div>
                             <div>
-                              <h3 className="text-base font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{s.title}</h3>
+                              <h3 className="text-base font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{s.title}</h3>
                               {!isOpen && <p className="text-xs mt-0.5 line-clamp-1" style={{ color: c.textMuted }}>{s.content.slice(0, 80)}…</p>}
                             </div>
                           </div>

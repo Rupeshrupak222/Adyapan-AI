@@ -62,7 +62,7 @@ export function ResearchDashboard({
             >
               <Sparkles size={14} /> Peer-Reviewed Research Paper Engine
             </div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
               Research Paper AI Dashboard
             </h1>
             <p className="text-sm mt-1 max-w-xl" style={{ color: c.textMuted }}>

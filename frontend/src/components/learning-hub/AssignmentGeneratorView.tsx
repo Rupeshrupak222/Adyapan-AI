@@ -165,7 +165,7 @@ function renderAssignmentMarkdown(content: string, c: ReturnType<typeof mkColors
                   ? "text-lg text-amber-400 mt-6 mb-3 pb-1 border-b border-amber-500/20"
                   : "text-base text-amber-400 mt-5 mb-2"
               }`}
-              style={{ fontFamily: "'Outfit', sans-serif" }}
+              style={{ fontFamily: "var(--font-sans)" }}
             >
               {text}
             </h4>
@@ -528,7 +528,7 @@ export function AssignmentGeneratorView() {
             <PenTool size={18} style={{ color: "#000" }} />
           </motion.div>
           <div>
-            <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Assignment Generator</motion.h1>
+            <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Assignment Generator</motion.h1>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="text-xs leading-tight" style={{ color: c.textMuted }}>AI-powered academic drafts with references</motion.p>
           </div>
         </div>
@@ -701,7 +701,7 @@ export function AssignmentGeneratorView() {
                   <div className="absolute bottom-4 left-8 w-16 h-16 rounded-full" style={{ opacity: c.isDark ? 0.04 : 0.06, background: "radial-gradient(circle, #8b5cf6, transparent)" }} />
                 </div>
                 <div className="relative z-10 space-y-4">
-                  <h3 className="text-lg font-extrabold text-center" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Configure Assignment Draft</h3>
+                  <h3 className="text-lg font-extrabold text-center" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Configure Assignment Draft</h3>
                   <div className="space-y-3 max-w-xl mx-auto">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold" style={{ color: c.textSec }}>Assignment Topic</label>
@@ -753,7 +753,7 @@ export function AssignmentGeneratorView() {
                       onClick={() => setTopic(item.title)} className="p-5 rounded-2xl relative overflow-hidden cursor-pointer group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
-                        <div><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{item.title}</h4></div>
+                        <div><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4></div>
                       </div>
                       <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
                     </motion.div>
@@ -773,7 +773,7 @@ export function AssignmentGeneratorView() {
                     <motion.div key={item.step} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }} className="p-5 rounded-2xl relative overflow-hidden group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
-                        <div><span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Step {item.step}</span><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{item.title}</h4></div>
+                        <div><span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Step {item.step}</span><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4></div>
                       </div>
                       <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
                     </motion.div>
@@ -805,7 +805,7 @@ export function AssignmentGeneratorView() {
                 <div className="absolute inset-0 flex items-center justify-center"><Brain size={28} style={{ color: c.amber }} /></div>
               </div>
               <div className="text-center space-y-1">
-                <h3 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Writing Assignment...</h3>
+                <h3 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Writing Assignment...</h3>
                 <p className="text-sm" style={{ color: c.textMuted }}>{statusMsg}</p>
               </div>
               <div className="w-full max-w-lg grid grid-cols-3 gap-3">
@@ -973,7 +973,7 @@ export function AssignmentGeneratorView() {
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <h3 className="text-base font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{s.title}</h3>
+                                <h3 className="text-base font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{s.title}</h3>
                                 <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: c.amberBg, color: c.amber, border: `1px solid ${c.amberBorder}` }}>{s.pageEstimate}</span>
                               </div>
                               {!isOpen && !s.isRefs && <p className="text-xs mt-0.5 line-clamp-1" style={{ color: c.textMuted }}>{stripMarkdown(s.content).slice(0, 90)}…</p>}

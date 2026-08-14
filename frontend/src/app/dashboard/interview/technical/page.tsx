@@ -15,7 +15,7 @@ const TechnicalInterviewView = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="min-h-screen bg-[#080710] flex items-center justify-center" style={{ fontFamily: "'Outfit', sans-serif" }}>
+      <div className="min-h-screen bg-[#080710] flex items-center justify-center" style={{ fontFamily: "var(--font-sans)" }}>
         <div className="text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20 animate-pulse">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

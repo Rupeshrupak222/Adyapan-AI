@@ -150,7 +150,7 @@ function SectionCard({ title, icon, children, c, delay = 0, accent }: {
         <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: accent || c.amBg, color: accent ? "#fff" : c.am }}>
           {icon}
         </div>
-        <h3 className="text-xs font-extrabold" style={{ color: c.tx, fontFamily: "'Outfit', sans-serif" }}>{title}</h3>
+        <h3 className="text-xs font-extrabold" style={{ color: c.tx, fontFamily: "var(--font-sans)" }}>{title}</h3>
       </div>
       <div className="p-4">{children}</div>
     </motion.div>
@@ -486,7 +486,7 @@ export function LinkedInView({ setView }: Props) {
           <div>
             <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
               className="text-base font-extrabold leading-tight"
-              style={{ color: c.tx, fontFamily: "'Outfit', sans-serif" }}>
+              style={{ color: c.tx, fontFamily: "var(--font-sans)" }}>
               LinkedIn Career Optimizer
             </motion.h1>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
@@ -523,7 +523,7 @@ export function LinkedInView({ setView }: Props) {
                 <Brain size={28} style={{ color: "#fff" }} />
               </motion.div>
               <div>
-                <h3 className="text-sm font-extrabold mb-1" style={{ color: c.tx, fontFamily: "'Outfit', sans-serif" }}>
+                <h3 className="text-sm font-extrabold mb-1" style={{ color: c.tx, fontFamily: "var(--font-sans)" }}>
                   Optimizing Your LinkedIn Profile
                 </h3>
                 <p className="text-[10px]" style={{ color: c.txM }}>AI is analyzing and generating your professional brand</p>

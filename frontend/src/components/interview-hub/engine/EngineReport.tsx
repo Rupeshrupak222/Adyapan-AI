@@ -297,7 +297,7 @@ export default function EngineReport({
   return (
     <div
       className="min-h-full"
-      style={{ fontFamily: "'Outfit', sans-serif", background: c.bg }}
+      style={{ fontFamily: "var(--font-sans)", background: c.bg }}
     >
       <style>{`
         @media print {

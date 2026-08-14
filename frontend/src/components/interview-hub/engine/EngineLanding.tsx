@@ -209,7 +209,7 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
   const STEP_ICONS = [Zap, Target, Settings2, Play];
 
   return (
-    <div className="relative min-h-full overflow-hidden" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>
+    <div className="relative min-h-full overflow-hidden" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
       {/* Background orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div

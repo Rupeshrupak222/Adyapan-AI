@@ -9,14 +9,14 @@ export function Footer() {
         borderColor: "var(--border-color)",
         padding: "5rem 0 2rem",
         color: "var(--text-primary)",
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontFamily: "var(--font-sans), sans-serif",
       }}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="flex flex-col gap-5 lg:col-span-1">
-            <Link href="/" className="text-xl font-bold text-gradient" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <Link href="/" className="text-xl font-bold text-gradient" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Adyapan AI
             </Link>
             <p className="text-sm leading-7" style={{ color: "var(--text-secondary)" }}>
@@ -48,7 +48,7 @@ export function Footer() {
 
           {/* Explore */}
           <div>
-            <h4 className="mb-6 text-base font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <h4 className="mb-6 text-base font-bold" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Explore
             </h4>
             <ul className="flex flex-col gap-4">
@@ -68,7 +68,7 @@ export function Footer() {
 
           {/* Tools */}
           <div>
-            <h4 className="mb-6 text-base font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <h4 className="mb-6 text-base font-bold" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Tools
             </h4>
             <ul className="flex flex-col gap-4">
@@ -84,7 +84,7 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <h4 className="mb-6 text-base font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <h4 className="mb-6 text-base font-bold" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Support
             </h4>
             <ul className="flex flex-col gap-4">

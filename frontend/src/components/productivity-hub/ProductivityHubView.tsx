@@ -304,7 +304,7 @@ export function ProductivityHubView({ setView, activeModule = "productivity-hub"
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="flex flex-wrap justify-between items-center gap-3 border-b pb-2.5 shrink-0" style={{ borderColor: c.border }}>
           <div>
             <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">Productivity Workspace</p>
-            <h2 className="text-base font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <h2 className="text-base font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>
               {tab === "email" && "Email Writer"}
               {tab === "sop" && "SOP Generator"}
               {tab === "linkedin" && "LinkedIn Post Generator"}

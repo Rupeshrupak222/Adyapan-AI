@@ -486,7 +486,7 @@ export function StudyPlannerDashboard() {
             <CalendarIcon size={18} style={{ color: "#000" }} />
           </motion.div>
           <div>
-            <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Study Planner</motion.h1>
+            <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Study Planner</motion.h1>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="text-xs leading-tight" style={{ color: c.textMuted }}>AI-powered spaced repetition study schedules</motion.p>
           </div>
         </div>
@@ -558,7 +558,7 @@ export function StudyPlannerDashboard() {
                   <div className="absolute inset-0 flex items-center justify-center"><BookOpen size={28} style={{ color: c.amber }} /></div>
                 </div>
                 <div className="text-center space-y-1">
-                  <h3 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Generating Study Plan...</h3>
+                  <h3 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Generating Study Plan...</h3>
                   <p className="text-sm" style={{ color: c.textMuted }}>Our cognitive learning priority engine is designing your personalized schedule</p>
                 </div>
                 <div className="w-full max-w-lg space-y-3 text-left">
@@ -585,7 +585,7 @@ export function StudyPlannerDashboard() {
                     <div className="absolute bottom-4 left-8 w-16 h-16 rounded-full" style={{ opacity: c.isDark ? 0.04 : 0.06, background: "radial-gradient(circle, #8b5cf6, transparent)" }} />
                   </div>
                   <div className="relative z-10 space-y-4">
-                    <h3 className="text-lg font-extrabold text-center" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Configure AI Study Plan</h3>
+                    <h3 className="text-lg font-extrabold text-center" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Configure AI Study Plan</h3>
                     <form onSubmit={handleGenerate} className="space-y-4 max-w-xl mx-auto">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold" style={{ color: c.textSec }}>Exam / Subject Title</label>
@@ -664,7 +664,7 @@ export function StudyPlannerDashboard() {
                       <motion.div key={item.step} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }} className="p-5 rounded-2xl relative overflow-hidden group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                         <div className="flex items-start gap-3 mb-3">
                           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
-                          <div><span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Step {item.step}</span><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{item.title}</h4></div>
+                          <div><span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Step {item.step}</span><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4></div>
                         </div>
                         <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
                       </motion.div>
@@ -701,7 +701,7 @@ export function StudyPlannerDashboard() {
                     <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full" style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>Critical</span>
                   )}
                 </div>
-                <h1 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>{activePlan.title}</h1>
+                <h1 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{activePlan.title}</h1>
                 <div className="flex flex-wrap items-center gap-3 text-xs font-semibold" style={{ color: c.textMuted }}>
                   <span className="flex items-center gap-1"><CalendarIcon size={12} /> {activePlan.examDate ? new Date(activePlan.examDate).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'}) : "No date"}</span>
                   <span className="flex items-center gap-1"><Clock size={12} /> {activePlan.dailyHours} hrs/day</span>
@@ -749,7 +749,7 @@ export function StudyPlannerDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <ListTodo size={16} style={{ color: c.amber }} />
-                    <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Today&apos;s Tasks</h3>
+                    <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Today&apos;s Tasks</h3>
                   </div>
                   <span className="text-[10px] font-semibold" style={{ color: c.textMuted }}>{todayTasks.length} tasks</span>
                 </div>
@@ -803,7 +803,7 @@ export function StudyPlannerDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <CalendarIcon size={16} style={{ color: c.amber }} />
-                    <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Monthly Roadmap</h3>
+                    <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Monthly Roadmap</h3>
                   </div>
                   <div className="flex items-center gap-2">
                     <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleMonthChange("prev")} className="p-1 rounded-lg" style={{ color: c.textMuted }}><ChevronLeft size={14} /></motion.button>
@@ -866,7 +866,7 @@ export function StudyPlannerDashboard() {
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full" style={{ border: `3px dashed ${c.amberBorder}` }} />
                   <Award size={28} style={{ color: c.amber }} />
                 </div>
-                <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Level Progress</h3>
+                <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Level Progress</h3>
                 <p className="text-[10px] mb-3" style={{ color: c.textMuted }}>Scholar XP</p>
                 <div className="space-y-1 text-left">
                   <div className="flex justify-between text-xs font-extrabold">
@@ -883,7 +883,7 @@ export function StudyPlannerDashboard() {
               <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="p-5 rounded-2xl" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                 <div className="flex items-center gap-2 mb-4">
                   <CalendarRange size={16} style={{ color: c.amber }} />
-                  <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>Workload</h3>
+                  <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Workload</h3>
                 </div>
                 <div className="space-y-3">
                   {[
@@ -903,7 +903,7 @@ export function StudyPlannerDashboard() {
               <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="p-5 rounded-2xl" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles size={16} style={{ color: c.amber }} />
-                  <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "'Outfit', sans-serif" }}>AI Suggested Tasks</h3>
+                  <h3 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>AI Suggested Tasks</h3>
                 </div>
                 <div className="space-y-2">
                   {recommendations.map((rec, index) => (
