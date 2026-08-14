@@ -123,6 +123,20 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const loadAnalytics = async () => {
+    try {
+      const { data } = await api.get("/aptitude/analytics");
+      if (data.success && data.analytics) setAnalytics(data.analytics);
+    } catch {}
+  };
+
+  const loadHistory = async () => {
+    try {
+      const { data } = await api.get("/aptitude/history");
+      if (data.success && data.history) setHistory(data.history);
+    } catch {}
+  };
+
   useEffect(() => {
     if (view === "home" || view === "analytics" || view === "history") {
       loadAnalytics();
@@ -134,30 +148,6 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
       loadHistory();
     }
   }, [view]);
-
-  useEffect(() => {
-    if (session && view === "active_session") {
-      if (session.mode === "timed_quiz" || session.mode === "company_test") {
-        timerRef.current = setInterval(() => {
-          setProgress(prev => {
-            if (prev.timeRemaining <= 1000) {
-              clearInterval(timerRef.current!);
-              handleCompleteSession();
-              return { ...prev, timeRemaining: 0 };
-            }
-            return { ...prev, timeElapsed: prev.timeElapsed + 1000, timeRemaining: prev.timeRemaining - 1000 };
-          });
-        }, 1000);
-      } else {
-        timerRef.current = setInterval(() => {
-          setProgress(prev => ({ ...prev, timeElapsed: prev.timeElapsed + 1000 }));
-        }, 1000);
-      }
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [session?.id, view]);
 
   useEffect(() => {
     if (aiLoading) {
@@ -176,20 +166,6 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
       if (loadingTimerRef.current) clearInterval(loadingTimerRef.current);
     };
   }, [aiLoading]);
-
-  const loadAnalytics = async () => {
-    try {
-      const { data } = await api.get("/aptitude/analytics");
-      if (data.success && data.analytics) setAnalytics(data.analytics);
-    } catch {}
-  };
-
-  const loadHistory = async () => {
-    try {
-      const { data } = await api.get("/aptitude/history");
-      if (data.success && data.history) setHistory(data.history);
-    } catch {}
-  };
 
   const startSession = useCallback(async (
     mode: TestMode,
@@ -295,18 +271,6 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     setQuestionStartTime(Date.now());
   }, [session, progress.currentIdx, questionStartTime]);
 
-  const handleNextQuestion = useCallback(() => {
-    if (!session) return;
-    const nextIdx = progress.currentIdx + 1;
-    if (nextIdx >= session.questions.length) {
-      handleCompleteSession();
-    } else {
-      setProgress(prev => ({ ...prev, currentIdx: nextIdx }));
-      setQuestionStartTime(Date.now());
-      setShowExplanation(false);
-    }
-  }, [session, progress.currentIdx]);
-
   const handleCompleteSession = useCallback(async () => {
     if (!session) return;
     if (timerRef.current) clearInterval(timerRef.current);
@@ -378,6 +342,42 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     }
     setSession(null);
   }, [session, progress.answers, sessionStartTime]);
+
+  const handleNextQuestion = useCallback(() => {
+    if (!session) return;
+    const nextIdx = progress.currentIdx + 1;
+    if (nextIdx >= session.questions.length) {
+      handleCompleteSession();
+    } else {
+      setProgress(prev => ({ ...prev, currentIdx: nextIdx }));
+      setQuestionStartTime(Date.now());
+      setShowExplanation(false);
+    }
+  }, [session, progress.currentIdx]);
+
+  useEffect(() => {
+    if (session && view === "active_session") {
+      if (session.mode === "timed_quiz" || session.mode === "company_test") {
+        timerRef.current = setInterval(() => {
+          setProgress(prev => {
+            if (prev.timeRemaining <= 1000) {
+              clearInterval(timerRef.current!);
+              handleCompleteSession();
+              return { ...prev, timeRemaining: 0 };
+            }
+            return { ...prev, timeElapsed: prev.timeElapsed + 1000, timeRemaining: prev.timeRemaining - 1000 };
+          });
+        }, 1000);
+      } else {
+        timerRef.current = setInterval(() => {
+          setProgress(prev => ({ ...prev, timeElapsed: prev.timeElapsed + 1000 }));
+        }, 1000);
+      }
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [session?.id, view]);
 
   const toggleBookmark = useCallback((idx: number) => {
     setProgress(prev => {

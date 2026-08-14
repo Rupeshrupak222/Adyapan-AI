@@ -48,10 +48,6 @@ export function ResearchHubView({ setView, activeModule, theme: propTheme }: Res
   const [selectedTemplate, setSelectedTemplate] = useState<string>("IEEE");
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
   const fetchDashboardData = async () => {
     try {
       const res = await api.get("/research/dashboard");
@@ -70,6 +66,10 @@ export function ResearchHubView({ setView, activeModule, theme: propTheme }: Res
       });
     }
   };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   const handleSelectPaper = (paper: any) => {
     setSelectedPaper(paper);

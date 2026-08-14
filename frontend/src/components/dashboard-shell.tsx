@@ -553,7 +553,7 @@ export function DashboardTopNav({
         </motion.button>
 
         <Link href="/dashboard/user" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <Image src="/assets/logo.png" alt="Adyapan AI" width={30} height={30} style={{ borderRadius: "50%" }} />
+          <Image src="/assets/logo.png" alt="Adyapan AI" width={237} height={208} style={{ width: 30, height: 30, borderRadius: "50%" }} />
           <span style={{ fontWeight: 700, fontSize: "1.15rem", color: navBtnColor }}>Adyapan AI</span>
         </Link>
         <motion.div ref={searchRef} className="desktop-search" style={{ position: "relative" }}
@@ -675,7 +675,7 @@ export function DashboardTopNav({
                 }} style={{
                   display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left",
                   padding: "0.5rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)",
-                  background: "transparent", border: "none", cursor: "pointer", borderRadius: 8,
+                  background: "rgba(0,0,0,0)", border: "none", cursor: "pointer", borderRadius: 8,
                 }}>
                   {item === "Notes" && <FileText size={13} style={{ color: "#f59e0b" }} />}
                   {item === "Assignment" && <ClipboardList size={13} style={{ color: "#3b82f6" }} />}
@@ -727,7 +727,7 @@ export function DashboardTopNav({
                 }} style={{
                   display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left",
                   padding: "0.5rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)",
-                  background: "transparent", border: "none", cursor: "pointer", borderRadius: 8,
+                  background: "rgba(0,0,0,0)", border: "none", cursor: "pointer", borderRadius: 8,
                 }}>
                   {item === "ATS Score" && <TrendingUp size={13} style={{ color: "#10b981" }} />}
                   {item === "Skill Assessment" && <Award size={13} style={{ color: "#f59e0b" }} />}

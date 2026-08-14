@@ -174,18 +174,6 @@ export default function ProblemWorkspacePage() {
       .catch(() => {});
   }, []);
 
-  // Loading timer check-list simulation
-  useEffect(() => {
-    if (loadingIndex < loadingSteps.length) {
-      const timer = setTimeout(() => {
-        setLoadingIndex(prev => prev + 1);
-      }, 350);
-      return () => clearTimeout(timer);
-    } else if (problemId && loading) {
-      fetchWorkspaceData();
-    }
-  }, [loadingIndex, problemId, loading]);
-
   // Keep track of time spent active on page
   useEffect(() => {
     if (!loading) {
@@ -195,15 +183,6 @@ export default function ProblemWorkspacePage() {
       return () => clearInterval(timerRef.current);
     }
   }, [loading]);
-
-  // Auto-Save code every 5 seconds
-  useEffect(() => {
-    if (loading || !problem) return;
-    const saveTimer = setTimeout(() => {
-      handleAutoSaveCode();
-    }, 5000);
-    return () => clearTimeout(saveTimer);
-  }, [code, language, loading, problem]);
 
   // Load custom input from LocalStorage on mount
   useEffect(() => {
@@ -300,6 +279,27 @@ export default function ProblemWorkspacePage() {
       console.error("Auto save failed", err);
     }
   };
+
+  // Loading timer check-list simulation
+  useEffect(() => {
+    if (loadingIndex < loadingSteps.length) {
+      const timer = setTimeout(() => {
+        setLoadingIndex(prev => prev + 1);
+      }, 350);
+      return () => clearTimeout(timer);
+    } else if (problemId && loading) {
+      fetchWorkspaceData();
+    }
+  }, [loadingIndex, problemId, loading]);
+
+  // Auto-Save code every 5 seconds
+  useEffect(() => {
+    if (loading || !problem) return;
+    const saveTimer = setTimeout(() => {
+      handleAutoSaveCode();
+    }, 5000);
+    return () => clearTimeout(saveTimer);
+  }, [code, language, loading, problem]);
 
   const handleEndSession = async () => {
     if (!problem) return;

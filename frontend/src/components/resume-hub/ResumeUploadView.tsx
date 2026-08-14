@@ -89,13 +89,6 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { fetchResumes(); }, []);
-
-  const showToast = useCallback((msg: string, type: "success" | "error" = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 2800);
-  }, []);
-
   async function fetchResumes() {
     setLoadingResumes(true);
     try {
@@ -109,6 +102,13 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
       setLoadingResumes(false);
     }
   }
+
+  useEffect(() => { fetchResumes(); }, []);
+
+  const showToast = useCallback((msg: string, type: "success" | "error" = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 2800);
+  }, []);
 
   async function handleFileUpload(file: File) {
     const allowedTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"];

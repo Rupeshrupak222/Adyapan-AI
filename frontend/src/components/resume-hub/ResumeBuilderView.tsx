@@ -95,6 +95,8 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
   const accumulatedTextRef = useRef("");
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages]);
 
+  const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 2500); }, []);
+
   // Load resume from sessionStorage when navigated from ResumeImprovements (Apply button)
   useEffect(() => {
     const pendingId = sessionStorage.getItem("pendingResumeId");
@@ -141,7 +143,6 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
     }
   }, []);
 
-  const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 2500); }, []);
   const resumeJSON = { personalInfo, summary, education, experience, projects, skills, certifications, achievements, languages };
 
   // AI

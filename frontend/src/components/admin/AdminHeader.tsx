@@ -48,7 +48,7 @@ export function AdminHeader({
           <Menu size={20} />
         </motion.button>
         <div className="flex items-center gap-2.5">
-          <Image src="/assets/logo.png" alt="Adyapan AI" width={32} height={32} className="rounded-full" />
+          <Image src="/assets/logo.png" alt="Adyapan AI" width={237} height={208} style={{ width: 32, height: 32 }} className="rounded-full" />
           <div>
             <span className="font-extrabold text-base tracking-tight" style={{ color: "var(--text-primary)" }}>Adyapan AI</span>
             <span className="text-[10px] font-bold text-amber-500 block -mt-1 tracking-wider uppercase">Admin Console</span>

@@ -128,6 +128,53 @@ function CodingHubContent() {
   const [timeSpent, setTimeSpent] = useState(0);
   const [activeTimer, setActiveTimer] = useState<any>(null);
 
+  // Fetch stats & dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      const res = await api.get("/coding/dashboard");
+      setStats(res.data.stats);
+      setTopicExplorer(res.data.topicExplorer || []);
+      setDailyChallenge(res.data.dailyChallenge);
+      setRecentActivity(res.data.recentActivity || []);
+      setAiRecommendations(res.data.aiRecommendations);
+    } catch (err) {
+      toast.error("Failed to load dashboard data");
+    }
+  };
+
+  // Fetch paginated, filterable questions
+  const fetchQuestions = async (page = 1) => {
+    setFetchingQuestions(true);
+    try {
+      const params: any = {
+        page,
+        limit: 12,
+        search: searchQuery || undefined,
+        topic: topicFilter || undefined,
+        difficulty: difficultyFilter || undefined,
+        status: statusFilter || undefined,
+        bookmarked: bookmarkFilter ? "true" : undefined
+      };
+
+      const res = await api.get("/coding/questions", { params });
+
+      let filteredQs = res.data.questions || [];
+      if (placementFilter === "placement") {
+        filteredQs = filteredQs.filter((q: any) => q.placementImportance);
+      } else if (placementFilter === "interview") {
+        filteredQs = filteredQs.filter((q: any) => q.interviewImportance);
+      }
+
+      setQuestions(filteredQs);
+      setCurrentPage(res.data.pagination?.page || 1);
+      setTotalPages(res.data.pagination?.totalPages || 1);
+    } catch (err) {
+      toast.error("Failed to load questions list");
+    } finally {
+      setFetchingQuestions(false);
+    }
+  };
+
   // Restore user & theme settings
   useEffect(() => {
     // Theme setup
@@ -174,53 +221,6 @@ function CodingHubContent() {
       }
     }
   }, [drawerOpen, selectedQuestion]);
-
-  // Fetch stats & dashboard data
-  const fetchDashboardData = async () => {
-    try {
-      const res = await api.get("/coding/dashboard");
-      setStats(res.data.stats);
-      setTopicExplorer(res.data.topicExplorer || []);
-      setDailyChallenge(res.data.dailyChallenge);
-      setRecentActivity(res.data.recentActivity || []);
-      setAiRecommendations(res.data.aiRecommendations);
-    } catch (err) {
-      toast.error("Failed to load dashboard data");
-    }
-  };
-
-  // Fetch paginated, filterable questions
-  const fetchQuestions = async (page = 1) => {
-    setFetchingQuestions(true);
-    try {
-      const params: any = {
-        page,
-        limit: 12,
-        search: searchQuery || undefined,
-        topic: topicFilter || undefined,
-        difficulty: difficultyFilter || undefined,
-        status: statusFilter || undefined,
-        bookmarked: bookmarkFilter ? "true" : undefined
-      };
-
-      const res = await api.get("/coding/questions", { params });
-      
-      let filteredQs = res.data.questions || [];
-      if (placementFilter === "placement") {
-        filteredQs = filteredQs.filter((q: any) => q.placementImportance);
-      } else if (placementFilter === "interview") {
-        filteredQs = filteredQs.filter((q: any) => q.interviewImportance);
-      }
-
-      setQuestions(filteredQs);
-      setCurrentPage(res.data.pagination?.page || 1);
-      setTotalPages(res.data.pagination?.totalPages || 1);
-    } catch (err) {
-      toast.error("Failed to load questions list");
-    } finally {
-      setFetchingQuestions(false);
-    }
-  };
 
   // Trigger Codeforces Sync
   const handleSyncRepository = async () => {

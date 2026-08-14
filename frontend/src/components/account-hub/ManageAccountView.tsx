@@ -171,6 +171,15 @@ export function ManageAccountView() {
   // ── Auto-save debounce refs ──
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Apply theme app-wide ──
+  const applyTheme = useCallback((mode: string) => {
+    const resolved = mode === "system"
+      ? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : mode;
+    document.documentElement.setAttribute("data-theme", resolved);
+    localStorage.setItem("adyapan-theme", resolved);
+  }, []);
+
   // ── Load all settings on mount ──
   useEffect(() => {
     const loadSettings = async () => {
@@ -345,14 +354,6 @@ export function ManageAccountView() {
   }, [themeMode, accentColor, compactMode, glassEffect, animationsEnabled, sidebarCollapse, fontSize]);
 
   // ── Apply theme mode app-wide ──
-  const applyTheme = useCallback((mode: string) => {
-    const resolved = mode === "system"
-      ? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-      : mode;
-    document.documentElement.setAttribute("data-theme", resolved);
-    localStorage.setItem("adyapan-theme", resolved);
-  }, []);
-
   // ── Apply accent color app-wide ──
   const applyAccentColor = useCallback((color: string) => {
     if (typeof document !== "undefined") {

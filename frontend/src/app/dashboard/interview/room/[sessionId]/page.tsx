@@ -169,6 +169,20 @@ export default function InterviewRoomPage() {
     };
   }, []);
 
+  const handleEndInterview = async () => {
+    if (!confirm("Are you sure you want to end the interview? Your evaluation will be generated.")) return;
+    clearInterval(timerRef.current!);
+    clearInterval(proctorIntervalRef.current!);
+    try {
+      await api.post(`/interview/${sessionId}/end`);
+      toast.success("Interview ended. Generating your report...");
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      router.push(`/dashboard/interview?completed=${sessionId}`);
+    } catch {
+      toast.error("Failed to end interview. Please try again.");
+    }
+  };
+
   // Countdown timer
   useEffect(() => {
     if (timeLeft <= 0 || !session) return;
@@ -390,20 +404,6 @@ export default function InterviewRoomPage() {
       toast.error("Failed to submit answer. Please try again.");
     } finally {
       setSending(false);
-    }
-  };
-
-  const handleEndInterview = async () => {
-    if (!confirm("Are you sure you want to end the interview? Your evaluation will be generated.")) return;
-    clearInterval(timerRef.current!);
-    clearInterval(proctorIntervalRef.current!);
-    try {
-      await api.post(`/interview/${sessionId}/end`);
-      toast.success("Interview ended. Generating your report...");
-      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-      router.push(`/dashboard/interview?completed=${sessionId}`);
-    } catch {
-      toast.error("Failed to end interview. Please try again.");
     }
   };
 

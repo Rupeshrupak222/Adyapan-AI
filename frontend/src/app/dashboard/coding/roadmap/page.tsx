@@ -134,6 +134,30 @@ export default function CodingRoadmapPage() {
   const [confirm, confirmModal] = useConfirm();
   const [expandedWeeks, setExpandedWeeks] = useState<Record<number, boolean>>({ 1: true });
 
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const roadmapRes = await api.get("/coding/roadmap");
+      if (roadmapRes.data.roadmap) {
+        setRoadmap(roadmapRes.data.roadmap);
+
+        const [readinessRes, recRes, streakRes] = await Promise.all([
+          api.get("/coding/roadmap/readiness"),
+          api.get("/coding/roadmap/recommendations"),
+          api.get("/streak/dashboard").catch(() => ({ data: { data: null } }))
+        ]);
+        setReadiness(readinessRes.data.readiness);
+        setRecommendations(recRes.data.recommendations);
+        setStreakData(streakRes.data?.data || streakRes.data?.streak || null);
+      }
+    } catch (err) {
+      console.error("Failed to load roadmap data", err);
+      toast.error("Could not fetch roadmap details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("adyapan-theme") || "dark";
     setTheme(savedTheme);
@@ -171,30 +195,6 @@ export default function CodingRoadmapPage() {
   const handleViewTool = (tool: string) => {
     if (tool === "dsa-practice") router.push("/dashboard/coding");
     else { localStorage.setItem("dashboard-active-view", tool); router.push("/dashboard/user"); }
-  };
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const roadmapRes = await api.get("/coding/roadmap");
-      if (roadmapRes.data.roadmap) {
-        setRoadmap(roadmapRes.data.roadmap);
-
-        const [readinessRes, recRes, streakRes] = await Promise.all([
-          api.get("/coding/roadmap/readiness"),
-          api.get("/coding/roadmap/recommendations"),
-          api.get("/streak/dashboard").catch(() => ({ data: { data: null } }))
-        ]);
-        setReadiness(readinessRes.data.readiness);
-        setRecommendations(recRes.data.recommendations);
-        setStreakData(streakRes.data?.data || streakRes.data?.streak || null);
-      }
-    } catch (err) {
-      console.error("Failed to load roadmap data", err);
-      toast.error("Could not fetch roadmap details");
-    } finally {
-      setLoading(false);
-    }
   };
 
   const triggerGeneration = async (e: React.FormEvent) => {

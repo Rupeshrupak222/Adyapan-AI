@@ -846,6 +846,7 @@ export default function LandingPage() {
                   <motion.circle
                     cx="24" cy="24" r="20" stroke="#f59e0b" strokeWidth="4" fill="transparent"
                     strokeDasharray={2 * Math.PI * 20}
+                    initial={{ strokeDashoffset: 2 * Math.PI * 20 }}
                     animate={{ strokeDashoffset: 2 * Math.PI * 20 * (1 - atsScore / 100) }}
                     transition={{ duration: 0.5 }}
                   />

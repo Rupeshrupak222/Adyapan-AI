@@ -43,12 +43,6 @@ export function CommunityMessagesView({ openChatWith }: { openChatWith?: string 
 
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
 
-  useEffect(() => {
-    if (!openChatWith) return;
-    setActiveChat(openChatWith);
-    loadChat(openChatWith);
-  }, [openChatWith]);
-
   const loadChat = async (userId: string) => {
     setChatLoading(true);
     try {
@@ -61,6 +55,12 @@ export function CommunityMessagesView({ openChatWith }: { openChatWith?: string 
     } catch { toast.error("Failed to load chat"); }
     finally { setChatLoading(false); }
   };
+
+  useEffect(() => {
+    if (!openChatWith) return;
+    setActiveChat(openChatWith);
+    loadChat(openChatWith);
+  }, [openChatWith]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

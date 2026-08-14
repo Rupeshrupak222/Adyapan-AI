@@ -243,6 +243,13 @@ export function LinkedInView({ setView }: Props) {
   // ── Refs ───────────────────────────────────────────────────────────────────
   const loadStepRef = useRef<NodeJS.Timeout | null>(null);
 
+  const loadHistory = async () => {
+    try {
+      const res = await api.get("/linkedin/history");
+      setHistory(res.data.reports || []);
+    } catch {}
+  };
+
   // ── Load resumes & history ─────────────────────────────────────────────────
   useEffect(() => {
     Promise.allSettled([
@@ -260,13 +267,6 @@ export function LinkedInView({ setView }: Props) {
     }).catch(() => {});
     loadHistory();
   }, []);
-
-  const loadHistory = async () => {
-    try {
-      const res = await api.get("/linkedin/history");
-      setHistory(res.data.reports || []);
-    } catch {}
-  };
 
   // ── Generate full profile ──────────────────────────────────────────────────
   const handleGenerate = async () => {

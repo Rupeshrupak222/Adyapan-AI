@@ -109,6 +109,18 @@ export function CodingDashboardView() {
 
   const isDark = theme === "dark";
 
+  const fetchAnalytics = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get("/coding/dashboard/analytics");
+      setAnalytics(res.data);
+    } catch {
+      toast.error("Failed to load dashboard analytics");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("adyapan-theme") || "dark";
     setTheme(savedTheme);
@@ -124,18 +136,6 @@ export function CodingDashboardView() {
 
     fetchAnalytics();
   }, []);
-
-  const fetchAnalytics = async () => {
-    setIsLoading(true);
-    try {
-      const res = await api.get("/coding/dashboard/analytics");
-      setAnalytics(res.data);
-    } catch {
-      toast.error("Failed to load dashboard analytics");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleThemeToggle = () => {
     const next = theme === "dark" ? "light" : "dark";

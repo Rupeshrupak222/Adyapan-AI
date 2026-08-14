@@ -139,8 +139,7 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
 
 
   // ── Answer Submission with Fast Fallback Recovery ──
-  const handleAnswerSubmit = useCallback(
-    async (transcript: string) => {
+  async function handleAnswerSubmit(transcript: string) {
       if (!transcript.trim()) return;
 
       const userMsg: HRMessage = {
@@ -228,19 +227,7 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
       } finally {
         setSending(false);
       }
-    },
-    [
-      sessionId,
-      questionNumber,
-      addMessage,
-      setSending,
-      setQuestionNumber,
-      setCurrentCompetency,
-      setLiveSTAR,
-      setLiveCommunication,
-      onComplete,
-    ]
-  );
+    }
 
   const conversationEngine = useConversationEngine({
     config: {

@@ -202,6 +202,11 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
     },
   ]);
 
+  const [questionNumber, setQuestionNumber] = useState(1);
+  const [totalQuestions, setTotalQuestions] = useState(5);
+  const [currentQuestion, setCurrentQuestion] = useState<any>(initialQuestion || null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
   useEffect(() => {
     if (initialQuestion?.question) {
       setCurrentQuestion(initialQuestion);
@@ -221,11 +226,6 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
       });
     }
   }, [initialQuestion]);
-
-  const [questionNumber, setQuestionNumber] = useState(1);
-  const [totalQuestions, setTotalQuestions] = useState(5);
-  const [currentQuestion, setCurrentQuestion] = useState<any>(initialQuestion || null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Coding Workspace State
   const [showCoding, setShowCoding] = useState(false);
@@ -270,8 +270,7 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
   }, [startProctoring, stopProctoring]);
 
   // ── Answer submission to AI with Fast Timeout & Fallback ──
-  const handleAnswerSubmit = useCallback(
-    async (transcript: string) => {
+  async function handleAnswerSubmit(transcript: string) {
       if (!transcript.trim()) return;
 
       const candidateMsg: EngineMessage = {
@@ -355,17 +354,7 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
         setQuestionNumber(questionNumber + 1);
         conversationEngine.speak(fallbackText);
       }
-    },
-    [
-      sessionId,
-      questionNumber,
-      showCoding,
-      code,
-      config.codingLanguage,
-      config.topic,
-      onComplete,
-    ]
-  );
+    }
 
   const conversationEngine = useConversationEngine({
     config: {

@@ -132,8 +132,7 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
   }, [initialMessages, initialQuestionText, setMessages]);
 
   // ── Conversation Engine Integration with Fast Fallback ──
-  const handleAnswerSubmit = useCallback(
-    async (transcript: string) => {
+  async function handleAnswerSubmit(transcript: string) {
       if (!transcript.trim()) return;
 
       const candidateMsg: EngineMessage = {
@@ -215,18 +214,7 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
       } finally {
         setSending(false);
       }
-    },
-    [
-      sessionId,
-      questionNumber,
-      config.targetRole,
-      addMessage,
-      setSending,
-      setQuestionNumber,
-      setTotalQuestions,
-      onComplete,
-    ]
-  );
+    }
 
   const conversationEngine = useConversationEngine({
     config: {

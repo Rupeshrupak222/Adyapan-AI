@@ -414,16 +414,6 @@ export function AtsCheckerView({ setView }: Props) {
       }
     }).catch(() => { });
   }, []);
-  useEffect(() => {
-    const pendingId = sessionStorage.getItem("pendingResumeUploadId");
-    if (pendingId) {
-      sessionStorage.removeItem("pendingResumeUploadId");
-      setSelId(pendingId);
-      const timer = setTimeout(() => startAnalysisWithId(pendingId), 300);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-  useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMsgs]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const sc = (s: number) => s >= 80 ? "#10b981" : s >= 60 ? "#f59e0b" : "#ef4444";
@@ -582,6 +572,17 @@ export function AtsCheckerView({ setView }: Props) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const pendingId = sessionStorage.getItem("pendingResumeUploadId");
+    if (pendingId) {
+      sessionStorage.removeItem("pendingResumeUploadId");
+      setSelId(pendingId);
+      const timer = setTimeout(() => startAnalysisWithId(pendingId), 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+  useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMsgs]);
 
   const genSuggestions = async (a?: ATSDeepAnalysis) => {
     try {
@@ -1113,17 +1114,17 @@ export function AtsCheckerView({ setView }: Props) {
               {/* ─── TABS ─── */}
               <div className="flex gap-1 p-1 rounded-xl overflow-x-auto" style={{ background: c.sf, border: `1px solid ${c.bd}` }}>
                 {([
-                  ["overview", "Overview", <BarChart3 size={12} />],
-                  ["sections", "Sections", <FileSearch size={12} />],
-                  ["keywords", "Keywords", <Search size={12} />],
-                  ["recruiter", "Recruiter", <Users size={12} />],
-                  ["insights", "Insights", <Brain size={12} />],
-                ] as const).map(([id, label, icon]) => (
+                  ["overview", "Overview", BarChart3],
+                  ["sections", "Sections", FileSearch],
+                  ["keywords", "Keywords", Search],
+                  ["recruiter", "Recruiter", Users],
+                  ["insights", "Insights", Brain],
+                ] as const).map(([id, label, Icon]) => (
                   <motion.button key={id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                     onClick={() => setTab(id)}
                     className="flex items-center gap-1 px-3 py-2 rounded-lg text-[11px] font-bold whitespace-nowrap"
                     style={{ background: tab === id ? "linear-gradient(135deg,#f59e0b,#d97706)" : "transparent", color: tab === id ? "#000" : c.txM }}>
-                    {icon} {label}
+                    <Icon size={12} /> {label}
                   </motion.button>
                 ))}
               </div>
@@ -1274,17 +1275,17 @@ export function AtsCheckerView({ setView }: Props) {
                   {/* Section Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {([
-                      ["summary", "Professional Summary", <BookOpen size={15} />, analysis.sectionScores?.summary || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
-                      ["skills", "Technical Skills", <Code2 size={15} />, analysis.sectionScores?.skills || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
-                      ["experience", "Work Experience", <Briefcase size={15} />, analysis.sectionScores?.experience || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
-                      ["projects", "Projects", <Lightbulb size={15} />, analysis.sectionScores?.projects || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
-                      ["education", "Education", <GraduationCap size={15} />, analysis.sectionScores?.education || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
-                    ] as const).map(([k, lbl, ic, data], i) => (
+                      ["summary", "Professional Summary", BookOpen, analysis.sectionScores?.summary || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
+                      ["skills", "Technical Skills", Code2, analysis.sectionScores?.skills || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
+                      ["experience", "Work Experience", Briefcase, analysis.sectionScores?.experience || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
+                      ["projects", "Projects", Lightbulb, analysis.sectionScores?.projects || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
+                      ["education", "Education", GraduationCap, analysis.sectionScores?.education || { score: 0, suggestions: ["Run an ATS analysis to get section scores."] }],
+                    ] as const).map(([k, lbl, Ic, data], i) => (
                       <motion.div key={k} variants={AP.card} initial="init" animate="in" transition={{ delay: i * 0.06 }}
                         className="p-4 rounded-xl" style={{ background: c.cb, border: `1px solid ${c.bd}`, boxShadow: c.cs }}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <span style={{ color: c.am }}>{ic}</span>
+                            <span style={{ color: c.am }}><Ic size={15} /></span>
                             <span className="text-xs font-bold">{lbl}</span>
                           </div>
                           <span className="text-sm font-extrabold" style={{ color: sc(data.score * 10) }}>{data.score}/10</span>
@@ -1554,15 +1555,15 @@ export function AtsCheckerView({ setView }: Props) {
                   {/* 4 Quadrant Insights */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {([
-                      ["Strengths", <TrendingUp size={13} />, c.gn, intel.insights.strengths],
-                      ["Weaknesses", <TrendingDown size={13} />, c.rd, intel.insights.weaknesses],
-                      ["Risks", <AlertTriangle size={13} />, c.am, intel.insights.risks],
-                      ["Opportunities", <Lightbulb size={13} />, c.bl, intel.insights.opportunities],
-                    ] as const).map(([lbl, ic, cl, data], i) => (
+                      ["Strengths", TrendingUp, c.gn, intel.insights.strengths],
+                      ["Weaknesses", TrendingDown, c.rd, intel.insights.weaknesses],
+                      ["Risks", AlertTriangle, c.am, intel.insights.risks],
+                      ["Opportunities", Lightbulb, c.bl, intel.insights.opportunities],
+                    ] as const).map(([lbl, Ic, cl, data], i) => (
                       <motion.div key={lbl} variants={AP.card} initial="init" animate="in" transition={{ delay: i * 0.06 }}
                         className="p-4 rounded-xl" style={{ background: c.cb, border: `1px solid ${c.bd}`, boxShadow: c.cs }}>
                         <h3 className="text-[11px] font-bold mb-3 flex items-center gap-2">
-                          <span style={{ color: cl }}>{ic}</span> {lbl}
+                          <span style={{ color: cl }}><Ic size={13} /></span> {lbl}
                         </h3>
                         <div className="space-y-1.5">
                           {data.map((item, j) => (
@@ -1697,16 +1698,16 @@ export function AtsCheckerView({ setView }: Props) {
               </Card>
               <motion.div variants={AP.stagger.in} initial="init" animate="in" className="grid grid-cols-2 gap-3">
                 {[
-                  ["Save Resume", <Save size={14} />],
-                  ["Download PDF", <Download size={14} />],
-                  ["Download DOCX", <Download size={14} />],
-                  ["Resume Builder", <FileText size={14} />],
-                ].map(([l, ic], i) => (
+                  ["Save Resume", Save] as const,
+                  ["Download PDF", Download] as const,
+                  ["Download DOCX", Download] as const,
+                  ["Resume Builder", FileText] as const,
+                ].map(([l, Ic], i) => (
                   <motion.button key={l as string} variants={AP.card} whileHover={btnH} whileTap={btnT}
                     onClick={i === 3 ? () => setView("resume-builder") : undefined}
                     className="py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2"
                     style={{ background: i === 3 ? c.am : c.sf, color: i === 3 ? "#000" : c.tx, border: `1px solid ${c.bd}` }}>
-                    {ic} {l}
+                    <Ic size={14} /> {l}
                   </motion.button>
                 ))}
               </motion.div>
