@@ -1487,26 +1487,7 @@ function UserDashboardContent() {
                   onPracticeDsa={() => navigateTo("dsa-practice")}
                 />
                 <StatCardsGrid stats={dashboardStats} />
-                {recommendationsLoading ? (
-                  <RecommendationLoadingProgress />
-                ) : (
-                  <>
-                    <AIDailyBriefing brief={dailyBrief} />
-                    <RecommendedToday
-                      recommendations={recommendations}
-                      onRegenerate={() => fetchRecommendations(true)}
-                      onSelectAction={(type) => {
-                        if (type === "study_next" || type === "retention_recovery") navigateTo("study-assistant");
-                        else if (type === "revision") navigateTo("progress-hub");
-                        else if (type === "practice") navigateTo("dsa-practice");
-                        else if (type === "weak_recovery") navigateTo("weak-topics");
-                        else if (type === "exam_prep") navigateTo("study-planner");
-                        else if (type === "interview_prep") navigateTo("interview-hub");
-                        else navigateTo("study-assistant");
-                      }}
-                    />
-                  </>
-                )}
+
                 <PanelGrid stats={dashboardStats} onViewTool={navigateTo} />
 
                 {/* ΓòÉΓòÉΓòÉ CROSS-MODULE ANALYTICS ΓòÉΓòÉΓòÉ */}

@@ -245,11 +245,14 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
             useUsageStore.getState().openLimitModal(data as import("@/store/usage-store").LimitSnapshot)
           );
         }
-        throw new Error("Request failed");
+        const errMsg =
+          (data && typeof data === "object" && ((data as Record<string, unknown>).message || (data as Record<string, unknown>).error)) ||
+          `Request failed with status ${res.status}`;
+        throw new Error(String(errMsg));
       }
 
       const reader = res.body?.getReader();
-      if (!reader) throw new Error("No reader");
+      if (!reader) throw new Error("No response body reader available");
 
       const decoder = new TextDecoder();
       let buffer = "";
@@ -266,37 +269,40 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed.startsWith("data: ")) continue;
+          let eventData: any = null;
           try {
-            const data = JSON.parse(trimmed.slice(6));
-            if (data.type === "chunk") {
-              accumulated += data.text;
-              setStreamingText(accumulated);
-            } else if (data.type === "done") {
-              const aiMsg: ChatMessage = {
-                id: `ai-${Date.now()}`,
-                sessionId: sessionId!,
-                role: "assistant",
-                content: accumulated,
-                createdAt: new Date().toISOString(),
-              };
-              setMessages(prev => [...prev, aiMsg]);
-              setStreamingText("");
-              loadSessions();
-            } else if (data.type === "error") {
-              throw new Error(data.message);
-            }
-          } catch { /* skip */ }
+            eventData = JSON.parse(trimmed.slice(6));
+          } catch {
+            continue;
+          }
+          if (eventData.type === "chunk") {
+            accumulated += eventData.text;
+            setStreamingText(accumulated);
+          } else if (eventData.type === "done") {
+            const aiMsg: ChatMessage = {
+              id: `ai-${Date.now()}`,
+              sessionId: sessionId!,
+              role: "assistant",
+              content: accumulated,
+              createdAt: new Date().toISOString(),
+            };
+            setMessages(prev => [...prev, aiMsg]);
+            setStreamingText("");
+            loadSessions();
+          } else if (eventData.type === "error") {
+            throw new Error(eventData.message || "Streaming failed");
+          }
         }
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("[AdyChatView] handleSend error:", err);
       setMessages(prev => [
         ...prev,
         {
           id: `err-${Date.now()}`,
           sessionId: sessionId!,
           role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
+          content: err?.message || "Sorry, something went wrong. Please try again.",
           createdAt: new Date().toISOString(),
         },
       ]);

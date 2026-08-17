@@ -37,15 +37,7 @@ export const ADY_MODELS: ChatModel[] = [
     description: "Fast & efficient",
     fast: true,
   },
-  {
-    id: "google/gemini-2.5-pro",
-    name: "Ady Pro",
-    displayName: "Ady Pro",
-    provider: "Google",
-    iconKey: "pro",
-    description: "Most capable",
-    fast: false,
-  },
+
   {
     id: "deepseek/deepseek-r1",
     name: "Ady Reasoning",

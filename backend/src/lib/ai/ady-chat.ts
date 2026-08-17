@@ -20,32 +20,39 @@ export async function streamChat(
 ): Promise<void> {
   const providers = [];
 
-  // 1. Add Google Gemini if key exists (primary for chat — latest flash models)
+  // 1. Add Google Gemini if key exists (primary for chat)
   if (env.geminiApiKey) {
-    let geminiModel = "gemini-3.6-flash";
-    if (model.includes("gemini")) {
-      geminiModel = model.split("/").pop() || "gemini-3.6-flash";
+    let primaryModel = "gemini-2.5-flash";
+    const requestedLower = (model || "").toLowerCase();
+    if (requestedLower.includes("pro")) {
+      primaryModel = "gemini-2.5-pro";
     }
-    providers.push({
-      name: "Gemini",
-      url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      key: env.geminiApiKey,
-      model: geminiModel
-    });
+    const geminiChain = [primaryModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"];
+    const uniqueGemini = Array.from(new Set(geminiChain));
+
+    for (const gModel of uniqueGemini) {
+      providers.push({
+        name: `Gemini (${gModel})`,
+        url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        key: env.geminiApiKey,
+        model: gModel,
+      });
+    }
   }
 
-  // 2. Add OpenRouter if key exists (secondary for chat — fast models)
+  // 2. Add OpenRouter if key exists (secondary for chat)
   if (env.openrouterApiKey) {
     let orModel = "openai/gpt-4o-mini";
-    const modelLower = model.toLowerCase();
+    const modelLower = (model || "").toLowerCase();
     if (modelLower.includes("kimi")) orModel = "moonshotai/kimi-k2";
-    else if (modelLower.includes("gemini")) orModel = "google/gemini-3.6-flash";
+    else if (modelLower.includes("pro")) orModel = "google/gemini-2.5-pro";
+    else if (modelLower.includes("gemini")) orModel = "google/gemini-2.5-flash";
     else if (modelLower.includes("deepseek")) orModel = "deepseek/deepseek-chat";
     else if (modelLower.includes("llama")) orModel = "meta-llama/llama-3.3-70b-instruct";
     else if (modelLower.includes("mistral")) orModel = "mistralai/mistral-medium";
     else if (modelLower.includes("glm")) orModel = "z-ai/glm-4.5";
     providers.push({
-      name: "OpenRouter",
+      name: `OpenRouter (${orModel})`,
       url: "https://openrouter.ai/api/v1/chat/completions",
       key: env.openrouterApiKey,
       model: orModel,
@@ -54,36 +61,37 @@ export async function streamChat(
 
   // 3. Add Groq if key exists
   if (env.groqApiKey) {
-    let groqModel = "llama-3.3-70b-versatile";
-    const modelLower = model.toLowerCase();
-    const isMiniOrFast = (modelLower.includes("mini") && !modelLower.includes("gemini")) ||
-                         modelLower.includes("haiku") ||
-                         modelLower.includes("flash");
-    if (isMiniOrFast) {
-      groqModel = "llama-3.1-8b-instant";
-    }
     providers.push({
-      name: "Groq",
+      name: "Groq (llama-3.3-70b)",
       url: "https://api.groq.com/openai/v1/chat/completions",
       key: env.groqApiKey,
-      model: groqModel
+      model: "llama-3.3-70b-versatile",
+    });
+    providers.push({
+      name: "Groq (llama-3.1-8b)",
+      url: "https://api.groq.com/openai/v1/chat/completions",
+      key: env.groqApiKey,
+      model: "llama-3.1-8b-instant",
     });
   }
 
-  // 4. Add NVIDIA NIM if key exists (fallback only)
-  if (env.nvidiaApiKey) {
-    let nvidiaModel = "deepseek-ai/deepseek-v4-flash";
-    if (model.includes("deepseek-ai/")) nvidiaModel = model;
-    else if (model.includes("z-ai/")) nvidiaModel = model;
-    else if (model.includes("moonshotai/")) nvidiaModel = model;
-    else if (model.includes("mistralai/")) nvidiaModel = model;
-    else if (model.includes("gemini")) nvidiaModel = "deepseek-ai/deepseek-v4-flash";
-    providers.push({
-      name: "NVIDIA",
-      url: "https://integrate.api.nvidia.com/v1/chat/completions",
-      key: env.nvidiaApiKey,
-      model: nvidiaModel,
-    });
+  // 4. Add NVIDIA NIM if key exists (valid active NIM endpoints only)
+  const nimKey = env.nvidiaApiKey || (env.nvidiaApiKeys && env.nvidiaApiKeys[0]);
+  if (nimKey) {
+    const validNimModels = [
+      "meta/llama-3.3-70b-instruct",
+      "deepseek-ai/deepseek-r1",
+      "mistralai/mistral-large-2-instruct",
+    ];
+
+    for (const nimModel of validNimModels) {
+      providers.push({
+        name: `NVIDIA (${nimModel})`,
+        url: "https://integrate.api.nvidia.com/v1/chat/completions",
+        key: nimKey,
+        model: nimModel,
+      });
+    }
   }
 
   if (providers.length === 0) {
