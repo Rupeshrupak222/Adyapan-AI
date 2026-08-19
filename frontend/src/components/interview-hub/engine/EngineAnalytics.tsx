@@ -4,6 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/services/api";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUsageStore } from "@/store/usage-store";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -118,6 +120,8 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ size?: number; className?
 
 export default function EngineAnalytics({ onBack, onStartInterview, theme: propTheme }: EngineAnalyticsProps & { theme?: string }) {
   const theme = propTheme || (typeof window !== "undefined" ? (localStorage.getItem("adyapan-theme") || "dark") : "dark");
+  const { isPremium } = useUserPlan();
+  const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
 
   const isDark = theme === "dark";
 
@@ -501,10 +505,17 @@ export default function EngineAnalytics({ onBack, onStartInterview, theme: propT
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            onClick={onStartInterview}
+            onClick={() => {
+              if (!isPremium) {
+                openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "engine", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
+                return;
+              }
+              onStartInterview();
+            }}
             className="px-5 py-2.5 rounded-xl bg-amber-500 text-black font-extrabold text-xs hover:bg-amber-400 transition-colors flex items-center gap-2"
           >
             <Flame size={14} /> Start Interview
+            {!isPremium && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
           </motion.button>
         </motion.div>
 

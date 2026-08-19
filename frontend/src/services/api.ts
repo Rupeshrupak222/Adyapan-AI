@@ -66,6 +66,14 @@ api.interceptors.response.use(
       return Promise.reject(err);
     }
 
+    // Surface premium-required enforcement (Interview/Coding/Chat) to upgrade modal
+    if (typeof window !== "undefined" && response?.data?.code === "PREMIUM_REQUIRED") {
+      import("@/store/usage-store").then(({ useUsageStore }) =>
+        useUsageStore.getState().openPremiumRequiredModal(response.data)
+      );
+      return Promise.reject(err);
+    }
+
     // Redirect to login on 401 (only if not already on an authentication page)
     if (typeof window !== "undefined" && response?.status === 401) {
       const path = window.location.pathname;

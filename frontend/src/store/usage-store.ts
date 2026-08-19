@@ -30,12 +30,15 @@ export interface UsageSnapshot {
 }
 
 export interface LimitSnapshot {
-  code: "LIMIT_EXCEEDED";
+  code: "LIMIT_EXCEEDED" | "PREMIUM_REQUIRED";
   plan?: string;
   planKind?: PlanKind;
   reason?: string;
   upgrade?: boolean;
   usage?: Partial<UsageSnapshot>;
+  featureKey?: string;
+  requiredPlan?: string;
+  upgradeUrl?: string;
 }
 
 interface UsageState {
@@ -43,11 +46,15 @@ interface UsageState {
   usageLoading: boolean;
   limitOpen: boolean;
   limitData: LimitSnapshot | null;
+  premiumRequiredOpen: boolean;
+  premiumRequiredData: LimitSnapshot | null;
   lastFetchedAt: number | null;
   setUsage: (usage: UsageSnapshot | null) => void;
   fetchUsage: () => Promise<UsageSnapshot | null>;
   openLimitModal: (snapshot: LimitSnapshot | Partial<UsageSnapshot>) => void;
   closeLimitModal: () => void;
+  openPremiumRequiredModal: (snapshot: LimitSnapshot) => void;
+  closePremiumRequiredModal: () => void;
 }
 
 const DISMISS_KEY = "adyapan-limit-dismissed";
@@ -76,6 +83,8 @@ export const useUsageStore = create<UsageState>((set) => ({
   usageLoading: false,
   limitOpen: false,
   limitData: null,
+  premiumRequiredOpen: false,
+  premiumRequiredData: null,
   lastFetchedAt: null,
 
   setUsage: (usage) => set({ usage, lastFetchedAt: Date.now() }),
@@ -115,5 +124,14 @@ export const useUsageStore = create<UsageState>((set) => ({
   closeLimitModal: () => {
     if (typeof window !== "undefined") sessionStorage.setItem(DISMISS_KEY, "1");
     set({ limitOpen: false });
+  },
+
+  openPremiumRequiredModal: (snapshot) => {
+    if (isAdminUser()) return;
+    set({ premiumRequiredOpen: true, premiumRequiredData: snapshot });
+  },
+
+  closePremiumRequiredModal: () => {
+    set({ premiumRequiredOpen: false, premiumRequiredData: null });
   },
 }));

@@ -55,12 +55,17 @@ import { settingsRouter } from "./settings.routes";
 import { usageRouter } from "./usage.routes";
 import { subscriptionRouter } from "./subscription.routes";
 import { enforceAiTokenLimit } from "../middleware/aiTokenLimit.middleware";
+import { requirePremiumEntitlement } from "../middleware/requirePremium";
 
 export const apiRouter = Router();
 
 // Global AI plan-limit enforcement. Mounted before sub-routers so it sees the
 // original path; it only acts on AI-generation endpoints (POST/PUT/etc).
 apiRouter.use(enforceAiTokenLimit);
+
+// Premium-only entitlement enforcement for Interview Hub, Coding Hub, and Ady Chat
+// Applied AFTER aiTokenLimit to avoid duplicate DB lookups on free-tier blocks
+const premiumGate = requirePremiumEntitlement;
 
 apiRouter.use("/health", healthRouter);
 apiRouter.use("/auth", authRouter);
@@ -84,12 +89,12 @@ apiRouter.use("/assignment", assignmentRouter);
 apiRouter.use("/assignment/export", assignmentExportRouter);
 apiRouter.use("/export/assignment", assignmentExportRouter);
 apiRouter.use("/mindmap", mindMapRouter);
-apiRouter.use("/coding", codingRouter);
-apiRouter.use("/dsa", dsaRouter);
-apiRouter.use("/challenges", challengesRouter);
+apiRouter.use("/coding", premiumGate, codingRouter);
+apiRouter.use("/dsa", premiumGate, dsaRouter);
+apiRouter.use("/challenges", premiumGate, challengesRouter);
 apiRouter.use("/github", githubRouter);
-apiRouter.use("/interview", interviewRouter);
-apiRouter.use("/ady-chat", adyChatRouter);
+apiRouter.use("/interview", premiumGate, interviewRouter);
+apiRouter.use("/ady-chat", premiumGate, adyChatRouter);
 apiRouter.use("/flashcards", flashcardsRouter);
 apiRouter.use("/payment", paymentRouter);
 apiRouter.use("/notifications", notificationRouter);
@@ -121,20 +126,20 @@ apiRouter.use("/community", communityRouter);
 apiRouter.use("/career", careerRouter);
 
 // Interview Engine Routes
-apiRouter.use("/engine", engineRouter);
+apiRouter.use("/engine", premiumGate, engineRouter);
 
 // Technical Interview Engine Routes
-apiRouter.use("/technical-engine", technicalEngineRouter);
+apiRouter.use("/technical-engine", premiumGate, technicalEngineRouter);
 
 // HR Interview Engine Routes
-apiRouter.use("/interview/hr", hrInterviewRouter);
+apiRouter.use("/interview/hr", premiumGate, hrInterviewRouter);
 
 // Placement Hub Routes
 apiRouter.use("/placement", placementRouter);
 
 // Logical Reasoning Routes
-apiRouter.use("/reasoning", reasoningRouter);
-apiRouter.use("/placement/reasoning", reasoningRouter);
+apiRouter.use("/reasoning", premiumGate, reasoningRouter);
+apiRouter.use("/placement/reasoning", premiumGate, reasoningRouter);
 
 // Technical MCQs Routes
 apiRouter.use("/mcq", mcqRouter);
@@ -159,7 +164,7 @@ apiRouter.use("/search", searchRouter);
 apiRouter.use("/blog", blogRouter);
 
 // AI Avatar Routes
-apiRouter.use("/avatar", avatarRouter);
+apiRouter.use("/avatar", premiumGate, avatarRouter);
 
 // User Settings Routes
 apiRouter.use("/settings", settingsRouter);

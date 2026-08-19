@@ -7,6 +7,7 @@ import LenisProvider from "@/components/providers/LenisProvider";
 import ThemeScript from "@/components/providers/ThemeScript";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { PremiumUpgradeModal } from "@/components/premium/PremiumUpgradeModal";
+import { PremiumRequiredModal } from "@/components/premium/PremiumRequiredModal";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default function RootLayout({
         <Toaster position="top-right" richColors closeButton />
         <QueryProvider>{children}</QueryProvider>
         <PremiumUpgradeModal />
+        <PremiumRequiredModal />
       </body>
     </html>
   );

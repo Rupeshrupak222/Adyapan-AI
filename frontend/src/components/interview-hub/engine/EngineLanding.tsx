@@ -6,6 +6,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { api } from "@/services/api";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUsageStore } from "@/store/usage-store";
 import {
   User, Code, Terminal, LayoutGrid, Users, Crown, GraduationCap,
   School, Briefcase, Sliders, Search, ChevronRight, ChevronLeft,
@@ -83,6 +85,8 @@ const cardHover = { scale: 1.015, y: -2 };
 
 export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics, theme: propTheme }: EngineLandingProps & { theme?: string }) {
   const theme = propTheme || (typeof window !== "undefined" ? (localStorage.getItem("adyapan-theme") || "dark") : "dark");
+  const { isPremium } = useUserPlan();
+  const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
   const [step, setStep] = useState(0);
   const [stepDir, setStepDir] = useState(1);
   const [launching, setLaunching] = useState(false);
@@ -170,6 +174,10 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
   };
 
   const onSubmit = (data: ConfigFormData) => {
+    if (!isPremium) {
+      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "engine", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
+      return;
+    }
     const config: EngineConfig = {
       interviewType: data.interviewType as InterviewType,
       targetRole: data.targetRole,
@@ -1060,6 +1068,7 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                     ) : (
                       <><Play size={16} /> Launch Interview</>
                     )}
+                    {!isPremium && !launching && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
                   </motion.button>
                 </div>
               </motion.div>

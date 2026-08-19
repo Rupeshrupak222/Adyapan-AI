@@ -7,9 +7,11 @@ import {
   Code2, CheckCircle2, Target, Trophy, Flame, Search, Filter,
   HelpCircle, Play, Sparkles, ArrowLeft, BookOpen, Lightbulb,
   Send, Clock, Zap, ChevronRight, RefreshCw, Terminal,
-  Maximize2, Minimize2, Copy, ChevronDown, AlertCircle, XCircle
+  Maximize2, Minimize2, Copy, ChevronDown, AlertCircle, XCircle, Crown
 } from "lucide-react";
 import { api } from "@/services/api";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUsageStore } from "@/store/usage-store";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import confetti from "canvas-confetti";
@@ -44,6 +46,8 @@ const CODE_TEMPLATES: Record<string, string> = {
 };
 
 export function DsaPracticeView() {
+  const { isPremium } = useUserPlan();
+  const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
   const [view, setView] = useState<"dashboard" | "problem">("dashboard");
   const [activeProblem, setActiveProblem] = useState<Record<string, string> | null>(null);
   const [problems, setProblems] = useState<Record<string, string>[]>([]);
@@ -144,6 +148,10 @@ export function DsaPracticeView() {
   };
 
   const submitCode = async () => {
+    if (!isPremium) {
+      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "dsa", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
+      return;
+    }
     setLoading(true);
     setAiReview(null);
     try {
@@ -412,6 +420,7 @@ export function DsaPracticeView() {
                 >
                   {loading ? <RefreshCw size={10} className="animate-spin" /> : <Sparkles size={10} />}
                   {loading ? "Analyzing..." : "Submit to AI"}
+                  {!isPremium && !loading && <span className="ml-1 text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
                 </motion.button>
               </div>
             </div>

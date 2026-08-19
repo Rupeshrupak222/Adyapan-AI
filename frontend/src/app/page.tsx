@@ -312,7 +312,7 @@ export default function LandingPage() {
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
             <motion.h1
-              className="text-6xl sm:text-7xl md:text-8xl font-bold leading-tight tracking-tighter text-white"
+              className="text-6xl sm:text-7xl md:text-8xl font-bold leading-[1.05] tracking-tighter text-white"
               style={{ fontFamily: "var(--font-display), sans-serif", fontWeight: 900 }}
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
@@ -324,7 +324,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.7 }}
-              className="w-full flex justify-center items-center -my-2"
+              className="w-full flex justify-center items-center my-0"
             >
               <WarpText
                 text="Operating System"
@@ -340,11 +340,11 @@ export default function LandingPage() {
                 fontWeight={900}
                 fontFamily="'Space Grotesk', sans-serif"
                 letterSpacing="-0.03em"
-                style={{ height: "140px", width: "100%", maxWidth: "900px" }}
+                style={{ height: "115px", width: "100%", maxWidth: "900px" }}
               />
             </motion.div>
             <motion.h1
-              className="text-6xl sm:text-7xl md:text-8xl font-bold leading-tight tracking-tighter text-white"
+              className="text-6xl sm:text-7xl md:text-8xl font-bold leading-[1.05] tracking-tighter text-white"
               style={{ fontFamily: "var(--font-display), sans-serif", fontWeight: 900 }}
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}

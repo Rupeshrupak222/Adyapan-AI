@@ -125,11 +125,13 @@ const FEATURES: FeatureEntry[] = [
   { featureKey: "aptitude", name: "Aptitude Engine", description: "Aptitude question bank & practice", category: "Learning Hub", requiredPlan: "free", routePattern: "^/aptitude(/|$)", gated: true },
 
   // Coding Hub
-  { featureKey: "coding-assistant", name: "Coding Assistant", description: "Code generation, debugging & explanations", category: "Coding Hub", requiredPlan: "free", routePattern: "^/coding(/|$)", gated: true },
+  { featureKey: "coding-assistant", name: "Coding Assistant", description: "Code generation, debugging & explanations", category: "Coding Hub", requiredPlan: "premium", routePattern: "^/coding(/|$)", gated: true },
   { featureKey: "technical-engine", name: "Technical Interview Engine", description: "AI technical question engine", category: "Coding Hub", requiredPlan: "premium", routePattern: "^/technical-engine(/|$)", gated: true },
-  { featureKey: "reasoning", name: "Reasoning Engine", description: "Logical & analytical reasoning practice", category: "Coding Hub", requiredPlan: "free", routePattern: "^/reasoning(/|$)", gated: true },
+  { featureKey: "reasoning", name: "Reasoning Engine", description: "Logical & analytical reasoning practice", category: "Coding Hub", requiredPlan: "premium", routePattern: "^/reasoning(/|$)", gated: true },
   { featureKey: "plagiarism", name: "Plagiarism Checker", description: "AI plagiarism detection", category: "Coding Hub", requiredPlan: "premium", routePattern: "^/plagiarism(/|$)", gated: true },
   { featureKey: "weak-topics", name: "Weak Topic Analysis", description: "Detect weak areas in coding prep", category: "Coding Hub", requiredPlan: "premium", routePattern: "^/weak-topics(/|$)", gated: true },
+  { featureKey: "dsa", name: "DSA Practice", description: "Data structures & algorithms practice", category: "Coding Hub", requiredPlan: "premium", routePattern: "^/dsa(/|$)", gated: true },
+  { featureKey: "challenges", name: "Coding Challenges", description: "Competitive coding challenges", category: "Coding Hub", requiredPlan: "premium", routePattern: "^/challenges(/|$)", gated: true },
   { featureKey: "code-runner", name: "Code Runner", description: "Run code in the sandbox", category: "Coding Hub", requiredPlan: "free", routePattern: "^/code(/|$)", gated: false },
 
   // Resume Hub
@@ -140,8 +142,10 @@ const FEATURES: FeatureEntry[] = [
   { featureKey: "linkedin-tools", name: "LinkedIn Tools", description: "LinkedIn profile & post assistant", category: "Resume Hub", requiredPlan: "free", routePattern: "^/linkedin(/|$)", gated: true },
 
   // Interview Hub
-  { featureKey: "mock-interview", name: "Mock Interviews", description: "AI mock interview sessions", category: "Interview Hub", requiredPlan: "free", routePattern: "^/interview(/|$)", gated: true },
+  { featureKey: "mock-interview", name: "Mock Interviews", description: "AI mock interview sessions", category: "Interview Hub", requiredPlan: "premium", routePattern: "^/interview(/|$)", gated: true },
   { featureKey: "interview-ai", name: "AI Interviewer", description: "Voice & text AI interviewer", category: "Interview Hub", requiredPlan: "premium", routePattern: "^/interview/ai(/|$)", gated: true },
+  { featureKey: "engine", name: "Interview Engine", description: "AI interview session management", category: "Interview Hub", requiredPlan: "premium", routePattern: "^/engine(/|$)", gated: true },
+  { featureKey: "hr-interview", name: "HR Interview", description: "HR behavioural interview practice", category: "Interview Hub", requiredPlan: "premium", routePattern: "^/interview/hr(/|$)", gated: true },
   { featureKey: "interview-questions", name: "Question Bank", description: "Curated interview question bank", category: "Interview Hub", requiredPlan: "free", routePattern: "^/interview/questions(/|$)", gated: false },
 
   // Placement Hub
@@ -156,7 +160,7 @@ const FEATURES: FeatureEntry[] = [
   { featureKey: "research-export", name: "Research Export", description: "Export research in multiple formats", category: "Research Hub", requiredPlan: "premium", routePattern: "^/research/export(/|$)", gated: false },
 
   // AI Productivity
-  { featureKey: "ady-chat", name: "Ady Chat", description: "Conversational AI assistant", category: "AI Productivity", requiredPlan: "free", routePattern: "^/ady-chat(/|$)", gated: true },
+  { featureKey: "ady-chat", name: "Ady Chat", description: "Conversational AI assistant", category: "AI Productivity", requiredPlan: "premium", routePattern: "^/ady-chat(/|$)", gated: true },
   { featureKey: "ppt-generate", name: "PPT Generation", description: "AI presentation builder", category: "AI Productivity", requiredPlan: "free", routePattern: "^/ppt(/|$)", gated: true },
   { featureKey: "avatar", name: "AI Avatar", description: "Generate AI avatars & voiceovers", category: "AI Productivity", requiredPlan: "premium", routePattern: "^/avatar(/|$)", gated: true },
   { featureKey: "productivity", name: "Productivity Tools", description: "AI productivity utilities", category: "AI Productivity", requiredPlan: "premium", routePattern: "^/productivity(/|$)", gated: true },

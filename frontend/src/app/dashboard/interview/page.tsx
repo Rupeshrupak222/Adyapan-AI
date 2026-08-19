@@ -8,11 +8,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "@/services/api";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUsageStore } from "@/store/usage-store";
 import Link from "next/link";
 import {
   Mic, Code, Briefcase, User, Sparkles, ChevronRight, History,
   BarChart3, ArrowLeft, Loader2, CheckCircle2, Flame, Award,
-  Clock, Calendar, Star, TrendingUp, AlertTriangle
+  Clock, Calendar, Star, TrendingUp, AlertTriangle, Crown
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -74,6 +76,8 @@ function InterviewPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const completedSessionId = searchParams?.get("completed");
+  const { isPremium } = useUserPlan();
+  const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
 
   const [selectedType, setSelectedType] = useState<"technical" | "behavioral" | "general" | null>(null);
   const [showConfig, setShowConfig] = useState(false);
@@ -128,6 +132,10 @@ function InterviewPageContent() {
   };
 
   const onSubmit = async (data: InterviewConfig) => {
+    if (!isPremium) {
+      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "mock-interview", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
+      return;
+    }
     setLaunching(true);
     try {
       const res = await api.post("/interview/start", {
@@ -537,7 +545,7 @@ function InterviewPageContent() {
                       {launching ? (
                         <><Loader2 size={15} className="animate-spin" /> Launching Interview Room...</>
                       ) : (
-                        <><Sparkles size={15} /> Launch Interview Room</>
+                        <><Sparkles size={15} /> Launch Interview Room {!isPremium && <span className="ml-1 text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}</>
                       )}
                     </button>
                   </div>

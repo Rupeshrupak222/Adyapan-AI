@@ -5,13 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { stripMarkdown } from "@/utils/stripMarkdown";
 import { useRouter } from "next/navigation";
 import { api } from "@/services/api";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUsageStore } from "@/store/usage-store";
 import {
   Mic, Send, RefreshCw, Sparkles, ChevronRight, History, User, Code,
   Award, ShieldAlert, Volume2, Briefcase, Loader2, Calendar, ChevronLeft,
   CheckCircle2, XCircle, Info, GraduationCap, Flame, ArrowLeft,
   Camera, Monitor, Wifi, Smartphone, Eye, Users, AlertTriangle,
   Clock, BookOpen, Shield, CheckCheck, Ban, AlertOctagon,
-  BarChart3, ExternalLink, Download,
+  BarChart3, ExternalLink, Download, Crown,
 } from "lucide-react";
 import type {
   InterviewSession, InterviewMessage, InterviewConfig,
@@ -41,6 +43,8 @@ type AppScreen =
 export function InterviewHubView({ setView, activeModule = "interview-hub", theme = "dark" }: InterviewHubViewProps) {
   const isDark = theme === "dark";
   const router = useRouter();
+  const { isPremium } = useUserPlan();
+  const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
   const c = {
     bg: isDark ? "#080710" : "#f0f4ff",
     surface: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
@@ -845,9 +849,16 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                   className="px-4 py-2 rounded-lg border text-xs font-bold" style={{ borderColor: c.border, color: c.textSec }}>
                   Back
                 </button>
-                <button onClick={handleLaunchInterview} disabled={loading || !config.role}
+                <button onClick={() => {
+                    if (!isPremium) {
+                      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "mock-interview", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
+                      return;
+                    }
+                    handleLaunchInterview();
+                  }} disabled={loading || !config.role}
                   className="px-6 py-2 rounded-lg bg-amber-500 text-black font-extrabold text-xs hover:bg-amber-400 transition-colors disabled:opacity-50 flex items-center gap-2">
                   {loading ? <><Loader2 size={12} className="animate-spin" /> Starting...</> : "Start Interview"}
+                  {!isPremium && <span className="ml-1 text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
                 </button>
               </div>
             </div>
@@ -1060,9 +1071,16 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                     className="w-5 h-5" />
                   I have read and accept all interview rules
                 </label>
-                <button onClick={handleAcceptRules} disabled={!rulesAccepted || loading}
+                <button onClick={() => {
+                    if (!isPremium) {
+                      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "mock-interview", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
+                      return;
+                    }
+                    handleAcceptRules();
+                  }} disabled={!rulesAccepted || loading}
                   className="px-6 py-2 rounded-lg bg-amber-500 text-black font-extrabold text-xs hover:bg-amber-400 transition-colors disabled:opacity-50 flex items-center gap-2">
                   {loading ? <><Loader2 size={12} className="animate-spin" /> Initializing...</> : <><CheckCheck size={14} /> Accept & Start Interview</>}
+                  {!isPremium && <span className="ml-1 text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
                 </button>
                 {activeSession && (
                   <button

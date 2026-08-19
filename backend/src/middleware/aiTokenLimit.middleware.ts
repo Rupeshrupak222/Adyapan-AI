@@ -32,6 +32,8 @@ const AI_ROUTE_PATTERNS: RegExp[] = [
   /^\/weak-topics(\/|$)/,
   /^\/recommendations(\/|$)/,
   /^\/study-planner(\/|$)/,
+  /^\/dsa(\/|$)/,
+  /^\/challenges(\/|$)/,
 ];
 
 // Non-generation paths that fall under an AI prefix but must not be charged.
