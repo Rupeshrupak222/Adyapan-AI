@@ -10,7 +10,7 @@ import dynamic from "next/dynamic";
 import {
   Code2, Search, BookMarked, CheckCircle2, AlertCircle, Play, Sparkles,
   Trophy, Clock, RefreshCw, X, ChevronRight, HelpCircle, ExternalLink,
-  Check, Award, Lightbulb, Zap, Crown
+  Check, Award, Lightbulb, Zap
 } from "lucide-react";
 import {
   FloatingOrbs,
@@ -23,8 +23,6 @@ import {
   CodingEmptyState,
   codingFadeUp
 } from "@/components/coding-hub/CodingHubShared";
-import { useUserPlan } from "@/hooks/useUserPlan";
-import { useUsageStore } from "@/store/usage-store";
 import {
   DashboardSidebar,
   DashboardTopNav,
@@ -84,9 +82,6 @@ function CodingHubContent() {
   const currentTab = rawTab === "dashboard" || rawTab === "coding-dashboard" ? "dashboard"
     : rawTab === "roadmap" || rawTab === "coding-roadmap" ? "roadmap"
     : "dsa";
-
-  const { isPremium } = useUserPlan();
-  const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
 
   const [user, setUser] = useState<AdyapanUser | null>(null);
   const [theme, setTheme] = useState("dark");
@@ -285,10 +280,6 @@ function CodingHubContent() {
 
   const handleSolveQuestion = (q: any) => {
     if (!q || !q.id) return;
-    if (!isPremium) {
-      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "coding-assistant", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
-      return;
-    }
     window.open(`/dashboard/coding/problem/${q.id}`, "_blank");
   };
 
@@ -527,7 +518,7 @@ function CodingHubContent() {
               {dailyChallenge && (
                 <>
                   <PremiumButton variant="primary" onClick={() => handleSolveQuestion(dailyChallenge)} icon={<Play size={12} />}>
-                    Solve Problem {!isPremium && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
+                    Solve Problem
                   </PremiumButton>
                   <PremiumButton variant="secondary" onClick={() => handleOpenQuestion(dailyChallenge)}>
                     View Details
@@ -807,7 +798,6 @@ function CodingHubContent() {
                                 className={`p-1 px-3 ${isAttempted ? "bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 font-bold" : ""}`}
                               >
                                 {isSolved ? "Solved" : isAttempted ? "Try Again" : "Solve"}
-                                {!isSolved && !isPremium && <span className="ml-1 text-[7px] bg-black/20 px-1 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={7} /> PRO</span>}
                               </PremiumButton>
                             </div>
                           </td>
@@ -1086,7 +1076,6 @@ function CodingHubContent() {
                     icon={<Play size={12} />}
                   >
                     Solve in AI Workspace
-                    {!isPremium && <span className="ml-1 text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
                   </PremiumButton>
                   <PremiumButton variant="secondary" onClick={handleMarkAttempted} className="bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-color)]">
                     Mark Attempted

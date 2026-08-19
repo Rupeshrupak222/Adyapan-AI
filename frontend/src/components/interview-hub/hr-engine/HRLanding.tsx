@@ -11,6 +11,8 @@ import {
   Zap, Mic, MicOff, Volume2, Star, BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUsageStore } from "@/store/usage-store";
 import {
   HRConfig, HRInterviewType, HRDifficultyLevel, HRExperienceLevel,
   HR_INTERVIEW_TYPES, HR_COMPANY_PRESETS, HR_BEHAVIORAL_TOPICS,
@@ -52,6 +54,8 @@ const pageVariants = {
 
 export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, theme: propTheme }: HRLandingProps & { theme?: string }) {
   const theme = propTheme || (typeof window !== "undefined" ? (localStorage.getItem("adyapan-theme") || "dark") : "dark");
+  const { isPremium } = useUserPlan();
+  const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
   const [step, setStep] = useState(0);
   const [stepDir, setStepDir] = useState(1);
   const [config, setConfig] = useState<HRConfig>({
@@ -102,6 +106,10 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
   const STEP_ICONS = [Zap, Target, Settings2, Play];
 
   const handleLaunch = () => {
+    if (!isPremium) {
+      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "hr-interview", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
+      return;
+    }
     toast.success("HR Interview configured! Launching...");
     onStart(config);
   };
@@ -558,6 +566,7 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
                   className="px-8 py-3 rounded-xl bg-amber-500 text-black font-extrabold text-sm hover:bg-amber-400 transition-colors flex items-center gap-2 shadow-lg"
                   style={{ boxShadow: "0 0 30px rgba(245,158,11,0.25)" }}>
                   <Play size={16} /> Launch HR Interview
+                  {!isPremium && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
                 </motion.button>
               </div>
             </motion.div>

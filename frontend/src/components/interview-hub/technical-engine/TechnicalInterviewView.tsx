@@ -9,10 +9,12 @@ import {
   RefreshCw, CheckCircle2, XCircle, Info, Shield, Clock, PhoneOff,
   Volume2, VolumeX, Target, Building2, Search, ArrowRight, ArrowLeft,
   Briefcase, Sliders, Check, Settings2, Flame, Layers, Server, Cpu, Database,
-  ChevronLeft, ChevronRight, Trophy, BarChart3, Award, FileText, Download,
+  ChevronLeft, ChevronRight, Trophy, BarChart3, Award, FileText, Download, Crown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUsageStore } from "@/store/usage-store";
 import AIAvatar from "../shared/AIAvatar";
 import {
   useInterviewProctor,
@@ -577,6 +579,8 @@ export default function TechnicalInterviewView({
   theme?: string;
 }) {
   const isDark = theme === "dark";
+  const { isPremium } = useUserPlan();
+  const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
   const [screen, setScreen] = useState<"landing" | "permission_gate" | "loading" | "active" | "report">("landing");
   const [sessionId, setSessionId] = useState<string>("");
   const [evaluation, setEvaluation] = useState<any>(null);
@@ -630,9 +634,13 @@ export default function TechnicalInterviewView({
   });
 
   const handleStartInterview = useCallback(async () => {
+    if (!isPremium) {
+      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "technical-engine", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
+      return;
+    }
     setScreen("permission_gate");
     await lifecycle.validateAndRequestPermissions();
-  }, [lifecycle]);
+  }, [lifecycle, isPremium, openPremiumModal]);
 
   const handleLoadingComplete = useCallback(async () => {
     try {
@@ -1242,6 +1250,7 @@ export default function TechnicalInterviewView({
                   className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl flex items-center justify-center space-x-2 transition-all transform active:scale-95"
                 >
                   <span>Start Technical Interview</span>
+                  {!isPremium && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

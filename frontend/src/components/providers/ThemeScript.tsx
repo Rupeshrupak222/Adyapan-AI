@@ -6,6 +6,38 @@ export default function ThemeScript() {
         document.documentElement.setAttribute('data-theme', theme);
       } catch (e) {}
 
+      /* Suppress unhandled Chrome/Firefox extension errors (e.g. IDM / third-party extension injected scripts) */
+      try {
+        window.addEventListener('error', function(event) {
+          var filename = (event.filename || '') + ' ' + ((event.error && event.error.stack) || '');
+          var message = event.message || '';
+          if (
+            filename.indexOf('chrome-extension:') !== -1 ||
+            filename.indexOf('moz-extension:') !== -1 ||
+            message.indexOf('M_ID') !== -1 ||
+            message.indexOf('200.js') !== -1
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return true;
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          var reason = event.reason;
+          var stack = ((reason && reason.stack) || '') + ' ' + ((reason && reason.message) || String(reason || ''));
+          if (
+            stack.indexOf('chrome-extension:') !== -1 ||
+            stack.indexOf('moz-extension:') !== -1 ||
+            stack.indexOf('M_ID') !== -1 ||
+            stack.indexOf('200.js') !== -1
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+      } catch (e) {}
+
       /* Strip Bitdefender/extension-injected bis_skin_checked attributes
          both immediately and continuously via MutationObserver so React
          hydration never sees a mismatch. */

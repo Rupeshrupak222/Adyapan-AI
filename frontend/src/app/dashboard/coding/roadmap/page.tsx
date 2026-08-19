@@ -12,10 +12,8 @@ import {
   HelpCircle, ExternalLink, Check, Award, ChevronDown, CheckCircle2,
   BookOpen, Star, AlertCircle, ShieldAlert, BrainCircuit, Target,
   GraduationCap, Briefcase, Compass, Flame, Zap, BarChart3, Lightbulb,
-  ArrowRight, Map, Route, Crown
+  ArrowRight, Map, Route
 } from "lucide-react";
-import { useUserPlan } from "@/hooks/useUserPlan";
-import { useUsageStore } from "@/store/usage-store";
 import {
   FloatingOrbs,
   PremiumCard,
@@ -106,8 +104,6 @@ export default function CodingRoadmapPage() {
   useRequireAuth("USER");
 
   const router = useRouter();
-  const { isPremium } = useUserPlan();
-  const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
   const [user, setUser] = useState<AdyapanUser | null>(null);
   const [theme, setTheme] = useState("dark");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -622,15 +618,9 @@ export default function CodingRoadmapPage() {
                                                 <PremiumButton
                                                   variant={isSolved ? "ghost" : "glow"}
                                                   className="text-[10px] py-1 px-3"
-                                                  onClick={() => {
-                                                    if (!isSolved && !isPremium) {
-                                                      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "coding-assistant", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
-                                                      return;
-                                                    }
-                                                    window.open(`/dashboard/coding/problem/${q.id}`, "_blank");
-                                                  }}
+                                                  onClick={() => window.open(`/dashboard/coding/problem/${q.id}`, "_blank")}
                                                 >
-                                                  {isSolved ? "Solved" : isAttempted ? "Try Again" : "Solve"} {!isSolved && !isPremium && <span className="ml-1 text-[7px] bg-black/20 px-1 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={7} /> PRO</span>} {!isSolved && <Play className="w-2.5 h-2.5 ml-1 fill-current" />}
+                                                  {isSolved ? "Solved" : isAttempted ? "Try Again" : "Solve"} {!isSolved && <Play className="w-2.5 h-2.5 ml-1 fill-current" />}
                                                 </PremiumButton>
                                               </motion.div>
                                             );
@@ -714,15 +704,9 @@ export default function CodingRoadmapPage() {
                             <PremiumButton
                               variant="primary"
                               className="text-[10px] py-1 px-3 mt-3 w-full"
-                              onClick={() => {
-                                if (!isPremium) {
-                                  openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "coding-assistant", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
-                                  return;
-                                }
-                                window.open(`/dashboard/coding/problem/${recommendations.practiceNext.id}`, "_blank");
-                              }}
+                              onClick={() => window.open(`/dashboard/coding/problem/${recommendations.practiceNext.id}`, "_blank")}
                             >
-                              Solve Problem {!isPremium && <span className="ml-1 text-[7px] bg-black/20 px-1 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={7} /> PRO</span>}
+                              Solve Problem <ChevronRight className="w-3.5 h-3.5 ml-1" />
                             </PremiumButton>
                           )}
                         </div>
