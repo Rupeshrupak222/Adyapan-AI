@@ -657,15 +657,23 @@ router.get("/workspace/:id", async (req: any, res) => {
 
     // 7. Fetch or auto-generate AI Analysis for full problem explanation and examples
     let aiAnalysisData: any = null;
+    let scrapedProblemData: any = null;
 
     if (question.externalId && (question.source === "codeforces" || question.externalId.includes("-"))) {
       try {
         const scraped = await scrapeCodeforcesProblem(question.externalId);
         if (scraped && scraped.description) {
+          scrapedProblemData = scraped;
           aiAnalysisData = {
             ...(question.aiAnalyses[0] ? (question.aiAnalyses[0].explanationJson as any) : {}),
-            problem_explanation: `${scraped.description}\n\nINPUT SPECIFICATION:\n${scraped.inputSpecification}\n\nOUTPUT SPECIFICATION:\n${scraped.outputSpecification}${scraped.note ? `\n\nNOTE:\n${scraped.note}` : ""}`,
-            examples: scraped.examples
+            problem_explanation: scraped.description,
+            inputSpecification: scraped.inputSpecification || "",
+            outputSpecification: scraped.outputSpecification || "",
+            constraints: scraped.constraints || "",
+            timeLimit: scraped.timeLimit || "",
+            memoryLimit: scraped.memoryLimit || "",
+            examples: scraped.examples,
+            note: scraped.note || ""
           };
         }
       } catch (err) {
@@ -698,7 +706,8 @@ router.get("/workspace/:id", async (req: any, res) => {
       notes,
       isBookmarked: !!bookmarkRecord,
       discussions,
-      aiAnalysis: aiAnalysisData
+      aiAnalysis: aiAnalysisData,
+      scrapedProblem: scrapedProblemData
     });
   } catch (error) {
     handleRouteError(res, error, "Coding.workspace", "Failed to retrieve workspace details");

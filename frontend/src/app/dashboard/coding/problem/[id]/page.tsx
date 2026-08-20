@@ -76,6 +76,7 @@ export default function ProblemWorkspacePage() {
   });
   const [notes, setNotes] = useState<any[]>([]);
   const [discussions, setDiscussions] = useState<any[]>([]);
+  const [scrapedProblem, setScrapedProblem] = useState<any>(null);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("python");
 
@@ -245,6 +246,7 @@ export default function ProblemWorkspacePage() {
       setNotes(data.notes || []);
       setDiscussions(data.discussions || []);
       setAiAnalysis(data.aiAnalysis || null);
+      setScrapedProblem(data.scrapedProblem || null);
       
       // Load restored session
       if (data.session) {
@@ -2041,113 +2043,27 @@ Answer the student's question based on the coding problem. Provide hints or feed
   // Render structured explanation (Description, Input Spec, Output Spec, Note)
   const cleanMath = (txt: string) => {
     if (!txt) return "";
-    return txt
-      .replace(/\$\$([\s\S]*?)\$\$/g, "$1")
-      .replace(/\$([^$]+)\$/g, "$1")
-      .replace(/([a-zA-Z0-9]+)_\{([^}]+)\}/g, "$1[$2]")
-      .replace(/([a-zA-Z0-9]+)_([a-zA-Z0-9])/g, "$1$2")
-      .replace(/([a-zA-Z0-9]+)\^\{([^}]+)\}/g, "$1^$2")
-      .replace(/\\le\b|\\leq\b/g, "≤")
-      .replace(/\\ge\b|\\geq\b/g, "≥")
-      .replace(/\\to\b|\\rightarrow\b/g, "→")
-      .replace(/\\gets\b|\\leftarrow\b/g, "←")
-      .replace(/\\neq\b|\\ne\b/g, "≠")
-      .replace(/\\dots\b|\\cdots\b|\\ldots\b/g, "...")
-      .replace(/\\cdot\b/g, "·")
-      .replace(/\\infty\b/g, "∞")
-      .replace(/\\times\b/g, "×")
-      .replace(/\\pm\b/g, "±")
-      .replace(/\\in\b/g, "∈")
-      .replace(/\\sum\b/g, "Σ")
-      .replace(/\\prod\b/g, "∏")
-      .replace(/\\lfloor\s*([\s\S]*?)\s*\\rfloor/g, "⌊$1⌋")
-      .replace(/\\ceil\s*([\s\S]*?)\s*\\rceil/g, "⌈$1⌉")
-      .replace(/\\text\{([^}]+)\}/g, "$1")
-      .replace(/\\mathrm\{([^}]+)\}/g, "$1")
-      .replace(/\\mathbf\{([^}]+)\}/g, "$1")
-      .replace(/\\mathbb\{([^}]+)\}/g, "$1")
-      .replace(/\\/g, "");
+    return txt;
   };
 
   const renderStructuredExplanation = (text: string) => {
     if (!text) return null;
-    const cleanRaw = cleanMath(text);
-    
-    if (cleanRaw.includes("INPUT SPECIFICATION:") || cleanRaw.includes("OUTPUT SPECIFICATION:")) {
-      const parts = cleanRaw.split(/(INPUT SPECIFICATION:|OUTPUT SPECIFICATION:|NOTE:)/g);
-      let desc = "";
-      let inputSpec = "";
-      let outputSpec = "";
-      let noteSpec = "";
-
-      let currentSection = "desc";
-      for (let i = 0; i < parts.length; i++) {
-        const p = parts[i];
-        if (p === "INPUT SPECIFICATION:") currentSection = "input";
-        else if (p === "OUTPUT SPECIFICATION:") currentSection = "output";
-        else if (p === "NOTE:") currentSection = "note";
-        else {
-          if (currentSection === "desc") desc += p;
-          else if (currentSection === "input") inputSpec += p;
-          else if (currentSection === "output") outputSpec += p;
-          else if (currentSection === "note") noteSpec += p;
-        }
-      }
-
-      return (
-        <div className="flex flex-col gap-5">
-          {desc.trim() && (
-            <div className="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)] font-medium bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
-              {desc.trim()}
-            </div>
-          )}
-
-          {inputSpec.trim() && (
-            <div className="flex flex-col gap-2">
-              <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider">Input Specification</h4>
-              <div className="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)] font-medium bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
-                {inputSpec.trim()}
-              </div>
-            </div>
-          )}
-
-          {outputSpec.trim() && (
-            <div className="flex flex-col gap-2">
-              <h4 className="text-xs font-bold text-teal-400 uppercase tracking-wider">Output Specification</h4>
-              <div className="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)] font-medium bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
-                {outputSpec.trim()}
-              </div>
-            </div>
-          )}
-
-          {noteSpec.trim() && (
-            <div className="flex flex-col gap-2">
-              <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider">Note & Walkthrough</h4>
-              <div className="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)] font-medium bg-purple-500/5 p-4 rounded-xl border border-purple-500/20">
-                {noteSpec.trim()}
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
     return (
-      <div className="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)] font-medium bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
-        {cleanRaw}
+      <div className="text-xs leading-relaxed text-[var(--text-primary)] bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
+        {renderMarkdown(text, theme === "dark")}
       </div>
     );
   };
 
   // Parse examples if present
   const renderExamples = () => {
-    const rawExamples = problem?.examples || aiAnalysis?.examples;
+    const rawExamples = aiAnalysis?.examples || scrapedProblem?.examples || problem?.examples;
     if (!rawExamples) return null;
     let parsed: any[] = [];
     try {
       parsed = typeof rawExamples === 'string' ? JSON.parse(rawExamples) : rawExamples;
     } catch {
-      return <pre className="text-xs bg-black/40 p-3 rounded-lg border border-[var(--border-color)] overflow-x-auto text-[var(--text-secondary)]">{JSON.stringify(rawExamples)}</pre>;
+      return <pre className="text-xs bg-black/40 p-3 rounded-lg border border-[var(--border-color)] overflow-x-auto text-[var(--text-secondary)] whitespace-pre">{JSON.stringify(rawExamples)}</pre>;
     }
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
 
@@ -2156,13 +2072,19 @@ Answer the student's question based on the coding problem. Provide hints or feed
         {parsed.map((ex: any, idx: number) => (
           <div key={idx} className="bg-black/40 p-4 rounded-xl border border-[var(--border-color)] font-mono text-xs">
             <p className="font-bold text-amber-500 mb-2 font-sans">Example {idx + 1}:</p>
-            <div className="flex flex-col gap-1.5 text-[var(--text-primary)]">
-              <div><span className="text-[var(--text-secondary)] font-sans">Input:</span> {ex.input}</div>
-              <div><span className="text-[var(--text-secondary)] font-sans">Output:</span> {ex.output}</div>
+            <div className="flex flex-col gap-2 text-[var(--text-primary)]">
+              <div className="flex flex-col">
+                <span className="text-[var(--text-secondary)] font-sans font-semibold mb-0.5">Input:</span>
+                <pre className="whitespace-pre bg-black/30 p-2 rounded-lg border border-[var(--border-color)] overflow-x-auto text-[var(--text-primary)] leading-relaxed">{ex.input}</pre>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[var(--text-secondary)] font-sans font-semibold mb-0.5">Output:</span>
+                <pre className="whitespace-pre bg-black/30 p-2 rounded-lg border border-[var(--border-color)] overflow-x-auto text-[var(--text-primary)] leading-relaxed">{ex.output}</pre>
+              </div>
               {ex.explanation && (
                 <div className="mt-1 text-[var(--text-secondary)] italic font-sans">
                   <span className="text-amber-500/80 font-semibold not-italic">Explanation: </span>
-                  {ex.explanation}
+                  {renderMarkdown(ex.explanation, theme === "dark")}
                 </div>
               )}
             </div>
@@ -2407,13 +2329,42 @@ Answer the student's question based on the coding problem. Provide hints or feed
                   {/* Problem Description */}
                   <div className="flex flex-col gap-3">
                     <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-1">Description</h3>
-                    {aiAnalysis?.problem_explanation ? (
+                    {scrapedProblem?.description ? (
+                      renderStructuredExplanation(scrapedProblem.description)
+                    ) : aiAnalysis?.problem_explanation ? (
                       renderStructuredExplanation(aiAnalysis.problem_explanation)
                     ) : problem?.description ? (
                       renderStructuredExplanation(problem.description)
                     ) : (
                       <div className="text-xs text-[var(--text-muted)] animate-pulse bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
                         Loading exact Codeforces problem statement...
+                      </div>
+                    )}
+                    
+                    {scrapedProblem?.inputSpecification && (
+                      <div className="flex flex-col gap-2">
+                        <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider">Input</h4>
+                        <div className="text-xs leading-relaxed text-[var(--text-primary)] bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
+                          {renderMarkdown(scrapedProblem.inputSpecification, theme === "dark")}
+                        </div>
+                      </div>
+                    )}
+
+                    {scrapedProblem?.outputSpecification && (
+                      <div className="flex flex-col gap-2">
+                        <h4 className="text-xs font-bold text-teal-400 uppercase tracking-wider">Output</h4>
+                        <div className="text-xs leading-relaxed text-[var(--text-primary)] bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
+                          {renderMarkdown(scrapedProblem.outputSpecification, theme === "dark")}
+                        </div>
+                      </div>
+                    )}
+
+                    {scrapedProblem?.note && (
+                      <div className="flex flex-col gap-2">
+                        <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider">Note</h4>
+                        <div className="text-xs leading-relaxed text-[var(--text-primary)] bg-purple-500/5 p-4 rounded-xl border border-purple-500/20">
+                          {renderMarkdown(scrapedProblem.note, theme === "dark")}
+                        </div>
                       </div>
                     )}
                     
@@ -2434,7 +2385,21 @@ Answer the student's question based on the coding problem. Provide hints or feed
                       <span>Constraints</span>
                     </h3>
                     <div className="bg-black/30 p-3 rounded-lg border border-[var(--border-color)] text-xs font-mono text-[var(--text-secondary)]">
-                      {problem?.externalId ? "Codeforces Standard constraints (typically 1.0s limit, 256MB memory limit)." : "Standard execution constraints apply."}
+                      {(scrapedProblem?.timeLimit || scrapedProblem?.memoryLimit) ? (
+                        <div className="flex flex-col gap-1.5">
+                          {scrapedProblem.timeLimit && (
+                            <div><span className="text-amber-500 font-semibold">Time Limit:</span> {scrapedProblem.timeLimit}</div>
+                          )}
+                          {scrapedProblem.memoryLimit && (
+                            <div><span className="text-amber-500 font-semibold">Memory Limit:</span> {scrapedProblem.memoryLimit}</div>
+                          )}
+                          {scrapedProblem.constraints && (
+                            <div className="mt-2 whitespace-pre-line text-[var(--text-primary)]">{renderMarkdown(scrapedProblem.constraints, theme === "dark")}</div>
+                          )}
+                        </div>
+                      ) : (
+                        "Standard execution constraints apply."
+                      )}
                     </div>
                   </div>
 

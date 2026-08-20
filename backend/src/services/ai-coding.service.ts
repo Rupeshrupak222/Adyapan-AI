@@ -20,6 +20,12 @@ export interface AIAnalysisSchema {
   interview_importance: string;
   common_mistakes: string[];
   examples?: Example[];
+  inputSpecification?: string;
+  outputSpecification?: string;
+  constraints?: string;
+  timeLimit?: string;
+  memoryLimit?: string;
+  note?: string;
 }
 
 export class AICodingService {
@@ -50,7 +56,7 @@ export class AICodingService {
     if (cached) {
       const data = cached.explanationJson as unknown as AIAnalysisSchema;
       if (data && data.examples && data.examples.length > 0 && data.problem_explanation && !data.problem_explanation.includes("A structured explanation of the problem")) {
-        if (!scrapedData || (data.problem_explanation.includes("INPUT SPECIFICATION") && data.problem_explanation.length > 100)) {
+        if (!scrapedData || (data.inputSpecification && data.problem_explanation.length > 100)) {
           return data;
         }
       }
@@ -65,7 +71,7 @@ export class AICodingService {
 
     const fallback: AIAnalysisSchema = {
       problem_explanation: scrapedData?.description
-        ? `${scrapedData.description}\n\nINPUT SPECIFICATION:\n${scrapedData.inputSpecification}\n\nOUTPUT SPECIFICATION:\n${scrapedData.outputSpecification}${scrapedData.note ? `\n\nNOTE:\n${scrapedData.note}` : ""}`
+        ? scrapedData.description
         : `A structured explanation of the problem: "${question.title}" (${question.topic}). We need to solve it efficiently.`,
       hint_1: "Think about the naive brute-force method first.",
       hint_2: "Can we use a hash map or sorting to optimize?",
@@ -86,7 +92,13 @@ export class AICodingService {
           output: "15",
           explanation: "Example input with sum 15."
         }
-      ]
+      ],
+      inputSpecification: scrapedData?.inputSpecification || "",
+      outputSpecification: scrapedData?.outputSpecification || "",
+      constraints: scrapedData?.constraints || "",
+      timeLimit: scrapedData?.timeLimit || "",
+      memoryLimit: scrapedData?.memoryLimit || "",
+      note: scrapedData?.note || ""
     };
 
     const systemPrompt = `You are a FAANG Interview Coach, Competitive Programming Mentor, and EdTech Platform Architect.
@@ -117,7 +129,7 @@ Topic: ${question.topic}
 Difficulty: ${question.difficulty}
 Rating: ${question.rating || "N/A"}
 Tags: ${JSON.stringify(question.tagsJson)}
-${scrapedData ? `\nExact Codeforces Problem Details:\nDescription:\n${scrapedData.description}\nInput Spec:\n${scrapedData.inputSpecification}\nOutput Spec:\n${scrapedData.outputSpecification}\nExamples:\n${JSON.stringify(scrapedData.examples)}\nNote:\n${scrapedData.note}` : ""}`;
+${scrapedData ? `\nExact Codeforces Problem Details:\nDescription:\n${scrapedData.description}\nInput Spec:\n${scrapedData.inputSpecification}\nOutput Spec:\n${scrapedData.outputSpecification}\nConstraints:\n${scrapedData.constraints}\nTime Limit:\n${scrapedData.timeLimit}\nMemory Limit:\n${scrapedData.memoryLimit}\nExamples:\n${JSON.stringify(scrapedData.examples)}\nNote:\n${scrapedData.note}` : ""}`;
 
     try {
       const generated = await generateJSON<AIAnalysisSchema>(
@@ -129,7 +141,25 @@ ${scrapedData ? `\nExact Codeforces Problem Details:\nDescription:\n${scrapedDat
 
       if (scrapedData) {
         if (scrapedData.description) {
-          generated.problem_explanation = `${scrapedData.description}\n\nINPUT SPECIFICATION:\n${scrapedData.inputSpecification}\n\nOUTPUT SPECIFICATION:\n${scrapedData.outputSpecification}${scrapedData.note ? `\n\nNOTE:\n${scrapedData.note}` : ""}`;
+          generated.problem_explanation = scrapedData.description;
+        }
+        if (scrapedData.inputSpecification) {
+          generated.inputSpecification = scrapedData.inputSpecification;
+        }
+        if (scrapedData.outputSpecification) {
+          generated.outputSpecification = scrapedData.outputSpecification;
+        }
+        if (scrapedData.constraints) {
+          generated.constraints = scrapedData.constraints;
+        }
+        if (scrapedData.timeLimit) {
+          generated.timeLimit = scrapedData.timeLimit;
+        }
+        if (scrapedData.memoryLimit) {
+          generated.memoryLimit = scrapedData.memoryLimit;
+        }
+        if (scrapedData.note) {
+          generated.note = scrapedData.note;
         }
         if (scrapedData.examples && scrapedData.examples.length > 0) {
           generated.examples = scrapedData.examples;

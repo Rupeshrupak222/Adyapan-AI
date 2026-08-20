@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import * as cheerio from "cheerio";
 import { prisma } from "../config/prisma";
 import { env } from "../config/env";
 
@@ -291,15 +292,26 @@ export class CodeforcesService {
   }
 }
 
-export async function scrapeCodeforcesProblem(externalId: string): Promise<{
+export interface ScrapedProblemData {
   description?: string;
   inputSpecification?: string;
   outputSpecification?: string;
   timeLimit?: string;
   memoryLimit?: string;
+  constraints?: string;
   examples?: Array<{ input: string; output: string; explanation?: string }>;
   note?: string;
-} | null> {
+}
+
+const scrapeCache = new Map<string, { data: ScrapedProblemData; timestamp: number }>();
+const SCRAPE_CACHE_TTL = 30 * 60 * 1000;
+
+export async function scrapeCodeforcesProblem(externalId: string): Promise<ScrapedProblemData | null> {
+  const cached = scrapeCache.get(externalId);
+  if (cached && Date.now() - cached.timestamp < SCRAPE_CACHE_TTL) {
+    return cached.data;
+  }
+
   try {
     const parts = externalId.split("-");
     if (parts.length !== 2) return null;
@@ -316,122 +328,226 @@ export async function scrapeCodeforcesProblem(externalId: string): Promise<{
     if (!response.ok) return null;
     const html = await response.text();
 
-    const formatMathText = (txt: string) => {
-      if (!txt) return "";
-      return txt
-        .replace(/\$\$([\s\S]*?)\$\$/g, "$1")
-        .replace(/\$([^$]+)\$/g, "$1")
-        .replace(/([a-zA-Z0-9]+)_\{([^}]+)\}/g, "$1[$2]")
-        .replace(/([a-zA-Z0-9]+)_([a-zA-Z0-9])/g, "$1$2")
-        .replace(/([a-zA-Z0-9]+)\^\{([^}]+)\}/g, "$1^$2")
-        .replace(/\\le\b|\\leq\b/g, "≤")
-        .replace(/\\ge\b|\\geq\b/g, "≥")
-        .replace(/\\to\b|\\rightarrow\b/g, "→")
-        .replace(/\\gets\b|\\leftarrow\b/g, "←")
-        .replace(/\\neq\b|\\ne\b/g, "≠")
-        .replace(/\\dots\b|\\cdots\b|\\ldots\b/g, "...")
-        .replace(/\\cdot\b/g, "·")
-        .replace(/\\infty\b/g, "∞")
-        .replace(/\\times\b/g, "×")
-        .replace(/\\pm\b/g, "±")
-        .replace(/\\in\b/g, "∈")
-        .replace(/\\sum\b/g, "Σ")
-        .replace(/\\prod\b/g, "∏")
-        .replace(/\\lfloor\s*([\s\S]*?)\s*\\rfloor/g, "⌊$1⌋")
-        .replace(/\\ceil\s*([\s\S]*?)\s*\\rceil/g, "⌈$1⌉")
-        .replace(/\\text\{([^}]+)\}/g, "$1")
-        .replace(/\\mathrm\{([^}]+)\}/g, "$1")
-        .replace(/\\mathbf\{([^}]+)\}/g, "$1")
-        .replace(/\\mathbb\{([^}]+)\}/g, "$1")
-        .replace(/\\/g, "");
-    };
+    const $ = cheerio.load(html);
 
-    const cleanText = (str: string) => {
-      const rawClean = str
-        .replace(/<script[\s\S]*?<\/script>/gi, "")
-        .replace(/<style[\s\S]*?<\/style>/gi, "")
-        .replace(/<br\s*\/?>/gi, "\n")
-        .replace(/<\/p>/gi, "\n\n")
-        .replace(/<\/li>/gi, "\n")
-        .replace(/<li>/gi, "\n• ")
-        .replace(/<\/div>/gi, "\n")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&amp;/g, "&")
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&nbsp;/g, " ")
-        .replace(/<\/?(div|p|span|a|ul|ol|li|sub|sup|pre|code|strong|b|em|i|table|tbody|tr|td|th|h1|h2|h3|h4|h5|h6)[^>]*>/gi, "")
-        .replace(/\n\s*\n\s*\n+/g, "\n\n")
-        .trim();
-      return formatMathText(rawClean);
-    };
+    const problemDiv = $(".problem-statement");
+    if (!problemDiv.length) return null;
 
-    // Time & Memory limits
-    const timeMatch = html.match(/class="time-limit"[^>]*>[\s\S]*?<div[^>]*>([\s\S]*?)<\/div>/i);
-    const memoryMatch = html.match(/class="memory-limit"[^>]*>[\s\S]*?<div[^>]*>([\s\S]*?)<\/div>/i);
-    const timeLimit = timeMatch ? cleanText(timeMatch[1]) : "1 second";
-    const memoryLimit = memoryMatch ? cleanText(memoryMatch[1]) : "256 megabytes";
+    const timeLimit = problemDiv.find(".time-limit div").first().text().trim() || "1 second";
+    const memoryLimit = problemDiv.find(".memory-limit div").first().text().trim() || "256 megabytes";
 
-    // Extract problem statement container
-    const statementMatch = html.match(/class="problem-statement"[\s\S]*?>([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>\s*<div/i) || html.match(/class="problem-statement"[\s\S]*?>([\s\S]*?)<\/div>\s*<div class="input-file"/i);
-    
-    // Description (between header and input-specification)
-    let description = "";
-    const descMatch = html.match(/<div class="header">[\s\S]*?<\/div>([\s\S]*?)<div class="input-specification">/i);
-    if (descMatch) {
-      description = cleanText(descMatch[1]);
-    }
+    const headerDiv = problemDiv.find(".header");
+    const descDiv = headerDiv.nextAll("div").first();
 
-    // Input specification
-    let inputSpecification = "";
-    const inputMatch = html.match(/<div class="input-specification">[\s\S]*?<div class="section-title"[^>]*>[\s\S]*?<\/div>([\s\S]*?)<div class="output-specification">/i);
-    if (inputMatch) {
-      inputSpecification = cleanText(inputMatch[1]);
-    }
+    const description = htmlToMarkdown($, descDiv);
 
-    // Output specification
-    let outputSpecification = "";
-    const outputMatch = html.match(/<div class="output-specification">[\s\S]*?<div class="section-title"[^>]*>[\s\S]*?<\/div>([\s\S]*?)(?:<div class="sample-tests">|<div class="sample-test">)/i);
-    if (outputMatch) {
-      outputSpecification = cleanText(outputMatch[1]);
-    }
+    const inputSpecDiv = problemDiv.find(".input-specification");
+    const inputSpecification = inputSpecDiv.length
+      ? htmlToMarkdown($, inputSpecDiv.children("div").not(".section-title").addBack().filter(".input-specification > :not(.section-title)"))
+      : "";
+    const inputSpecificationClean = inputSpecDiv.length
+      ? (() => {
+          const sectionTitle = inputSpecDiv.find(".section-title").text().trim();
+          let content = "";
+          inputSpecDiv.contents().each((_, el) => {
+            const node = $(el);
+            if (!node.hasClass("section-title")) {
+              content += $.html(node);
+            }
+          });
+          const result = htmlToMarkdown($, $("<div>").html(content));
+          return result;
+        })()
+      : "";
 
-    // Sample test cases
-    const sampleTestsMatch = html.match(/<div class="sample-test"[^>]*>([\s\S]*?)(?:<div class="note">|<\/div>\s*<\/div>\s*<\/div>\s*<\/div>)/i) || html.match(/class="sample-tests"[\s\S]*?>([\s\S]*?)(?:<div class="note">|<\/div>\s*<\/div>)/i);
-    const examples: Array<{ input: string; output: string }> = [];
+    const outputSpecDiv = problemDiv.find(".output-specification");
+    const outputSpecification = outputSpecDiv.length
+      ? (() => {
+          let content = "";
+          outputSpecDiv.contents().each((_, el) => {
+            const node = $(el);
+            if (!node.hasClass("section-title")) {
+              content += $.html(node);
+            }
+          });
+          return htmlToMarkdown($, $("<div>").html(content));
+        })()
+      : "";
 
-    if (sampleTestsMatch) {
-      const samplesHtml = sampleTestsMatch[1];
-      const inputs = Array.from(samplesHtml.matchAll(/class="input"[\s\S]*?<pre[^>]*>([\s\S]*?)<\/pre>/gi)).map(m => cleanText(m[1]));
-      const outputs = Array.from(samplesHtml.matchAll(/class="output"[\s\S]*?<pre[^>]*>([\s\S]*?)<\/pre>/gi)).map(m => cleanText(m[1]));
+    const examples: Array<{ input: string; output: string; explanation?: string }> = [];
+    const sampleTestsDiv = problemDiv.find(".sample-tests");
+    if (sampleTestsDiv.length) {
+      sampleTestsDiv.find(".sample-test").each((_, sampleEl) => {
+        const inputPre = $(sampleEl).find(".input pre");
+        const outputPre = $(sampleEl).find(".output pre");
+        if (inputPre.length && outputPre.length) {
+          const inputText = preservePreText($, inputPre);
+          const outputText = preservePreText($, outputPre);
+          examples.push({ input: inputText, output: outputText });
+        }
+      });
 
-      for (let i = 0; i < Math.min(inputs.length, outputs.length); i++) {
-        examples.push({
-          input: inputs[i],
-          output: outputs[i]
-        });
+      if (examples.length === 0) {
+        const inputs = sampleTestsDiv.find(".input pre").toArray();
+        const outputs = sampleTestsDiv.find(".output pre").toArray();
+        for (let i = 0; i < Math.min(inputs.length, outputs.length); i++) {
+          examples.push({
+            input: preservePreText($, $(inputs[i])),
+            output: preservePreText($, $(outputs[i]))
+          });
+        }
       }
     }
 
-    // Note explanation
+    const noteDiv = problemDiv.find(".note");
     let note = "";
-    const noteMatch = html.match(/<div class="note">[\s\S]*?<div class="section-title"[^>]*>[\s\S]*?<\/div>([\s\S]*?)(?:<\/div>\s*<\/div>\s*<\/div>|$)/i);
-    if (noteMatch) {
-      note = cleanText(noteMatch[1]);
+    if (noteDiv.length) {
+      let noteContent = "";
+      noteDiv.contents().each((_, el) => {
+        const node = $(el);
+        if (!node.hasClass("section-title")) {
+          noteContent += $.html(node);
+        }
+      });
+      note = htmlToMarkdown($, $("<div>").html(noteContent));
     }
 
-    return {
+    const constraintTexts: string[] = [];
+    problemDiv.find(".input-specification p, .input-specification li").each((_, el) => {
+      const t = $(el).text().trim();
+      if (t) constraintTexts.push(t);
+    });
+
+    const result: ScrapedProblemData = {
       description,
-      inputSpecification,
+      inputSpecification: inputSpecificationClean || inputSpecification,
       outputSpecification,
       timeLimit,
       memoryLimit,
+      constraints: constraintTexts.join("\n"),
       examples,
       note
     };
+
+    scrapeCache.set(externalId, { data: result, timestamp: Date.now() });
+
+    return result;
   } catch (err) {
     console.error("[Codeforces Scraper] Error scraping problem:", err);
     return null;
   }
 }
+
+function preservePreText($: cheerio.CheerioAPI, el: any): string {
+  const rawHtml = $.html(el);
+  let text = rawHtml
+    .replace(/^<pre[^>]*>/i, "")
+    .replace(/<\/pre>$/i, "")
+    .trim();
+  text = text
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
+  return text;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function htmlToMarkdown($: cheerio.CheerioAPI, el: any): string {
+  if (!el || !el.length) return "";
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const processNode = (node: any): string => {
+    if (node.type === "text") {
+      return node.data || "";
+    }
+    if (node.type !== "tag" || !node.attribs) return "";
+
+    const tagName = (node.tagName || "").toLowerCase();
+    const children = (node.children || []).map(processNode).join("");
+
+    switch (tagName) {
+      case "br":
+        return "\n";
+      case "p":
+        return children.trim() + "\n\n";
+      case "div":
+        return children.trim() + "\n";
+      case "h1":
+      case "h2":
+      case "h3":
+      case "h4":
+      case "h5":
+      case "h6": {
+        const level = parseInt(tagName[1]);
+        return "\n" + "#".repeat(level) + " " + children.trim() + "\n";
+      }
+      case "strong":
+      case "b":
+        return "**" + children + "**";
+      case "em":
+        return "*" + children + "*";
+      case "code":
+        return "`" + children + "`";
+      case "pre":
+        return "\n```\n" + children + "\n```\n";
+      case "ul":
+        return "\n" + children;
+      case "ol":
+        return "\n" + children;
+      case "li": {
+        const parent = node.parent;
+        const isOrdered = parent && (parent.tagName || "").toLowerCase() === "ol";
+        const siblings = parent ? (parent.children || []).filter((c: any) => c.type === "tag" && (c.tagName || "").toLowerCase() === "li") : [];
+        const idx = siblings.indexOf(node);
+        return (isOrdered ? `${idx + 1}. ` : "- ") + children.trim() + "\n";
+      }
+      case "sub":
+        return "$_{" + children + "}$";
+      case "sup":
+        return "$^{" + children + "}$";
+      case "a": {
+        const href = node.attribs.href || "";
+        const linkText = children.trim();
+        if (href && linkText) {
+          return `[${linkText}](${href.startsWith("http") ? href : `https://codeforces.com${href}`})`;
+        }
+        return linkText;
+      }
+      case "img": {
+        const src = node.attribs.src || "";
+        const alt = node.attribs.alt || "image";
+        return `![${alt}](${src.startsWith("http") ? src : `https://codeforces.com${src}`})`;
+      }
+      case "table":
+        return "\n" + children + "\n";
+      case "thead":
+      case "tbody":
+        return children;
+      case "tr":
+        return "| " + children.replace(/\n$/, "") + " |\n";
+      case "td":
+      case "th":
+        return children.trim().replace(/\|/g, "\\|") + " | ";
+      case "hr":
+        return "\n---\n";
+      default:
+        return children;
+    }
+  };
+
+  const raw = el.toArray().map(processNode).join("");
+  const md = raw
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return md;
+}
+
+export { htmlToMarkdown, preservePreText };

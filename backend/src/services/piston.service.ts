@@ -4,6 +4,38 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
+function runProcess(cmd: string, args: string[], opts: { cwd?: string; timeout?: number; stdin?: string }): Promise<{ stdout: string; stderr: string; code: number }> {
+  return new Promise((resolve) => {
+    try {
+      const child = spawn(cmd, args, { cwd: opts.cwd, timeout: opts.timeout });
+      let stdout = "";
+      let stderr = "";
+
+      if (opts.stdin) {
+        child.stdin.write(opts.stdin);
+        child.stdin.end();
+      }
+
+      child.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
+      child.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
+
+      child.on("error", () => {
+        resolve({ stdout: "", stderr: `Failed to spawn ${cmd}`, code: -1 });
+      });
+
+      child.on("close", (code) => {
+        resolve({ stdout: stdout.trim(), stderr: stderr.trim(), code: code ?? -1 });
+      });
+    } catch (err: any) {
+      resolve({ stdout: "", stderr: err.message || "spawn failed", code: -1 });
+    }
+  });
+}
+
+function cleanup(dir: string) {
+  try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+}
+
 async function executeNativeCode(
   language: string,
   code: string,
@@ -12,27 +44,89 @@ async function executeNativeCode(
 ): Promise<ExecutionResult> {
   const norm = normalizeLanguage(language);
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "adyapan-exec-"));
+  const startTime = Date.now();
 
-  let cmd = "";
-  let args: string[] = [];
-  let filePath = "";
+  try {
+    // ── Interpreted languages ────────────────────────────────────────────
+    if (norm === "python") {
+      const filePath = path.join(tmpDir, "solution.py");
+      fs.writeFileSync(filePath, code, "utf-8");
+      const r = await runProcess("python", [filePath], { timeout, stdin });
+      const elapsed = (Date.now() - startTime) / 1000;
+      const success = r.code === 0;
+      cleanup(tmpDir);
+      return { stdout: r.stdout, stderr: r.stderr, compile_output: "", executionTime: elapsed, memory: 0, status: success ? "Accepted" : "Runtime Error", signal: null, success };
+    }
 
-  if (norm === "python") {
-    filePath = path.join(tmpDir, "solution.py");
-    fs.writeFileSync(filePath, code, "utf-8");
-    cmd = "python";
-    args = [filePath];
-  } else if (norm === "javascript" || norm === "typescript") {
-    filePath = path.join(tmpDir, "solution.js");
-    fs.writeFileSync(filePath, code, "utf-8");
-    cmd = "node";
-    args = [filePath];
-  } else {
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+    if (norm === "javascript" || norm === "typescript") {
+      const filePath = path.join(tmpDir, "solution.js");
+      fs.writeFileSync(filePath, code, "utf-8");
+      const r = await runProcess("node", [filePath], { timeout, stdin });
+      const elapsed = (Date.now() - startTime) / 1000;
+      const success = r.code === 0;
+      cleanup(tmpDir);
+      return { stdout: r.stdout, stderr: r.stderr, compile_output: "", executionTime: elapsed, memory: 0, status: success ? "Accepted" : "Runtime Error", signal: null, success };
+    }
+
+    // ── Compiled: C++ ────────────────────────────────────────────────────
+    if (norm === "c++" || norm === "c") {
+      const ext = norm === "c++" ? "cpp" : "c";
+      const srcPath = path.join(tmpDir, `solution.${ext}`);
+      const binPath = path.join(tmpDir, norm === "c++" ? "solution.exe" : "solution.exe");
+      fs.writeFileSync(srcPath, code, "utf-8");
+
+      const compileCmd = norm === "c++" ? "g++" : "gcc";
+      const compileFlags = norm === "c++" ? ["-o", binPath, srcPath, "-std=c++17", "-O2"] : ["-o", binPath, srcPath, "-std=c11", "-O2"];
+      const comp = await runProcess(compileCmd, compileFlags, { cwd: tmpDir, timeout: timeout / 2 });
+      if (comp.code !== 0) {
+        cleanup(tmpDir);
+        return { stdout: "", stderr: comp.stderr, compile_output: comp.stderr, executionTime: (Date.now() - startTime) / 1000, memory: 0, status: "Compilation Error", signal: null, success: false };
+      }
+
+      const run = await runProcess(binPath, [], { cwd: tmpDir, timeout: timeout / 2, stdin });
+      const elapsed = (Date.now() - startTime) / 1000;
+      const success = run.code === 0;
+      cleanup(tmpDir);
+      return { stdout: run.stdout, stderr: run.stderr, compile_output: comp.stderr || comp.stdout, executionTime: elapsed, memory: 0, status: success ? "Accepted" : "Runtime Error", signal: null, success };
+    }
+
+    // ── Compiled: Java ───────────────────────────────────────────────────
+    if (norm === "java") {
+      const className = "Solution";
+      const srcPath = path.join(tmpDir, `${className}.java`);
+      fs.writeFileSync(srcPath, code, "utf-8");
+
+      const comp = await runProcess("javac", [srcPath], { cwd: tmpDir, timeout: timeout / 2 });
+      if (comp.code !== 0) {
+        cleanup(tmpDir);
+        return { stdout: "", stderr: comp.stderr, compile_output: comp.stderr, executionTime: (Date.now() - startTime) / 1000, memory: 0, status: "Compilation Error", signal: null, success: false };
+      }
+
+      const run = await runProcess("java", ["-cp", tmpDir, className], { cwd: tmpDir, timeout: timeout / 2, stdin });
+      const elapsed = (Date.now() - startTime) / 1000;
+      const success = run.code === 0;
+      cleanup(tmpDir);
+      return { stdout: run.stdout, stderr: run.stderr, compile_output: comp.stderr || comp.stdout, executionTime: elapsed, memory: 0, status: success ? "Accepted" : "Runtime Error", signal: null, success };
+    }
+
+    // ── Unsupported language ─────────────────────────────────────────────
+    cleanup(tmpDir);
     return {
       stdout: "",
       stderr: "",
-      compile_output: `Piston execution engine for ${language} requires Docker container to be active. Please ensure Docker Desktop is running.`,
+      compile_output: `Native execution for "${language}" is not supported. Supported languages: Python, JavaScript, TypeScript, C++, C, Java. Install the corresponding compiler (g++, javac) or run a local Piston/Docker instance for additional languages.`,
+      executionTime: 0,
+      memory: 0,
+      status: "Internal Error",
+      signal: null,
+      success: false,
+    };
+  } catch (err: any) {
+    cleanup(tmpDir);
+    return {
+      stdout: "",
+      stderr: err.message || "Native execution failed",
+      compile_output: err.message || "Native execution failed",
       executionTime: 0,
       memory: 0,
       status: "Internal Error",
@@ -40,72 +134,6 @@ async function executeNativeCode(
       success: false,
     };
   }
-
-  const startTime = Date.now();
-
-  return new Promise<ExecutionResult>((resolve) => {
-    try {
-      const child = spawn(cmd, args, { timeout });
-      let stdout = "";
-      let stderr = "";
-
-      if (stdin) {
-        child.stdin.write(stdin);
-        child.stdin.end();
-      }
-
-      child.stdout.on("data", (data) => {
-        stdout += data.toString();
-      });
-
-      child.stderr.on("data", (data) => {
-        stderr += data.toString();
-      });
-
-      child.on("error", (err) => {
-        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
-        resolve({
-          stdout: "",
-          stderr: err.message,
-          compile_output: `Failed to execute ${cmd}: ${err.message}`,
-          executionTime: (Date.now() - startTime) / 1000,
-          memory: 0,
-          status: "Runtime Error",
-          signal: null,
-          success: false,
-        });
-      });
-
-      child.on("close", (code) => {
-        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
-        const executionTime = (Date.now() - startTime) / 1000;
-        const success = code === 0;
-
-        resolve({
-          stdout: stdout.trim(),
-          stderr: stderr.trim(),
-          compile_output: stderr.trim(),
-          executionTime,
-          memory: 0,
-          status: success ? "Accepted" : "Runtime Error",
-          signal: null,
-          success,
-        });
-      });
-    } catch (err: any) {
-      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
-      resolve({
-        stdout: "",
-        stderr: err.message || "Native execution failed",
-        compile_output: err.message || "Native execution failed",
-        executionTime: 0,
-        memory: 0,
-        status: "Internal Error",
-        signal: null,
-        success: false,
-      });
-    }
-  });
 }
 
 const LANGUAGE_MAP: Record<string, string> = {
