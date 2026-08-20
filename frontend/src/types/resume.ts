@@ -365,3 +365,75 @@ export function formStateToJSONResume(state: {
     })) : undefined,
   };
 }
+
+// ─── CandidateProfile → ResumeBuilder form state ─────────────────────────────
+
+export interface CandidateProfileData {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  summary?: string | null;
+  education?: any[];
+  experience?: any[];
+  projects?: any[];
+  skills?: string[];
+  certifications?: any[];
+  achievements?: string[];
+  languages?: string[];
+  links?: { linkedin?: string; github?: string; portfolio?: string; [key: string]: any } | null;
+}
+
+export function candidateProfileToFormState(profile: CandidateProfileData): {
+  personalInfo: { fullName: string; email: string; phone: string; location: string; linkedin: string; github: string; portfolio: string };
+  summary: string;
+  education: EducationItem[];
+  experience: ExperienceItem[];
+  projects: { name: string; techStack: string; description: string }[];
+  skills: string[];
+  certifications: CertificationItem[];
+  achievements: string[];
+  languages: string[];
+} {
+  const links = (profile.links ?? {}) as Record<string, string>;
+  return {
+    personalInfo: {
+      fullName: profile.name ?? "",
+      email: profile.email ?? "",
+      phone: profile.phone ?? "",
+      location: profile.location ?? "",
+      linkedin: links.linkedin ?? "",
+      github: links.github ?? "",
+      portfolio: links.portfolio ?? "",
+    },
+    summary: profile.summary ?? "",
+    education: (profile.education ?? []).map((e: any) => ({
+      institution: e.institution ?? "",
+      degree: e.degree ?? "",
+      fieldOfStudy: e.fieldOfStudy ?? "",
+      startDate: e.startDate ?? "",
+      endDate: e.endDate ?? "",
+      grade: e.grade ?? "",
+    })),
+    experience: (profile.experience ?? []).map((w: any) => ({
+      company: w.company ?? "",
+      role: w.role ?? "",
+      startDate: w.startDate ?? "",
+      endDate: w.endDate ?? "",
+      description: w.description ?? "",
+    })),
+    projects: (profile.projects ?? []).map((p: any) => ({
+      name: p.name ?? "",
+      techStack: typeof p.techStack === "string" ? p.techStack : Array.isArray(p.techStack) ? p.techStack.join(", ") : "",
+      description: p.description ?? "",
+    })),
+    skills: Array.isArray(profile.skills) ? profile.skills : [],
+    certifications: (profile.certifications ?? []).map((c: any) => ({
+      name: c.name ?? "",
+      issuer: c.issuer ?? "",
+      date: c.date ?? "",
+    })),
+    achievements: Array.isArray(profile.achievements) ? profile.achievements : [],
+    languages: Array.isArray(profile.languages) ? profile.languages : [],
+  };
+}

@@ -88,6 +88,14 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const stepTimersRef = useRef<NodeJS.Timeout[]>([]);
+
+  useEffect(() => {
+    return () => {
+      stepTimersRef.current.forEach(clearTimeout);
+      stepTimersRef.current = [];
+    };
+  }, []);
 
   async function fetchResumes() {
     setLoadingResumes(true);
@@ -128,9 +136,10 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
     setScreen("parsing");
     setParsingStep(0);
 
-    const stepTimers: NodeJS.Timeout[] = [];
+    stepTimersRef.current.forEach(clearTimeout);
+    stepTimersRef.current = [];
     for (let i = 1; i < PARSING_STEPS.length; i++) {
-      stepTimers.push(setTimeout(() => setParsingStep(i), i * 1400));
+      stepTimersRef.current.push(setTimeout(() => setParsingStep(i), i * 1400));
     }
 
     try {
@@ -141,7 +150,8 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
       });
 
       if (res.data.success) {
-        stepTimers.forEach(clearTimeout);
+        stepTimersRef.current.forEach(clearTimeout);
+        stepTimersRef.current = [];
         setParsingStep(PARSING_STEPS.length - 1);
         await new Promise(r => setTimeout(r, 600));
 
@@ -157,7 +167,8 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
         } catch { /* confetti blocked */ }
       }
     } catch (err: any) {
-      stepTimers.forEach(clearTimeout);
+      stepTimersRef.current.forEach(clearTimeout);
+      stepTimersRef.current = [];
       showToast(err?.response?.data?.message || "Upload failed. Please try again.", "error");
       setScreen("dashboard");
     }

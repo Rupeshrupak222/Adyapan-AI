@@ -1,4 +1,29 @@
-import puppeteer from "puppeteer";
+import puppeteer, { Browser } from "puppeteer";
+
+let sharedBrowser: Browser | null = null;
+let browserLaunchPromise: Promise<Browser> | null = null;
+
+async function getBrowser(): Promise<Browser> {
+  if (sharedBrowser && sharedBrowser.connected) return sharedBrowser;
+  if (browserLaunchPromise) return browserLaunchPromise;
+
+  browserLaunchPromise = puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+  }).then((browser) => {
+    sharedBrowser = browser;
+    browserLaunchPromise = null;
+    browser.on("disconnected", () => {
+      sharedBrowser = null;
+    });
+    return browser;
+  }).catch((err) => {
+    browserLaunchPromise = null;
+    throw err;
+  });
+
+  return browserLaunchPromise;
+}
 
 export interface ResumeData {
   title: string;
@@ -347,13 +372,10 @@ function renderTemplate(data: ResumeData): string {
 export async function generateResumePdf(data: ResumeData): Promise<Buffer> {
   const html = renderTemplate(data);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  const browser = await getBrowser();
+  const page = await browser.newPage();
 
   try {
-    const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "load" });
 
     const pdfBuffer = await page.pdf({
@@ -364,6 +386,6 @@ export async function generateResumePdf(data: ResumeData): Promise<Buffer> {
 
     return Buffer.from(pdfBuffer);
   } finally {
-    await browser.close();
+    await page.close();
   }
 }
