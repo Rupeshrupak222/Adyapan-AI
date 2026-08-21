@@ -1,5 +1,8 @@
 .aider*
 
+# dependencies
+node_modules/
+
 # runtime logs & build artifacts
 *.log
 logs/
