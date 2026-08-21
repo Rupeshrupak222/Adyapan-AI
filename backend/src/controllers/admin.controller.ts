@@ -493,19 +493,6 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
       });
       return res.json({ success: true, message: "User activated" });
     }
-    if (action === "change-role" || action === "change_role") {
-      const targetRole = role || req.body.role || (user.role === "ADMIN" ? "USER" : "ADMIN");
-      await prisma.user.update({ where: { id: userId }, data: { role: targetRole } });
-      await AdminAuditService.log({
-        adminId, adminName,
-        action: "User Role Changed",
-        module: "User Management",
-        targetId: userId,
-        details: { ...auditDetails(), from: user.role, to: targetRole },
-        ipAddress: req.ip,
-      });
-      return res.json({ success: true, message: `Role changed to ${targetRole}` });
-    }
     if (action === "delete" || action === "delete_user") {
       await prisma.user.delete({ where: { id: userId } });
       await AdminAuditService.log({

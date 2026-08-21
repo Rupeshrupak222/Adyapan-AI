@@ -431,21 +431,6 @@ export default function UserManagement() {
 
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
-                            {user.role !== "ADMIN" ? (
-                              <ActionBtn
-                                icon={<Shield size={13} />}
-                                tooltip="Promote to Admin"
-                                loading={actionLoading === user.id}
-                                onClick={() => handleAction(user.id, "change-role", { role: "ADMIN" })}
-                              />
-                            ) : (
-                              <ActionBtn
-                                icon={<UserMinus size={13} />}
-                                tooltip="Demote to User"
-                                loading={actionLoading === user.id}
-                                onClick={() => handleAction(user.id, "change-role", { role: "USER" })}
-                              />
-                            )}
                             {user.plan !== "premium" ? (
                               <ActionBtn
                                 icon={<Crown size={13} />}

@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../config/prisma";
 import { httpError } from "../utils/httpError";
 import { AdminAuditService } from "../services/admin-audit.service";
+import { adminDbService } from "../services/admin-db.service";
 import type { AdminAuthRequest } from "../middleware/adminAuth";
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -70,51 +71,54 @@ interface SeedFeature {
 }
 
 const SEED_FEATURES: SeedFeature[] = [
-  { key: "auth-service", name: "Authentication Service", description: "Core sign-up, sign-in and session management for every user.", module: "Authentication", category: "Authentication", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.1.4", owner: "Platform Team", isPremium: false, isBeta: false, apiEndpoint: "/api/auth", rateLimit: 600, rolloutPct: 100, isEnabled: true, dependencies: ["payments-gateway"] },
+  // User Authentication & Core
+  { key: "auth-service", name: "Authentication Service", description: "Core sign-up, sign-in and session management for users.", module: "Authentication", category: "Authentication", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.1.4", owner: "Platform Team", isPremium: false, isBeta: false, apiEndpoint: "/api/auth", rateLimit: 600, rolloutPct: 100, isEnabled: true },
   { key: "sso-oauth", name: "SSO & OAuth", description: "Google and GitHub single sign-on flows.", module: "Authentication", category: "Authentication", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.3.0", owner: "Platform Team", isPremium: false, isBeta: false, apiEndpoint: "/api/auth/github", rateLimit: 120, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "mfa", name: "Multi-Factor Authentication", description: "Optional 2FA via email OTP for high-security accounts.", module: "Authentication", category: "Authentication", status: "Beta", environment: "Production", accessLevel: "All", version: "0.9.2", owner: "Security Team", isPremium: false, isBeta: true, apiEndpoint: "/api/auth/mfa", rateLimit: 60, rolloutPct: 50, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "user-dashboard", name: "User Dashboard", description: "Personalized home dashboard with widgets and quick access.", module: "Dashboard", category: "Dashboard", status: "Enabled", environment: "Production", accessLevel: "All", version: "3.0.1", owner: "Frontend Team", isPremium: false, isBeta: false, apiEndpoint: "/api/dashboard", rateLimit: 300, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "admin-dashboard", name: "Admin Dashboard", description: "Full admin control plane for operations and monitoring.", module: "Admin", category: "Admin", status: "Enabled", environment: "Production", accessLevel: "Admin", version: "4.1.0", owner: "Platform Team", isPremium: false, isBeta: false, apiEndpoint: "/api/admin", rateLimit: 200, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service", "feature-flagging", "analytics-bi"] },
-  { key: "study-sessions", name: "Study Sessions", description: "Tracked focused study sessions with subject tagging.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.2.0", owner: "Learning Team", isPremium: false, isBeta: false, apiEndpoint: "/api/study", rateLimit: 300, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "notes-generator", name: "Notes Generator", description: "AI-powered study notes from uploaded materials.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.0.3", owner: "AI Team", isPremium: false, isBeta: false, apiEndpoint: "/api/notes", rateLimit: 80, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat", "study-sessions"] },
-  { key: "quiz-engine", name: "Quiz Engine", description: "AI-generated quizzes with adaptive difficulty.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.8.0", owner: "Learning Team", isPremium: false, isBeta: false, apiEndpoint: "/api/quiz", rateLimit: 120, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat", "auth-service"] },
-  { key: "assignments", name: "Assignments", description: "Create, submit and grade assignments.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.4.1", owner: "Learning Team", isPremium: false, isBeta: false, apiEndpoint: "/api/assignment", rateLimit: 120, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "mind-maps", name: "Mind Maps", description: "Visual concept maps generated from learning content.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.1.5", owner: "AI Team", isPremium: false, isBeta: false, apiEndpoint: "/api/mindmap", rateLimit: 100, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat"] },
-  { key: "flashcards", name: "Flashcards", description: "Spaced-repetition flashcards from study material.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.0.2", owner: "Learning Team", isPremium: false, isBeta: false, apiEndpoint: "/api/flashcards", rateLimit: 100, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat"] },
-  { key: "study-planner", name: "Study Planner", description: "AI study schedules aligned to upcoming exams.", module: "Learning Hub", category: "Learning Hub", status: "Beta", environment: "Production", accessLevel: "All", version: "0.8.0", owner: "AI Team", isPremium: false, isBeta: true, apiEndpoint: "/api/study-planner", rateLimit: 60, rolloutPct: 25, isEnabled: true, dependencies: ["study-sessions", "ai-chat"] },
-  { key: "coding-ide", name: "Coding IDE", description: "In-browser IDE with syntax highlighting and exec.", module: "Coding Hub", category: "Coding Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.2.0", owner: "Coding Team", isPremium: false, isBeta: false, apiEndpoint: "/api/coding", rateLimit: 200, rolloutPct: 100, isEnabled: true, dependencies: ["code-runner", "auth-service"] },
-  { key: "dsa-problems", name: "DSA Practice", description: "Curated DSA problem set with hints and solutions.", module: "Coding Hub", category: "Coding Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "3.1.2", owner: "Coding Team", isPremium: false, isBeta: false, apiEndpoint: "/api/dsa", rateLimit: 300, rolloutPct: 100, isEnabled: true, dependencies: ["coding-ide"] },
-  { key: "code-runner", name: "Code Runner", description: "Sandboxed code execution backed by the Piston engine.", module: "Coding Hub", category: "Coding Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "2.0.7", owner: "Infra Team", isPremium: true, isBeta: false, apiEndpoint: "/api/coding/run", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service", "rate-limiter"] },
-  { key: "resume-builder", name: "Resume Builder", description: "Professional resume creation with templates.", module: "Resume Hub", category: "Resume Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.3.0", owner: "Resume Team", isPremium: false, isBeta: false, apiEndpoint: "/api/resume", rateLimit: 150, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "ats-checker", name: "ATS Checker", description: "Resume ATS compatibility scoring with suggestions.", module: "Resume Hub", category: "Resume Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "1.6.1", owner: "AI Team", isPremium: true, isBeta: false, apiEndpoint: "/api/ats", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["resume-builder", "ai-chat"] },
-  { key: "cover-letter", name: "Cover Letter Generator", description: "AI cover letters tailored to job descriptions.", module: "Resume Hub", category: "Resume Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.3.4", owner: "AI Team", isPremium: false, isBeta: false, apiEndpoint: "/api/cover-letter", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["resume-builder", "ai-chat"] },
-  { key: "linkedin-report", name: "LinkedIn Report", description: "Profile optimization report for LinkedIn.", module: "Resume Hub", category: "Resume Hub", status: "Experimental", environment: "Production", accessLevel: "Premium", version: "0.6.0", owner: "AI Team", isPremium: true, isBeta: true, apiEndpoint: "/api/linkedin", rateLimit: 30, rolloutPct: 10, isEnabled: true, dependencies: ["ai-chat", "resume-builder"] },
-  { key: "interview-engine", name: "AI Interview Engine", description: "Real-time AI mock interviews with feedback.", module: "Interview Hub", category: "Interview Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "2.0.0", owner: "Interview Team", isPremium: true, isBeta: false, apiEndpoint: "/api/interview", rateLimit: 40, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat", "auth-service", "payments-gateway"] },
-  { key: "hr-interview", name: "HR Interview", description: "HR round simulation covering soft skills.", module: "Interview Hub", category: "Interview Hub", status: "Beta", environment: "Production", accessLevel: "Premium", version: "0.9.5", owner: "Interview Team", isPremium: true, isBeta: true, apiEndpoint: "/api/interview/hr", rateLimit: 30, rolloutPct: 50, isEnabled: true, dependencies: ["interview-engine", "auth-service"] },
-  { key: "technical-interview", name: "Technical Interview", description: "Coding-focused technical interview rounds.", module: "Interview Hub", category: "Interview Hub", status: "Beta", environment: "Production", accessLevel: "Premium", version: "0.8.1", owner: "Interview Team", isPremium: true, isBeta: true, apiEndpoint: "/api/technical-engine", rateLimit: 30, rolloutPct: 25, isEnabled: true, dependencies: ["interview-engine", "code-runner", "auth-service"] },
-  { key: "proctoring", name: "Interview Proctoring", description: "Webcam and tab-switch monitoring during interviews.", module: "Interview Hub", category: "Interview Hub", status: "Experimental", environment: "Production", accessLevel: "Premium", version: "0.5.0", owner: "Interview Team", isPremium: true, isBeta: true, apiEndpoint: "/api/interview/proctor", rateLimit: 20, rolloutPct: 5, isEnabled: true, dependencies: ["interview-engine", "ai-chat"] },
-  { key: "job-discovery", name: "Job Discovery", description: "Aggregated job listings with smart matching.", module: "Placement Hub", category: "Placement Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.4.0", owner: "Placement Team", isPremium: false, isBeta: false, apiEndpoint: "/api/discovery", rateLimit: 200, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "aptitude-tests", name: "Aptitude Tests", description: "Mock aptitude and reasoning tests.", module: "Placement Hub", category: "Placement Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.7.0", owner: "Placement Team", isPremium: false, isBeta: false, apiEndpoint: "/api/aptitude", rateLimit: 120, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "research-assistant", name: "Research Assistant", description: "AI assistant for literature and research summaries.", module: "Research Hub", category: "Research Hub", status: "Experimental", environment: "Production", accessLevel: "Premium", version: "0.4.2", owner: "AI Team", isPremium: true, isBeta: true, apiEndpoint: "/api/research", rateLimit: 30, rolloutPct: 10, isEnabled: true, dependencies: ["ai-chat"] },
-  { key: "plagiarism-checker", name: "Plagiarism Checker", description: "Content originality and plagiarism detection.", module: "Research Hub", category: "Research Hub", status: "Beta", environment: "Production", accessLevel: "Premium", version: "0.7.1", owner: "AI Team", isPremium: true, isBeta: true, apiEndpoint: "/api/plagiarism", rateLimit: 30, rolloutPct: 25, isEnabled: true, dependencies: ["research-assistant", "ai-chat"] },
-  { key: "ai-chat", name: "AI Chat (Ady)", description: "Conversational AI assistant across the platform.", module: "AI Productivity", category: "AI Productivity", status: "Enabled", environment: "Production", accessLevel: "All", version: "3.2.0", owner: "AI Team", isPremium: false, isBeta: false, apiEndpoint: "/api/ady-chat", rateLimit: 150, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service", "payments-gateway"] },
-  { key: "ai-copilot", name: "AI Copilot", description: "Admin operations assistant with live insights.", module: "AI Productivity", category: "AI Productivity", status: "Enabled", environment: "Production", accessLevel: "Admin", version: "1.1.0", owner: "AI Team", isPremium: false, isBeta: false, apiEndpoint: "/api/admin/copilot", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat", "admin-dashboard"] },
-  { key: "payments-gateway", name: "Payment Gateway", description: "Razorpay payments, refunds and receipts.", module: "Payments", category: "Payments", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.1.0", owner: "Billing Team", isPremium: false, isBeta: false, apiEndpoint: "/api/payment", rateLimit: 100, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service", "rate-limiter"] },
-  { key: "subscriptions", name: "Subscriptions", description: "Plan management, upgrades and renewals.", module: "Payments", category: "Payments", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.0.4", owner: "Billing Team", isPremium: false, isBeta: false, apiEndpoint: "/api/payment/plan", rateLimit: 100, rolloutPct: 100, isEnabled: true, dependencies: ["payments-gateway"] },
-  { key: "coupons", name: "Coupons & Discounts", description: "Promo codes and discount campaigns.", module: "Payments", category: "Payments", status: "Enabled", environment: "Production", accessLevel: "Admin", version: "1.2.0", owner: "Billing Team", isPremium: false, isBeta: false, apiEndpoint: "/api/admin/coupons", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["subscriptions"] },
-  { key: "push-notifications", name: "Push Notifications", description: "Real-time browser push notifications.", module: "Notifications", category: "Notifications", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.4.0", owner: "Platform Team", isPremium: false, isBeta: false, apiEndpoint: "/api/notifications", rateLimit: 400, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "email-notifications", name: "Email Notifications", description: "Transactional and digest emails.", module: "Notifications", category: "Notifications", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.5.2", owner: "Platform Team", isPremium: false, isBeta: false, apiEndpoint: "/api/notifications/email", rateLimit: 200, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "analytics-bi", name: "Analytics BI", description: "Business intelligence dashboards and exports.", module: "Analytics", category: "Analytics", status: "Enabled", environment: "Production", accessLevel: "Admin", version: "2.0.0", owner: "Data Team", isPremium: false, isBeta: false, apiEndpoint: "/api/admin/analytics/bi", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["usage-reports"] },
-  { key: "usage-reports", name: "Usage Reports", description: "Aggregated platform usage reporting.", module: "Analytics", category: "Analytics", status: "Enabled", environment: "Production", accessLevel: "Admin", version: "1.9.0", owner: "Data Team", isPremium: false, isBeta: false, apiEndpoint: "/api/admin/modules", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "cloud-storage", name: "Cloud Storage", description: "Cloudinary-backed media and document storage.", module: "Storage", category: "Storage", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.3.1", owner: "Infra Team", isPremium: false, isBeta: false, apiEndpoint: "/api/upload", rateLimit: 150, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "file-upload", name: "File Upload & Parsing", description: "PDF and document upload with content extraction.", module: "Storage", category: "Storage", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.6.0", owner: "Infra Team", isPremium: false, isBeta: false, apiEndpoint: "/api/resume-upload", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["cloud-storage", "auth-service"] },
-  { key: "public-api", name: "Public API", description: "Rate-limited public API surface for integrations.", module: "API", category: "API", status: "Maintenance", environment: "Production", accessLevel: "Developer", version: "1.0.0", owner: "DevRel Team", isPremium: false, isBeta: false, apiEndpoint: "/api/public", rateLimit: 30, rolloutPct: 100, isEnabled: false, dependencies: ["auth-service", "rate-limiter"] },
-  { key: "webhooks", name: "Webhooks", description: "Outbound event webhooks for external systems.", module: "API", category: "API", status: "Coming Soon", environment: "Staging", accessLevel: "Developer", version: "0.0.1", owner: "DevRel Team", isPremium: false, isBeta: true, apiEndpoint: "/api/webhooks", rateLimit: 20, rolloutPct: 5, isEnabled: true, dependencies: ["public-api", "auth-service"] },
-  { key: "security-center", name: "Security Center", description: "Threat monitoring, alerts and admin access control.", module: "Security", category: "Security", status: "Enabled", environment: "Production", accessLevel: "Admin", version: "3.0.0", owner: "Security Team", isPremium: false, isBeta: false, apiEndpoint: "/api/admin/security", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service", "rate-limiter"] },
-  { key: "rate-limiter", name: "Rate Limiter", description: "Global API rate limiting and abuse protection.", module: "Security", category: "Security", status: "Enabled", environment: "Production", accessLevel: "System", version: "1.2.0", owner: "Infra Team", isPremium: false, isBeta: false, apiEndpoint: "/api/rate-limit", rateLimit: 1000, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "maintenance-mode", name: "Maintenance Mode", description: "Global maintenance banner and graceful shutdown.", module: "System", category: "System", status: "Disabled", environment: "Production", accessLevel: "Admin", version: "1.0.1", owner: "Platform Team", isPremium: false, isBeta: false, apiEndpoint: "/api/config", rateLimit: 30, rolloutPct: 0, isEnabled: false, dependencies: ["feature-flagging"] },
-  { key: "feature-flagging", name: "Feature Flagging", description: "This feature flag control plane.", module: "System", category: "System", status: "Enabled", environment: "Production", accessLevel: "Admin", version: "1.0.0", owner: "Platform Team", isPremium: false, isBeta: false, apiEndpoint: "/api/admin/features", rateLimit: 100, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
-  { key: "legacy-resume-flow", name: "Legacy Resume Flow", description: "Previous resume builder flow kept for migration.", module: "Resume Hub", category: "Resume Hub", status: "Deprecated", environment: "Production", accessLevel: "All", version: "1.0.0", owner: "Resume Team", isPremium: false, isBeta: false, apiEndpoint: "/api/legacy/resume", rateLimit: 20, rolloutPct: 0, isEnabled: false, dependencies: ["resume-builder"] },
+  { key: "user-dashboard", name: "User Dashboard", description: "Personalized user home dashboard with hub widgets.", module: "Dashboard", category: "Dashboard", status: "Enabled", environment: "Production", accessLevel: "All", version: "3.0.1", owner: "Frontend Team", isPremium: false, isBeta: false, apiEndpoint: "/api/dashboard", rateLimit: 300, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+
+  // Resume Hub
+  { key: "resume-builder", name: "Resume Builder", description: "Professional resume creation with multi-style templates.", module: "Resume Hub", category: "Resume Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.3.0", owner: "Resume Team", isPremium: false, isBeta: false, apiEndpoint: "/api/resume", rateLimit: 150, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+  { key: "ats-checker", name: "ATS Checker", description: "Resume ATS compatibility scoring with keyword optimization.", module: "Resume Hub", category: "Resume Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "1.6.1", owner: "AI Team", isPremium: true, isBeta: false, apiEndpoint: "/api/ats", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["resume-builder", "ai-chat"] },
+  { key: "cover-letter", name: "Cover Letter Generator", description: "AI cover letters tailored to targeted job descriptions.", module: "Resume Hub", category: "Resume Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.3.4", owner: "AI Team", isPremium: false, isBeta: false, apiEndpoint: "/api/cover-letter", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["resume-builder", "ai-chat"] },
+  { key: "linkedin-report", name: "LinkedIn Profile Optimizer", description: "Profile optimization report for LinkedIn visibility.", module: "Resume Hub", category: "Resume Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "1.0.0", owner: "AI Team", isPremium: true, isBeta: false, apiEndpoint: "/api/linkedin", rateLimit: 30, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat", "resume-builder"] },
+  { key: "file-upload", name: "Resume Parsing & File Upload", description: "PDF and document upload with AI content extraction.", module: "Resume Hub", category: "Storage", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.6.0", owner: "Infra Team", isPremium: false, isBeta: false, apiEndpoint: "/api/resume-upload", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+
+  // Learning Hub
+  { key: "study-sessions", name: "Study Sessions & Tracking", description: "Tracked focused study sessions with subject tagging.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.2.0", owner: "Learning Team", isPremium: false, isBeta: false, apiEndpoint: "/api/study", rateLimit: 300, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+  { key: "notes-generator", name: "AI Study Notes Generator", description: "AI-powered study notes and summaries from uploaded materials.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.0.3", owner: "AI Team", isPremium: false, isBeta: false, apiEndpoint: "/api/notes", rateLimit: 80, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat", "study-sessions"] },
+  { key: "quiz-engine", name: "AI Quiz Engine", description: "AI-generated quizzes with adaptive difficulty.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.8.0", owner: "Learning Team", isPremium: false, isBeta: false, apiEndpoint: "/api/quiz", rateLimit: 120, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat", "auth-service"] },
+  { key: "assignments", name: "Assignments & Homework", description: "Create, solve and grade study assignments.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.4.1", owner: "Learning Team", isPremium: false, isBeta: false, apiEndpoint: "/api/assignment", rateLimit: 120, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+  { key: "mind-maps", name: "AI Mind Maps", description: "Visual concept mind maps generated from study content.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.1.5", owner: "AI Team", isPremium: false, isBeta: false, apiEndpoint: "/api/mindmap", rateLimit: 100, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat"] },
+  { key: "flashcards", name: "Spaced Flashcards", description: "Spaced-repetition flashcards for quick revision.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.0.2", owner: "Learning Team", isPremium: false, isBeta: false, apiEndpoint: "/api/flashcards", rateLimit: 100, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat"] },
+  { key: "study-planner", name: "AI Study Planner", description: "Personalized study schedules aligned to upcoming exams.", module: "Learning Hub", category: "Learning Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.0.0", owner: "AI Team", isPremium: false, isBeta: false, apiEndpoint: "/api/study-planner", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["study-sessions", "ai-chat"] },
+
+  // Coding Hub
+  { key: "coding-ide", name: "Interactive Coding IDE", description: "In-browser multi-language IDE with syntax highlighting.", module: "Coding Hub", category: "Coding Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.2.0", owner: "Coding Team", isPremium: false, isBeta: false, apiEndpoint: "/api/coding", rateLimit: 200, rolloutPct: 100, isEnabled: true, dependencies: ["code-runner", "auth-service"] },
+  { key: "dsa-problems", name: "DSA Practice Problems", description: "Curated DSA problem set with hints and solutions.", module: "Coding Hub", category: "Coding Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "3.1.2", owner: "Coding Team", isPremium: false, isBeta: false, apiEndpoint: "/api/dsa", rateLimit: 300, rolloutPct: 100, isEnabled: true, dependencies: ["coding-ide"] },
+  { key: "code-runner", name: "Code Execution Engine", description: "Sandboxed multi-language execution backed by Piston engine.", module: "Coding Hub", category: "Coding Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "2.0.7", owner: "Infra Team", isPremium: true, isBeta: false, apiEndpoint: "/api/coding/run", rateLimit: 60, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+
+  // Interview Hub
+  { key: "interview-engine", name: "AI Mock Interview Engine", description: "Real-time AI voice/text mock interviews with feedback.", module: "Interview Hub", category: "Interview Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "2.0.0", owner: "Interview Team", isPremium: true, isBeta: false, apiEndpoint: "/api/interview", rateLimit: 40, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat", "auth-service"] },
+  { key: "hr-interview", name: "HR Interview Simulator", description: "HR round behavioral interview simulation.", module: "Interview Hub", category: "Interview Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "1.0.0", owner: "Interview Team", isPremium: true, isBeta: false, apiEndpoint: "/api/interview/hr", rateLimit: 30, rolloutPct: 100, isEnabled: true, dependencies: ["interview-engine", "auth-service"] },
+  { key: "technical-interview", name: "Technical Interview Simulator", description: "Technical coding interview rounds with live evaluation.", module: "Interview Hub", category: "Interview Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "1.0.0", owner: "Interview Team", isPremium: true, isBeta: false, apiEndpoint: "/api/technical-engine", rateLimit: 30, rolloutPct: 100, isEnabled: true, dependencies: ["interview-engine", "code-runner", "auth-service"] },
+  { key: "proctoring", name: "Interview Proctoring", description: "Webcam and tab-switch monitoring during mock tests.", module: "Interview Hub", category: "Interview Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "1.0.0", owner: "Interview Team", isPremium: true, isBeta: false, apiEndpoint: "/api/interview/proctor", rateLimit: 20, rolloutPct: 100, isEnabled: true, dependencies: ["interview-engine"] },
+
+  // Placement & Research
+  { key: "job-discovery", name: "Smart Job Discovery", description: "Aggregated placement & job listings with AI match score.", module: "Placement Hub", category: "Placement Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.4.0", owner: "Placement Team", isPremium: false, isBeta: false, apiEndpoint: "/api/discovery", rateLimit: 200, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+  { key: "aptitude-tests", name: "Aptitude Practice Tests", description: "Mock quantitative aptitude and reasoning tests.", module: "Placement Hub", category: "Placement Hub", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.7.0", owner: "Placement Team", isPremium: false, isBeta: false, apiEndpoint: "/api/aptitude", rateLimit: 120, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+  { key: "research-assistant", name: "AI Research Assistant", description: "AI literature & paper search summaries.", module: "Research Hub", category: "Research Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "1.0.0", owner: "AI Team", isPremium: true, isBeta: false, apiEndpoint: "/api/research", rateLimit: 30, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat"] },
+  { key: "plagiarism-checker", name: "Originality & Plagiarism Checker", description: "Content originality and plagiarism detection.", module: "Research Hub", category: "Research Hub", status: "Enabled", environment: "Production", accessLevel: "Premium", version: "1.0.0", owner: "AI Team", isPremium: true, isBeta: false, apiEndpoint: "/api/plagiarism", rateLimit: 30, rolloutPct: 100, isEnabled: true, dependencies: ["ai-chat"] },
+
+  // AI Productivity & Chat
+  { key: "ai-chat", name: "AI Chat Assistant (Ady)", description: "Conversational AI assistant across all user features.", module: "AI Productivity", category: "AI Productivity", status: "Enabled", environment: "Production", accessLevel: "All", version: "3.2.0", owner: "AI Team", isPremium: false, isBeta: false, apiEndpoint: "/api/ady-chat", rateLimit: 150, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+
+  // Payments & Storage
+  { key: "payments-gateway", name: "Razorpay Payment Gateway", description: "Razorpay secure subscription payments and receipts.", module: "Payments", category: "Payments", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.1.0", owner: "Billing Team", isPremium: false, isBeta: false, apiEndpoint: "/api/payment", rateLimit: 100, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+  { key: "subscriptions", name: "Subscriptions & Upgrades", description: "Plan management, Pro & Premium upgrades.", module: "Payments", category: "Payments", status: "Enabled", environment: "Production", accessLevel: "All", version: "2.0.4", owner: "Billing Team", isPremium: false, isBeta: false, apiEndpoint: "/api/payment/plan", rateLimit: 100, rolloutPct: 100, isEnabled: true, dependencies: ["payments-gateway"] },
+  { key: "push-notifications", name: "Push Notifications", description: "Real-time browser notifications for updates.", module: "Notifications", category: "Notifications", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.4.0", owner: "Platform Team", isPremium: false, isBeta: false, apiEndpoint: "/api/notifications", rateLimit: 400, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+  { key: "email-notifications", name: "Email Digest & Alerts", description: "Transactional emails and weekly study digests.", module: "Notifications", category: "Notifications", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.5.2", owner: "Platform Team", isPremium: false, isBeta: false, apiEndpoint: "/api/notifications/email", rateLimit: 200, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+  { key: "cloud-storage", name: "Cloud Storage Drive", description: "Cloudinary document and media storage.", module: "Storage", category: "Storage", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.3.1", owner: "Infra Team", isPremium: false, isBeta: false, apiEndpoint: "/api/upload", rateLimit: 150, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
+  { key: "rate-limiter", name: "User Rate Protection", description: "API rate limiting to prevent abuse.", module: "Security", category: "Security", status: "Enabled", environment: "Production", accessLevel: "All", version: "1.2.0", owner: "Infra Team", isPremium: false, isBeta: false, apiEndpoint: "/api/rate-limit", rateLimit: 1000, rolloutPct: 100, isEnabled: true, dependencies: ["auth-service"] },
 ];
 
 const ROLE_HIERARCHY: Record<string, number> = {
@@ -399,41 +403,6 @@ export async function ensureFeatureSeed(): Promise<void> {
       }
     }
 
-    // Seed usage snapshots (14 days)
-    for (let i = 0; i < created.length; i++) {
-      const f = created[i];
-      const isAi = /ai|chat|copilot|generator|engine|plagiarism|roadmap|report|checker|interview/i.test(f.key);
-      const isPayments = f.key === "payments-gateway" || f.key === "subscriptions" || f.key === "coupons";
-      const base = Math.round((2500 + deterministicNoise(i, 0) * 6000) * (isPayments ? 0.35 : 1));
-      for (let d = 13; d >= 0; d--) {
-        const date = new Date(Date.now() - d * 24 * 60 * 60 * 1000);
-        const weekendDip = date.getDay() === 0 || date.getDay() === 6 ? 0.65 : 1;
-        const growth = 1 + (13 - d) * 0.015;
-        const wave = 0.85 + deterministicNoise(i, d) * 0.3;
-        const requests = Math.max(5, Math.round(base * weekendDip * growth * wave));
-        const users = Math.round(requests * (0.28 + deterministicNoise(i, d + 50) * 0.15));
-        const errors = Math.round(requests * (0.006 + deterministicNoise(i, d + 100) * 0.02));
-        const avgResponseMs = isAi ? Math.round(320 + deterministicNoise(i, d + 200) * 900) : Math.round(60 + deterministicNoise(i, d + 300) * 240);
-        const revenue = isPayments || f.isPremium ? Math.round(requests * (0.4 + deterministicNoise(i, d + 400) * 0.8)) : 0;
-        const aiTokens = isAi ? BigInt(Math.round(requests * (9000 + deterministicNoise(i, d + 500) * 16000))) : BigInt(0);
-        await (prisma as any).featureUsage.upsert({
-          where: { featureId_date: { featureId: f.id, date } },
-          update: {},
-          create: {
-            featureId: f.id,
-            date,
-            requests,
-            users,
-            successCount: requests - errors,
-            errorCount: errors,
-            avgResponseMs,
-            revenueGenerated: revenue,
-            aiTokensUsed: aiTokens,
-          },
-        });
-      }
-    }
-
     // Seed permissions matrix
     for (const f of created) {
       const accessLevel = f.accessLevel ?? "All";
@@ -528,31 +497,36 @@ export async function getFeatures(req: Request, res: Response, next: NextFunctio
     if (isPremium) where.isPremium = true;
     const roleFilterLevel = role ? (ROLE_HIERARCHY[role] ?? 0) : null;
 
+    const hubTableMap: Record<string, string> = {
+      "resume-builder": "resume",
+      "ats-checker": "aTSReport",
+      "cover-letter": "coverLetter",
+      "linkedin-report": "linkedInReport",
+      "study-sessions": "studySession",
+      "notes-generator": "generatedNote",
+      "quiz-engine": "quiz",
+      "assignments": "assignment",
+      "mind-maps": "mindMap",
+      "coding-ide": "codingSession",
+      "dsa-problems": "codingSession",
+      "code-runner": "submission",
+      "interview-engine": "interviewSession",
+      "hr-interview": "interviewSession",
+      "technical-interview": "interviewSession",
+      "ai-chat": "chatSession",
+    };
+
     const db = (prisma as any);
-    const [rows, flags, usageRows, depRows] = await Promise.all([
+    const [rows, flags, depRows, hubCounts] = await Promise.all([
       db.feature.findMany({ where, orderBy: { updatedAt: "desc" } }),
       db.featureFlag.findMany({ where: { environment } }),
-      db.featureUsage.findMany(),
       db.featureDependency.findMany(),
+      adminDbService.countAllAcrossAllUserDbs(Object.values(hubTableMap)).catch(() => ({})),
     ]);
 
     const flagMap: Record<string, any> = {};
     for (const f of flags || []) {
       if (f.featureId && !flagMap[f.featureId]) flagMap[f.featureId] = f;
-    }
-
-    const usageByFeature: Record<string, any> = {};
-    for (const u of usageRows || []) {
-      const agg = usageByFeature[u.featureId] || { requests: 0, users: 0, successCount: 0, errorCount: 0, sumResp: 0, respCount: 0, revenue: 0, aiTokens: 0 };
-      agg.requests += u.requests ?? 0;
-      agg.users = Math.max(agg.users, u.users ?? 0);
-      agg.successCount += u.successCount ?? 0;
-      agg.errorCount += u.errorCount ?? 0;
-      agg.sumResp += (u.avgResponseMs ?? 0) * (u.requests ?? 0);
-      agg.respCount += u.requests ?? 0;
-      agg.revenue += u.revenueGenerated ?? 0;
-      agg.aiTokens += Number(u.aiTokensUsed ?? 0);
-      usageByFeature[u.featureId] = agg;
     }
 
     const depMap: Record<string, string[]> = {};
@@ -566,23 +540,22 @@ export async function getFeatures(req: Request, res: Response, next: NextFunctio
       .filter((f: any) => {
         if (!roleFilterLevel) return true;
         const level = ACCESS_LEVEL_PRIORITY[f.accessLevel] ?? 0;
-        if (level === 0) return true; // "All" is viewable by every role
+        if (level === 0) return true;
         return roleFilterLevel >= level;
       })
       .map((f: any) => {
-        const usage = usageByFeature[f.id];
-        const agg = usage
-          ? {
-              requests: usage.requests,
-              users: usage.users,
-              successRate: usage.requests > 0 ? Math.round((usage.successCount / usage.requests) * 1000) / 10 : 100,
-              errors: usage.errorCount,
-              avgResponseMs: usage.respCount > 0 ? Math.round(usage.sumResp / usage.respCount) : 0,
-              revenue: Math.round(usage.revenue),
-              aiTokens: usage.aiTokens,
-              today: 0,
-            }
-          : null;
+        const tableName = hubTableMap[f.key];
+        const liveRequests = tableName ? (hubCounts[tableName] ?? 0) : 0;
+        const agg = {
+          requests: liveRequests,
+          users: Math.min(liveRequests, 50),
+          successRate: 100,
+          errors: 0,
+          avgResponseMs: 120,
+          revenue: 0,
+          aiTokens: 0,
+          today: 0,
+        };
         const flag = flagMap[f.id] || null;
         return serializeFeature(f, flag, agg, [], dependentMap[f.id] || 0);
       });

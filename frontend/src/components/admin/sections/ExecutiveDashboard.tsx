@@ -368,7 +368,11 @@ export default function ExecutiveDashboard() {
                   <HardDrive size={12} className="inline mr-1" />RAM
                 </span>
                 <span className="text-[11px] font-mono font-bold" style={{ color: "var(--text-secondary)" }}>
-                  {health ? `${(health.memory.used / 1024 / 1024).toFixed(1)}GB / ${(health.memory.total / 1024 / 1024).toFixed(1)}GB` : "—"}
+                  {health ? (
+                    health.memory.total >= 1024
+                      ? `${(health.memory.used / 1024).toFixed(2)} GB / ${(health.memory.total / 1024).toFixed(2)} GB`
+                      : `${health.memory.used} MB / ${health.memory.total} MB`
+                  ) : "—"}
                 </span>
               </div>
               <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
