@@ -313,17 +313,32 @@ Only include fields that actually changed. Omit unchanged fields.`;
  */
 export async function exportResumePdf(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = requireUserId(req);
+    const userId = (req as any).user?.userId;
 
-    const userPrisma = await getUserPrismaFromRequest(req);
-    const resume = await getResumeForUser(req.body.resumeId, userId, userPrisma);
+    let resumeTitle = req.body.title || "Resume";
+    let templateName = req.body.template || "modern";
+    let jr: JSONResume = (req.body.resumeData as JSONResume) ?? { basics: {} };
 
-    const jr = (resume.resumeData as unknown as JSONResume) ?? { basics: {} };
+    const targetId = req.body.resumeId;
+    if (targetId && userId) {
+      try {
+        const userPrisma = await getUserPrismaFromRequest(req);
+        const dbResume = await getResumeForUser(targetId, userId, userPrisma);
+        resumeTitle = dbResume.title || resumeTitle;
+        templateName = dbResume.template || templateName;
+        if (dbResume.resumeData) {
+          jr = dbResume.resumeData as unknown as JSONResume;
+        }
+      } catch {
+        /* fallback to inline payload */
+      }
+    }
+
     const legacy = jsonResumeToLegacy(jr);
 
     const resumeData: ResumeData = {
-      title: resume.title,
-      template: resume.template || "modern",
+      title: resumeTitle,
+      template: templateName,
       personalInfo: legacy.personalInfo ?? {},
       education: legacy.education ?? [],
       experience: legacy.experience ?? [],
@@ -337,7 +352,7 @@ export async function exportResumePdf(req: Request, res: Response, next: NextFun
     const pdfBuffer = await generateResumePdf(resumeData);
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${resume.title.replace(/\s+/g, "_")}.pdf"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${resumeTitle.replace(/\s+/g, "_")}.pdf"`);
     res.send(pdfBuffer);
   } catch (error) {
     next(error);
@@ -349,12 +364,25 @@ export async function exportResumePdf(req: Request, res: Response, next: NextFun
  */
 export async function exportResumeDocx(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = requireUserId(req);
+    const userId = (req as any).user?.userId;
 
-    const userPrisma = await getUserPrismaFromRequest(req);
-    const resume = await getResumeForUser(req.body.resumeId, userId, userPrisma);
+    let resumeTitle = req.body.title || "Resume";
+    let jr: JSONResume = (req.body.resumeData as JSONResume) ?? { basics: {} };
 
-    const jr = (resume.resumeData as unknown as JSONResume) ?? { basics: {} };
+    const targetId = req.body.resumeId;
+    if (targetId && userId) {
+      try {
+        const userPrisma = await getUserPrismaFromRequest(req);
+        const dbResume = await getResumeForUser(targetId, userId, userPrisma);
+        resumeTitle = dbResume.title || resumeTitle;
+        if (dbResume.resumeData) {
+          jr = dbResume.resumeData as unknown as JSONResume;
+        }
+      } catch {
+        /* fallback to inline payload */
+      }
+    }
+
     const legacy = jsonResumeToLegacy(jr);
 
     const p = legacy.personalInfo ?? {};
@@ -644,7 +672,7 @@ export async function exportResumeDocx(req: Request, res: Response, next: NextFu
     const buffer = await Packer.toBuffer(doc);
 
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-    res.setHeader("Content-Disposition", `attachment; filename="${resume.title.replace(/\s+/g, "_")}.docx"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${resumeTitle.replace(/\s+/g, "_")}.docx"`);
     res.send(buffer);
   } catch (error) {
     next(error);

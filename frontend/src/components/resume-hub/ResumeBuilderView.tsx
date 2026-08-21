@@ -381,29 +381,66 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
     } catch {}
     setGenStep(4); setGenerating(false); setBuilderPhase("working");
   };
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = async (): Promise<string | null> => {
     setSaving(true);
     try {
       const jr = formStateToJSONResume(resumeJSON);
       const payload = { title: `My ${setup.profession} Resume`, template: setup.resumeStyle, resumeData: jr, targetCompany: setup.company };
-      if (resumeId) await api.put(`/resume/update/${resumeId}`, payload);
-      else { const r = await api.post("/resume/create", payload); if (r.data?.success && r.data.resume) setResumeId(r.data.resume.id); }
+      let activeId = resumeId;
+      if (activeId) {
+        await api.put(`/resume/update/${activeId}`, payload);
+      } else {
+        const r = await api.post("/resume/create", payload);
+        if (r.data?.success && r.data.resume) {
+          activeId = r.data.resume.id;
+          setResumeId(activeId);
+        }
+      }
       const now = new Date();
       setLastSaved(now);
       lastSavedRef.current = now.toLocaleTimeString();
       showToast("Draft saved!");
-    } catch { showToast("Save failed"); } finally { setSaving(false); }
+      return activeId;
+    } catch {
+      showToast("Save failed");
+      return null;
+    } finally {
+      setSaving(false);
+    }
   };
+
   const handleExport = async (type: "pdf" | "docx") => {
-    if (!resumeId) await handleSaveDraft();
     setExporting(type);
+    let currentId = resumeId;
+    if (!currentId) {
+      currentId = await handleSaveDraft();
+    }
     try {
-      const id = resumeId; if (!id) return;
-      const r = await api.post(`/resume/export-${type}`, { resumeId: id }, { responseType: "blob" });
-      const blob = new Blob([r.data], { type: type === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-      const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `${setup.company}_${setup.profession}_Resume.${type}`; link.click();
+      const payload = {
+        resumeId: currentId || undefined,
+        title: `My ${setup.profession} Resume`,
+        template: setup.resumeStyle,
+        resumeData: formStateToJSONResume(resumeJSON),
+      };
+      const r = await api.post(`/resume/export-${type}`, payload, { responseType: "blob" });
+
+      const mimeType = type === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const blob = new Blob([r.data], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${(setup.company || "My").replace(/\s+/g, "_")}_${(setup.profession || "Resume").replace(/\s+/g, "_")}_Resume.${type}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       showToast(`Exported as ${type.toUpperCase()}`);
-    } catch { showToast("Export failed"); } finally { setExporting(null); }
+    } catch (err: unknown) {
+      console.error("[Export Error]", err);
+      showToast(`Exporting ${type.toUpperCase()} failed. Please try again.`);
+    } finally {
+      setExporting(null);
+    }
   };
 
   const addEdu = () => { pushUndo(); setEducation([...education, { institution: "", degree: "", fieldOfStudy: "", startDate: "", endDate: "", grade: "" }]); };
@@ -979,43 +1016,43 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
       {/* ─── SETUP MODAL ─── */}
       <AnimatePresence>
         {builderPhase === "setup" && !generating && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} style={{ background: c.cardBg, borderRadius: 20, border: `1px solid ${c.border}`, padding: "1.5rem 2rem", maxWidth: 480, width: "min(90vw, 480px)", maxHeight: "80vh", overflowY: "auto" }}>
-              <div style={{ textAlign: "center", marginBottom: "1.25rem" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>
-                  <FileText size={20} style={{ color: "#000" }} />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", padding: "1.5rem 1rem" }}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} style={{ background: c.cardBg, borderRadius: 20, border: `1px solid ${c.border}`, padding: "1.25rem 1.5rem", maxWidth: 460, width: "min(92vw, 460px)", maxHeight: "calc(100vh - 4rem)", overflowY: "auto", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
+              <div style={{ textAlign: "center", marginBottom: "1rem" }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-1.5" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>
+                  <FileText size={18} style={{ color: "#000" }} />
                 </div>
-                <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: c.text, margin: 0 }}>Resume Setup</h2>
-                <p style={{ fontSize: "0.78rem", color: c.textMuted, margin: "0.2rem 0 0" }}>Configure your resume targets</p>
+                <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: c.text, margin: 0 }}>Resume Setup</h2>
+                <p style={{ fontSize: "0.75rem", color: c.textMuted, margin: "0.15rem 0 0" }}>Configure your resume targets</p>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
                 {[
-                  { label: "Target Company", value: setup.company, onChange: (v: string) => setSetup({ ...setup, company: v }), options: COMPANIES, icon: <Briefcase size={14} /> },
-                  { label: "Target Profession", value: setup.profession, onChange: (v: string) => setSetup({ ...setup, profession: v }), options: PROFESSIONS, icon: <Code2 size={14} /> },
-                  { label: "Career Level", value: setup.careerLevel, onChange: (v: string) => setSetup({ ...setup, careerLevel: v }), options: CAREER_LEVELS, icon: <Target size={14} /> },
-                  { label: "Resume Style", value: setup.resumeStyle, onChange: (v: string) => setSetup({ ...setup, resumeStyle: v }), options: RESUME_STYLES, icon: <FileText size={14} /> },
+                  { label: "Target Company", value: setup.company, onChange: (v: string) => setSetup({ ...setup, company: v }), options: COMPANIES, icon: <Briefcase size={13} /> },
+                  { label: "Target Profession", value: setup.profession, onChange: (v: string) => setSetup({ ...setup, profession: v }), options: PROFESSIONS, icon: <Code2 size={13} /> },
+                  { label: "Career Level", value: setup.careerLevel, onChange: (v: string) => setSetup({ ...setup, careerLevel: v }), options: CAREER_LEVELS, icon: <Target size={13} /> },
+                  { label: "Resume Style", value: setup.resumeStyle, onChange: (v: string) => setSetup({ ...setup, resumeStyle: v }), options: RESUME_STYLES, icon: <FileText size={13} /> },
                 ].map((field) => (
-                  <div key={field.label} style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, padding: "0.6rem 0.85rem" }}>
-                    <label style={{ fontSize: "0.65rem", fontWeight: 700, color: c.textSecondary, textTransform: "uppercase", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                  <div key={field.label} style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, padding: "0.5rem 0.75rem" }}>
+                    <label style={{ fontSize: "0.62rem", fontWeight: 700, color: c.textSecondary, textTransform: "uppercase", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
                       <span style={{ color: col }}>{field.icon}</span> {field.label}
                     </label>
                     <select value={field.value} onChange={(e) => field.onChange(e.target.value)}
-                      style={{ ...inputSx, cursor: "pointer", appearance: "none" as const, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f59e0b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.75rem center", paddingRight: "2rem" }}>
+                      style={{ ...inputSx, cursor: "pointer", padding: "0.45rem 0.75rem", fontSize: "0.78rem", appearance: "none" as const, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f59e0b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.75rem center", paddingRight: "2rem" }}>
                       {field.options.map((o) => <option key={o} value={o}>{o}</option>)}
                     </select>
                   </div>
                 ))}
               </div>
 
-              <div style={{ display: "flex", gap: 8, marginTop: "1.25rem" }}>
+              <div style={{ display: "flex", gap: 8, marginTop: "1rem" }}>
                 <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={() => setBuilderPhase("working")}
-                  style={{ flex: 1, padding: "0.6rem", borderRadius: 10, border: `1px solid ${c.border}`, background: c.surface, color: c.textSecondary, fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>
+                  style={{ flex: 1, padding: "0.55rem", borderRadius: 10, border: `1px solid ${c.border}`, background: c.surface, color: c.textSecondary, fontWeight: 600, fontSize: "0.78rem", cursor: "pointer" }}>
                   Skip for now
                 </motion.button>
                 <motion.button whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(245,158,11,0.3)" }} whileTap={{ scale: 0.98 }} onClick={handleGenerate}
-                  style={{ flex: 2, padding: "0.6rem", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                  <Sparkles size={14} /> Generate AI Resume
+                  style={{ flex: 2, padding: "0.55rem", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <Sparkles size={13} /> Generate AI Resume
                 </motion.button>
               </div>
             </motion.div>

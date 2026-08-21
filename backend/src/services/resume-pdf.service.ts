@@ -1,16 +1,37 @@
 import puppeteer, { Browser } from "puppeteer";
+import fs from "fs";
+import PDFDocumentBase from "pdfkit";
 
 let sharedBrowser: Browser | null = null;
 let browserLaunchPromise: Promise<Browser> | null = null;
+
+function getSystemChromePath(): string | undefined {
+  const paths = [
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    (process.env.LOCALAPPDATA || "") + "\\Google\\Chrome\\Application\\chrome.exe",
+  ];
+  for (const p of paths) {
+    if (p && fs.existsSync(p)) return p;
+  }
+  return undefined;
+}
 
 async function getBrowser(): Promise<Browser> {
   if (sharedBrowser && sharedBrowser.connected) return sharedBrowser;
   if (browserLaunchPromise) return browserLaunchPromise;
 
-  browserLaunchPromise = puppeteer.launch({
+  const executablePath = getSystemChromePath();
+  const launchOptions: any = {
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-  }).then((browser) => {
+  };
+  if (executablePath) {
+    launchOptions.executablePath = executablePath;
+  }
+
+  browserLaunchPromise = puppeteer.launch(launchOptions).then((browser) => {
     sharedBrowser = browser;
     browserLaunchPromise = null;
     browser.on("disconnected", () => {
@@ -19,6 +40,7 @@ async function getBrowser(): Promise<Browser> {
     return browser;
   }).catch((err) => {
     browserLaunchPromise = null;
+    console.error("[Puppeteer Launch Error]", err);
     throw err;
   });
 
@@ -367,25 +389,106 @@ function renderTemplate(data: ResumeData): string {
   return fn(data);
 }
 
+
 // ─── PDF GENERATION ──────────────────────────────────────────────────────────
 
+async function generatePdfWithPdfKit(data: ResumeData): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocumentBase({ margin: 36, size: "A4" });
+      const chunks: Buffer[] = [];
+
+      doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", (err) => reject(err));
+
+      const p = data.personalInfo || {};
+
+      // Header
+      doc.fillColor("#0f172a").fontSize(20).font("Helvetica-Bold").text(p.fullName || data.title || "Resume", { align: "center" });
+      doc.moveDown(0.3);
+
+      const contacts = [p.email, p.phone, p.location].filter(Boolean).join("  |  ");
+      if (contacts) {
+        doc.fillColor("#475569").fontSize(9).font("Helvetica").text(contacts, { align: "center" });
+        doc.moveDown(0.2);
+      }
+
+      const links = [p.linkedin, p.github, p.portfolio || p.website].filter(Boolean).join("  |  ");
+      if (links) {
+        doc.fillColor("#2563eb").fontSize(8.5).font("Helvetica").text(links, { align: "center" });
+        doc.moveDown(0.4);
+      }
+
+      const addHeader = (title: string) => {
+        doc.moveDown(0.4);
+        doc.fillColor("#0f172a").fontSize(10.5).font("Helvetica-Bold").text(title.toUpperCase());
+        doc.strokeColor("#e2e8f0").lineWidth(0.75).moveTo(36, doc.y).lineTo(559, doc.y).stroke();
+        doc.moveDown(0.3);
+      };
+
+      if (p.summary) {
+        addHeader("Professional Summary");
+        doc.fillColor("#334155").fontSize(9).font("Helvetica").text(p.summary, { align: "justify" });
+      }
+
+      if (data.experience?.length) {
+        addHeader("Work Experience");
+        data.experience.forEach((e) => {
+          doc.fillColor("#0f172a").fontSize(9.5).font("Helvetica-Bold").text(`${e.role || "Role"} ${e.company ? `@ ${e.company}` : ""}`);
+          if (e.startDate || e.endDate) {
+            doc.fillColor("#64748b").fontSize(8).font("Helvetica").text(`${e.startDate || ""} ${e.endDate ? `- ${e.endDate}` : ""}`);
+          }
+          if (e.description) {
+            doc.fillColor("#334155").fontSize(8.5).font("Helvetica").text(e.description);
+          }
+          doc.moveDown(0.25);
+        });
+      }
+
+      if (data.projects?.length) {
+        addHeader("Projects");
+        data.projects.forEach((proj) => {
+          doc.fillColor("#0f172a").fontSize(9.5).font("Helvetica-Bold").text(proj.name || proj.title || "Project");
+          if (proj.techStack) {
+            doc.fillColor("#d97706").fontSize(8).font("Helvetica-Oblique").text(`Tech Stack: ${proj.techStack}`);
+          }
+          if (proj.description) {
+            doc.fillColor("#334155").fontSize(8.5).font("Helvetica").text(proj.description);
+          }
+          doc.moveDown(0.25);
+        });
+      }
+
+      if (data.education?.length) {
+        addHeader("Education");
+        data.education.forEach((edu) => {
+          doc.fillColor("#0f172a").fontSize(9.5).font("Helvetica-Bold").text(`${edu.degree || "Degree"} ${edu.fieldOfStudy ? `in ${edu.fieldOfStudy}` : ""}`);
+          doc.fillColor("#64748b").fontSize(8.5).font("Helvetica").text(edu.institution || "");
+          if (edu.grade) doc.fillColor("#64748b").fontSize(8).font("Helvetica").text(`Grade/GPA: ${edu.grade}`);
+          doc.moveDown(0.25);
+        });
+      }
+
+      if (data.skills?.length) {
+        addHeader("Technical Skills");
+        doc.fillColor("#334155").fontSize(9).font("Helvetica").text(data.skills.join(" • "));
+      }
+
+      if (data.certifications?.length) {
+        addHeader("Certifications");
+        data.certifications.forEach((c) => {
+          doc.fillColor("#334155").fontSize(8.5).font("Helvetica").text(`• ${c.name || c.title}${c.issuer ? ` (${c.issuer})` : ""}`);
+        });
+      }
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 export async function generateResumePdf(data: ResumeData): Promise<Buffer> {
-  const html = renderTemplate(data);
-
-  const browser = await getBrowser();
-  const page = await browser.newPage();
-
-  try {
-    await page.setContent(html, { waitUntil: "load" });
-
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "0", right: "0", bottom: "0", left: "0" },
-    });
-
-    return Buffer.from(pdfBuffer);
-  } finally {
-    await page.close();
-  }
+  return generatePdfWithPdfKit(data);
 }
