@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-export function Navbar() {
+export function Navbar({ forceWhiteText }: { forceWhiteText?: boolean } = {}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
@@ -24,12 +24,13 @@ export function Navbar() {
 
   const navBg = "transparent";
   const navBorder = "transparent";
-  const linkColor = theme === "dark" ? "#c5c5c5" : "#475569";
-  const linkHover = theme === "dark" ? "#ffffff" : "#0f172a";
-  const logoColor = theme === "dark" ? "#ffffff" : "#0f172a";
-  const loginBg = theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
-  const getStartedBg = theme === "dark" ? "#ffffff" : "#0f172a";
-  const getStartedText = theme === "dark" ? "#0d0d0d" : "#ffffff";
+  const useWhite = forceWhiteText || theme === "dark";
+  const linkColor = useWhite ? "rgba(255, 255, 255, 0.9)" : "#475569";
+  const linkHover = "#ffffff";
+  const logoColor = useWhite ? "#ffffff" : "#0f172a";
+  const loginBg = useWhite ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.05)";
+  const getStartedBg = useWhite ? "#ffffff" : "#0f172a";
+  const getStartedText = useWhite ? "#0d0d0d" : "#ffffff";
 
   return (
     <header
