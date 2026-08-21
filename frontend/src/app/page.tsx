@@ -219,10 +219,12 @@ export default function LandingPage() {
   const [terminalText, setTerminalText] = useState("");
   const promptString = "Build a microservices-based Netflix Clone using React...";
 
-  // Set video playback speed
+  // Set video playback speed & continuous playback
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = 1.5;
+    const v = videoRef.current;
+    if (v) {
+      v.playbackRate = 1.1;
+      v.play().catch(() => {});
     }
   }, []);
 
@@ -294,7 +296,7 @@ export default function LandingPage() {
       <motion.section
         id="home"
         style={{ scale: heroScale, opacity: heroOpacity, y: heroY }}
-        className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-20 px-4 md:px-8 z-10 overflow-hidden bg-[#030712]"
+        className="relative min-h-[85vh] flex flex-col items-center justify-center pt-20 pb-4 md:pb-6 px-4 md:px-8 z-10 overflow-hidden bg-[#030712]"
       >
         {/* Large "ADYAPAN" text background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
@@ -415,14 +417,8 @@ export default function LandingPage() {
       </motion.section>
 
       {/* ════════════════ TRANSPARENT VIDEO SECTION ════════════════ */}
-      <Section bg="bg-[#030712]" variant="fadeUp" className="py-8 md:py-12">
-        <motion.div
-          className="flex justify-center items-center -mx-4 md:-mx-12"
-          initial={{ opacity: 0, scale: 0.92, y: 40 }}
-          whileInView={{ opacity: 1, scale: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-        >
+      <section className="relative bg-[#030712] pt-0 pb-4 md:pb-8 -mt-6 md:-mt-12 overflow-hidden z-10">
+        <div className="flex justify-center items-center -mx-4 md:-mx-12">
           <video
             ref={videoRef}
             autoPlay
@@ -430,6 +426,7 @@ export default function LandingPage() {
             loop
             playsInline
             preload="auto"
+            disablePictureInPicture
             className="w-screen h-auto relative z-10"
             style={{
               maxHeight: "600px",
@@ -438,13 +435,18 @@ export default function LandingPage() {
               maskImage: "radial-gradient(ellipse 92% 85% at 50% 50%, black 65%, transparent 100%)",
               filter: "drop-shadow(0 0 35px rgba(245, 158, 11, 0.25)) contrast(1.05)",
             }}
+            onEnded={(e) => {
+              const v = e.currentTarget;
+              v.currentTime = 0;
+              v.play().catch(() => {});
+            }}
           >
             <source src="/Adyapan-ai-character.webm" type="video/webm" />
             <source src="/Adyapan-ai-character.mp4" type="video/mp4" />
             <source src="/Adyapan-ai-character.mov" type="video/quicktime" />
           </video>
-        </motion.div>
-      </Section>
+        </div>
+      </section>
 
       {/* ════════════════ HOW IT WORKS ════════════════ */}
       <Section id="how-it-works" bg="bg-[#05070c]" variant="section3D">
