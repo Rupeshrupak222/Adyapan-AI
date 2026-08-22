@@ -330,7 +330,7 @@ export function PremiumSetupWizard({
         toast.info("Complete payment in the new window, then click Verify Payment.");
       } else if (o.provider === "stripe") {
         setStep(4);
-        toast.info("Stripe checkout requires a redirect — use Mock or Razorpay in development.");
+        toast.info("Stripe checkout requires a redirect.");
       }
     } catch (err) {
       const msg =
@@ -622,7 +622,6 @@ export function PremiumSetupWizard({
                             razorpay: { label: "Razorpay", hint: "UPI · Cards · NetBanking · Wallets", icon: <Wallet className="w-4 h-4" /> },
                             stripe: { label: "Stripe", hint: "Cards · Apple/Google Pay", icon: <CreditCard className="w-4 h-4" /> },
                             paypal: { label: "PayPal", hint: "PayPal balance · Cards", icon: <Zap className="w-4 h-4" /> },
-                            mock: { label: "Test Mode", hint: "Simulate payment instantly", icon: <RefreshCw className="w-4 h-4" /> },
                           };
                           const m = meta[pname] || { label: pname, hint: "", icon: <CreditCard className="w-4 h-4" /> };
                           return (
@@ -649,16 +648,10 @@ export function PremiumSetupWizard({
                           );
                         })}
                       </div>
-                      {provider === "mock" && (
-                        <div className="rounded-xl p-3 bg-amber-500/[0.08] border border-amber-500/25 text-[10px] text-amber-600 dark:text-amber-400 flex items-start gap-2">
-                          <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          Test mode — no real charge. Payment is simulated and your subscription activates instantly.
-                        </div>
-                      )}
                       {provider === "razorpay" && (
                         <div className="rounded-xl p-3 bg-sky-500/[0.08] border border-sky-500/25 text-[10px] text-sky-600 dark:text-sky-400 flex items-start gap-2">
                           <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          A secure Razorpay checkout will open to complete your payment. Test card: 4111 1111 1111 1111.
+                          A secure Razorpay checkout will open to complete your payment.
                         </div>
                       )}
                     </div>

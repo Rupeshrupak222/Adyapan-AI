@@ -3,7 +3,7 @@ import { httpError } from "../utils/httpError";
 
 // ─── Types ────────────────────────────────────────────────────────
 
-export type PaymentProviderName = "razorpay" | "stripe" | "paypal" | "mock";
+export type PaymentProviderName = "razorpay" | "stripe" | "paypal";
 
 export interface CreateOrderInput {
   userId: string;
@@ -262,49 +262,16 @@ class PayPalProvider implements PaymentProvider {
   }
 }
 
-// ─── Mock provider (no external gateway configured) ────────────────
-
-class MockProvider implements PaymentProvider {
-  readonly name = "mock" as const;
-  get configured() {
-    return true;
-  }
-
-  async createOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
-    return {
-      provider: "mock",
-      providerOrderId: `order_mock_${Math.random().toString(36).slice(2, 10)}`,
-      amount: input.amount,
-      currency: input.currency,
-    };
-  }
-
-  async verifyPayment(): Promise<boolean> {
-    return true;
-  }
-
-  async cancelSubscription(): Promise<boolean> {
-    return true;
-  }
-
-  async refund(input: RefundInput): Promise<{ refundId: string; status: string }> {
-    return { refundId: `refund_mock_${Math.random().toString(36).slice(2, 10)}`, status: "refunded" };
-  }
-}
-
 // ─── Registry ──────────────────────────────────────────────────────
 
 const providers: Record<string, PaymentProvider> = {
   razorpay: new RazorpayProvider(),
   stripe: new StripeProvider(),
   paypal: new PayPalProvider(),
-  mock: new MockProvider(),
 };
 
 /**
- * Resolve a provider. When the requested provider is unavailable it falls
- * back in the order: razorpay → mock. This keeps the app usable in local
- * dev (no gateway keys) while preferring real gateways in production.
+ * Resolve a payment provider.
  */
 export function getPaymentProvider(name?: string): PaymentProvider {
   const requested = String(name || "").toLowerCase();
@@ -312,7 +279,7 @@ export function getPaymentProvider(name?: string): PaymentProvider {
     if (providers[requested].configured) return providers[requested];
   }
   if (providers.razorpay.configured) return providers.razorpay;
-  return providers.mock;
+  throw httpError(503, "Razorpay payment gateway is not configured. Real payment gateway credentials required.");
 }
 
 export function listConfiguredProviders(): Array<{ provider: PaymentProviderName; configured: boolean }> {

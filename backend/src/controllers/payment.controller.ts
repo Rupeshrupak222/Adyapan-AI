@@ -18,7 +18,7 @@ try {
       key_secret: env.razorpay.keySecret,
     });
   } else {
-    console.warn("Razorpay credentials not set. Running in dummy payment mode.");
+    console.warn("[PaymentController] Razorpay credentials not configured.");
   }
 } catch (e) {
   console.error("Failed to initialize Razorpay SDK:", e);
@@ -56,19 +56,16 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
     }
     const finalAmount = amount - discountAmount;
 
-    const order = razorpay
-      ? await razorpay.orders.create({
-          amount: finalAmount,
-          currency: "INR",
-          receipt: `receipt_${userId}_${Date.now()}`,
-          notes: { userId, plan, label, couponCode: appliedCoupon ?? "" },
-        })
-      : {
-          id: `order_mock_${Math.random().toString(36).substring(7)}`,
-          amount: finalAmount,
-          currency: "INR",
-          receipt: `receipt_${userId}_${Date.now()}`,
-        };
+    if (!razorpay) {
+      throw httpError(503, "Razorpay payment gateway is not configured. Real payment gateway credentials required.");
+    }
+
+    const order = await razorpay.orders.create({
+      amount: finalAmount,
+      currency: "INR",
+      receipt: `receipt_${userId}_${Date.now()}`,
+      notes: { userId, plan, label, couponCode: appliedCoupon ?? "" },
+    });
 
     await prisma.payment.create({
       data: {

@@ -532,17 +532,6 @@ export default function PremiumPage() {
           </motion.div>
         )}
 
-        {/* Test Mode Notice */}
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-          className="mt-8 text-center"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-bold transition-colors"
-            style={{ background: colors.testNoticeBg, color: colors.testNoticeText, border: colors.testNoticeBorder }}>
-            <Shield className="w-3 h-3" />
-            Test Mode — Use card 4111 1111 1111 1111 for test payments
-          </div>
-        </motion.div>
       </div>
 
       <PremiumSetupWizard
