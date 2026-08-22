@@ -5,6 +5,8 @@ import {
   getRegistrationAnalytics,
   getAdminUsers,
   updateUserPlan,
+  createAdminUser,
+  editAdminUser,
   getAiAnalytics,
   getRevenueAnalytics,
   getSystemHealth,
@@ -92,6 +94,8 @@ adminRouter.get("/dashboard", ...can("analytics", "read"), getDashboardStats);
 adminRouter.get("/activity", ...can("analytics", "read"), getActivityFeed);
 adminRouter.get("/analytics/registrations", ...can("analytics", "read"), getRegistrationAnalytics);
 adminRouter.get("/users", ...can("users", "read"), getAdminUsers);
+adminRouter.post("/users", ...can("users", "write"), createAdminUser);
+adminRouter.put("/users/:id", ...can("users", "write"), editAdminUser);
 adminRouter.post("/users/:id/action", ...can("users", "write"), updateUserPlan);
 adminRouter.get("/analytics/ai", ...can("analytics", "read"), getAiAnalytics);
 adminRouter.get("/analytics/revenue", ...can("analytics", "read"), getRevenueAnalytics);

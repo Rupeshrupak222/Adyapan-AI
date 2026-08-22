@@ -10,6 +10,8 @@ import { autoResolveCompanyLogo } from "../utils/companyLogoResolver";
 import { JobDiscoveryService } from "../services/job-discovery.service";
 import { emitBroadcastNotification } from "../lib/notificationEmitter";
 import { AdminAuditService } from "../services/admin-audit.service";
+import { registerUser } from "../services/auth.service";
+import { calculateProfileCompletion } from "../utils/profileCompletion";
 
 // ─── Global admin settings (DB-backed via AdminSetting) ──────────
 
@@ -561,6 +563,211 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
     }
 
     throw httpError(400, "Invalid action");
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── 4b. Create User (Admin) ─────────────────────────────────────
+
+export async function createAdminUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const {
+      name, email, password, role,
+      firstName, lastName, phone,
+      college, branch, year, degree,
+      country, state, city,
+      department, course, semester, studentId,
+      plan, // optional plan code to assign (e.g. "pro_monthly", "premium", "free")
+    } = req.body;
+
+    if (!name || !email || !password) {
+      throw httpError(400, "Name, email, and password are required");
+    }
+
+    // Use the same registration flow as normal signup
+    const result = await registerUser({
+      name,
+      email,
+      password,
+      role: role === "ADMIN" ? "ADMIN" : "USER",
+      firstName,
+      lastName,
+      phone,
+      college,
+      branch,
+      year,
+      degree,
+      country,
+      state,
+      city,
+      department,
+      course,
+      semester,
+      studentId,
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+
+    const userId = result.user.id;
+
+    // If a plan was specified (other than free), upgrade the user
+    const planCode = (plan || "").toLowerCase().trim();
+    if (planCode && planCode !== "free") {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          plan: planCode,
+          subscriptionStatus: "active",
+          subscriptionEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        },
+      });
+      // Update or create the subscription record
+      await prisma.subscription.updateMany({
+        where: { userId },
+        data: {
+          planCode,
+          status: "active",
+          provider: "admin",
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+
+    const adminId = (req as any).adminUser?.id;
+    const adminName = (req as any).adminUser?.name || "Admin";
+    await AdminAuditService.log({
+      adminId,
+      adminName,
+      action: "User Created",
+      module: "User Management",
+      targetId: userId,
+      details: { email, plan: planCode || "free", role: role || "USER" },
+      ipAddress: req.ip,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `User "${name}" created successfully${planCode && planCode !== "free" ? ` with ${planCode} plan` : ""}`,
+      userId,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── 4c. Edit User (Admin) ───────────────────────────────────────
+
+export async function editAdminUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.params.id as string;
+    const {
+      name, email, role, password,
+      firstName, lastName, phone,
+      college, branch, year, degree,
+      country, state, city,
+      department, course, semester, studentId,
+      plan, subscriptionStatus,
+    } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, include: { profile: true } });
+    if (!user) throw httpError(404, "User not found");
+
+    // Build user update data
+    const userData: any = {};
+    if (name !== undefined) userData.name = name.trim();
+    if (email !== undefined) userData.email = email.toLowerCase().trim();
+    if (role !== undefined) userData.role = role === "ADMIN" ? "ADMIN" : "USER";
+    if (firstName !== undefined) userData.firstName = firstName?.trim() || null;
+    if (lastName !== undefined) userData.lastName = lastName?.trim() || null;
+    if (password) {
+      userData.password = await bcrypt.hash(password, 12);
+    }
+
+    // Handle plan change
+    const planCode = plan !== undefined ? (plan || "").toLowerCase().trim() : undefined;
+    if (planCode !== undefined && planCode !== (user.plan || "").toLowerCase()) {
+      userData.plan = planCode || "free";
+      if (planCode && planCode !== "free") {
+        userData.subscriptionStatus = "active";
+        userData.subscriptionEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      } else {
+        userData.subscriptionStatus = "free";
+        userData.subscriptionEnd = null;
+      }
+      // Update subscription record
+      const existingSub = await prisma.subscription.findFirst({ where: { userId }, orderBy: { createdAt: "desc" } });
+      if (existingSub) {
+        await prisma.subscription.update({
+          where: { id: existingSub.id },
+          data: {
+            planCode: planCode || "free",
+            status: planCode && planCode !== "free" ? "active" : "free",
+            provider: "admin",
+            currentPeriodEnd: planCode && planCode !== "free"
+              ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          },
+        });
+      }
+    } else if (subscriptionStatus !== undefined) {
+      userData.subscriptionStatus = subscriptionStatus;
+    }
+
+    // Update user record
+    if (Object.keys(userData).length > 0) {
+      await prisma.user.update({ where: { id: userId }, data: userData });
+    }
+
+    // Build profile update data
+    const profileData: any = {};
+    if (phone !== undefined) profileData.phone = phone?.trim() || null;
+    if (college !== undefined) profileData.college = college?.trim() || null;
+    if (branch !== undefined) profileData.branch = branch?.trim() || null;
+    if (year !== undefined) profileData.year = year?.trim() || null;
+    if (degree !== undefined) profileData.degree = degree?.trim() || null;
+    if (country !== undefined) profileData.country = country?.trim() || null;
+    if (state !== undefined) profileData.state = state?.trim() || null;
+    if (city !== undefined) profileData.city = city?.trim() || null;
+    if (department !== undefined) profileData.department = department?.trim() || null;
+    if (course !== undefined) profileData.course = course?.trim() || null;
+    if (semester !== undefined) profileData.semester = semester?.trim() || null;
+    if (studentId !== undefined) profileData.studentId = studentId?.trim() || null;
+
+    if (Object.keys(profileData).length > 0) {
+      // Recalculate profile completion
+      const mergedProfile = { ...user.profile, ...profileData };
+      profileData.profileCompletion = calculateProfileCompletion(mergedProfile);
+
+      if (user.profile) {
+        await prisma.profile.update({ where: { userId }, data: profileData });
+      } else {
+        await prisma.profile.create({
+          data: {
+            userId,
+            username: (email || user.email).split("@")[0],
+            ...profileData,
+          },
+        });
+      }
+    }
+
+    const adminId = (req as any).adminUser?.id;
+    const adminName = (req as any).adminUser?.name || "Admin";
+    await AdminAuditService.log({
+      adminId,
+      adminName,
+      action: "User Edited",
+      module: "User Management",
+      targetId: userId,
+      details: { email: email || user.email, fieldsChanged: Object.keys({ ...userData, ...profileData }) },
+      ipAddress: req.ip,
+    });
+
+    res.json({
+      success: true,
+      message: "User updated successfully",
+    });
   } catch (error) {
     next(error);
   }
