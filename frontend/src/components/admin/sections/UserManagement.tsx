@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Users, Shield, Crown, Star, X, ChevronLeft, ChevronRight,
   Lock, Trash2, ArrowUpDown, Loader2, CheckCircle, AlertTriangle,
-  UserPlus, UserMinus, MoreVertical, RefreshCw
+  UserPlus, UserMinus, MoreVertical, RefreshCw, Edit3
 } from "lucide-react";
 import { api } from "@/services/api";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
@@ -48,6 +48,39 @@ interface UsersResponse {
 }
 
 type FilterChip = "all" | "admin" | "premium" | "free" | "active" | "suspended";
+
+interface UserFormData {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  college: string;
+  branch: string;
+  year: string;
+  degree: string;
+  country: string;
+  state: string;
+  city: string;
+  department: string;
+  course: string;
+  semester: string;
+  studentId: string;
+  plan: string;
+}
+
+function getEmptyUserForm(): UserFormData {
+  return {
+    name: "", email: "", password: "", role: "USER",
+    firstName: "", lastName: "", phone: "",
+    college: "", branch: "", year: "", degree: "",
+    country: "", state: "", city: "",
+    department: "", course: "", semester: "", studentId: "",
+    plan: "free",
+  };
+}
 
 const filterChips: { id: FilterChip; label: string }[] = [
   { id: "all", label: "All Users" },
@@ -106,6 +139,12 @@ export default function UserManagement() {
   const [resetLoading, setResetLoading] = useState(false);
 
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({ show: false, message: "", type: "success" });
+
+  // Add/Edit User modal state
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [userFormLoading, setUserFormLoading] = useState(false);
+  const [userForm, setUserForm] = useState<UserFormData>(getEmptyUserForm());
 
   const showToast = useCallback((message: string, type: "success" | "error" = "success") => {
     setToast({ show: true, message, type });
@@ -186,6 +225,89 @@ export default function UserManagement() {
     setNewPassword(pwd);
   };
 
+  const openAddUser = () => {
+    setEditingUser(null);
+    setUserForm(getEmptyUserForm());
+    setShowUserForm(true);
+  };
+
+  const openEditUser = (user: AdminUser) => {
+    setEditingUser(user);
+    setUserForm({
+      name: user.name || "",
+      email: user.email || "",
+      password: "",
+      role: user.role || "USER",
+      firstName: "",
+      lastName: "",
+      phone: user.profile?.phone || "",
+      college: user.profile?.college || "",
+      branch: user.profile?.branch || "",
+      year: "",
+      degree: "",
+      country: "",
+      state: "",
+      city: "",
+      department: "",
+      course: "",
+      semester: "",
+      studentId: "",
+      plan: user.plan || "free",
+    });
+    setShowUserForm(true);
+  };
+
+  const handleUserFormSubmit = async () => {
+    if (!userForm.name || !userForm.email) {
+      showToast("Name and email are required", "error");
+      return;
+    }
+    if (!editingUser && !userForm.password) {
+      showToast("Password is required for new users", "error");
+      return;
+    }
+
+    setUserFormLoading(true);
+    try {
+      if (editingUser) {
+        // Edit existing user
+        const payload: Record<string, string> = {};
+        if (userForm.name !== editingUser.name) payload.name = userForm.name;
+        if (userForm.email !== editingUser.email) payload.email = userForm.email;
+        if (userForm.role !== editingUser.role) payload.role = userForm.role;
+        if (userForm.password) payload.password = userForm.password;
+        if (userForm.plan !== (editingUser.plan || "free")) payload.plan = userForm.plan;
+        if (userForm.phone) payload.phone = userForm.phone;
+        if (userForm.college) payload.college = userForm.college;
+        if (userForm.branch) payload.branch = userForm.branch;
+        if (userForm.year) payload.year = userForm.year;
+        if (userForm.degree) payload.degree = userForm.degree;
+        if (userForm.country) payload.country = userForm.country;
+        if (userForm.state) payload.state = userForm.state;
+        if (userForm.city) payload.city = userForm.city;
+        if (userForm.department) payload.department = userForm.department;
+        if (userForm.course) payload.course = userForm.course;
+        if (userForm.semester) payload.semester = userForm.semester;
+        if (userForm.studentId) payload.studentId = userForm.studentId;
+
+        await api.put(`/admin/users/${editingUser.id}`, payload);
+        showToast("User updated successfully");
+      } else {
+        // Create new user
+        await api.post("/admin/users", userForm);
+        showToast("User created successfully");
+      }
+      setShowUserForm(false);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.response?.data?.error || (editingUser ? "Failed to update user" : "Failed to create user");
+      showToast(msg, "error");
+    } finally {
+      setUserFormLoading(false);
+    }
+  };
+
   const pageNumbers: (number | "...")[] = [];
   const totalPages = pagination.pages;
   if (totalPages <= 7) {
@@ -204,16 +326,28 @@ export default function UserManagement() {
         title="User Management"
         description={`${pagination.total} registered users on the platform`}
         actions={
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={fetchUsers}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
-            style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.25)" }}
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            Refresh
-          </motion.button>
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={openAddUser}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+              style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", border: "1px solid transparent" }}
+            >
+              <UserPlus size={14} />
+              Add User
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={fetchUsers}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+              style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.25)" }}
+            >
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+              Refresh
+            </motion.button>
+          </div>
         }
       />
 
@@ -431,6 +565,12 @@ export default function UserManagement() {
 
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
+                            <ActionBtn
+                              icon={<Edit3 size={13} />}
+                              tooltip="Edit User"
+                              loading={false}
+                              onClick={() => openEditUser(user)}
+                            />
                             {user.plan !== "premium" ? (
                               <ActionBtn
                                 icon={<Crown size={13} />}
@@ -616,6 +756,161 @@ export default function UserManagement() {
         )}
       </AnimatePresence>
 
+      {/* Add/Edit User Modal */}
+      <AnimatePresence>
+        {showUserForm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
+            onClick={() => !userFormLoading && setShowUserForm(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: "spring", duration: 0.35 }}
+              className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl border p-6 shadow-2xl"
+              style={{ background: "var(--bg-dark)", borderColor: "var(--border-color)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)" }}>
+                  {editingUser ? <Edit3 size={18} style={{ color: "#f59e0b" }} /> : <UserPlus size={18} style={{ color: "#f59e0b" }} />}
+                </div>
+                <div>
+                  <h3 className="text-base font-black" style={{ color: "var(--text-primary)" }}>
+                    {editingUser ? "Edit User" : "Add New User"}
+                  </h3>
+                  <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                    {editingUser ? `Editing ${editingUser.name} (${editingUser.email})` : "Create a new user with full details and plan assignment"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowUserForm(false)}
+                  className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/5"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Account Info</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="Full Name *" value={userForm.name} onChange={(v) => setUserForm({ ...userForm, name: v })} placeholder="John Doe" />
+                    <FormField label="Email *" value={userForm.email} onChange={(v) => setUserForm({ ...userForm, email: v })} placeholder="john@example.com" type="email" />
+                    <FormField label={editingUser ? "New Password (leave blank to keep)" : "Password *"} value={userForm.password} onChange={(v) => setUserForm({ ...userForm, password: v })} placeholder={editingUser ? "••••••••" : "Min 6 characters"} type="password" />
+                    <div>
+                      <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Role</label>
+                      <select
+                        value={userForm.role}
+                        onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                        className="w-full mt-1.5 px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all"
+                        style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                      >
+                        <option value="USER">User</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Plan Assignment */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Plan Assignment</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Plan</label>
+                      <select
+                        value={userForm.plan}
+                        onChange={(e) => setUserForm({ ...userForm, plan: e.target.value })}
+                        className="w-full mt-1.5 px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all"
+                        style={{ background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                      >
+                        <option value="free">Free</option>
+                        <option value="pro_monthly">Pro Monthly</option>
+                        <option value="pro_yearly">Pro Yearly</option>
+                        <option value="premium">Premium</option>
+                        <option value="enterprise">Enterprise</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Personal Details */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Personal Details</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="First Name" value={userForm.firstName} onChange={(v) => setUserForm({ ...userForm, firstName: v })} placeholder="John" />
+                    <FormField label="Last Name" value={userForm.lastName} onChange={(v) => setUserForm({ ...userForm, lastName: v })} placeholder="Doe" />
+                    <FormField label="Phone" value={userForm.phone} onChange={(v) => setUserForm({ ...userForm, phone: v })} placeholder="+91 9876543210" />
+                    <FormField label="Student ID" value={userForm.studentId} onChange={(v) => setUserForm({ ...userForm, studentId: v })} placeholder="STU001" />
+                  </div>
+                </div>
+
+                {/* Academic Info */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Academic Info</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="College/University" value={userForm.college} onChange={(v) => setUserForm({ ...userForm, college: v })} placeholder="IIT Hyderabad" />
+                    <FormField label="Branch" value={userForm.branch} onChange={(v) => setUserForm({ ...userForm, branch: v })} placeholder="Computer Science" />
+                    <FormField label="Degree" value={userForm.degree} onChange={(v) => setUserForm({ ...userForm, degree: v })} placeholder="B.Tech" />
+                    <FormField label="Year" value={userForm.year} onChange={(v) => setUserForm({ ...userForm, year: v })} placeholder="3rd Year" />
+                    <FormField label="Department" value={userForm.department} onChange={(v) => setUserForm({ ...userForm, department: v })} placeholder="CSE" />
+                    <FormField label="Course" value={userForm.course} onChange={(v) => setUserForm({ ...userForm, course: v })} placeholder="B.Tech CSE" />
+                    <FormField label="Semester" value={userForm.semester} onChange={(v) => setUserForm({ ...userForm, semester: v })} placeholder="5" />
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Location</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <FormField label="Country" value={userForm.country} onChange={(v) => setUserForm({ ...userForm, country: v })} placeholder="India" />
+                    <FormField label="State" value={userForm.state} onChange={(v) => setUserForm({ ...userForm, state: v })} placeholder="Telangana" />
+                    <FormField label="City" value={userForm.city} onChange={(v) => setUserForm({ ...userForm, city: v })} placeholder="Hyderabad" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 mt-6 pt-4" style={{ borderTop: "1px solid var(--border-color)" }}>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowUserForm(false)}
+                  disabled={userFormLoading}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all"
+                  style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-color)" }}
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleUserFormSubmit}
+                  disabled={userFormLoading}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                  style={{
+                    background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                    color: "#000",
+                    border: "1px solid transparent",
+                  }}
+                >
+                  {userFormLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                  {userFormLoading ? (editingUser ? "Updating..." : "Creating...") : (editingUser ? "Update User" : "Create User")}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {toast.show && (
           <motion.div
@@ -709,5 +1004,35 @@ function PageBtn({
     >
       {children}
     </motion.button>
+  );
+}
+
+function FormField({
+  label, value, onChange, placeholder, type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <div>
+      <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+        {label}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full mt-1.5 px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all"
+        style={{
+          background: "var(--bg-card)",
+          color: "var(--text-primary)",
+          border: "1px solid var(--border-color)",
+        }}
+      />
+    </div>
   );
 }
