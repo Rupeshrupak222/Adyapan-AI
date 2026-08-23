@@ -415,7 +415,23 @@ export default function PremiumPage() {
                 </div>
               ))}
             </div>
-            {isPro ? (
+            {isPro && sub?.plan?.includes("monthly") && cycle === "yearly" ? (
+              <button
+                onClick={() => openWizard("pro_yearly")}
+                className="w-full py-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer hover:shadow-lg"
+                style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", border: "none" }}
+              >
+                Upgrade to Yearly
+              </button>
+            ) : isPro && sub?.plan?.includes("yearly") && cycle === "monthly" ? (
+              <button
+                onClick={() => openWizard("pro_monthly")}
+                className="w-full py-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer hover:shadow-lg"
+                style={{ background: colors.badgeProBg, color: colors.badgeProText, border: colors.badgeProBorder }}
+              >
+                Switch to Monthly
+              </button>
+            ) : isPro ? (
               <button
                 onClick={() => {
                   window.location.href = "/dashboard/user?view=billing";
