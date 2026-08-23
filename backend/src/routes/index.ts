@@ -55,6 +55,7 @@ import { settingsRouter } from "./settings.routes";
 import { usageRouter } from "./usage.routes";
 import { subscriptionRouter } from "./subscription.routes";
 import { contactRouter } from "./contact.routes";
+import { legalRouter } from "./legal.routes";
 import { enforceAiTokenLimit } from "../middleware/aiTokenLimit.middleware";
 import { requirePremiumEntitlement } from "../middleware/requirePremium";
 
@@ -178,3 +179,6 @@ apiRouter.use("/subscription", subscriptionRouter);
 
 // Contact Form Routes
 apiRouter.use("/contact", contactRouter);
+
+// Legal & Cookie Compliance Routes
+apiRouter.use("/legal", legalRouter);

@@ -136,6 +136,8 @@ export function Footer() {
                 { label: "FAQ", href: "/#faq" },
                 { label: "Contact Us", href: "/contact" },
                 { label: "Privacy Policy", href: "/privacy" },
+                { label: "Terms of Service", href: "/terms" },
+                { label: "Cookie Preferences", href: "/cookies" },
               ].map((link) => (
                 <li key={link.label}>
                   <Link href={link.href} className="text-sm transition-all hover:pl-1" style={{ color: "var(--text-secondary)" }}>
@@ -149,11 +151,23 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div
-          className="flex flex-col items-center justify-between gap-3 border-t pt-8 text-sm sm:flex-row"
+          className="flex flex-col items-center justify-between gap-4 border-t pt-8 text-xs sm:flex-row"
           style={{ borderColor: "var(--border-color)", color: "var(--text-muted)" }}
         >
-          <p>&copy; 2026 Adyapan AI. All rights reserved.</p>
-          <p>Built for users globally.</p>
+          <p>&copy; {new Date().getFullYear()} Adyapan AI. All rights reserved.</p>
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 uppercase tracking-wider font-semibold text-[11px]" style={{ color: "var(--text-secondary)" }}>
+            <Link href="/privacy" className="transition-colors hover:text-amber-400">
+              PRIVACY POLICY
+            </Link>
+            <span style={{ color: "var(--border-color)" }}>•</span>
+            <Link href="/terms" className="transition-colors hover:text-amber-400">
+              TERMS OF SERVICE
+            </Link>
+            <span style={{ color: "var(--border-color)" }}>•</span>
+            <Link href="/cookies" className="transition-colors hover:text-amber-400">
+              COOKIE PREFERENCES
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
