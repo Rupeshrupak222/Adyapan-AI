@@ -338,7 +338,7 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                         else if (sub.label === "Assignment Generator") onViewTool("assignment-generator");
                         else if (sub.label === "Mind Maps") onViewTool("mind-maps");
                         else if (sub.label === "Flashcards") onViewTool("flashcards");
-                        else if (sub.label === "DSA Practice") onViewTool("dsa-practice");
+                        else if (sub.label === "DSA Practice") router.push("/dashboard/coding?tab=dsa");
                         else if (sub.label === "Coding Dashboard") router.push("/dashboard/coding/dashboard");
                         else if (sub.label === "Coding Challenges") onViewTool("coding-challenges");
                         else if (sub.label === "GitHub Portfolio Builder") onViewTool("github-portfolio");

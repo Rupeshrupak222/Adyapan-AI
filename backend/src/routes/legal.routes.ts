@@ -10,6 +10,7 @@ const cookiePreferencesStore = new Map<string, {
   analytics: boolean;
   functional: boolean;
   marketing: boolean;
+  status: "accepted" | "declined" | "custom";
   ipAddress?: string;
   userAgent?: string;
   updatedAt: string;
@@ -118,14 +119,19 @@ legalRouter.get("/cookies", async (_req, res) => {
 // ── 4. POST /api/legal/cookie-preferences ────────────────────────────────────
 legalRouter.post("/cookie-preferences", async (req, res) => {
   try {
-    const { sessionId, preferences } = req.body;
+    const { sessionId, preferences, action } = req.body;
 
     const key = sessionId || req.ip || "global-session";
+    const status: "accepted" | "declined" | "custom" =
+      action === "decline" ? "declined" : action === "accept" ? "accepted" : "custom";
+
+    const isDecline = status === "declined";
     const record = {
       essential: true,
-      analytics: Boolean(preferences?.analytics),
-      functional: Boolean(preferences?.functional),
-      marketing: Boolean(preferences?.marketing),
+      analytics: isDecline ? false : Boolean(preferences?.analytics ?? true),
+      functional: isDecline ? false : Boolean(preferences?.functional ?? true),
+      marketing: isDecline ? false : Boolean(preferences?.marketing ?? false),
+      status,
       ipAddress: req.ip,
       userAgent: req.headers["user-agent"],
       updatedAt: new Date().toISOString(),
@@ -135,7 +141,7 @@ legalRouter.post("/cookie-preferences", async (req, res) => {
 
     res.json({
       success: true,
-      message: "Cookie preferences updated successfully",
+      message: isDecline ? "Cookie consent declined (Essential only preserved)" : "Cookie preferences updated successfully",
       data: record,
     });
   } catch (error) {
@@ -143,7 +149,36 @@ legalRouter.post("/cookie-preferences", async (req, res) => {
   }
 });
 
-// ── 5. GET /api/legal/cookie-preferences ─────────────────────────────────────
+// ── 5. POST /api/legal/cookie-decline ─────────────────────────────────────────
+legalRouter.post("/cookie-decline", async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    const key = sessionId || req.ip || "global-session";
+
+    const record = {
+      essential: true,
+      analytics: false,
+      functional: false,
+      marketing: false,
+      status: "declined" as const,
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      updatedAt: new Date().toISOString(),
+    };
+
+    cookiePreferencesStore.set(key, record);
+
+    res.json({
+      success: true,
+      message: "Non-essential cookies declined",
+      data: record,
+    });
+  } catch (error) {
+    handleRouteError(res, error, "Legal.cookieDecline.post", "Failed to process cookie decline");
+  }
+});
+
+// ── 6. GET /api/legal/cookie-preferences ─────────────────────────────────────
 legalRouter.get("/cookie-preferences", async (req, res) => {
   try {
     const key = (req.query.sessionId as string) || req.ip || "global-session";
@@ -152,6 +187,7 @@ legalRouter.get("/cookie-preferences", async (req, res) => {
       analytics: true,
       functional: true,
       marketing: false,
+      status: "accepted" as const,
       updatedAt: new Date().toISOString(),
     };
 

@@ -22,26 +22,38 @@ export function CookieConsentBanner() {
       analytics: true,
       functional: true,
       marketing: true,
+      status: "accepted",
     };
     localStorage.setItem("adyapan-cookie-preferences", JSON.stringify(preferences));
     setShow(false);
 
     try {
-      await api.post("/legal/cookie-preferences", { preferences });
+      await api.post("/legal/cookie-preferences", { action: "accept", preferences });
+    } catch {
+      // Non-blocking
+    }
+  };
+
+  const handleDeclineAll = async () => {
+    const preferences = {
+      essential: true,
+      analytics: false,
+      functional: false,
+      marketing: false,
+      status: "declined",
+    };
+    localStorage.setItem("adyapan-cookie-preferences", JSON.stringify(preferences));
+    setShow(false);
+
+    try {
+      await api.post("/legal/cookie-preferences", { action: "decline", preferences });
     } catch {
       // Non-blocking
     }
   };
 
   const handleDismiss = () => {
-    const preferences = {
-      essential: true,
-      analytics: false,
-      functional: true,
-      marketing: false,
-    };
-    localStorage.setItem("adyapan-cookie-preferences", JSON.stringify(preferences));
-    setShow(false);
+    handleDeclineAll();
   };
 
   if (!show) return null;
@@ -85,22 +97,35 @@ export function CookieConsentBanner() {
         Adyapan AI uses essential and functional cookies to personalize learning, maintain login sessions, and improve platform performance.
       </p>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={handleAcceptAll}
-          className="flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all hover:scale-[1.02] cursor-pointer shadow-md"
+          className="flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all hover:scale-[1.02] cursor-pointer shadow-md text-center"
           style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000000" }}
         >
           Accept All
         </button>
+        <button
+          onClick={handleDeclineAll}
+          className="py-2 px-3.5 rounded-xl font-bold text-xs transition-all hover:scale-[1.02] cursor-pointer text-center"
+          style={{
+            borderColor: "rgba(239, 68, 68, 0.35)",
+            background: "rgba(239, 68, 68, 0.15)",
+            color: "#fca5a5",
+            borderWidth: "1px",
+          }}
+        >
+          Decline
+        </button>
         <Link
           href="/cookies"
           onClick={() => setShow(false)}
-          className="py-2 px-3 rounded-xl font-semibold text-xs transition-colors border text-center cursor-pointer"
+          className="py-2 px-3 rounded-xl font-semibold text-xs transition-colors text-center cursor-pointer"
           style={{
             borderColor: "rgba(255, 255, 255, 0.25)",
             background: "rgba(255, 255, 255, 0.08)",
             color: "#ffffff",
+            borderWidth: "1px",
           }}
         >
           Preferences

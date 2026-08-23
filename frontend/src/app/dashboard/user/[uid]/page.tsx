@@ -351,7 +351,7 @@ function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resume
   const router = useRouter();
   const quickActions = [
     { label: "Study Assistant", icon: <GraduationCap size={16} />, color: "#8b5cf6", target: "study-assistant", href: null },
-    { label: "DSA Practice", icon: <Code2 size={16} />, color: "var(--primary)", target: "dsa-practice", href: null },
+    { label: "DSA Practice", icon: <Code2 size={16} />, color: "var(--primary)", target: "", href: "/dashboard/coding?tab=dsa" },
     { label: "Resume Builder", icon: <FileText size={16} />, color: "#3b82f6", target: "resume-hub", href: null },
     { label: "ATS Checker", icon: <BarChart3 size={16} />, color: "#10b981", target: "ats-checker", href: null },
     { label: "Progress Tracker", icon: <TrendingUp size={16} />, color: "#f59e0b", target: "progress-hub", href: null },
@@ -1346,6 +1346,10 @@ function UserDashboardContent() {
       router.push("/dashboard/user/settings/account");
       return;
     }
+    if (view === "dsa-practice" || view === "dsa") {
+      router.push("/dashboard/coding?tab=dsa");
+      return;
+    }
     if (view !== "community-messages") setOpenChatWith(null);
     if (view !== "community-browse") setCommunityProfileUserId(null);
     setActiveView(view);
@@ -1424,8 +1428,6 @@ function UserDashboardContent() {
             <HubErrorBoundary><MindMapsView /></HubErrorBoundary>
           ) : activeView === "flashcards" ? (
             <HubErrorBoundary><FlashcardsView /></HubErrorBoundary>
-          ) : activeView === "dsa-practice" ? (
-            <HubErrorBoundary><DsaPracticeView /></HubErrorBoundary>
           ) : activeView === "coding-challenges" ? (
             <HubErrorBoundary><CodingChallengesView /></HubErrorBoundary>
           ) : activeView === "ady-chat" ? (

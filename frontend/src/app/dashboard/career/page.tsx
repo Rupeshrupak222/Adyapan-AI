@@ -69,7 +69,7 @@ export default function CareerDashboardPage() {
     router.push("/dashboard/user");
   };
   const handleViewTool = (tool: string) => {
-    if (tool === "dsa-practice") router.push("/dashboard/coding");
+    if (tool === "dsa-practice") router.push("/dashboard/coding?tab=dsa");
     else { 
       localStorage.setItem("dashboard-active-view", tool); 
       router.push("/dashboard/user"); 

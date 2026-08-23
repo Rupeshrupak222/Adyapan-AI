@@ -84,7 +84,7 @@ export function PremiumUpgradeModal() {
             exit={{ opacity: 0, scale: 0.94, y: 24 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white/75 dark:bg-[#0c0d16]/90 shadow-2xl backdrop-blur-2xl"
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c0d16] shadow-2xl backdrop-blur-2xl"
           >
             <div className="pointer-events-none absolute -top-24 -left-16 w-64 h-64 rounded-full bg-amber-500/20 blur-[80px]" />
             <div className="pointer-events-none absolute -bottom-24 -right-16 w-64 h-64 rounded-full bg-orange-500/20 blur-[80px]" />
@@ -93,7 +93,7 @@ export function PremiumUpgradeModal() {
             <button
               onClick={closeLimitModal}
               aria-label="Dismiss"
-              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-white/10 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full flex items-center justify-center text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-gray-100 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
             >
               <X size={16} />
             </button>
@@ -110,8 +110,8 @@ export function PremiumUpgradeModal() {
                 <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 animate-ping opacity-60" />
               </div>
 
-              <h3 className="text-base font-extrabold tracking-tight text-slate-800 dark:text-gray-50">{copy.title}</h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-gray-400">{copy.body}</p>
+              <h3 className="text-base font-black tracking-tight text-slate-900 dark:text-gray-50">{copy.title}</h3>
+              <p className="mt-1.5 text-xs font-semibold leading-relaxed text-slate-600 dark:text-gray-300">{copy.body}</p>
 
               {usageData && usageData.limit > 0 && (
                 <div className="mt-4 rounded-2xl border border-white/10 bg-white/60 dark:bg-white/[0.04] p-4">
