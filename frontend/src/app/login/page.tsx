@@ -334,12 +334,12 @@ function LoginPageContent() {
                     ))}
                     <motion.div className="flex items-center justify-between text-xs" style={{ color: labelClr }} custom={2} variants={staggerItem} initial="hidden" animate="visible">
                       <label className="flex cursor-pointer items-center gap-1.5">
-                        <input type="checkbox" className="accent-amber-500" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} /> Remember me
+                        <input type="checkbox" className="accent-amber-500 cursor-pointer" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} /> Remember me
                       </label>
-                      <button type="button" onClick={() => switchTab("forgot")} className="font-semibold text-amber-400">Forgot password?</button>
+                      <button type="button" onClick={() => switchTab("forgot")} className="font-semibold text-amber-400 cursor-pointer">Forgot password?</button>
                     </motion.div>
                     {loginError && <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-xs text-red-400">{loginError}</motion.p>}
-                    <motion.button type="submit" disabled={loginLoading} className="w-full rounded-full py-2.5 text-sm font-bold disabled:opacity-60" style={submitStyle} custom={3} variants={staggerItem} initial="hidden" animate="visible" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <motion.button type="submit" disabled={loginLoading} className="w-full rounded-full py-2.5 text-sm font-bold disabled:opacity-60 cursor-pointer" style={submitStyle} custom={3} variants={staggerItem} initial="hidden" animate="visible" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       {loginLoading ? "Logging in…" : "Login →"}
                     </motion.button>
                     <motion.div className="relative text-center" custom={4} variants={staggerItem} initial="hidden" animate="visible">
@@ -347,11 +347,11 @@ function LoginPageContent() {
                       <span className="relative px-3 text-xs" style={{ background: cardBg, color: mutedClr }}>OR LOGIN WITH</span>
                     </motion.div>
                     <motion.div className="flex gap-2" custom={5} variants={staggerItem} initial="hidden" animate="visible">
-                      <button type="button" className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80" style={socialStyle}><GoogleIcon /> Google</button>
-                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
+                      <button type="button" className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
+                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
                     </motion.div>
                     <motion.p className="text-center text-xs" style={{ color: labelClr }} custom={6} variants={staggerItem} initial="hidden" animate="visible">
-                      Don&apos;t have an account? <button type="button" onClick={() => switchTab("register")} className="font-bold text-amber-400">Register here</button>
+                      Don&apos;t have an account? <button type="button" onClick={() => switchTab("register")} className="font-bold text-amber-400 cursor-pointer">Register here</button>
                     </motion.p>
                   </form>
                 </motion.div>
@@ -434,7 +434,7 @@ function LoginPageContent() {
                     ))}
                     {regError && <motion.p className="col-span-2 text-xs text-red-400" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{regError}</motion.p>}
                     <motion.button type="submit" disabled={regLoading}
-                      className="col-span-2 w-full rounded-full py-2 text-sm font-bold disabled:opacity-60"
+                      className="col-span-2 w-full rounded-full py-2 text-sm font-bold disabled:opacity-60 cursor-pointer"
                       style={submitStyle} custom={8} variants={staggerItem} initial="hidden" animate="visible" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       {regLoading ? "Creating…" : "Create Account →"}
                     </motion.button>
@@ -443,11 +443,11 @@ function LoginPageContent() {
                       <span className="relative px-3 text-xs font-semibold tracking-widest uppercase" style={{ background: cardBg, color: mutedClr }}>OR SIGN UP WITH</span>
                     </motion.div>
                     <motion.div className="col-span-2 flex gap-2" custom={10} variants={staggerItem} initial="hidden" animate="visible">
-                      <button type="button" className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80" style={socialStyle}><GoogleIcon /> Google</button>
-                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
+                      <button type="button" className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
+                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
                     </motion.div>
                     <motion.p className="col-span-2 text-center text-xs" style={{ color: labelClr }} custom={11} variants={staggerItem} initial="hidden" animate="visible">
-                      Already have an account? <button type="button" onClick={() => switchTab("login")} className="font-bold text-amber-400">Sign in</button>
+                      Already have an account? <button type="button" onClick={() => switchTab("login")} className="font-bold text-amber-400 cursor-pointer">Sign in</button>
                     </motion.p>
                   </form>
                 </motion.div>
@@ -490,11 +490,11 @@ function LoginPageContent() {
                       ))}
                       {forgotMsg   && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-semibold text-green-400">{forgotMsg}</motion.p>}
                       {forgotError && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-semibold text-red-400">{forgotError}</motion.p>}
-                      <motion.button type="submit" disabled={forgotLoading} className="w-full rounded-full py-2.5 text-sm font-bold disabled:opacity-60" style={submitStyle} custom={3} variants={staggerItem} initial="hidden" animate="visible" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <motion.button type="submit" disabled={forgotLoading} className="w-full rounded-full py-2.5 text-sm font-bold disabled:opacity-60 cursor-pointer" style={submitStyle} custom={3} variants={staggerItem} initial="hidden" animate="visible" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                         {forgotLoading ? "Please wait…" : forgotStep === "email" ? "Send OTP →" : "Reset Password →"}
                       </motion.button>
                       <motion.p className="text-center text-xs" style={{ color: labelClr }} custom={4} variants={staggerItem} initial="hidden" animate="visible">
-                        Remember your password? <button type="button" onClick={() => { switchTab("login"); setForgotStep("email"); }} className="font-bold text-amber-400">Sign in</button>
+                        Remember your password? <button type="button" onClick={() => { switchTab("login"); setForgotStep("email"); }} className="font-bold text-amber-400 cursor-pointer">Sign in</button>
                       </motion.p>
                     </form>
                   )}
