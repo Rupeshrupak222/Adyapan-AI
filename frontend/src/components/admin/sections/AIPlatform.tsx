@@ -354,7 +354,8 @@ export default function AIPlatform() {
             Configure daily token limits for free and premium tiers
           </p>
 
-          <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-secondary)" }}>
                 Free Tier
@@ -419,7 +420,7 @@ export default function AIPlatform() {
             Projected request volume based on current usage
           </p>
 
-          <div className="grid grid-cols-3 gap-3">
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div
               className="rounded-xl border p-3.5 text-center"
               style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.2)" }}

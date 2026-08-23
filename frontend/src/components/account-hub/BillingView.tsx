@@ -517,7 +517,7 @@ export function BillingView() {
           </div>
 
           {showPmForm && (
-            <form onSubmit={handleAddPaymentMethod} className="grid grid-cols-2 gap-2 p-3 rounded-xl" style={{ background: "rgba(245,158,11,0.04)", border: `1px solid ${c.primary}30` }}>
+            <form onSubmit={handleAddPaymentMethod} className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 rounded-xl" style={{ background: "rgba(245,158,11,0.04)", border: `1px solid ${c.primary}30` }}>
               <input value={pmForm.brand} onChange={(e) => setPmForm((s) => ({ ...s, brand: e.target.value }))} placeholder="Brand (Visa/Mastercard)" className="col-span-2 px-3 py-2 rounded-lg text-xs outline-none focus:border-amber-500 transition-colors" style={{ background: c.inputBg, color: c.text, border: `1px solid ${c.border}` }} />
               <input value={pmForm.last4} onChange={(e) => setPmForm((s) => ({ ...s, last4: e.target.value }))} placeholder="Card no. (last 4 saved)" className="col-span-2 px-3 py-2 rounded-lg text-xs outline-none focus:border-amber-500 transition-colors" style={{ background: c.inputBg, color: c.text, border: `1px solid ${c.border}` }} />
               <input value={pmForm.expiryMonth} onChange={(e) => setPmForm((s) => ({ ...s, expiryMonth: e.target.value }))} placeholder="MM" className="px-3 py-2 rounded-lg text-xs outline-none focus:border-amber-500 transition-colors" style={{ background: c.inputBg, color: c.text, border: `1px solid ${c.border}` }} />
@@ -663,7 +663,7 @@ export function BillingView() {
           </div>
 
           {editAddress ? (
-            <form onSubmit={handleSaveAddress} className="grid grid-cols-2 gap-2">
+            <form onSubmit={handleSaveAddress} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {([
                 ["name", "Full Name"], ["email", "Email"], ["phone", "Phone"],
                 ["line1", "Address Line 1"], ["line2", "Address Line 2"], ["city", "City"],

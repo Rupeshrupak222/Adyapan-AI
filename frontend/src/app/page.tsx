@@ -158,7 +158,7 @@ function Section({
 // ─── Glowing Background ───────────────────────────────────────────────────
 function GlowBackground() {
   return (
-    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] pointer-events-none z-0">
+    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] pointer-events-none z-0 overflow-hidden">
       <motion.div
         className="absolute top-[-10%] left-[20%] w-[350px] h-[350px] rounded-full bg-amber-500/10 blur-[120px]"
         animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
@@ -279,7 +279,7 @@ export default function LandingPage() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--landing-bg, #03060b)", color: "var(--landing-text, #f3f4f6)" }} className="overflow-x-clip font-sans landing">
+    <div style={{ minHeight: "100vh", background: "var(--landing-bg, #03060b)", color: "var(--landing-text, #f3f4f6)", maxWidth: "100vw", overflowX: "clip" }} className="font-sans landing">
       <svg style={{ display: "none" }}>
         <defs>
           <filter id="smoothing">
@@ -300,7 +300,7 @@ export default function LandingPage() {
       >
         {/* Large "ADYAPAN" text background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-          <div className="text-9xl md:text-[200px] font-bold text-amber-500/25 whitespace-nowrap select-none" style={{ letterSpacing: "0.05em", textShadow: "0 0 30px rgba(249, 115, 22, 0.2)" }}>
+          <div className="text-9xl md:text-[200px] font-bold text-amber-500/25 select-none overflow-hidden" style={{ letterSpacing: "0.05em", textShadow: "0 0 30px rgba(249, 115, 22, 0.2)" }}>
             ADYAPAN
           </div>
         </div>
@@ -389,7 +389,7 @@ export default function LandingPage() {
 
       {/* ════════════════ TRANSPARENT VIDEO SECTION ════════════════ */}
       <section className="relative bg-[#030712] pt-0 pb-4 md:pb-8 -mt-6 md:-mt-12 overflow-hidden z-10">
-        <div className="flex justify-center items-center -mx-4 md:-mx-12">
+        <div className="flex justify-center items-center overflow-hidden">
           <video
             ref={videoRef}
             autoPlay
@@ -398,7 +398,7 @@ export default function LandingPage() {
             playsInline
             preload="auto"
             disablePictureInPicture
-            className="w-screen h-auto relative z-10"
+            className="w-full h-auto relative z-10"
             style={{
               maxHeight: "600px",
               objectFit: "contain",
@@ -1374,7 +1374,12 @@ export default function LandingPage() {
                 placeholder="Search FAQs..."
                 value={faqSearch}
                 onChange={(e) => setFaqSearch(e.target.value)}
-                className="w-full bg-white/5 border border-white/5 focus:border-amber-500 focus:outline-none rounded-xl py-2.5 pl-10 pr-4 text-xs text-white"
+                className="w-full border focus:border-amber-500 focus:outline-none rounded-xl py-2.5 pl-10 pr-4 text-xs transition-all"
+                style={{
+                  background: "var(--bg-input, rgba(255,255,255,0.05))",
+                  borderColor: "var(--border-color, rgba(255,255,255,0.1))",
+                  color: "var(--text-primary, #ffffff)",
+                }}
                 whileFocus={{ borderColor: "rgba(245,158,11,0.5)", scale: 1.01 }}
               />
             </motion.div>

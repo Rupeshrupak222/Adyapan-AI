@@ -285,7 +285,8 @@ export default function Monitoring() {
               API Performance
             </h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
             <MetricCard
               label="Avg Response"
               value={apiMetrics.avgApiResponseTime > 0 ? `${apiMetrics.avgApiResponseTime}ms` : "—"}
@@ -331,7 +332,8 @@ export default function Monitoring() {
               Database Status
             </h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
             <MetricCard
               label="Total Users"
               value={dbMetrics.totalUsers.toLocaleString()}
@@ -374,7 +376,7 @@ export default function Monitoring() {
               Service Health
             </h2>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {services.map((svc) => {
               const variant = getStatusVariant(svc.status);
               return (

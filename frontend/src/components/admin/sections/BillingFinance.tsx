@@ -597,7 +597,7 @@ export default function BillingFinance() {
                 Coupon Impact
               </h2>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-xl border p-3" style={{ borderColor: "var(--border-color)" }}>
                 <div className="text-lg font-black font-mono" style={{ color: "#ef4444" }}>
                   -{formatCurrency(couponStats?.totalDiscount ?? 0)}
@@ -714,7 +714,7 @@ export default function BillingFinance() {
           </div>
 
           {showCouponForm && (
-            <form onSubmit={handleCreateCoupon} className="grid grid-cols-2 gap-3 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+            <form onSubmit={handleCreateCoupon} className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
               <Input label="Code" value={newCoupon.code} onChange={(v) => setNewCoupon((s) => ({ ...s, code: v }))} placeholder="ADYAPAN20" />
               <Input label="Discount %" type="number" value={newCoupon.discountPct} onChange={(v) => setNewCoupon((s) => ({ ...s, discountPct: v }))} placeholder="20" />
               <Input label="Max Uses" type="number" value={newCoupon.maxUses} onChange={(v) => setNewCoupon((s) => ({ ...s, maxUses: v }))} placeholder="Unlimited" />
@@ -806,7 +806,7 @@ export default function BillingFinance() {
           </div>
 
           {showPlanForm && (
-            <form onSubmit={handleCreatePlan} className="grid grid-cols-2 gap-3 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+            <form onSubmit={handleCreatePlan} className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
               <Input label="Name" value={newPlan.name} onChange={(v) => setNewPlan((s) => ({ ...s, name: v }))} placeholder="e.g. Pro Monthly" />
               <Input label="Code" value={newPlan.code} onChange={(v) => setNewPlan((s) => ({ ...s, code: v }))} placeholder="e.g. pro_monthly" />
               <Input label="Monthly ₹" type="number" value={newPlan.priceMonthly} onChange={(v) => setNewPlan((s) => ({ ...s, priceMonthly: v }))} placeholder="199" />
@@ -833,7 +833,7 @@ export default function BillingFinance() {
               plans.map((p) => (
                 <div key={p.id} className="px-5 py-3">
                   {editingPlan?.id === p.id ? (
-                    <form onSubmit={handleSavePlanEdit} className="grid grid-cols-2 gap-2">
+                    <form onSubmit={handleSavePlanEdit} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input label="Name" value={editingPlan.name} onChange={(v) => setEditingPlan((s) => (s ? { ...s, name: v } : s))} />
                       <Input label="Code" value={editingPlan.code} onChange={(v) => setEditingPlan((s) => (s ? { ...s, code: v } : s))} />
                       <Input label="Monthly ₹" type="number" value={String(editingPlan.priceMonthly)} onChange={(v) => setEditingPlan((s) => (s ? { ...s, priceMonthly: Number(v) } : s))} />
@@ -947,13 +947,13 @@ export default function BillingFinance() {
           </div>
           <div className="space-y-3">
             <h3 className="text-xs font-bold" style={{ color: "var(--text-secondary)" }}>Subscriber Breakdown</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <MiniStat label="Free" value={(analytics?.freeUsers ?? 0).toLocaleString()} color="#64748b" />
               <MiniStat label="Premium" value={(analytics?.premiumUsers ?? 0).toLocaleString()} color="#f59e0b" />
               <MiniStat label="Enterprise" value={(analytics?.enterpriseUsers ?? 0).toLocaleString()} color="#8b5cf6" />
               <MiniStat label="New (period)" value={(analytics?.newSubscribers ?? 0).toLocaleString()} color="#10b981" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <MiniStat label="Upgrade Rate" value={`${analytics?.upgradeRate ?? 0}%`} color="#10b981" />
               <MiniStat label="Downgrade Rate" value={`${analytics?.downgradeRate ?? 0}%`} color="#f472b6" />
               <MiniStat label="Churned" value={(analytics?.churned ?? 0).toLocaleString()} color="#ef4444" />
@@ -1348,7 +1348,7 @@ export default function BillingFinance() {
           </div>
 
           {showLimitForm && (
-            <form onSubmit={handleCreateLimit} className="grid grid-cols-2 gap-3 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+            <form onSubmit={handleCreateLimit} className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-5 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
               <Input label="Feature Key" value={newLimit.featureKey} onChange={(v) => setNewLimit((s) => ({ ...s, featureKey: v }))} placeholder="ai_chat" />
               <Input label="Plan Code" value={newLimit.planCode} onChange={(v) => setNewLimit((s) => ({ ...s, planCode: v }))} placeholder="free" />
               <Input label="Daily Limit" type="number" value={newLimit.dailyLimit} onChange={(v) => setNewLimit((s) => ({ ...s, dailyLimit: v }))} />

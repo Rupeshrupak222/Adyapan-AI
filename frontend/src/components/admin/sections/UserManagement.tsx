@@ -801,7 +801,7 @@ export default function UserManagement() {
               <div className="space-y-4">
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Account Info</h4>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <FormField label="Full Name *" value={userForm.name} onChange={(v) => setUserForm({ ...userForm, name: v })} placeholder="John Doe" />
                     <FormField label="Email *" value={userForm.email} onChange={(v) => setUserForm({ ...userForm, email: v })} placeholder="john@example.com" type="email" />
                     <FormField label={editingUser ? "New Password (leave blank to keep)" : "Password *"} value={userForm.password} onChange={(v) => setUserForm({ ...userForm, password: v })} placeholder={editingUser ? "••••••••" : "Min 6 characters"} type="password" />
@@ -823,7 +823,7 @@ export default function UserManagement() {
                 {/* Plan Assignment */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Plan Assignment</h4>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Plan</label>
                       <select
@@ -845,7 +845,7 @@ export default function UserManagement() {
                 {/* Personal Details */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Personal Details</h4>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <FormField label="First Name" value={userForm.firstName} onChange={(v) => setUserForm({ ...userForm, firstName: v })} placeholder="John" />
                     <FormField label="Last Name" value={userForm.lastName} onChange={(v) => setUserForm({ ...userForm, lastName: v })} placeholder="Doe" />
                     <FormField label="Phone" value={userForm.phone} onChange={(v) => setUserForm({ ...userForm, phone: v })} placeholder="+91 9876543210" />
@@ -856,7 +856,7 @@ export default function UserManagement() {
                 {/* Academic Info */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Academic Info</h4>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <FormField label="College/University" value={userForm.college} onChange={(v) => setUserForm({ ...userForm, college: v })} placeholder="IIT Hyderabad" />
                     <FormField label="Branch" value={userForm.branch} onChange={(v) => setUserForm({ ...userForm, branch: v })} placeholder="Computer Science" />
                     <FormField label="Degree" value={userForm.degree} onChange={(v) => setUserForm({ ...userForm, degree: v })} placeholder="B.Tech" />
@@ -870,7 +870,7 @@ export default function UserManagement() {
                 {/* Location */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Location</h4>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <FormField label="Country" value={userForm.country} onChange={(v) => setUserForm({ ...userForm, country: v })} placeholder="India" />
                     <FormField label="State" value={userForm.state} onChange={(v) => setUserForm({ ...userForm, state: v })} placeholder="Telangana" />
                     <FormField label="City" value={userForm.city} onChange={(v) => setUserForm({ ...userForm, city: v })} placeholder="Hyderabad" />

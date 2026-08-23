@@ -1617,7 +1617,7 @@ Answer the student's question based on the coding problem. Provide hints or feed
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-[45%] min-w-[420px] max-w-[650px] bg-slate-50 dark:bg-zinc-950 border-l border-slate-200 dark:border-zinc-800 shadow-2xl z-50 backdrop-blur-md flex flex-col"
+              className="fixed top-0 right-0 h-full w-[85vw] md:w-[45%] md:min-w-[420px] max-w-[650px] bg-slate-50 dark:bg-zinc-950 border-l border-slate-200 dark:border-zinc-800 shadow-2xl z-50 backdrop-blur-md flex flex-col"
             >
               {/* Drawer Header */}
               <div className="h-14 border-b border-slate-200 dark:border-zinc-800 px-5 flex items-center justify-between bg-white dark:bg-black/40">

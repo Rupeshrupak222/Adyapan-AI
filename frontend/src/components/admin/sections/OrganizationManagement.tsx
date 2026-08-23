@@ -538,9 +538,9 @@ export default function OrganizationManagement() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Code / Abbreviation</label>
+                    <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Domain</label>
                     <input
                       type="text"
                       placeholder="e.g. IITB"
@@ -650,7 +650,7 @@ export default function OrganizationManagement() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Code</label>
                     <input
@@ -885,7 +885,7 @@ export default function OrganizationManagement() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold mb-1" style={{ color: isDark ? "var(--text-secondary)" : "#475569" }}>Branch / Department</label>
                     <input

@@ -129,7 +129,7 @@ export default function DeveloperCenter() {
             </p>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-xl border p-3" style={{ borderColor: "var(--border-color)", background: "rgba(255,255,255,0.02)" }}>
                   <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Total Requests</p>
                   <p className="text-lg font-black font-mono mt-1" style={{ color: "var(--text-primary)" }}>{totalRequests.toLocaleString()}</p>

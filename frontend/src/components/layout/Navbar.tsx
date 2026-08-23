@@ -26,7 +26,7 @@ export function Navbar({ forceWhiteText, hideThemeToggle }: { forceWhiteText?: b
   const navBorder = "transparent";
   const useWhite = forceWhiteText || theme === "dark";
   const linkColor = useWhite ? "rgba(255, 255, 255, 0.9)" : "#475569";
-  const linkHover = "#ffffff";
+  const linkHover = useWhite ? "#ffffff" : "#f59e0b";
   const logoColor = useWhite ? "#ffffff" : "#0f172a";
   const loginBg = useWhite ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.05)";
   const getStartedBg = useWhite ? "#ffffff" : "#0f172a";

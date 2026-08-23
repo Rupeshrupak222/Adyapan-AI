@@ -173,7 +173,7 @@ function InterviewPageContent() {
   const scoreColor = (score: number) => score >= 80 ? "#10b981" : score >= 60 ? "#f59e0b" : "#ef4444";
 
   return (
-    <div className="min-h-screen bg-[#080710] text-white relative overflow-x-hidden" style={{ fontFamily: "var(--font-sans)" }}>
+    <div className="min-h-screen bg-[#080710] text-white relative" style={{ fontFamily: "var(--font-sans)", maxWidth: "100vw", overflowX: "clip" }}>
       {/* Animated background orbs */}
       {orbs.map((orb, i) => (
         <motion.div

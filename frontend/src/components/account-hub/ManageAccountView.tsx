@@ -1345,7 +1345,7 @@ export function AppearanceSection({
         <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.primary }}>
           <Palette size={16} /> Theme Mode
         </h3>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             { id: "dark" as const, label: "Dark", icon: Moon, desc: "Easy on the eyes" },
             { id: "light" as const, label: "Light", icon: Sun, desc: "Bright and clean" },
@@ -2690,7 +2690,7 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                     <h4 className="text-lg font-extrabold" style={{ color: c.text }}>Adyapan AI Platform</h4>
                     <span className="text-xs text-amber-500 font-semibold block">Version 2.0.0 (Enterprise Build)</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 text-left border-y py-3" style={{ borderColor: c.border }}>
+                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left border-y py-3" style={{ borderColor: c.border }}>
                     <div className="p-3 rounded-xl border" style={{ background: c.cardBg, borderColor: c.border }}>
                       <span className="text-[10px] block" style={{ color: c.textMuted }}>Engine Status</span>
                       <span className="text-xs font-bold text-emerald-500">● Operational</span>

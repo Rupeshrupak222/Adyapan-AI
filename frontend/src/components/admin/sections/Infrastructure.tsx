@@ -305,7 +305,7 @@ function InfraCard({
         </div>
         <StatusBadge variant={status} pulse={status === "success"}>{statusLabel}</StatusBadge>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {metrics.map((m) => (
           <div key={m.label} className="p-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)" }}>
             <div className="text-[9px] font-medium" style={{ color: "var(--text-muted)" }}>{m.label}</div>

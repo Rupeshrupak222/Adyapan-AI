@@ -1155,7 +1155,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
         <div className="flex-1 flex min-h-0">
           {/* LEFT COLUMN: Score Cards */}
           <div
-            className="w-[250px] shrink-0 border-r overflow-y-auto p-3 space-y-2"
+            className="hidden md:block w-[250px] shrink-0 border-r overflow-y-auto p-3 space-y-2"
             style={{ borderColor: c.border, background: isDark ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.01)" }}
           >
             {renderScoreCard(
@@ -1288,7 +1288,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
 
           {/* RIGHT COLUMN: Detail Panel */}
           <div
-            className="w-[300px] shrink-0 border-l flex flex-col overflow-hidden"
+            className="hidden md:flex w-[300px] shrink-0 border-l flex-col overflow-hidden"
             style={{ borderColor: c.border, background: isDark ? "#0d1117" : "#ffffff" }}
           >
             {/* Tabs */}

@@ -1467,7 +1467,7 @@ function DetailPanel({ detail, loading, tab, setTab, onClose, onRefresh, onEdit,
             )}
 
             {/* Key-value grid */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <KV label="Owner" value={detail.owner || "—"} />
               <KV label="Category" value={detail.category} />
               <KV label="API" value={detail.apiEndpoint || "—"} mono />
@@ -1477,7 +1477,7 @@ function DetailPanel({ detail, loading, tab, setTab, onClose, onRefresh, onEdit,
             </div>
 
             {/* Usage summary */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <MiniStat label="Requests" value={formatNumber(detail.usage?.totalRequests ?? 0)} color="#10b981" icon={<MousePointerClick size={12} />} />
               <MiniStat label="Users" value={formatNumber(detail.usage?.totalUsers ?? 0)} color="#38bdf8" icon={<Users size={12} />} />
               <MiniStat label="Success" value={`${detail.usage?.successRate ?? 100}%`} color="#a78bfa" icon={<Check size={12} />} />
@@ -1512,7 +1512,7 @@ function DetailPanel({ detail, loading, tab, setTab, onClose, onRefresh, onEdit,
             )}
 
             {/* Action buttons */}
-            <div className="grid grid-cols-3 gap-2 pt-1">
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
               <PanelBtn icon={<Pencil size={12} />} label="Edit" onClick={onEdit} color="#818cf8" />
               <PanelBtn icon={<Workflow size={12} />} label="Rollout" onClick={onRollout} color="#f59e0b" />
               <PanelBtn icon={<ShieldCheck size={12} />} label="Access" onClick={onPermissions} color="#10b981" />
@@ -1557,7 +1557,7 @@ function DetailPanel({ detail, loading, tab, setTab, onClose, onRefresh, onEdit,
               </ResponsiveContainer>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <MiniStat label="Revenue (14d)" value={`₹${formatNumber(detail.usage?.revenue ?? 0)}`} color="#fbbf24" icon={<DollarSign size={12} />} />
               <MiniStat label="AI Tokens" value={formatNumber(detail.usage?.aiTokens ?? 0)} color="#e879f9" icon={<Cpu size={12} />} />
               <MiniStat label="Today's Requests" value={formatNumber(detail.usage?.today ?? 0)} color="#10b981" icon={<Zap size={12} />} />
@@ -1948,7 +1948,7 @@ function RolloutModal({ feature, onClose, onSave }: {
             <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Rollout Percentage</span>
             <span className="text-xl font-black font-mono" style={{ color: isEnabled ? "#10b981" : "#6b7280" }}>{rolloutPct}%</span>
           </div>
-          <div className="grid grid-cols-6 gap-1.5">
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
             {ROLLOUT_OPTIONS.map((r) => (
               <button key={r} onClick={() => { setRolloutPct(r); if (r < 100) setTargetType("percent"); }}
                 className="py-2 rounded-lg text-[11px] font-black transition-all cursor-pointer border-none"

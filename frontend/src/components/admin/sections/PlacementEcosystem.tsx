@@ -590,7 +590,7 @@ export default function PlacementEcosystem() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Location</label>
                   <input

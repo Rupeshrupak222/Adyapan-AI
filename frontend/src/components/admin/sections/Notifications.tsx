@@ -623,7 +623,7 @@ export default function Notifications() {
                   <label className="block text-xs font-extrabold uppercase tracking-wider mb-2" style={{ color: "var(--text-secondary)" }}>
                     Target Audience Segment *
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                       { id: "ALL", label: "All Users", icon: <Users size={16} />, desc: "Every user", count: stats.reachStats.all },
                       { id: "FREE", label: "Free Tier", icon: <Gift size={16} />, desc: "Free plan users", count: stats.reachStats.free },
@@ -687,7 +687,7 @@ export default function Notifications() {
                 </div>
 
                 {/* Category Type & Priority */}
-                <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-extrabold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-secondary)" }}>
                       Category Type

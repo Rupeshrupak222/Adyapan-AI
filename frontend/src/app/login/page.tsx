@@ -100,8 +100,9 @@ function LoginPageContent() {
 
   useEffect(() => {
     document.body.classList.add("landing");
-    const saved = (localStorage.getItem("adyapan-theme") as "dark" | "light") || "dark";
-    setTheme(saved);
+    // Force strictly dark theme on login page
+    document.documentElement.setAttribute("data-theme", "dark");
+    setTheme("dark");
 
     // Handle GitHub OAuth callback
     const params = new URLSearchParams(window.location.search);
@@ -136,12 +137,6 @@ function LoginPageContent() {
       window.history.replaceState({}, "", url.toString());
     }
 
-    const observer = new MutationObserver(() => {
-      const t = document.documentElement.getAttribute("data-theme");
-      setTheme(t === "light" ? "light" : "dark");
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-
     // Clear session if logout query parameter is present
     if (params.get("logout") === "true") {
       localStorage.removeItem("adyapan-token");
@@ -162,7 +157,11 @@ function LoginPageContent() {
       } catch { /* ignore */ }
     }
 
-    return () => { document.body.classList.remove("landing"); observer.disconnect(); };
+    return () => {
+      document.body.classList.remove("landing");
+      const saved = localStorage.getItem("adyapan-theme") || "dark";
+      document.documentElement.setAttribute("data-theme", saved);
+    };
   }, [router]);
 
   const cardBg    = "rgba(18,18,30,0.15)";
@@ -181,7 +180,7 @@ function LoginPageContent() {
   const inpReg = (extra = "") =>
     `w-full rounded-md border bg-transparent px-3 py-2 pl-8 text-xs outline-none transition placeholder:text-white/40 focus:border-amber-400 ${extra}`;
 
-  const inpStyle = { background: inputBg, borderColor: inputBdr, color: "#ffffff", WebkitTextFillColor: "#ffffff" };
+  const inpStyle = { background: inputBg, borderColor: inputBdr, color: "#ffffff", WebkitTextFillColor: "#ffffff", colorScheme: "dark" as const };
   const socialStyle = { background: socialBg, border: `1px solid ${inputBdr}`, color: "#ffffff" };
   const submitStyle = { background: "linear-gradient(135deg,#fbbf24,#f59e0b)", color: "#000" };
 
@@ -385,7 +384,7 @@ function LoginPageContent() {
                     <motion.h1 className="text-lg font-bold" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>Create an Account</motion.h1>
                     <motion.p className="mt-0.5 text-xs" style={{ color: labelClr }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>Sign up now to start learning with AI</motion.p>
                   </div>
-                  <form onSubmit={handleRegister} className="grid grid-cols-2 gap-2">
+                  <form onSubmit={handleRegister} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {[
                       { label: "Full Name",     key: "name",    type: "text",  ph: "Enter your name", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, full: false },
                       { label: "Email Address", key: "email",   type: "email", ph: "Enter your email", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, full: false },
