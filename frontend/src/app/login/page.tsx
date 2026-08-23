@@ -289,7 +289,7 @@ function LoginPageContent() {
         }}
       />
 
-      <Navbar forceWhiteText />
+      <Navbar forceWhiteText hideThemeToggle />
 
       <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-6 relative z-10">
         <motion.div
