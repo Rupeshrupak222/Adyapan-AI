@@ -52,7 +52,7 @@
   color: #111827;
 }
 
-/* ── Prevent Browser Autofill Light Background Override ── */
+/* ── Prevent Browser Autofill Light Background Override & Ensure High Contrast Input Text ── */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -61,20 +61,38 @@ input:-webkit-autofill:active {
   transition-delay: 99999s;
 }
 
-[data-theme="dark"] input:-webkit-autofill,
-[data-theme="dark"] input:-webkit-autofill:hover,
-[data-theme="dark"] input:-webkit-autofill:focus,
-[data-theme="dark"] input:-webkit-autofill:active {
+body.landing input,
+body.landing select,
+.login-card input,
+.login-card select {
+  color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
-  -webkit-box-shadow: 0 0 0px 1000px #12121e inset !important;
+  caret-color: #ffffff !important;
 }
 
-[data-theme="light"] input:-webkit-autofill,
-[data-theme="light"] input:-webkit-autofill:hover,
-[data-theme="light"] input:-webkit-autofill:focus,
-[data-theme="light"] input:-webkit-autofill:active {
-  -webkit-text-fill-color: #0f172a !important;
-  -webkit-box-shadow: 0 0 0px 1000px #f1f5f9 inset !important;
+body.landing select option,
+.login-card select option {
+  background-color: #141424 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+body.landing select:focus,
+.login-card select:focus {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+body.landing input:-webkit-autofill,
+body.landing input:-webkit-autofill:hover,
+body.landing input:-webkit-autofill:focus,
+body.landing input:-webkit-autofill:active,
+.login-card input:-webkit-autofill,
+.login-card input:-webkit-autofill:hover,
+.login-card input:-webkit-autofill:focus,
+.login-card input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(18, 18, 30, 0.85) inset !important;
 }
 
 

@@ -54,6 +54,7 @@ import avatarRouter from "./avatar.routes";
 import { settingsRouter } from "./settings.routes";
 import { usageRouter } from "./usage.routes";
 import { subscriptionRouter } from "./subscription.routes";
+import { contactRouter } from "./contact.routes";
 import { enforceAiTokenLimit } from "../middleware/aiTokenLimit.middleware";
 import { requirePremiumEntitlement } from "../middleware/requirePremium";
 
@@ -174,3 +175,6 @@ apiRouter.use("/usage", usageRouter);
 
 // Enterprise Subscription System Routes
 apiRouter.use("/subscription", subscriptionRouter);
+
+// Contact Form Routes
+apiRouter.use("/contact", contactRouter);

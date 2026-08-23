@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { saveAuthSession } from "@/hooks/useAuth";
 import { Navbar } from "@/components/layout/Navbar";
 import { AnimatedCheckCircle } from "@/components/ui/AnimatedIcons";
+import { Eye, EyeOff } from "lucide-react";
 import type { PlatformUser } from "@/types/user";
 
 type Tab = "login" | "register" | "forgot";
@@ -51,20 +52,37 @@ function LoginPageContent() {
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPass, setShowLoginPass] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
   const [reg, setReg] = useState({ name: "", email: "", phone: "", college: "", branch: "", year: "", password: "", confirm: "" });
+  const [showRegPass, setShowRegPass] = useState(false);
+  const [showRegConfirm, setShowRegConfirm] = useState(false);
   const [regError, setRegError] = useState("");
   const [regLoading, setRegLoading] = useState(false);
   const [regEmailError, setRegEmailError] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+  const yearRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (yearRef.current && !yearRef.current.contains(e.target as Node)) {
+        setYearDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotOtp, setForgotOtp] = useState("");
   const [forgotNew, setForgotNew] = useState("");
   const [forgotConfirm, setForgotConfirm] = useState("");
+  const [showForgotNew, setShowForgotNew] = useState(false);
+  const [showForgotConfirm, setShowForgotConfirm] = useState(false);
   const [forgotStep, setForgotStep] = useState<ForgotStep>("email");
   const [forgotMsg, setForgotMsg] = useState("");
   const [forgotError, setForgotError] = useState("");
@@ -147,7 +165,6 @@ function LoginPageContent() {
     return () => { document.body.classList.remove("landing"); observer.disconnect(); };
   }, [router]);
 
-  const isDark = theme === "dark";
   const cardBg    = "rgba(18,18,30,0.15)";
   const cardBorder= "rgba(255,255,255,0.15)";
   const cardText  = "#ffffff";
@@ -159,13 +176,13 @@ function LoginPageContent() {
   const socialBg  = "rgba(255,255,255,0.12)";
 
   const inp = (extra = "") =>
-    `w-full rounded-lg border bg-transparent px-3 py-2 pl-9 text-sm outline-none transition placeholder:text-[${mutedClr}] focus:border-indigo-500 ${extra}`;
+    `w-full rounded-lg border bg-transparent px-3 py-2 pl-9 text-sm outline-none transition placeholder:text-white/40 focus:border-amber-400 ${extra}`;
 
   const inpReg = (extra = "") =>
-    `w-full rounded-md border bg-transparent px-3 py-2 pl-8 text-xs outline-none transition focus:border-indigo-500 ${extra}`;
+    `w-full rounded-md border bg-transparent px-3 py-2 pl-8 text-xs outline-none transition placeholder:text-white/40 focus:border-amber-400 ${extra}`;
 
-  const inpStyle = { background: inputBg, borderColor: inputBdr, color: cardText };
-  const socialStyle = { background: socialBg, border: `1px solid ${inputBdr}`, color: cardText };
+  const inpStyle = { background: inputBg, borderColor: inputBdr, color: "#ffffff", WebkitTextFillColor: "#ffffff" };
+  const socialStyle = { background: socialBg, border: `1px solid ${inputBdr}`, color: "#ffffff" };
   const submitStyle = { background: "linear-gradient(135deg,#fbbf24,#f59e0b)", color: "#000" };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -296,7 +313,7 @@ function LoginPageContent() {
           initial={{ opacity: 0, y: 40, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className={`w-full rounded-2xl border shadow-2xl transition-shadow duration-300 ${tab === "register" ? "max-w-md" : "max-w-sm"}`}
+          className={`login-card w-full rounded-2xl border shadow-2xl transition-shadow duration-300 ${tab === "register" ? "max-w-md" : "max-w-sm"}`}
           style={{ background: cardBg, borderColor: cardBorder, backdropFilter: "blur(24px)", color: cardText }}
         >
           <div className={tab === "register" ? "p-4" : "p-6"}>
@@ -321,14 +338,19 @@ function LoginPageContent() {
                   </div>
                   <form onSubmit={handleLogin} className="flex flex-col gap-3">
                     {[
-                      { label: "Email Address", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, ph: "Email", val: loginEmail, set: (v: string) => setLoginEmail(v), type: "email" },
-                      { label: "Password", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, ph: "••••••••", val: loginPassword, set: (v: string) => setLoginPassword(v), type: "password" },
+                      { label: "Email Address", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, ph: "Enter your email", val: loginEmail, set: (v: string) => setLoginEmail(v), type: "email" },
+                      { label: "Password", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, ph: "Enter your password", val: loginPassword, set: (v: string) => setLoginPassword(v), type: "password" },
                     ].map((f, i) => (
                       <motion.div key={f.label} custom={i} variants={staggerItem} initial="hidden" animate="visible">
                         <label className="mb-1 block text-xs font-semibold" style={{ color: labelClr }}>{f.label}</label>
                         <div className="relative">
                           <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}>{f.icon}</span>
-                          <input type={f.type} required placeholder={f.ph} value={f.val} onChange={e => f.set(e.target.value)} className={inp()} style={inpStyle} />
+                          <input type={f.label === "Password" ? (showLoginPass ? "text" : "password") : f.type} required placeholder={f.ph} value={f.val} onChange={e => f.set(e.target.value)} className={inp(f.label === "Password" ? "pr-9" : "")} style={inpStyle} />
+                          {f.label === "Password" && (
+                            <button type="button" onClick={() => setShowLoginPass(!showLoginPass)} aria-label="Toggle password visibility" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white cursor-pointer z-10 p-1 transition-colors">
+                              {showLoginPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                            </button>
+                          )}
                         </div>
                       </motion.div>
                     ))}
@@ -365,11 +387,11 @@ function LoginPageContent() {
                   </div>
                   <form onSubmit={handleRegister} className="grid grid-cols-2 gap-2">
                     {[
-                      { label: "Full Name",     key: "name",    type: "text",  ph: "John Doe",         icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, full: false },
-                      { label: "Email Address", key: "email",   type: "email", ph: "Email", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, full: false },
-                      { label: "Phone Number",  key: "phone",   type: "tel",   ph: "9876543210",        icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.6 4.4 2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.11 6.11l.91-.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>, full: false },
-                      { label: "College/University", key: "college", type: "text", ph: "State University", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>, full: false },
-                      { label: "Branch/Specialization", key: "branch", type: "text", ph: "Computer Science", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, full: false },
+                      { label: "Full Name",     key: "name",    type: "text",  ph: "Enter your name", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, full: false },
+                      { label: "Email Address", key: "email",   type: "email", ph: "Enter your email", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, full: false },
+                      { label: "Phone Number",  key: "phone",   type: "tel",   ph: "Enter phone number", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.6 4.4 2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.11 6.11l.91-.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>, full: false },
+                      { label: "College/University", key: "college", type: "text", ph: "Enter university/college", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>, full: false },
+                      { label: "Branch/Specialization", key: "branch", type: "text", ph: "Enter branch/specialization", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, full: false },
                     ].map(({ label, key, type, ph, icon, full }, fi) => {
                       const isEmail = key === "email";
                       return (
@@ -409,29 +431,100 @@ function LoginPageContent() {
                     })}
                     <motion.div className="col-span-1" custom={5} variants={staggerItem} initial="hidden" animate="visible">
                       <label className="mb-0.5 block text-xs font-semibold" style={{ color: labelClr }}>Academic Year</label>
-                      <div className="relative">
-                        <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-                        <select required value={reg.year} onChange={e => setReg(r => ({ ...r, year: e.target.value }))}
-                          className={inpReg()} style={{ ...inpStyle, appearance: "none" as const, backgroundColor: isDark ? "#1a1a2e" : "#ffffff", color: cardText }}>
-                          <option value="" disabled style={{ background: isDark ? "#1a1a2e" : "#ffffff", color: cardText }}>Select Year</option>
-                          <option value="1"         style={{ background: isDark ? "#1a1a2e" : "#ffffff", color: cardText }}>1st Year</option>
-                          <option value="2"         style={{ background: isDark ? "#1a1a2e" : "#ffffff", color: cardText }}>2nd Year</option>
-                          <option value="3"         style={{ background: isDark ? "#1a1a2e" : "#ffffff", color: cardText }}>3rd Year</option>
-                          <option value="4"         style={{ background: isDark ? "#1a1a2e" : "#ffffff", color: cardText }}>4th Year</option>
-                          <option value="Graduated" style={{ background: isDark ? "#1a1a2e" : "#ffffff", color: cardText }}>Graduated</option>
-                        </select>
+                      <div className="relative" ref={yearRef}>
+                        <button
+                          type="button"
+                          onClick={() => setYearDropdownOpen(!yearDropdownOpen)}
+                          className={inpReg("cursor-pointer flex items-center justify-between pr-7 text-left")}
+                          style={{ ...inpStyle, opacity: reg.year ? 1 : 0.8 }}
+                        >
+                          <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                          </span>
+                          <span style={{ color: reg.year ? "#ffffff" : "rgba(255,255,255,0.4)" }}>
+                            {[
+                              { label: "1st Year", value: "1" },
+                              { label: "2nd Year", value: "2" },
+                              { label: "3rd Year", value: "3" },
+                              { label: "4th Year", value: "4" },
+                              { label: "Graduated", value: "Graduated" },
+                            ].find(o => o.value === reg.year)?.label || "Select Year"}
+                          </span>
+                          <span style={{ position: "absolute", right: "0.6rem", top: "50%", transform: `translateY(-50%) rotate(${yearDropdownOpen ? 180 : 0}deg)`, color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10, transition: "transform 0.2s" }}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+                          </span>
+                        </button>
+
+                        <AnimatePresence>
+                          {yearDropdownOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 4, scale: 1 }}
+                              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute left-0 right-0 top-full z-50 overflow-hidden rounded-lg border shadow-xl backdrop-blur-xl"
+                              style={{
+                                background: "rgba(18, 18, 30, 0.95)",
+                                borderColor: "rgba(255, 255, 255, 0.18)",
+                                boxShadow: "0 15px 35px rgba(0, 0, 0, 0.6)",
+                              }}
+                            >
+                              {[
+                                { label: "1st Year", value: "1" },
+                                { label: "2nd Year", value: "2" },
+                                { label: "3rd Year", value: "3" },
+                                { label: "4th Year", value: "4" },
+                                { label: "Graduated", value: "Graduated" },
+                              ].map((opt) => {
+                                const isSelected = reg.year === opt.value;
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => {
+                                      setReg((r) => ({ ...r, year: opt.value }));
+                                      setYearDropdownOpen(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer flex items-center justify-between"
+                                    style={{
+                                      color: isSelected ? "#fbbf24" : "#ffffff",
+                                      background: isSelected ? "rgba(245, 158, 11, 0.15)" : "transparent",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (!isSelected) e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (!isSelected) e.currentTarget.style.background = "transparent";
+                                    }}
+                                  >
+                                    <span>{opt.label}</span>
+                                    {isSelected && <span className="text-amber-400 font-bold">✓</span>}
+                                  </button>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </motion.div>
-                    {[{ label: "Password", key: "password" }, { label: "Confirm Password", key: "confirm" }].map(({ label, key }, fi) => (
-                      <motion.div key={key} className="col-span-1" custom={6 + fi} variants={staggerItem} initial="hidden" animate="visible">
-                        <label className="mb-0.5 block text-xs font-semibold" style={{ color: labelClr }}>{label}</label>
-                        <div className="relative">
-                          <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-                          <input type="password" required placeholder="••••••••" value={reg[key as keyof typeof reg]}
-                            onChange={e => setReg(r => ({ ...r, [key]: e.target.value }))} className={inpReg()} style={inpStyle} />
-                        </div>
-                      </motion.div>
-                    ))}
+                    {[{ label: "Password", key: "password", ph: "Enter password" }, { label: "Confirm Password", key: "confirm", ph: "Confirm password" }].map(({ label, key, ph }, fi) => {
+                      const isPass = key === "password";
+                      const showState = isPass ? showRegPass : showRegConfirm;
+                      const toggleFn = isPass ? () => setShowRegPass(!showRegPass) : () => setShowRegConfirm(!showRegConfirm);
+                      return (
+                        <motion.div key={key} className="col-span-1" custom={6 + fi} variants={staggerItem} initial="hidden" animate="visible">
+                          <label className="mb-0.5 block text-xs font-semibold" style={{ color: labelClr }}>{label}</label>
+                          <div className="relative">
+                            <span style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                            <input type={showState ? "text" : "password"} required placeholder={ph} value={reg[key as keyof typeof reg]}
+                              onChange={e => setReg(r => ({ ...r, [key]: e.target.value }))} className={inpReg("pr-8")} style={inpStyle} />
+                            <button type="button" onClick={toggleFn} aria-label="Toggle password visibility" className="absolute right-2 top-1/2 -translate-y-1/2 text-white/70 hover:text-white cursor-pointer z-10 p-1 transition-colors">
+                              {showState ? <EyeOff size={13} /> : <Eye size={13} />}
+                            </button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                     {regError && <motion.p className="col-span-2 text-xs text-red-400" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{regError}</motion.p>}
                     <motion.button type="submit" disabled={regLoading}
                       className="col-span-2 w-full rounded-full py-2 text-sm font-bold disabled:opacity-60 cursor-pointer"
@@ -471,23 +564,35 @@ function LoginPageContent() {
                   ) : (
                     <form onSubmit={handleForgot} className="flex flex-col gap-3">
                       {[
-                        { label: "Email Address", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, ph: "Email", type: "email", val: forgotEmail, set: (v: string) => setForgotEmail(v) },
+                        { label: "Email Address", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>, ph: "Enter your email", type: "email", val: forgotEmail, set: (v: string) => setForgotEmail(v) },
                         ...(forgotStep === "otp" ? [
-                          { label: "Email OTP", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, ph: "6-digit OTP", type: "text", val: forgotOtp, set: (v: string) => setForgotOtp(v) },
-                          { label: "New Password", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, ph: "New password", type: "password", val: forgotNew, set: (v: string) => setForgotNew(v) },
-                          { label: "Confirm Password", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, ph: "Confirm password", type: "password", val: forgotConfirm, set: (v: string) => setForgotConfirm(v) },
+                          { label: "Email OTP", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, ph: "Enter 6-digit OTP", type: "text", val: forgotOtp, set: (v: string) => setForgotOtp(v) },
+                          { label: "New Password", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, ph: "Enter new password", type: "password", val: forgotNew, set: (v: string) => setForgotNew(v) },
+                          { label: "Confirm Password", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, ph: "Confirm new password", type: "password", val: forgotConfirm, set: (v: string) => setForgotConfirm(v) },
                         ] : []),
-                      ].map((f, i) => (
-                        <motion.div key={f.label} custom={i} variants={staggerItem} initial="hidden" animate="visible">
-                          <label className="mb-1 block text-xs font-semibold" style={{ color: labelClr }}>{f.label}</label>
-                          <div className="relative">
-                            <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}>{f.icon}</span>
-                            <input type={f.type} required placeholder={f.ph} value={f.val}
-                              onChange={e => f.set(e.target.value)} disabled={f.label === "Email Address" && forgotStep === "otp"}
-                              className={inp()} style={{ ...inpStyle, opacity: f.label === "Email Address" && forgotStep === "otp" ? 0.6 : 1 }} />
-                          </div>
-                        </motion.div>
-                      ))}
+                      ].map((f, i) => {
+                        const isNewPass = f.label === "New Password";
+                        const isConfirmPass = f.label === "Confirm Password";
+                        const isPassField = isNewPass || isConfirmPass;
+                        const showState = isNewPass ? showForgotNew : showForgotConfirm;
+                        const toggleFn = isNewPass ? () => setShowForgotNew(!showForgotNew) : () => setShowForgotConfirm(!showForgotConfirm);
+                        return (
+                          <motion.div key={f.label} custom={i} variants={staggerItem} initial="hidden" animate="visible">
+                            <label className="mb-1 block text-xs font-semibold" style={{ color: labelClr }}>{f.label}</label>
+                            <div className="relative">
+                              <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: iconClr, display: "flex", pointerEvents: "none", zIndex: 10 }}>{f.icon}</span>
+                              <input type={isPassField ? (showState ? "text" : "password") : f.type} required placeholder={f.ph} value={f.val}
+                                onChange={e => f.set(e.target.value)} disabled={f.label === "Email Address" && forgotStep === "otp"}
+                                className={inp(isPassField ? "pr-9" : "")} style={{ ...inpStyle, opacity: f.label === "Email Address" && forgotStep === "otp" ? 0.6 : 1 }} />
+                              {isPassField && (
+                                <button type="button" onClick={toggleFn} aria-label="Toggle password visibility" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white cursor-pointer z-10 p-1 transition-colors">
+                                  {showState ? <EyeOff size={15} /> : <Eye size={15} />}
+                                </button>
+                              )}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
                       {forgotMsg   && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-semibold text-green-400">{forgotMsg}</motion.p>}
                       {forgotError && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-semibold text-red-400">{forgotError}</motion.p>}
                       <motion.button type="submit" disabled={forgotLoading} className="w-full rounded-full py-2.5 text-sm font-bold disabled:opacity-60 cursor-pointer" style={submitStyle} custom={3} variants={staggerItem} initial="hidden" animate="visible" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

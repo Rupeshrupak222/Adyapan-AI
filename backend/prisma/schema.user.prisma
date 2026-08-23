@@ -3180,3 +3180,20 @@ model LinkedInScrapedJob {
   @@index([savedAt])
   @@map("linkedin_scraped_jobs")
 }
+
+// Contact Form Submissions
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  fullName  String   @map("full_name")
+  email     String
+  phone     String
+  subject   String
+  message   String   @db.Text
+  status    String   @default("pending") // pending, in-progress, resolved, closed
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("contact_submissions")
+}

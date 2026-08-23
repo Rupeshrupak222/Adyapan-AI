@@ -358,29 +358,14 @@ export default function LandingPage() {
 
           {/* Hero content with robot image */}
           <motion.div
-            className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative pt-0 -mt-8"
+            className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative pt-0 -mt-8 justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
-            {/* Left side text */}
-            <motion.div
-              className="lg:col-span-3 text-left space-y-2"
-              initial={{ opacity: 0, x: -60 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-            >
-              <div className="space-y-2">
-                <p className="text-sm md:text-base font-bold text-white tracking-wide">//LEARN SMARTER</p>
-                <p className="text-sm md:text-base font-bold text-white tracking-wide">BUILD FASTER</p>
-                <p className="text-sm md:text-base font-bold text-white tracking-wide">GROW LIMITLESS</p>
-                <p className="text-sm md:text-base font-bold text-white tracking-wide">WITH ADYAPAN AI</p>
-              </div>
-            </motion.div>
-
             {/* Center robot image */}
             <motion.div
-              className="lg:col-span-6 flex justify-center relative"
+              className="lg:col-span-8 lg:col-start-3 flex justify-center relative"
               initial={{ opacity: 0, scale: 0.7 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.7, duration: 0.8, type: "spring", stiffness: 80 }}
@@ -397,20 +382,6 @@ export default function LandingPage() {
                   style={{ filter: "url(#smoothing) contrast(1.05) brightness(1.02)" }}
                 />
               </motion.div>
-            </motion.div>
-
-            {/* Right side text */}
-            <motion.div
-              className="lg:col-span-3 text-right space-y-2"
-              initial={{ opacity: 0, x: 60 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-            >
-              <div className="space-y-2">
-                <p className="text-sm md:text-base font-bold text-white tracking-wide">//POWERING</p>
-                <p className="text-sm md:text-base font-bold text-white tracking-wide">THE NEXT GENERATION</p>
-                <p className="text-sm md:text-base font-bold text-white tracking-wide">OF CAREER SUCCESS</p>
-              </div>
             </motion.div>
           </motion.div>
         </div>
