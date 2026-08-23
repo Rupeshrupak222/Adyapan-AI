@@ -33,6 +33,8 @@ import { cn } from "@/lib/cn";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
 import { getAuthUser } from "@/hooks/useAuth";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 
 const mkColors = (theme: string) => {
   const isDark = theme === "dark";
@@ -493,6 +495,7 @@ function KnowledgePanel({
 export function MindMapsView() {
   const theme = useTheme();
   const c = mkColors(theme);
+  const quota = useFeatureQuota("MIND_MAPS");
 
   const [topic, setTopic] = useState("");
   const [selectedMode, setSelectedMode] = useState<LearningMode>("intermediate");
@@ -546,7 +549,14 @@ export function MindMapsView() {
   const handleGenerate = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const targetTopic = topic.trim() || "Cellular Respiration";
+    if (quota.exhausted) {
+      toast.error("You've used all free Mind Map generations this month.", {
+        description: "Upgrade to Premium for unlimited mind maps.",
+      });
+      return;
+    }
 
+    const requestId = quota.newRequestId();
     setIsGenerating(true);
     setLoadingStep(0);
     setError(null);
@@ -561,6 +571,7 @@ export function MindMapsView() {
       const apiPromise = api.post("/mindmap/generate", {
         topic: targetTopic,
         mode: selectedMode,
+        requestId,
       });
 
       await stepTimer(1, 800);
@@ -606,6 +617,7 @@ export function MindMapsView() {
 
       setNodes(positioned);
       setEdges(flowEdges);
+      quota.onSuccess();
       setIsGenerating(false);
       setLoadingStep(5);
 
@@ -618,7 +630,10 @@ export function MindMapsView() {
     } catch (err: unknown) {
       const e = err as { response?: { data?: { error?: string } }; message?: string };
       console.error("[MindMapsView] generate failed:", err);
-      setError(e?.response?.data?.error || e?.message || "An unexpected error occurred.");
+      if (!quota.handleQuotaError(err)) {
+        await quota.onFailure();
+        setError(e?.response?.data?.error || e?.message || "An unexpected error occurred.");
+      }
       setIsGenerating(false);
     }
   };
@@ -756,6 +771,7 @@ export function MindMapsView() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <FeatureCreditBadge featureKey="MIND_MAPS" compact isDark={theme === "dark"} />
           {hasGraph && (
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               onClick={handleReset} className="h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.text }}>

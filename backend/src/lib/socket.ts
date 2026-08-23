@@ -14,6 +14,7 @@ import { analyzeProctoringEvent, generateViolationReport } from "./ai/proctoring
 import { logProctoringEvent } from "../services/interview-session.service";
 import { generateInterviewQuestion } from "./ai/gemini";
 import { callAIRobust } from "./ai/openrouter";
+import { FeatureUsageService } from "../services/feature-usage.service";
 
 function stripLessonJson(text: string): string {
   let cleaned = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
@@ -198,9 +199,37 @@ export function initSocketServer(server: HttpServer) {
         socket.emit("generate:progress", { progress, statusMessage });
       };
 
+      let quotaFeatureKey: string | null = null;
+      let quotaRequestId: string | null = null;
+      let quotaUserId: string | null = null;
       try {
         const userId = await resolveUserId(payload);
         const userPrisma = await getUserPrisma(userId);
+
+        // Centralized free-credit enforcement for metered generation modules.
+        const socketFeatureKeys: Record<string, string> = {
+          notes: "NOTES_GENERATOR",
+          quiz: "QUIZ_GENERATOR",
+          assignment: "ASSIGNMENT_GENERATOR",
+          mindmap: "MIND_MAPS",
+        };
+        quotaFeatureKey = socketFeatureKeys[moduleName] || null;
+        if (quotaFeatureKey && userId) {
+          try {
+            const consume = await FeatureUsageService.checkAndConsume(userId, quotaFeatureKey);
+            if (!consume.allowed) {
+              socket.emit("generate:error", {
+                error: `You've used all ${consume.status.limit} free attempts for this tool this month. Credits reset on ${new Date(consume.status.resetAt).toLocaleDateString()}. Upgrade to Premium for unlimited access.`,
+                code: "FEATURE_LIMIT_REACHED",
+              });
+              return;
+            }
+            quotaUserId = userId;
+            quotaRequestId = consume.requestId;
+          } catch (quotaErr) {
+            console.warn("[Socket] Quota check failed, proceeding:", quotaErr);
+          }
+        }
 
         switch (moduleName) {
           case "notes": {
@@ -377,14 +406,39 @@ export function initSocketServer(server: HttpServer) {
             socket.emit("generate:complete", { message: `${moduleName.toUpperCase()} generation complete!` });
           }
         }
+
+        if (quotaFeatureKey && quotaUserId && quotaRequestId) {
+          FeatureUsageService.markCompleted(quotaUserId, quotaFeatureKey, quotaRequestId).catch(() => {});
+        }
       } catch (error) {
         console.error(`Socket generation error for ${moduleName}:`, error);
+        if (quotaFeatureKey && quotaUserId && quotaRequestId) {
+          await FeatureUsageService.refundAttempt(quotaUserId, quotaFeatureKey, quotaRequestId).catch(() => {});
+        }
         socket.emit("generate:error", { error: `Failed to generate ${moduleName}. Please try again.` });
       }
     });
 
     // Lesson generation — multi-provider fallback via callAIRobust
     socket.on("lesson:generate", async ({ topic, duration, level }: { topic: string; duration: string; level: string }) => {
+      const quotaUserId = socket.data?.userId as string | undefined;
+      let quotaRequestId: string | null = null;
+      if (quotaUserId) {
+        try {
+          const consume = await FeatureUsageService.checkAndConsume(quotaUserId, "STUDY_ASSISTANT");
+          if (!consume.allowed) {
+            socket.emit("lesson:error", {
+              error: `You've used all ${consume.status.limit} free Study Assistant attempts this month. Credits reset on ${new Date(consume.status.resetAt).toLocaleDateString()}. Upgrade to Premium for unlimited access.`,
+              code: "FEATURE_LIMIT_REACHED",
+            });
+            return;
+          }
+          quotaRequestId = consume.requestId;
+        } catch (quotaErr) {
+          console.warn("[Lesson] Quota check failed, proceeding:", quotaErr);
+        }
+      }
+
       const progressMessages = [
         "Analyzing Topic Semantics",
         "Building Custom Learning Path",
@@ -495,8 +549,14 @@ Keep responses concise for short durations and detailed for longer durations.`;
         }
 
         socket.emit("lesson:complete", { data });
+        if (quotaUserId && quotaRequestId) {
+          FeatureUsageService.markCompleted(quotaUserId, "STUDY_ASSISTANT", quotaRequestId).catch(() => {});
+        }
       } catch (error: any) {
         console.error("Lesson generation error:", error?.message || error);
+        if (quotaUserId && quotaRequestId) {
+          await FeatureUsageService.refundAttempt(quotaUserId, "STUDY_ASSISTANT", quotaRequestId).catch(() => {});
+        }
         // Serve smart fallback lesson instead of failing user UI
         const fallbackData = createFallbackLesson(topic, duration, level);
         const uid = socket.data?.userId;

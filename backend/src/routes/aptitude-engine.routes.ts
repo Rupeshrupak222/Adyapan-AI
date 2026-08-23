@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import {
   getCategories,
   getCompanyPresetsCtrl,
@@ -22,7 +23,7 @@ aptitudeEngineRouter.get("/categories", requireAuth, getCategories);
 aptitudeEngineRouter.get("/companies", requireAuth, getCompanyPresetsCtrl);
 
 // Session Management
-aptitudeEngineRouter.post("/session/start", requireAuth, startSession);
+aptitudeEngineRouter.post("/session/start", requireAuth, requireFeatureQuota("AI_APTITUDE_ENGINE"), startSession);
 aptitudeEngineRouter.post("/session/answer", requireAuth, submitAnswer);
 aptitudeEngineRouter.post("/session/complete", requireAuth, completeSession);
 aptitudeEngineRouter.post("/session/submit", requireAuth, submitSessionAnswers);

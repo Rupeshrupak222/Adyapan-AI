@@ -15,6 +15,7 @@ import { StreakService } from "../services/streak.service";
 import { handleRouteError } from "../utils/routeError";
 import { getTimezone } from "../utils/request";
 import { generatePdfFromHtml } from "../services/pdf-generator.service";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 
 const uploadMemory = multer({
   storage: multer.memoryStorage(),
@@ -490,7 +491,9 @@ Return JSON:
 }
 
 // Analyze uploaded document — fast unified AI study summary generation
-studyRouter.post("/analyze", uploadMemory.single("file"), async (req, res) => {
+// Quota note: middleware runs before multer, so multipart `requestId` bodies
+// are unavailable here — clients should send the `x-request-id` header.
+studyRouter.post("/analyze", requireFeatureQuota("STUDY_ASSISTANT"), uploadMemory.single("file"), async (req, res) => {
   const start = Date.now();
   try {
     let documentText = req.body.documentText as string | undefined;
@@ -701,7 +704,7 @@ studyRouter.post("/export/pdf", async (req, res) => {
 });
 
 // Generate AI lesson on a topic (migrated from learn module)
-studyRouter.post("/generate-lesson", async (req, res) => {
+studyRouter.post("/generate-lesson", requireFeatureQuota("STUDY_ASSISTANT"), async (req, res) => {
   try {
     const { topic, duration, level } = req.body;
     const result = await generateLearnLesson(topic, duration || "10m", level || "intermediate");

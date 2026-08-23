@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { AiUsageService } from "../services/token-tracking.service";
+import { FeatureUsageService } from "../services/feature-usage.service";
 
 export async function getMyUsage(req: Request, res: Response, next: NextFunction) {
   try {
@@ -9,9 +10,25 @@ export async function getMyUsage(req: Request, res: Response, next: NextFunction
       return;
     }
 
+    // AI token/request usage (legacy global quota system)
     const usage = await AiUsageService.getUsage(userId);
+
+    // Centralized per-feature free-credit usage (authoritative source for the
+    // 19 limited features). Additive field — existing consumers unaffected.
+    let featureCredits = null;
+    try {
+      featureCredits = await FeatureUsageService.getGlobalUsageSummary(userId);
+    } catch {
+      /* feature usage is non-critical for this endpoint */
+    }
+
     res.json({
       success: true,
+      plan: featureCredits?.plan,
+      features: featureCredits?.features,
+      featurePeriod: featureCredits
+        ? Object.values(featureCredits.features)[0] ?? null
+        : null,
       usage: usage
         ? {
             plan: usage.plan,

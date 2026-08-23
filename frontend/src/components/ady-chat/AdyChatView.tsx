@@ -15,6 +15,8 @@ import { ChatInput } from "./ChatInput";
 import { MessageList } from "./MessageList";
 import { ADY_MODELS, type ChatSession, type ChatMessage } from "./types";
 import { useTheme } from "@/hooks/useTheme";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 
 // ─── Voice recognition hook ──────────────────────────────────────────────────
 
@@ -65,6 +67,7 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
   const { user } = useAuth();
   const theme = useTheme();
   const isDark = theme === "dark";
+  const quota = useFeatureQuota("AI_CHAT_ASSISTANT");
 
   // ── Intro animation ────────────────────────────────────────────────────────
   const [introComplete, setIntroComplete] = useState(false);
@@ -124,18 +127,30 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
 
   // ── New session ────────────────────────────────────────────────────────────
   const handleNewSession = useCallback(async () => {
+    if (quota.exhausted) {
+      import("sonner").then(({ toast }) =>
+        toast.error("You've used all free AI Chat sessions this month.", {
+          description: "Upgrade to Premium for unlimited chats.",
+        })
+      );
+      return;
+    }
+    const requestId = quota.newRequestId();
     try {
-      const res = await api.post("/ady-chat/sessions", { model: selectedModel });
+      const res = await api.post("/ady-chat/sessions", { model: selectedModel, requestId });
       if (res.data.success) {
+        quota.onSuccess();
         setSessions(prev => [res.data.session, ...prev]);
         setActiveSessionId(res.data.session.id);
         setMessages([]);
         setStreamingText("");
       }
     } catch (err) {
+      if (quota.handleQuotaError(err)) return;
+      await quota.onFailure();
       console.error(err);
     }
-  }, [selectedModel]);
+  }, [selectedModel, quota]);
 
   // ── Delete session ─────────────────────────────────────────────────────────
   const handleDeleteSession = useCallback(async (id: string, e: React.MouseEvent) => {
@@ -188,18 +203,49 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
 
     let sessionId = activeSessionId;
     if (!sessionId) {
+      if (quota.exhausted) {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            sessionId: "none",
+            role: "assistant",
+            content:
+              "You've used all free AI Chat sessions this month. Upgrade to Premium for unlimited access.",
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+        return;
+      }
+      const requestId = quota.newRequestId();
       try {
         const res = await api.post("/ady-chat/sessions", {
           model: selectedModel,
           title: finalMessage.slice(0, 80),
+          requestId,
         });
         if (res.data.success) {
+          quota.onSuccess();
           sessionId = res.data.session.id;
           isNewSessionCreatedRef.current = true;
           setActiveSessionId(sessionId);
           setSessions(prev => [res.data.session, ...prev]);
         }
-      } catch (err) {
+      } catch (err: any) {
+        if (quota.handleQuotaError(err)) {
+          setMessages(prev => [
+            ...prev,
+            {
+              id: `err-${Date.now()}`,
+              sessionId: "none",
+              role: "assistant",
+              content: err?.response?.data?.message || "Monthly AI Chat limit reached. Please upgrade to continue.",
+              createdAt: new Date().toISOString(),
+            },
+          ]);
+          return;
+        }
+        await quota.onFailure();
         console.error(err);
         return;
       }
@@ -310,7 +356,7 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
       setLoading(false);
       setStreamingText("");
     }
-  }, [input, uploadedFile, activeSessionId, selectedModel, loadSessions]);
+  }, [input, uploadedFile, activeSessionId, selectedModel, loadSessions, quota]);
 
   const handleSuggestionClick = useCallback((prompt: string) => {
     setInput(prompt);
@@ -413,6 +459,11 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
 
         {/* Main content area */}
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {!hasMessages && (
+            <div className="absolute top-3 right-3 z-20">
+              <FeatureCreditBadge featureKey="AI_CHAT_ASSISTANT" isDark={isDark} compact />
+            </div>
+          )}
           <AnimatePresence mode="wait">
             {!hasMessages ? (
               /* ── Greeting / empty state ── */

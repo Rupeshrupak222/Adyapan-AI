@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import { generateAssignment } from "../lib/ai/gemini";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { handleRouteError } from "../utils/routeError";
@@ -7,7 +8,7 @@ export const assignmentRouter = Router();
 
 assignmentRouter.use(requireAuth);
 
-assignmentRouter.post("/generate", async (req, res) => {
+assignmentRouter.post("/generate", requireFeatureQuota("ASSIGNMENT_GENERATOR"), async (req, res) => {
   try {
     const { topic, academicLevel, wordCount } = req.body;
     const result = await generateAssignment(topic, academicLevel, wordCount);

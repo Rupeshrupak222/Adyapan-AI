@@ -1,9 +1,12 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
 import { getMyUsage, getMyUsageHistory } from "../controllers/usage.controller";
+import { featureUsageRouter } from "./feature-usage.routes";
 
 export const usageRouter = Router();
 
 usageRouter.use(requireAuth);
 usageRouter.get("/", getMyUsage);
 usageRouter.get("/history", getMyUsageHistory);
+usageRouter.use("/features", featureUsageRouter);
+

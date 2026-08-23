@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import { generateEnhancedMindMap } from "../lib/ai/gemini";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { StreakService } from "../services/streak.service";
@@ -10,7 +11,7 @@ export const mindMapRouter = Router();
 
 mindMapRouter.use(requireAuth);
 
-mindMapRouter.post("/generate", async (req, res) => {
+mindMapRouter.post("/generate", requireFeatureQuota("MIND_MAPS"), async (req, res) => {
   try {
     const { topic, mode } = req.body;
     const result = await generateEnhancedMindMap(topic, mode || "intermediate");

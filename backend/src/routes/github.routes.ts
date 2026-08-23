@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import {
   analyzeGithubProfile,
   generateReadme,
@@ -76,7 +77,7 @@ router.post("/readme", async (req: any, res) => {
   }
 });
 
-router.post("/portfolio", async (req: any, res) => {
+router.post("/portfolio", requireFeatureQuota("GITHUB_PORTFOLIO_BUILDER"), async (req: any, res) => {
   try {
     const { profileData, theme, title } = req.body;
     const result = await generatePortfolio(profileData, theme || "modern");

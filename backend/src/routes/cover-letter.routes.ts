@@ -16,6 +16,7 @@ import {
   toggleFavorite,
 } from "../controllers/cover-letter.controller";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 
 export const coverLetterRouter = Router();
 
@@ -25,7 +26,7 @@ const uploadMemory = multer({
 });
 
 // Intelligence Engine endpoints
-coverLetterRouter.post("/generate", requireAuth, generateCoverLetter);
+coverLetterRouter.post("/generate", requireAuth, requireFeatureQuota("COVER_LETTER_GENERATOR"), generateCoverLetter);
 coverLetterRouter.post("/parse-jd", requireAuth, parseJDEndpoint);
 coverLetterRouter.post("/company-insights", requireAuth, getCompanyInsights);
 coverLetterRouter.post("/role-match", requireAuth, getRoleMatch);

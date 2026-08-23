@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   experimental: {
     // Cache dynamic page shells client-side for 30s so repeat navigations
     // render instantly instead of hitting the server on every click.

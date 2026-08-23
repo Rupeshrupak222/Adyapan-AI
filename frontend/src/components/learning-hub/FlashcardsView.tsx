@@ -13,6 +13,8 @@ import {
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
 import { getAuthUser } from "@/hooks/useAuth";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 import { toast } from "sonner";
 import { AIContent } from "@/components/ai/AIContent";
 
@@ -157,6 +159,7 @@ export function FlashcardsView() {
   const router = useRouter();
   const theme = useTheme();
   const c = mkColors(theme);
+  const quota = useFeatureQuota("FLASHCARDS");
 
   const [inputTopic, setInputTopic] = useState("");
   const [topic, setTopic] = useState("");
@@ -254,6 +257,13 @@ export function FlashcardsView() {
       setError("Please provide a learning topic.");
       return;
     }
+    if (quota.exhausted) {
+      toast.error("You've used all free Flashcard Generator attempts this month.", {
+        description: "Upgrade to Premium for unlimited flashcards.",
+      });
+      return;
+    }
+    const requestId = quota.newRequestId();
     setTopic(inputTopic.trim());
     setIsGenerating(true);
     setError(null);
@@ -262,10 +272,12 @@ export function FlashcardsView() {
         topic: inputTopic.trim(),
         mode,
         cardCount,
+        requestId,
       });
       const data = response.data;
       const generatedCards: Flashcard[] = data?.data?.cards || data?.cards || [];
       if (generatedCards.length > 0) {
+        quota.onSuccess();
         setCards(generatedCards);
         setPhase("viewing");
         setCurrentCardIndex(0);
@@ -279,8 +291,11 @@ export function FlashcardsView() {
       }
     } catch (err: unknown) {
       const e = err as { response?: { data?: { error?: string; message?: string } }; message?: string };
-      const msg = e?.response?.data?.error || e?.response?.data?.message || e?.message || "Failed to generate flashcards.";
-      setError(msg);
+      if (!quota.handleQuotaError(err)) {
+        await quota.onFailure();
+        const msg = e?.response?.data?.error || e?.response?.data?.message || e?.message || "Failed to generate flashcards.";
+        setError(msg);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -376,6 +391,7 @@ export function FlashcardsView() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <FeatureCreditBadge featureKey="FLASHCARDS" compact isDark={theme === "dark"} />
           <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold" style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: "#f59e0b" }}>
             <Flame size={13} className="text-orange-400" />
             <span>{studyStreak} Day Streak</span>

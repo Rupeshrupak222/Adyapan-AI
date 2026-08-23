@@ -25,6 +25,8 @@ import {
 } from "chart.js";
 import { Radar, Bar } from "react-chartjs-2";
 import { EmptyState } from "@/components/ui/PremiumComponents";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 
 ChartJS.register(
   RadialLinearScale, PointElement, LineElement, Filler,
@@ -183,6 +185,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
   const theme = useTheme();
   const c = mkColors(theme);
   const cfg = useConfig();
+  const quota = useFeatureQuota("COVER_LETTER_GENERATOR");
 
   const [confirm, confirmModal] = useConfirm();
 
@@ -507,11 +510,18 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const startGeneration = useCallback(async () => {
+    if (quota.exhausted) {
+      setGenerationError("You've used all free Cover Letter generations this month. Upgrade to Premium for unlimited generations.");
+      setScreen("configure");
+      return;
+    }
     setLoading(true);
     setLoadingStep(0);
     setGenerationError(null);
     setScreen("generating");
     let stepInterval: ReturnType<typeof setInterval> | null = null;
+    const requestId = quota.newRequestId();
+    let quotaSucceeded = false;
     try {
       let finalResumeId = selectedResumeId;
 
@@ -520,7 +530,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
         const formData = new FormData();
         formData.append("resume", uploadFile);
         const uploadRes = await api.post("/resume-upload/upload", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "multipart/form-data", "x-request-id": quota.newRequestId() },
         });
         if (uploadRes.data.success && uploadRes.data.resume) {
           finalResumeId = uploadRes.data.resume.id;
@@ -544,9 +554,12 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
         parsedJD: parsedJD || undefined,
         companyInsights: companyInsights || undefined,
         roleMatch: roleMatch || undefined,
+        requestId,
       });
       if (stepInterval) clearInterval(stepInterval);
       if (res.data.success && res.data.coverLetter) {
+        quotaSucceeded = true;
+        quota.onSuccess();
         const cl = res.data.coverLetter;
         setCoverLetter(cl);
         setGreeting(cl.greeting || "");
@@ -558,12 +571,18 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
         loadHistory();
         autoScore();
       } else {
+        await quota.onFailure();
         const errMsg = res.data?.message || res.data?.error || "Generation returned no data. Please try again.";
         setGenerationError(errMsg);
         setScreen("configure");
       }
     } catch (err: any) {
       if (stepInterval) clearInterval(stepInterval);
+      if (quota.handleQuotaError(err)) {
+        setScreen("configure");
+        return;
+      }
+      if (!quotaSucceeded) await quota.onFailure();
       const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || "Something went wrong. Please try again.";
       console.error(err);
       setGenerationError(errMsg);
@@ -572,7 +591,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedResumeId, uploadFile, companyName, role, jobDescription, tone, letterType, length, mode, parsedJD, companyInsights, roleMatch, loadHistory, loadUploadedResumes]);
+  }, [selectedResumeId, uploadFile, companyName, role, jobDescription, tone, letterType, length, mode, parsedJD, companyInsights, roleMatch, loadHistory, loadUploadedResumes, quota]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // AI CHAT
@@ -854,6 +873,9 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
           Personalized, ATS-optimized cover letters powered by AI analysis.
         </motion.p>
       </div>
+      {screen === "configure" && (
+        <FeatureCreditBadge featureKey="COVER_LETTER_GENERATOR" compact isDark={theme === "dark"} />
+      )}
       {coverLetter && screen === "editor" && (
         <div className="flex items-center gap-1.5">
           <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={handleUndo} disabled={undoStack.length === 0}

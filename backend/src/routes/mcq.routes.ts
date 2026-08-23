@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import {
   handleGetTopics,
   handleGetCompanies,
@@ -20,7 +21,7 @@ mcqRouter.get("/company/:name", requireAuth, handleGetCompanyByName);
 
 // Questions & Practice
 mcqRouter.get("/questions", requireAuth, handleGetQuestions);
-mcqRouter.post("/generate", requireAuth, handleGenerateAIMCQs);
+mcqRouter.post("/generate", requireAuth, requireFeatureQuota("TECHNICAL_MCQS"), handleGenerateAIMCQs);
 mcqRouter.post("/submit", requireAuth, handleSubmitAttempt);
 
 // Progress & Bookmarks

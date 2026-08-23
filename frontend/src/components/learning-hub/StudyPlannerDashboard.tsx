@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { WeakTopicDetectionDashboard } from "@/components/learning-hub/WeakTopicDetectionDashboard";
 import { useTheme } from "@/hooks/useTheme";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 
 const mkColors = (theme: string) => {
   const isDark = theme === "dark";
@@ -78,6 +80,7 @@ const slideRight = { hidden: { opacity: 0, x: -24 }, visible: (i = 0) => ({ opac
 export function StudyPlannerDashboard() {
   const theme = useTheme();
   const c = mkColors(theme);
+  const quota = useFeatureQuota("STUDY_PLANNER");
 
   // Top-level tab: "planner" | "weak-topics"
   const [activeTab, setActiveTab] = useState<"planner" | "weak-topics">("planner");
@@ -241,28 +244,36 @@ export function StudyPlannerDashboard() {
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title) return toast.error("Please enter a study goal or exam name.");
+    if (quota.exhausted) {
+      toast.error("You've used all free AI Study Planner attempts this month.", {
+        description: "Upgrade to Premium for unlimited study plans.",
+      });
+      return;
+    }
+    const requestId = quota.newRequestId();
     setGenerating(true);
     setLoadingStage(0);
     const timer = setInterval(() => {
       setLoadingStage(prev => prev < loadingStages.length - 2 ? prev + 1 : prev);
     }, 1800);
-    try {
-      let documentText = "";
+    try {      let documentText = "";
       if (selectedFile) {
         setAnalyzingFile(true);
         const fileData = new FormData();
         fileData.append("file", selectedFile);
         const analyzeRes = await api.post("/study/analyze", fileData, {
-          headers: { "Content-Type": "multipart/form-data" }
+          headers: { "Content-Type": "multipart/form-data", "x-request-id": quota.newRequestId() }
         });
         if (analyzeRes.data.success && analyzeRes.data.analysis) {
           documentText = JSON.stringify(analyzeRes.data.analysis);
+          quota.onSuccess();
         }
         setAnalyzingFile(false);
       }
       setLoadingStage(5);
-      const res = await api.post("/study-planner/generate", { ...formData, documentText });
+      const res = await api.post("/study-planner/generate", { ...formData, documentText, requestId });
       if (res.data.success) {
+        quota.onSuccess();
         setLoadingStage(6);
         setTimeout(async () => {
           clearInterval(timer);
@@ -278,6 +289,11 @@ export function StudyPlannerDashboard() {
     } catch (error) {
       clearInterval(timer);
       console.error(error);
+      if (quota.handleQuotaError(error)) {
+        setGenerating(false);
+        return;
+      }
+      await quota.onFailure();
       toast.error("AI Plan generation failed. Please try again.");
       setGenerating(false);
     }
@@ -492,7 +508,9 @@ export function StudyPlannerDashboard() {
         </div>
 
         {/* Tab Switcher inside the Header */}
-        <div className="flex items-center gap-2 px-1 py-1 rounded-xl bg-white/[0.02] border border-white/5 relative z-20">
+        <div className="flex items-center gap-3">
+          <FeatureCreditBadge featureKey="STUDY_PLANNER" compact isDark={theme === "dark"} />
+          <div className="flex items-center gap-2 px-1 py-1 rounded-xl bg-white/[0.02] border border-white/5 relative z-20">
           <motion.button
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
             onClick={() => setActiveTab("planner")}
@@ -519,6 +537,7 @@ export function StudyPlannerDashboard() {
             <AlertTriangle size={12} />
             Weak Topics
           </motion.button>
+          </div>
         </div>
 
         {activePlan && activeTab === "planner" && (

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import { generateNotes } from "../lib/ai/gemini";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { StreakService } from "../services/streak.service";
@@ -11,7 +12,7 @@ export const notesRouter = Router();
 
 notesRouter.use(requireAuth);
 
-notesRouter.post("/generate", async (req, res) => {
+notesRouter.post("/generate", requireFeatureQuota("NOTES_GENERATOR"), async (req, res) => {
   try {
     const topic = req.body.topic || "General";
     const difficulty = req.body.difficulty || "Intermediate";

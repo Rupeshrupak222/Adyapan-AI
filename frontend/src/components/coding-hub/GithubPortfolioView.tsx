@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { getAuthUser } from "@/hooks/useAuth";
 import { api } from "@/services/api";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { useFeatureUsageStore } from "@/store/feature-usage-store";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { FeatureLimitBanner } from "@/components/shared/FeatureLimitBanner";
 import {
   Code2,
   Copy,
@@ -123,6 +127,14 @@ export function GithubPortfolioView() {
   const [activeTab, setActiveTab] = useState<"header" | "work" | "skills" | "stats" | "social">("header");
   const [previewMode, setPreviewMode] = useState<"preview" | "code">("preview");
   const [copied, setCopied] = useState(false);
+  const quota = useFeatureQuota("GITHUB_PORTFOLIO_BUILDER");
+  const checkAndConsume = useFeatureUsageStore((s) => s.checkAndConsume);
+
+  // One logical generation per distinct README version. Each new configuration
+  // gets a fresh idempotency key; re-exporting the SAME version replays the
+  // same key so it can never consume a second credit.
+  const attemptIdRef = useRef<string | null>(null);
+  const consumedVersionRef = useRef<string | null>(null);
 
   // Form State (100% BLANK INITIAL STATES - NO PREFILL OR MOCK DATA)
   const [username, setUsername] = useState("");
@@ -277,14 +289,53 @@ export function GithubPortfolioView() {
     socialPortfolio, socialLeetcode, socialCodeforces, showQuote
   ]);
 
-  const handleCopyCode = () => {
+  // A new distinct README configuration starts a fresh logical attempt.
+  useEffect(() => {
+    attemptIdRef.current = quota.newRequestId();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generatedMarkdown]);
+
+  /**
+   * Authoritative server-side consumption for exporting the current portfolio
+   * version. Idempotent per version: copy + download of the same README cost
+   * exactly one credit; editing inputs and exporting again costs another.
+   */
+  const ensureQuotaForCurrentVersion = async (): Promise<boolean> => {
+    if (quota.unlimited) return true;
+    if (consumedVersionRef.current === attemptIdRef.current) return true;
+    if (quota.exhausted) {
+      toast.error(
+        "You've used all free GitHub Portfolio Builder attempts this month.",
+        {
+          description: "Upgrade to Premium for unlimited access.",
+          action: { label: "Upgrade", onClick: () => (window.location.href = "/premium") },
+        }
+      );
+      return false;
+    }
+    const res = await checkAndConsume("GITHUB_PORTFOLIO_BUILDER", attemptIdRef.current || undefined);
+    if (!res.allowed) {
+      toast.error(res.message || "You've used all free GitHub Portfolio Builder attempts this month.", {
+        description: "Upgrade to Premium for unlimited access.",
+        action: { label: "Upgrade", onClick: () => (window.location.href = "/premium") },
+      });
+      await quota.refresh();
+      return false;
+    }
+    consumedVersionRef.current = attemptIdRef.current;
+    return true;
+  };
+
+  const handleCopyCode = async () => {
+    if (!(await ensureQuotaForCurrentVersion())) return;
     navigator.clipboard.writeText(generatedMarkdown);
     setCopied(true);
     toast.success("README.md copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownloadFile = () => {
+  const handleDownloadFile = async () => {
+    if (!(await ensureQuotaForCurrentVersion())) return;
     const blob = new Blob([generatedMarkdown], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -310,22 +361,29 @@ export function GithubPortfolioView() {
         </div>
 
         <div className="flex items-center gap-2">
+          <FeatureCreditBadge featureKey="GITHUB_PORTFOLIO_BUILDER" compact />
           <button
             onClick={handleCopyCode}
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition-all flex items-center gap-2"
+            disabled={quota.exhausted}
+            className="px-4 py-2 text-xs font-bold rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
             {copied ? "Copied!" : "Copy Markdown"}
           </button>
           <button
             onClick={handleDownloadFile}
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all flex items-center gap-2"
+            disabled={quota.exhausted}
+            className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download size={14} />
             Download README.md
           </button>
         </div>
       </div>
+
+      {quota.exhausted && (
+        <FeatureLimitBanner featureKey="GITHUB_PORTFOLIO_BUILDER" featureName="GitHub Portfolio Builder" />
+      )}
 
       {/* Main Studio Grid (Form Config + Live Preview) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

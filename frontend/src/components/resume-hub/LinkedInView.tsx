@@ -6,6 +6,9 @@ import { stripMarkdown } from "@/utils/stripMarkdown";
 import { api } from "@/services/api";
 import type { ResumeHubViewType } from "@/types/resume";
 import { useTheme } from "@/hooks/useTheme";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { FeatureLimitBanner } from "@/components/shared/FeatureLimitBanner";
 import { mkColors } from "@/utils/themeColors";
 import { fadeUp, scaleIn, buttonHover } from "@/utils/animations";
 import confetti from "canvas-confetti";
@@ -210,6 +213,7 @@ const LOADING_STEPS = [
 export function LinkedInView({ setView }: Props) {
   const theme = useTheme();
   const c = mkC(theme);
+  const quota = useFeatureQuota("LINKEDIN_OPTIMIZER");
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [profile, setProfile] = useState<LinkedInProfile | null>(null);
@@ -270,6 +274,10 @@ export function LinkedInView({ setView }: Props) {
 
   // ── Generate full profile ──────────────────────────────────────────────────
   const handleGenerate = async () => {
+    if (quota.exhausted) {
+      setError("You've used all free LinkedIn Optimizer attempts this month. Upgrade to continue.");
+      return;
+    }
     setLoading(true);
     setLoadStep(0);
     setError(null);
@@ -279,10 +287,12 @@ export function LinkedInView({ setView }: Props) {
       if (step < LOADING_STEPS.length) setLoadStep(step);
     }, 2500);
 
+    const requestId = quota.newRequestId();
     try {
       const res = await api.post("/linkedin/generate", {
         resumeId: selectedResumeId || undefined,
         targetRole,
+        requestId,
       });
       if (res.data.success && res.data.profile) {
         setProfile(res.data.profile);
@@ -290,11 +300,15 @@ export function LinkedInView({ setView }: Props) {
         setSelectedAbout(res.data.profile.aboutSection);
         setHeadlineVariants(res.data.profile.headlineVariants || []);
         setAboutVariants(res.data.profile.aboutVariants || []);
+        quota.onSuccess();
         loadHistory();
       } else {
+        await quota.onFailure();
         setError(res.data.error || "Failed to generate profile. Please try again.");
       }
     } catch (err: any) {
+      if (quota.handleQuotaError(err)) return;
+      await quota.onFailure();
       const msg = err?.response?.data?.error || err?.message || "Failed to generate LinkedIn profile. Please check your resume and try again.";
       console.error("[LinkedIn] Generation error:", msg);
       setError(msg);
@@ -497,6 +511,7 @@ export function LinkedInView({ setView }: Props) {
         </div>
         {profile && (
           <div className="flex items-center gap-2">
+            <FeatureCreditBadge featureKey="LINKEDIN_OPTIMIZER" compact isDark={c.d} />
             <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={copyAll}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all"
               style={{ background: c.gnBg, color: c.gn, border: `1px solid ${c.gn}30` }}>
@@ -571,10 +586,19 @@ export function LinkedInView({ setView }: Props) {
               )}
             </AnimatePresence>
 
+            {/* Limit banner when free attempts are exhausted */}
+            {quota.exhausted && (
+              <FeatureLimitBanner featureKey="LINKEDIN_OPTIMIZER" featureName="LinkedIn Optimizer" isDark={c.d} className="w-full max-w-md" />
+            )}
+
             {/* Config Card */}
             <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
               className="w-full max-w-md p-5 rounded-2xl space-y-3"
               style={{ background: c.cb, border: `1px solid ${c.bd}`, boxShadow: c.cs }}>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: c.tx2 }}>Free Usage</span>
+                <FeatureCreditBadge featureKey="LINKEDIN_OPTIMIZER" compact isDark={c.d} />
+              </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold" style={{ color: c.tx2 }}>Target Role</label>
                 <input type="text" value={targetRole} onChange={e => setTargetRole(e.target.value)}
@@ -595,8 +619,17 @@ export function LinkedInView({ setView }: Props) {
                   </select>
                 </div>
               )}
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleGenerate}
-                className="w-full py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2"
+              {quota.status && !quota.unlimited && !quota.exhausted && (
+                <p className="text-[10px] text-center font-semibold" style={{ color: quota.remaining <= 2 ? c.rd : c.gn }}>
+                  {quota.remaining <= 2
+                    ? `Only ${quota.remaining} free ${quota.remaining === 1 ? "use" : "uses"} left this month`
+                    : `✨ ${quota.remaining} free uses remaining`}
+                </p>
+              )}
+              <motion.button whileHover={{ scale: quota.exhausted ? 1 : 1.02 }} whileTap={{ scale: quota.exhausted ? 1 : 0.98 }}
+                onClick={handleGenerate}
+                disabled={quota.exhausted || loading}
+                className="w-full py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: "linear-gradient(135deg, #f59e0b, #0077b5)", color: "#fff" }}>
                 <Sparkles size={14} /> Generate Full LinkedIn Profile
               </motion.button>

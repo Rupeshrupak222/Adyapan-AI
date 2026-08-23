@@ -9,6 +9,8 @@ import { useSocket } from "@/context/SocketContext";
 import { useTheme } from "@/hooks/useTheme";
 import { getAuthUser } from "@/hooks/useAuth";
 import { mkColors } from "@/utils/themeColors";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 
 import { StudyAssistantHeader } from "./study/StudyAssistantHeader";
 import { HistorySidebar } from "./study/HistorySidebar";
@@ -55,6 +57,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
   const theme = useTheme();
   const c = mkColors(theme);
   const { socket } = useSocket();
+  const quota = useFeatureQuota("STUDY_ASSISTANT");
 
   const [file, setFile] = useState<File | null>(null);
   const [fileDetails, setFileDetails] = useState<{
@@ -186,7 +189,14 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
       toast.error("Unsupported file type! Only PDF, TXT, and Markdown (.md) files are allowed.");
       return;
     }
+    if (quota.exhausted) {
+      toast.error("You've used all free AI Study Assistant attempts this month.", {
+        description: "Upgrade to Premium for unlimited document analysis.",
+      });
+      return;
+    }
 
+    const requestId = quota.newRequestId();
     setFile(droppedFile);
     setFileDetails({ name: droppedFile.name, size: (droppedFile.size / (1024 * 1024)).toFixed(1) + " MB", pages: 0, language: "English", time: "30-60 seconds" });
     setStatus("uploading");
@@ -197,7 +207,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
         const formData = new FormData();
         formData.append("file", droppedFile);
         res = await api.post("/study/analyze", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "multipart/form-data", "x-request-id": requestId },
           timeout: 120000,
         });
       } else {
@@ -206,9 +216,10 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
           reader.onload = (e) => resolve(e.target?.result as string || "");
           reader.readAsText(droppedFile);
         });
-        res = await api.post("/study/analyze", { documentText: fileText }, { timeout: 120000 });
+        res = await api.post("/study/analyze", { documentText: fileText, requestId }, { timeout: 120000 });
       }
       if (res.data?.success && res.data?.analysis) {
+        quota.onSuccess();
         const a = res.data.analysis;
         setSummaryData(a);
         setStatus("ready");
@@ -222,10 +233,13 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
     } catch (err: unknown) {
       const e = err as { code?: string; message?: string; response?: { data?: { error?: string } } };
       setStatus("empty");
-      if (e?.code === "ECONNABORTED" || e?.message?.includes("timeout")) {
-        toast.error("Analysis is taking too long. Please try with a shorter document or try again.");
-      } else {
-        toast.error("Failed to analyze document. Please try again.");
+      if (!quota.handleQuotaError(err)) {
+        await quota.onFailure();
+        if (e?.code === "ECONNABORTED" || e?.message?.includes("timeout")) {
+          toast.error("Analysis is taking too long. Please try with a shorter document or try again.");
+        } else {
+          toast.error("Failed to analyze document. Please try again.");
+        }
       }
     }
   };
@@ -344,6 +358,12 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
 
   const handleGenerateLesson = (targetTopic: string) => {
     if (!targetTopic.trim() || !socket) return;
+    if (quota.exhausted) {
+      toast.error("You've used all free AI Study Assistant attempts this month.", {
+        description: "Upgrade to Premium for unlimited lessons.",
+      });
+      return;
+    }
     setLessonData(null);
     setTopicError(null);
     setIsGenerating(true);
@@ -361,6 +381,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
       socket.off("lesson:complete", onComplete);
       socket.off("lesson:error", onError);
       setIsGenerating(false);
+      quota.onSuccess();
       const newEntry = { topic: targetTopic, date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }), duration, level, lesson: payload.data };
       setTopicHistory(prev => {
         const updated = [newEntry, ...prev.filter(h => h.topic !== targetTopic)].slice(0, 20);
@@ -374,12 +395,13 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
         setCurrentTopic(targetTopic);
       }
     };
-    const onError = (payload: { error: string }) => {
+    const onError = (payload: { error: string; code?: string }) => {
       socket.off("lesson:progress", onProgress);
       socket.off("lesson:complete", onComplete);
       socket.off("lesson:error", onError);
       setTopicError(payload.error);
       setIsGenerating(false);
+      quota.refresh();
     };
 
     socket.on("lesson:progress", onProgress);
@@ -555,6 +577,10 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
         onToggleTopicHistory={() => setShowTopicHistory(!showTopicHistory)}
         topicHistoryCount={topicHistory.length}
       />
+
+      <div className="flex justify-end mb-3">
+        <FeatureCreditBadge featureKey="STUDY_ASSISTANT" compact isDark={theme === "dark"} />
+      </div>
 
       <HistorySidebar
         c={c} type="document" show={mode === "document" && showHistory}

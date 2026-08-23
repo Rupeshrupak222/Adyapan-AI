@@ -18,6 +18,7 @@ import {
   exportPaperMarkdown,
   exportPaperBibtex,
 } from "../services/research-export.service";
+import { refundFeatureQuotaOnFailure } from "../middleware/requireFeatureQuota";
 import { parseUploadedPDFBuffer } from "../services/pdf-parser.service";
 import { ACADEMIC_TEMPLATES } from "../services/template-engine.service";
 import { generateVisualContent } from "../services/visual-content.service";
@@ -246,6 +247,9 @@ export async function generatePaperSSE(req: Request, res: Response) {
 
     sendEvent({ type: "complete", paperId, paper });
   } catch (err: any) {
+    // Streaming responses always report HTTP 200 — refund the reserved
+    // feature credit explicitly when generation fails mid-stream.
+    await refundFeatureQuotaOnFailure(req, "RESEARCH_PAPER_AI").catch(() => {});
     sendEvent({ type: "error", message: err.message || "Paper generation failed" });
   } finally {
     res.end();

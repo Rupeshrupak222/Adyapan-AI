@@ -9,6 +9,7 @@ import {
   analyzeWritingQuality,
   type PlagiarismConfig,
 } from "../services/plagiarism-checker.service";
+import { refundFeatureQuotaOnFailure } from "../middleware/requireFeatureQuota";
 
 const reportStore = new Map<string, any>();
 
@@ -58,6 +59,9 @@ export async function analyzePlagiarismSSE(req: Request, res: Response) {
 
     sendEvent({ type: "complete", reportId, report });
   } catch (err: any) {
+    // SSE responses report HTTP 200 even on failure — refund the reserved
+    // credit explicitly so users never lose credits for failed analyses.
+    await refundFeatureQuotaOnFailure(req, "PLAGIARISM_CHECKER").catch(() => {});
     sendEvent({ type: "error", message: err.message || "Analysis failed" });
   } finally {
     res.end();

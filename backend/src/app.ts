@@ -54,7 +54,7 @@ export function createApp() {
       },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization", "x-timezone", "Accept", "Cache-Control"],
+      allowedHeaders: ["Content-Type", "Authorization", "x-timezone", "Accept", "Cache-Control", "x-request-id"],
     }),
   );
 

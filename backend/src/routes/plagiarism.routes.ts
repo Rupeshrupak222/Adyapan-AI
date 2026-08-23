@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import {
   analyzePlagiarismSSE,
   analyzePlagiarismSync,
@@ -13,10 +14,10 @@ export const plagiarismRouter = Router();
 plagiarismRouter.use(requireAuth);
 
 // Full analysis (SSE streaming)
-plagiarismRouter.post("/analyze", analyzePlagiarismSSE);
+plagiarismRouter.post("/analyze", requireFeatureQuota("PLAGIARISM_CHECKER"), analyzePlagiarismSSE);
 
 // Full analysis (non-streaming fallback)
-plagiarismRouter.post("/analyze-sync", analyzePlagiarismSync);
+plagiarismRouter.post("/analyze-sync", requireFeatureQuota("PLAGIARISM_CHECKER"), analyzePlagiarismSync);
 
 // Retrieve stored report
 plagiarismRouter.get("/report/:id", getReport);

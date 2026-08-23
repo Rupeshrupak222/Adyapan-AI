@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import { generateFlashcards } from "../lib/ai/gemini";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { StreakService } from "../services/streak.service";
@@ -10,7 +11,7 @@ export const flashcardsRouter = Router();
 
 flashcardsRouter.use(requireAuth);
 
-flashcardsRouter.post("/generate", async (req, res) => {
+flashcardsRouter.post("/generate", requireFeatureQuota("FLASHCARDS"), async (req, res) => {
   try {
     const { topic, mode, cardCount } = req.body;
     const result = await generateFlashcards(topic, mode || "intermediate", cardCount || 5);

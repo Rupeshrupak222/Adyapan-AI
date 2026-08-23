@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import {
   getDashboardStats,
   listPapers,
@@ -45,8 +46,8 @@ researchRouter.post("/suggest-topics", suggestTopics);
 researchRouter.post("/fetch-sources", fetchSources);
 
 // Paper & Section Generation
-researchRouter.post("/generate-paper", generatePaperSSE);
-researchRouter.post("/generate-paper-sync", generatePaperSync);
+researchRouter.post("/generate-paper", requireFeatureQuota("RESEARCH_PAPER_AI"), generatePaperSSE);
+researchRouter.post("/generate-paper-sync", requireFeatureQuota("RESEARCH_PAPER_AI"), generatePaperSync);
 researchRouter.post("/generate-section", generateSectionHandler);
 researchRouter.post("/draft/save", saveDraftHandler);
 

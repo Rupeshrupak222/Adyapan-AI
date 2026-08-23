@@ -24,6 +24,8 @@ import { ATS_ROLES, ATS_ROLE_ICONS } from "@/config/resume-config";
 import { mkColors } from "@/utils/themeColors";
 import { fadeUp, fadeIn, scaleIn, buttonHover } from "@/utils/animations";
 import { EmptyState } from "@/components/ui/PremiumComponents";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 import {
   Chart as ChartJS,
   RadialLinearScale, PointElement, LineElement, Filler,
@@ -329,6 +331,7 @@ export function AtsCheckerView({ setView }: Props) {
   const theme = useTheme();
   const c = mkC(theme);
   const cfg = useConfig();
+  const quota = useFeatureQuota("ATS_CHECKER");
 
   // ── State ──────────────────────────────────────────────────────────────────
   type Screen = "home" | "jd" | "loading" | "dashboard" | "history" | "compare" | "final";
@@ -515,11 +518,19 @@ export function AtsCheckerView({ setView }: Props) {
       toast.error("Please upload a resume file or select a saved resume to analyze.");
       return;
     }
+    if (quota.exhausted) {
+      toast.error("You've used all free ATS Checker analyses this month.", {
+        description: "Upgrade to Premium for unlimited ATS scans.",
+      });
+      return;
+    }
 
     setScreen("loading");
     setErrorMsg(null);
     setLoading(true);
     setLoadStep(0);
+    const requestId = quota.newRequestId();
+    let quotaSucceeded = false;
     const iv = setInterval(() => setLoadStep(p => Math.min(p + 1, loadSteps.length - 1)), 700);
 
     try {
@@ -527,11 +538,12 @@ export function AtsCheckerView({ setView }: Props) {
       if (file) fd.append("resume", file);
       if (effectiveSelId) fd.append("resumeId", effectiveSelId);
       fd.append("targetRole", role);
+      fd.append("requestId", requestId);
       if (incJD === "yes") {
         if (jdFile) fd.append("jobDescription", await jdFile.text());
         else if (jd) fd.append("jobDescription", jd);
       }
-      const hdrs = { "Content-Type": "multipart/form-data" };
+      const hdrs = { "Content-Type": "multipart/form-data", "x-request-id": requestId };
       const [aR, iR] = await Promise.allSettled([
         api.post("/ats/analyze", fd, { headers: hdrs }),
         api.post("/ats/intelligence", fd, { headers: hdrs }),
@@ -540,10 +552,15 @@ export function AtsCheckerView({ setView }: Props) {
       setLoadStep(loadSteps.length - 1);
 
       if (aR.status === "rejected") {
-        const errMsg = aR.reason?.response?.data?.message || aR.reason?.message || "Failed to analyze resume.";
+        const reason: any = aR.reason;
+        if (quota.handleQuotaError(reason)) return;
+        const errMsg = reason?.response?.data?.message || reason?.message || "Failed to analyze resume.";
         toast.error(errMsg);
         throw new Error(errMsg);
       }
+
+      quota.onSuccess();
+      quotaSucceeded = true;
 
       const resAnalysis = aR.value.data.analysis || aR.value.data.report?.reportJson || aR.value.data.report;
       if (resAnalysis) {
@@ -564,6 +581,9 @@ export function AtsCheckerView({ setView }: Props) {
       } catch { /* confetti blocked */ }
     } catch (err: any) {
       clearInterval(iv);
+      if (!quotaSucceeded && !quota.handleQuotaError(err)) {
+        await quota.onFailure();
+      }
       setScreen("home");
       const msg = err?.response?.data?.message || err?.message || "Analysis failed. Please try again.";
       setErrorMsg(msg);
@@ -694,7 +714,8 @@ export function AtsCheckerView({ setView }: Props) {
           </p>
         </div>
         {screen === "home" && (
-          <div className="flex gap-1.5 shrink-0">
+          <div className="flex gap-1.5 shrink-0 items-center">
+            <FeatureCreditBadge featureKey="ATS_CHECKER" compact isDark={theme === "dark"} />
             <motion.button whileHover={btnH} whileTap={btnT} onClick={() => { setScreen("history"); loadHistory(); }}
               className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: c.sf, border: `1px solid ${c.bd}`, color: c.txM }} title="History">
               <History size={14} />

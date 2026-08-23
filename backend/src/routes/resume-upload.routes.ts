@@ -9,6 +9,7 @@ import {
   getActiveProfile,
 } from "../controllers/resume-upload.controller";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 
 export const resumeUploadRouter = Router();
 
@@ -17,7 +18,7 @@ const uploadMemory = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
-resumeUploadRouter.post("/upload", requireAuth, uploadMemory.single("resume"), uploadAndParseResume);
+resumeUploadRouter.post("/upload", requireAuth, requireFeatureQuota("RESUME_UPLOAD"), uploadMemory.single("resume"), uploadAndParseResume);
 resumeUploadRouter.get("/list", requireAuth, listUploadedResumes);
 resumeUploadRouter.get("/active", requireAuth, getActiveProfile);
 resumeUploadRouter.get("/:id", requireAuth, getUploadedResume);

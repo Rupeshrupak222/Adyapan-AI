@@ -18,14 +18,15 @@ import {
   updateReport,
 } from "../controllers/linkedin.controller";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 
 export const linkedinRouter = Router();
 
 // Full profile generation
-linkedinRouter.post("/generate", requireAuth, generateFullLinkedInProfile);
+linkedinRouter.post("/generate", requireAuth, requireFeatureQuota("LINKEDIN_OPTIMIZER"), generateFullLinkedInProfile);
 
 // Legacy analyze (backward compatible)
-linkedinRouter.post("/analyze", requireAuth, analyzeLinkedIn);
+linkedinRouter.post("/analyze", requireAuth, requireFeatureQuota("LINKEDIN_OPTIMIZER"), analyzeLinkedIn);
 
 // Individual section generators
 linkedinRouter.post("/generate-headline", requireAuth, generateHeadline);

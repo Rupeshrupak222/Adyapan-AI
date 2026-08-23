@@ -13,6 +13,8 @@ import { useSocket } from "@/context/SocketContext";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
 import { getAuthUser } from "@/hooks/useAuth";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 
 const mkColors = (theme: string) => {
   const isDark = theme === "dark";
@@ -43,6 +45,7 @@ const slideRight = { hidden: { opacity: 0, x: -24 }, visible: (i = 0) => ({ opac
 export function NotesGeneratorView() {
   const theme = useTheme();
   const c = mkColors(theme);
+  const quota = useFeatureQuota("NOTES_GENERATOR");
 
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -113,13 +116,18 @@ export function NotesGeneratorView() {
     const handleProgress = ({ progress: p, statusMessage }: { progress: number; statusMessage: string }) => { setProgress(p); setStatusMsg(statusMessage); };
     const handleComplete = ({ content, formattedContent }: { content: string; formattedContent?: string }) => {
       setGenerating(false);
+      quota.onSuccess();
       const parsedSections = parseMarkdownToSections(content);
       const newNotes = { topic: topicRef.current, sections: parsedSections, wordCount: content.split(/\s+/).length, studyTime: `${Math.ceil(content.split(/\s+/).length / 200)} mins`, difficulty: difficultyRef.current, rawContent: content, formattedHtml: formattedContent || "" };
       setNotesData(newNotes);
       if (parsedSections.length > 0) setActiveSection(parsedSections[0].title);
       addToHistory(newNotes, content, parsedSections);
     };
-    const handleError = ({ error }: { error: string }) => { setGenerating(false); toast.error(`Generation error: ${error}`); };
+    const handleError = ({ error, code }: { error: string; code?: string }) => {
+      setGenerating(false);
+      if (code === "FEATURE_LIMIT_REACHED") quota.refresh();
+      toast.error(`Generation error: ${error}`);
+    };
     socket.on("generate:progress", handleProgress);
     socket.on("generate:complete", handleComplete);
     socket.on("generate:error", handleError);
@@ -127,14 +135,22 @@ export function NotesGeneratorView() {
   }, [socket, addToHistory]);
 
   const handleGenerate = useCallback(async () => {
+    if (quota.exhausted) {
+      toast.error("You've used all free AI Notes Generator attempts this month.", {
+        description: "Upgrade to Premium for unlimited notes.",
+      });
+      return;
+    }
     setGenerating(true); setProgress(0); setStatusMsg("Starting notes generator pipeline...");
     if (socket && isConnected) {
       socket.emit("generate:start", { moduleName: "notes", payload: { topic, difficulty, type: noteType, userId: userIdRef.current } });
     } else {
+      const requestId = quota.newRequestId();
       try {
         setStatusMsg("Calling API directly...");
-        const res = await api.post("/notes/generate", { topic, difficulty, type: noteType });
+        const res = await api.post("/notes/generate", { topic, difficulty, type: noteType, requestId });
         if (res.data?.success && res.data?.note?.content) {
+          quota.onSuccess();
           const content = res.data.note.content;
           const formattedContent = res.data.note.formattedContent || "";
           const parsedSections = parseMarkdownToSections(content);
@@ -145,12 +161,15 @@ export function NotesGeneratorView() {
         } else throw new Error("Invalid response");
       } catch (err: unknown) {
         const e = err as { response?: { data?: { error?: string } } };
-        toast.error(e?.response?.data?.error || "Failed to generate notes via API.");
+        if (!quota.handleQuotaError(err)) {
+          await quota.onFailure();
+          toast.error(e?.response?.data?.error || "Failed to generate notes via API.");
+        }
       } finally {
         setGenerating(false);
       }
     }
-  }, [socket, isConnected, topic, difficulty, noteType, addToHistory]);
+  }, [socket, isConnected, topic, difficulty, noteType, addToHistory, quota]);
 
   const handleScrollToSection = (title: string) => {
     setActiveSection(prev => (prev === title ? "" : title));
@@ -251,6 +270,7 @@ export function NotesGeneratorView() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <FeatureCreditBadge featureKey="NOTES_GENERATOR" compact isDark={theme === "dark"} />
           {notesData && (
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               onClick={() => { setNotesData(null); setSearchQuery(""); }} className="h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.text }}>

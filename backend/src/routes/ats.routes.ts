@@ -13,6 +13,7 @@ import {
   getLatestATSReport,
 } from "../controllers/ats.controller";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 
 export const atsRouter = Router();
 
@@ -21,7 +22,7 @@ const uploadMemory = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 
-atsRouter.post("/analyze", requireAuth, uploadMemory.single("resume"), analyzeATSReport);
+atsRouter.post("/analyze", requireAuth, requireFeatureQuota("ATS_CHECKER"), uploadMemory.single("resume"), analyzeATSReport);
 atsRouter.post("/jd-match", requireAuth, uploadMemory.single("resume"), analyzeJDMatch);
 atsRouter.post("/suggestions", requireAuth, getATSSuggestions);
 atsRouter.post("/apply-improvement", requireAuth, applyImprovement);

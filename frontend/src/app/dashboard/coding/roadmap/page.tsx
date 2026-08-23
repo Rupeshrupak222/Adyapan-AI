@@ -31,6 +31,9 @@ import {
 } from "@/components/dashboard-shell";
 import type { AdyapanUser } from "@/components/dashboard-shell";
 import { useConfirm } from "@/components/ui/ConfirmModal";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { FeatureLimitBanner } from "@/components/shared/FeatureLimitBanner";
 
 const FALLBACK_TOPICS = [
   "Arrays", "Strings", "Hashing", "Linked Lists", "Stacks", "Queues",
@@ -132,6 +135,7 @@ export default function CodingRoadmapPage() {
   });
 
   const [confirm, confirmModal] = useConfirm();
+  const quota = useFeatureQuota("CODING_ROADMAP");
   const [expandedWeeks, setExpandedWeeks] = useState<Record<number, boolean>>({ 1: true });
 
   const fetchData = async () => {
@@ -199,14 +203,24 @@ export default function CodingRoadmapPage() {
 
   const triggerGeneration = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (quota.exhausted) {
+      toast.error("You've used all free AI Roadmap generations this month.", {
+        description: "Upgrade to Premium for unlimited roadmaps.",
+      });
+      return;
+    }
     setIsGenerating(true);
+    const requestId = quota.newRequestId();
 
     try {
-      const res = await api.post("/coding/roadmap/generate", formData);
+      const res = await api.post("/coding/roadmap/generate", { ...formData, requestId });
       setRoadmap(res.data.roadmap);
+      quota.onSuccess();
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       fetchData();
     } catch (err) {
+      if (quota.handleQuotaError(err)) return;
+      quota.onFailure();
       toast.error("AI Roadmap generation failed. Please try again.");
     } finally {
       setIsGenerating(false);
@@ -321,14 +335,20 @@ export default function CodingRoadmapPage() {
                   </div>
 
                   <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                        <Route className="w-5 h-5 text-black" />
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+                          <Route className="w-5 h-5 text-black" />
+                        </div>
+                        <h2 className="text-xl font-black" style={{ backgroundImage: "linear-gradient(135deg, var(--text-primary), var(--text-secondary))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                          Setup Coding Roadmap
+                        </h2>
                       </div>
-                      <h2 className="text-xl font-black" style={{ backgroundImage: "linear-gradient(135deg, var(--text-primary), var(--text-secondary))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                        Setup Coding Roadmap
-                      </h2>
+                      <FeatureCreditBadge featureKey="CODING_ROADMAP" compact />
                     </div>
+                    {quota.status && quota.exhausted && (
+                      <FeatureLimitBanner featureKey="CODING_ROADMAP" featureName="AI Coding Roadmap" className="mb-4" />
+                    )}
                     <p className="text-[10px] text-amber-500 uppercase tracking-widest font-black mb-4">
                       Personalized DSA Preparation Path
                     </p>

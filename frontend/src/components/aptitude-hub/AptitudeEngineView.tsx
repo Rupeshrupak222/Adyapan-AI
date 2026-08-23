@@ -15,6 +15,9 @@ import {
   ArrowUpRight, X, Info
 } from "lucide-react";
 import { api } from "@/services/api";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { FeatureLimitBanner } from "@/components/shared/FeatureLimitBanner";
 import QuestionCard from "./QuestionCard";
 import SessionReviewComponent from "./SessionReview";
 import AptitudeAnalytics from "./AptitudeAnalytics";
@@ -84,6 +87,7 @@ const formatTimeSec = (sec: number): string => {
 export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", theme = "dark" }: AptitudeEngineViewProps) {
   const router = useRouter();
   const isDark = theme === "dark";
+  const quota = useFeatureQuota("AI_APTITUDE_ENGINE");
   const c = {
     bg: isDark ? "#080710" : "#f0f4ff",
     surface: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
@@ -175,18 +179,22 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     diff?: string,
     count?: number
   ) => {
+    if (quota.exhausted) return;
     setAiLoading(true);
     setShowExplanation(false);
     try {
+      const requestId = quota.newRequestId();
       const { data } = await api.post("/aptitude/session/start", {
         mode,
         category,
         topic,
         company,
         difficulty: diff || difficulty,
-        count: count || 15
+        count: count || 15,
+        requestId
       });
       if (data.success && data.session) {
+        quota.onSuccess();
         setSession(data.session);
         const timeLimit = (mode === "timed_quiz" || mode === "company_test")
           ? (data.session.totalQuestions * 90 * 1000)
@@ -204,12 +212,15 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
         setViewState("active_session");
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.error || "Failed to start session";
-      alert(msg);
+      if (!quota.handleQuotaError(err)) {
+        await quota.onFailure();
+        const msg = err?.response?.data?.error || "Failed to start session";
+        alert(msg);
+      }
     } finally {
       setAiLoading(false);
     }
-  }, [difficulty]);
+  }, [difficulty, quota]);
 
   const startDailyChallenge = useCallback(async () => {
     setAiLoading(true);
@@ -644,6 +655,9 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   {progress.answers.length}/{session.totalQuestions}
                 </span>
               </div>
+            )}
+            {view !== "active_session" && (
+              <FeatureCreditBadge featureKey="AI_APTITUDE_ENGINE" isDark={isDark} compact />
             )}
             {view !== "active_session" && (
               <motion.button

@@ -12,6 +12,8 @@ import { useSocket } from "@/context/SocketContext";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
 import { getAuthUser } from "@/hooks/useAuth";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 
 const mkColors = (theme: string) => {
   const isDark = theme === "dark";
@@ -335,6 +337,7 @@ function parseAssignmentSections(result: AssignmentContent | null, c: ReturnType
 export function AssignmentGeneratorView() {
   const theme = useTheme();
   const c = mkColors(theme);
+  const quota = useFeatureQuota("ASSIGNMENT_GENERATOR");
 
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<AssignmentContent | null>(null);
@@ -466,12 +469,17 @@ export function AssignmentGeneratorView() {
     const handleProgress = ({ progress: p, statusMessage }: { progress: number; statusMessage: string }) => { setProgress(p); setStatusMsg(statusMessage); };
     const handleComplete = ({ assignment }: { assignment: AssignmentContent }) => {
       setGenerating(false);
+      quota.onSuccess();
       setResult(assignment);
       const parsed = parseAssignmentSections(assignment, c);
       if (parsed.length > 0) setActiveSection(parsed[0].title);
       addToHistory(assignment);
     };
-    const handleError = ({ error }: { error: string }) => { setGenerating(false); toast.error(`Generation error: ${error}`); };
+    const handleError = ({ error, code }: { error: string; code?: string }) => {
+      setGenerating(false);
+      if (code === "FEATURE_LIMIT_REACHED") quota.refresh();
+      toast.error(`Generation error: ${error}`);
+    };
     socket.on("generate:progress", handleProgress);
     socket.on("generate:complete", handleComplete);
     socket.on("generate:error", handleError);
@@ -479,14 +487,22 @@ export function AssignmentGeneratorView() {
   }, [socket, addToHistory, c]);
 
   const handleGenerate = useCallback(async () => {
+    if (quota.exhausted) {
+      toast.error("You've used all free Assignment Generator attempts this month.", {
+        description: "Upgrade to Premium for unlimited assignments.",
+      });
+      return;
+    }
     setGenerating(true); setProgress(0); setStatusMsg("Initializing Assignment Generator...");
     if (socket && isConnected) {
       socket.emit("generate:start", { moduleName: "assignment", payload: { topic, level, wordCount: wordCount.split(" ")[0], userId: userIdRef.current } });
     } else {
+      const requestId = quota.newRequestId();
       try {
         setStatusMsg("Calling API directly...");
-        const res = await api.post("/assignment/generate", { topic, academicLevel: level, wordCount: wordCount.split(" ")[0] });
+        const res = await api.post("/assignment/generate", { topic, academicLevel: level, wordCount: wordCount.split(" ")[0], requestId });
         if (res.data?.success && res.data?.assignment?.content) {
+          quota.onSuccess();
           const assignment: AssignmentContent = res.data.assignment.content;
           setResult(assignment);
           const parsed = parseAssignmentSections(assignment, c);
@@ -495,12 +511,15 @@ export function AssignmentGeneratorView() {
         } else throw new Error("Invalid response");
       } catch (err: unknown) {
         const e = err as { response?: { data?: { error?: string } } };
-        toast.error(e?.response?.data?.error || "Failed to generate assignment via API.");
+        if (!quota.handleQuotaError(err)) {
+          await quota.onFailure();
+          toast.error(e?.response?.data?.error || "Failed to generate assignment via API.");
+        }
       } finally {
         setGenerating(false);
       }
     }
-  }, [socket, isConnected, topic, level, wordCount, addToHistory, c]);
+  }, [socket, isConnected, topic, level, wordCount, addToHistory, c, quota]);
 
   const handleScrollToSection = (title: string) => {
     setActiveSection(prev => (prev === title ? "" : title));
@@ -533,6 +552,7 @@ export function AssignmentGeneratorView() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <FeatureCreditBadge featureKey="ASSIGNMENT_GENERATOR" compact isDark={theme === "dark"} />
           {result && (
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               onClick={() => { setResult(null); }} className="h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all" style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.text }}>

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import { generateEnhancedQuiz, generateQuiz } from "../lib/ai/gemini";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { StreakService } from "../services/streak.service";
@@ -10,7 +11,7 @@ export const quizRouter = Router();
 
 quizRouter.use(requireAuth);
 
-quizRouter.post("/generate", async (req, res) => {
+quizRouter.post("/generate", requireFeatureQuota("QUIZ_GENERATOR"), async (req, res) => {
   try {
     const { topic, mode, duration } = req.body;
     const userPrisma = await getUserPrismaFromRequest(req);

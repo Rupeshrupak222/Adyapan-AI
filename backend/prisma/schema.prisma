@@ -38,6 +38,7 @@ model User {
   storageUsage          StorageUsage?
   subscriptions         Subscription[]
   aiUsage               AiUsage?
+  featureQuotas         UserFeatureQuota[]
 
   @@index([plan, subscriptionStatus])
   @@index([role])
@@ -3179,3 +3180,40 @@ model LinkedInScrapedJob {
   @@index([savedAt])
   @@map("linkedin_scraped_jobs")
 }
+
+// ─── Feature Free Usage Limits & Feature Credit System ────────────────────
+
+model UserFeatureQuota {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  featureKey  String   @map("feature_key")
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+  limit       Int      @default(10)
+  used        Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, featureKey, periodStart])
+  @@index([userId, featureKey])
+  @@index([periodStart, periodEnd])
+  @@map("feature_usages")
+}
+
+model FeatureUsageAttempt {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  featureKey  String   @map("feature_key")
+  requestId   String   @unique @map("request_id")
+  periodStart DateTime @map("period_start")
+  status      String   @default("RESERVED")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, featureKey])
+  @@index([requestId])
+  @@map("feature_usage_attempts")
+}
+

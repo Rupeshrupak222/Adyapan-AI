@@ -15,6 +15,9 @@ import {
 import type { ResumeHubViewType } from "@/types/resume";
 import { formStateToJSONResume, jsonResumeToFormState, candidateProfileToFormState, type CandidateProfileData } from "@/types/resume";
 import { useTheme } from "@/hooks/useTheme";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { FeatureLimitBanner } from "@/components/shared/FeatureLimitBanner";
 import { mkColors as centralizedMkColors } from "@/utils/themeColors";
 import { fadeUp, scaleIn, pageTransition, buttonHover } from "@/utils/animations";
 
@@ -83,6 +86,7 @@ function ToastBar({ toastMsg, isDark, text }: { toastMsg: string | null; isDark:
 export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderViewProps) {
   const theme = useTheme();
   const c = mkColors(theme);
+  const quota = useFeatureQuota("RESUME_BUILDER");
   const [resumeId, setResumeId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
@@ -367,7 +371,12 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
     } catch { setChatMessages((prev) => { const n = [...prev]; n[n.length - 1] = { role: "ai", text: "Something went wrong. Try again." }; return n; }); } finally { setChatLoading(false); }
   };
   const handleGenerate = async () => {
+    if (quota.exhausted) {
+      showToast("You've used all free Resume Builder attempts this month.");
+      return;
+    }
     setGenerating(true); setGenStep(0);
+    const requestId = quota.newRequestId();
     const snap = { personalInfo, summary, education, experience, projects, skills, certifications: [...certifications], achievements: [...achievements], languages: [...languages], company: setup.company, profession: setup.profession, resumeStyle: setup.resumeStyle };
     const snapJSON = { personalInfo: snap.personalInfo, summary: snap.summary, education: snap.education, experience: snap.experience, projects: snap.projects, skills: snap.skills, certifications: snap.certifications, achievements: snap.achievements, languages: snap.languages };
     try { const r = await api.post("/resume/generate-summary", { personalInfo: snap.personalInfo, education: snap.education, experience: snap.experience, skills: snap.skills }); if (r.data.success && r.data.summary) setSummary(r.data.summary); } catch {}
@@ -376,9 +385,15 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
     setGenStep(3);
     try {
       const jr = formStateToJSONResume(snapJSON);
-      const r = await api.post("/resume/create", { title: `My ${snap.profession} Resume`, template: snap.resumeStyle, resumeData: jr, targetCompany: snap.company });
-      if (r.data.success && r.data.resume) setResumeId(r.data.resume.id);
-    } catch {}
+      const r = await api.post("/resume/create", { title: `My ${snap.profession} Resume`, template: snap.resumeStyle, resumeData: jr, targetCompany: snap.company }, { headers: { "x-request-id": requestId } });
+      if (r.data.success && r.data.resume) { setResumeId(r.data.resume.id); quota.onSuccess(); }
+    } catch (err) {
+      if (quota.handleQuotaError(err)) {
+        await quota.onFailure();
+        setGenStep(4); setGenerating(false); setBuilderPhase("working");
+        return;
+      }
+    }
     setGenStep(4); setGenerating(false); setBuilderPhase("working");
   };
   const handleSaveDraft = async (): Promise<string | null> => {
@@ -394,6 +409,7 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
         if (r.data?.success && r.data.resume) {
           activeId = r.data.resume.id;
           setResumeId(activeId);
+          quota.onSuccess();
         }
       }
       const now = new Date();
@@ -401,8 +417,8 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
       lastSavedRef.current = now.toLocaleTimeString();
       showToast("Draft saved!");
       return activeId;
-    } catch {
-      showToast("Save failed");
+    } catch (err) {
+      if (!quota.handleQuotaError(err)) showToast("Save failed");
       return null;
     } finally {
       setSaving(false);
@@ -535,7 +551,16 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
             <ExportMenu c={c} inputSx={inputSx} onExport={handleExport} exporting={exporting} />
           </div>
         </div>
+        <div className="ml-auto">
+          <FeatureCreditBadge featureKey="RESUME_BUILDER" compact isDark={c.d} />
+        </div>
       </div>
+
+      {quota.exhausted && (
+        <div className="px-5 pt-2">
+          <FeatureLimitBanner featureKey="RESUME_BUILDER" featureName="Resume Builder" isDark={c.d} />
+        </div>
+      )}
 
       {/* ─── MAIN WORKSPACE ─── */}
       <div className="flex-1 flex overflow-hidden">

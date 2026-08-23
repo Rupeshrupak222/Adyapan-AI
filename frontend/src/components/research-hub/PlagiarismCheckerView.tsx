@@ -15,6 +15,9 @@ import {
   Activity, Gauge, Sparkle, RotateCcw, ArrowRight,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { FeatureLimitBanner } from "@/components/shared/FeatureLimitBanner";
 
 function extractErrorMessage(err: any, fallback: string): string {
   return err?.response?.data?.message || err?.response?.data?.error || err?.message || fallback;
@@ -158,6 +161,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentViewerRef = useRef<HTMLDivElement>(null);
+  const quota = useFeatureQuota("PLAGIARISM_CHECKER");
 
   const getScoreColor = (score: number, thresholds: { green: number; amber: number }, inverse = false) => {
     if (inverse) {
@@ -298,10 +302,15 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
   };
 
   const handleAnalyze = async () => {
+    if (quota.exhausted) {
+      toast.info("You've used all free Plagiarism Checker credits for this month.");
+      return;
+    }
     if (!documentText.trim()) {
       toast.error("Please enter or upload a document first.");
       return;
     }
+    const requestId = quota.newRequestId();
     setAnalyzing(true);
     setStep("analyzing");
     setProgressLog([]);
@@ -326,6 +335,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
             checkSimilarity: config.similarityCheck,
             checkCitations: config.citationCheck,
             checkWritingQuality: config.writingQuality,
+            requestId,
           }),
         });
 
@@ -349,9 +359,13 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
                 if (event.type === "progress") {
                   setProgress({ step: event.step, message: event.message, percent: event.percent });
                   addLog(event.message);
+                } else if (event.type === "error") {
+                  addLog(`Error: ${event.message || "Analysis failed"}`);
+                  await quota.onFailure();
                 } else if (event.type === "complete") {
                   const rawReport = event.report;
                   const reportData: PlagiarismReport = normalizeReport(rawReport);
+                  quota.onSuccess();
                   setReport(reportData);
                   setProgress({ step: "complete", message: "Analysis complete!", percent: 100 });
                   addLog("Analysis complete!");
@@ -368,6 +382,7 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
               const event = JSON.parse(buffer.slice(6));
               if (event.type === "complete") {
                 const reportData: PlagiarismReport = normalizeReport(event.report);
+                quota.onSuccess();
                 setReport(reportData);
                 setProgress({ step: "complete", message: "Analysis complete!", percent: 100 });
                 toast.success("Document analysis complete!");
@@ -379,6 +394,8 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
         }
       } catch (sseErr) {
         console.warn("SSE Analysis connection issue, falling back to sync endpoint:", sseErr);
+        if (quota.handleQuotaError(sseErr)) return;
+        await quota.onFailure();
       }
 
       // Non-streaming fallback if SSE did not complete
@@ -390,10 +407,12 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
           checkSimilarity: config.similarityCheck,
           checkCitations: config.citationCheck,
           checkWritingQuality: config.writingQuality,
+          requestId,
         });
 
         if (res.data?.success && res.data?.report) {
           const reportData: PlagiarismReport = normalizeReport(res.data.report);
+          quota.onSuccess();
           setReport(reportData);
           setProgress({ step: "complete", message: "Analysis complete!", percent: 100 });
           toast.success("Document analysis complete!");
@@ -403,6 +422,8 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
         }
       }
     } catch (err: any) {
+      if (quota.handleQuotaError(err)) return;
+      await quota.onFailure();
       addLog(`Error: ${err.message || "Analysis failed"}`);
       toast.error(extractErrorMessage(err, "Failed to analyze document. Please try again."));
       setTimeout(() => setStep("upload"), 2000);
@@ -919,6 +940,9 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
         <p className="text-sm" style={{ color: c.textSec }}>
           Comprehensive plagiarism detection, AI content identification, and citation analysis
         </p>
+        <div className="flex justify-center">
+          <FeatureCreditBadge featureKey="PLAGIARISM_CHECKER" isDark={isDark} compact />
+        </div>
       </div>
 
       {/* Document Input */}
@@ -1016,10 +1040,14 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
         ))}
       </motion.div>
 
+      {quota.status && quota.exhausted && (
+        <FeatureLimitBanner featureKey="PLAGIARISM_CHECKER" featureName="Plagiarism Checker" isDark={isDark} />
+      )}
+
       {/* Analyze Button */}
       <motion.button
         onClick={handleAnalyze}
-        disabled={!documentText.trim()}
+        disabled={!documentText.trim() || quota.exhausted}
         whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(245,158,11,0.3)" }}
         whileTap={{ scale: 0.98 }}
         className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-extrabold text-xs hover:from-amber-400 hover:to-orange-400 disabled:opacity-40 transition-all flex items-center justify-center gap-2"

@@ -19,6 +19,9 @@ import {
 import { toast } from "sonner";
 import { api } from "@/services/api";
 import CompanyLogo from "@/components/interview-hub/CompanyLogo";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { FeatureLimitBanner } from "@/components/shared/FeatureLimitBanner";
 
 // ─── Animation Variants (matching AptitudeEngineView) ───────────────────────
 
@@ -261,6 +264,7 @@ const PROMPT_SUGGESTION_CHIPS = [
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: TechnicalMCQsModuleViewProps) {
   const isDark = theme === "dark";
+  const quota = useFeatureQuota("TECHNICAL_MCQS");
 
   const c = {
     bg: isDark ? "#080710" : "#f0f4ff",
@@ -395,12 +399,20 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
 
   // ── Session Start ──
   const startSession = useCallback(async (tech: string, company: string, domain: string, prompt?: string) => {
+    if (quota.exhausted) {
+      toast.error("You've used all free AI Technical MCQ generations this month.", {
+        description: "Upgrade to Premium for unlimited AI question sets.",
+      });
+      return;
+    }
+    const requestId = quota.newRequestId();
     setAiLoading(true);
     setShowExplanation(false);
     setShowHint(false);
     try {
-      const res = await api.post("/mcq/generate", { prompt: prompt || `Generate 15 ${tech || company || domain || "mixed"} MCQs` });
+      const res = await api.post("/mcq/generate", { prompt: prompt || `Generate 15 ${tech || company || domain || "mixed"} MCQs`, requestId });
       if (res.data?.success && Array.isArray(res.data.questions) && res.data.questions.length > 0) {
+        quota.onSuccess();
         setQuestions(res.data.questions);
         setSessionConfig({ tech, company, domain });
         setProgress({ currentIdx: 0, answers: [], timeElapsed: 0, timeRemaining: 0, bookmarkedCount: 0, flaggedCount: 0 });
@@ -408,13 +420,16 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
         setViewState("active_session");
         toast.success(`Loaded ${res.data.questions.length} questions!`);
       } else {
+        await quota.onFailure();
         setQuestions(DEFAULT_MCQ_QUESTIONS);
         setSessionConfig({ tech, company, domain });
         setProgress({ currentIdx: 0, answers: [], timeElapsed: 0, timeRemaining: 0, bookmarkedCount: 0, flaggedCount: 0 });
         questionStartTimeRef.current = Date.now();
         setViewState("active_session");
       }
-    } catch {
+    } catch (err) {
+      if (quota.handleQuotaError(err)) return;
+      await quota.onFailure();
       setQuestions(DEFAULT_MCQ_QUESTIONS);
       setSessionConfig({ tech, company, domain });
       setProgress({ currentIdx: 0, answers: [], timeElapsed: 0, timeRemaining: 0, bookmarkedCount: 0, flaggedCount: 0 });
@@ -424,7 +439,7 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
     } finally {
       setAiLoading(false);
     }
-  }, [setShowExplanation, setShowHint]);
+  }, [setShowExplanation, setShowHint, quota]);
 
   // ── Fetch Questions ──
   const fetchQuestions = useCallback(async () => {
@@ -614,6 +629,7 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <FeatureCreditBadge featureKey="TECHNICAL_MCQS" compact isDark={isDark} />
           {view === "active_session" && (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold" style={{ background: "rgba(16,185,129,0.1)", borderColor: "rgba(16,185,129,0.3)", color: "#10b981" }}>
@@ -640,6 +656,8 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
           {/* ═══ HOME VIEW ═══ */}
           {view === "home" && activeTab === "home" && (
             <motion.div key="home" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 overflow-y-auto max-h-[calc(100vh-160px)] pr-1 custom-scrollbar">
+
+              <FeatureLimitBanner featureKey="TECHNICAL_MCQS" featureName="Technical MCQ Engine" isDark={isDark} />
 
               {/* Hero */}
               <motion.div variants={scaleIn} initial="hidden" animate="visible" custom={0} className="p-6 rounded-2xl border text-center relative overflow-hidden" style={{ background: `linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.04))`, borderColor: "rgba(245,158,11,0.2)" }}>

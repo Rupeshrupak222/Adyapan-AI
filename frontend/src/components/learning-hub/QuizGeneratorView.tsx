@@ -15,6 +15,8 @@ import {
 import { toast } from "sonner";
 import { api } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 
 const mkColors = (theme: string) => {
   const isDark = theme === "dark";
@@ -485,6 +487,7 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
   const router = useRouter();
   const theme = useTheme();
   const c = mkColors(theme);
+  const quota = useFeatureQuota("QUIZ_GENERATOR");
 
   // Quiz config
   const [topic, setTopic] = useState("");
@@ -512,6 +515,13 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
   const generateQuiz = useCallback(async (overrideTopic?: string) => {
     const topicVal = (overrideTopic || topic).trim();
     if (!topicVal) return;
+    if (quota.exhausted) {
+      toast.error("You've used all free AI Quiz Generator attempts this month.", {
+        description: "Upgrade to Premium for unlimited quizzes.",
+      });
+      return;
+    }
+    const requestId = quota.newRequestId();
     setQuizError(null);
     setQuizData(null);
     setQuizResult(null);
@@ -530,8 +540,10 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
         mode,
         duration,
         questionCount: parseInt(questionCount),
+        requestId,
       });
       timers.forEach(clearTimeout);
+      quota.onSuccess();
       const data = res.data;
       if (data.quiz) {
         setQuizData(data.quiz);
@@ -556,12 +568,17 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
       }
     } catch (err: unknown) {
       timers.forEach(clearTimeout);
+      if (quota.handleQuotaError(err)) {
+        setPhase("config");
+        return;
+      }
+      await quota.onFailure();
       const msg = err instanceof Error ? err.message : "Unexpected error. Please try again.";
       setQuizError(msg);
       setPhase("config");
       toast.error(msg);
     }
-  }, [topic, mode, duration, questionCount]);
+  }, [topic, mode, duration, questionCount, quota]);
 
   const handleSelect = (option: string) => {
     if (submittedQuestions[currentIndex]) return;
@@ -676,7 +693,9 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
             </motion.p>
           </div>
         </div>
-        {(quizData || quizResult) && (
+        <div className="flex items-center gap-2">
+          <FeatureCreditBadge featureKey="QUIZ_GENERATOR" compact isDark={theme === "dark"} />
+          {(quizData || quizResult) && (
           <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             onClick={handleNewQuiz}
@@ -685,6 +704,7 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
             <Plus size={14} /> New Quiz
           </motion.button>
         )}
+        </div>
       </div>
 
       <div className="flex-1">

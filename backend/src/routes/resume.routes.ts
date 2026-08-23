@@ -16,10 +16,11 @@ import {
 } from "../controllers/resume.controller";
 import { analyzeSWOT, matchJob } from "../controllers/resume-analyzer.controller";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 
 export const resumeRouter = Router();
 
-resumeRouter.post("/create", requireAuth, createResume);
+resumeRouter.post("/create", requireAuth, requireFeatureQuota("RESUME_BUILDER"), createResume);
 resumeRouter.get("/list", requireAuth, listResumes);
 resumeRouter.get("/:id", requireAuth, getResume);
 resumeRouter.put("/update/:id", requireAuth, updateResume);

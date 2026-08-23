@@ -8,6 +8,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { mkColors } from "@/utils/themeColors";
 import { fadeUp, scaleIn, springConfig, buttonHover } from "@/utils/animations";
 import { ScoreRing } from "@/components/ui/ScoreRing";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 import {
   Upload, FileText, X, Check, AlertCircle, Sparkles, Zap,
   ChevronRight, Eye, Trash2, Target, BookOpen,
@@ -75,6 +77,7 @@ type Screen = "dashboard" | "upload" | "parsing" | "profile";
 export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
   const theme = useTheme();
   const c = mkColors(theme);
+  const quota = useFeatureQuota("RESUME_UPLOAD");
 
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [resumes, setResumes] = useState<UploadedResume[]>([]);
@@ -132,9 +135,14 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
       showToast("File is empty. Please select a valid resume.", "error");
       return;
     }
+    if (quota.exhausted) {
+      showToast("You've used all free Resume Upload & Parse credits for this month.", "error");
+      return;
+    }
 
     setScreen("parsing");
     setParsingStep(0);
+    const requestId = quota.newRequestId();
 
     stepTimersRef.current.forEach(clearTimeout);
     stepTimersRef.current = [];
@@ -146,10 +154,11 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
       const formData = new FormData();
       formData.append("resume", file);
       const res = await api.post("/resume-upload/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { "Content-Type": "multipart/form-data", "x-request-id": requestId },
       });
 
       if (res.data.success) {
+        quota.onSuccess();
         stepTimersRef.current.forEach(clearTimeout);
         stepTimersRef.current = [];
         setParsingStep(PARSING_STEPS.length - 1);
@@ -169,7 +178,10 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
     } catch (err: any) {
       stepTimersRef.current.forEach(clearTimeout);
       stepTimersRef.current = [];
-      showToast(err?.response?.data?.message || "Upload failed. Please try again.", "error");
+      if (!quota.handleQuotaError(err)) {
+        await quota.onFailure();
+        showToast(err?.response?.data?.message || "Upload failed. Please try again.", "error");
+      }
       setScreen("dashboard");
     }
   }
@@ -373,6 +385,9 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
                     <p className="text-sm mb-4 max-w-md mx-auto" style={{ color: c.textSec }}>
                       Drag & drop or <span style={{ color: col, fontWeight: 700 }}>browse files</span> to unlock AI-powered career analysis, ATS scoring, and improvement suggestions.
                     </p>
+                    <div className="flex justify-center mb-4">
+                      <FeatureCreditBadge featureKey="RESUME_UPLOAD" compact isDark={theme === "dark"} />
+                    </div>
                     <div className="flex justify-center gap-2">
                       {["PDF", "DOCX"].map((fmt) => (
                         <span key={fmt} className="px-3 py-1 rounded-full text-[11px] font-bold" style={{ background: c.pill, border: `1px solid ${c.pillBorder}`, color: c.textSec }}>{fmt}</span>

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
 import { StreakService } from "../services/streak.service";
@@ -17,7 +18,7 @@ Use spaced repetition, prioritization, and cognitive learning principles.
 Avoid generic plans. Create personalized learning roadmaps.`;
 
 // POST /api/study-planner/generate
-studyPlannerRouter.post("/generate", async (req: any, res: any) => {
+studyPlannerRouter.post("/generate", requireFeatureQuota("STUDY_PLANNER"), async (req: any, res: any) => {
   try {
     const userId = req.user!.userId;
     const { title, examDate, dailyHours, targetScore, studyMode, documentText, customTopics } = req.body;

@@ -9,6 +9,9 @@ import {
 } from "lucide-react";
 import { api } from "@/services/api";
 import { toast } from "sonner";
+import { useFeatureQuota } from "@/hooks/useFeatureQuota";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { FeatureLimitBanner } from "@/components/shared/FeatureLimitBanner";
 import { ACADEMIC_TEMPLATES_LIST } from "./TemplateGalleryModal";
 
 function extractErrorMessage(err: any, fallback: string): string {
@@ -22,6 +25,7 @@ interface ResearchWizardProps {
 }
 
 export function ResearchWizard({ onCancel, onFinish, c }: ResearchWizardProps) {
+  const quota = useFeatureQuota("RESEARCH_PAPER_AI");
   const [currentStep, setCurrentStep] = useState<number>(1);
 
   // Step 1: Research Details
@@ -134,11 +138,16 @@ export function ResearchWizard({ onCancel, onFinish, c }: ResearchWizardProps) {
   };
 
   const handleStartGeneration = async () => {
+    if (quota.exhausted) {
+      toast.info("You've used all free Research Paper AI credits for this month.");
+      return;
+    }
     if (!title.trim()) {
       toast.error("Please enter a research paper title before generating.");
       setCurrentStep(1);
       return;
     }
+    const requestId = quota.newRequestId();
     setIsGenerating(true);
     setCurrentStep(5);
     setGeneratingProgress(10);
@@ -152,6 +161,7 @@ export function ResearchWizard({ onCancel, onFinish, c }: ResearchWizardProps) {
         template,
         paperLength,
         citationStyle,
+        requestId,
         options: {
           includeTables,
           includeEquations,
@@ -163,6 +173,7 @@ export function ResearchWizard({ onCancel, onFinish, c }: ResearchWizardProps) {
 
       const res = await api.post("/research/generate-paper-sync", config);
       if (res.data?.success && res.data?.paper) {
+        quota.onSuccess();
         setGeneratingProgress(100);
         setGeneratingMessage("Paper generated successfully!");
         setGeneratedPaper(res.data.paper);
@@ -170,6 +181,8 @@ export function ResearchWizard({ onCancel, onFinish, c }: ResearchWizardProps) {
         setTimeout(() => setCurrentStep(6), 800);
       }
     } catch (err: any) {
+      if (quota.handleQuotaError(err)) return;
+      await quota.onFailure();
       toast.error(extractErrorMessage(err, "Generation failed"));
       setCurrentStep(4);
     } finally {
@@ -196,7 +209,7 @@ export function ResearchWizard({ onCancel, onFinish, c }: ResearchWizardProps) {
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       {/* Wizard Header Progress Bar */}
-      <div className="p-4 rounded-2xl border" style={{ background: c.isDark ? "rgba(255,255,255,0.02)" : "#ffffff", borderColor: c.isDark ? "rgba(245,158,11,0.2)" : c.border }}>
+      <div className="p-4 rounded-2xl border space-y-2" style={{ background: c.isDark ? "rgba(255,255,255,0.02)" : "#ffffff", borderColor: c.isDark ? "rgba(245,158,11,0.2)" : c.border }}>
         <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2">
           {stepsHeader.map((sLabel, idx) => {
             const stepNum = idx + 1;
@@ -219,6 +232,9 @@ export function ResearchWizard({ onCancel, onFinish, c }: ResearchWizardProps) {
               </div>
             );
           })}
+        </div>
+        <div className="flex justify-end">
+          <FeatureCreditBadge featureKey="RESEARCH_PAPER_AI" isDark={c.isDark} compact />
         </div>
       </div>
 
@@ -461,9 +477,13 @@ export function ResearchWizard({ onCancel, onFinish, c }: ResearchWizardProps) {
               ))}
             </div>
 
+            {quota.status && quota.exhausted && (
+              <FeatureLimitBanner featureKey="RESEARCH_PAPER_AI" featureName="Research Paper AI" isDark={c.isDark} />
+            )}
+
             <div className="flex justify-between pt-4">
               <button onClick={() => setCurrentStep(3)} className="px-4 py-2 rounded-xl bg-white/10 font-semibold text-xs text-white">Back</button>
-              <button onClick={handleStartGeneration} className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 font-black text-xs text-slate-950 flex items-center gap-2 shadow-lg shadow-amber-500/25">
+              <button onClick={handleStartGeneration} disabled={quota.exhausted} className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 font-black text-xs text-slate-950 flex items-center gap-2 shadow-lg shadow-amber-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
                 <Play size={14} /> Generate Full Paper
               </button>
             </div>

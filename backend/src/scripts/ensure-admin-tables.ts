@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { prisma } from "../config/prisma";
 
-const SQL_FILES = ["admin-tables.sql", "usage-tables.sql"];
+const SQL_FILES = ["admin-tables.sql", "usage-tables.sql", "feature-usage-tables.sql"];
 
 function describe(stmt: string): string {
   const m =

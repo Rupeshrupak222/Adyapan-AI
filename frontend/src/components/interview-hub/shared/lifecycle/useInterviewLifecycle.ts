@@ -124,14 +124,26 @@ export function useInterviewLifecycle({
 
     logInterview("State", `[${interviewType}] EXECUTING ATOMIC TERMINATION SEQUENCE`);
 
-    // 1. Stop Speech Synthesis immediately
+    // 1. Cancel Speech Synthesis immediately
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
         window.speechSynthesis.cancel();
       } catch {}
     }
 
-    // 2. Stop Camera & Mic MediaStream tracks
+    // 2. Stop all Web Speech Recognition instances if window.webkitSpeechRecognition / SpeechRecognition exists
+    if (typeof window !== "undefined") {
+      try {
+        const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (SpeechRec && (window as any).__activeSpeechRecognition) {
+          (window as any).__activeSpeechRecognition.stop();
+          (window as any).__activeSpeechRecognition.abort();
+          (window as any).__activeSpeechRecognition = null;
+        }
+      } catch {}
+    }
+
+    // 3. Close & stop Camera & Mic MediaStream tracks
     if (activeStreamRef.current) {
       try {
         activeStreamRef.current.getTracks().forEach((track) => {
@@ -144,7 +156,15 @@ export function useInterviewLifecycle({
       }
     }
 
-    // 3. Custom component cleanup callback
+    // 4. Close any global AudioContext or active WebAudio nodes created during interview
+    if (typeof window !== "undefined" && (window as any).__interviewAudioContext) {
+      try {
+        (window as any).__interviewAudioContext.close();
+        (window as any).__interviewAudioContext = null;
+      } catch {}
+    }
+
+    // 5. Custom component cleanup callback
     try {
       onTerminationCleanup?.();
     } catch (e) {
@@ -255,3 +275,4 @@ export function useInterviewLifecycle({
     cancelExit,
   };
 }
+
