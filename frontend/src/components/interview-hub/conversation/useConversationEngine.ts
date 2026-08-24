@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/services/api";
 import { toast } from "sonner";
 import { logInterview, logInterviewError } from "../shared/interviewLogger";
+import { SharedSpeechEngine } from "../shared/speechState";
+import { MicrophoneHealthManager } from "../shared/microphoneHealth";
 import type {
   ConversationState,
   SilenceStage,
@@ -312,13 +314,12 @@ export function useConversationEngine({
     setMicLevel(0);
   }, []);
 
-  // Web Speech API initialization with state guards
+  // SharedSpeechEngine initialization with state guards
   const startSpeechRecognition = useCallback(() => {
     if (typeof window === "undefined") return;
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const speechEngine = SharedSpeechEngine.getInstance();
 
-    if (!SpeechRecognition) {
+    if (!speechEngine.isSupported()) {
       toast.error("Speech recognition is not supported in this browser.");
       return;
     }
@@ -326,108 +327,69 @@ export function useConversationEngine({
     if (isStartingRef.current) return;
     isStartingRef.current = true;
 
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.onresult = null;
-        recognitionRef.current.onerror = null;
-        recognitionRef.current.onend = null;
-        recognitionRef.current.abort();
-      } catch {}
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = config.language === "hindi" ? "hi-IN" : "en-US";
-
-    recognition.onstart = () => {
-      isListeningRef.current = true;
-      isStartingRef.current = false;
-      logInterview("SpeechRecognition", "Recognition session started");
-    };
-
-    recognition.onresult = (event: any) => {
-      if (isPausedRef.current || isSubmittingRef.current) return;
-      lastSpeechTimeRef.current = Date.now();
-
-      let currentInterim = "";
-      let newlyFinalized = "";
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcriptChunk = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          newlyFinalized += transcriptChunk + " ";
-        } else {
-          currentInterim += transcriptChunk;
-        }
-      }
-
-      if (newlyFinalized) {
-        setAccumulatedTranscript((prev) => (prev + " " + newlyFinalized).trim());
-      }
-      setLiveTranscript(currentInterim.trim());
-
-      // Update state to LISTENING when speech detected
-      if (
-        stateRef.current === "WAITING_FOR_CANDIDATE" ||
-        stateRef.current === "SHORT_PAUSE" ||
-        stateRef.current === "LONG_PAUSE_CONFIRMATION"
-      ) {
-        setState("LISTENING");
-      }
-      setSilenceStage("none");
-    };
-
-    recognition.onerror = (event: any) => {
-      const err = event.error;
-      if (err === "no-speech" || err === "aborted" || err === "network") {
-        logInterview("SpeechRecognition", `Transient notice: ${err}`);
-        return;
-      }
-      if (err === "not-allowed") {
-        logInterviewError("SpeechRecognition", "Microphone permission denied", event);
-        toast.error("Microphone permission denied.");
-        setIsMicEnabled(false);
-      } else {
-        logInterview("SpeechRecognition", `Notice: ${err}`, event);
-      }
-    };
-
-    recognition.onend = () => {
-      isListeningRef.current = false;
-      isStartingRef.current = false;
-      logInterview("SpeechRecognition", "Recognition session ended");
-
-      // Auto-restart recognition if engine is in a listening state and not submitting
-      const currentState = stateRef.current;
-      if (
-        !isPausedRef.current &&
-        !isSubmittingRef.current &&
-        isMicEnabledRef.current &&
-        (currentState === "WAITING_FOR_CANDIDATE" ||
-          currentState === "LISTENING" ||
-          currentState === "SHORT_PAUSE" ||
-          currentState === "LONG_PAUSE_CONFIRMATION")
-      ) {
-        setTimeout(() => {
-          try {
-            if (!isListeningRef.current && !isStartingRef.current) {
-              recognition.start();
-            }
-          } catch (e) {
-            logInterview("SpeechRecognition", "Auto-restart notice", e);
+    speechEngine.configure(
+      {
+        language: config.language,
+        continuous: true,
+        interimResults: true,
+      },
+      {
+        onStateChange: (engineState) => {
+          if (engineState === "LISTENING") {
+            isListeningRef.current = true;
+            isStartingRef.current = false;
+          } else if (engineState === "IDLE" || engineState === "ERROR") {
+            isListeningRef.current = false;
+            isStartingRef.current = false;
           }
-        }, 300);
-      }
-    };
+        },
+        onInterimResult: (interimText) => {
+          if (isPausedRef.current || isSubmittingRef.current) return;
+          lastSpeechTimeRef.current = Date.now();
+          setLiveTranscript(interimText);
 
-    recognitionRef.current = recognition;
-    try {
-      recognition.start();
-    } catch (e) {
-      isStartingRef.current = false;
-      logInterview("SpeechRecognition", "Initial recognition start notice", e);
+          if (
+            stateRef.current === "WAITING_FOR_CANDIDATE" ||
+            stateRef.current === "SHORT_PAUSE" ||
+            stateRef.current === "LONG_PAUSE_CONFIRMATION"
+          ) {
+            setState("LISTENING");
+          }
+          setSilenceStage("none");
+        },
+        onFinalResult: (finalText) => {
+          if (isPausedRef.current || isSubmittingRef.current) return;
+          lastSpeechTimeRef.current = Date.now();
+          setAccumulatedTranscript(finalText);
+          setLiveTranscript("");
+
+          if (
+            stateRef.current === "WAITING_FOR_CANDIDATE" ||
+            stateRef.current === "SHORT_PAUSE" ||
+            stateRef.current === "LONG_PAUSE_CONFIRMATION"
+          ) {
+            setState("LISTENING");
+          }
+          setSilenceStage("none");
+        },
+        onError: (errMessage) => {
+          logInterview("SpeechRecognition", `Notice: ${errMessage}`);
+          if (errMessage.includes("permission")) {
+            toast.error("Microphone permission denied.");
+            setIsMicEnabled(false);
+          }
+        },
+        onAutoRecover: () => {
+          logInterview("SpeechRecognition", "Engine automatically recovered speech recognition stream.");
+        },
+      }
+    );
+
+    const started = speechEngine.startListening();
+    if (started) {
+      isListeningRef.current = true;
     }
+    isStartingRef.current = false;
   }, [config.language]);
 
   // Open Microphone automatically for natural turn taking

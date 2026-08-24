@@ -247,7 +247,14 @@ QUESTION GENERATION & INTERACTIVE EVALUATION RULES:
 7. ${config.company ? `Include company-specific elements for ${config.company}` : ""}
 8. Vary question types: scenario-based, hypothetical, knowledge-check, problem-solving, reflection
 9. Each question should be natural and conversational
-10. IMPORTANT: If there is previous candidate response in conversation history, begin the "question" string with 1-2 brief, encouraging conversational sentences evaluating their answer (what they got right, missing points, or key takeaway), before seamlessly moving to the next question.
+10. CRITICAL CANDIDATE ANSWER ANALYSIS & TRANSITION RULE:
+- Inspect the candidate's MOST RECENT response in the conversation history against the INTERVIEWER'S IMMEDIATELY PRECEDING QUESTION:
+  a) IF THE CANDIDATE GAVE AN INTRO, GREETING, OR OFF-TOPIC STATEMENT (e.g. "Hi, I am...", "My background is...", or did not address the specific question asked):
+     DO NOT hallucinate praise or say "Great explanation of [topic]!". Acknowledge what they actually said naturally (e.g., "Thanks for introducing yourself! Let's get right into the technical discussion on...") and ask the question without false praise.
+  b) IF THE CANDIDATE SAID "I DON'T KNOW", SKIPPED, OR GAVE A VERY BRIEF/WEAK ANSWER:
+     Briefly provide a 1-sentence helpful insight on the topic, then move gracefully to the next concept.
+  c) IF THE CANDIDATE ACTUALLY ANSWERED THE PREVIOUS QUESTION:
+     Provide 1 brief, relevant sentence summarizing the key takeaway of what they actually said before asking the next question.
 
 ${config.customInstructions ? `Additional Instructions: ${config.customInstructions}` : ""}
 

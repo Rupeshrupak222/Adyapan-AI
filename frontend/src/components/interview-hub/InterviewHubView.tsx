@@ -1273,16 +1273,30 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
                     <p><span className="font-bold">Type:</span> {activeSession.type}</p>
                     <p><span className="font-bold">Difficulty:</span> {activeSession.difficulty}</p>
                     <p><span className="font-bold">Duration:</span> {activeSession.durationMinutes} min</p>
-                    {activeSession.evaluation?.hiringRecommendation && (
-                      <p className="mt-2">
-                        <span className="font-bold">Recommendation: </span>
-                        <span className={
-                          activeSession.evaluation.hiringRecommendation.includes("strong") || activeSession.evaluation.hiringRecommendation === "recommend"
-                            ? "text-emerald-500" : activeSession.evaluation.hiringRecommendation === "maybe"
-                            ? "text-amber-500" : "text-red-500"
-                        }>{activeSession.evaluation.hiringRecommendation.replace(/_/g, " ")}</span>
-                      </p>
-                    )}
+                    {activeSession.evaluation?.hiringRecommendation && (() => {
+                      const recStr = activeSession.evaluation.hiringRecommendation.toLowerCase().replace(/_/g, " ");
+                      const isNegative = recStr.includes("no") || recStr.includes("not") || recStr.includes("reject");
+                      const isStrong = recStr.includes("strong");
+                      const isHire = (recStr.includes("hire") || recStr.includes("recommend")) && !isNegative;
+                      const isMaybe = recStr.includes("maybe") || recStr.includes("consider");
+
+                      return (
+                        <p className="mt-2">
+                          <span className="font-bold">Recommendation: </span>
+                          <span className={
+                            isNegative
+                              ? "text-red-500 font-bold"
+                              : isStrong
+                              ? "text-emerald-500 font-bold"
+                              : isHire
+                              ? "text-cyan-500 font-bold"
+                              : isMaybe
+                              ? "text-amber-500 font-bold"
+                              : "text-red-500 font-bold"
+                          }>{recStr}</span>
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

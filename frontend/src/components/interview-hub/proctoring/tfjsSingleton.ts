@@ -99,3 +99,8 @@ export function isModelLoaded(): boolean {
 export function isModelLoading(): boolean {
   return isLoading;
 }
+
+export async function preloadCocoSsdModel(onProgress?: (step: string) => void): Promise<ObjectDetectionModel> {
+  return loadCocoSsdModel(onProgress);
+}
+

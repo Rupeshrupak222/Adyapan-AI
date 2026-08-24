@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { logInterview, logInterviewError } from "../interviewLogger";
+import { preloadCocoSsdModel } from "../../proctoring/tfjsSingleton";
+import { MicrophoneHealthManager } from "../microphoneHealth";
 
 export type InterviewLifecycleState =
   | "PREPARING"
@@ -51,6 +53,9 @@ export function useInterviewLifecycle({
     logInterview("State", `[${interviewType}] Requesting hard camera/microphone permission gate...`);
     setLifecycleState("PERMISSION_REQUIRED");
 
+    // Trigger background preloading of TensorFlow COCO-SSD proctoring model
+    preloadCocoSsdModel().catch(() => {});
+
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error(
@@ -58,7 +63,10 @@ export function useInterviewLifecycle({
         );
       }
 
-      // Request media stream explicitly
+      // 1. Run Microphone Audio Signal Diagnostic
+      const micDiag = await MicrophoneHealthManager.getInstance().diagnoseMicrophone();
+
+      // 2. Request media stream explicitly
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 640 },
@@ -75,7 +83,6 @@ export function useInterviewLifecycle({
       const micWorking = audioTracks.length > 0 && audioTracks[0].readyState === "live" && audioTracks[0].enabled;
 
       if (!cameraWorking || !micWorking) {
-        // Stop any partial tracks
         stream.getTracks().forEach((track) => track.stop());
         throw new Error(
           "Camera and microphone access are both strictly required. Please allow permissions in browser settings."
@@ -89,7 +96,7 @@ export function useInterviewLifecycle({
         cameraWorking: true,
         micAvailable: true,
         micWorking: true,
-        errorMessage: null,
+        errorMessage: micDiag.errorMessage || null,
       });
 
       setLifecycleState("READY");
