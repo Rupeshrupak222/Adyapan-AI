@@ -13,7 +13,9 @@ export type LogCategory =
   | "VAD"
   | "API"
   | "Proctoring"
-  | "Turn";
+  | "Turn"
+  | "MicHealth"
+  | "SpeechState";
 
 export function logInterview(
   category: LogCategory,
