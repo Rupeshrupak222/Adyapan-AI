@@ -62,11 +62,8 @@ export async function registerAdmin(req: Request, res: Response, next: NextFunct
 
     const isSecretValid =
       Boolean(rawSecret) && (
-        rawSecret.toLowerCase() === configuredSecret.toLowerCase() ||
-        rawSecret.toLowerCase() === defaultSecret ||
-        configuredSecret.toLowerCase().includes(rawSecret.toLowerCase()) ||
-        rawSecret.toLowerCase().includes(configuredSecret.toLowerCase()) ||
-        rawSecret.includes("adyapan-admin-secret")
+        rawSecret === configuredSecret ||
+        rawSecret === defaultSecret
       );
 
     if (!isSecretValid) {

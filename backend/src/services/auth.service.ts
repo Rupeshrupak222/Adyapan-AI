@@ -1011,6 +1011,8 @@ export async function handleGoogleUser(gUser: GoogleUser, rememberMe?: boolean) 
           googleId,
           avatarUrl: gUser.picture,
           role: "USER",
+          plan: "free",
+          subscriptionStatus: "free",
         } as any,
       });
       await tx.profile.create({
