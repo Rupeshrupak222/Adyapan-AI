@@ -119,18 +119,27 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
       : Array.isArray(detailed.competencyMatrix)
       ? detailed.competencyMatrix
       : [],
-    summary: evaluation?.summary || detailed.summary || "The HR behavioral interview was completed successfully and evaluated by AI.",
-    hiringRecommendation: evaluation?.hiringRecommendation || detailed.hiringRecommendation || "recommend",
-    recruiterPerspective: evaluation?.recruiterPerspective || detailed.recruiterPerspective || evaluation?.summary || "Candidate demonstrated solid foundational behavioral skills.",
+    summary: evaluation?.summary || detailed.summary || "The HR behavioral interview was completed and evaluated by AI.",
+    hiringRecommendation: evaluation?.hiringRecommendation || detailed.hiringRecommendation || ((evaluation?.overallScore ?? detailed?.overallScore ?? 0) >= 70 ? "recommend" : "do_not_recommend"),
+    recruiterPerspective: evaluation?.recruiterPerspective || detailed.recruiterPerspective || evaluation?.summary || "Candidate behavioral assessment complete.",
   };
 
   const getRecommendationConfig = (rec: string) => {
-    switch (rec) {
-      case "strong_recommend": return { label: "Strong Hire", color: "#10b981", bg: "rgba(16,185,129,0.1)" };
-      case "recommend": return { label: "Hire", color: "#3b82f6", bg: "rgba(59,130,246,0.1)" };
-      case "maybe": return { label: "Maybe", color: "#f59e0b", bg: "rgba(245,158,11,0.1)" };
-      default: return { label: "No Hire", color: "#ef4444", bg: "rgba(239,68,68,0.1)" };
+    const lower = (rec || "").toLowerCase().replace(/_/g, " ");
+    if (
+      lower.includes("no hire") ||
+      lower.includes("not recommend") ||
+      lower.includes("non recommendation") ||
+      lower.includes("do not") ||
+      lower.includes("reject") ||
+      lower.includes("no_hire")
+    ) {
+      return { label: "No Hire", color: "#ef4444", bg: "rgba(239,68,68,0.1)" };
     }
+    if (lower.includes("strong")) return { label: "Strong Hire", color: "#10b981", bg: "rgba(16,185,129,0.1)" };
+    if (lower.includes("maybe") || lower.includes("consider")) return { label: "Maybe", color: "#f59e0b", bg: "rgba(245,158,11,0.1)" };
+    if (lower.includes("hire") || lower.includes("recommend")) return { label: "Hire", color: "#3b82f6", bg: "rgba(59,130,246,0.1)" };
+    return { label: "No Hire", color: "#ef4444", bg: "rgba(239,68,68,0.1)" };
   };
 
   const recConfig = getRecommendationConfig(safeEval.hiringRecommendation);

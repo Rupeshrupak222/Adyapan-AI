@@ -985,20 +985,36 @@ engineRouter.get("/:sessionId/report", async (req, res) => {
       answer: string;
     }> = [];
 
-    const interviewerMsgs = session.messages.filter(
-      (m: any) => m.role === "interviewer",
-    );
-    const candidateMsgs = session.messages.filter(
-      (m: any) => m.role === "candidate",
-    );
+    let currentQuestion: string | null = null;
+    let currentAnswers: string[] = [];
 
-    for (let i = 0; i < interviewerMsgs.length; i++) {
+    for (const msg of session.messages) {
+      if (msg.role === "interviewer") {
+        if (currentQuestion !== null) {
+          questionPairs.push({
+            questionNumber: questionPairs.length + 1,
+            question: currentQuestion,
+            answer: currentAnswers.join("\n\n").trim() || "No answer provided",
+          });
+        }
+        currentQuestion = msg.content;
+        currentAnswers = [];
+      } else if (msg.role === "candidate" || msg.role === "user") {
+        if (currentQuestion !== null) {
+          currentAnswers.push(msg.content);
+        }
+      }
+    }
+    if (currentQuestion !== null) {
       questionPairs.push({
-        questionNumber: i + 1,
-        question: interviewerMsgs[i].content,
-        answer: candidateMsgs[i]?.content || "No answer provided",
+        questionNumber: questionPairs.length + 1,
+        question: currentQuestion,
+        answer: currentAnswers.join("\n\n").trim() || "No answer provided",
       });
     }
+
+    const interviewerMsgsCount = session.messages.filter((m: any) => m.role === "interviewer").length;
+    const candidateMsgsCount = session.messages.filter((m: any) => m.role === "candidate" || m.role === "user").length;
 
     const duration = session.endedAt
       ? Math.round(
@@ -1025,8 +1041,8 @@ engineRouter.get("/:sessionId/report", async (req, res) => {
         configuration: session.configuration,
         evaluation,
         questionPairs,
-        totalQuestions: interviewerMsgs.length,
-        totalAnswers: candidateMsgs.length,
+        totalQuestions: interviewerMsgsCount,
+        totalAnswers: candidateMsgsCount,
       },
     });
   } catch (error) {

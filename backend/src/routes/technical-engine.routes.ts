@@ -694,14 +694,42 @@ technicalEngineRouter.get("/:sessionId/report", async (req, res) => {
     }
 
     const evaluation = session.evaluations?.[0] || null;
-    const interviewerMsgs = session.messages.filter((m: any) => m.role === "interviewer");
-    const candidateMsgs = session.messages.filter((m: any) => m.role === "candidate");
 
-    const questionPairs = interviewerMsgs.map((q: any, i: number) => ({
-      questionNumber: i + 1,
-      question: q.content,
-      answer: candidateMsgs[i]?.content || "No answer provided",
-    }));
+    const questionPairs: Array<{
+      questionNumber: number;
+      question: string;
+      answer: string;
+    }> = [];
+
+    let currentQuestion: string | null = null;
+    let currentAnswers: string[] = [];
+
+    for (const msg of session.messages) {
+      if (msg.role === "interviewer") {
+        if (currentQuestion !== null) {
+          questionPairs.push({
+            questionNumber: questionPairs.length + 1,
+            question: currentQuestion,
+            answer: currentAnswers.join("\n\n").trim() || "No answer provided",
+          });
+        }
+        currentQuestion = msg.content;
+        currentAnswers = [];
+      } else if (msg.role === "candidate" || msg.role === "user") {
+        if (currentQuestion !== null) {
+          currentAnswers.push(msg.content);
+        }
+      }
+    }
+    if (currentQuestion !== null) {
+      questionPairs.push({
+        questionNumber: questionPairs.length + 1,
+        question: currentQuestion,
+        answer: currentAnswers.join("\n\n").trim() || "No answer provided",
+      });
+    }
+
+    const interviewerMsgsCount = session.messages.filter((m: any) => m.role === "interviewer").length;
 
     const duration = session.endedAt
       ? Math.round((new Date(session.endedAt).getTime() - new Date(session.createdAt).getTime()) / 60000)
@@ -723,7 +751,7 @@ technicalEngineRouter.get("/:sessionId/report", async (req, res) => {
         configuration: session.configuration,
         evaluation,
         questionPairs,
-        totalQuestions: interviewerMsgs.length,
+        totalQuestions: interviewerMsgsCount,
       },
     });
   } catch (error) {

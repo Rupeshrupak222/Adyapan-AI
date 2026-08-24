@@ -42,9 +42,19 @@ function getScoreColor(score: number): string {
 
 function getRecommendationInfo(rec: string): { label: string; color: string; bg: string } {
   const lower = (rec || "").toLowerCase().replace(/_/g, " ");
+  if (
+    lower.includes("no hire") ||
+    lower.includes("not recommend") ||
+    lower.includes("non recommendation") ||
+    lower.includes("do not") ||
+    lower.includes("reject") ||
+    lower.includes("no_hire")
+  ) {
+    return { label: "No Hire", color: "#ef4444", bg: "rgba(239,68,68,0.12)" };
+  }
   if (lower.includes("strong")) return { label: "Strong Hire", color: "#10b981", bg: "rgba(16,185,129,0.12)" };
-  if (lower.includes("hire") || lower.includes("recommend")) return { label: "Hire", color: "#06b6d4", bg: "rgba(6,182,212,0.12)" };
   if (lower.includes("maybe") || lower.includes("consider")) return { label: "Maybe", color: "#f59e0b", bg: "rgba(245,158,11,0.12)" };
+  if (lower.includes("hire") || lower.includes("recommend")) return { label: "Hire", color: "#06b6d4", bg: "rgba(6,182,212,0.12)" };
   return { label: "No Hire", color: "#ef4444", bg: "rgba(239,68,68,0.12)" };
 }
 
@@ -132,37 +142,40 @@ export default function EngineReport({
 
   const evalAny = (evaluation as any) || {};
   const detailed = evalAny?.detailedAnalysis || {};
+  const sub = evalAny?.subScores || detailed?.subScores || {};
+  const baseOverall = evalAny.overallScore ?? detailed.overallScore ?? 0;
+
   const safeEval = {
-    overallScore: evalAny.overallScore ?? detailed.overallScore ?? 75,
-    communicationScore: evalAny.communicationScore ?? evalAny.communication ?? detailed.communicationScore ?? 75,
-    technicalScore: evalAny.technicalScore ?? evalAny.technical ?? detailed.technicalScore ?? 75,
-    hrScore: evalAny.hrScore ?? evalAny.hr ?? detailed.hrScore ?? 75,
-    confidenceScore: evalAny.confidenceScore ?? evalAny.confidence ?? detailed.confidenceScore ?? 70,
-    fluencyScore: evalAny.fluencyScore ?? evalAny.fluency ?? detailed.fluencyScore ?? 75,
-    bodyLanguageScore: evalAny.bodyLanguageScore ?? evalAny.bodyLanguage ?? detailed.bodyLanguageScore ?? 70,
-    communication: evalAny.communication ?? evalAny.communicationScore ?? detailed.communication ?? 75,
-    technical: evalAny.technical ?? evalAny.technicalScore ?? detailed.technical ?? 75,
-    confidence: evalAny.confidence ?? evalAny.confidenceScore ?? detailed.confidence ?? 70,
-    problemSolving: evalAny.problemSolving ?? detailed.problemSolving ?? 75,
-    leadership: evalAny.leadership ?? detailed.leadership ?? 70,
-    roleFit: evalAny.roleFit ?? detailed.roleFit ?? 75,
+    overallScore: baseOverall,
+    communicationScore: evalAny.communicationScore ?? sub.communication ?? evalAny.communication ?? detailed.communicationScore ?? baseOverall,
+    technicalScore: evalAny.technicalScore ?? sub.technical ?? evalAny.technical ?? detailed.technicalScore ?? baseOverall,
+    hrScore: evalAny.hrScore ?? sub.hr ?? evalAny.hr ?? detailed.hrScore ?? baseOverall,
+    confidenceScore: evalAny.confidenceScore ?? sub.confidence ?? evalAny.confidence ?? detailed.confidenceScore ?? baseOverall,
+    fluencyScore: evalAny.fluencyScore ?? sub.fluency ?? evalAny.fluency ?? detailed.fluencyScore ?? baseOverall,
+    bodyLanguageScore: evalAny.bodyLanguageScore ?? sub.bodyLanguage ?? evalAny.bodyLanguage ?? detailed.bodyLanguageScore ?? baseOverall,
+    communication: evalAny.communication ?? sub.communication ?? evalAny.communicationScore ?? detailed.communication ?? baseOverall,
+    technical: evalAny.technical ?? sub.technical ?? evalAny.technicalScore ?? detailed.technical ?? baseOverall,
+    confidence: evalAny.confidence ?? sub.confidence ?? evalAny.confidenceScore ?? detailed.confidence ?? baseOverall,
+    problemSolving: sub.problemSolving ?? evalAny.problemSolving ?? detailed.problemSolving ?? baseOverall,
+    leadership: sub.leadership ?? evalAny.leadership ?? detailed.leadership ?? 0,
+    roleFit: sub.roleFit ?? evalAny.roleFit ?? detailed.roleFit ?? baseOverall,
     strengths: Array.isArray(evalAny.strengths) && evalAny.strengths.length > 0
       ? evalAny.strengths
       : Array.isArray(detailed.strengths) && detailed.strengths.length > 0
       ? detailed.strengths
-      : ["Strong technical core principles and problem solving"],
+      : baseOverall > 50 ? ["Demonstrated foundational domain awareness"] : ["Attempted interview session"],
     weaknesses: Array.isArray(evalAny.weaknesses) && evalAny.weaknesses.length > 0
       ? evalAny.weaknesses
       : Array.isArray(detailed.weaknesses) && detailed.weaknesses.length > 0
       ? detailed.weaknesses
-      : ["Consider optimizing space complexity for edge cases"],
+      : baseOverall < 50 ? ["Did not provide sufficient technical depth to evaluate competencies"] : ["Could improve space/time optimization"],
     improvements: Array.isArray(evalAny.improvements) && evalAny.improvements.length > 0
       ? evalAny.improvements
       : Array.isArray(evalAny.areasForImprovement) && evalAny.areasForImprovement.length > 0
       ? evalAny.areasForImprovement
       : Array.isArray(detailed.improvements) && detailed.improvements.length > 0
       ? detailed.improvements
-      : ["Walk through sample test cases before finalizing code"],
+      : ["Answer each question thoroughly with concrete examples"],
     missedOpportunities: Array.isArray(evalAny.missedOpportunities)
       ? evalAny.missedOpportunities
       : Array.isArray(detailed.missedOpportunities)
@@ -189,8 +202,8 @@ export default function EngineReport({
       ? detailed.technicalImprovements
       : [],
     nextPracticePlan: evalAny.nextPracticePlan || detailed.nextPracticePlan || "Practice core problem solving and system design questions.",
-    summary: evalAny.summary || detailed.summary || "The technical interview was completed successfully and evaluated by AI.",
-    hiringRecommendation: evalAny.hiringRecommendation || detailed.hiringRecommendation || "recommend",
+    summary: evalAny.summary || detailed.summary || "The technical interview was completed and evaluated.",
+    hiringRecommendation: evalAny.hiringRecommendation || detailed.hiringRecommendation || (baseOverall >= 70 ? "recommend" : "do_not_recommend"),
   };
 
   const overallScore = safeEval.overallScore;
@@ -198,25 +211,40 @@ export default function EngineReport({
   const recInfo = useMemo(() => getRecommendationInfo(safeEval.hiringRecommendation), [safeEval.hiringRecommendation]);
 
   const scoreBreakdowns = useMemo(() => {
-    const comm = safeEval.communication || safeEval.communicationScore;
-    const conf = safeEval.confidence || safeEval.confidenceScore;
-    const prob = safeEval.problemSolving || 70;
-    const lead = safeEval.leadership || 70;
-    const fit = safeEval.roleFit || overallScore;
-    const tech = safeEval.technical || safeEval.technicalScore;
+    const comm = safeEval.communication;
+    const conf = safeEval.confidence;
+    const prob = safeEval.problemSolving;
+    const lead = safeEval.leadership;
+    const fit = safeEval.roleFit;
+    const tech = safeEval.technical;
 
     const items: Array<{ label: string; value: number; icon: React.ComponentType<{ className?: string }> }> = [
       { label: "Communication", value: comm, icon: MessageSquare },
-      { label: "Confidence", value: conf, icon: Star },
-      { label: "Problem Solving", value: prob, icon: Brain },
-      { label: "Leadership", value: lead, icon: Award },
-      { label: "Role Fit", value: fit, icon: Target },
     ];
+
     if (config.interviewType === "system-design" || config.interviewType === "technical" || config.interviewType === "coding") {
-      items.splice(1, 0, { label: "Technical", value: tech, icon: Zap });
+      items.push({ label: "Technical", value: tech, icon: Zap });
     }
+
+    items.push(
+      { label: "Confidence", value: conf, icon: Star },
+      { label: "Problem Solving", value: prob, icon: Brain }
+    );
+
+    // Only include Leadership for HR/Behavioral interviews or if explicitly provided (>0)
+    if (
+      config.interviewType === "hr" ||
+      config.interviewType === "behavioral" ||
+      config.interviewType === "leadership" ||
+      (lead > 0 && (sub.leadership !== undefined || evalAny.leadership !== undefined))
+    ) {
+      items.push({ label: "Leadership", value: lead, icon: Award });
+    }
+
+    items.push({ label: "Role Fit", value: fit, icon: Target });
+
     return items;
-  }, [safeEval, config.interviewType, overallScore]);
+  }, [safeEval, config.interviewType, sub.leadership, evalAny.leadership]);
 
   const visibleBreakdowns = useMemo(() => {
     const list = safeEval.answerBreakdowns;
