@@ -420,7 +420,8 @@ export async function runTestCases(
     const actualOutput = (execResult.stdout || "").trim();
     const expectedOutput = tc.expectedOutput.trim();
 
-    const passed = execResult.success && actualOutput === expectedOutput;
+    // Line-by-line trimmed comparison (competitive programming style)
+    const passed = execResult.success && compareOutputsStrict(actualOutput, expectedOutput);
 
     results.push({
       input: tc.input,
@@ -444,6 +445,28 @@ export async function runTestCases(
     executionTime: totalExecutionTime,
     memory: maxMemory,
   };
+}
+
+/**
+ * Competitive programming style output comparison:
+ * - Trim each line individually
+ * - Ignore trailing empty lines
+ * - Exact match per line after trimming
+ */
+function compareOutputsStrict(actual: string, expected: string): boolean {
+  const normalizeLines = (s: string): string[] =>
+    s.split("\n").map(line => line.trimEnd()).join("\n").trim().split("\n");
+
+  const actualLines = normalizeLines(actual);
+  const expectedLines = normalizeLines(expected);
+
+  if (actualLines.length !== expectedLines.length) return false;
+
+  for (let i = 0; i < actualLines.length; i++) {
+    if (actualLines[i].trim() !== expectedLines[i].trim()) return false;
+  }
+
+  return true;
 }
 
 export async function checkPistonHealth(): Promise<boolean> {
