@@ -52,6 +52,11 @@ export const env = {
     clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
     callbackUrl: process.env.GITHUB_CALLBACK_URL ?? "http://localhost:5000/api/auth/github/callback",
   },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID ?? "64852137088-vbpfqsap37q2t43g8uh5h9jl03dkofqv.apps.googleusercontent.com",
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "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",
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL ?? "http://localhost:5000/api/auth/google/callback",
+  },
   codeforces: {
     apiKey: process.env.CODEFORCES_API_KEY ?? "",
     apiSecret: process.env.CODEFORCES_API_SECRET ?? "",

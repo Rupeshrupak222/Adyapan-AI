@@ -13,23 +13,21 @@ export interface OpenRouterOptions {
   responseFormat?: { type: "json_object" | "text" };
 }
 
-// Gemini model fallback chain — tried in order when one is unavailable
+// Gemini model fallback chain — only active supported models
 const GEMINI_MODEL_FALLBACKS = [
   "gemini-2.5-flash",
   "gemini-2.5-pro",
-  "gemini-2.0-flash",
-  "gemini-1.5-pro",
-  "gemini-1.5-flash",
 ];
 
-// Groq model fallback chain
+// Groq model fallback chain — active fast models on Groq
 const GROQ_MODEL_FALLBACKS_STRONG = [
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
+  "groq/compound-mini",
+  "openai/gpt-oss-120b",
+  "qwen/qwen3.6-27b",
 ];
 const GROQ_MODEL_FALLBACKS_FAST = [
-  "llama-3.1-8b-instant",
-  "llama-3.3-70b-versatile",
+  "groq/compound-mini",
+  "openai/gpt-oss-20b",
 ];
 
 // NVIDIA NIM model fallback chain
@@ -42,14 +40,15 @@ const NVIDIA_NIM_MODELS = [
 
 const FAST_OPENROUTER_DEFAULT = "openai/gpt-4o-mini";
 
-// Maps any requested model hint to a valid, fast OpenRouter model id. NVIDIA
-// NIM ids (e.g. "deepseek-ai/deepseek-v4-flash") are not valid on OpenRouter,
-// so they are translated to their fast OpenRouter equivalents.
+// In-memory circuit breaker to prevent hammering dead/rate-limited providers
+const providerCooldownUntil = new Map<string, number>();
+
+// Maps any requested model hint to a valid, fast OpenRouter model id.
 function resolveOpenRouterModel(requestedModel?: string): string {
   const lower = (requestedModel ?? "").toLowerCase();
   if (!lower) return FAST_OPENROUTER_DEFAULT;
   if (lower.includes("kimi")) return "moonshotai/kimi-k2";
-  if (lower.includes("gemini")) return "google/gemini-3.6-flash";
+  if (lower.includes("gemini")) return "google/gemini-2.5-flash";
   if (lower.includes("llama")) return "meta-llama/llama-3.3-70b-instruct";
   if (lower.includes("deepseek")) return "deepseek/deepseek-chat";
   if (lower.includes("mistral")) return "mistralai/mistral-medium";
@@ -58,12 +57,12 @@ function resolveOpenRouterModel(requestedModel?: string): string {
   return FAST_OPENROUTER_DEFAULT;
 }
 
-// Sequential fallback completion engine: Gemini (primary, latest flash models) → OpenRouter → Groq → NVIDIA NIM (fallback)
+// Sequential fallback completion engine with Circuit Breaker & Instant Failover
 export async function callAIRobust(
   messages: OpenRouterMessage[],
   options: OpenRouterOptions
 ): Promise<string> {
-  const providers: { name: string; url: string; key: string; model: string }[] = [];
+  const providers: { name: string; url: string; key: string; model: string; cooldownKey: string }[] = [];
 
   // 0. Moonshot / Kimi 2.6 API (Direct Kimi Provider if requested or key present)
   const kimiKey = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
@@ -74,6 +73,7 @@ export async function callAIRobust(
       url: "https://api.moonshot.cn/v1/chat/completions",
       key: kimiKey,
       model: "moonshot-v1-32k",
+      cooldownKey: "kimi",
     });
   }
 
@@ -84,7 +84,6 @@ export async function callAIRobust(
       ? options.model.split("/").pop() || ""
       : "";
 
-    // If a specific Gemini model was requested, try it first then fall back
     const modelsToTry = requestedModel
       ? [requestedModel, ...GEMINI_MODEL_FALLBACKS.filter(m => m !== requestedModel)]
       : [...GEMINI_MODEL_FALLBACKS];
@@ -95,21 +94,23 @@ export async function callAIRobust(
         url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
         key: env.geminiApiKey,
         model: m,
+        cooldownKey: `gemini-${m}`,
       });
     }
   }
 
-  // 2. Add OpenRouter if key exists (secondary) — fast models, valid OpenRouter IDs
+  // 2. Add OpenRouter if key exists (secondary) — fast models, high reliability
   if (env.openrouterApiKey) {
     providers.push({
       name: "OpenRouter",
       url: "https://openrouter.ai/api/v1/chat/completions",
       key: env.openrouterApiKey,
       model: isKimiRequested ? "moonshotai/kimi-k2" : resolveOpenRouterModel(options.model),
+      cooldownKey: "openrouter",
     });
   }
 
-  // 3. Add Groq with fallback models (tertiary)
+  // 3. Add Groq with fallback models (tertiary) — ultrafast inference
   if (env.groqApiKey) {
     const modelLower = options.model?.toLowerCase() ?? "";
     const isMiniOrFast = (modelLower.includes("mini") && !modelLower.includes("gemini")) ||
@@ -123,6 +124,7 @@ export async function callAIRobust(
         url: "https://api.groq.com/openai/v1/chat/completions",
         key: env.groqApiKey,
         model: m,
+        cooldownKey: `groq-${m}`,
       });
     }
   }
@@ -137,6 +139,7 @@ export async function callAIRobust(
         url: "https://integrate.api.nvidia.com/v1/chat/completions",
         key,
         model: nvidiaModel.model,
+        cooldownKey: `nvidia-${i}`,
       });
     }
   }
@@ -145,102 +148,97 @@ export async function callAIRobust(
     throw new Error("No AI providers configured. Please check environment keys.");
   }
 
+  // Filter out temporarily dead providers (cooldown active)
+  const now = Date.now();
+  const availableProviders = providers.filter(p => {
+    const cooldown = providerCooldownUntil.get(p.cooldownKey) ?? 0;
+    return now >= cooldown;
+  });
+
+  const providersToRun = availableProviders.length > 0 ? availableProviders : providers;
   const errors: string[] = [];
 
-  const MAX_RETRIES = 2;
+  for (const provider of providersToRun) {
+    try {
+      const body: Record<string, unknown> = {
+        model: provider.model,
+        messages,
+        temperature: options.temperature ?? 0.7,
+        max_tokens: options.maxTokens ?? 4096,
+      };
 
-  for (const provider of providers) {
-    let lastError: string = "";
-
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        if (attempt > 0) {
-          const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 4000);
-          console.log(`[AI Engine] Retrying ${provider.name} (attempt ${attempt + 1}/${MAX_RETRIES + 1}) after ${delayMs}ms...`);
-          await new Promise(r => setTimeout(r, delayMs));
+      if (options.responseFormat?.type === "json_object") {
+        const supportsResponseFormat = provider.name.includes("Gemini") || provider.name.includes("OpenRouter");
+        if (supportsResponseFormat) {
+          body.response_format = { type: "json_object" };
         }
-
-        const body: Record<string, unknown> = {
-          model: provider.model,
-          messages,
-          temperature: options.temperature ?? 0.7,
-          max_tokens: options.maxTokens ?? 4096,
-        };
-
-        if (options.responseFormat?.type === "json_object") {
-          // Gemini and OpenRouter support response_format; NVIDIA NIM and Groq do not
-          const supportsResponseFormat = provider.name.includes("Gemini") || provider.name.includes("OpenRouter");
-          if (supportsResponseFormat) {
-            body.response_format = { type: "json_object" };
-          }
-        }
-
-        const controller = new AbortController();
-        const fetchTimeoutMs = (options.maxTokens ?? 4096) > 4096 ? 120000 : 60000;
-        const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
-
-        let res: Response;
-        try {
-          res = await fetch(provider.url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${provider.key}`,
-            },
-            body: JSON.stringify(body),
-            signal: controller.signal,
-          });
-        } catch (fetchErr) {
-          clearTimeout(timeoutId);
-          throw fetchErr;
-        }
-        clearTimeout(timeoutId);
-
-        const rawText = await res.text();
-        let data: any;
-        try {
-          data = JSON.parse(rawText);
-        } catch {
-          console.error(`[AI Engine] ${provider.name} returned non-JSON (${rawText.length} chars): ${rawText.substring(0, 300)}`);
-          throw new Error(`${provider.name} returned non-JSON response.`);
-        }
-
-        if (!res.ok || data.error) {
-          const errMsg = data.error?.message ?? res.statusText;
-          console.error(`[AI Engine] ${provider.name} error (HTTP ${res.status}):`, JSON.stringify(data).substring(0, 500));
-          throw new Error(`${provider.name} error: ${errMsg}`);
-        }
-
-        const content = data.choices?.[0]?.message?.content;
-        if (!content || content.trim().length === 0) {
-          console.error(`[AI Engine] ${provider.name} empty content. Full response keys: ${Object.keys(data)}, choices: ${JSON.stringify(data.choices).substring(0, 500)}`);
-          throw new Error(`${provider.name} returned empty completion.`);
-        }
-
-        console.log(`[AI Engine] Success with ${provider.name}`);
-        return content;
-      } catch (e: any) {
-        const msg = e.message || String(e);
-        const isAbort = e?.name === "AbortError" || msg.includes("abort") || msg.includes("This operation was aborted");
-        const isPermanentError = msg.includes("404") || msg.includes("410") || msg.includes("413") || msg.includes("Quota") || msg.includes("Request too large") || msg.includes("not found");
-        // 429 (rate limit) is transient: back off and retry the same provider.
-        const isTransient = (isAbort || msg.includes("429") || msg.includes("rate limit") || msg.includes("500") || msg.includes("502") || msg.includes("503") || msg.includes("overloaded") || msg.includes("unavailable")) && !isPermanentError;
-        lastError = isAbort ? `${provider.name}: Request timed out` : `${provider.name}: ${msg}`;
-
-        if (isTransient && attempt < MAX_RETRIES) {
-          console.warn(`[AI Engine] ${provider.name} transient error (attempt ${attempt + 1}): ${msg}`);
-          continue;
-        }
-
-        console.warn(`[AI Engine] ${provider.name} failed: ${msg} — trying next provider...`);
-        break;
       }
-    }
 
-    errors.push(lastError);
+      const controller = new AbortController();
+      const fetchTimeoutMs = (options.maxTokens ?? 4096) > 4096 ? 25000 : 12000;
+      const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
+
+      let res: Response;
+      try {
+        res = await fetch(provider.url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${provider.key}`,
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+      } catch (fetchErr: any) {
+        clearTimeout(timeoutId);
+        const isAbort = fetchErr?.name === "AbortError" || String(fetchErr).includes("abort");
+        if (isAbort) {
+          console.warn(`[AI Engine] ${provider.name} timed out after ${fetchTimeoutMs}ms — failing over immediately...`);
+          providerCooldownUntil.set(provider.cooldownKey, Date.now() + 30000);
+        }
+        throw fetchErr;
+      }
+      clearTimeout(timeoutId);
+
+      const rawText = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        console.error(`[AI Engine] ${provider.name} returned non-JSON (${rawText.length} chars)`);
+        throw new Error(`${provider.name} returned non-JSON response.`);
+      }
+
+      if (!res.ok || data.error) {
+        const errMsg = data.error?.message ?? res.statusText;
+        const isQuotaOr404 = res.status === 429 || res.status === 404 || res.status === 401 ||
+                             String(errMsg).includes("quota") || String(errMsg).includes("RESOURCE_EXHAUSTED") ||
+                             String(errMsg).includes("does not exist") || String(errMsg).includes("not found");
+        
+        if (isQuotaOr404) {
+          console.warn(`[AI Engine] ${provider.name} quota/model error (HTTP ${res.status}): ${errMsg}. Cooling down for 60s.`);
+          providerCooldownUntil.set(provider.cooldownKey, Date.now() + 60000);
+        }
+
+        throw new Error(`${provider.name} error: ${errMsg}`);
+      }
+
+      const content = data.choices?.[0]?.message?.content;
+      if (!content || content.trim().length === 0) {
+        throw new Error(`${provider.name} returned empty completion.`);
+      }
+
+      // Success — clear any cooldown for this provider
+      providerCooldownUntil.delete(provider.cooldownKey);
+      return content;
+    } catch (e: any) {
+      const msg = e.message || String(e);
+      errors.push(`${provider.name}: ${msg}`);
+      // Immediate failover to the next healthy provider without blocking sleep delay
+    }
   }
 
-  throw new Error(`All AI providers failed. Tried ${providers.length} options: ${errors.join(" | ")}`);
+  throw new Error(`All AI providers failed. Tried ${providersToRun.length} options: ${errors.join(" | ")}`);
 }
 
 // Extracts clean JSON string by finding first '{' or '[' and matching to final '}' or ']'

@@ -104,11 +104,14 @@ function LoginPageContent() {
     document.documentElement.setAttribute("data-theme", "dark");
     setTheme("dark");
 
-    // Handle GitHub OAuth callback
+    // Handle GitHub / Google OAuth callback
     const params = new URLSearchParams(window.location.search);
 
     const githubStatus = params.get("github");
-    if (githubStatus === "success") {
+    const googleStatus = params.get("google");
+    const oauthStatus = githubStatus || googleStatus;
+
+    if (oauthStatus === "success") {
       const token = params.get("token");
       const userStr = params.get("user");
       if (token && userStr) {
@@ -123,14 +126,16 @@ function LoginPageContent() {
           return;
         } catch { return; }
       }
-    } else if (githubStatus === "error") {
-      setLoginError(params.get("message") || "GitHub login failed. Please try again.");
+    } else if (oauthStatus === "error") {
+      const providerName = githubStatus ? "GitHub" : "Google";
+      setLoginError(params.get("message") || `${providerName} login failed. Please try again.`);
     }
 
-    // Strip GitHub params from URL without reload
-    if (githubStatus) {
+    // Strip OAuth params from URL without reload
+    if (oauthStatus) {
       const url = new URL(window.location.href);
       url.searchParams.delete("github");
+      url.searchParams.delete("google");
       url.searchParams.delete("token");
       url.searchParams.delete("user");
       url.searchParams.delete("message");
@@ -368,7 +373,7 @@ function LoginPageContent() {
                       <span className="relative px-3 text-xs" style={{ background: cardBg, color: mutedClr }}>OR LOGIN WITH</span>
                     </motion.div>
                     <motion.div className="flex gap-2" custom={5} variants={staggerItem} initial="hidden" animate="visible">
-                      <button type="button" className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
+                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/google`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
                       <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
                     </motion.div>
                     <motion.p className="text-center text-xs" style={{ color: labelClr }} custom={6} variants={staggerItem} initial="hidden" animate="visible">
@@ -535,7 +540,7 @@ function LoginPageContent() {
                       <span className="relative px-3 text-xs font-semibold tracking-widest uppercase" style={{ background: cardBg, color: mutedClr }}>OR SIGN UP WITH</span>
                     </motion.div>
                     <motion.div className="col-span-2 flex gap-2" custom={10} variants={staggerItem} initial="hidden" animate="visible">
-                      <button type="button" className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
+                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/google`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
                       <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
                     </motion.div>
                     <motion.p className="col-span-2 text-center text-xs" style={{ color: labelClr }} custom={11} variants={staggerItem} initial="hidden" animate="visible">

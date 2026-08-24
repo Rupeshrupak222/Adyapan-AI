@@ -916,3 +916,116 @@ export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: bool
     refreshToken: signRefreshToken(user.id),
   };
 }
+
+// ─────────────────────────────────────────────
+// Google OAuth Service
+// ─────────────────────────────────────────────
+
+export type GoogleUser = {
+  id: string;
+  name: string;
+  given_name?: string;
+  family_name?: string;
+  email: string;
+  picture?: string;
+};
+
+export function getGoogleRedirectUrl(): string {
+  const params = new URLSearchParams({
+    client_id: env.google.clientId,
+    redirect_uri: env.google.callbackUrl,
+    response_type: "code",
+    scope: "openid profile email",
+    access_type: "offline",
+    prompt: "consent",
+  });
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+}
+
+export async function exchangeGoogleCode(code: string): Promise<GoogleUser> {
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      code,
+      client_id: env.google.clientId,
+      client_secret: env.google.clientSecret,
+      redirect_uri: env.google.callbackUrl,
+      grant_type: "authorization_code",
+    }),
+  });
+
+  const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string; error_description?: string };
+  if (!tokenData.access_token) {
+    throw httpError(401, "Google OAuth failed: " + (tokenData.error_description || tokenData.error || "No access token"));
+  }
+
+  const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+    },
+  });
+
+  const gUser = (await userRes.json()) as any;
+  if (!gUser.email) {
+    throw httpError(400, "Google account has no email address.");
+  }
+
+  return {
+    id: gUser.sub,
+    name: gUser.name || `${gUser.given_name || ""} ${gUser.family_name || ""}`.trim() || gUser.email.split("@")[0],
+    given_name: gUser.given_name,
+    family_name: gUser.family_name,
+    email: gUser.email,
+    picture: gUser.picture,
+  };
+}
+
+export async function handleGoogleUser(gUser: GoogleUser, rememberMe?: boolean) {
+  const googleId = gUser.id;
+  const email = gUser.email.toLowerCase();
+
+  let user = await prisma.user.findFirst({
+    where: { OR: [{ googleId }, { email }] },
+  });
+
+  if (user) {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        googleId,
+        avatarUrl: user.avatarUrl || gUser.picture,
+        name: user.name || gUser.name,
+      } as any,
+    });
+  } else {
+    user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: gUser.name,
+          firstName: gUser.given_name,
+          lastName: gUser.family_name,
+          email,
+          googleId,
+          avatarUrl: gUser.picture,
+          role: "USER",
+        } as any,
+      });
+      await tx.profile.create({
+        data: {
+          userId: newUser.id,
+        },
+      });
+      return newUser;
+    });
+  }
+
+  return {
+    user: publicUser(user),
+    token: signToken(user, rememberMe),
+    refreshToken: signRefreshToken(user.id),
+  };
+}
+

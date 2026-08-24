@@ -1,5 +1,16 @@
 import type { NextFunction, Request, Response } from "express";
-import { loginUser, registerUser, getGitHubRedirectUrl, exchangeGitHubCode, handleGitHubUser, requestPasswordReset, resetPassword } from "../services/auth.service";
+import {
+  loginUser,
+  registerUser,
+  getGitHubRedirectUrl,
+  exchangeGitHubCode,
+  handleGitHubUser,
+  getGoogleRedirectUrl,
+  exchangeGoogleCode,
+  handleGoogleUser,
+  requestPasswordReset,
+  resetPassword,
+} from "../services/auth.service";
 import { requireString } from "../utils/request";
 import { env } from "../config/env";
 import { httpError } from "../utils/httpError";
@@ -290,3 +301,33 @@ export async function githubCallback(req: Request, res: Response, next: NextFunc
     res.redirect(`${frontendUrl}/login?github=error&message=${encodeURIComponent(message)}`);
   }
 }
+
+export function googleAuth(_req: Request, res: Response) {
+  const url = getGoogleRedirectUrl();
+  res.redirect(url);
+}
+
+export async function googleCallback(req: Request, res: Response, next: NextFunction) {
+  try {
+    const code = req.query.code as string | undefined;
+    if (!code) {
+      throw httpError(400, "Missing authorization code");
+    }
+
+    const gUser = await exchangeGoogleCode(code);
+    const result = await handleGoogleUser(gUser);
+
+    const frontendUrl = env.frontendUrl;
+    const params = new URLSearchParams({
+      token: result.token,
+      user: JSON.stringify(result.user),
+    });
+
+    res.redirect(`${frontendUrl}/login?google=success&${params.toString()}`);
+  } catch (error) {
+    const frontendUrl = env.frontendUrl;
+    const message = error instanceof Error ? error.message : "Google login failed";
+    res.redirect(`${frontendUrl}/login?google=error&message=${encodeURIComponent(message)}`);
+  }
+}
+

@@ -290,25 +290,16 @@ export default function AIAvatar({
   className = "",
 }: AIAvatarProps) {
   const isDark = theme === "dark";
-  const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const px = SIZE_MAP[size].outer;
 
-  // Play ElevenLabs audio when URL changes
+  // Play audio when URL changes
   useEffect(() => {
     if (audioUrl && audioRef.current) {
       audioRef.current.src = audioUrl;
       audioRef.current.play().catch(() => {});
     }
   }, [audioUrl]);
-
-  // Play D-ID video when URL changes
-  useEffect(() => {
-    if (videoUrl && videoRef.current) {
-      videoRef.current.src = videoUrl;
-      videoRef.current.play().catch(() => {});
-    }
-  }, [videoUrl]);
 
   const statusColors: Record<AIStatus, string> = {
     speaking: isDark ? "#22c55e" : "#16a34a",
@@ -353,58 +344,35 @@ export default function AIAvatar({
           )}
         </AnimatePresence>
 
-        {/* Video mode (D-ID) */}
-        {videoUrl ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="w-full h-full rounded-full overflow-hidden"
-            style={{
-              border: `3px solid ${isDark ? "rgba(251,191,36,0.65)" : "rgba(217,119,6,0.45)"}`,
-              boxShadow: isDark
-                ? "0 0 32px rgba(251,191,36,0.45), 0 8px 32px rgba(0,0,0,0.5)"
-                : "0 0 24px rgba(217,119,6,0.25), 0 8px 24px rgba(0,0,0,0.15)",
-            }}
-          >
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              autoPlay
-              playsInline
-              muted={!!audioUrl} // mute D-ID video if using ElevenLabs audio separately
-            />
-          </motion.div>
-        ) : (
-          /* SVG Animated Face (fallback / no D-ID) */
-          <motion.div
-            className="w-full h-full rounded-full overflow-hidden flex items-center justify-center"
-            style={{
-              border: `3px solid ${isDark ? "rgba(251,191,36,0.55)" : "rgba(217,119,6,0.4)"}`,
-              boxShadow: isDark
-                ? "0 0 32px rgba(251,191,36,0.4), 0 8px 32px rgba(0,0,0,0.45)"
-                : "0 0 24px rgba(217,119,6,0.2), 0 6px 20px rgba(0,0,0,0.12)",
-            }}
-            animate={
-              aiStatus === "speaking"
-                ? { scale: [1, 1.015, 1] }
-                : aiStatus === "thinking"
-                  ? { scale: [1, 1.008, 1] }
-                  : { scale: [1, 1.005, 1] }
-            }
-            transition={{
-              duration: aiStatus === "speaking" ? 0.5 : 2.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            <AnimatedFace
-              aiStatus={aiStatus}
-              speechEnergy={speechEnergy}
-              size={size}
-              isDark={isDark}
-            />
-          </motion.div>
-        )}
+        {/* SVG Animated Interactive Face */}
+        <motion.div
+          className="w-full h-full rounded-full overflow-hidden flex items-center justify-center"
+          style={{
+            border: `3px solid ${isDark ? "rgba(251,191,36,0.55)" : "rgba(217,119,6,0.4)"}`,
+            boxShadow: isDark
+              ? "0 0 32px rgba(251,191,36,0.4), 0 8px 32px rgba(0,0,0,0.45)"
+              : "0 0 24px rgba(217,119,6,0.2), 0 6px 20px rgba(0,0,0,0.12)",
+          }}
+          animate={
+            aiStatus === "speaking"
+              ? { scale: [1, 1.015, 1] }
+              : aiStatus === "thinking"
+                ? { scale: [1, 1.008, 1] }
+                : { scale: [1, 1.005, 1] }
+          }
+          transition={{
+            duration: aiStatus === "speaking" ? 0.5 : 2.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        >
+          <AnimatedFace
+            aiStatus={aiStatus}
+            speechEnergy={speechEnergy}
+            size={size}
+            isDark={isDark}
+          />
+        </motion.div>
 
         {/* Status badge */}
         <motion.div
