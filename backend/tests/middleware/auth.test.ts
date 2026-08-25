@@ -7,6 +7,25 @@ jest.mock("../../src/services/auth.service", () => ({
   isTokenBlacklisted: (...args: unknown[]) => mockIsTokenBlacklisted(...args),
 }));
 
+jest.mock("../../src/services/session.service", () => ({
+  checkForceLogout: () => null,
+  checkUserForceLogout: () => null,
+  recordActivity: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock("../../src/config/prisma", () => ({
+  prisma: {
+    user: {
+      findUnique: jest.fn().mockImplementation(({ where, select }: any) => {
+        if (select?.activeSessionId) {
+          return Promise.resolve({ activeSessionId: "a".repeat(48) });
+        }
+        return Promise.resolve(null);
+      }),
+    },
+  },
+}));
+
 // Deterministic secret for signing test tokens.
 process.env.JWT_SECRET = "test-secret";
 
@@ -52,7 +71,8 @@ describe("requireAuth", () => {
   it("attaches the decoded user and calls next on a valid token", async () => {
     const user: AuthUser = { userId: "u1", email: "a@b.com", role: "USER" };
     const token = jwt.sign(user, SECRET, { algorithm: "HS256" });
-    const req = { headers: { authorization: `Bearer ${token}` } } as Request;
+    const sessionId = "a".repeat(48); // 48-char hex session ID
+    const req = { headers: { authorization: `Bearer ${token}`, "x-session-id": sessionId } } as Request;
     const next = jest.fn();
 
     await requireAuth(req, {} as Response, next as NextFunction);

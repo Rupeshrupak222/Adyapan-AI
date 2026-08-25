@@ -1,6 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { forgotPassword, resetPasswordController, githubAuth, githubCallback, googleAuth, googleCallback, login, adminLogin, logout, me, register, registerAdmin, refreshAccessToken, getSessionFromCookie } from "../controllers/auth.controller";
+import { forgotPassword, resetPasswordController, githubAuth, githubCallback, googleAuth, googleCallback, login, adminLogin, logout, me, register, registerAdmin, sessionCheck, refresh, getSessionFromCookie } from "../controllers/auth.controller";
 import { requireAuth } from "../middleware/auth";
 
 const authLimiter = rateLimit({
@@ -28,10 +28,11 @@ authRouter.post("/login", loginLimiter, login);
 authRouter.post("/admin-login", authLimiter, adminLogin);
 authRouter.post("/forgot-password", authLimiter, forgotPassword);
 authRouter.post("/reset-password", authLimiter, resetPasswordController);
+authRouter.post("/refresh", refresh);
 authRouter.post("/logout", requireAuth, logout);
-authRouter.post("/refresh", refreshAccessToken);
 authRouter.get("/session", getSessionFromCookie);
 authRouter.get("/me", requireAuth, me);
+authRouter.get("/session-check", requireAuth, sessionCheck);
 authRouter.get("/github", githubAuth);
 authRouter.get("/github/callback", githubCallback);
 authRouter.get("/callback/github", githubCallback);
