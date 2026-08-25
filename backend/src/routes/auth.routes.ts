@@ -23,6 +23,8 @@ authRouter.post("/logout", requireAuth, logout);
 authRouter.get("/me", requireAuth, me);
 authRouter.get("/github", githubAuth);
 authRouter.get("/github/callback", githubCallback);
+authRouter.get("/callback/github", githubCallback);
 authRouter.get("/google", googleAuth);
 authRouter.get("/google/callback", googleCallback);
+authRouter.get("/callback/google", googleCallback);
 
