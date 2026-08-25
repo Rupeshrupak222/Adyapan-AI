@@ -3,18 +3,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-/**
- * Client-side route guard.
- * Call at the top of any protected page.
- *
- * @param requiredRole  "USER" | "ADMIN" — if omitted, just checks login
- */
 export function useRequireAuth(requiredRole?: "USER" | "ADMIN") {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token");
-    const raw = localStorage.getItem("adyapan-user") || sessionStorage.getItem("adyapan-user");
+    const token = sessionStorage.getItem("adyapan-token") || localStorage.getItem("adyapan-token");
+    const raw = sessionStorage.getItem("adyapan-user") || localStorage.getItem("adyapan-user");
 
     if (!token || !raw) {
       const loginUrl = requiredRole === "ADMIN" ? "/admin-login" : "/login";
@@ -36,4 +30,3 @@ export function useRequireAuth(requiredRole?: "USER" | "ADMIN") {
     }
   }, [router, requiredRole]);
 }
-

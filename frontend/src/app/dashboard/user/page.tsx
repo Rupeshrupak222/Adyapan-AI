@@ -6,6 +6,9 @@ import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clearAuthSession } from "@/hooks/useAuth";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useSessionHeartbeat } from "@/hooks/useSessionHeartbeat";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
+import { useForceLogoutPopup } from "@/hooks/useForceLogoutPopup";
 import { useTheme } from "@/hooks/useTheme";
 import { api } from "@/services/api";
 import { cn } from "@/lib/cn";
@@ -847,6 +850,9 @@ function HubErrorBoundary({ children }: { children: React.ReactNode }) {
 
 function UserDashboardContent() {
   useRequireAuth("USER");
+  useSessionHeartbeat();
+  useIdleTimeout();
+  const [forceLogoutMsg, dismissForceLogout] = useForceLogoutPopup();
   const [user, setUser] = useState<AdyapanUser | null>(null);
   const [theme, setTheme] = useState("dark");
   // ΓöÇΓöÇ Start with a stable SSR-safe default to avoid hydration mismatches.
@@ -1250,6 +1256,7 @@ function UserDashboardContent() {
 
   return (
     <div suppressHydrationWarning className="relative overflow-hidden" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
+ {forceLogoutMsg && (<div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(6px)" }}><div className="rounded-2xl p-6 w-full max-w-sm shadow-2xl border" style={{ background: "rgba(15,15,30,0.75)", backdropFilter: "blur(40px) saturate(1.8)", WebkitBackdropFilter: "blur(40px) saturate(1.8)", borderColor: "rgba(255,255,255,0.15)", boxShadow: "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)" }}><p className="text-base font-semibold leading-relaxed mb-5" style={{ color: "#ffffff", textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>{forceLogoutMsg}</p><div className="flex justify-end"><button onClick={dismissForceLogout} className="px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.2)" }}>OK</button></div></div></div>)}
       {showOnboarding && <OnboardingFlow userId={user?.id} onComplete={() => setShowOnboarding(false)} />}
       <FloatingOrbs />
 

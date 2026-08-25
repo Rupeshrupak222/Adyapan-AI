@@ -17,6 +17,7 @@ model User {
   githubId  String?  @unique @map("github_id")
   googleId  String?  @unique @map("google_id")
   avatarUrl String?  @map("avatar_url")
+ activeSessionId String? @map("active_session_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   profile   Profile?
