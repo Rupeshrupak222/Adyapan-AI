@@ -992,26 +992,7 @@ export function MindMapsView() {
                 </div>
               </motion.div>
 
-              {/* Presets & How It Works */}
-              <div>
-                <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text }}><Zap size={15} style={{ color: c.amber }} /> Explore Presets</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { title: "Cellular Respiration", desc: "Visualizes glycolysis, Krebs cycle, and ETC nodes.", icon: <Star size={18} style={{ color: c.amber }} /> },
-                    { title: "React Lifecycle", desc: "Outlines mounting, updating, and unmounting phases.", icon: <Brain size={18} style={{ color: "#a78bfa" }} /> },
-                    { title: "Data Structures", desc: "Hierarchy of linear vs non-linear structures.", icon: <Sparkles size={18} style={{ color: "#22d3ee" }} /> },
-                  ].map((item, i) => (
-                    <motion.div key={item.title} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }}
-                      onClick={() => setTopic(item.title)} className="p-5 rounded-2xl cursor-pointer group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
-                      <div className="flex items-start gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
-                        <h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4>
-                      </div>
-                      <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
+
 
               <div>
                 <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text }}><Zap size={15} style={{ color: c.amber }} /> How It Works</h2>

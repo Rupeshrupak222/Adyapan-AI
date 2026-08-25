@@ -168,11 +168,22 @@ export function LearningStreakDashboard() {
     motivationalMessage: string;
   } | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
-  const [timeRange, setTimeRange] = useState<90 | 180 | 365>(180);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [timezone, setTimezone] = useState("UTC");
   const [sharingModalOpen, setSharingModalOpen] = useState(false);
   const [theme, setTheme] = useState("dark");
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [snakeActive, setSnakeActive] = useState(true);
+  const [snakeHeadIndex, setSnakeHeadIndex] = useState(0);
+
+  // Snake animation loop
+  useEffect(() => {
+    if (!snakeActive) return;
+    const interval = setInterval(() => {
+      setSnakeHeadIndex((prev) => prev + 1);
+    }, 130);
+    return () => clearInterval(interval);
+  }, [snakeActive]);
 
   const loadingChecklist = [
     "Analyzing Learning Activity",
@@ -507,7 +518,7 @@ export function LearningStreakDashboard() {
 
   const filteredHeatmap = () => {
     if (!heatmap.length) return [];
-    return heatmap.slice(-timeRange);
+    return heatmap.filter(d => d.date && new Date(d.date).getFullYear() === selectedYear);
   };
 
   // Get dynamic cell color based on active theme
@@ -577,60 +588,80 @@ export function LearningStreakDashboard() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className={cn(
-            "md:col-span-2 relative overflow-hidden rounded-3xl border p-6 flex flex-col justify-between h-[230px] transition-all",
+            "md:col-span-2 relative overflow-hidden rounded-3xl border p-6 flex flex-col justify-between min-h-[250px] transition-all shadow-xl",
             isLightTheme 
-              ? "bg-gradient-to-br from-orange-500/8 to-rose-500/8 border-orange-500/15" 
-              : "bg-gradient-to-br from-orange-950/20 to-red-950/20 border-white/5"
+              ? "bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-rose-500/10 border-orange-500/20" 
+              : "bg-gradient-to-br from-orange-950/40 via-amber-950/20 to-red-950/30 border-orange-500/20"
           )}
         >
           {/* Flame aura backglow */}
-          <div className="absolute top-[-30%] right-[-10%] w-[55%] h-[70%] rounded-full bg-radial-gradient from-orange-500/15 via-orange-500/5 to-transparent blur-[40px] pointer-events-none" />
+          <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[80%] rounded-full bg-radial-gradient from-orange-500/25 via-amber-500/10 to-transparent blur-[50px] pointer-events-none" />
           
           <div className="flex justify-between items-start z-10">
             <div>
-              <span className="text-[10px] text-orange-500 font-extrabold tracking-widest uppercase flex items-center gap-1.5">
-                <Zap size={10} className="fill-orange-500" /> Active learning streak
+              <span className="text-xs text-orange-500 font-extrabold tracking-widest uppercase flex items-center gap-1.5">
+                <Zap size={13} className="fill-orange-500" /> Active learning streak
               </span>
-              <h3 className={cn("text-sm font-bold mt-1", isLightTheme ? "text-slate-400" : "text-white/50")}>Current Streak</h3>
+              <h3 className={cn("text-sm font-bold mt-1", isLightTheme ? "text-slate-500" : "text-white/60")}>Current Streak</h3>
             </div>
             
             <motion.div 
               animate={{ 
-                scale: [1, 1.08, 1], 
-                y: [0, -3, 0],
-                filter: ["drop-shadow(0 0 4px rgba(249,115,22,0.2))", "drop-shadow(0 0 16px rgba(249,115,22,0.5))", "drop-shadow(0 0 4px rgba(249,115,22,0.2))"]
+                scale: [1, 1.12, 1], 
+                y: [0, -4, 0],
+                filter: ["drop-shadow(0 0 6px rgba(249,115,22,0.3))", "drop-shadow(0 0 20px rgba(249,115,22,0.7))", "drop-shadow(0 0 6px rgba(249,115,22,0.3))"]
               }}
               transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
               className={cn(
-                "w-12 h-12 rounded-2xl flex items-center justify-center border transition-colors",
-                isLightTheme ? "bg-orange-500/10 border-orange-500/20 text-orange-600" : "bg-orange-500/20 border-orange-500/30 text-orange-400"
+                "w-13 h-13 rounded-2xl flex items-center justify-center border transition-colors shadow-lg",
+                isLightTheme ? "bg-orange-500/15 border-orange-500/30 text-orange-600" : "bg-orange-500/25 border-orange-500/40 text-orange-400"
               )}
             >
-              <Flame size={24} className="fill-orange-400/10" />
+              <Flame size={26} className="fill-orange-500" />
             </motion.div>
           </div>
 
-          <div className="z-10 mt-4">
+          <div className="z-10 mt-3">
             <div className="flex items-baseline gap-2">
               <span className={cn("text-6xl font-black tracking-tighter", isLightTheme ? "text-slate-900" : "text-white")}>
                 <CountUp start={0} end={data.currentStreak} duration={1.5} />
               </span>
-              <span className="text-xl font-bold text-orange-500">Days</span>
+              <span className="text-2xl font-black text-orange-500">Days</span>
             </div>
             
-            <p className={cn("text-xs font-medium mt-2 leading-relaxed max-w-sm", isLightTheme ? "text-slate-500" : "text-white/60")}>
+            <p className={cn("text-xs font-medium mt-2 leading-relaxed max-w-md", isLightTheme ? "text-slate-600" : "text-white/70")}>
               {data.motivationalMessage}
             </p>
+
+            {/* Streak Milestone Progress Bar */}
+            <div className="mt-3.5 space-y-1.5">
+              <div className="flex justify-between text-[11px] font-extrabold" style={{ color: isLightTheme ? "#475569" : "#9ca3af" }}>
+                <span>Next Milestone: {data.currentStreak < 3 ? 3 : data.currentStreak < 7 ? 7 : data.currentStreak < 14 ? 14 : data.currentStreak < 30 ? 30 : data.currentStreak + 10} Days</span>
+                <span className="text-orange-500 font-extrabold">
+                  {data.currentStreak}/{data.currentStreak < 3 ? 3 : data.currentStreak < 7 ? 7 : data.currentStreak < 14 ? 14 : data.currentStreak < 30 ? 30 : data.currentStreak + 10} Days
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: isLightTheme ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.08)" }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{
+                    width: `${Math.min(100, Math.max(10, (data.currentStreak / (data.currentStreak < 3 ? 3 : data.currentStreak < 7 ? 7 : data.currentStreak < 14 ? 14 : data.currentStreak < 30 ? 30 : data.currentStreak + 10)) * 100))}%`
+                  }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                  className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="flex gap-4 items-center mt-2 z-10 pt-2 border-t border-white/5">
-            <div className={cn("flex items-center gap-1 text-[11px] font-bold", isLightTheme ? "text-slate-400" : "text-white/40")}>
-              <Clock size={11} /> 
-              Rule: <span className={isLightTheme ? "text-slate-650" : "text-white/60"}>{data.streakRule === "action" ? "1 Action = Active Day" : `>= ${data.timeRequirement} mins`}</span>
+          <div className="flex flex-wrap gap-2.5 items-center mt-3 z-10 pt-3 border-t border-white/10">
+            <div className={cn("flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-xl border", isLightTheme ? "bg-slate-100 border-slate-200 text-slate-700" : "bg-white/5 border-white/10 text-white/80")}>
+              <Clock size={13} className="text-orange-500" /> 
+              <span>Rule:</span> <span className="text-orange-500 font-extrabold">{data.streakRule === "action" ? "1 Action = Active Day" : `>= ${data.timeRequirement} mins`}</span>
             </div>
             {data.streakFreezes > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-[10px] text-sky-500 font-extrabold tracking-wider uppercase">
-                ❄️ Streak Freeze Active
+              <span className="px-2.5 py-1 rounded-xl bg-sky-500/15 border border-sky-500/30 text-xs text-sky-400 font-extrabold tracking-wider uppercase flex items-center gap-1">
+                ❄️ Streak Freeze Active ({data.streakFreezes})
               </span>
             )}
           </div>
@@ -642,30 +673,30 @@ export function LearningStreakDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className={cn(
-            "rounded-3xl border p-6 flex flex-col justify-between h-[230px] transition-colors",
-            isLightTheme ? "border-slate-200 bg-white/70" : "border-white/5 bg-[#0e0d1b]/60"
+            "rounded-3xl border p-6 flex flex-col justify-between min-h-[250px] transition-colors shadow-lg",
+            isLightTheme ? "border-slate-200 bg-white/80" : "border-white/10 bg-[#0e0d1b]/70"
           )}
         >
           <div className="flex justify-between items-start">
-            <span className={cn("text-xs font-bold", isLightTheme ? "text-slate-400" : "text-white/40")}>Longest Streak</span>
+            <span className={cn("text-xs font-extrabold uppercase tracking-wider", isLightTheme ? "text-slate-500" : "text-white/50")}>Longest Streak</span>
             <div className={cn(
-              "w-10 h-10 rounded-xl border flex items-center justify-center shadow-sm transition-colors",
-              isLightTheme ? "bg-amber-500/10 border-amber-500/20 text-amber-600" : "bg-amber-500/10 border-amber-500/20 text-amber-500"
+              "w-11 h-11 rounded-2xl border flex items-center justify-center shadow-sm transition-colors",
+              isLightTheme ? "bg-amber-500/15 border-amber-500/30 text-amber-600" : "bg-amber-500/20 border-amber-500/30 text-amber-400"
             )}>
-              <Trophy size={18} />
+              <Trophy size={20} />
             </div>
           </div>
           
-          <div>
-            <div className={cn("text-4xl font-extrabold tracking-tight", isLightTheme ? "text-slate-950" : "text-white")}>
-              <CountUp start={0} end={data.longestStreak} duration={1.5} /> Days
+          <div className="my-2">
+            <div className={cn("text-5xl font-black tracking-tight", isLightTheme ? "text-slate-950" : "text-white")}>
+              <CountUp start={0} end={data.longestStreak} duration={1.5} /> <span className="text-xl font-extrabold text-amber-500">Days</span>
             </div>
-            <p className={cn("text-xs mt-1", isLightTheme ? "text-slate-400" : "text-white/40")}>Your record since registering.</p>
+            <p className={cn("text-xs font-medium mt-1", isLightTheme ? "text-slate-500" : "text-white/50")}>Your record since registering.</p>
           </div>
 
           <div className={cn(
-            "border rounded-2xl p-2.5 flex items-center justify-between text-xs transition-colors",
-            isLightTheme ? "bg-slate-50 border-slate-100 text-slate-500" : "bg-white/[0.02] border-white/5 text-white/50"
+            "border rounded-2xl p-3 flex items-center justify-between text-xs font-semibold transition-colors",
+            isLightTheme ? "bg-slate-50 border-slate-200 text-slate-600" : "bg-white/[0.03] border-white/10 text-white/70"
           )}>
             <span>Previous record:</span>
             <strong className={isLightTheme ? "text-slate-900" : "text-white"}>{data.previousStreak} Days</strong>
@@ -678,17 +709,17 @@ export function LearningStreakDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className={cn(
-            "rounded-3xl border p-6 flex flex-col justify-between h-[230px] items-center text-center transition-colors",
-            isLightTheme ? "border-slate-200 bg-white/70" : "border-white/5 bg-[#0e0d1b]/60"
+            "rounded-3xl border p-6 flex flex-col justify-between min-h-[250px] items-center text-center transition-colors shadow-lg",
+            isLightTheme ? "border-slate-200 bg-white/80" : "border-white/10 bg-[#0e0d1b]/70"
           )}
         >
-          <span className={cn("text-xs font-bold w-full text-left", isLightTheme ? "text-slate-400" : "text-white/40")}>Consistency Score</span>
+          <span className={cn("text-xs font-extrabold uppercase tracking-wider w-full text-left", isLightTheme ? "text-slate-500" : "text-white/50")}>Consistency Score</span>
           
           <div className="relative w-28 h-28 flex items-center justify-center my-1.5">
             <svg className="w-full h-full transform -rotate-95" viewBox="0 0 36 36">
               <path
-                className={isLightTheme ? "text-slate-100" : "text-white/5"}
-                strokeWidth="3.2"
+                className={isLightTheme ? "text-slate-200" : "text-white/10"}
+                strokeWidth="3.5"
                 stroke="currentColor"
                 fill="none"
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -698,7 +729,7 @@ export function LearningStreakDashboard() {
                 animate={{ strokeDasharray: `${data.consistencyScore}, 100` }}
                 transition={{ duration: 1.5, ease: "easeOut" }}
                 className="text-emerald-500"
-                strokeWidth="3.2"
+                strokeWidth="3.5"
                 strokeLinecap="round"
                 stroke="currentColor"
                 fill="none"
@@ -707,11 +738,11 @@ export function LearningStreakDashboard() {
             </svg>
             <div className="absolute flex flex-col items-center justify-center">
               <span className={cn("text-2xl font-black", isLightTheme ? "text-slate-900" : "text-white")}>{data.consistencyScore}%</span>
-              <span className="text-[9px] font-bold text-emerald-550 tracking-widest uppercase">rolling</span>
+              <span className="text-[9px] font-extrabold text-emerald-500 tracking-widest uppercase">rolling</span>
             </div>
           </div>
 
-          <div className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-extrabold text-emerald-600">
+          <div className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xs font-extrabold text-emerald-500">
             {data.consistencyScore >= 80 ? "Learning Machine" : 
              data.consistencyScore >= 60 ? "Consistent Learner" :
              data.consistencyScore >= 40 ? "Building Habit" : "Getting Started"}
@@ -725,100 +756,191 @@ export function LearningStreakDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         className={cn(
-          "rounded-3xl border p-6 space-y-6 transition-colors",
-          isLightTheme ? "border-slate-200 bg-white/70" : "border-white/5 bg-[#0e0d1b]/60"
+          "rounded-3xl border p-6 space-y-6 transition-colors shadow-xl relative overflow-hidden",
+          isLightTheme ? "border-slate-200 bg-white/80" : "border-white/10 bg-[#0e0d1b]/70"
         )}
       >
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-white/5 pb-4">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-white/10 pb-4">
           <div>
-            <h3 className="text-base font-extrabold flex items-center gap-2">
-              <Calendar size={18} className="text-orange-500" /> Learning Contribution Heatmap
+            <h3 className="text-lg font-extrabold flex items-center gap-2">
+              <Calendar size={20} className="text-orange-500" /> Learning Contribution Heatmap
             </h3>
-            <p className={cn("text-xs mt-1", isLightTheme ? "text-slate-400" : "text-white/40")}>Track the volume of daily uploads, generations, planner commits, and chats.</p>
+            <p className={cn("text-xs font-medium mt-1", isLightTheme ? "text-slate-500" : "text-white/60")}>Track the volume of daily uploads, generations, planner commits, and chats.</p>
           </div>
 
-          {/* Time range toggle */}
+          {/* Dynamic Year selector pills (LeetCode Style) */}
           <div className={cn(
-            "flex p-0.5 rounded-xl border transition-colors self-start sm:self-center",
-            isLightTheme ? "border-slate-200 bg-slate-100" : "border-white/5 bg-white/[0.02]"
+            "flex p-1 rounded-xl border transition-colors self-start sm:self-center gap-1",
+            isLightTheme ? "border-slate-200 bg-slate-100" : "border-white/10 bg-white/[0.03]"
           )}>
-            {([90, 180, 365] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => setTimeRange(r)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                  timeRange === r 
-                    ? "bg-orange-500 text-black shadow-sm" 
-                    : (isLightTheme ? "text-slate-500 hover:text-slate-900" : "text-white/50 hover:text-white")
-                )}
-              >
-                {r} Days
-              </button>
-            ))}
+            {(() => {
+              const curY = new Date().getFullYear();
+              const yearSet = new Set<number>([curY, curY - 1, curY - 2]);
+              heatmap.forEach(d => {
+                if (d.date) {
+                  const y = new Date(d.date).getFullYear();
+                  if (y && !isNaN(y)) yearSet.add(y);
+                }
+              });
+              return Array.from(yearSet).sort((a, b) => b - a).map((year) => (
+                <button
+                  key={year}
+                  onClick={() => setSelectedYear(year)}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer",
+                    selectedYear === year 
+                      ? "bg-orange-500 text-black shadow-sm" 
+                      : (isLightTheme ? "text-slate-600 hover:text-slate-900" : "text-white/60 hover:text-white")
+                  )}
+                >
+                  {year}
+                </button>
+              ));
+            })()}
           </div>
         </div>
 
-        {/* Heatmap Grid Calendar */}
-        <div className="overflow-x-auto pb-2 custom-scrollbar">
-          <div className="min-w-[800px] flex gap-2 pt-2">
+        {/* LeetCode-Style Single-Frame 12-Month Heatmap Calendar ending at TODAY */}
+        <div className="w-full overflow-x-auto pb-1 custom-scrollbar">
+          <div className="w-full min-w-[760px] flex gap-2 pt-1 items-start">
             
-            <div className={cn("grid grid-rows-7 text-[9px] font-bold pr-2 select-none justify-between h-[96px] py-0.5", isLightTheme ? "text-slate-400" : "text-white/30")}>
-              <span>Mon</span>
-              <span>Wed</span>
-              <span>Fri</span>
-              <span>Sun</span>
+            {/* Left Day Labels Column */}
+            <div className="flex flex-col pt-5 shrink-0 justify-between select-none" style={{ height: "94px", width: "26px" }}>
+              <span className={cn("text-[10px] font-extrabold leading-none", isLightTheme ? "text-slate-700" : "text-white/80")}>Mon</span>
+              <span className={cn("text-[10px] font-extrabold leading-none", isLightTheme ? "text-slate-700" : "text-white/80")}>Wed</span>
+              <span className={cn("text-[10px] font-extrabold leading-none", isLightTheme ? "text-slate-700" : "text-white/80")}>Fri</span>
+              <span className={cn("text-[10px] font-extrabold leading-none", isLightTheme ? "text-slate-700" : "text-white/80")}>Sun</span>
             </div>
 
-            <div 
-              className="grid gap-1.5 h-[96px] flex-grow"
-              style={{
-                gridTemplateRows: "repeat(7, minmax(0, 1fr))",
-                gridAutoFlow: "column",
-              }}
-            >
-              {filteredHeatmap().map((day, idx) => {
-                const colorClass = getHeatmapIntensity(day);
+            {/* Months Container (12 Months in ONE FRAME ending at TODAY) */}
+            <div className="flex items-start justify-between flex-grow gap-1 sm:gap-1.5">
+              {(() => {
+                const dayMap = new Map<string, HeatmapDay>();
+                heatmap.forEach(d => {
+                  if (d.date) dayMap.set(d.date.split("T")[0], d);
+                });
 
-                return (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "w-[12px] h-[12px] rounded-[3px] transition-all cursor-pointer relative group",
-                      colorClass
-                    )}
-                  >
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 rounded-lg bg-zinc-950/95 border border-white/10 text-[10px] text-white font-medium shadow-xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all z-30 leading-normal">
-                      <div className="font-bold text-white/90 border-b border-white/5 pb-1 mb-1">
-                        {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </div>
-                      <div>{day.details || "No activity logged"}</div>
-                      {day.count > 0 && (
-                        <div className="text-orange-400 font-semibold mt-1">
-                          +{day.points} XP · {day.count} action{day.count > 1 ? "s" : ""}
-                        </div>
-                      )}
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                let totalGlobalIndex = 0;
+
+                // Calendar Months JAN to DEC for selectedYear
+                const yearMonthsData = months.map((monthName, monthIdx) => {
+                  const yr = selectedYear;
+                  const daysCount = new Date(yr, monthIdx + 1, 0).getDate();
+
+                  // Start weekday offset (Mon=0..Sun=6)
+                  const rawFirstDay = new Date(yr, monthIdx, 1).getDay();
+                  const startOffset = rawFirstDay === 0 ? 6 : rawFirstDay - 1;
+
+                  const monthDaysList: { day?: HeatmapDay; globalIdx?: number; isPadding?: boolean }[] = [];
+
+                  for (let p = 0; p < startOffset; p++) {
+                    monthDaysList.push({ isPadding: true });
+                  }
+
+                  for (let dayNum = 1; dayNum <= daysCount; dayNum++) {
+                    const mm = String(monthIdx + 1).padStart(2, "0");
+                    const dd = String(dayNum).padStart(2, "0");
+                    const dateKey = `${yr}-${mm}-${dd}`;
+
+                    const existing = dayMap.get(dateKey);
+                    monthDaysList.push({
+                      day: existing || { date: dateKey, count: 0, points: 0, details: "No activity logged" },
+                      globalIdx: totalGlobalIndex++,
+                    });
+                  }
+
+                  return { monthName, year: yr, days: monthDaysList };
+                });
+
+                const totalYearDays = totalGlobalIndex || 365;
+
+                return yearMonthsData.map(({ monthName, days }, mIdx) => (
+                  <div key={`${monthName}-${mIdx}`} className="flex flex-col items-center flex-grow">
+                    {/* Month Header Label Above Month Block */}
+                    <span className={cn("text-[10px] font-black uppercase tracking-wider mb-1.5", isLightTheme ? "text-slate-800" : "text-white/90")}>
+                      {monthName}
+                    </span>
+
+                    {/* 7-Row Grid for this Month */}
+                    <div 
+                      className="grid gap-[2px]"
+                      style={{
+                        gridTemplateRows: "repeat(7, 11px)",
+                        gridAutoFlow: "column",
+                        gridAutoColumns: "11px",
+                        height: "94px",
+                      }}
+                    >
+                      {days.map((item, idx) => {
+                        if (item.isPadding || !item.day) {
+                          return (
+                            <div
+                              key={`pad-${idx}`}
+                              className="w-[11px] h-[11px] opacity-0 pointer-events-none"
+                            />
+                          );
+                        }
+
+                        const { day, globalIdx = 0 } = item;
+                        const colorClass = getHeatmapIntensity(day);
+                        const isSnakeHead = snakeActive && globalIdx === (snakeHeadIndex % totalYearDays);
+                        const isSnakeTail =
+                          snakeActive &&
+                          [
+                            (snakeHeadIndex - 1 + totalYearDays) % totalYearDays,
+                            (snakeHeadIndex - 2 + totalYearDays) % totalYearDays,
+                            (snakeHeadIndex - 3 + totalYearDays) % totalYearDays,
+                          ].includes(globalIdx);
+
+                        return (
+                          <div
+                            key={day.date}
+                            className={cn(
+                              "w-[11px] h-[11px] rounded-[2.5px] transition-all cursor-pointer relative group flex items-center justify-center",
+                              colorClass,
+                              isSnakeHead && "bg-emerald-400 shadow-[0_0_12px_#10b981] scale-125 z-20 border border-white",
+                              isSnakeTail && "bg-emerald-500/80 shadow-[0_0_8px_#10b981] scale-110"
+                            )}
+                          >
+                            {/* Snake Head Icon */}
+                            {isSnakeHead && <span className="text-[7px] leading-none">🐍</span>}
+
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 rounded-xl bg-zinc-950/95 border border-white/15 text-xs text-white font-medium shadow-2xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all z-30 leading-normal">
+                              <div className="font-extrabold text-white/90 border-b border-white/10 pb-1 mb-1">
+                                {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </div>
+                              <div>{day.details || "No activity logged"}</div>
+                              {day.count > 0 && (
+                                <div className="text-orange-400 font-extrabold mt-1">
+                                  +{day.points} XP · {day.count} action{day.count > 1 ? "s" : ""}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                );
-              })}
+                ));
+              })()}
             </div>
           </div>
         </div>
 
         {/* Legend */}
-        <div className={cn("flex justify-between items-center text-[10px] select-none pt-2 border-t border-white/5", isLightTheme ? "text-slate-400" : "text-white/30")}>
-          <span>{filteredHeatmap().length > 0 ? new Date(filteredHeatmap()[0].date).toLocaleDateString() : ""}</span>
-          <div className="flex items-center gap-1.5">
+        <div className={cn("flex justify-between items-center text-xs font-semibold select-none pt-2 border-t border-white/10", isLightTheme ? "text-slate-500" : "text-white/40")}>
+          <span>Jan 1, {selectedYear}</span>
+          <div className="flex items-center gap-2">
             <span>Less</span>
-            <div className={cn("w-[10px] h-[10px] rounded-[2px]", isLightTheme ? "bg-slate-200" : "bg-white/[0.02]")} />
-            <div className="w-[10px] h-[10px] rounded-[2px] bg-emerald-900/20 border border-emerald-500/10" />
-            <div className="w-[10px] h-[10px] rounded-[2px] bg-emerald-800/60 border border-emerald-500/20" />
-            <div className="w-[10px] h-[10px] rounded-[2px] bg-emerald-555" />
+            <div className={cn("w-[11px] h-[11px] rounded-[3px]", isLightTheme ? "bg-slate-200" : "bg-white/[0.04]")} />
+            <div className="w-[11px] h-[11px] rounded-[3px] bg-emerald-900/30 border border-emerald-500/20" />
+            <div className="w-[11px] h-[11px] rounded-[3px] bg-emerald-700/60 border border-emerald-500/30" />
+            <div className="w-[11px] h-[11px] rounded-[3px] bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
             <span>More</span>
           </div>
-          <span>Today</span>
+          <span>Dec 31, {selectedYear}</span>
         </div>
       </motion.div>
 

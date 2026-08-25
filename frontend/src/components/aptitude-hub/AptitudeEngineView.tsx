@@ -104,12 +104,14 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     red: "#ef4444",
   };
 
-  const [view, setViewState] = useState<AptitudeView | "topic_select">("home");
+  const [view, setViewState] = useState<AptitudeView | "topic_select" | "topic_tests_list">("home");
   const [selectedCategory, setSelectedCategory] = useState<AptitudeCategory | null>(null);
   const [selectedMode, setSelectedMode] = useState<TestMode | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string>("");
   const [selectedTopic, setSelectedTopic] = useState<string>("");
   const [difficulty, setDifficulty] = useState<string>("medium");
+  const [topicTests, setTopicTests] = useState<any[]>([]);
+  const [testsLoading, setTestsLoading] = useState(false);
   const [session, setSession] = useState<AptitudeSession | null>(null);
   const [progress, setProgress] = useState<SessionProgress>({
     currentIdx: 0, answers: [], timeElapsed: 0, timeRemaining: 0, bookmarkedCount: 0, flaggedCount: 0
@@ -126,6 +128,20 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
   const [questionStartTime, setQuestionStartTime] = useState<number>(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const loadTopicTests = async (topic: string, cat?: string) => {
+    setTestsLoading(true);
+    try {
+      const { data } = await api.get(`/aptitude/topic-tests?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(cat || selectedCategory || "quantitative")}`);
+      if (data.success && data.tests) {
+        setTopicTests(data.tests);
+      }
+    } catch (err) {
+      console.error("Failed to load topic tests", err);
+    } finally {
+      setTestsLoading(false);
+    }
+  };
 
   const loadAnalytics = async () => {
     try {
@@ -177,7 +193,8 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     topic?: string,
     company?: string,
     diff?: string,
-    count?: number
+    count?: number,
+    testId?: string
   ) => {
     if (quota.exhausted) return;
     setAiLoading(true);
@@ -190,7 +207,8 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
         topic,
         company,
         difficulty: diff || difficulty,
-        count: count || 15,
+        count: count || 30,
+        testId,
         requestId
       });
       if (data.success && data.session) {
@@ -1070,7 +1088,11 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                             custom={i}
                             whileHover={{ y: -3, scale: 1.02 }}
                             whileTap={{ scale: 0.97 }}
-                            onClick={() => { setSelectedTopic(topic); startSession(selectedMode || "practice", selectedCategory, topic, undefined, difficulty); }}
+                            onClick={() => {
+                              setSelectedTopic(topic);
+                              setViewState("topic_tests_list");
+                              loadTopicTests(topic, selectedCategory || undefined);
+                            }}
                             className="p-4 border rounded-2xl cursor-pointer transition-all"
                             style={{ background: c.cardBg, borderColor: c.border }}
                           >
@@ -1091,13 +1113,88 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                                 </div>
                               </div>
                             ) : (
-                              <p className="text-[9px] mt-1.5" style={{ color: c.textMuted }}>Not yet practiced</p>
+                              <p className="text-[9px] mt-1.5" style={{ color: c.textMuted }}>Click to view tests (30 Qs)</p>
                             )}
                           </motion.div>
                         );
                       })}
                     </div>
                   </>
+                )}
+              </motion.div>
+            )}
+
+            {view === "topic_tests_list" && (
+              <motion.div key="topic-tests-list" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-5 overflow-y-auto max-h-[calc(100vh-160px)] pr-1 custom-scrollbar">
+                <div className="flex items-center gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setViewState("topic_select")}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center border"
+                    style={{ borderColor: c.border, color: c.textSec }}
+                  >
+                    <ArrowLeft size={14} />
+                  </motion.button>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-500">{selectedCategory || "Aptitude"}</span>
+                    <h3 className="text-base font-extrabold" style={{ color: c.text }}>{selectedTopic} — Available Tests</h3>
+                  </div>
+                </div>
+
+                {testsLoading ? (
+                  <div className="p-8 text-center text-xs text-amber-500 animate-pulse font-bold">
+                    Fetching stored tests from database...
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {topicTests.map((t, idx) => (
+                      <motion.div
+                        key={t.id || idx}
+                        whileHover={{ y: -3, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="p-5 border rounded-2xl flex flex-col justify-between space-y-4"
+                        style={{ background: c.cardBg, borderColor: c.border }}
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
+                              {t.difficulty || "medium"}
+                            </span>
+                            <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">30 Questions</span>
+                          </div>
+                          <h4 className="text-sm font-extrabold" style={{ color: c.text }}>{t.title || `Test ${t.testNumber || idx + 1}`}</h4>
+                          <p className="text-[11px]" style={{ color: c.textMuted }}>30 placement questions • Stored in DB</p>
+                        </div>
+
+                        {t.completed ? (
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-[11px] font-bold">
+                              <span style={{ color: c.textSec }}>Last Score:</span>
+                              <span className="text-emerald-400 font-extrabold">{t.score}/30 ({Math.round((t.score / 30) * 100)}%)</span>
+                            </div>
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => startSession("topic_test", selectedCategory || undefined, selectedTopic, undefined, t.difficulty, 30, t.id)}
+                              className="w-full py-2.5 rounded-xl text-xs font-bold text-amber-500 border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20"
+                            >
+                              Retake {t.title || `Test ${idx + 1}`}
+                            </motion.button>
+                          </div>
+                        ) : (
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => startSession("topic_test", selectedCategory || undefined, selectedTopic, undefined, t.difficulty, 30, t.id)}
+                            className="w-full py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md hover:from-amber-400 hover:to-amber-500"
+                          >
+                            Start {t.title || `Test ${idx + 1}`}
+                          </motion.button>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
                 )}
               </motion.div>
             )}

@@ -638,8 +638,17 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
           <div className="space-y-2">
             {data.dailyBrief.lines.map((line, i) => {
               let displayLine = line;
-              if (i === 0 && userFirstName) {
-                displayLine = displayLine.replace(/Good (Morning|Afternoon|Evening),?\s*(User|there|Honey|Learner|Student)?/i, (match, p1) => `Good ${p1}, ${userFirstName}`);
+              if (i === 0) {
+                const hour = new Date().getHours();
+                const timeOfDay = hour >= 12 && hour < 17 ? "Afternoon" : hour >= 17 ? "Evening" : "Morning";
+                let raw = (userFirstName || data.dailyBrief?.userName || (user?.name ? user.name.split(" ")[0] : "") || "").trim().replace(/[,.!?]/g, "");
+                if (raw.length > 2 && raw.length % 2 === 0) {
+                  const half = raw.length / 2;
+                  if (raw.substring(0, half).toLowerCase() === raw.substring(half).toLowerCase()) {
+                    raw = raw.substring(0, half);
+                  }
+                }
+                displayLine = raw ? `Good ${timeOfDay}, ${raw}.` : `Good ${timeOfDay}.`;
               }
               return (
                 <motion.p

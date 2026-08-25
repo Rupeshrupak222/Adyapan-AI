@@ -768,7 +768,6 @@ function CodingHubContent() {
                             <span className="font-bold text-[var(--text-primary)] hover:text-amber-500 cursor-pointer transition-colors block max-w-sm truncate" onClick={() => handleOpenQuestion(q)}>
                               {q.title}
                             </span>
-                            <span className="text-[10px] text-[var(--text-secondary)] mt-0.5 block">{q.externalId}</span>
                           </td>
                           <td className="py-4 px-2 text-purple-500 font-semibold">{q.topic}</td>
                           <td className="py-4 px-2">
@@ -841,7 +840,7 @@ function CodingHubContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end"
+            className="fixed inset-x-0 top-[70px] bottom-0 z-40 bg-black/60 backdrop-blur-sm flex justify-end"
             onClick={() => setDrawerOpen(false)}
           >
             <motion.div
@@ -849,7 +848,7 @@ function CodingHubContent() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="w-full max-w-2xl bg-[var(--bg-dark)] border-l border-[var(--border-color)] h-full overflow-y-auto p-6 flex flex-col justify-between shadow-2xl relative"
+              className="w-full max-w-2xl bg-[var(--bg-card)] border-l border-[var(--border-color)] h-full overflow-y-auto p-6 flex flex-col justify-between shadow-2xl relative"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Top Bar inside Drawer */}
@@ -861,7 +860,7 @@ function CodingHubContent() {
                     </span>
                     <div>
                       <h3 className="text-lg font-bold text-[var(--text-primary)] leading-tight">{selectedQuestion.title}</h3>
-                      <p className="text-[10px] text-[var(--text-secondary)] font-medium">Contest Codeforces · {selectedQuestion.externalId}</p>
+                      <p className="text-[10px] text-[var(--text-secondary)] font-medium">Codeforces Problem</p>
                     </div>
                   </div>
                   

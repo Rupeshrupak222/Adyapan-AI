@@ -39,14 +39,10 @@ export const FeatureCreditBadge: React.FC<FeatureCreditBadgeProps> = ({
   if (isPaid) {
     return (
       <div
-        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
-          isDark
-            ? "bg-purple-950/40 border-purple-500/30 text-purple-300"
-            : "bg-purple-50 border-purple-200 text-purple-800"
-        } ${className}`}
+        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black shadow-md border bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white border-purple-400/40 ${className}`}
       >
-        <Zap className="w-3.5 h-3.5 text-purple-400 fill-current" />
-        <span>Unlimited Pro Access</span>
+        <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300 animate-pulse" />
+        <span className="tracking-wide">Unlimited Pro Access</span>
       </div>
     );
   }

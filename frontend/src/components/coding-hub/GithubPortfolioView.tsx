@@ -454,7 +454,7 @@ export function GithubPortfolioView() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Ashish Kumar"
+                    placeholder="Your Name"
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
                   />
                 </div>

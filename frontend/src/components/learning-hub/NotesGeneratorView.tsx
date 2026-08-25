@@ -433,83 +433,46 @@ export function NotesGeneratorView() {
           {!generating && !notesData && (
             <motion.div key="empty" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
               {/* Config Form */}
-              <motion.div className="p-6 rounded-3xl relative overflow-hidden" style={{ background: c.surface, border: `2px solid ${c.border}` }}>
+              <motion.div className="p-6 rounded-3xl relative overflow-visible" style={{ background: c.surface, border: `2px solid ${c.border}` }}>
                 <div className="absolute inset-0 pointer-events-none">
                   <div className="absolute top-4 right-8 w-24 h-24 rounded-full" style={{ opacity: c.isDark ? 0.05 : 0.08, background: "radial-gradient(circle, #f59e0b, transparent)" }} />
                   <div className="absolute bottom-4 left-8 w-16 h-16 rounded-full" style={{ opacity: c.isDark ? 0.04 : 0.06, background: "radial-gradient(circle, #8b5cf6, transparent)" }} />
                 </div>
-                <div className="relative z-10 space-y-4">
-                  <h3 className="text-lg font-extrabold text-center" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Configure Notes Outline</h3>
-                  <div className="space-y-3 max-w-xl mx-auto">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold" style={{ color: c.textSec }}>Topic or Subject</label>
+                <div className="relative z-10 space-y-4">                  <h3 className="text-xl font-extrabold text-center" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Configure Notes Outline</h3>
+                  <div className="space-y-4 max-w-xl mx-auto">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-extrabold uppercase tracking-widest" style={{ color: c.textSec }}>Topic or Subject</label>
                       <input type="text" value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Operating Systems, Advanced Data Structures"
-                        className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }} />
+                        className="w-full px-5 py-3.5 text-base font-medium transition-all focus:outline-none" style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text, borderRadius: "18px" }} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold" style={{ color: c.textSec }}>Difficulty</label>
-                        <div className="relative">
-                          <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
-                            className="w-full rounded-xl px-4 py-2.5 pr-10 text-sm transition-all focus:outline-none appearance-none cursor-pointer" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
-                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Beginner</option>
-                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Intermediate</option>
-                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Advanced</option>
-                          </select>
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" style={{ color: c.textSec }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                          </span>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold" style={{ color: c.textSec }}>Note Type</label>
-                        <div className="relative">
-                          <select value={noteType} onChange={e => setNoteType(e.target.value)}
-                            className="w-full rounded-xl px-4 py-2.5 pr-10 text-sm transition-all focus:outline-none appearance-none cursor-pointer" style={{ background: c.isDark ? "#121214" : "#ffffff", border: `1px solid ${c.border}`, color: c.text }}>
-                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Detailed Notes</option>
-                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Short Revision</option>
-                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Formulas Only</option>
-                            <option style={{ background: c.isDark ? "#121214" : "#ffffff", color: c.text }}>Exam Cheat Sheet</option>
-                          </select>
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" style={{ color: c.textSec }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                          </span>
-                        </div>
-                      </div>
+                      <CustomSelect
+                        label="Difficulty"
+                        value={difficulty}
+                        options={["Beginner", "Intermediate", "Advanced"]}
+                        onChange={setDifficulty}
+                        c={c}
+                      />
+                      <CustomSelect
+                        label="Note Type"
+                        value={noteType}
+                        options={["Detailed Notes", "Short Revision", "Formulas Only", "Exam Cheat Sheet"]}
+                        onChange={setNoteType}
+                        c={c}
+                      />
                     </div>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       onClick={handleGenerate}
-                      className="w-full py-2.5 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 transition-all" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>
+                      className="w-full py-3.5 rounded-2xl text-base font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", borderRadius: "18px" }}>
                       <BookOpen size={16} /> Generate Notes
                     </motion.button>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Presets */}
-              <div>
-                <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text }}><Zap size={15} style={{ color: c.amber }} /> Choose from Templates</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { title: "Exam Study Guide", desc: "Structured to highlight essential exam components, sample review formulations, and critical milestones.", icon: <Star size={18} style={{ color: c.amber }} /> },
-                    { title: "Key Terms & Glossaries", desc: "Filters subject files to isolate definitions, equations, algorithms, and core keywords.", icon: <Brain size={18} style={{ color: "#a78bfa" }} /> },
-                    { title: "Interview Prep Notes", desc: "Formulates questions, brief code samples, and conceptual outlines suitable for placement audits.", icon: <Sparkles size={18} style={{ color: "#22d3ee" }} /> }
-                  ].map((item, i) => (
-                    <motion.div key={item.title} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }}
-                      onClick={() => setTopic(item.title)} className="p-5 rounded-2xl relative overflow-hidden cursor-pointer group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
-                        <div><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4></div>
-                      </div>
-                      <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-
               {/* How It Works */}
               <div>
-                <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text }}><Zap size={15} style={{ color: c.amber }} /> How It Works</h2>
+                <h2 className="text-sm font-extrabold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: c.text }}><Zap size={15} style={{ color: c.amber }} /> How It Works</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
                     { step: "01", title: "Configure", desc: "Input a study module brief or syllabus guidelines, choose details level.", icon: <BookOpen size={18} style={{ color: c.amber }} /> },
@@ -519,9 +482,9 @@ export function NotesGeneratorView() {
                     <motion.div key={item.step} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }} className="p-5 rounded-2xl relative overflow-hidden group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
-                        <div><span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: c.amber }}>Step {item.step}</span><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4></div>
+                        <div><span className="text-xs font-extrabold uppercase tracking-widest block" style={{ color: c.amber }}>Step {item.step}</span><h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4></div>
                       </div>
-                      <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
+                      <p className="text-sm leading-relaxed font-medium" style={{ color: c.textSec }}>{item.desc}</p>
                     </motion.div>
                   ))}
                 </div>
@@ -529,10 +492,10 @@ export function NotesGeneratorView() {
 
               {/* Features */}
               <motion.div variants={fadeUp} custom={3} initial="hidden" animate="visible" className="p-5 rounded-2xl" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
-                <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text }}><Star size={14} style={{ color: c.amber }} /> Features</h2>
+                <h2 className="text-sm font-extrabold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: c.text }}><Star size={14} style={{ color: c.amber }} /> Features</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
                   {["Topic-wise Sections", "Bullet Points", "Structured Layout", "Multiple Levels", "Search Content", "Copy & Export"].map((feat, i) => (
-                    <motion.div key={feat} custom={i} variants={scaleIn} initial="hidden" animate="visible" className="flex items-center gap-2 text-sm" style={{ color: c.textSec }}>
+                    <motion.div key={feat} custom={i} variants={scaleIn} initial="hidden" animate="visible" className="flex items-center gap-2 text-sm font-semibold" style={{ color: c.textSec }}>
                       <CheckCircle2 size={14} style={{ color: c.amber }} className="shrink-0" />
                       <span>{feat}</span>
                     </motion.div>
@@ -761,6 +724,114 @@ export function NotesGeneratorView() {
         </AnimatePresence>
       </div>
     </motion.div>
+  );
+}
+
+interface CustomSelectProps {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (val: string) => void;
+  c: ReturnType<typeof mkColors>;
+}
+
+function CustomSelect({ label, value, options, onChange, c }: CustomSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="space-y-1" ref={dropdownRef}>
+      <label className="text-xs font-semibold" style={{ color: c.textSec }}>{label}</label>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-all focus:outline-none cursor-pointer text-left"
+          style={{
+            background: c.inputBg,
+            border: `1px solid ${isOpen ? c.amber : c.border}`,
+            color: c.text,
+            borderRadius: "18px",
+            boxShadow: isOpen ? `0 0 0 3px ${c.amberBg}` : "none",
+          }}
+        >
+          <span className="truncate">{value}</span>
+          <ChevronRight
+            size={15}
+            className="transition-transform duration-200 flex-shrink-0"
+            style={{
+              color: c.textSec,
+              transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
+            }}
+          />
+        </button>
+
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="absolute left-0 right-0 top-full mt-1.5 z-[100] p-1.5 overflow-hidden"
+              style={{
+                background: c.isDark ? "#141422" : "#ffffff",
+                border: `1px solid ${c.isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`,
+                borderRadius: "18px",
+                boxShadow: c.isDark ? "0 16px 40px rgba(0,0,0,0.7)" : "0 16px 40px rgba(0,0,0,0.12)",
+              }}
+            >
+              <div className="space-y-0.5">
+                {options.map((opt) => {
+                  const isSelected = opt === value;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => {
+                        onChange(opt);
+                        setIsOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between px-3.5 py-2 text-sm font-medium transition-all text-left cursor-pointer"
+                      style={{
+                        background: isSelected
+                          ? (c.isDark ? "rgba(245,158,11,0.16)" : "rgba(245,158,11,0.12)")
+                          : "transparent",
+                        color: isSelected ? c.amber : c.text,
+                        borderRadius: "12px",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = c.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
+                    >
+                      <span>{opt}</span>
+                      {isSelected && <CheckCircle2 size={15} style={{ color: c.amber }} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 }
 

@@ -366,8 +366,10 @@ router.get("/questions", async (req: any, res) => {
 
     let mappedQuestions = questions.map((q: any) => {
       const p: any = progressMap.get(q.id);
+      // Hide internal IDs from user display, but keep id for internal operations
+      const { externalId, ...questionData } = q;
       return {
-        ...q,
+        ...questionData,
         progress: {
           status: p ? p.status : "unsolved",
           viewed: p ? p.viewed : false,

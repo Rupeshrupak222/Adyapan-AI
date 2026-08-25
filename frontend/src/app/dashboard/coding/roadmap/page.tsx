@@ -103,6 +103,153 @@ function TopicLibraryCard({ topics, topicProgress }: { topics: string[]; topicPr
   );
 }
 
+const skillLevelOptions = [
+  { label: "Beginner (No core DSA knowledge)", value: "Beginner" },
+  { label: "Intermediate (Familiar with arrays/stacks, weak on tree/graph)", value: "Intermediate" },
+  { label: "Advanced (Strong logic, practicing hard/optimization)", value: "Advanced" }
+];
+
+const targetCompanyOptions = [
+  { label: "FAANG Track (Google, Amazon, Microsoft)", value: "FAANG" },
+  { label: "Product Companies (Uber, Atlassian, Stripe)", value: "Product Companies" },
+  { label: "Startup Track (Rapid problem solving)", value: "Startup" },
+  { label: "TCS Track", value: "TCS" },
+  { label: "Infosys Track", value: "Infosys" },
+  { label: "Accenture Track", value: "Accenture" },
+  { label: "Competitive Programming Track", value: "Competitive Programming" }
+];
+
+const targetRoleOptions = [
+  { label: "Internship Placement", value: "Internship" },
+  { label: "Campus Placement (Entry level SDE)", value: "Placement" },
+  { label: "SDE-1 Role (Full-time placement)", value: "SDE-1" }
+];
+
+const targetTimelineOptions = [
+  { label: "4 Weeks (Fast Crash Course)", value: 4 },
+  { label: "6 Weeks (Standard path)", value: 6 },
+  { label: "8 Weeks (Thorough prep - Recommended)", value: 8 },
+  { label: "12 Weeks (Extended deep dive)", value: 12 }
+];
+
+const preferredLanguageOptions = [
+  { label: "C++", value: "C++" },
+  { label: "Java", value: "Java" },
+  { label: "Python", value: "Python" },
+  { label: "JavaScript", value: "JavaScript" }
+];
+
+const dailyStudyTimeOptions = [
+  { label: "1 Hour / Day", value: "1 hour" },
+  { label: "2 Hours / Day", value: "2 hours" },
+  { label: "4 Hours / Day", value: "4 hours" },
+  { label: "6+ Hours / Day", value: "6+ hours" }
+];
+
+function CustomSelect({
+  value,
+  onChange,
+  options,
+  isDark
+}: {
+  value: string | number;
+  onChange: (val: any) => void;
+  options: { label: string; value: string | number }[];
+  isDark: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((o) => String(o.value) === String(value)) || options[0];
+
+  return (
+    <div className="relative w-full overflow-visible" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 text-xs md:text-sm font-semibold transition-all cursor-pointer shadow-sm"
+        style={{
+          borderRadius: "18px",
+          background: isDark ? "rgba(14, 16, 37, 0.95)" : "#ffffff",
+          border: open
+            ? "1px solid #f59e0b"
+            : `1px solid ${isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)"}`,
+          color: isDark ? "#f3f4f6" : "#0f172a",
+        }}
+      >
+        <span className="truncate pr-2">{selectedOption?.label}</span>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 transition-transform duration-200 ${
+            open ? "rotate-180 text-amber-500" : isDark ? "text-white/40" : "text-slate-400"
+          }`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 4, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute left-0 right-0 top-full z-[100] max-h-60 overflow-y-auto p-1.5 shadow-2xl backdrop-blur-2xl"
+            style={{
+              borderRadius: "18px",
+              background: isDark ? "#0f1126" : "#ffffff",
+              border: `1px solid ${isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.12)"}`,
+              boxShadow: isDark
+                ? "0 20px 40px rgba(0,0,0,0.85)"
+                : "0 20px 40px rgba(0,0,0,0.15)",
+            }}
+          >
+            {options.map((opt) => {
+              const isSelected = String(opt.value) === String(value);
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 my-0.5 text-xs font-semibold transition-all cursor-pointer text-left"
+                  style={{
+                    borderRadius: "14px",
+                    background: isSelected
+                      ? isDark
+                        ? "rgba(245, 158, 11, 0.2)"
+                        : "rgba(245, 158, 11, 0.12)"
+                      : "transparent",
+                    color: isSelected
+                      ? "#f59e0b"
+                      : isDark
+                      ? "#e5e7eb"
+                      : "#334155",
+                  }}
+                >
+                  <span className="truncate pr-2">{opt.label}</span>
+                  {isSelected && <Check size={14} className="text-amber-500 shrink-0" />}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function CodingRoadmapPage() {
   useRequireAuth("USER");
 
@@ -325,8 +472,8 @@ export default function CodingRoadmapPage() {
                 exit={{ opacity: 0 }}
                 className="max-w-2xl mx-auto w-full"
               >
-                <div className="relative w-full rounded-2xl backdrop-blur-xl shadow-2xl overflow-hidden p-8 md:p-10" style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="relative w-full rounded-2xl backdrop-blur-xl shadow-2xl overflow-visible p-8 md:p-10" style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
                     <div className="absolute -top-24 -right-24 w-72 h-72 bg-amber-500/8 rounded-full blur-[100px]" />
                     <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-orange-500/6 rounded-full blur-[100px]" />
                     <div className="absolute top-0 right-0 p-8 opacity-[0.04] pointer-events-none">
@@ -337,9 +484,6 @@ export default function CodingRoadmapPage() {
                   <div className="relative z-10">
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                          <Route className="w-5 h-5 text-black" />
-                        </div>
                         <h2 className="text-xl font-black" style={{ backgroundImage: "linear-gradient(135deg, var(--text-primary), var(--text-secondary))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                           Setup Coding Roadmap
                         </h2>
@@ -361,93 +505,62 @@ export default function CodingRoadmapPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div className="flex flex-col gap-2">
                         <label className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Current Skill Level</label>
-                        <select
+                        <CustomSelect
                           value={formData.skillLevel}
-                          onChange={(e) => setFormData({ ...formData, skillLevel: e.target.value })}
-                          className="rounded-xl px-4 py-3 text-xs md:text-sm focus:outline-none focus:border-amber-500 transition"
-                          style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}
-                        >
-                          <option style={optionStyle} value="Beginner">Beginner (No core DSA knowledge)</option>
-                          <option style={optionStyle} value="Intermediate">Intermediate (Familiar with arrays/stacks, weak on tree/graph)</option>
-                          <option style={optionStyle} value="Advanced">Advanced (Strong logic, practicing hard/optimization)</option>
-                        </select>
+                          onChange={(val) => setFormData({ ...formData, skillLevel: val })}
+                          options={skillLevelOptions}
+                          isDark={isDark}
+                        />
                       </div>
 
                       <div className="flex flex-col gap-2">
                         <label className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Target Track</label>
-                        <select
+                        <CustomSelect
                           value={formData.targetCompany}
-                          onChange={(e) => setFormData({ ...formData, targetCompany: e.target.value })}
-                          className="rounded-xl px-4 py-3 text-xs md:text-sm focus:outline-none focus:border-amber-500 transition"
-                          style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}
-                        >
-                          <option style={optionStyle} value="FAANG">FAANG Track (Google, Amazon, Microsoft)</option>
-                          <option style={optionStyle} value="Product Companies">Product Companies (Uber, Atlassian, Stripe)</option>
-                          <option style={optionStyle} value="Startup">Startup Track (Rapid problem solving)</option>
-                          <option style={optionStyle} value="TCS">TCS Track</option>
-                          <option style={optionStyle} value="Infosys">Infosys Track</option>
-                          <option style={optionStyle} value="Accenture">Accenture Track</option>
-                          <option style={optionStyle} value="Competitive Programming">Competitive Programming Track</option>
-                        </select>
+                          onChange={(val) => setFormData({ ...formData, targetCompany: val })}
+                          options={targetCompanyOptions}
+                          isDark={isDark}
+                        />
                       </div>
 
                       <div className="flex flex-col gap-2">
                         <label className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Target Role</label>
-                        <select
+                        <CustomSelect
                           value={formData.targetRole}
-                          onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
-                          className="rounded-xl px-4 py-3 text-xs md:text-sm focus:outline-none focus:border-amber-500 transition"
-                          style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}
-                        >
-                          <option style={optionStyle} value="Internship">Internship Placement</option>
-                          <option style={optionStyle} value="Placement">Campus Placement (Entry level SDE)</option>
-                          <option style={optionStyle} value="SDE-1">SDE-1 Role (Full-time placement)</option>
-                        </select>
+                          onChange={(val) => setFormData({ ...formData, targetRole: val })}
+                          options={targetRoleOptions}
+                          isDark={isDark}
+                        />
                       </div>
 
                       <div className="flex flex-col gap-2">
                         <label className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Timeline Weeks</label>
-                        <select
+                        <CustomSelect
                           value={formData.targetTimeline}
-                          onChange={(e) => setFormData({ ...formData, targetTimeline: Number(e.target.value) })}
-                          className="rounded-xl px-4 py-3 text-xs md:text-sm focus:outline-none focus:border-amber-500 transition"
-                          style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}
-                        >
-                          <option style={optionStyle} value="4">4 Weeks (Fast Crash Course)</option>
-                          <option style={optionStyle} value="6">6 Weeks (Standard path)</option>
-                          <option style={optionStyle} value="8">8 Weeks (Thorough prep - Recommended)</option>
-                          <option style={optionStyle} value="12">12 Weeks (Extended deep dive)</option>
-                        </select>
+                          onChange={(val) => setFormData({ ...formData, targetTimeline: Number(val) })}
+                          options={targetTimelineOptions}
+                          isDark={isDark}
+                        />
                       </div>
 
                       <div className="flex flex-col gap-2">
                         <label className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Preferred Language</label>
-                        <select
+                        <CustomSelect
                           value={formData.preferredLanguage}
-                          onChange={(e) => setFormData({ ...formData, preferredLanguage: e.target.value })}
-                          className="rounded-xl px-4 py-3 text-xs md:text-sm focus:outline-none focus:border-amber-500 transition"
-                          style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}
-                        >
-                          <option style={optionStyle} value="C++">C++</option>
-                          <option style={optionStyle} value="Java">Java</option>
-                          <option style={optionStyle} value="Python">Python</option>
-                          <option style={optionStyle} value="JavaScript">JavaScript</option>
-                        </select>
+                          onChange={(val) => setFormData({ ...formData, preferredLanguage: val })}
+                          options={preferredLanguageOptions}
+                          isDark={isDark}
+                        />
                       </div>
 
                       <div className="flex flex-col gap-2">
                         <label className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Daily Study Time</label>
-                        <select
+                        <CustomSelect
                           value={formData.dailyStudyTime}
-                          onChange={(e) => setFormData({ ...formData, dailyStudyTime: e.target.value })}
-                          className="rounded-xl px-4 py-3 text-xs md:text-sm focus:outline-none focus:border-amber-500 transition"
-                          style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}
-                        >
-                          <option style={optionStyle} value="1 hour">1 Hour / Day</option>
-                          <option style={optionStyle} value="2 hours">2 Hours / Day</option>
-                          <option style={optionStyle} value="4 hours">4 Hours / Day</option>
-                          <option style={optionStyle} value="6+ hours">6+ Hours / Day</option>
-                        </select>
+                          onChange={(val) => setFormData({ ...formData, dailyStudyTime: val })}
+                          options={dailyStudyTimeOptions}
+                          isDark={isDark}
+                        />
                       </div>
                     </div>
 
