@@ -4,6 +4,8 @@ import { getMasterPrisma } from "../config/dynamicPrisma";
 import { autoResolveCompanyLogo } from "../utils/companyLogoResolver";
 import { scrapeAllJobSources, ScrapflyJob } from "./scrapfly.service";
 
+let apifyExceededUntil = 0;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface NormalizedJob {
@@ -864,7 +866,7 @@ export class JobDiscoveryService {
     const apifyToken = process.env.APIFY_API_KEY || process.env.APIFY_TOKEN || env.apifyApiKey || "";
     let ingestionResult: IngestionResult | null = null;
 
-    if (apifyToken) {
+    if (apifyToken && Date.now() >= apifyExceededUntil) {
       try {
         const apify = new ApifyClient({ token: apifyToken });
         const input = config.buildInput({});
@@ -878,7 +880,12 @@ export class JobDiscoveryService {
         ingestionResult = await this.ingestJobs(normalized, sourceName);
       } catch (err: any) {
         const errMsg = err?.message || String(err);
-        console.warn(`[JobDiscovery] Apify actor warning for ${sourceName}:`, errMsg);
+        if (errMsg.includes("hard limit exceeded") || errMsg.includes("usage hard limit") || errMsg.includes("quota")) {
+          apifyExceededUntil = Date.now() + 60 * 60 * 1000; // 1 hour cooldown
+          console.warn(`[JobDiscovery] Apify monthly limit reached. Pausing Apify calls for 1 hour.`);
+        } else {
+          console.warn(`[JobDiscovery] Apify actor warning for ${sourceName}:`, errMsg);
+        }
       }
     }
 

@@ -7,11 +7,15 @@ export interface SearchFilters {
   query?: string;
   company?: string;
   location?: string;
+  locations?: string[];
   country?: string;
   state?: string;
   city?: string;
   workMode?: string;
+  workModes?: string[];
   employmentType?: string;
+  employmentTypes?: string[];
+  departments?: string[];
   experienceMin?: number;
   experienceMax?: number;
   salaryMin?: number;
@@ -19,14 +23,71 @@ export interface SearchFilters {
   skills?: string[];
   industry?: string;
   education?: string;
+  educationList?: string[];
   companySize?: string;
   source?: string;
+  sources?: string[];
   isFeatured?: boolean;
   postedWithin?: "today" | "3days" | "week" | "month";
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
+  targetRole?: string;
+  userSkills?: string[];
+  userId?: string;
+}
+
+export function calculateJobMatch(job: any, targetRole?: string, userSkills: string[] = []) {
+  let score = 50;
+  const reasons: string[] = [];
+
+  const normTarget = (targetRole || "Software Developer").toLowerCase().trim();
+  const normTitle = (job.title || "").toLowerCase();
+  const normDesc = (job.description || "").toLowerCase();
+
+  // 1. Target Role Match (Up to 45 pts)
+  const roleKeywords = normTarget.split(/\s+/).filter(w => w.length > 2);
+  let roleMatchCount = 0;
+
+  if (normTitle.includes(normTarget)) {
+    score += 45;
+    reasons.push(`Direct match for your target role: "${targetRole || 'Software Developer'}"`);
+  } else {
+    for (const kw of roleKeywords) {
+      if (normTitle.includes(kw)) {
+        roleMatchCount++;
+      }
+    }
+    if (roleMatchCount > 0) {
+      const boost = Math.min(40, roleMatchCount * 20);
+      score += boost;
+      reasons.push(`Matches your interest in ${targetRole || 'Software Developer'}`);
+    } else if (normDesc.includes(normTarget) || roleKeywords.some(kw => normDesc.includes(kw))) {
+      score += 15;
+      reasons.push(`Relevant role responsibilities for ${targetRole || 'Software Developer'}`);
+    }
+  }
+
+  // 2. Skill Match (Up to 35 pts)
+  if (userSkills && userSkills.length > 0 && job.skills && Array.isArray(job.skills)) {
+    const jobSkillSet = new Set(job.skills.map((s: string) => s.toLowerCase()));
+    const matchedSkills = userSkills.filter(s => jobSkillSet.has(s.toLowerCase()));
+    if (matchedSkills.length > 0) {
+      const skillScore = Math.min(35, Math.round((matchedSkills.length / Math.max(1, userSkills.length)) * 40));
+      score += skillScore;
+      reasons.push(`Matches ${matchedSkills.length} of your key skills (${matchedSkills.slice(0, 3).join(', ')})`);
+    }
+  }
+
+  const finalScore = Math.min(99, Math.max(45, Math.round(score)));
+  const isRecommended = finalScore >= 65 || (normTarget && (normTitle.includes(normTarget) || roleMatchCount > 0));
+
+  return {
+    matchScore: finalScore,
+    isRecommended,
+    reasons: reasons.length > 0 ? reasons : ["Good fit based on active hiring trends"],
+  };
 }
 
 export interface SearchResult {
@@ -704,11 +765,25 @@ export class JobSearchService {
         }
       }
       const finalPostedAt = job.postedAt || job.createdAt || job.firstSeenAt || new Date();
-      // Normalize through the shared mapper so every card gets computed
-      // experience / mode / salary / education / passingYear strings.
       const mapped = mapDiscoveryJobToListing(job) || {};
-      return { ...job, ...mapped, skills: jobSkills, postedAt: finalPostedAt, postedDate: finalPostedAt };
+
+      const match = calculateJobMatch({ ...job, skills: jobSkills }, filters.targetRole, filters.userSkills);
+
+      return {
+        ...job,
+        ...mapped,
+        skills: jobSkills,
+        postedAt: finalPostedAt,
+        postedDate: finalPostedAt,
+        matchScore: match.matchScore,
+        isRecommended: match.isRecommended,
+        matchReasons: match.reasons,
+      };
     });
+
+    if (!filters.sortBy || filters.sortBy === "recommended" || filters.sortBy === "matchScore") {
+      mappedJobs.sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0));
+    }
 
     const totalPages = Math.ceil(total / limit);
 
@@ -718,7 +793,10 @@ export class JobSearchService {
       page,
       limit,
       totalPages,
-      filters,
+      filters: {
+        ...filters,
+        targetRole: filters.targetRole || "Software Developer",
+      },
       facets: await JobSearchService.getFacets(filters),
     };
 

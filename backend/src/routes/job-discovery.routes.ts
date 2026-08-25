@@ -16,9 +16,37 @@ jobDiscoveryRouter.get("/jobs", async (req: Request, res: Response) => {
     const {
       query, company, location, country, state, city, workMode, employmentType,
       experienceMin, experienceMax, salaryMin, salaryMax, skills, industry,
-      education, companySize, source, isFeatured, postedWithin,
-      sortBy = "postedAt", sortOrder = "desc", page = "1", limit = "20",
+      education, companySize, source, isFeatured, postedWithin, targetRole,
+      sortBy = "recommended", sortOrder = "desc", page = "1", limit = "20",
     } = req.query;
+
+    const userId = (req as any).user?.userId;
+    let userTargetRole = (targetRole as string) || "";
+    let userSkills: string[] = [];
+
+    if (userId) {
+      try {
+        const userPrisma = await getUserPrismaFromRequest(req);
+        const profile = await userPrisma.profile.findUnique({ where: { userId } });
+        if (profile) {
+          if (!userTargetRole && profile.targetRole) {
+            userTargetRole = profile.targetRole;
+          }
+          if (!userTargetRole && profile.careerGoal) {
+            userTargetRole = profile.careerGoal;
+          }
+          if (profile.skills && Array.isArray(profile.skills)) {
+            userSkills = profile.skills;
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch user profile for recommendations", err);
+      }
+    }
+
+    if (!userTargetRole) {
+      userTargetRole = "Software Developer";
+    }
 
     const filters: any = {
       query: query as string,
@@ -44,11 +72,13 @@ jobDiscoveryRouter.get("/jobs", async (req: Request, res: Response) => {
       sortOrder: sortOrder as "asc" | "desc",
       page: parseInt(page as string) || 1,
       limit: Math.min(100, parseInt(limit as string) || 20),
+      targetRole: userTargetRole,
+      userSkills,
+      userId,
     };
 
     const result = await JobSearchService.search(filters);
 
-    const userId = (req as any).user?.userId;
     if (userId && query) {
       JobSearchService.logSearch(userId, query as string, filters, result.total).catch(() => {});
     }

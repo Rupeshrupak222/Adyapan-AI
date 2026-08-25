@@ -3,7 +3,14 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { prisma } from "../config/prisma";
 
-const pkg = JSON.parse(readFileSync(join(__dirname, "..", "..", "package.json"), "utf-8"));
+let pkg: any = { name: "adyapan-ai-backend", version: "1.0.0" };
+try {
+  pkg = JSON.parse(readFileSync(join(__dirname, "..", "..", "package.json"), "utf-8"));
+} catch {
+  try {
+    pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8"));
+  } catch {}
+}
 
 export const healthRouter = Router();
 

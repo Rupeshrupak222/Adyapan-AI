@@ -13,28 +13,28 @@ export interface OpenRouterOptions {
   responseFormat?: { type: "json_object" | "text" };
 }
 
-// Gemini model fallback chain — only active supported models
+// Gemini model fallback chain — active supported models
 const GEMINI_MODEL_FALLBACKS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-pro",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
 ];
 
-// Groq model fallback chain — active fast models on Groq
+// Groq model fallback chain — active official fast models on Groq
 const GROQ_MODEL_FALLBACKS_STRONG = [
-  "groq/compound-mini",
-  "openai/gpt-oss-120b",
-  "qwen/qwen3.6-27b",
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
+  "mixtral-8x7b-32768",
 ];
 const GROQ_MODEL_FALLBACKS_FAST = [
-  "groq/compound-mini",
-  "openai/gpt-oss-20b",
+  "llama-3.1-8b-instant",
+  "llama3-70b-8192",
 ];
 
 // NVIDIA NIM model fallback chain
 const NVIDIA_NIM_MODELS = [
   { model: "meta/llama-3.3-70b-instruct", label: "Llama 3.3 70B" },
   { model: "deepseek-ai/deepseek-r1", label: "DeepSeek R1" },
-  { model: "mistralai/mistral-large-2-instruct", label: "Mistral Large" },
   { model: "qwen/qwen2.5-72b-instruct", label: "Qwen 2.5 72B" },
 ];
 
@@ -48,12 +48,11 @@ function resolveOpenRouterModel(requestedModel?: string): string {
   const lower = (requestedModel ?? "").toLowerCase();
   if (!lower) return FAST_OPENROUTER_DEFAULT;
   if (lower.includes("kimi")) return "moonshotai/kimi-k2";
-  if (lower.includes("gemini")) return "google/gemini-2.5-flash";
+  if (lower.includes("gemini")) return "google/gemini-2.0-flash-001";
   if (lower.includes("llama")) return "meta-llama/llama-3.3-70b-instruct";
   if (lower.includes("deepseek")) return "deepseek/deepseek-chat";
-  if (lower.includes("mistral")) return "mistralai/mistral-medium";
+  if (lower.includes("mistral")) return "mistralai/mistral-small-24b-instruct-2501";
   if (lower.includes("qwen")) return "qwen/qwen-2.5-72b-instruct";
-  if (lower.includes("glm")) return "z-ai/glm-4.5";
   return FAST_OPENROUTER_DEFAULT;
 }
 
@@ -164,7 +163,7 @@ export async function callAIRobust(
         model: provider.model,
         messages,
         temperature: options.temperature ?? 0.7,
-        max_tokens: options.maxTokens ?? 4096,
+        max_tokens: options.maxTokens ?? 1200,
       };
 
       if (options.responseFormat?.type === "json_object") {
@@ -175,7 +174,7 @@ export async function callAIRobust(
       }
 
       const controller = new AbortController();
-      const fetchTimeoutMs = (options.maxTokens ?? 4096) > 4096 ? 25000 : 12000;
+      const fetchTimeoutMs = (options.maxTokens ?? 1200) > 2000 ? 25000 : 12000;
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
 
       let res: Response;
@@ -213,7 +212,8 @@ export async function callAIRobust(
         const errMsg = data.error?.message ?? res.statusText;
         const isQuotaOr404 = res.status === 429 || res.status === 404 || res.status === 401 ||
                              String(errMsg).includes("quota") || String(errMsg).includes("RESOURCE_EXHAUSTED") ||
-                             String(errMsg).includes("does not exist") || String(errMsg).includes("not found");
+                             String(errMsg).includes("does not exist") || String(errMsg).includes("not found") ||
+                             String(errMsg).includes("more credits");
         
         if (isQuotaOr404) {
           console.warn(`[AI Engine] ${provider.name} quota/model error (HTTP ${res.status}): ${errMsg}. Cooling down for 60s.`);
@@ -241,27 +241,28 @@ export async function callAIRobust(
   throw new Error(`All AI providers failed. Tried ${providersToRun.length} options: ${errors.join(" | ")}`);
 }
 
-// Extracts clean JSON string by finding first '{' or '[' and matching to final '}' or ']'
+// Extracts clean JSON string by stripping reasoning tags and finding first '{' or '[' and matching to final '}' or ']'
 function stripMarkdownJson(text: string): string {
-  const firstBrace = text.indexOf("{");
-  const firstBracket = text.indexOf("[");
+  let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const firstBrace = cleaned.indexOf("{");
+  const firstBracket = cleaned.indexOf("[");
   
   let startIdx = -1;
   let endIdx = -1;
   
   if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
     startIdx = firstBrace;
-    endIdx = text.lastIndexOf("}");
+    endIdx = cleaned.lastIndexOf("}");
   } else if (firstBracket !== -1) {
     startIdx = firstBracket;
-    endIdx = text.lastIndexOf("]");
+    endIdx = cleaned.lastIndexOf("]");
   }
   
   if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-    return text.substring(startIdx, endIdx + 1);
+    return cleaned.substring(startIdx, endIdx + 1);
   }
   
-  return text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+  return cleaned.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
 }
 
 export async function generateText(

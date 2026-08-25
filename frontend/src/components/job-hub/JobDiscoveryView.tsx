@@ -142,8 +142,9 @@ const POSTED_WITHIN = [
 ];
 
 const SORT_OPTIONS = [
+  { value: "recommended", label: "Recommended for You" },
   { value: "postedAt", label: "Newest" },
-  { value: "matchScore", label: "Best Match" },
+  { value: "matchScore", label: "Best Match Score" },
   { value: "salaryMax", label: "Salary High-Low" },
   { value: "experienceMin", label: "Experience" },
   { value: "company", label: "Company" },
@@ -497,9 +498,10 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [targetRole, setTargetRole] = useState<string>("Software Developer");
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState("postedAt");
+  const [sortBy, setSortBy] = useState("recommended");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // ─── Facets State ───────────────────────────────────────────────────────
@@ -565,6 +567,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
       const params: Record<string, string> = {
         page: String(pageNum), limit: String(PAGE_LIMIT),
         sortBy, sortOrder: sortOrder,
+        targetRole: targetRole,
       };
       if (debouncedQuery) params.query = debouncedQuery;
       if (filters.location) params.location = filters.location;
@@ -598,7 +601,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [debouncedQuery, filters, sortBy, sortOrder, skillTags]);
+  }, [debouncedQuery, filters, sortBy, sortOrder, skillTags, targetRole]);
 
   const fetchSavedJobs = useCallback(async () => {
     try {
@@ -1052,14 +1055,20 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         className="rounded-2xl border p-5 cursor-pointer group transition-all duration-200 relative overflow-hidden"
         style={{ background: c.cardBg, borderColor: c.border }} onClick={() => openJobDetail(job)}>
 
-        {job.isFeatured && (
+        {(job as any).isRecommended ? (
+          <div className="absolute top-0 right-0">
+            <div className="px-2.5 py-1 text-[8px] font-black uppercase tracking-wider rounded-bl-xl bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md flex items-center gap-1">
+              <Sparkles size={9} /> Recommended
+            </div>
+          </div>
+        ) : job.isFeatured ? (
           <div className="absolute top-0 right-0">
             <div className="px-2.5 py-1 text-[8px] font-black uppercase tracking-wider rounded-bl-xl"
               style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
               <Star size={8} className="inline mr-1" /> Featured
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className="flex items-start gap-3 mb-3">
           <CompanyLogo company={job.company} logoUrl={job.logoUrl} />
@@ -2149,6 +2158,39 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                 <EmptyState c={c} onClearFilters={clearAllFilters} />
               ) : (
                 <>
+                  {/* Recommendation Header Banner */}
+                  <div className="p-4 rounded-2xl border mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md"
+                    style={{
+                      background: isDark ? "linear-gradient(135deg, rgba(245,158,11,0.14), rgba(99,102,241,0.08))" : "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(99,102,241,0.04))",
+                      borderColor: "rgba(245,158,11,0.3)"
+                    }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(245,158,11,0.25)" }}>
+                        <Sparkles size={18} style={{ color: "#f59e0b" }} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xs font-black uppercase tracking-wider" style={{ color: c.text }}>Recommended Jobs for You</h3>
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-500 border border-amber-500/30">Naukri AI Engine</span>
+                        </div>
+                        <p className="text-[11px] mt-0.5" style={{ color: c.textSec }}>
+                          Prioritizing top opportunities matching your interest in <strong className="text-amber-500 font-extrabold">{targetRole}</strong>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {["Software Developer", "Full Stack", "Data Scientist", "DevOps", "Frontend"].map(role => (
+                        <button
+                          key={role}
+                          onClick={() => { setTargetRole(role); }}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all border cursor-pointer ${targetRole === role ? "bg-amber-500 text-black border-amber-500 font-black shadow-sm" : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"}`}
+                        >
+                          {role}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-3"}>
                     {jobs.map((job, i) => viewMode === "grid" ? renderJobCard(job, i) : renderJobListCard(job, i))}
                   </div>

@@ -66,6 +66,15 @@ export function createApp() {
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));
 
+  // Standalone root healthcheck endpoint for container health probes (/health)
+  app.get("/health", (_req, res) => {
+    res.status(200).json({
+      success: true,
+      service: "adyapan-ai-backend",
+      status: "ok",
+    });
+  });
+
   // Health/readiness/version at root and under /api/health
   app.use("/api/health", healthRouter);
   app.use(healthRouter);
