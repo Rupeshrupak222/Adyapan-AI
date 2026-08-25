@@ -40,11 +40,12 @@ healthRouter.get("/ready", async (_req, res) => {
       database: "connected",
     });
   } catch (e: any) {
+    // Log the full error server-side; return a generic message to clients
+    console.error("[Health] Readiness probe failed:", e?.message || e);
     res.status(503).json({
       success: false,
       status: "not_ready",
       database: "disconnected",
-      error: e?.message || String(e),
     });
   }
 });

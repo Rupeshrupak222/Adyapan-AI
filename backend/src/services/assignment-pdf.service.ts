@@ -147,7 +147,9 @@ export async function generateAssignmentPdf(
     });
 
     const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: "domcontentloaded", timeout: 20000 });
+    const cspMeta = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src https: data: blob:; style-src \'unsafe-inline\' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:;">';
+    const hardenedHtml = htmlContent.replace("<head>", `<head>${cspMeta}`);
+    await page.setContent(hardenedHtml, { waitUntil: "domcontentloaded", timeout: 20000 });
 
     const pdfBuffer = await page.pdf({
       format: "A4",

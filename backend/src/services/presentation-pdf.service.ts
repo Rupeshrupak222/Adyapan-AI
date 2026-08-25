@@ -44,7 +44,7 @@ export async function generatePresentationPdf(spec: PresentationSpec): Promise<B
     const imagesHtml = (slide.images || [])
       .map(img => `
         <div class="image-wrapper">
-          <img src="${img.url}" alt="${cleanText(img.alt)}" class="slide-img" />
+          <img src="${cleanText(img.url)}" alt="${cleanText(img.alt)}" class="slide-img" />
           ${img.caption ? `<div class="image-caption">${cleanText(img.caption)}</div>` : ""}
         </div>
       `)
@@ -356,7 +356,9 @@ export async function generatePresentationPdf(spec: PresentationSpec): Promise<B
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });
-    await page.setContent(fullHtml, { waitUntil: "networkidle0", timeout: 60000 });
+    const cspMeta = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src https: data: blob:; style-src \'unsafe-inline\' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:;">';
+    const hardenedHtml = fullHtml.replace("<head>", `<head>${cspMeta}`);
+    await page.setContent(hardenedHtml, { waitUntil: "networkidle0", timeout: 60000 });
 
     const pdfBuffer = await page.pdf({
       format: "A4",

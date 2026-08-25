@@ -4,10 +4,29 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
+// Strict env allowlist for native execution: user code must NOT inherit server
+// secrets (DATABASE_URL, JWT_SECRET, API keys, etc.). Only the minimal set
+// needed by language toolchains is forwarded.
+const SANDBOX_ENV: Record<string, string | undefined> = {
+  PATH: process.env.PATH,
+  Path: process.env.Path,
+  PATHEXT: process.env.PATHEXT,
+  SYSTEMROOT: process.env.SYSTEMROOT,
+  SYSTEMDRIVE: process.env.SYSTEMDRIVE,
+  TEMP: process.env.TEMP || os.tmpdir(),
+  TMP: process.env.TMP || os.tmpdir(),
+  COMSPEC: process.env.COMSPEC,
+  HOME: process.env.HOME,
+  NODE_PATH: undefined,
+  JAVA_TOOL_OPTIONS: undefined,
+};
+
+const MAX_OUTPUT_BYTES = 64 * 1024; // 64 KB per stream cap
+
 function runProcess(cmd: string, args: string[], opts: { cwd?: string; timeout?: number; stdin?: string }): Promise<{ stdout: string; stderr: string; code: number }> {
   return new Promise((resolve) => {
     try {
-      const child = spawn(cmd, args, { cwd: opts.cwd, timeout: opts.timeout });
+      const child = spawn(cmd, args, { cwd: opts.cwd, timeout: opts.timeout, env: SANDBOX_ENV, windowsHide: true });
       let stdout = "";
       let stderr = "";
 
@@ -16,8 +35,8 @@ function runProcess(cmd: string, args: string[], opts: { cwd?: string; timeout?:
         child.stdin.end();
       }
 
-      child.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
-      child.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
+      child.stdout.on("data", (d: Buffer) => { if (stdout.length < MAX_OUTPUT_BYTES) stdout += d.toString(); });
+      child.stderr.on("data", (d: Buffer) => { if (stderr.length < MAX_OUTPUT_BYTES) stderr += d.toString(); });
 
       child.on("error", () => {
         resolve({ stdout: "", stderr: `Failed to spawn ${cmd}`, code: -1 });
@@ -400,7 +419,21 @@ export async function executeCode(
     }
   }
 
-  // Fallback to local native execution (Python / Node.js) if all Piston endpoints are offline/whitelisted
+  // Fallback to local native execution (Python / Node.js) if all Piston endpoints are offline/whitelisted.
+  // Disabled in production: native execution on the backend host is a critical
+  // privilege-escalation vector. In production, require Piston to be available.
+  if (env.nodeEnv === "production") {
+    return {
+      stdout: "",
+      stderr: "Code execution is temporarily unavailable. Piston service is offline.",
+      compile_output: "",
+      executionTime: 0,
+      memory: 0,
+      status: "Internal Error",
+      signal: null,
+      success: false,
+    };
+  }
   return executeNativeCode(language, code, stdin, timeout);
 }
 

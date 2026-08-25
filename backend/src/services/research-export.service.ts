@@ -16,7 +16,9 @@ export async function exportPaperPdf(paper: GeneratedPaper, templateId: string =
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
     });
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    const cspMeta = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src https: data: blob:; style-src \'unsafe-inline\' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:;">';
+    const hardenedHtml = html.replace("<head>", `<head>${cspMeta}`);
+    await page.setContent(hardenedHtml, { waitUntil: "networkidle0" });
 
     const paperTitleStr = typeof paper.title === "string" ? paper.title : (Array.isArray(paper.title) ? (paper.title as string[]).join(", ") : "Untitled Paper");
 

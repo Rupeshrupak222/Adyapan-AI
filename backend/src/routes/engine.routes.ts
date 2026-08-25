@@ -1186,6 +1186,16 @@ engineRouter.post("/:sessionId/proctor", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
+    // Ownership check
+    const owned = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+      select: { id: true },
+    });
+    if (!owned) {
+      res.status(404).json({ error: "Interview session not found" });
+      return;
+    }
+
     const points = pointsDeducted || 1;
     const { terminated, totalPoints } = await addViolationPoints(sessionId, points, p);
 
@@ -1209,6 +1219,16 @@ engineRouter.get("/:sessionId/proctor", async (req, res) => {
     const { sessionId } = req.params;
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
+
+    // Ownership check
+    const owned = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+      select: { id: true },
+    });
+    if (!owned) {
+      res.status(404).json({ error: "Interview session not found" });
+      return;
+    }
 
     const events = await p.proctoringEvent.findMany({
       where: { sessionId },

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getPlatformConfig, updatePlatformConfig } from "../config/platform-config";
 import { getSystemSettingsMemory } from "../controllers/admin.controller";
-import { requireUserId } from "../utils/request";
+import { requireAuth, requireRole } from "../middleware/auth";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 
 export const configRouter = Router();
@@ -33,10 +33,9 @@ configRouter.get("/:key", async (req, res) => {
   res.json({ success: true, key, value });
 });
 
-configRouter.put("/:key", async (req, res) => {
+configRouter.put("/:key", requireAuth, requireRole("ADMIN"), async (req, res) => {
   try {
-    requireUserId(req);
-    const { key } = req.params;
+    const key = String(req.params.key);
     const { value } = req.body;
     if (!value || !Array.isArray(value)) {
       res.status(400).json({ success: false, error: "value must be a non-empty array" });

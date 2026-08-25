@@ -315,6 +315,7 @@ export default function AICopilot({ isDrawer = false }: AICopilotProps) {
               style={{ color: "var(--text-primary)" }}
               dangerouslySetInnerHTML={{
                 __html: msg.content
+                  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
                   .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
                   .replace(/\n/g, "<br/>")
                   .replace(/```/g, ""),

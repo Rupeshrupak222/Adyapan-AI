@@ -114,6 +114,31 @@ function LoginPageContent() {
     if (oauthStatus === "success") {
       const token = params.get("token");
       const userStr = params.get("user");
+
+      // New flow: token is in httpOnly cookie, user info in URL params
+      if (!token && userStr) {
+        (async () => {
+          try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+            const sessionRes = await fetch(`${apiUrl}/auth/session`, { credentials: "include" });
+            const sessionData = await sessionRes.json();
+            if (sessionData.success && sessionData.token && sessionData.user) {
+              const user = sessionData.user as PlatformUser;
+              if (user.role === "ADMIN") {
+                setLoginError("Admin accounts cannot log in here. Please use the Admin Login page.");
+                return;
+              }
+              saveAuthSession(sessionData.token, user, true);
+              router.replace(getPostLoginTarget(user.role));
+              return;
+            }
+          } catch { /* fall through to error handling */ }
+          setLoginError("Failed to complete OAuth login. Please try again.");
+        })();
+        return;
+      }
+
+      // Legacy flow: token in URL params (backward compatibility)
       if (token && userStr) {
         try {
           const user = JSON.parse(userStr) as PlatformUser;

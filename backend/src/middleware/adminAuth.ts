@@ -32,7 +32,7 @@ export async function requireAdminAuth(
       throw httpError(401, "Admin authentication required");
     }
 
-    const decoded = jwt.verify(token, env.jwtSecret) as {
+    const decoded = jwt.verify(token, env.jwtSecret, { algorithms: ["HS256"] }) as {
       userId?: string;
       id?: string;
       email: string;

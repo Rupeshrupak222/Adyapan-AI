@@ -42,11 +42,10 @@ export function createApp() {
         if (
           allowedOrigins.includes(origin) ||
           /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-          /\.railway\.(app|internal)$/.test(origin) ||
-          /\.vercel\.app$/.test(origin) ||
-          origin.includes("railway.internal") ||
-          origin.includes("railway.app") ||
-          /\.onrender\.com$/.test(origin)
+          /^https:\/\/[a-z0-9-]+\.up\.railway\.app$/.test(origin) ||
+          /^https:\/\/adyapan-ai-[a-z0-9-]*\.vercel\.app$/.test(origin) ||
+          /^https:\/\/[a-z0-9-]+\.onrender\.com$/.test(origin) ||
+          origin === "http://adyapan-ai.railway.internal:5000"
         ) {
           return callback(null, true);
         }
@@ -59,6 +58,10 @@ export function createApp() {
   );
 
 
+
+  // Raw body parser for Razorpay webhook signature verification — mounted
+  // BEFORE express.json so the webhook path gets the raw Buffer.
+  app.use("/api/payment/webhook", express.raw({ type: "application/json" }));
 
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));

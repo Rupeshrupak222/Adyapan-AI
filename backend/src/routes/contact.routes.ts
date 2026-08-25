@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../config/prisma";
+import { requireAuth, requireRole } from "../middleware/auth";
 import { handleRouteError } from "../utils/routeError";
 
 export const contactRouter = Router();
@@ -74,7 +75,7 @@ contactRouter.post("/submit", async (req, res) => {
 });
 
 // Get all contact submissions (Admin only)
-contactRouter.get("/list", async (req, res) => {
+contactRouter.get("/list", requireAuth, requireRole("ADMIN"), async (req, res) => {
   try {
     const { status, page = "1", limit = "20" } = req.query;
 
@@ -125,7 +126,7 @@ contactRouter.get("/list", async (req, res) => {
 });
 
 // Update contact submission status (Admin only)
-contactRouter.patch("/:id/status", async (req, res) => {
+contactRouter.patch("/:id/status", requireAuth, requireRole("ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;

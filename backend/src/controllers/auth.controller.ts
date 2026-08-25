@@ -1,4 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
+import { randomBytes } from "crypto";
+import jwt from "jsonwebtoken";
 import {
   loginUser,
   registerUser,
@@ -10,6 +12,8 @@ import {
   handleGoogleUser,
   requestPasswordReset,
   resetPassword,
+  logout as logoutService,
+  refreshToken as refreshTokenService,
 } from "../services/auth.service";
 import { requireString } from "../utils/request";
 import { env } from "../config/env";
@@ -56,14 +60,17 @@ export async function register(req: Request, res: Response, next: NextFunction) 
 export async function registerAdmin(req: Request, res: Response, next: NextFunction) {
   try {
     const rawSecret = String(req.body?.adminSecret || req.body?.secret || "").replace(/^["']|["']$/g, "").trim();
-    const configuredSecret = String(env.adminRegisterSecret || "adyapan-admin-secret-2026").replace(/^["']|["']$/g, "").trim();
+    const configuredSecret = String(env.adminRegisterSecret || "").replace(/^["']|["']$/g, "").trim();
 
-    const defaultSecret = "adyapan-admin-secret-2026";
+    // The historical default secret is only honoured outside production so
+    // existing local/dev workflows keep working; production requires the
+    // configured ADMIN_REGISTER_SECRET.
+    const legacyDefaultSecret = "adyapan-admin-secret-2026";
 
     const isSecretValid =
       Boolean(rawSecret) && (
-        rawSecret === configuredSecret ||
-        rawSecret === defaultSecret
+        (Boolean(configuredSecret) && rawSecret === configuredSecret) ||
+        (env.nodeEnv !== "production" && rawSecret === legacyDefaultSecret)
       );
 
     if (!isSecretValid) {
@@ -237,11 +244,71 @@ export async function me(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export function logout(_req: Request, res: Response) {
+export async function logout(req: Request, res: Response) {
+  // Blacklist the presented JWT so a stolen/logged-out token is rejected
+  // immediately instead of remaining valid until natural expiry.
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+  if (token) {
+    await logoutService(token).catch(() => {});
+  }
   res.json({
     success: true,
     message: "Logged out",
   });
+}
+
+export async function refreshAccessToken(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken || typeof refreshToken !== "string") {
+      throw httpError(400, "Refresh token is required");
+    }
+    const result = await refreshTokenService(refreshToken);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getSessionFromCookie(req: Request, res: Response, next: NextFunction) {
+  try {
+    // The adyapan_session cookie is set by the OAuth callback.
+    // Frontend cannot read httpOnly cookies, so this endpoint extracts
+    // the token and returns it to the client for localStorage storage.
+    const cookieHeader = req.headers.cookie || "";
+    let sessionToken: string | undefined;
+    for (const part of cookieHeader.split(";")) {
+      const [k, ...v] = part.trim().split("=");
+      if (k === "adyapan_session") {
+        sessionToken = decodeURIComponent(v.join("="));
+        break;
+      }
+    }
+
+    if (!sessionToken) {
+      throw httpError(401, "No session cookie found");
+    }
+
+    // Verify the token is valid
+    const decoded = jwt.verify(sessionToken, env.jwtSecret, { algorithms: ["HS256"] }) as { userId: string };
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, name: true, email: true, role: true, plan: true, createdAt: true },
+    });
+
+    if (!user) {
+      throw httpError(401, "User not found");
+    }
+
+    // Clear the cookie (one-time use)
+    res.clearCookie("adyapan_session", { path: "/" });
+
+    res.json({ success: true, token: sessionToken, user });
+  } catch (error) {
+    next(error);
+  }
 }
 
 export async function forgotPassword(req: Request, res: Response, next: NextFunction) {
@@ -270,13 +337,48 @@ export async function resetPasswordController(req: Request, res: Response, next:
   }
 }
 
-export function githubAuth(_req: Request, res: Response) {
-  const url = getGitHubRedirectUrl();
+const OAUTH_STATE_COOKIE = "adyapan_oauth_state";
+
+function issueOAuthState(res: Response): string {
+  const state = randomBytes(16).toString("hex");
+  res.cookie(OAUTH_STATE_COOKIE, state, {
+    httpOnly: true,
+    secure: env.nodeEnv === "production",
+    sameSite: "lax",
+    maxAge: 10 * 60 * 1000,
+    path: "/",
+  });
+  return state;
+}
+
+function readCookie(req: Request, name: string): string {
+  const header = req.headers.cookie || "";
+  for (const part of header.split(";")) {
+    const [k, ...v] = part.trim().split("=");
+    if (k === name) return decodeURIComponent(v.join("="));
+  }
+  return "";
+}
+
+function validateOAuthState(req: Request, res: Response): boolean {
+  const cookieState = readCookie(req, OAUTH_STATE_COOKIE);
+  const queryState = String(req.query.state || "");
+  // Clear the single-use cookie either way
+  res.clearCookie(OAUTH_STATE_COOKIE, { path: "/" });
+  return Boolean(cookieState) && cookieState === queryState;
+}
+
+export function githubAuth(req: Request, res: Response) {
+  const state = issueOAuthState(res);
+  const url = getGitHubRedirectUrl(state);
   res.redirect(url);
 }
 
 export async function githubCallback(req: Request, res: Response, next: NextFunction) {
   try {
+    if (!validateOAuthState(req, res)) {
+      throw httpError(400, "Invalid OAuth state");
+    }
     const code = req.query.code as string | undefined;
     if (!code) {
       throw httpError(400, "Missing authorization code");
@@ -286,8 +388,18 @@ export async function githubCallback(req: Request, res: Response, next: NextFunc
     const result = await handleGitHubUser(githubUser);
 
     const frontendUrl = env.frontendUrl;
+
+    // Set JWT in httpOnly cookie (not exposed to JavaScript or Referer header)
+    res.cookie("adyapan_session", result.token, {
+      httpOnly: true,
+      secure: env.nodeEnv === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    });
+
+    // Also pass user info for display (token is in cookie, not URL)
     const params = new URLSearchParams({
-      token: result.token,
       user: JSON.stringify(result.user),
     });
 
@@ -299,13 +411,17 @@ export async function githubCallback(req: Request, res: Response, next: NextFunc
   }
 }
 
-export function googleAuth(_req: Request, res: Response) {
-  const url = getGoogleRedirectUrl();
+export function googleAuth(req: Request, res: Response) {
+  const state = issueOAuthState(res);
+  const url = getGoogleRedirectUrl(state);
   res.redirect(url);
 }
 
 export async function googleCallback(req: Request, res: Response, next: NextFunction) {
   try {
+    if (!validateOAuthState(req, res)) {
+      throw httpError(400, "Invalid OAuth state");
+    }
     const code = req.query.code as string | undefined;
     if (!code) {
       throw httpError(400, "Missing authorization code");
@@ -315,8 +431,17 @@ export async function googleCallback(req: Request, res: Response, next: NextFunc
     const result = await handleGoogleUser(gUser);
 
     const frontendUrl = env.frontendUrl;
+
+    // Set JWT in httpOnly cookie (not exposed to JavaScript or Referer header)
+    res.cookie("adyapan_session", result.token, {
+      httpOnly: true,
+      secure: env.nodeEnv === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    });
+
     const params = new URLSearchParams({
-      token: result.token,
       user: JSON.stringify(result.user),
     });
 

@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { exec } from "child_process";
-import { createHash } from "crypto";
+import { createHash, randomInt } from "crypto";
 import { Prisma, type User } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { env } from "../config/env";
@@ -649,11 +649,42 @@ export async function refreshToken(refreshToken: string) {
       throw httpError(404, "User not found");
     }
 
+    // Rotate: revoke the old refresh token session to prevent reuse
+    const oldHash = createHash("sha256").update(refreshToken).digest("hex");
+    try {
+      await (prisma as any).session.updateMany({
+        where: { refreshTokenHash: oldHash, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    } catch {
+      // Session table may not exist; continue without revocation
+    }
+
+    const newRefreshToken = signRefreshToken(user.id);
+
+    // Store the new refresh token hash
+    const newHash = createHash("sha256").update(newRefreshToken).digest("hex");
+    try {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      await (prisma as any).session.create({
+        data: {
+          userId: user.id,
+          tokenHash: createHash("sha256").update(signToken(user, false)).digest("hex"),
+          refreshTokenHash: newHash,
+          expiresAt,
+        },
+      });
+    } catch {
+      // Session table may not exist; continue
+    }
+
     return {
       token: signToken(user, false),
-      refreshToken: signRefreshToken(user.id),
+      refreshToken: newRefreshToken,
     };
-  } catch (err) {
+  } catch (err: any) {
+    if (err && typeof err === "object" && "statusCode" in err) throw err;
     throw httpError(401, "Invalid or expired refresh token");
   }
 }
@@ -732,7 +763,8 @@ const memoryPasswordResetTokens: Array<{
 }> = [];
 
 function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  // Cryptographically secure 6-digit OTP (Math.random is predictable)
+  return String(randomInt(100000, 1000000));
 }
 
 export async function requestPasswordReset(email: string): Promise<{ devOtp?: string }> {
@@ -741,6 +773,14 @@ export async function requestPasswordReset(email: string): Promise<{ devOtp?: st
   if (!user) {
     // Do not reveal whether an account exists
     return {};
+  }
+
+  // Bound memory: drop expired/consumed entries before appending
+  const now = new Date();
+  for (let i = memoryPasswordResetTokens.length - 1; i >= 0; i--) {
+    if (memoryPasswordResetTokens[i].expiresAt <= now || memoryPasswordResetTokens[i].used) {
+      memoryPasswordResetTokens.splice(i, 1);
+    }
   }
 
   const otp = generateOtp();
@@ -756,8 +796,9 @@ export async function requestPasswordReset(email: string): Promise<{ devOtp?: st
   });
 
   // No email provider is configured; surface the OTP via the API response in
-  // non-production environments and log it in production for operators.
-  if (env.nodeEnv !== "production") {
+  // local development only, and log it in production for operators (their only
+  // delivery channel until SMTP is integrated).
+  if (env.nodeEnv === "development") {
     return { devOtp: otp };
   }
   console.log(`[PasswordReset] OTP for ${normalizedEmail}: ${otp}`);
@@ -808,12 +849,12 @@ type GitHubUser = {
   avatar_url: string;
 };
 
-export function getGitHubRedirectUrl(): string {
+export function getGitHubRedirectUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: env.github.clientId,
     redirect_uri: env.github.callbackUrl,
     scope: "read:user user:email",
-    state: "adyapan_ai",
+    state,
   });
   return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }
@@ -930,7 +971,7 @@ export type GoogleUser = {
   picture?: string;
 };
 
-export function getGoogleRedirectUrl(): string {
+export function getGoogleRedirectUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: env.google.clientId,
     redirect_uri: env.google.callbackUrl,
@@ -938,6 +979,7 @@ export function getGoogleRedirectUrl(): string {
     scope: "openid profile email",
     access_type: "offline",
     prompt: "consent",
+    state,
   });
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
