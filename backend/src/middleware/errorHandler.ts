@@ -32,11 +32,9 @@ export function errorHandler(error: HttpError, req: Request, res: Response, _nex
   res.status(statusCode).json({
     success: false,
     message,
-    // `error` mirrors `message` for backward compatibility with clients that
-    // read `response.data.error`.
     error: message,
-    // Stable machine-readable code so clients can branch on specific errors
-    // (e.g. EMAIL_ALREADY_EXISTS) without parsing human-facing text.
     ...(error.code ? { code: error.code } : {}),
+    ...((error as any).attemptsRemaining !== undefined ? { attemptsRemaining: (error as any).attemptsRemaining } : {}),
+    ...((error as any).lockedFor !== undefined ? { lockedFor: (error as any).lockedFor } : {}),
   });
 }

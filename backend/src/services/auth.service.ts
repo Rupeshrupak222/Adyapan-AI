@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { exec } from "child_process";
-import { createHash } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { Prisma, type User } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { env } from "../config/env";
@@ -10,6 +10,7 @@ import type { AuthRole } from "../middleware/auth";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { databaseService } from "./database.service";
 import { calculateProfileCompletion } from "../utils/profileCompletion";
+import { hashRefreshToken, isSessionIdle, revokeAllSessions } from "./session.service";
 
 type RegisterInput = {
   name: string;
@@ -37,8 +38,10 @@ type RegisterInput = {
 };
 
 type LoginInput = {
-  email: string;
-  password: string;
+ email: string;
+ password: string;
+ userAgent?: string;
+ ipAddress?: string;
 };
 
 const TOKEN_SHORT = "15m";
@@ -601,17 +604,68 @@ export async function registerUser(input: RegisterInput) {
   };
 }
 
+// --- Per-Email Login Lockout ---
+const USER_MAX_ATTEMPTS = 5;
+const USER_LOCKOUT_MS = 3 * 60 * 1000;
+const ADMIN_MAX_ATTEMPTS = 3;
+const ADMIN_LOCKOUT_MS = 30 * 60 * 1000;
+
+type LockoutEntry = { count: number; lockedUntil: number; isAdmin: boolean };
+const loginAttempts = new Map<string, LockoutEntry>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, entry] of loginAttempts) {
+    if (entry.lockedUntil < now && entry.count === 0) loginAttempts.delete(email);
+  }
+}, 10 * 60 * 1000).unref();
+
+function getMaxAttempts(isAdmin: boolean) { return isAdmin ? ADMIN_MAX_ATTEMPTS : USER_MAX_ATTEMPTS; }
+function getLockoutMs(isAdmin: boolean) { return isAdmin ? ADMIN_LOCKOUT_MS : USER_LOCKOUT_MS; }
+
+function checkLoginLockout(email: string, isAdmin = false): { locked: boolean; remainingSec?: number; attemptsRemaining?: number } {
+  const entry = loginAttempts.get(email);
+  const maxAttempts = getMaxAttempts(isAdmin);
+  if (!entry) return { locked: false, attemptsRemaining: maxAttempts };
+  if (entry.lockedUntil > Date.now()) return { locked: true, remainingSec: Math.ceil((entry.lockedUntil - Date.now()) / 1000) };
+  if (entry.lockedUntil > 0 && entry.lockedUntil <= Date.now()) { loginAttempts.delete(email); return { locked: false, attemptsRemaining: maxAttempts }; }
+  return { locked: false, attemptsRemaining: maxAttempts - entry.count };
+}
+
+function recordFailedLogin(email: string, isAdmin = false): { attemptsRemaining: number } {
+  const maxAttempts = getMaxAttempts(isAdmin);
+  const lockoutMs = getLockoutMs(isAdmin);
+  const entry = loginAttempts.get(email) || { count: 0, lockedUntil: 0, isAdmin };
+  entry.count += 1; entry.isAdmin = isAdmin;
+  if (entry.count >= maxAttempts) { entry.lockedUntil = Date.now() + lockoutMs; entry.count = 0; }
+  loginAttempts.set(email, entry);
+  const remaining = maxAttempts - entry.count;
+  return { attemptsRemaining: remaining > 0 ? remaining : 0 };
+}
+
+function clearLoginAttempts(email: string): void { loginAttempts.delete(email); }
+
 export async function loginUser(
   input: LoginInput & { rememberMe?: boolean; expectedRole?: "USER" | "ADMIN"; portal?: "user" | "admin" }
 ) {
   const email = input.email.toLowerCase().trim();
-  const user = await prisma.user.findUnique({ where: { email } });
+  const isAdminPortal = input.portal === "admin" || input.expectedRole === "ADMIN";
 
+  const lockout = checkLoginLockout(email, isAdminPortal);
+  if (lockout.locked) {
+    const err = httpError(429, `Account locked. Try again in ${lockout.remainingSec} seconds.`);
+    (err as any).lockedFor = lockout.remainingSec;
+    throw err;
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
   const targetRole = input.expectedRole || (input.portal === "admin" ? "ADMIN" : "USER");
 
   if (!user) {
-    const errorMsg = targetRole === "ADMIN" ? "Invalid admin credentials. Please try again." : "Invalid user credentials. Please try again.";
-    throw httpError(401, errorMsg);
+    const result = recordFailedLogin(email, isAdminPortal);
+    const err = httpError(401, targetRole === "ADMIN" ? "Invalid admin credentials." : "Invalid user credentials.");
+    (err as any).attemptsRemaining = result.attemptsRemaining;
+    throw err;
   }
 
   if (!user.password) {
@@ -619,44 +673,90 @@ export async function loginUser(
   }
 
   const isPasswordValid = await bcrypt.compare(input.password, user.password);
-
   if (!isPasswordValid) {
-    const errorMsg = targetRole === "ADMIN" ? "Invalid admin credentials. Please try again." : "Invalid user credentials. Please try again.";
-    throw httpError(401, errorMsg);
+    const isAdmin = user.role === "ADMIN" || isAdminPortal;
+    const result = recordFailedLogin(email, isAdmin);
+    const msg = result.attemptsRemaining > 0
+      ? `Invalid credentials. ${result.attemptsRemaining} attempt${result.attemptsRemaining === 1 ? "" : "s"} remaining.`
+      : isAdmin ? "Account temporarily locked. Try again in 30 minutes." : "Account locked for 3 minutes.";
+    const err = httpError(result.attemptsRemaining > 0 ? 401 : 429, msg);
+    (err as any).attemptsRemaining = result.attemptsRemaining;
+    throw err;
   }
 
-  if (targetRole === "ADMIN" && user.role !== "ADMIN") {
-    throw httpError(403, "Access denied. Only admin accounts can log in here.");
-  }
+  clearLoginAttempts(email);
 
-  if (targetRole === "USER" && user.role === "ADMIN") {
-    throw httpError(403, "Admin accounts cannot log in here. Please use the Admin Login page.");
-  }
+  if (targetRole === "ADMIN" && user.role !== "ADMIN") throw httpError(403, "Access denied. Only admin accounts can log in here.");
+  if (targetRole === "USER" && user.role === "ADMIN") throw httpError(403, "Admin accounts cannot log in here. Please use the Admin Login page.");
 
-  return {
-    user: publicUser(user),
-    token: signToken(user, input.rememberMe),
-    refreshToken: signRefreshToken(user.id),
-  };
-}
-
-export async function refreshToken(refreshToken: string) {
-  try {
-    const payload = jwt.verify(refreshToken, env.jwtSecret, { algorithms: ["HS256"] }) as { userId: string };
-    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
-
-    if (!user) {
-      throw httpError(404, "User not found");
+  // Session conflict detection
+  const forceLogin = (input as any).forceLogin === true;
+  if (user.activeSessionId && !forceLogin) {
+    const idle = await isSessionIdle(user.id);
+    if (!idle) {
+      return { requireSessionConfirmation: true, user: publicUser(user), message: "There is an active session on another device. Do you want to end it and login here?" } as any;
     }
-
-    return {
-      token: signToken(user, false),
-      refreshToken: signRefreshToken(user.id),
-    };
-  } catch (err) {
-    throw httpError(401, "Invalid or expired refresh token");
+    await revokeAllSessions(user.id);
   }
+  if (forceLogin && user.activeSessionId) await revokeAllSessions(user.id);
+
+  // Create new session
+  const activeSessionId = randomBytes(24).toString("hex");
+  const newToken = signToken(user, input.rememberMe);
+  const newRefreshToken = signRefreshToken(user.id);
+
+  await prisma.user.update({ where: { id: user.id }, data: { activeSessionId } });
+
+  const rfTokenHash = hashRefreshToken(newRefreshToken);
+  await prisma.session.create({
+    data: {
+      userId: user.id,
+      tokenHash: createHash("sha256").update(newToken).digest("hex"),
+      refreshTokenHash: rfTokenHash,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      lastActiveAt: new Date(),
+      userAgent: input.userAgent || null,
+      ipAddress: input.ipAddress || null,
+    },
+  });
+
+  return { user: publicUser(user), token: newToken, refreshToken: newRefreshToken, sessionId: activeSessionId };
 }
+
+export async function refreshToken(token: string) {
+  let payload: { userId: string };
+  try { payload = jwt.verify(token, env.jwtSecret, { algorithms: ["HS256"] }) as { userId: string }; }
+  catch { throw httpError(401, "Invalid or expired refresh token"); }
+
+  const tokenHash = hashRefreshToken(token);
+  const session = await prisma.session.findFirst({ where: { refreshTokenHash: tokenHash } });
+
+  if (!session) {
+    console.error(`[SECURITY] Refresh token theft detected for userId=${payload.userId}. Revoking all sessions.`);
+    await revokeAllSessions(payload.userId);
+    throw httpError(401, "Security alert: refresh token reuse detected. All sessions revoked.");
+  }
+  if (session.revokedAt) throw httpError(401, "Session has been revoked. Please log in again.");
+  if (session.expiresAt < new Date()) throw httpError(401, "Session expired. Please log in again.");
+
+  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+  if (!user) throw httpError(404, "User not found");
+
+  const newAccessToken = signToken(user, false);
+  const newRefreshToken = signRefreshToken(user.id);
+  const newRfHash = hashRefreshToken(newRefreshToken);
+
+  await prisma.session.update({ where: { id: session.id }, data: { refreshTokenHash: newRfHash, lastActiveAt: new Date() } });
+
+  return { token: newAccessToken, refreshToken: newRefreshToken };
+}
+
+export async function activateNewSession(userId: string): Promise<string> {
+  const sessionId = randomBytes(24).toString("hex");
+  await prisma.user.update({ where: { id: userId }, data: { activeSessionId: sessionId } });
+  return sessionId;
+}
+
 
 export async function logout(token: string) {
   tokenBlacklistCache.delete(token);

@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      saveAuthSession(data.token, data.user, rememberMe);
+      saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
       router.replace("/dashboard/admin");
     } catch (err: unknown) {
       setError(

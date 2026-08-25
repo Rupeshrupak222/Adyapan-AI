@@ -77,7 +77,7 @@ export default function AdminRegisterPage() {
         email: form.email,
         password: form.password,
       });
-      saveAuthSession(data.token, data.user);
+      saveAuthSession(data.token, data.user, true, data.sessionId, data.refreshToken);
       router.replace("/dashboard/admin");
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { code?: string; message?: string; error?: string } } })?.response?.data;

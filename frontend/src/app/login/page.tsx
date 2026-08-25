@@ -47,7 +47,9 @@ const GitHubIcon = ({ color }: { color: string }) => (
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [showSessionConfirm, setShowSessionConfirm] = useState(false);
   const [tab, setTab] = useState<Tab>("login");
+  const [sessionPopup, setSessionPopup] = useState<{ type: "warning" | "info" | "error"; text: string } | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   const [loginEmail, setLoginEmail] = useState("");
@@ -121,7 +123,7 @@ function LoginPageContent() {
             setLoginError("Admin accounts cannot log in here. Please use the Admin Login page.");
             return;
           }
-          saveAuthSession(token, user, true);
+          saveAuthSession(token, user, true, params.get("sessionId") || undefined);
           router.replace(getPostLoginTarget(user.role));
           return;
         } catch { return; }
@@ -193,16 +195,34 @@ function LoginPageContent() {
     e.preventDefault(); setLoginError(""); setLoginLoading(true);
     try {
       const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe, portal: "user" });
+      // Handle session confirmation popup
+      if (data.requireSessionConfirmation) {
+        setShowSessionConfirm(true);
+        return;
+      }
       if (data.user?.role === "ADMIN") {
         setLoginError("Admin accounts cannot log in here. Please use the Admin Login page.");
         return;
       }
-      saveAuthSession(data.token, data.user, rememberMe);
+      saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
       router.replace(getPostLoginTarget(data.user.role));
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data;
       const serverMsg = data?.message || data?.error;
       setLoginError(serverMsg || "Invalid user credentials. Please try again.");
+    } finally { setLoginLoading(false); }
+  };
+
+  const handleForceLogin = async () => {
+    setShowSessionConfirm(false);
+    setLoginLoading(true);
+    try {
+      const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe, portal: "user", forceLogin: true });
+      saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
+      router.replace(getPostLoginTarget(data.user.role));
+    } catch (err: unknown) {
+      const resp = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      setLoginError(resp?.message || "Login failed. Please try again.");
     } finally { setLoginLoading(false); }
   };
 
@@ -224,7 +244,7 @@ function LoginPageContent() {
       sessionStorage.setItem("adyapan-just-registered", "true");
       localStorage.setItem("adyapan-just-registered", "true");
       if (data?.token && data?.user) {
-        saveAuthSession(data.token, data.user, true);
+        saveAuthSession(data.token, data.user, true, data.sessionId, data.refreshToken);
         toast.success("Account created successfully! Welcome to Adyapan AI.");
         router.replace(getPostLoginTarget(data.user.role));
       } else {
@@ -290,6 +310,20 @@ function LoginPageContent() {
 
   return (
     <div className="min-h-screen transition-colors relative overflow-hidden">
+ {showSessionConfirm && (<div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}><div className="rounded-2xl p-6 w-full max-w-sm shadow-2xl border" style={{ background: "var(--bg-card, #1a1a2e)", borderColor: "var(--border-color, rgba(255,255,255,0.1))" }}><p className="text-sm leading-relaxed mb-5" style={{ color: "var(--text-primary, #fff)" }}>There is an active session on another device. Do you want to end it and login here?</p><div className="flex gap-3 justify-end"><button onClick={() => setShowSessionConfirm(false)} className="px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.08)" }}>Cancel</button><button onClick={handleForceLogin} className="px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer" style={{ background: "rgba(245,158,11,0.15)", color: "var(--primary, #f59e0b)", border: "1px solid rgba(245,158,11,0.2)" }}>Login Here</button></div></div></div>)}
+      {sessionPopup && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
+          <div className="rounded-2xl p-6 w-full max-w-sm shadow-2xl border" style={{ background: "#1a1a2e", borderColor: "rgba(255,255,255,0.1)" }}>
+            <div className="flex items-start gap-3 mb-5">
+              <span className="text-xl mt-0.5">{sessionPopup.type === "warning" ? "⚡" : sessionPopup.type === "error" ? "\u26A0\uFE0F" : "\u2139\uFE0F"}</span>
+              <p className="text-sm leading-relaxed text-white/90">{sessionPopup.text}</p>
+            </div>
+            <div className="flex justify-end">
+              <button onClick={() => setSessionPopup(null)} className="px-5 py-2 rounded-xl text-xs font-bold cursor-pointer" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Video Background */}
       <video
         autoPlay

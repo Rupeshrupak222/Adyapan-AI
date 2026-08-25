@@ -10,6 +10,9 @@ import {
   handleGoogleUser,
   requestPasswordReset,
   resetPassword,
+  activateNewSession,
+  logout as blacklistToken,
+  refreshToken as refreshTokenService,
 } from "../services/auth.service";
 import { requireString } from "../utils/request";
 import { env } from "../config/env";
@@ -108,12 +111,8 @@ export async function registerAdmin(req: Request, res: Response, next: NextFunct
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const portal = req.body?.portal === "admin" ? "admin" : (req.body?.expectedRole === "ADMIN" ? "admin" : "user");
-    const result = await loginUser({
-      email: requireString(req.body?.email, "email"),
-      password: requireString(req.body?.password, "password"),
-      rememberMe: Boolean(req.body?.rememberMe),
-      portal,
-    });
+ const result = await loginUser({ email: requireString(req.body?.email, "email"), password: requireString(req.body?.password, "password"), rememberMe: Boolean(req.body?.rememberMe), portal, userAgent: String(req.headers["user-agent"] ?? ""), ipAddress: req.ip || undefined, forceLogin: Boolean(req.body?.forceLogin), } as any);
+ if (result.requireSessionConfirmation) { res.json({ success: false, requireSessionConfirmation: true, message: result.message }); return; }
 
     if (result.user.role === "ADMIN") {
       (prisma as any).adminLoginHistory.create({
@@ -173,7 +172,15 @@ export async function adminLogin(req: Request, res: Response, next: NextFunction
       rememberMe: Boolean(req.body?.rememberMe),
       portal: "admin",
       expectedRole: "ADMIN",
-    });
+      userAgent: String(req.headers["user-agent"] ?? ""),
+      ipAddress: req.ip || undefined,
+      forceLogin: Boolean(req.body?.forceLogin),
+    } as any);
+
+    if (result.requireSessionConfirmation) {
+      res.json({ success: false, requireSessionConfirmation: true, message: result.message });
+      return;
+    }
 
     if (result.user.role === "ADMIN") {
       (prisma as any).adminLoginHistory.create({
@@ -237,11 +244,43 @@ export async function me(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export function logout(_req: Request, res: Response) {
-  res.json({
-    success: true,
-    message: "Logged out",
-  });
+export async function logout(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (req.user?.userId) {
+      await prisma.user.update({ where: { id: req.user.userId }, data: { activeSessionId: null } });
+    }
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+    if (token) await blacklistToken(token);
+    res.json({ success: true, message: "Logged out successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function sessionCheck(req: Request, res: Response, next: NextFunction) {
+  try {
+    const clientSessionId = req.headers["x-session-id"] as string | undefined;
+    if (!clientSessionId) {
+      res.status(401).json({ success: false, valid: false, message: "Session ID is required. Please log in again." });
+      return;
+    }
+    const user = await prisma.user.findUnique({ where: { id: req.user?.userId }, select: { activeSessionId: true } });
+    if (user?.activeSessionId && user.activeSessionId !== clientSessionId) {
+      res.status(401).json({ success: false, valid: false, code: "FORCE_LOGOUT", message: "Session ended. You have been logged in on another device." });
+      return;
+    }
+    res.json({ success: true, valid: true });
+  } catch (error) { next(error); }
+}
+
+export async function refresh(req: Request, res: Response, next: NextFunction) {
+  try {
+    const token = req.body?.refreshToken;
+    if (!token || typeof token !== "string") return next(httpError(400, "Refresh token is required"));
+    const result = await refreshTokenService(token);
+    res.json({ success: true, token: result.token, refreshToken: result.refreshToken });
+  } catch (error) { next(error); }
 }
 
 export async function forgotPassword(req: Request, res: Response, next: NextFunction) {

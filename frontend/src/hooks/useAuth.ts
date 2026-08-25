@@ -5,6 +5,8 @@ import type { PlatformUser } from "@/types/user";
 
 const USER_KEY = "adyapan-user";
 const TOKEN_KEY = "adyapan-token";
+const SESSION_ID_KEY = "adyapan-session-id";
+const REFRESH_TOKEN_KEY = "adyapan-refresh-token";
 
 function setCookie(name: string, value: string, days = 7) {
   const expires = new Date(Date.now() + days * 864e5).toUTCString();
@@ -16,28 +18,38 @@ function deleteCookie(name: string) {
 }
 
 /**
- * Save auth session.
- * When rememberMe is true → persists in localStorage + cookie (survives browser close).
- * When false → persists in sessionStorage only (cleared on browser close).
+ * Save auth session. Always uses sessionStorage — session ends when tab/browser closes.
  */
-export function saveAuthSession(token: string, user: PlatformUser, rememberMe = true) {
+export function saveAuthSession(token: string, user: PlatformUser, _rememberMe = true, sessionId?: string, refreshToken?: string) {
   const prevUser = getAuthUser();
   if (prevUser && (prevUser.id !== user.id || prevUser.email !== user.email)) {
     clearAuthSession();
   }
+  sessionStorage.setItem(TOKEN_KEY, token);
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+  if (sessionId) sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+  if (refreshToken) sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+}
 
-  if (rememberMe) {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-    setCookie(TOKEN_KEY, token, 30);
-    setCookie(USER_KEY, JSON.stringify(user), 30);
-  } else {
-    // Clear any old persistent data
-    clearAuthSession();
-    // Use session storage (clears when browser closes)
-    sessionStorage.setItem(TOKEN_KEY, token);
-    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-  }
+export function saveSessionId(sessionId: string) {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+}
+
+export function getSessionId(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(SESSION_ID_KEY) || localStorage.getItem(SESSION_ID_KEY);
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(REFRESH_TOKEN_KEY) || localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function updateStoredTokens(newToken: string, newRefreshToken: string): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(TOKEN_KEY, newToken);
+  sessionStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
 }
 
 export function clearAuthSession() {
@@ -45,44 +57,25 @@ export function clearAuthSession() {
     try {
       const keysToKeep = new Set(["adyapan-theme"]);
       const localKeys = Object.keys(localStorage);
-      localKeys.forEach((key) => {
-        if (!keysToKeep.has(key)) {
-          localStorage.removeItem(key);
-        }
-      });
+      localKeys.forEach((key) => { if (!keysToKeep.has(key)) localStorage.removeItem(key); });
       const sessionKeys = Object.keys(sessionStorage);
-      sessionKeys.forEach((key) => {
-        if (!keysToKeep.has(key)) {
-          sessionStorage.removeItem(key);
-        }
-      });
+      sessionKeys.forEach((key) => { if (!keysToKeep.has(key)) sessionStorage.removeItem(key); });
     } catch { /* ignore */ }
   }
-
   deleteCookie(TOKEN_KEY);
   deleteCookie(USER_KEY);
 }
 
-/**
- * Get the token from either localStorage or sessionStorage.
- */
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+  return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
 }
 
-/**
- * Get the user from either localStorage or sessionStorage.
- */
 export function getAuthUser(): PlatformUser | null {
   if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
+  const raw = sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY);
   if (!raw) return null;
-  try {
-    return JSON.parse(raw) as PlatformUser;
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(raw) as PlatformUser; } catch { return null; }
 }
 
 export function useAuth() {
@@ -90,9 +83,7 @@ export function useAuth() {
 
   useEffect(() => {
     const stored = getAuthUser();
-    if (stored) {
-      setUser(stored);
-    }
+    if (stored) setUser(stored);
   }, []);
 
   const logout = useCallback(() => {
@@ -102,13 +93,5 @@ export function useAuth() {
     window.location.href = isNavAdmin ? "/admin-login" : "/login";
   }, [user]);
 
-  return useMemo(
-    () => ({
-      user,
-      isAuthenticated: Boolean(user),
-      logout,
-    }),
-    [user, logout],
-  );
+  return useMemo(() => ({ user, isAuthenticated: Boolean(user), logout }), [user, logout]);
 }
-
