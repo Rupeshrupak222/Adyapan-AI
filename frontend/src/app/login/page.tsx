@@ -148,7 +148,7 @@ function LoginPageContent() {
             setLoginError("Admin accounts cannot log in here. Please use the Admin Login page.");
             return;
           }
-          saveAuthSession(token, user, true, params.get("sessionId") || undefined);
+          saveAuthSession(token, user, true, params.get("sessionId") || undefined, params.get("refreshToken") || undefined);
           router.replace(getPostLoginTarget(user.role));
           return;
         } catch { return; }
@@ -165,6 +165,8 @@ function LoginPageContent() {
       url.searchParams.delete("google");
       url.searchParams.delete("token");
       url.searchParams.delete("user");
+      url.searchParams.delete("sessionId");
+      url.searchParams.delete("refreshToken");
       url.searchParams.delete("message");
       window.history.replaceState({}, "", url.toString());
     }

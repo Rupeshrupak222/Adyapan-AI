@@ -21,6 +21,8 @@ export default function AdminLoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSessionConfirm, setShowSessionConfirm] = useState(false);
+  const [sessionConfirmMsg, setSessionConfirmMsg] = useState("");
 
   useEffect(() => {
     const saved = (localStorage.getItem("adyapan-theme") as "dark" | "light") || "dark";
@@ -63,7 +65,17 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/admin-login", { email, password, rememberMe, portal: "admin" });
-      
+
+      // Another active session exists on this account. Ask before ending it,
+      // mirroring the user-login flow. Without this, the response has no token
+      // and the page would hang on "Authenticating Admin…".
+      if (data.requireSessionConfirmation) {
+        setSessionConfirmMsg(data.message || "There is an active session on another device. End it and log in here?");
+        setShowSessionConfirm(true);
+        setLoading(false);
+        return;
+      }
+
       if (data.user?.role !== "ADMIN") {
         setError("Access denied. This account does not have Admin privileges.");
         setLoading(false);
@@ -77,6 +89,30 @@ export default function AdminLoginPage() {
         (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message ||
         (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.error ||
         "Invalid admin credentials. Please try again.",
+      );
+      setLoading(false);
+    }
+  };
+
+  const handleForceAdminLogin = async () => {
+    setShowSessionConfirm(false);
+    setLoading(true);
+    setError("");
+    try {
+      const { data } = await api.post("/auth/admin-login", { email, password, rememberMe, portal: "admin", forceLogin: true });
+
+      if (data.user?.role !== "ADMIN") {
+        setError("Access denied. This account does not have Admin privileges.");
+        setLoading(false);
+        return;
+      }
+
+      saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
+      router.replace("/dashboard/admin");
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message ||
+        "Login failed. Please try again.",
       );
       setLoading(false);
     }
@@ -257,6 +293,52 @@ export default function AdminLoginPage() {
           </Link>
         </div>
       </motion.div>
+
+      {showSessionConfirm && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 50, display: "flex",
+            alignItems: "center", justifyContent: "center", padding: "1.5rem",
+            background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+          }}
+        >
+          <div
+            style={{
+              width: "100%", maxWidth: 400, background: cardBg,
+              border: `1px solid ${cardBorder}`, borderRadius: 16,
+              padding: "1.75rem", color: cardText,
+              boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+            }}
+          >
+            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1.05rem", fontWeight: 700 }}>Active session detected</h3>
+            <p style={{ margin: "0 0 1.5rem", fontSize: "0.85rem", color: mutedClr, lineHeight: 1.5 }}>
+              {sessionConfirmMsg}
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={() => { setShowSessionConfirm(false); setLoading(false); }}
+                style={{
+                  flex: 1, padding: "0.6rem", borderRadius: 10, cursor: "pointer",
+                  background: inputBg, border: `1px solid ${inputBdr}`, color: cardText, fontWeight: 600,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleForceAdminLogin}
+                style={{
+                  flex: 1, padding: "0.6rem", borderRadius: 10, cursor: "pointer",
+                  background: "linear-gradient(135deg,#fbbf24,#f59e0b)", border: "none", color: "#000", fontWeight: 700,
+                }}
+              >
+                End &amp; Log In
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

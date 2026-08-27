@@ -204,6 +204,7 @@ type RegistrationResult = {
   subscription: Prisma.SubscriptionGetPayload<{}>;
   verificationEmail: VerificationEmailStatus;
   refreshToken: string;
+  activeSessionId: string;
 };
 
 type UniversityUpsertResult = {
@@ -498,7 +499,12 @@ export async function registerUser(input: RegisterInput) {
       });
 
       // 6. Session (hashed token/refresh pair for auditability).
+      //    Establish an activeSessionId now — identical to the login flow — so
+      //    the newly registered user immediately satisfies the single-session
+      //    check in requireAuth. Without this, the first protected request would
+      //    be rejected with "Session ID is required" right after signup.
       const refreshToken = signRefreshToken(newUser.id);
+      const activeSessionId = randomBytes(24).toString("hex");
       await tx.session.create({
         data: {
           userId: newUser.id,
@@ -507,8 +513,10 @@ export async function registerUser(input: RegisterInput) {
           userAgent,
           ipAddress,
           expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          lastActiveAt: new Date(),
         },
       });
+      await tx.user.update({ where: { id: newUser.id }, data: { activeSessionId } });
 
       // 7. Activity trail.
       const activities: Array<Promise<unknown>> = [
@@ -574,6 +582,7 @@ export async function registerUser(input: RegisterInput) {
         subscription,
         verificationEmail,
         refreshToken,
+        activeSessionId,
       };
     }, { timeout: 30000, maxWait: 10000 });
   } catch (error) {
@@ -601,6 +610,7 @@ export async function registerUser(input: RegisterInput) {
     verificationEmail: created.verificationEmail,
     token: signToken(created.user, false),
     refreshToken: created.refreshToken,
+    sessionId: created.activeSessionId,
   };
 }
 
@@ -986,6 +996,35 @@ export async function exchangeGitHubCode(code: string): Promise<GitHubUser> {
   return githubUser;
 }
 
+/**
+ * Establish a fresh single-session for an OAuth login: rotate the user's
+ * activeSessionId, persist a hashed Session row for auditability, and return
+ * the session id so the callback can hand it to the frontend. Without this,
+ * OAuth users receive a token but no X-Session-Id and are rejected by the
+ * requireAuth single-session check on their first protected request.
+ */
+async function establishOAuthSession(
+  userId: string,
+  token: string,
+  refreshToken: string,
+  meta: { userAgent?: string | null; ipAddress?: string | null } = {},
+): Promise<string> {
+  const activeSessionId = randomBytes(24).toString("hex");
+  await prisma.user.update({ where: { id: userId }, data: { activeSessionId } });
+  await prisma.session.create({
+    data: {
+      userId,
+      tokenHash: sha256(token),
+      refreshTokenHash: hashRefreshToken(refreshToken),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      lastActiveAt: new Date(),
+      userAgent: meta.userAgent ?? null,
+      ipAddress: meta.ipAddress ?? null,
+    },
+  });
+  return activeSessionId;
+}
+
 export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: boolean) {
   const githubId = String(githubUser.id);
   const email = githubUser.email.toLowerCase();
@@ -1026,10 +1065,15 @@ export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: bool
 
   }
 
+  const token = signToken(user, rememberMe);
+  const refreshToken = signRefreshToken(user.id);
+  const sessionId = await establishOAuthSession(user.id, token, refreshToken);
+
   return {
     user: publicUser(user),
-    token: signToken(user, rememberMe),
-    refreshToken: signRefreshToken(user.id),
+    token,
+    refreshToken,
+    sessionId,
   };
 }
 
@@ -1141,10 +1185,15 @@ export async function handleGoogleUser(gUser: GoogleUser, rememberMe?: boolean) 
     });
   }
 
+  const token = signToken(user, rememberMe);
+  const refreshToken = signRefreshToken(user.id);
+  const sessionId = await establishOAuthSession(user.id, token, refreshToken);
+
   return {
     user: publicUser(user),
-    token: signToken(user, rememberMe),
-    refreshToken: signRefreshToken(user.id),
+    token,
+    refreshToken,
+    sessionId,
   };
 }
 

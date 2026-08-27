@@ -422,6 +422,8 @@ export async function githubCallback(req: Request, res: Response, next: NextFunc
     // Also pass user info for display (token is in cookie, not URL)
     const params = new URLSearchParams({
       user: JSON.stringify(result.user),
+      sessionId: result.sessionId,
+      refreshToken: result.refreshToken,
     });
 
     res.redirect(`${frontendUrl}/login?github=success&${params.toString()}`);
@@ -464,6 +466,8 @@ export async function googleCallback(req: Request, res: Response, next: NextFunc
 
     const params = new URLSearchParams({
       user: JSON.stringify(result.user),
+      sessionId: result.sessionId,
+      refreshToken: result.refreshToken,
     });
 
     res.redirect(`${frontendUrl}/login?google=success&${params.toString()}`);
