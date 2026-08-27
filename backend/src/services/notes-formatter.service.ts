@@ -5,14 +5,16 @@ import path from "path";
 let cachedLogoBase64: string | null = null;
 
 function getLogoBase64(): string {
-  if (cachedLogoBase64 !== null) return cachedLogoBase64;
+  if (cachedLogoBase64) return cachedLogoBase64;
   try {
     const cwd = process.cwd();
     const candidatePaths = [
-      path.join(cwd, "frontend", "public", "assets", "logo.png"),
-      path.join(cwd, "..", "frontend", "public", "assets", "logo.png"),
-      path.join(__dirname, "..", "..", "..", "frontend", "public", "assets", "logo.png"),
-      path.join(__dirname, "..", "..", "public", "assets", "logo.png"),
+      path.resolve(cwd, "frontend/public/assets/logo.png"),
+      path.resolve(cwd, "../frontend/public/assets/logo.png"),
+      path.resolve(cwd, "public/assets/logo.png"),
+      path.resolve(__dirname, "../../../frontend/public/assets/logo.png"),
+      path.resolve(__dirname, "../../frontend/public/assets/logo.png"),
+      path.resolve(__dirname, "../../public/assets/logo.png"),
     ];
     for (const p of candidatePaths) {
       if (fs.existsSync(p)) {
@@ -21,9 +23,10 @@ function getLogoBase64(): string {
         return cachedLogoBase64;
       }
     }
-  } catch { /* fallback */ }
-  cachedLogoBase64 = "";
-  return cachedLogoBase64;
+  } catch (err) {
+    console.warn("[Notes Formatter] Could not load logo image:", err);
+  }
+  return "";
 }
 
 function escapeHtml(text: string): string {

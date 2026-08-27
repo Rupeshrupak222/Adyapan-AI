@@ -4,23 +4,33 @@ import { useEffect, useRef, useCallback } from "react";
 import { api } from "@/services/api";
 import { getAuthToken, clearAuthSession } from "@/hooks/useAuth";
 
-const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+// 24 Hours idle timeout
+const IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Tracks user activity (mouse, keyboard, scroll, click, touch).
- * After 15 minutes of inactivity:
+ * Tracks user activity (mouse, keyboard, scroll, click, touch, visibility change).
+ * After 24 hours of total inactivity:
  * 1. Calls POST /auth/logout to clear session on server
  * 2. Clears localStorage/sessionStorage
- * 3. Redirects to /login page
- *
- * Usage: call useIdleTimeout() in your authenticated layout/dashboard component.
+ * 3. Redirects to /login page with idle_timeout reason
  */
 export function useIdleTimeout() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoggedOutRef = useRef(false);
+  const lastActivityRef = useRef<number>(Date.now());
 
   const performIdleLogout = useCallback(async () => {
     if (isLoggedOutRef.current) return;
+
+    // Check if user was active recently (e.g. returned to tab)
+    const timeSinceLastActivity = Date.now() - lastActivityRef.current;
+    if (timeSinceLastActivity < IDLE_TIMEOUT_MS) {
+      // Re-arm timer if active recently
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(performIdleLogout, IDLE_TIMEOUT_MS - timeSinceLastActivity);
+      return;
+    }
+
     isLoggedOutRef.current = true;
 
     const token = getAuthToken();
@@ -40,6 +50,7 @@ export function useIdleTimeout() {
 
   const resetTimer = useCallback(() => {
     if (isLoggedOutRef.current) return;
+    lastActivityRef.current = Date.now();
 
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -67,13 +78,17 @@ export function useIdleTimeout() {
     ];
 
     // Throttle event handling to avoid excessive timer resets
-    let lastActivity = Date.now();
-    const THROTTLE_MS = 5000; // Only reset timer every 5 seconds max
+    const THROTTLE_MS = 10000; // Only reset timer every 10 seconds max
 
     const handleActivity = () => {
       const now = Date.now();
-      if (now - lastActivity >= THROTTLE_MS) {
-        lastActivity = now;
+      if (now - lastActivityRef.current >= THROTTLE_MS) {
+        resetTimer();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
         resetTimer();
       }
     };
@@ -83,6 +98,8 @@ export function useIdleTimeout() {
       window.addEventListener(event, handleActivity, { passive: true });
     });
 
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     // Start the initial timer
     resetTimer();
 
@@ -91,6 +108,7 @@ export function useIdleTimeout() {
       activityEvents.forEach((event) => {
         window.removeEventListener(event, handleActivity);
       });
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [resetTimer]);
 }

@@ -1988,23 +1988,164 @@ export async function generateEnhancedMindMap(
 ): Promise<EnhancedMindMapResult> {
   const prompt = `Create a comprehensive mind map for topic: "${topic}" at "${mode}" level.
 
-Output JSON with:
-1. "mindmap" object containing:
-   - "nodes": array of concept nodes, each with:
-     * "id": unique string like "root-1", "concept-1", etc.
-     * "label": short name
-     * "type": one of "root", "concept", "sub_concept", "example", "application"
-     * "definition": clear definition
-     * "whyItMatters": why this concept matters
-     * "realExample": real-world example
-     * "commonMistakes": common mistakes
-     * "interviewTip": interview tip
-   - "edges": array of { source: string, target: string }
-   
-The root node should be the main topic. Include 5-8 concept nodes connected to root. Add sub_concepts, examples, applications as children of concepts.`;
+Return ONLY valid JSON matching this schema:
+{
+  "mindmap": {
+    "nodes": [
+      {
+        "id": "root-1",
+        "label": "${topic}",
+        "type": "root",
+        "definition": "Fundamental overview of ${topic}",
+        "whyItMatters": "Core importance of this domain",
+        "realExample": "Real world applications and use cases",
+        "commonMistakes": "Common misconceptions and pitfalls",
+        "interviewTip": "Key insight for technical interviews"
+      },
+      {
+        "id": "concept-1",
+        "label": "Core Principles",
+        "type": "concept",
+        "definition": "Key underlying mechanics",
+        "whyItMatters": "Foundational understanding",
+        "realExample": "Industry scenario",
+        "commonMistakes": "Misunderstanding scope",
+        "interviewTip": "Frequent technical question"
+      }
+    ],
+    "edges": [
+      { "source": "root-1", "target": "concept-1" }
+    ]
+  }
+}`;
 
-  const fallback: EnhancedMindMapResult = { mindmap: { nodes: [], edges: [] } };
-  return generateJSON<EnhancedMindMapResult>(LEARNING_SYSTEM, prompt, { model: MODELS.FAST, responseFormat: { type: "json_object" } }, fallback);
+  let res: any;
+  try {
+    res = await generateJSON<any>(LEARNING_SYSTEM, prompt, { model: MODELS.FAST, responseFormat: { type: "json_object" } }, null);
+  } catch (err) {
+    console.warn("[MindMap AI] LLM call failed, generating fallback mind map structure:", err);
+  }
+
+  let rawNodes: any[] = [];
+  let rawEdges: any[] = [];
+
+  if (res) {
+    const targetObj = res.mindmap || res.mindMap || res.data || res;
+    if (Array.isArray(targetObj.nodes)) rawNodes = targetObj.nodes;
+    if (Array.isArray(targetObj.edges)) rawEdges = targetObj.edges;
+
+    if (rawNodes.length === 0 && Array.isArray(res.nodes)) rawNodes = res.nodes;
+    if (rawEdges.length === 0 && Array.isArray(res.edges)) rawEdges = res.edges;
+  }
+
+  if (rawNodes.length > 0) {
+    const hasRoot = rawNodes.some(n => n.type === "root" || String(n.id).includes("root"));
+    if (!hasRoot && rawNodes[0]) {
+      rawNodes[0].type = "root";
+    }
+
+    const validEdges = rawEdges.filter(e => e && e.source && e.target).map(e => ({
+      source: String(e.source),
+      target: String(e.target),
+    }));
+
+    return {
+      mindmap: {
+        nodes: rawNodes.map((n, idx) => ({
+          id: String(n.id || `node-${idx + 1}`),
+          label: String(n.label || `Concept ${idx + 1}`),
+          type: (n.type as "root" | "concept" | "example" | "application" | "sub_concept") || (idx === 0 ? "root" : "concept"),
+          definition: String(n.definition || `Detailed breakdown of ${n.label || topic}`),
+          whyItMatters: String(n.whyItMatters || `Essential knowledge for mastering ${topic}`),
+          realExample: String(n.realExample || `Applied in production systems for ${topic}`),
+          commonMistakes: String(n.commonMistakes || `Confusing core concepts of ${topic}`),
+          interviewTip: String(n.interviewTip || `Focus on trade-offs and underlying architecture`),
+        })),
+        edges: validEdges.length > 0 ? validEdges : rawNodes.slice(1).map(n => ({
+          source: String(rawNodes[0].id || "root-1"),
+          target: String(n.id),
+        })),
+      },
+    };
+  }
+
+  // Fallback structural mind map generator (Guarantees mind map display even if AI fails)
+  const rootId = "root-1";
+  const fallbackNodes: Array<{
+    id: string;
+    label: string;
+    type: "root" | "concept" | "example" | "application" | "sub_concept";
+    definition: string;
+    whyItMatters: string;
+    realExample: string;
+    commonMistakes: string;
+    interviewTip: string;
+  }> = [
+    {
+      id: rootId,
+      label: topic,
+      type: "root",
+      definition: `Mastery overview of ${topic} including key concepts, architecture, and practical applications.`,
+      whyItMatters: `High priority topic for academic excellence and technical interviews.`,
+      realExample: `Used widely in modern software and engineering workflows.`,
+      commonMistakes: `Superficial understanding without practical implementation.`,
+      interviewTip: `Be ready to explain core architecture and trade-offs.`,
+    },
+    {
+      id: "concept-1",
+      label: "Core Fundamentals",
+      type: "concept",
+      definition: `The underlying principles and building blocks governing ${topic}.`,
+      whyItMatters: `Forms the base for all advanced concepts in ${topic}.`,
+      realExample: `Initial architecture setup in real projects.`,
+      commonMistakes: `Skipping basic definitions and syntax rules.`,
+      interviewTip: `Expect direct questions on foundational definitions.`,
+    },
+    {
+      id: "concept-2",
+      label: "Architecture & Flow",
+      type: "concept",
+      definition: `How components interact and process data within ${topic}.`,
+      whyItMatters: `Crucial for designing scalable and efficient systems.`,
+      realExample: `Data pipelines and module communication.`,
+      commonMistakes: `Ignoring edge cases and concurrency issues.`,
+      interviewTip: `Draw block diagrams when explaining flow.`,
+    },
+    {
+      id: "concept-3",
+      label: "Best Practices",
+      type: "concept",
+      definition: `Recommended design patterns and optimization strategies for ${topic}.`,
+      whyItMatters: `Ensures code quality, maintainability, and performance.`,
+      realExample: `Production-grade refactoring and error handling.`,
+      commonMistakes: `Over-engineering simple solutions.`,
+      interviewTip: `Highlight clean code principles and testing.`,
+    },
+    {
+      id: "concept-4",
+      label: "Real-World Applications",
+      type: "application",
+      definition: `Industry use cases and practical deployment of ${topic}.`,
+      whyItMatters: `Demonstrates practical engineering capability.`,
+      realExample: `Enterprise SaaS and cloud deployments.`,
+      commonMistakes: `Memorizing theory without hands-on coding.`,
+      interviewTip: `Share project experiences and real-world metrics.`,
+    },
+  ];
+
+  const fallbackEdges = [
+    { source: rootId, target: "concept-1" },
+    { source: rootId, target: "concept-2" },
+    { source: rootId, target: "concept-3" },
+    { source: rootId, target: "concept-4" },
+  ];
+
+  return {
+    mindmap: {
+      nodes: fallbackNodes,
+      edges: fallbackEdges,
+    },
+  };
 }
 
 export interface SmartQuizQuestion {

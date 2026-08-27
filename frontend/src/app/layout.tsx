@@ -22,8 +22,34 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Adyapan AI",
-  description: "AI-powered learning and career platform.",
+  metadataBase: new URL("https://ai.adyapan.com"),
+  title: {
+    default: "Adyapan AI | AI-Powered Learning & Career Platform",
+    template: "%s | Adyapan AI",
+  },
+  description: "Boost your skills and career with Adyapan AI. Interactive aptitude engines, job discovery, smart learning tools, and career guidance.",
+  keywords: ["Adyapan AI", "ai.adyapan.com", "AI learning platform", "Aptitude preparation", "Job discovery", "Career guidance", "EdTech AI"],
+  authors: [{ name: "Adyapan AI Team" }],
+  alternates: {
+    canonical: "https://ai.adyapan.com",
+  },
+  openGraph: {
+    title: "Adyapan AI - Smart AI Learning Platform",
+    description: "AI-powered learning and career platform for students and professionals.",
+    url: "https://ai.adyapan.com",
+    siteName: "Adyapan AI",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Adyapan AI",
+    description: "AI-powered learning and career platform.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
