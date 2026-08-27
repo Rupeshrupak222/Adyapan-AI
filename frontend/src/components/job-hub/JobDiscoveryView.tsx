@@ -579,6 +579,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   // ─── Data-driven Filter Options (top cities, industries, education count) ─
   const [filterOptions, setFilterOptions] = useState<{
     topCities?: { name: string; count: number }[];
+    countries?: { name: string; count: number }[];
     industries?: { name: string; count: number }[];
     companies?: { name: string; count: number }[];
     skills?: { name: string; count: number }[];
@@ -637,9 +638,18 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   // ─── Location suggestions (Naukri-style "search by location" entries) ─────
   const locSuggestions = useMemo(() => {
-    const list = (filterOptions?.topCities && filterOptions.topCities.length > 0)
+    const cities = (filterOptions?.topCities && filterOptions.topCities.length > 0)
       ? filterOptions.topCities
       : TOP_CITIES.map(c => ({ name: c, count: 0 }));
+    const countries = filterOptions?.countries || [];
+    const all = [...cities, ...countries];
+    const seen = new Set<string>();
+    const list = all.filter(c => {
+      const k = c.name.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
     const q = locationDraft.trim().toLowerCase();
     if (!q) return list.slice(0, 8);
     return list
@@ -1045,6 +1055,27 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             </div>
           )}
         </div>
+
+        {/* Top Countries — auto-populated from live data */}
+        {filterOptions?.countries && filterOptions.countries.length > 0 && (
+          <div className="space-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Top Countries</span>
+            <div className="flex flex-wrap gap-1.5">
+              {filterOptions.countries.slice(0, 10).map(country => {
+                const active = filters.locations.some(l => l.toLowerCase() === country.name.toLowerCase());
+                return (
+                  <button key={country.name} onClick={() => toggleLocation(country.name)}
+                    className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                    style={{
+                      background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                      color: active ? c.primary : c.textMuted,
+                      borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                    }}>{country.name}</button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Department / Role Category */}
         <div className="space-y-2">

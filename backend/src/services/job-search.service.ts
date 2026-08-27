@@ -173,7 +173,31 @@ function expandLocationTerms(loc: string): string[] {
 
 // Reduce a messy city/location string to its canonical key (used by facets &
 // the sidebar so "Bangalore", "Bengaluru / Bangalore, Karnataka, India | India"
-// and "New Delhi" all collapse to a single clean entry).
+// and "New Delhi" all collapse to a single clean entry). Unknown/new cities
+// fall back to their own stable key so freshly ingested data auto-appears.
+function cleanLabel(raw: string): string {
+  const seg = String(raw || "").split(/[/|,;]+/)[0].trim();
+  if (!seg) return "";
+  const skip = new Set(["of", "and", "the", "de", "da", "do", "del", "las", "los", "san"]);
+  return seg
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(w => (skip.has(w) ? w : w[0].toUpperCase() + w.slice(1)))
+    .join(" ")
+    .trim();
+}
+
+const COUNTRY_NAMES = new Set([
+  "india", "united states", "usa", "us", "canada", "united kingdom", "uk", "england",
+  "germany", "france", "australia", "singapore", "united arab emirates", "uae", "dubai",
+  "netherlands", "switzerland", "japan", "china", "hong kong", "south korea", "brazil",
+  "mexico", "spain", "italy", "portugal", "poland", "ireland", "belgium", "austria",
+  "sweden", "norway", "denmark", "finland", "czech republic", "new zealand", "russia",
+  "indonesia", "malaysia", "thailand", "vietnam", "philippines", "egypt", "saudi arabia",
+  "qatar", "kuwait", "oman", "bahrain", "israel", "turkey", "south africa", "nigeria",
+]);
+
 function canonicalCityKey(city: string | undefined | null): string | undefined {
   if (!city) return undefined;
   const cleaned = city.trim().toLowerCase();
@@ -192,7 +216,14 @@ function canonicalCityKey(city: string | undefined | null): string | undefined {
       return key === "anywhere" ? "remote" : key;
     }
   }
-  return undefined;
+  // New/unmapped city or a country-only value (e.g. city column = "India"):
+  // exclude pure country names, otherwise fall back to the first token so the
+  // value still shows up in facets & filter options automatically.
+  const fallbackTokens = tokens.slice(0, 2).join(" ");
+  if (tokenSet.has(first) && (COUNTRY_NAMES.has(first) || COUNTRY_NAMES.has(fallbackTokens))) {
+    return undefined;
+  }
+  return first || undefined;
 }
 
 // ─── Query Normalization ──────────────────────────────────────────────────────
@@ -1179,7 +1210,7 @@ export class JobSearchService {
       const locations = [...cityCounts.entries()]
         .sort((a, b) => b[1] - a[1])
         .slice(0, 15)
-        .map(([key, count]) => ({ name: CITY_LABELS[key] || key, count }));
+        .map(([key, count]) => ({ name: CITY_LABELS[key] || cleanLabel(key), count }));
 
       // ─── Work Mode facet: merge variant labels into canonical ones ──
       const wmCounts = new Map<string, number>();
@@ -1224,6 +1255,7 @@ export class JobSearchService {
   static async getFilterOptions(): Promise<any> {
     const defaultOptions = {
       topCities: [], industries: [], companies: [], skills: [], workModes: [], employmentTypes: [], education: [],
+      countries: [],
     };
     try {
       const db = getDb();
@@ -1236,16 +1268,18 @@ export class JobSearchService {
       let workModeRows: any[] = [];
       let employmentTypeRows: any[] = [];
       let educationRows: any[] = [];
+      let countryRows: any[] = [];
       let skillRows: any[] = [];
 
       try {
-        const [cities, inds, comps, wModes, empTypes, edus, skills] = await Promise.all([
+        const [cities, inds, comps, wModes, empTypes, edus, countries, skills] = await Promise.all([
           db.discoveryJob.groupBy({ by: ["city"], where: { ...baseWhere, city: { not: "" } }, _count: true }),
           db.discoveryJob.groupBy({ by: ["industry"], where: { ...baseWhere, industry: { not: "" } }, _count: true }),
           db.discoveryJob.groupBy({ by: ["company"], where: baseWhere, _count: true }),
           db.discoveryJob.groupBy({ by: ["workMode"], where: baseWhere, _count: true }),
           db.discoveryJob.groupBy({ by: ["employmentType"], where: baseWhere, _count: true }),
           db.discoveryJob.groupBy({ by: ["education"], where: { ...baseWhere, education: { not: "" } }, _count: true }),
+          db.discoveryJob.groupBy({ by: ["country"], where: { ...baseWhere, country: { not: "" } }, _count: true }),
           db.$queryRaw`
             SELECT skill AS name, COUNT(*)::int AS count
             FROM discovery_jobs, unnest(skills) AS skill
@@ -1261,6 +1295,7 @@ export class JobSearchService {
         workModeRows = wModes;
         employmentTypeRows = empTypes;
         educationRows = edus;
+        countryRows = countries;
         skillRows = skills || [];
       } catch {
         // fall back to empty option lists
@@ -1286,7 +1321,7 @@ export class JobSearchService {
       const topCities = [...cityCounts.entries()]
         .sort((a, b) => b[1] - a[1])
         .slice(0, 15)
-        .map(([key, count]) => ({ name: CITY_LABELS[key] || key, count }));
+        .map(([key, count]) => ({ name: CITY_LABELS[key] || cleanLabel(key), count }));
 
       const wmCounts = new Map<string, number>();
       for (const r of workModeRows) {
@@ -1300,6 +1335,17 @@ export class JobSearchService {
 
       return {
         topCities,
+        countries: countryRows
+          .filter((r: any) => r.country && !canonicalCityKey(r.country))
+          .map((r: any) => ({ name: cleanLabel(r.country), count: getCount(r) }))
+          .reduce<{ name: string; count: number }[]>((acc, c) => {
+            const existing = acc.find(x => x.name === c.name);
+            if (existing) existing.count += c.count;
+            else acc.push(c);
+            return acc;
+          }, [])
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 15),
         industries: industryRows.map((r: any) => ({ name: r.industry, count: getCount(r) })).sort((a, b) => b.count - a.count).slice(0, 20),
         companies: companyRows.map((r: any) => ({ name: r.company, count: getCount(r) })).sort((a, b) => b.count - a.count).slice(0, 20),
         skills: (skillRows || []).map((r: any) => ({ name: r.name || r.skill, count: r.count })),

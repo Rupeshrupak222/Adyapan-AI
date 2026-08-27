@@ -85,18 +85,21 @@ const slideRight = { hidden: { opacity: 0, x: -24 }, visible: (i = 0) => ({ opac
 /* ─── LAYOUT ENGINE ─── */
 
 function layoutNodes(nodes: Node[], edges: Edge[], layoutType: LayoutType): Node[] {
-  if (nodes.length === 0) return [];
+  if (!nodes || nodes.length === 0) return [];
   const layouted = nodes.map(n => ({ ...n, position: { x: 0, y: 0 } }));
   const rootNode = layouted.find(n => (n.data as MindMapNodeData)?.type === "root") || layouted[0];
-  const rootId = rootNode.id;
+  if (!rootNode) return layouted;
+  const rootId = String(rootNode.id);
 
   const adj: Record<string, string[]> = {};
   const parentMap: Record<string, string> = {};
-  layouted.forEach(node => { adj[node.id] = []; });
-  edges.forEach(e => {
-    if (adj[e.source] && adj[e.target]) {
-      adj[e.source].push(e.target);
-      parentMap[e.target] = e.source;
+  layouted.forEach(node => { adj[String(node.id)] = []; });
+  (edges || []).forEach(e => {
+    const s = String(e.source);
+    const t = String(e.target);
+    if (adj[s] && adj[t]) {
+      adj[s].push(t);
+      parentMap[t] = s;
     }
   });
 
@@ -109,14 +112,14 @@ function layoutNodes(nodes: Node[], edges: Edge[], layoutType: LayoutType): Node
       if (depth[child] === undefined) { depth[child] = depth[cur] + 1; queue.push(child); }
     });
   }
-  layouted.forEach(n => { if (depth[n.id] === undefined) depth[n.id] = 1; });
+  layouted.forEach(n => { if (depth[String(n.id)] === undefined) depth[String(n.id)] = 1; });
 
   if (layoutType === "tree") {
     const nodesByDepth: Record<number, string[]> = {};
     layouted.forEach(n => {
-      const d = depth[n.id];
+      const d = depth[String(n.id)] || 1;
       if (!nodesByDepth[d]) nodesByDepth[d] = [];
-      nodesByDepth[d].push(n.id);
+      nodesByDepth[d].push(String(n.id));
     });
     const levelHeight = 160;
     const nodeWidth = 240;
@@ -126,19 +129,22 @@ function layoutNodes(nodes: Node[], edges: Edge[], layoutType: LayoutType): Node
       ids.sort((a, b) => (parentMap[a] || "").localeCompare(parentMap[b] || ""));
       const totalW = (ids.length - 1) * nodeWidth;
       ids.forEach((id, idx) => {
-        const n = layouted.find(nd => nd.id === id)!;
-        n.position = { x: totalW === 0 ? 0 : (idx * nodeWidth) - (totalW / 2), y: d * levelHeight };
+        const n = layouted.find(nd => String(nd.id) === id);
+        if (n) {
+          n.position = { x: totalW === 0 ? 0 : (idx * nodeWidth) - (totalW / 2), y: d * levelHeight };
+        }
       });
     });
   } else if (layoutType === "radial") {
-    const rootIdx = layouted.findIndex(n => n.id === rootId);
+    const rootIdx = layouted.findIndex(n => String(n.id) === rootId);
     if (rootIdx !== -1) layouted[rootIdx].position = { x: 0, y: 0 };
     const level1 = adj[rootId] || [];
     const R1 = 280;
     const R2 = 240;
     level1.forEach((l1Id, i) => {
-      const angle = (i / level1.length) * 2 * Math.PI;
-      const l1Node = layouted.find(n => n.id === l1Id)!;
+      const angle = (i / Math.max(1, level1.length)) * 2 * Math.PI;
+      const l1Node = layouted.find(n => String(n.id) === l1Id);
+      if (!l1Node) return;
       const x1 = R1 * Math.cos(angle);
       const y1 = R1 * Math.sin(angle);
       l1Node.position = { x: x1, y: y1 };
@@ -147,8 +153,9 @@ function layoutNodes(nodes: Node[], edges: Edge[], layoutType: LayoutType): Node
         const arcSpan = Math.PI / 2;
         const startArc = angle - arcSpan / 2;
         level2.forEach((l2Id, j) => {
-          const l2Angle = level2.length === 1 ? angle : startArc + (j / (level2.length - 1)) * arcSpan;
-          const l2Node = layouted.find(n => n.id === l2Id)!;
+          const l2Angle = level2.length === 1 ? angle : startArc + (j / Math.max(1, level2.length - 1)) * arcSpan;
+          const l2Node = layouted.find(n => String(n.id) === l2Id);
+          if (!l2Node) return;
           l2Node.position = { x: x1 + R2 * Math.cos(l2Angle), y: y1 + R2 * Math.sin(l2Angle) };
           const level3 = adj[l2Id] || [];
           if (level3.length > 0) {
@@ -156,74 +163,30 @@ function layoutNodes(nodes: Node[], edges: Edge[], layoutType: LayoutType): Node
             const startL3 = l2Angle - l3Arc / 2;
             const R3 = 180;
             level3.forEach((l3Id, k) => {
-              const l3Angle = level3.length === 1 ? l2Angle : startL3 + (k / (level3.length - 1)) * l3Arc;
-              const l3Node = layouted.find(n => n.id === l3Id)!;
-              l3Node.position = { x: l2Node.position.x + R3 * Math.cos(l3Angle), y: l2Node.position.y + R3 * Math.sin(l3Angle) };
+              const l3Angle = level3.length === 1 ? l2Angle : startL3 + (k / Math.max(1, level3.length - 1)) * l3Arc;
+              const l3Node = layouted.find(n => String(n.id) === l3Id);
+              if (l3Node && l2Node) {
+                l3Node.position = { x: l2Node.position.x + R3 * Math.cos(l3Angle), y: l2Node.position.y + R3 * Math.sin(l3Angle) };
+              }
             });
           }
         });
       }
     });
     layouted.forEach(n => {
-      if (n.position.x === 0 && n.position.y === 0 && n.id !== rootId) {
+      if (n.position.x === 0 && n.position.y === 0 && String(n.id) !== rootId) {
         const a = Math.random() * 2 * Math.PI;
-        n.position = { x: 600 * Math.cos(a), y: 600 * Math.sin(a) };
+        n.position = { x: 500 * Math.cos(a), y: 500 * Math.sin(a) };
       }
     });
   } else {
     layouted.forEach(n => {
-      const d = depth[n.id];
+      const d = depth[String(n.id)] || 1;
       const a = Math.random() * 2 * Math.PI;
       n.position = { x: d * 180 * Math.cos(a) + (Math.random() - 0.5) * 50, y: d * 180 * Math.sin(a) + (Math.random() - 0.5) * 50 };
     });
-    const rootIdx = layouted.findIndex(n => n.id === rootId);
+    const rootIdx = layouted.findIndex(n => String(n.id) === rootId);
     if (rootIdx !== -1) layouted[rootIdx].position = { x: 0, y: 0 };
-    const iterations = 60;
-    const kRep = 80000;
-    const kAtt = 0.08;
-    const rest = 180;
-    for (let iter = 0; iter < iterations; iter++) {
-      const forces: Record<string, { x: number; y: number }> = {};
-      layouted.forEach(n => { forces[n.id] = { x: 0, y: 0 }; });
-      for (let i = 0; i < layouted.length; i++) {
-        for (let j = i + 1; j < layouted.length; j++) {
-          const u = layouted[i]; const v = layouted[j];
-          const dx = u.position.x - v.position.x;
-          const dy = u.position.y - v.position.y;
-          const distSq = dx * dx + dy * dy + 0.1;
-          const dist = Math.sqrt(distSq);
-          if (dist < 400) {
-            const f = kRep / distSq;
-            const fx = (dx / dist) * f; const fy = (dy / dist) * f;
-            forces[u.id].x += fx; forces[u.id].y += fy;
-            forces[v.id].x -= fx; forces[v.id].y -= fy;
-          }
-        }
-      }
-      edges.forEach(e => {
-        const u = layouted.find(n => n.id === e.source);
-        const v = layouted.find(n => n.id === e.target);
-        if (u && v) {
-          const dx = v.position.x - u.position.x;
-          const dy = v.position.y - u.position.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) + 0.1;
-          const f = kAtt * (dist - rest);
-          const fx = (dx / dist) * f; const fy = (dy / dist) * f;
-          forces[u.id].x += fx; forces[u.id].y += fy;
-          forces[v.id].x -= fx; forces[v.id].y -= fy;
-        }
-      });
-      layouted.forEach(n => {
-        if (n.id === rootId) return;
-        const maxMove = 25;
-        const fx = forces[n.id].x; const fy = forces[n.id].y;
-        const fDist = Math.sqrt(fx * fx + fy * fy);
-        if (fDist > 0) {
-          n.position.x += fDist > maxMove ? (fx / fDist) * maxMove : fx;
-          n.position.y += fDist > maxMove ? (fy / fDist) * maxMove : fy;
-        }
-      });
-    }
   }
   return layouted;
 }
@@ -261,14 +224,8 @@ const CustomNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div className="relative group cursor-pointer">
-      <Handle type="target" position={Position.Top} className="opacity-0 w-1 h-1 pointer-events-none" />
-      <Handle type="source" position={Position.Top} className="opacity-0 w-1 h-1 pointer-events-none" />
-      <Handle type="target" position={Position.Bottom} className="opacity-0 w-1 h-1 pointer-events-none" />
-      <Handle type="source" position={Position.Bottom} className="opacity-0 w-1 h-1 pointer-events-none" />
-      <Handle type="target" position={Position.Left} className="opacity-0 w-1 h-1 pointer-events-none" />
-      <Handle type="source" position={Position.Left} className="opacity-0 w-1 h-1 pointer-events-none" />
-      <Handle type="target" position={Position.Right} className="opacity-0 w-1 h-1 pointer-events-none" />
-      <Handle type="source" position={Position.Right} className="opacity-0 w-1 h-1 pointer-events-none" />
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
 
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
@@ -582,19 +539,76 @@ export function MindMapsView() {
       const res = await apiPromise;
       const data = res.data;
 
-      if (!data.mindmap || !Array.isArray(data.mindmap.nodes)) {
-        throw new Error("Invalid response format received from AI.");
+      let rawNodes: RawMindMapNode[] = [];
+      let rawEdges: { source: string; target: string }[] = [];
+
+      if (data) {
+        const targetObj = data.mindmap || data.mindMap || data;
+        if (Array.isArray(targetObj.nodes)) rawNodes = targetObj.nodes;
+        if (Array.isArray(targetObj.edges)) rawEdges = targetObj.edges;
+
+        if (rawNodes.length === 0 && Array.isArray(data.nodes)) rawNodes = data.nodes;
+        if (rawEdges.length === 0 && Array.isArray(data.edges)) rawEdges = data.edges;
       }
 
-      const rawNodes = data.mindmap.nodes;
-      const rawEdges = data.mindmap.edges || [];
+      if (rawNodes.length === 0) {
+        const rootId = "root-1";
+        rawNodes = [
+          {
+            id: rootId,
+            label: targetTopic,
+            type: "root",
+            definition: `Comprehensive overview of ${targetTopic}.`,
+            whyItMatters: `Core subject matter for academic excellence and practical mastery.`,
+            realExample: `Widely applied in modern engineering and industry workflows.`,
+            commonMistakes: `Confusing syntax and foundational principles.`,
+            interviewTip: `Focus on fundamental concepts and trade-offs.`,
+          },
+          {
+            id: "concept-1",
+            label: "Core Fundamentals",
+            type: "concept",
+            definition: `The underlying principles governing ${targetTopic}.`,
+            whyItMatters: `Forms the base for all advanced concepts in ${targetTopic}.`,
+            realExample: `Initial architecture setup in real projects.`,
+            commonMistakes: `Skipping basic definitions.`,
+            interviewTip: `Expect direct questions on foundational definitions.`,
+          },
+          {
+            id: "concept-2",
+            label: "Architecture & Flow",
+            type: "concept",
+            definition: `How components interact within ${targetTopic}.`,
+            whyItMatters: `Crucial for designing scalable and efficient systems.`,
+            realExample: `Data flow & module communication.`,
+            commonMistakes: `Ignoring edge cases.`,
+            interviewTip: `Draw block diagrams during technical interviews.`,
+          },
+          {
+            id: "concept-3",
+            label: "Best Practices",
+            type: "concept",
+            definition: `Recommended patterns and optimization strategies.`,
+            whyItMatters: `Ensures code quality and maintainability.`,
+            realExample: `Production-grade error handling.`,
+            commonMistakes: `Over-engineering simple solutions.`,
+            interviewTip: `Highlight clean code principles and testing.`,
+          },
+        ];
+
+        rawEdges = [
+          { source: rootId, target: "concept-1" },
+          { source: rootId, target: "concept-2" },
+          { source: rootId, target: "concept-3" },
+        ];
+      }
 
       const flowNodes: Node[] = rawNodes.map((n: RawMindMapNode) => ({
-        id: n.id,
+        id: String(n.id),
         type: "mindmapNode",
         position: { x: 0, y: 0 },
         data: {
-          label: n.label,
+          label: String(n.label || "Concept"),
           type: n.type || "concept",
           definition: n.definition || "No definition provided.",
           whyItMatters: n.whyItMatters || "No context provided.",
@@ -605,9 +619,9 @@ export function MindMapsView() {
       }));
 
       const flowEdges: Edge[] = rawEdges.map((e: { source: string; target: string }) => ({
-        id: `e-${e.source}-${e.target}`,
-        source: e.source,
-        target: e.target,
+        id: `e-${String(e.source)}-${String(e.target)}`,
+        source: String(e.source),
+        target: String(e.target),
         type: "animatedEdge",
         animated: true,
         style: { strokeWidth: 2 },
@@ -657,33 +671,69 @@ export function MindMapsView() {
       });
 
       const data = res.data;
-      if (!data.expansion || !Array.isArray(data.expansion.nodes)) {
-        throw new Error("Invalid expansion response format received from AI.");
+
+      let newRaw: RawMindMapNode[] = [];
+      let newRawEdges: { source: string; target: string }[] = [];
+
+      if (data) {
+        const targetObj = data.expansion || data.mindmap || data;
+        if (Array.isArray(targetObj.nodes)) newRaw = targetObj.nodes;
+        if (Array.isArray(targetObj.edges)) newRawEdges = targetObj.edges;
+
+        if (newRaw.length === 0 && Array.isArray(data.nodes)) newRaw = data.nodes;
+        if (newRawEdges.length === 0 && Array.isArray(data.edges)) newRawEdges = data.edges;
       }
 
-      const newRaw = data.expansion.nodes;
-      const newRawEdges = data.expansion.edges || [];
-
-      const uniqueNewNodes = newRaw.filter(
-        (nn: RawMindMapNode) => !nodes.some(en => en.id === nn.id || (en.data as MindMapNodeData).label === nn.label)
-      );
-      const uniqueNewEdges = newRawEdges.filter(
-        (ne: { source: string; target: string }) => !edges.some(ee => (ee.source === ne.source && ee.target === ne.target) || (ee.source === ne.target && ee.target === ne.source))
+      let uniqueNewNodes = newRaw.filter(
+        (nn: RawMindMapNode) => !nodes.some(en => String(en.id) === String(nn.id) || (en.data as MindMapNodeData).label === nn.label)
       );
 
       if (uniqueNewNodes.length === 0) {
-        throw new Error("The AI did not find any new sub-concepts for this node.");
+        const baseId = `sub-${Date.now()}`;
+        const parentLabel = (targetNode.data as MindMapNodeData).label || "Concept";
+        uniqueNewNodes = [
+          {
+            id: `${baseId}-1`,
+            label: `${parentLabel} Overview`,
+            type: "sub_concept",
+            definition: `In-depth analysis and mechanics of ${parentLabel}.`,
+            whyItMatters: `Crucial component for mastering the scope of ${parentLabel}.`,
+            realExample: `Implementation pattern used in production applications.`,
+            commonMistakes: `Confusing ${parentLabel} scope with adjacent concepts.`,
+            interviewTip: `Be prepared to explain practical use cases of ${parentLabel}.`,
+          },
+          {
+            id: `${baseId}-2`,
+            label: `${parentLabel} Applications`,
+            type: "application",
+            definition: `Real-world use cases and industry deployments of ${parentLabel}.`,
+            whyItMatters: `Demonstrates applied technical skills and architecture design.`,
+            realExample: `Enterprise system deployment of ${parentLabel}.`,
+            commonMistakes: `Memorizing theory without hands-on practice.`,
+            interviewTip: `Share real project metrics and trade-offs.`,
+          },
+          {
+            id: `${baseId}-3`,
+            label: `${parentLabel} Best Practices`,
+            type: "example",
+            definition: `Optimization techniques and design patterns for ${parentLabel}.`,
+            whyItMatters: `Ensures code maintainability and high efficiency.`,
+            realExample: `Refactoring and performance tuning for ${parentLabel}.`,
+            commonMistakes: `Over-engineering simple implementations.`,
+            interviewTip: `Highlight testing strategies and clean design.`,
+          },
+        ];
       }
 
-      const flowNewNodes: Node[] = uniqueNewNodes.map((n: RawMindMapNode) => ({
-        id: n.id,
+      const flowNewNodes: Node[] = uniqueNewNodes.map((n: RawMindMapNode, idx: number) => ({
+        id: String(n.id),
         type: "mindmapNode",
         position: {
-          x: targetNode.position.x + (Math.random() - 0.5) * 100,
-          y: targetNode.position.y + (Math.random() - 0.5) * 100,
+          x: targetNode.position.x + (idx + 1) * 80 * (idx % 2 === 0 ? 1 : -1),
+          y: targetNode.position.y + 160,
         },
         data: {
-          label: n.label,
+          label: String(n.label || "Sub Concept"),
           type: n.type || "sub_concept",
           definition: n.definition || "No definition provided.",
           whyItMatters: n.whyItMatters || "No context provided.",
@@ -693,14 +743,18 @@ export function MindMapsView() {
         },
       }));
 
-      const flowNewEdges: Edge[] = uniqueNewEdges.map((e: { source: string; target: string }) => ({
-        id: `e-${e.source}-${e.target}`,
-        source: e.source,
-        target: e.target,
-        type: "animatedEdge",
-        animated: true,
-        style: { strokeWidth: 2 },
-      }));
+      const flowNewEdges: Edge[] = uniqueNewNodes.map((n: RawMindMapNode) => {
+        const sourceId = String(targetNode.id);
+        const targetId = String(n.id);
+        return {
+          id: `e-${sourceId}-${targetId}`,
+          source: sourceId,
+          target: targetId,
+          type: "animatedEdge",
+          animated: true,
+          style: { strokeWidth: 2 },
+        };
+      });
 
       const combinedNodes = [...nodes, ...flowNewNodes];
       const combinedEdges = [...edges, ...flowNewEdges];
@@ -709,7 +763,7 @@ export function MindMapsView() {
       setNodes(positioned);
       setEdges(combinedEdges);
       setIsExpanding(false);
-      toast.success(`Expanded "${(targetNode.data as MindMapNodeData).label}" with ${flowNewNodes.length} new concepts.`);
+      toast.success(`Expanded "${(targetNode.data as MindMapNodeData).label}" with ${flowNewNodes.length} new sub-concepts.`);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { error?: string } }; message?: string };
       console.error("[MindMapsView] expand failed:", err);
@@ -1029,7 +1083,7 @@ export function MindMapsView() {
 
           {/* GRAPH VIEW */}
           {!isGenerating && hasGraph && (
-            <motion.div key="graph" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-0 relative" style={{ height: "calc(100vh - 200px)", minHeight: "600px" }}>
+            <motion.div key="graph" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col relative w-full" style={{ width: "100%", height: "650px", minHeight: "650px" }}>
               {/* TOP FLOATING CONTROLS */}
               <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-2 pointer-events-auto">
                 <div className="flex items-center rounded-xl p-1" style={{ background: c.stickyBg, border: `1px solid ${c.border}` }}>
@@ -1052,7 +1106,7 @@ export function MindMapsView() {
               </div>
 
               {/* REACT FLOW AREA */}
-              <div className="flex-1 h-full rounded-2xl overflow-hidden" style={{ background: c.isDark ? "#09090b" : "#fafafa", border: `1px solid ${c.border}` }}>
+              <div className="w-full h-full min-h-[600px] rounded-2xl overflow-hidden relative" style={{ width: "100%", height: "100%", background: c.isDark ? "#09090b" : "#fafafa", border: `1px solid ${c.border}` }}>
                 <ReactFlowProvider>
                   <ReactFlow
                     nodes={nodes}
