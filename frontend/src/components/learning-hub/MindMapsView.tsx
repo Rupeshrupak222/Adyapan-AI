@@ -551,7 +551,7 @@ export function MindMapsView() {
     const targetTopic = topic.trim() || "Cellular Respiration";
     if (quota.exhausted) {
       toast.error("You've used all free Mind Map generations this month.", {
-        description: "Upgrade to Premium for unlimited mind maps.",
+        description: "Upgrade to Premium for 30 monthly mind maps.",
       });
       return;
     }

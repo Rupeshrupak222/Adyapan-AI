@@ -137,7 +137,7 @@ export function NotesGeneratorView() {
   const handleGenerate = useCallback(async () => {
     if (quota.exhausted) {
       toast.error("You've used all free AI Notes Generator attempts this month.", {
-        description: "Upgrade to Premium for unlimited notes.",
+        description: "Upgrade to Premium for 30 monthly notes generations.",
       });
       return;
     }

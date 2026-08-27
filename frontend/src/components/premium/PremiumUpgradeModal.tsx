@@ -10,7 +10,7 @@ import { PremiumProgressBar } from "@/components/ui/PremiumComponents";
 const REASON_COPY: Record<string, { title: string; body: string }> = {
   daily_token: {
     title: "Daily AI token limit reached",
-    body: "You've used all of today's AI tokens on the free plan. Upgrade to Premium for 10x more tokens every day and unlimited learning power.",
+    body: "You've used all of today's AI tokens on the free plan. Upgrade to Premium for 10x more tokens every day and higher monthly feature limits.",
   },
   monthly_token: {
     title: "Monthly AI token limit reached",
@@ -27,9 +27,9 @@ const REASON_COPY: Record<string, { title: string; body: string }> = {
 };
 
 const PERKS = [
+  "3x higher monthly AI feature limits (30/9 per feature)",
   "10x daily AI tokens & requests",
-  "Unlimited Ady Chat & Resume AI",
-  "Priority access to new AI tools",
+  "Priority access to new AI models (GPT-4o, Claude)",
   "Cancel anytime, keep your work",
 ];
 

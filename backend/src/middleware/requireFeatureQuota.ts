@@ -40,19 +40,23 @@ export function requireFeatureQuota(featureKey: string) {
       const result = await FeatureUsageService.checkAndConsume(userId, featureKey, requestId);
 
       if (!result.allowed) {
+        const isFree = result.status.plan === "free";
         res.status(429).json({
           success: false,
           allowed: false,
           code: "FEATURE_LIMIT_REACHED",
           feature: result.status.featureKey,
           featureName: result.status.featureName,
-          message: `You've used all ${result.status.limit} free ${result.status.featureName} attempts this month.`,
+          plan: result.status.plan,
+          message: isFree
+            ? `You've used all ${result.status.limit} free ${result.status.featureName} attempts this month.`
+            : `You've used all ${result.status.limit} Premium ${result.status.featureName} attempts this month.`,
           limit: result.status.limit,
           used: result.status.used,
           remaining: 0,
           resetAt: result.status.resetAt,
           periodStart: result.status.periodStart,
-          upgradeRequired: true,
+          upgradeRequired: isFree,
         });
         return;
       }

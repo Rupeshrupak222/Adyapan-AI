@@ -511,7 +511,7 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
 
   const startGeneration = useCallback(async () => {
     if (quota.exhausted) {
-      setGenerationError("You've used all free Cover Letter generations this month. Upgrade to Premium for unlimited generations.");
+      setGenerationError("You've used all free Cover Letter generations this month. Upgrade to Premium for 9 monthly generations.");
       setScreen("configure");
       return;
     }

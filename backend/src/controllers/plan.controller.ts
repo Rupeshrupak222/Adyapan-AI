@@ -53,10 +53,11 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
         monthlyAmount: Math.round(p.priceMonthly * 100),
         yearlyAmount: Math.round(p.priceYearly * 100),
         features: Array.isArray(p.features) && p.features.length > 0 ? p.features : [
-          "Unlimited Resumes & ATS Checks",
+          "Up to 30 monthly uses on Standard AI tools",
+          "Up to 9 monthly uses on Advanced AI tools",
           "All AI Models (GPT-4o, Claude, Gemini)",
-          "Unlimited Cover Letters & LinkedIn Tools",
           "Full Interview & Coding Hub Access",
+          "Priority Support",
         ],
         category: p.category,
         recommended: p.recommended,
@@ -80,12 +81,10 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
         features:
           id === "free"
             ? [
-                "50 AI Requests / day",
-                "5 Resume Generations / day",
-                "3 Mock Interviews / day",
-                "10 Note Generations / day",
-                "Basic Coding Assistant",
-                "Basic Research Tools",
+                "10 monthly uses on Standard AI tools",
+                "3 monthly uses on Advanced AI tools",
+                "Basic AI Assistant & Coding Support",
+                "Standard Response Speed",
                 "Community Support",
               ]
             : id === "enterprise"
@@ -98,10 +97,11 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
                   "Dedicated Success Manager",
                 ]
               : [
-                  "Unlimited Resumes & ATS Checks",
+                  "30 monthly uses on Standard AI tools (3x Free)",
+                  "9 monthly uses on Advanced AI tools (3x Free)",
                   "All AI Models (GPT-4o, Claude, Gemini)",
-                  "Unlimited Cover Letters & LinkedIn Tools",
                   "Full Interview & Coding Hub Access",
+                  "Priority Support",
                 ],
         category: id === "free" ? "free" : id === "enterprise" ? "enterprise" : "premium",
         recommended: id === "pro_monthly",

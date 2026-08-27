@@ -401,7 +401,7 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
   const startSession = useCallback(async (tech: string, company: string, domain: string, prompt?: string) => {
     if (quota.exhausted) {
       toast.error("You've used all free AI Technical MCQ generations this month.", {
-        description: "Upgrade to Premium for unlimited AI question sets.",
+        description: "Upgrade to Premium for 30 monthly AI question sets.",
       });
       return;
     }

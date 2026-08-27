@@ -84,7 +84,9 @@ export function useFeatureQuota(featureKey: string): UseFeatureQuotaResult {
         data?.message ||
           `You've reached your monthly ${keyUpper.replaceAll("_", " ").toLowerCase()} limit.`,
         {
-          description: "Upgrade to Premium for unlimited access.",
+          description: data?.upgradeRequired
+            ? "Upgrade to Premium for 3x higher monthly allowances."
+            : "Your monthly allowance will reset on the 1st of next month.",
           action: data?.upgradeRequired
             ? { label: "Upgrade", onClick: () => (window.location.href = "/premium") }
             : undefined,
