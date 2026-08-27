@@ -153,6 +153,40 @@ jobDiscoveryRouter.get("/jobs/:id", async (req: Request, res: Response) => {
   }
 });
 
+// ─── GET /recommended - Personalized job recommendations ─────────────
+jobDiscoveryRouter.get("/recommended", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
+    const jobs = await JobSearchService.getRecommendedJobs(userId, limit);
+    res.json({ success: true, jobs });
+  } catch (error) {
+    handleRouteError(res, error, "Discovery.recommended", "Failed to get recommended jobs");
+  }
+});
+
+// ─── GET /trending - Trending jobs ───────────────────────────────────
+jobDiscoveryRouter.get("/trending", async (req: Request, res: Response) => {
+  try {
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
+    const jobs = await JobSearchService.getTrendingJobs(limit);
+    res.json({ success: true, jobs });
+  } catch (error) {
+    handleRouteError(res, error, "Discovery.trending", "Failed to get trending jobs");
+  }
+});
+
+// ─── GET /suggestions - Search autocomplete suggestions ──────────────
+jobDiscoveryRouter.get("/suggestions", async (req: Request, res: Response) => {
+  try {
+    const q = (req.query.q as string) || "";
+    const suggestions = await JobSearchService.getSuggestions(q);
+    res.json({ success: true, suggestions });
+  } catch (error) {
+    handleRouteError(res, error, "Discovery.suggestions", "Failed to get suggestions");
+  }
+});
+
 // ─── GET /search/history - Search history ──────────────────────────────
 jobDiscoveryRouter.get("/search/history", async (req: Request, res: Response) => {
   try {

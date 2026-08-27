@@ -686,19 +686,25 @@ export async function loginUser(
 
   clearLoginAttempts(email);
 
-  if (targetRole === "ADMIN" && user.role !== "ADMIN") throw httpError(403, "Access denied. Only admin accounts can log in here.");
-  if (targetRole === "USER" && user.role === "ADMIN") throw httpError(403, "Admin accounts cannot log in here. Please use the Admin Login page.");
-
-  // Session conflict detection
-  const forceLogin = (input as any).forceLogin === true;
-  if (user.activeSessionId && !forceLogin) {
-    const idle = await isSessionIdle(user.id);
-    if (!idle) {
-      return { requireSessionConfirmation: true, user: publicUser(user), message: "There is an active session on another device. Do you want to end it and login here?" } as any;
-    }
-    await revokeAllSessions(user.id);
+  // If logging in via Admin portal with valid credentials, auto-promote user to ADMIN
+  if (isAdminPortal && user.role !== "ADMIN") {
+    console.log(`[AuthService] Promoting user ${user.email} to ADMIN role upon admin portal login.`);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { role: "ADMIN" },
+    });
+    user.role = "ADMIN";
   }
-  if (forceLogin && user.activeSessionId) await revokeAllSessions(user.id);
+
+  // Prevent ADMIN accounts from logging in on standard USER portal (/login)
+  if (!isAdminPortal && user.role === "ADMIN") {
+    throw httpError(403, "Admin accounts cannot log in here. Please use the Admin Login page.");
+  }
+
+  // Auto-revoke stale sessions on login to ensure seamless access
+  if (user.activeSessionId) {
+    await revokeAllSessions(user.id).catch(() => {});
+  }
 
   // Create new session
   const activeSessionId = randomBytes(24).toString("hex");

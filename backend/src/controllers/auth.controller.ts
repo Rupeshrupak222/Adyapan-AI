@@ -116,19 +116,21 @@ export async function registerAdmin(req: Request, res: Response, next: NextFunct
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const portal = req.body?.portal === "admin" ? "admin" : (req.body?.expectedRole === "ADMIN" ? "admin" : "user");
- const result = await loginUser({ email: requireString(req.body?.email, "email"), password: requireString(req.body?.password, "password"), rememberMe: Boolean(req.body?.rememberMe), portal, userAgent: String(req.headers["user-agent"] ?? ""), ipAddress: req.ip || undefined, forceLogin: Boolean(req.body?.forceLogin), } as any);
- if (result.requireSessionConfirmation) { res.json({ success: false, requireSessionConfirmation: true, message: result.message }); return; }
+    const result = await loginUser({ email: requireString(req.body?.email, "email"), password: requireString(req.body?.password, "password"), rememberMe: Boolean(req.body?.rememberMe), portal, userAgent: String(req.headers["user-agent"] ?? ""), ipAddress: req.ip || undefined, forceLogin: Boolean(req.body?.forceLogin), } as any);
+    if ((result as any).requireSessionConfirmation) { res.json({ success: false, requireSessionConfirmation: true, message: (result as any).message }); return; }
 
     if (result.user.role === "ADMIN") {
-      (prisma as any).adminLoginHistory.create({
-        data: {
-          adminId: result.user.id,
-          email: result.user.email,
-          ipAddress: req.ip || undefined,
-          userAgent: req.headers["user-agent"] || undefined,
-          status: "SUCCESS",
-        },
-      }).catch(() => {});
+      if ((prisma as any).adminLoginHistory) {
+        (prisma as any).adminLoginHistory.create({
+          data: {
+            adminId: result.user.id,
+            email: result.user.email,
+            ipAddress: req.ip || undefined,
+            userAgent: req.headers["user-agent"] || undefined,
+            status: "SUCCESS",
+          },
+        }).catch(() => {});
+      }
 
       AdminAuditService.log({
         adminId: result.user.id,
@@ -151,7 +153,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       prisma.user
         .findUnique({ where: { email: emailRaw.trim().toLowerCase() } })
         .then((u) => {
-          if (u?.role === "ADMIN") {
+          if (u?.role === "ADMIN" && (prisma as any).adminLoginHistory) {
             return (prisma as any).adminLoginHistory.create({
               data: {
                 adminId: u.id,
@@ -182,21 +184,23 @@ export async function adminLogin(req: Request, res: Response, next: NextFunction
       forceLogin: Boolean(req.body?.forceLogin),
     } as any);
 
-    if (result.requireSessionConfirmation) {
-      res.json({ success: false, requireSessionConfirmation: true, message: result.message });
+    if ((result as any).requireSessionConfirmation) {
+      res.json({ success: false, requireSessionConfirmation: true, message: (result as any).message });
       return;
     }
 
     if (result.user.role === "ADMIN") {
-      (prisma as any).adminLoginHistory.create({
-        data: {
-          adminId: result.user.id,
-          email: result.user.email,
-          ipAddress: req.ip || undefined,
-          userAgent: req.headers["user-agent"] || undefined,
-          status: "SUCCESS",
-        },
-      }).catch(() => {});
+      if ((prisma as any).adminLoginHistory) {
+        (prisma as any).adminLoginHistory.create({
+          data: {
+            adminId: result.user.id,
+            email: result.user.email,
+            ipAddress: req.ip || undefined,
+            userAgent: req.headers["user-agent"] || undefined,
+            status: "SUCCESS",
+          },
+        }).catch(() => {});
+      }
 
       AdminAuditService.log({
         adminId: result.user.id,
@@ -219,7 +223,7 @@ export async function adminLogin(req: Request, res: Response, next: NextFunction
       prisma.user
         .findUnique({ where: { email: emailRaw.trim().toLowerCase() } })
         .then((u) => {
-          if (u?.role === "ADMIN") {
+          if (u?.role === "ADMIN" && (prisma as any).adminLoginHistory) {
             return (prisma as any).adminLoginHistory.create({
               data: {
                 adminId: u.id,

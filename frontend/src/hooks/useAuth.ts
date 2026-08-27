@@ -27,8 +27,20 @@ export function saveAuthSession(token: string, user: PlatformUser, _rememberMe =
   }
   sessionStorage.setItem(TOKEN_KEY, token);
   sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-  if (sessionId) sessionStorage.setItem(SESSION_ID_KEY, sessionId);
-  if (refreshToken) sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  if (sessionId) {
+    sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+    localStorage.setItem(SESSION_ID_KEY, sessionId);
+  }
+  if (refreshToken) {
+    sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  }
+
+  // Set cookies so Next.js middleware.ts server-side checks succeed
+  setCookie(TOKEN_KEY, token, 7);
+  setCookie(USER_KEY, JSON.stringify(user), 7);
 }
 
 export function saveSessionId(sessionId: string) {

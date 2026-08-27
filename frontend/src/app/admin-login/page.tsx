@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
       }
 
       saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
-      router.replace("/dashboard/admin");
+      window.location.href = "/dashboard/admin";
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message ||

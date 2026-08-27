@@ -48,6 +48,7 @@ interface Job {
   isSaved?: boolean;
   source?: string;
   matchScore?: number;
+  matchReasons?: { type: string; text: string; weight: number }[];
   applyUrl?: string;
   industry?: string;
   companySize?: string;
@@ -138,7 +139,9 @@ const POSTED_WITHIN = [
   { label: "Today", value: "today" },
   { label: "Last 3 Days", value: "3days" },
   { label: "Last Week", value: "week" },
+  { label: "Last 15 Days", value: "15days" },
   { label: "Last Month", value: "month" },
+  { label: "Last 60 Days", value: "60days" },
 ];
 
 const SORT_OPTIONS = [
@@ -484,13 +487,53 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   // ─── Filter State ───────────────────────────────────────────────────────
   const [filters, setFilters] = useState({
-    location: "", workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
+    location: "", workModes: [] as string[], employmentTypes: [] as string[], experienceMin: "", experienceMax: "",
     salaryMin: "", salaryMax: "", skills: "", industry: "", education: "",
-    companySize: "", source: "", postedWithin: "", company: "",
+    companySize: "", sources: [] as string[], postedWithin: "", company: "",
   });
   const [filterOpen, setFilterOpen] = useState(true);
   const [skillInput, setSkillInput] = useState("");
   const [skillTags, setSkillTags] = useState<string[]>([]);
+
+  // ─── URL Persistence (read on mount) ───────────────────────────────────
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const q = sp.get("q") || "";
+    const loc = sp.get("location") || "";
+    const wm = sp.get("workModes") || sp.get("workMode") || "";
+    const et = sp.get("employmentTypes") || sp.get("employmentType") || "";
+    const src = sp.get("sources") || sp.get("source") || "";
+    const sk = sp.get("skills") || "";
+    const pw = sp.get("postedWithin") || "";
+    const comp = sp.get("company") || "";
+    const ind = sp.get("industry") || "";
+    const expMin = sp.get("experienceMin") || "";
+    const expMax = sp.get("experienceMax") || "";
+    const salMin = sp.get("salaryMin") || "";
+    const salMax = sp.get("salaryMax") || "";
+    const sort = sp.get("sortBy") || "";
+
+    if (q) { setSearchQuery(q); setDebouncedQuery(q); }
+    if (loc || wm || et || src || sk || pw || comp || ind || expMin || expMax || salMin || salMax) {
+      setFilters(prev => ({
+        ...prev,
+        location: loc,
+        workModes: wm ? wm.split(",").filter(Boolean) : prev.workModes,
+        employmentTypes: et ? et.split(",").filter(Boolean) : prev.employmentTypes,
+        sources: src ? src.split(",").filter(Boolean) : prev.sources,
+        postedWithin: pw,
+        company: comp,
+        industry: ind,
+        experienceMin: expMin,
+        experienceMax: expMax,
+        salaryMin: salMin,
+        salaryMax: salMax,
+      }));
+    }
+    if (sk) setSkillTags(sk.split(",").filter(Boolean));
+    if (sort) setSortBy(sort);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Results State ──────────────────────────────────────────────────────
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -539,8 +582,8 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   const activeFilters = useMemo(() => {
     const chips: { key: string; label: string }[] = [];
     if (filters.location) chips.push({ key: "location", label: `Location: ${filters.location}` });
-    if (filters.workMode) chips.push({ key: "workMode", label: filters.workMode });
-    if (filters.employmentType) chips.push({ key: "employmentType", label: filters.employmentType });
+    filters.workModes.forEach(w => chips.push({ key: `workMode-${w}`, label: w }));
+    filters.employmentTypes.forEach(e => chips.push({ key: `employmentType-${e}`, label: e }));
     if (filters.experienceMin) chips.push({ key: "experienceMin", label: `Min Exp: ${filters.experienceMin}y` });
     if (filters.experienceMax) chips.push({ key: "experienceMax", label: `Max Exp: ${filters.experienceMax}y` });
     if (filters.salaryMin) chips.push({ key: "salaryMin", label: `Min Salary: ${filters.salaryMin}` });
@@ -548,7 +591,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     if (filters.industry) chips.push({ key: "industry", label: filters.industry });
     if (filters.education) chips.push({ key: "education", label: filters.education });
     if (filters.companySize) chips.push({ key: "companySize", label: `Size: ${filters.companySize}` });
-    if (filters.source) chips.push({ key: "source", label: filters.source });
+    filters.sources.forEach(s => chips.push({ key: `source-${s}`, label: s }));
     if (filters.postedWithin) chips.push({ key: "postedWithin", label: `Posted: ${POSTED_WITHIN.find(p => p.value === filters.postedWithin)?.label || filters.postedWithin}` });
     if (filters.company) chips.push({ key: "company", label: filters.company });
     skillTags.forEach((s, i) => chips.push({ key: `skill-${i}`, label: s }));
@@ -571,8 +614,8 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
       };
       if (debouncedQuery) params.query = debouncedQuery;
       if (filters.location) params.location = filters.location;
-      if (filters.workMode) params.workMode = filters.workMode;
-      if (filters.employmentType) params.employmentType = filters.employmentType;
+      if (filters.workModes.length) params.workModes = filters.workModes.join(",");
+      if (filters.employmentTypes.length) params.employmentTypes = filters.employmentTypes.join(",");
       if (filters.experienceMin) params.experienceMin = filters.experienceMin;
       if (filters.experienceMax) params.experienceMax = filters.experienceMax;
       if (filters.salaryMin) params.salaryMin = filters.salaryMin;
@@ -581,7 +624,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
       if (filters.industry) params.industry = filters.industry;
       if (filters.education) params.education = filters.education;
       if (filters.companySize) params.companySize = filters.companySize;
-      if (filters.source) params.source = filters.source;
+      if (filters.sources.length) params.sources = filters.sources.join(",");
       if (filters.postedWithin) params.postedWithin = filters.postedWithin;
       if (filters.company) params.company = filters.company;
 
@@ -704,6 +747,28 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     fetchJobs(1, false);
   }, [debouncedQuery, filters, sortBy, sortOrder, skillTags, fetchJobs]);
 
+  // ─── URL Persistence (sync on change) ──────────────────────────────────
+  useEffect(() => {
+    const sp = new URLSearchParams();
+    if (debouncedQuery) sp.set("q", debouncedQuery);
+    if (filters.location) sp.set("location", filters.location);
+    if (filters.workModes.length) sp.set("workModes", filters.workModes.join(","));
+    if (filters.employmentTypes.length) sp.set("employmentTypes", filters.employmentTypes.join(","));
+    if (filters.sources.length) sp.set("sources", filters.sources.join(","));
+    if (filters.postedWithin) sp.set("postedWithin", filters.postedWithin);
+    if (filters.company) sp.set("company", filters.company);
+    if (filters.industry) sp.set("industry", filters.industry);
+    if (filters.experienceMin) sp.set("experienceMin", filters.experienceMin);
+    if (filters.experienceMax) sp.set("experienceMax", filters.experienceMax);
+    if (filters.salaryMin) sp.set("salaryMin", filters.salaryMin);
+    if (filters.salaryMax) sp.set("salaryMax", filters.salaryMax);
+    if (skillTags.length) sp.set("skills", skillTags.join(","));
+    if (sortBy !== "recommended") sp.set("sortBy", sortBy);
+    const qs = sp.toString();
+    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState(null, "", newUrl);
+  }, [debouncedQuery, filters, skillTags, sortBy]);
+
   useEffect(() => { fetchSavedJobs(); }, [fetchSavedJobs]);
   useEffect(() => { if (savedPage === "saved") fetchSavedJobs(); }, [savedPage]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { fetchSidebarData(); }, [fetchSidebarData]);
@@ -728,9 +793,9 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   const clearAllFilters = useCallback(() => {
     setFilters({
-      location: "", workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
+      location: "", workModes: [], employmentTypes: [], experienceMin: "", experienceMax: "",
       salaryMin: "", salaryMax: "", skills: "", industry: "", education: "",
-      companySize: "", source: "", postedWithin: "", company: "",
+      companySize: "", sources: [], postedWithin: "", company: "",
     });
     setSkillTags([]);
     setSearchQuery("");
@@ -741,6 +806,15 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     if (key.startsWith("skill-")) {
       const idx = parseInt(key.split("-")[1]);
       setSkillTags(prev => prev.filter((_, i) => i !== idx));
+    } else if (key.startsWith("workMode-")) {
+      const val = key.replace("workMode-", "");
+      setFilters(prev => ({ ...prev, workModes: prev.workModes.filter(w => w !== val) }));
+    } else if (key.startsWith("employmentType-")) {
+      const val = key.replace("employmentType-", "");
+      setFilters(prev => ({ ...prev, employmentTypes: prev.employmentTypes.filter(e => e !== val) }));
+    } else if (key.startsWith("source-")) {
+      const val = key.replace("source-", "");
+      setFilters(prev => ({ ...prev, sources: prev.sources.filter(s => s !== val) }));
     } else {
       setFilters(prev => ({ ...prev, [key]: "" }));
     }
@@ -837,15 +911,21 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         <div className="space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Work Mode</span>
           <div className="flex flex-wrap gap-1.5">
-            {WORK_MODES.map(mode => (
-              <button key={mode} onClick={() => handleFilterChange("workMode", filters.workMode === mode ? "" : mode)}
+            {WORK_MODES.map(mode => {
+              const active = filters.workModes.includes(mode);
+              return (
+              <button key={mode} onClick={() => setFilters(prev => ({
+                ...prev,
+                workModes: active ? prev.workModes.filter(w => w !== mode) : [...prev.workModes, mode],
+              }))}
                 className="px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all hover:scale-[1.03]"
                 style={{
-                  background: filters.workMode === mode ? "rgba(245,158,11,0.12)" : c.surface,
-                  color: filters.workMode === mode ? c.primary : c.textMuted,
-                  borderColor: filters.workMode === mode ? "rgba(245,158,11,0.25)" : c.border,
+                  background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                  color: active ? c.primary : c.textMuted,
+                  borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
                 }}>{mode}</button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -862,15 +942,21 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         <div className="space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Employment Type</span>
           <div className="flex flex-wrap gap-1.5">
-            {EMPLOYMENT_TYPES.map(type => (
-              <button key={type} onClick={() => handleFilterChange("employmentType", filters.employmentType === type ? "" : type)}
+            {EMPLOYMENT_TYPES.map(type => {
+              const active = filters.employmentTypes.includes(type);
+              return (
+              <button key={type} onClick={() => setFilters(prev => ({
+                ...prev,
+                employmentTypes: active ? prev.employmentTypes.filter(e => e !== type) : [...prev.employmentTypes, type],
+              }))}
                 className="px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all hover:scale-[1.03]"
                 style={{
-                  background: filters.employmentType === type ? "rgba(245,158,11,0.12)" : c.surface,
-                  color: filters.employmentType === type ? c.primary : c.textMuted,
-                  borderColor: filters.employmentType === type ? "rgba(245,158,11,0.25)" : c.border,
+                  background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                  color: active ? c.primary : c.textMuted,
+                  borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
                 }}>{type}</button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -982,15 +1068,21 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         <div className="space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Source</span>
           <div className="flex flex-wrap gap-1.5">
-            {SOURCES.map(src => (
-              <button key={src} onClick={() => handleFilterChange("source", filters.source === src ? "" : src)}
+            {SOURCES.map(src => {
+              const active = filters.sources.includes(src);
+              return (
+              <button key={src} onClick={() => setFilters(prev => ({
+                ...prev,
+                sources: active ? prev.sources.filter(s => s !== src) : [...prev.sources, src],
+              }))}
                 className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
                 style={{
-                  background: filters.source === src ? `${SOURCE_COLORS[src]?.bg || c.surface}` : c.surface,
-                  color: filters.source === src ? (SOURCE_COLORS[src]?.text || c.primary) : c.textMuted,
-                  borderColor: filters.source === src ? `${SOURCE_COLORS[src]?.text || c.primary}30` : c.border,
+                  background: active ? `${SOURCE_COLORS[src]?.bg || c.surface}` : c.surface,
+                  color: active ? (SOURCE_COLORS[src]?.text || c.primary) : c.textMuted,
+                  borderColor: active ? `${SOURCE_COLORS[src]?.text || c.primary}30` : c.border,
                 }}>{src}</button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -1138,6 +1230,17 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             {job.skills.length > 5 && (
               <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ color: c.textMuted }}>+{job.skills.length - 5}</span>
             )}
+          </div>
+        )}
+
+        {job.matchReasons && job.matchReasons.length > 0 && (
+          <div className="mb-3 space-y-1">
+            {job.matchReasons.slice(0, 2).map((r, i) => (
+              <div key={i} className="flex items-center gap-1.5 text-[9px] font-semibold" style={{ color: "#10b981" }}>
+                <CheckCircle2 size={9} className="shrink-0" />
+                <span className="truncate">{r.text}</span>
+              </div>
+            ))}
           </div>
         )}
 
@@ -2158,39 +2261,6 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                 <EmptyState c={c} onClearFilters={clearAllFilters} />
               ) : (
                 <>
-                  {/* Recommendation Header Banner */}
-                  <div className="p-4 rounded-2xl border mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md"
-                    style={{
-                      background: isDark ? "linear-gradient(135deg, rgba(245,158,11,0.14), rgba(99,102,241,0.08))" : "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(99,102,241,0.04))",
-                      borderColor: "rgba(245,158,11,0.3)"
-                    }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(245,158,11,0.25)" }}>
-                        <Sparkles size={18} style={{ color: "#f59e0b" }} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-xs font-black uppercase tracking-wider" style={{ color: c.text }}>Recommended Jobs for You</h3>
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-500 border border-amber-500/30">Naukri AI Engine</span>
-                        </div>
-                        <p className="text-[11px] mt-0.5" style={{ color: c.textSec }}>
-                          Prioritizing top opportunities matching your interest in <strong className="text-amber-500 font-extrabold">{targetRole}</strong>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {["Software Developer", "Full Stack", "Data Scientist", "DevOps", "Frontend"].map(role => (
-                        <button
-                          key={role}
-                          onClick={() => { setTargetRole(role); }}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all border cursor-pointer ${targetRole === role ? "bg-amber-500 text-black border-amber-500 font-black shadow-sm" : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"}`}
-                        >
-                          {role}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-3"}>
                     {jobs.map((job, i) => viewMode === "grid" ? renderJobCard(job, i) : renderJobListCard(job, i))}
                   </div>
