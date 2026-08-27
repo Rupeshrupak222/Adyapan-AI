@@ -530,7 +530,7 @@ export function PremiumSetupWizard({
                       <div className="sm:col-span-2 rounded-2xl p-4 flex items-start gap-3 bg-amber-500/[0.06] border border-amber-500/20 text-xs leading-relaxed text-slate-700 dark:text-gray-300 mt-1">
                         <Shield className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                         <span>
-                          All premium plans include <strong>unlimited resumes</strong>, all AI models (GPT-4o, Claude, Gemini), <strong>unlimited cover letters</strong>, full Interview & Coding Hub, and priority support. Cancel anytime.
+                          All premium plans include <strong>30 monthly uses on standard AI tools</strong>, <strong>9 monthly uses on advanced tools</strong>, all AI models (GPT-4o, Claude, Gemini), full Interview & Coding Hub, and priority support. Cancel anytime.
                         </span>
                       </div>
                     </div>
@@ -730,12 +730,13 @@ export function PremiumSetupWizard({
                         Your <span className="font-extrabold text-amber-500">{done.plan}</span> subscription is now active.
                         {done.expiresAt
                           ? ` Access continues until ${new Date(done.expiresAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}.`
-                          : " Enjoy unlimited access to every feature."}
+                          : " Higher limits and premium models are now ready."}
                       </p>
                       <div className="mt-6 w-full grid grid-cols-1 gap-2.5">
                         {[
-                          "All AI models & unlimited resumes",
-                          "Unlimited cover letters & ATS checks",
+                          "Up to 30 monthly attempts on standard AI tools",
+                          "Up to 9 monthly attempts on advanced tools",
+                          "All AI models (GPT-4o, Claude, Gemini)",
                           "Full Interview & Coding Hub",
                           "Priority support",
                         ].map((perk) => (

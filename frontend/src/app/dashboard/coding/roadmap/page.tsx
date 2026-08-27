@@ -205,7 +205,7 @@ export default function CodingRoadmapPage() {
     e.preventDefault();
     if (quota.exhausted) {
       toast.error("You've used all free AI Roadmap generations this month.", {
-        description: "Upgrade to Premium for unlimited roadmaps.",
+        description: "Upgrade to Premium for 9 monthly roadmaps.",
       });
       return;
     }

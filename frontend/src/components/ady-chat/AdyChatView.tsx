@@ -130,7 +130,7 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
     if (quota.exhausted) {
       import("sonner").then(({ toast }) =>
         toast.error("You've used all free AI Chat sessions this month.", {
-          description: "Upgrade to Premium for unlimited chats.",
+          description: "Upgrade to Premium for 30 monthly chat sessions.",
         })
       );
       return;
@@ -211,7 +211,7 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
             sessionId: "none",
             role: "assistant",
             content:
-              "You've used all free AI Chat sessions this month. Upgrade to Premium for unlimited access.",
+              "You've used all free AI Chat sessions this month. Upgrade to Premium for 30 monthly sessions.",
             createdAt: new Date().toISOString(),
           },
         ]);

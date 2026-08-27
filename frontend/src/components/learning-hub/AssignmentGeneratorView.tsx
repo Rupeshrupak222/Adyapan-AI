@@ -489,7 +489,7 @@ export function AssignmentGeneratorView() {
   const handleGenerate = useCallback(async () => {
     if (quota.exhausted) {
       toast.error("You've used all free Assignment Generator attempts this month.", {
-        description: "Upgrade to Premium for unlimited assignments.",
+        description: "Upgrade to Premium for 30 monthly assignment generations.",
       });
       return;
     }

@@ -2,6 +2,8 @@ import { prisma } from "../config/prisma";
 import { randomUUID } from "crypto";
 import {
   DEFAULT_FREE_LIMITS,
+  DEFAULT_PREMIUM_LIMITS,
+  DEFAULT_PLAN_LIMITS,
   FEATURE_DISPLAY_NAMES,
 } from "./feature-keys";
 import { normalizePlanKind } from "./feature-access.service";
@@ -91,15 +93,24 @@ export class FeatureUsageService {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { plan: true, subscriptionStatus: true },
+        select: { plan: true, subscriptionStatus: true, subscriptionEnd: true },
       });
-      const plan = String(user?.plan || "free").toLowerCase();
-      const planKind = normalizePlanKind(plan);
+      const rawPlan = String(user?.plan || "free").toLowerCase();
+      const planKind = normalizePlanKind(rawPlan);
       const subStatus = String(user?.subscriptionStatus || "").toLowerCase();
-      // Paid entitlement requires a non-free plan without a contradicting
-      // lifecycle status (expired/cancelled downgrades back to free).
-      const isPaid = planKind !== "free" && (subStatus === "" || ACTIVE_STATUSES.has(subStatus));
-      return { plan, planKind, isPaid };
+      const subEnd = user?.subscriptionEnd ? new Date(user.subscriptionEnd) : null;
+      const isExpired = subEnd ? subEnd.getTime() <= Date.now() : false;
+
+      // Paid entitlement requires a non-free plan, active/trialing status, and unexpired period.
+      const isPaid =
+        planKind !== "free" &&
+        !isExpired &&
+        (subStatus === "" || ACTIVE_STATUSES.has(subStatus));
+
+      const effectivePlan = isPaid ? rawPlan : "free";
+      const effectivePlanKind = isPaid ? planKind : "free";
+
+      return { plan: effectivePlan, planKind: effectivePlanKind, isPaid };
     } catch {
       return { plan: "free", planKind: "free", isPaid: false };
     }
@@ -108,7 +119,8 @@ export class FeatureUsageService {
   /**
    * Effective monthly limit for a feature + plan.
    * Priority: admin-configured `usage_limits` row → platform defaults.
-   * Paid plans without an explicit admin limit are unlimited.
+   * Free tier: Group A = 10, Group B = 3.
+   * Premium tier: Group A = 30, Group B = 9.
    */
   public static async resolveMonthlyLimit(
     featureKey: string,
@@ -117,25 +129,30 @@ export class FeatureUsageService {
     const overrides = await this.loadLimitOverrides();
     const snake = featureKey.toUpperCase();
     const kebab = snake.toLowerCase().replace(/_/g, "-");
-    const fallback = DEFAULT_FREE_LIMITS[snake] ?? 10;
 
-    // Free-plan scoped row (or un-suffixed row) wins for free users; paid
-    // users fall back to their own plan-scoped rows before going unlimited.
-    const lookupOrder =
-      planInfo.isPaid
-        ? [`${kebab}:${planInfo.plan}`, `${snake}:${planInfo.plan}`, `${planInfo.plan}:${kebab}`]
-        : [kebab, snake];
+    // Check admin overrides with priority
+    const lookupOrder = planInfo.isPaid
+      ? [
+          `${kebab}:${planInfo.plan}`,
+          `${snake}:${planInfo.plan}`,
+          `${planInfo.plan}:${kebab}`,
+          `${kebab}:${planInfo.planKind}`,
+          `${snake}:${planInfo.planKind}`,
+          `${planInfo.planKind}:${kebab}`,
+        ]
+      : [`${kebab}:free`, `${snake}:free`, `free:${kebab}`, kebab, snake];
 
     for (const candidate of lookupOrder) {
       if (overrides.has(candidate)) {
         return { limit: overrides.get(candidate)!, unlimited: false };
       }
     }
-    if (overrides.has(`free:${kebab}`) && !planInfo.isPaid) {
-      return { limit: overrides.get(`free:${kebab}`)!, unlimited: false };
-    }
 
-    return { limit: fallback, unlimited: planInfo.isPaid };
+    const planTier = planInfo.isPaid ? planInfo.planKind : "free";
+    const planLimits = DEFAULT_PLAN_LIMITS[planTier] || DEFAULT_PLAN_LIMITS["free"];
+    const fallback = planLimits[snake] ?? (DEFAULT_FREE_LIMITS[snake] ?? 10);
+
+    return { limit: fallback, unlimited: false };
   }
 
   private static async loadLimitOverrides(): Promise<Map<string, number>> {
@@ -342,10 +359,13 @@ export class FeatureUsageService {
               limit,
               used: 0,
             },
-            update: {},
+            update: {
+              limit,
+              periodEnd,
+            },
           });
 
-          // 2. Limit check (paid plans are unlimited).
+          // 2. Limit check (enforces plan allowance for Free and Premium).
           if (!unlimited && quotaRow.used >= limit) {
             return { blocked: true as const };
           }

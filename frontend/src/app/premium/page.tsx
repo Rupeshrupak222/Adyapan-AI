@@ -234,19 +234,18 @@ export default function PremiumPage() {
   }
 
   const freePlanFeatures = [
-    "50 AI Requests / day",
-    "5 Resume Generations / day",
-    "Basic AI Chat",
-    "3 Cover Letters / month",
-    "Basic ATS Check",
+    "10 uses / mo on standard AI tools",
+    "3 uses / mo on advanced AI tools",
+    "Standard AI model access",
+    "Basic Resume & Coding support",
     "Community Support",
   ];
   const proPlanFeatures = proMonthly?.features?.length
     ? proMonthly.features
     : [
-        "Unlimited Resumes & ATS Checks",
-        "All AI Models (GPT-4o, Claude, Gemini)",
-        "Unlimited Cover Letters & LinkedIn Tools",
+        "30 uses / mo on standard AI tools (3x Free)",
+        "9 uses / mo on advanced AI tools (3x Free)",
+        "All Premium AI Models (GPT-4o, Claude, Gemini)",
         "Full Interview & Coding Hub Access",
         "Ady Chat with file uploads",
         "Priority Support",
@@ -296,7 +295,7 @@ export default function PremiumPage() {
             Unlock <span style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Premium</span>
           </h1>
           <p className="text-sm max-w-lg mx-auto transition-colors duration-300" style={{ color: colors.subtext }}>
-            Get unlimited access to all AI features, premium models, and advanced tools to accelerate your career.
+            Get 3x higher monthly AI allowances, premium models, and advanced career tools to accelerate your learning.
           </p>
         </motion.div>
       </div>
@@ -368,7 +367,7 @@ export default function PremiumPage() {
                   <span style={{ color: colors.featureText }}>{f}</span>
                 </div>
               ))}
-              {["Premium AI Models", "Unlimited Cover Letters", "Advanced ATS Analysis", "Interview Hub"].map((f, j) => (
+              {["30 Standard AI Uses / mo", "9 Advanced AI Uses / mo", "Premium AI Models", "Priority Support"].map((f, j) => (
                 <div key={j} className="flex items-start gap-2 text-xs" style={{ color: colors.missingFeatureText }}>
                   <X className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                   <span>{f}</span>

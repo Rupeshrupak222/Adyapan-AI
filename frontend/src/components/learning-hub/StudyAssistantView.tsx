@@ -190,8 +190,8 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
       return;
     }
     if (quota.exhausted) {
-      toast.error("You've used all free AI Study Assistant attempts this month.", {
-        description: "Upgrade to Premium for unlimited document analysis.",
+      toast.error("You've used all free Study Assistant attempts this month.", {
+        description: "Upgrade to Premium for 30 monthly document analyses.",
       });
       return;
     }
@@ -360,7 +360,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
     if (!targetTopic.trim() || !socket) return;
     if (quota.exhausted) {
       toast.error("You've used all free AI Study Assistant attempts this month.", {
-        description: "Upgrade to Premium for unlimited lessons.",
+        description: "Upgrade to Premium for 30 monthly lessons.",
       });
       return;
     }
