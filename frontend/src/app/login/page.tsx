@@ -181,19 +181,13 @@ function LoginPageContent() {
       document.cookie = "adyapan-user=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
     }
 
-    // Auto-redirect if already logged in (and not explicitly logging out).
-    // Only auto-redirect regular USERs. An ADMIN landing here (e.g. after
-    // clicking "User Login" from the admin portal) must NOT be bounced: the
-    // user dashboard would reject them and send them back to /admin-login,
-    // creating a redirect loop. Admins simply see the user login form.
+    // Auto-redirect if already logged in (and not explicitly logging out)
     const existingToken = localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token");
     const existingUser = localStorage.getItem("adyapan-user") || sessionStorage.getItem("adyapan-user");
     if (existingToken && existingUser && params.get("logout") !== "true") {
       try {
         const u = JSON.parse(existingUser) as { role?: string };
-        if (u.role !== "ADMIN") {
-          router.replace(getPostLoginTarget(u.role));
-        }
+        router.replace(getPostLoginTarget(u.role));
       } catch { /* ignore */ }
     }
 
