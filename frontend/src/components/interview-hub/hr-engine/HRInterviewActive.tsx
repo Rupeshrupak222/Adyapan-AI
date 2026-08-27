@@ -306,6 +306,7 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
           conversationEngine.pauseConversation();
         }
       }}
+      onMicToggle={conversationEngine.toggleCandidateMic}
       onEndInterview={async () => {
         conversationEngine.destroyEngine();
         try {
@@ -324,6 +325,7 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
       }}
       onMuteToggle={conversationEngine.toggleAiMute}
       onReplayLastQuestion={handleReplayQuestion}
+      onSubmitAnswer={conversationEngine.triggerAutoSubmit}
       onTextSubmit={conversationEngine.submitTextAnswer}
       onTextModeToggle={() =>
         conversationEngine.setTextModeEnabled(

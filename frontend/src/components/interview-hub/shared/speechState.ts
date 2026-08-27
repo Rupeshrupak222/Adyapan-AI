@@ -174,8 +174,8 @@ export class SharedSpeechEngine {
           return;
         }
 
-        // Automatic Recovery Logic
-        if (this.restartCount < (this.config.maxRestartAttempts || 10)) {
+        // Automatic Recovery Logic — infinitely restart stream while session is active
+        if (!this.isExplicitlyStopped && !this.isDestroyed) {
           this.restartCount++;
           this.setState("RESTARTING");
           logInterview("SpeechState", `Auto-recovering speech recognition (Attempt ${this.restartCount})...`);
@@ -185,11 +185,7 @@ export class SharedSpeechEngine {
             if (!this.isExplicitlyStopped && !this.isDestroyed) {
               this.startListening();
             }
-          }, 300);
-        } else {
-          logInterviewError("SpeechState", "Max restart attempts reached.", null);
-          this.setState("ERROR");
-          this.callbacks.onError?.("Speech recognition connection lost. Please try speaking again.");
+          }, 200);
         }
       };
 

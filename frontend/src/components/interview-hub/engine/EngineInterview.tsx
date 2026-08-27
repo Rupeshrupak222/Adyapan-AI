@@ -292,6 +292,8 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
           conversationEngine.pauseConversation();
         }
       }}
+      onMuteToggle={conversationEngine.toggleAiMute}
+      onMicToggle={conversationEngine.toggleCandidateMic}
       onEndInterview={async () => {
         conversationEngine.destroyEngine();
         try {
@@ -308,8 +310,8 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
           onComplete(sessionId);
         }
       }}
-      onMuteToggle={conversationEngine.toggleAiMute}
       onReplayLastQuestion={handleReplayQuestion}
+      onSubmitAnswer={conversationEngine.triggerAutoSubmit}
       onTextSubmit={conversationEngine.submitTextAnswer}
       onTextModeToggle={() =>
         conversationEngine.setTextModeEnabled(

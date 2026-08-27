@@ -17,6 +17,7 @@ interface CandidateCardProps {
   className?: string;
   isFloatingPIP?: boolean;
   onTogglePIP?: () => void;
+  onToggleMic?: () => void;
 }
 
 export const CandidateCard: React.FC<CandidateCardProps> = ({
@@ -31,6 +32,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   className = "",
   isFloatingPIP: externalPIP,
   onTogglePIP,
+  onToggleMic,
 }) => {
   const [internalPIP, setInternalPIP] = useState(false);
   const isFloating = externalPIP !== undefined ? externalPIP : internalPIP;
@@ -128,6 +130,21 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             )}
             <span>{isSpeaking ? "Speaking" : silenceStage !== "none" ? silenceStage : "Ready"}</span>
           </div>
+
+          {/* Interactive Mic Toggle Button */}
+          {onToggleMic && (
+            <button
+              onClick={onToggleMic}
+              className={`p-1.5 rounded-lg border text-xs transition-colors flex items-center ${
+                isMicEnabled
+                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30"
+                  : "bg-rose-500/20 text-rose-300 border-rose-500/30 hover:bg-rose-500/30"
+              }`}
+              title={isMicEnabled ? "Click to Mute Mic" : "Click to Enable & Unmute Mic"}
+            >
+              {isMicEnabled ? <Mic className="w-3.5 h-3.5 text-emerald-400" /> : <MicOff className="w-3.5 h-3.5 text-rose-400" />}
+            </button>
+          )}
 
           {/* Camera PIP Popup Toggle */}
           <button

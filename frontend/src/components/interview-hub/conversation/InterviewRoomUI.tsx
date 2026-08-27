@@ -51,6 +51,8 @@ interface InterviewRoomUIProps {
   onPauseToggle: () => void;
   onEndInterview: () => void;
   onMuteToggle: () => void;
+  onMicToggle?: () => void;
+  onSubmitAnswer?: () => void;
   onReplayLastQuestion: () => void;
   onTextSubmit: (text: string) => void;
   onTextModeToggle: () => void;
@@ -88,6 +90,8 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
   onPauseToggle,
   onEndInterview,
   onMuteToggle,
+  onMicToggle,
+  onSubmitAnswer,
   onReplayLastQuestion,
   onTextSubmit,
   onTextModeToggle,
@@ -235,6 +239,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
                 className="h-full min-h-0"
                 isFloatingPIP={isFloatingPIP}
                 onTogglePIP={() => setIsFloatingPIP((prev) => !prev)}
+                onToggleMic={onMicToggle}
               />
             </div>
           </div>
@@ -248,6 +253,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
               isCandidateSpeaking={micLevel > 15}
               theme={theme}
               className="h-full min-h-0 flex-1"
+              onSubmitAnswer={onSubmitAnswer}
             />
           </div>
         </div>
@@ -352,18 +358,27 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
             <span>{isAiMuted ? "Unmute AI" : "Mute AI"}</span>
           </button>
 
-          {/* Replay Last Question */}
+          {/* Replay Last Question / Unblock Voice */}
           <button
-            onClick={onReplayLastQuestion}
+            onClick={() => {
+              if (typeof window !== "undefined" && "speechSynthesis" in window) {
+                try {
+                  window.speechSynthesis.cancel();
+                  window.speechSynthesis.resume();
+                } catch {}
+              }
+              onReplayLastQuestion();
+            }}
             disabled={!lastInterviewerMessage}
             className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors disabled:opacity-50 ${
               isDark
                 ? "bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800"
                 : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm"
             }`}
+            title="Click to unblock browser audio and replay question voice out loud"
           >
             <RotateCcw className="w-3.5 h-3.5 text-purple-500" />
-            <span>Replay Question</span>
+            <span>Replay Voice</span>
           </button>
         </div>
 

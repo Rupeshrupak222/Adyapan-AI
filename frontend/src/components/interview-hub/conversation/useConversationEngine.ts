@@ -97,16 +97,37 @@ export function useConversationEngine({
   const lastSpeechTimeRef = useRef<number>(Date.now());
   const activeAudioElementRef = useRef<HTMLAudioElement | null>(null);
 
-  // Dynamic voice loading state ref
+  // Dynamic voice loading state ref & Brave/Safari Audio Autoplay Unlocker
   const availableVoicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const updateVoices = () => {
-        availableVoicesRef.current = window.speechSynthesis.getVoices();
+        try {
+          const v = window.speechSynthesis.getVoices();
+          if (v && v.length > 0) availableVoicesRef.current = v;
+        } catch {}
       };
       updateVoices();
       window.speechSynthesis.onvoiceschanged = updateVoices;
+
+      const unblockBraveAudio = () => {
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+        } catch {}
+      };
+
+      window.addEventListener("click", unblockBraveAudio);
+      window.addEventListener("touchstart", unblockBraveAudio);
+      window.addEventListener("keydown", unblockBraveAudio);
+
+      return () => {
+        window.removeEventListener("click", unblockBraveAudio);
+        window.removeEventListener("touchstart", unblockBraveAudio);
+        window.removeEventListener("keydown", unblockBraveAudio);
+      };
     }
   }, []);
 
@@ -495,17 +516,24 @@ export function useConversationEngine({
           onFinishedSpeech();
         }, expectedDurationMs + 5000);
 
-        // Chrome keep-alive pulse (pauses and resumes every 8 seconds during speech)
-        speechKeepAliveRef.current = setInterval(() => {
-          if (typeof window !== "undefined" && "speechSynthesis" in window) {
-            if (window.speechSynthesis.speaking) {
-              window.speechSynthesis.pause();
-              window.speechSynthesis.resume();
-            }
-          }
-        }, 8000);
+        // Brave & Chrome speech queue reset and force-resume
+        try {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.resume();
+        } catch {}
 
         window.speechSynthesis.speak(utterance);
+
+        // Brave browser autoplay force-unpause pulse
+        setTimeout(() => {
+          if (typeof window !== "undefined" && "speechSynthesis" in window) {
+            try {
+              if (window.speechSynthesis.paused || window.speechSynthesis.speaking) {
+                window.speechSynthesis.resume();
+              }
+            } catch {}
+          }
+        }, 150);
       } else {
         // Muted or unsupported: brief delay then open mic
         setTimeout(() => {
@@ -627,6 +655,24 @@ export function useConversationEngine({
   }, [stopSpeech, stopMicMonitoring, clearSilenceTimers, clearSpeechWatchdogs]);
 
   // Cleanup on unmount
+  const toggleCandidateMic = useCallback(async () => {
+    if (isMicEnabled) {
+      stopMicMonitoring();
+      SharedSpeechEngine.getInstance().pauseListening();
+      setIsMicEnabled(false);
+      toast.info("Microphone muted.");
+    } else {
+      toast.info("Initializing microphone...");
+      await startMicMonitoring();
+      startSpeechRecognition();
+      startSilenceMonitor();
+      if (stateRef.current !== "AI_SPEAKING") {
+        setState("WAITING_FOR_CANDIDATE");
+      }
+      toast.success("Microphone active — listening to your voice!");
+    }
+  }, [isMicEnabled, startMicMonitoring, startSpeechRecognition, startSilenceMonitor, stopMicMonitoring]);
+
   useEffect(() => {
     return () => {
       destroyEngine();
@@ -652,6 +698,7 @@ export function useConversationEngine({
     pauseConversation,
     resumeConversation,
     toggleAiMute,
+    toggleCandidateMic,
     setTextModeEnabled,
     openMicAuto,
     stopSpeech,
