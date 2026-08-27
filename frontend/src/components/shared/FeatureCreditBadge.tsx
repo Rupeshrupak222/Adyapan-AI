@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, AlertCircle, Crown, ShieldAlert } from "lucide-react";
+import { Sparkles, AlertCircle, Crown, ShieldAlert, Zap } from "lucide-react";
 import { useFeatureUsageStore, formatResetDate } from "@/store/feature-usage-store";
 
 interface FeatureCreditBadgeProps {
@@ -36,16 +36,11 @@ export const FeatureCreditBadge: React.FC<FeatureCreditBadgeProps> = ({
   const isPaid = plan !== "free";
   const isExhausted = !allowed || remaining === 0;
 
-  if (isPaid) {
-    return (
-      <div
-        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black shadow-md border bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white border-purple-400/40 ${className}`}
-      >
-        <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300 animate-pulse" />
-        <span className="tracking-wide">Unlimited Pro Access</span>
-      </div>
-    );
-  }
+  // Warning thresholds
+  // 30-limit features: >10 normal, 6-10 subtle, 1-5 warning, 0 blocked
+  // 9-limit features: >2 normal, 1-2 warning, 0 blocked
+  const isWarning = limit >= 20 ? remaining > 0 && remaining <= 5 : remaining > 0 && remaining <= 2;
+  const isSubtleNotice = limit >= 20 && remaining > 5 && remaining <= 10;
 
   const pct = limit > 0 ? Math.max(0, Math.min(100, ((limit - remaining) / limit) * 100)) : 0;
   const resetLabel = formatResetDate(resetAt);
