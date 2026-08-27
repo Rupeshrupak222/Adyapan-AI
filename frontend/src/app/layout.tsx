@@ -8,7 +8,6 @@ import ThemeScript from "@/components/providers/ThemeScript";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { PremiumUpgradeModal } from "@/components/premium/PremiumUpgradeModal";
 import { PremiumRequiredModal } from "@/components/premium/PremiumRequiredModal";
-import { CookieConsentBanner } from "@/components/ui/CookieConsentBanner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -45,7 +44,6 @@ export default function RootLayout({
         <QueryProvider>{children}</QueryProvider>
         <PremiumUpgradeModal />
         <PremiumRequiredModal />
-        <CookieConsentBanner />
       </body>
     </html>
   );

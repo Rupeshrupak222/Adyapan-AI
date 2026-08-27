@@ -860,9 +860,11 @@ settingsRouter.post("/logout-devices", async (req: any, res) => {
     // The current JWT remains valid until it expires.
     // Future implementations should use a token-version field on User
     // to fully invalidate older sessions.
-    // For now we clear the blacklisted-token table to prevent unbounded growth.
+    // Housekeeping: prune only EXPIRED blacklist entries. Wiping the whole
+    // table would resurrect blacklisted (potentially stolen) tokens for
+    // every user on the platform.
     try {
-      await prisma.blacklistedToken.deleteMany();
+      await prisma.blacklistedToken.deleteMany({ where: { expiresAt: { lt: new Date() } } });
     } catch { /* model may not exist, ignore */ }
 
     await logActivity(prisma, userId, "All other devices logged out", "security");

@@ -154,6 +154,16 @@ interviewRouter.post("/:sessionId/system-check/result", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
+    // Ownership check
+    const owned = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+      select: { id: true },
+    });
+    if (!owned) {
+      res.status(404).json({ error: "Interview session not found" });
+      return;
+    }
+
     await storeDeviceInfo(sessionId, deviceInfo || {}, p);
     await p.interviewSession.update({
       where: { id: sessionId },
@@ -266,6 +276,16 @@ interviewRouter.post("/:sessionId/answer", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
+    // Ownership check
+    const owned = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+      select: { id: true },
+    });
+    if (!owned) {
+      res.status(404).json({ error: "Interview session not found" });
+      return;
+    }
+
     const processResult = await processAnswer(sessionId, answer, p);
 
     if (processResult.isComplete) {
@@ -358,6 +378,16 @@ interviewRouter.post("/:sessionId/proctor", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
+    // Ownership check
+    const owned = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+      select: { id: true },
+    });
+    if (!owned) {
+      res.status(404).json({ error: "Interview session not found" });
+      return;
+    }
+
     const analysis = analyzeProctoringEvent(eventType, req.body);
     const results = Array.isArray(analysis) ? analysis : [analysis];
 
@@ -392,13 +422,19 @@ interviewRouter.get("/:sessionId/proctor", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
+    // Ownership check
+    const session = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+      select: { violationPoints: true, violationThreshold: true },
+    });
+    if (!session) {
+      res.status(404).json({ error: "Interview session not found" });
+      return;
+    }
+
     const events = await p.proctoringEvent.findMany({
       where: { sessionId },
       orderBy: { createdAt: "asc" },
-    });
-    const session = await p.interviewSession.findFirst({
-      where: { id: sessionId },
-      select: { violationPoints: true, violationThreshold: true },
     });
 
     res.json({ success: true, events, totalPoints: session?.violationPoints || 0, threshold: session?.violationThreshold || 10 });
@@ -414,13 +450,19 @@ interviewRouter.get("/:sessionId/violation-report", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
+    // Ownership check
+    const session = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+      select: { violationPoints: true, violationThreshold: true },
+    });
+    if (!session) {
+      res.status(404).json({ error: "Interview session not found" });
+      return;
+    }
+
     const events = await p.proctoringEvent.findMany({
       where: { sessionId },
       orderBy: { createdAt: "asc" },
-    });
-    const session = await p.interviewSession.findFirst({
-      where: { id: sessionId },
-      select: { violationPoints: true, violationThreshold: true },
     });
 
     const report = generateViolationReport(
@@ -448,6 +490,17 @@ interviewRouter.post("/:sessionId/end", async (req, res) => {
     const { sessionId } = req.params;
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
+
+    // Ownership check
+    const owned = await p.interviewSession.findFirst({
+      where: { id: sessionId, userId: req.user!.userId },
+      select: { id: true },
+    });
+    if (!owned) {
+      res.status(404).json({ error: "Interview session not found" });
+      return;
+    }
+
     const result = await endInterviewSession(sessionId, p);
     res.json({ success: true, session: result.session, evaluation: result.evaluation });
   } catch (error) {

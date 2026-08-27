@@ -755,12 +755,9 @@ export function CodingDashboardView() {
             {/* ─── HEATMAP ───────────────────────────────────────── */}
             <motion.div custom={17} variants={codingFadeUp} initial="hidden" animate="visible">
               <PremiumCard className="p-6 bg-[var(--bg-card)] border-[var(--border-color)] hover:border-emerald-500/20 hover:shadow-[0_0_24px_rgba(16,185,129,0.04)] transition-all duration-300">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={18} className="text-emerald-500" />
-                    <h3 className="text-sm font-bold text-[var(--text-primary)]">Coding Activity Heatmap</h3>
-                  </div>
-                  <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Last 365 Days</span>
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar size={18} className="text-emerald-500" />
+                  <h3 className="text-base font-extrabold text-[var(--text-primary)]">Coding Activity Heatmap</h3>
                 </div>
                 <HeatmapGrid heatmap={analytics.heatmap} isDark={isDark} />
               </PremiumCard>
@@ -829,97 +826,194 @@ export function CodingDashboardView() {
 
 // ─── Heatmap Grid Component ──────────────────────────────────────────────────
 function HeatmapGrid({ heatmap, isDark }: { heatmap: Record<string, number>; isDark: boolean }) {
-  const weeks = 53;
-  const days = 7;
-  const [tooltip, setTooltip] = useState<{ date: string; count: number; x: number; y: number } | null>(null);
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [snakeHeadIndex, setSnakeHeadIndex] = useState(0);
 
-  const cells: { date: string; count: number; day: number; week: number }[] = [];
-  const today = new Date();
-  const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() - (weeks * 7 - 1) + (6 - today.getDay()));
-
-  for (let w = 0; w < weeks; w++) {
-    for (let d = 0; d < days; d++) {
-      const cellDate = new Date(startDate);
-      cellDate.setDate(cellDate.getDate() + w * 7 + d);
-      const dateStr = cellDate.toISOString().split("T")[0];
-      const count = heatmap[dateStr] || 0;
-      cells.push({ date: dateStr, count, day: d, week: w });
-    }
-  }
-
-  const maxCount = Math.max(1, ...Object.values(heatmap));
-  const getColor = (count: number) => {
-    if (count === 0) return isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
-    const intensity = count / maxCount;
-    if (intensity <= 0.25) return isDark ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.15)";
-    if (intensity <= 0.5) return isDark ? "rgba(16,185,129,0.4)" : "rgba(16,185,129,0.3)";
-    if (intensity <= 0.75) return isDark ? "rgba(16,185,129,0.65)" : "rgba(16,185,129,0.5)";
-    return "#10b981";
-  };
+  // Snake animation loop
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSnakeHeadIndex((prev) => prev + 1);
+    }, 130);
+    return () => clearInterval(interval);
+  }, []);
 
   const totalSolved = Object.values(heatmap).reduce((s, c) => s + c, 0);
   const activeDays = Object.keys(heatmap).length;
+  const maxCount = Math.max(1, ...Object.values(heatmap));
+
+  const getColor = (count: number) => {
+    if (count === 0) return isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
+    const intensity = count / maxCount;
+    if (intensity <= 0.25) return isDark ? "rgba(16,185,129,0.25)" : "rgba(16,185,129,0.18)";
+    if (intensity <= 0.5) return isDark ? "rgba(16,185,129,0.5)" : "rgba(16,185,129,0.35)";
+    if (intensity <= 0.75) return isDark ? "rgba(16,185,129,0.75)" : "rgba(16,185,129,0.6)";
+    return "#10b981";
+  };
+
+  // Compute available years dynamically
+  const availableYears = (() => {
+    const yearsSet = new Set<number>([currentYear, currentYear - 1, currentYear - 2]);
+    Object.keys(heatmap).forEach((dateStr) => {
+      const y = new Date(dateStr).getFullYear();
+      if (y && !isNaN(y)) yearsSet.add(y);
+    });
+    return Array.from(yearsSet).sort((a, b) => b - a);
+  })();
+
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  let totalGlobalIndex = 0;
+
+  const yearMonthsData = months.map((monthName, monthIdx) => {
+    const yr = selectedYear;
+    const daysCount = new Date(yr, monthIdx + 1, 0).getDate();
+
+    // Start weekday offset (Mon=0..Sun=6)
+    const rawFirstDay = new Date(yr, monthIdx, 1).getDay();
+    const startOffset = rawFirstDay === 0 ? 6 : rawFirstDay - 1;
+
+    const monthDaysList: { date?: string; count?: number; globalIdx?: number; isPadding?: boolean }[] = [];
+
+    for (let p = 0; p < startOffset; p++) {
+      monthDaysList.push({ isPadding: true });
+    }
+
+    for (let dayNum = 1; dayNum <= daysCount; dayNum++) {
+      const mm = String(monthIdx + 1).padStart(2, "0");
+      const dd = String(dayNum).padStart(2, "0");
+      const dateKey = `${yr}-${mm}-${dd}`;
+      const count = heatmap[dateKey] || 0;
+
+      monthDaysList.push({
+        date: dateKey,
+        count,
+        globalIdx: totalGlobalIndex++,
+      });
+    }
+
+    return { monthName, year: yr, days: monthDaysList };
+  });
+
+  const totalYearDays = totalGlobalIndex || 365;
 
   return (
-    <div className="relative">
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-[10px] text-[var(--text-secondary)]">{totalSolved} questions solved across {activeDays} active days</span>
-      </div>
-      <div className="overflow-x-auto pb-2">
-        <div className="flex gap-[3px]">
-          {Array.from({ length: weeks }, (_, weekIdx) => (
-            <div key={weekIdx} className="flex flex-col gap-[3px]">
-              {cells.filter(c => c.week === weekIdx).map((cell) => (
-                <div
-                  key={cell.date}
-                  className="w-[11px] h-[11px] rounded-[2px] hover:ring-1 hover:ring-[var(--text-secondary)]/30 transition-all cursor-default"
-                  style={{ backgroundColor: getColor(cell.count) }}
-                  onMouseEnter={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setTooltip({ date: cell.date, count: cell.count, x: rect.left + rect.width / 2, y: rect.top - 8 });
-                  }}
-                  onMouseLeave={() => setTooltip(null)}
-                />
-              ))}
-            </div>
+    <div className="relative space-y-4">
+      {/* Header Bar with Stats & Year Selector Pills */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+        <span className="text-xs font-semibold text-[var(--text-secondary)]">
+          <strong className="text-emerald-500 font-extrabold">{totalSolved}</strong> questions solved across{" "}
+          <strong className="text-amber-500 font-extrabold">{activeDays}</strong> active days
+        </span>
+
+        {/* Dynamic Year Pills */}
+        <div className="flex p-1 rounded-xl border border-[var(--border-color)] bg-[var(--bg-dark)] gap-1">
+          {availableYears.map((year) => (
+            <button
+              key={year}
+              onClick={() => setSelectedYear(year)}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                selectedYear === year
+                  ? "bg-emerald-500 text-black shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              {year}
+            </button>
           ))}
         </div>
       </div>
-      <AnimatePresence>
-        {tooltip && (
-          <motion.div
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15 }}
-            className="fixed z-50 pointer-events-none px-2.5 py-1.5 rounded-lg text-[10px] font-bold shadow-lg border"
-            style={{
-              left: tooltip.x,
-              top: tooltip.y,
-              transform: "translate(-50%, -100%)",
-              background: isDark ? "#1a1c29" : "#ffffff",
-              color: isDark ? "#f3f4f6" : "#0f172a",
-              borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"
-            }}
-          >
-            {tooltip.count} solved on {tooltip.date}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <div className="flex items-center justify-end gap-2 mt-3">
-        <span className="text-[9px] text-[var(--text-secondary)]">Less</span>
-        {[0, 1, 2, 3, 4].map((level) => {
-          const counts = [0, 0.25, 0.5, 0.75, 1];
-          return (
-            <div
-              key={level}
-              className="w-[11px] h-[11px] rounded-[2px]"
-              style={{ backgroundColor: getColor(counts[level] * maxCount) }}
-            />
-          );
-        })}
-        <span className="text-[9px] text-[var(--text-secondary)]">More</span>
+
+      {/* LeetCode-Style Heatmap Grid in ONE FRAME */}
+      <div className="w-full overflow-x-auto pb-1 custom-scrollbar">
+        <div className="w-full min-w-[760px] flex gap-2 pt-1 items-start">
+          
+          {/* Left Day Labels Column */}
+          <div className="flex flex-col pt-5 shrink-0 justify-between select-none" style={{ height: "94px", width: "26px" }}>
+            <span className="text-[10px] font-extrabold leading-none text-[var(--text-secondary)]">Mon</span>
+            <span className="text-[10px] font-extrabold leading-none text-[var(--text-secondary)]">Wed</span>
+            <span className="text-[10px] font-extrabold leading-none text-[var(--text-secondary)]">Fri</span>
+            <span className="text-[10px] font-extrabold leading-none text-[var(--text-secondary)]">Sun</span>
+          </div>
+
+          {/* Months Container (12 Months in ONE FRAME from JAN to DEC) */}
+          <div className="flex items-start justify-between flex-grow gap-1 sm:gap-1.5">
+            {yearMonthsData.map(({ monthName, days }, mIdx) => (
+              <div key={`${monthName}-${mIdx}`} className="flex flex-col items-center flex-grow">
+                {/* Month Header Label */}
+                <span className="text-[10px] font-black uppercase tracking-wider mb-1.5 text-[var(--text-primary)]">
+                  {monthName}
+                </span>
+
+                {/* 7-Row Grid */}
+                <div
+                  className="grid gap-[2px]"
+                  style={{
+                    gridTemplateRows: "repeat(7, 11px)",
+                    gridAutoFlow: "column",
+                    gridAutoColumns: "11px",
+                    height: "94px",
+                  }}
+                >
+                  {days.map((item, idx) => {
+                    if (item.isPadding || !item.date) {
+                      return (
+                        <div
+                          key={`pad-${idx}`}
+                          className="w-[11px] h-[11px] opacity-0 pointer-events-none"
+                        />
+                      );
+                    }
+
+                    const { date, count = 0, globalIdx = 0 } = item;
+                    const color = getColor(count);
+                    const isSnakeHead = globalIdx === (snakeHeadIndex % totalYearDays);
+                    const isSnakeTail = [
+                      (snakeHeadIndex - 1 + totalYearDays) % totalYearDays,
+                      (snakeHeadIndex - 2 + totalYearDays) % totalYearDays,
+                      (snakeHeadIndex - 3 + totalYearDays) % totalYearDays,
+                    ].includes(globalIdx);
+
+                    return (
+                      <div
+                        key={date}
+                        className={`w-[11px] h-[11px] rounded-[2.5px] transition-all cursor-pointer relative group flex items-center justify-center ${
+                          isSnakeHead ? "bg-emerald-400 shadow-[0_0_12px_#10b981] scale-125 z-20 border border-white" :
+                          isSnakeTail ? "bg-emerald-500/80 shadow-[0_0_8px_#10b981] scale-110" : ""
+                        }`}
+                        style={!isSnakeHead && !isSnakeTail ? { backgroundColor: color } : undefined}
+                      >
+                        {/* Snake Head Icon */}
+                        {isSnakeHead && <span className="text-[7px] leading-none">🐍</span>}
+
+                        {/* Tooltip */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 rounded-xl bg-zinc-950/95 border border-white/15 text-xs text-white font-medium shadow-2xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all z-30 leading-normal">
+                          <div className="font-extrabold text-white/90 border-b border-white/10 pb-1 mb-1">
+                            {new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </div>
+                          <div>{count > 0 ? `${count} question${count > 1 ? "s" : ""} solved` : "No questions solved"}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Legend Footer */}
+      <div className="flex justify-between items-center text-xs font-semibold select-none pt-2 border-t border-[var(--border-color)] text-[var(--text-secondary)]">
+        <span>Jan 1, {selectedYear}</span>
+        <div className="flex items-center gap-2">
+          <span>Less</span>
+          <div className="w-[11px] h-[11px] rounded-[2.5px] bg-[var(--bg-dark)] border border-[var(--border-color)]" />
+          <div className="w-[11px] h-[11px] rounded-[2.5px] bg-emerald-900/30 border border-emerald-500/20" />
+          <div className="w-[11px] h-[11px] rounded-[2.5px] bg-emerald-700/60 border border-emerald-500/30" />
+          <div className="w-[11px] h-[11px] rounded-[2.5px] bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+          <span>More</span>
+        </div>
+        <span>Dec 31, {selectedYear}</span>
       </div>
     </div>
   );

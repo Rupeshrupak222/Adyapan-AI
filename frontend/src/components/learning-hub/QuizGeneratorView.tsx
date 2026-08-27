@@ -732,14 +732,13 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
               {/* Topic Input */}
               <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
                 className="p-6 rounded-3xl relative overflow-hidden" style={{ background: c.surface, border: `1px solid ${accent.border}` }}>
-                <div className="relative z-10 space-y-4">
-                  <p className="text-xs font-black uppercase tracking-widest" style={{ color: c.textMuted }}>What do you want to be quizzed on?</p>
+                <div className="relative z-10 space-y-3">
+                  <p className="text-xs font-extrabold uppercase tracking-widest" style={{ color: c.textSec }}>What do you want to be quizzed on?</p>
                   <div className="relative">
-                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#52525b" }} />
                     <input type="text" placeholder="Enter a topic to generate quiz..." value={topic}
                       onChange={e => setTopic(e.target.value)} onKeyDown={e => e.key === "Enter" && topic.trim() && generateQuiz()}
-                      className="w-full rounded-xl pl-10 pr-4 py-3 text-sm transition-all focus:outline-none"
-                      style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }} />
+                      className="w-full rounded-2xl px-5 py-3.5 text-base font-medium transition-all focus:outline-none"
+                      style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text, borderRadius: "18px" }} />
                   </div>
                 </div>
               </motion.div>
@@ -747,28 +746,29 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
               {/* Mode & Duration Config */}
               <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1} className="space-y-6">
                 <div className="space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: c.textMuted }}>Learning Mode</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <p className="text-xs font-extrabold uppercase tracking-widest" style={{ color: c.textSec }}>Learning Mode</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {MODES.map(m => {
                       const active = mode === m.key;
                       const modeAccent = getModeAccent(m.key);
                       return (
                         <motion.button key={m.key} whileTap={{ scale: 0.97 }} onClick={() => setMode(m.key)}
-                          className="relative flex flex-col items-start gap-1.5 p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer overflow-hidden"
+                          className="relative flex flex-col items-start gap-1.5 p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer overflow-hidden"
                           style={{
                             background: active ? modeAccent.bg : c.pill,
                             border: `1px solid ${active ? modeAccent.border : c.pillBorder}`,
+                            borderRadius: "16px",
                           }}>
                           {active && (
-                            <motion.div layoutId="active-mode" className="absolute inset-0 rounded-xl pointer-events-none opacity-20"
+                            <motion.div layoutId="active-mode" className="absolute inset-0 rounded-2xl pointer-events-none opacity-20"
                               style={{ background: `linear-gradient(135deg, ${modeAccent.text}22, transparent)` }}
                               transition={{ type: "spring", stiffness: 380, damping: 30 }}
                             />
                           )}
-                          <span className="text-[10px] font-black uppercase tracking-wider relative z-10" style={{ color: active ? modeAccent.text : c.textMuted }}>
+                          <span className="text-xs font-extrabold uppercase tracking-wider relative z-10" style={{ color: active ? modeAccent.text : c.text }}>
                             {m.label}
                           </span>
-                          <span className="text-[9px] leading-tight relative z-10 line-clamp-2" style={{ color: c.textMuted }}>
+                          <span className="text-xs leading-normal relative z-10 line-clamp-2" style={{ color: active ? modeAccent.text : c.textSec }}>
                             {m.description}
                           </span>
                         </motion.button>
@@ -777,19 +777,20 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: c.textMuted }}>Quiz Duration</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <p className="text-xs font-extrabold uppercase tracking-widest" style={{ color: c.textSec }}>Quiz Duration</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {DURATIONS.map(d => {
                       const active = duration === d.key;
                       return (
                         <motion.button key={d.key} whileTap={{ scale: 0.96 }} onClick={() => setDuration(d.key)}
-                          className="flex flex-col items-center gap-1 p-3 rounded-xl border transition-all duration-200 cursor-pointer"
+                          className="flex flex-col items-center justify-center gap-1 p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer"
                           style={{
                             background: active ? accent.bg : c.pill,
                             border: `1px solid ${active ? accent.border : c.pillBorder}`,
+                            borderRadius: "16px",
                           }}>
-                          <span className="text-sm font-black" style={{ color: active ? accent.text : c.text }}>{d.label}</span>
-                          <span className="text-[9px] font-mono" style={{ color: c.textMuted }}>{d.hint}</span>
+                          <span className="text-base font-extrabold" style={{ color: active ? accent.text : c.text }}>{d.label}</span>
+                          <span className="text-xs font-medium" style={{ color: active ? accent.text : c.textSec }}>{d.hint}</span>
                         </motion.button>
                       );
                     })}
@@ -799,16 +800,16 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
 
               {/* Summary bar */}
               <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
-                className="flex items-center justify-between p-3.5 rounded-xl border"
-                style={{ background: accent.bg, border: `1px solid ${accent.border}` }}>
-                <div className="flex items-center gap-2 text-xs">
-                  <Zap size={13} style={{ color: accent.text }} />
-                  <span style={{ color: c.textMuted }}>
-                    <span className="font-bold" style={{ color: accent.text }}>{DURATIONS.find(d => d.key === duration)?.hint}</span>
+                className="flex items-center justify-between p-4 rounded-2xl border"
+                style={{ background: accent.bg, border: `1px solid ${accent.border}`, borderRadius: "16px" }}>
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Zap size={15} style={{ color: accent.text }} />
+                  <span style={{ color: c.textSec }}>
+                    <span className="font-extrabold" style={{ color: accent.text }}>{DURATIONS.find(d => d.key === duration)?.hint}</span>
                     {" · "}{MODES.find(m => m.key === mode)?.label}{" · "}{DURATIONS.find(d => d.key === duration)?.label} session
                   </span>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider hidden sm:block" style={{ color: accent.text }}>
+                <span className="text-xs font-extrabold uppercase tracking-wider hidden sm:block" style={{ color: accent.text }}>
                   {MODES.find(m => m.key === mode)?.description.split(",")[0]}
                 </span>
               </motion.div>

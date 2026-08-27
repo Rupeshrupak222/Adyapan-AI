@@ -16,7 +16,8 @@ export function KatexMath({ math, displayMode = false }: { math: string; display
       output: "htmlAndMathml",
     });
   } catch {
-    html = math;
+    // Fall back to raw input — escape HTML entities to prevent XSS
+    html = math.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   if (displayMode) {

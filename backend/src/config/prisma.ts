@@ -17,4 +17,3 @@ export const prisma = new PrismaClient({
   adapter,
   log: env.nodeEnv === "development" ? ["warn"] : [],
 });
-

@@ -4,6 +4,7 @@ import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import {
   getCategories,
   getCompanyPresetsCtrl,
+  getTopicTests,
   startSession,
   submitAnswer,
   completeSession,
@@ -21,6 +22,7 @@ export const aptitudeEngineRouter = Router();
 // Categories & Company Presets
 aptitudeEngineRouter.get("/categories", requireAuth, getCategories);
 aptitudeEngineRouter.get("/companies", requireAuth, getCompanyPresetsCtrl);
+aptitudeEngineRouter.get("/topic-tests", requireAuth, getTopicTests);
 
 // Session Management
 aptitudeEngineRouter.post("/session/start", requireAuth, requireFeatureQuota("AI_APTITUDE_ENGINE"), startSession);

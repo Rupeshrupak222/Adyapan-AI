@@ -82,8 +82,14 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     q(() => userPrisma.uploadedDocument.findMany({ where: { userId } }), []),
   ]);
 
-  const rawName = userRecord?.name || (profile as any)?.name || (profile as any)?.careerGoal || "";
-  const userName = rawName ? String(rawName).trim().split(" ")[0] : "Learner";
+  const rawName = userRecord?.name || (profile as any)?.name || "";
+  let userName = rawName ? String(rawName).trim().split(" ")[0] : "Learner";
+  if (userName.length > 2 && userName.length % 2 === 0) {
+    const half = userName.length / 2;
+    if (userName.substring(0, half).toLowerCase() === userName.substring(half).toLowerCase()) {
+      userName = userName.substring(0, half);
+    }
+  }
 
   // ─── Compute Scores ─────────────────────────────────────────────────
   const candidateScore = candidateProfile?.strengthScore || 0;

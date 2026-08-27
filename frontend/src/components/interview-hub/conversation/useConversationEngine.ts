@@ -93,7 +93,6 @@ export function useConversationEngine({
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
-  const avatarPollRef = useRef<NodeJS.Timeout | null>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSpeechTimeRef = useRef<number>(Date.now());
   const activeAudioElementRef = useRef<HTMLAudioElement | null>(null);
@@ -146,12 +145,7 @@ export function useConversationEngine({
         activeAudioElementRef.current = null;
       } catch {}
     }
-    if (avatarPollRef.current) {
-      clearInterval(avatarPollRef.current);
-      avatarPollRef.current = null;
-    }
     setAvatarAudioUrl(null);
-    setAvatarVideoUrl(null);
     logInterview("SpeechSynthesis", "Stopped speech");
   }, [clearSpeechWatchdogs]);
 
@@ -412,7 +406,7 @@ export function useConversationEngine({
       logInterview("SpeechSynthesis", "AI Speaking started", text.substring(0, 40) + "...");
       const cleaned = text.replace(/[*_#`]/g, "").replace(/\n+/g, ". ");
 
-      // Check backend audio avatar service if available
+      // Check backend audio avatar service (ElevenLabs) if available
       let playedAvatarAudio = false;
       try {
         const res = await api.post(
@@ -423,23 +417,7 @@ export function useConversationEngine({
         const contentType = (res.headers as any)["content-type"] || "";
         const mode = (res.headers as any)["x-avatar-mode"];
 
-        if (mode === "did" || (res.data as any)?.mode === "did") {
-          const json = JSON.parse(Buffer.from(res.data).toString());
-          const talkId = json.talkId;
-          if (talkId) {
-            if (avatarPollRef.current) clearInterval(avatarPollRef.current);
-            avatarPollRef.current = setInterval(async () => {
-              try {
-                const statusRes = await api.get(`/avatar/status/${talkId}`);
-                if (statusRes.data.status === "done" && statusRes.data.videoUrl) {
-                  setAvatarVideoUrl(statusRes.data.videoUrl);
-                  if (avatarPollRef.current) clearInterval(avatarPollRef.current);
-                }
-              } catch {}
-            }, 1500);
-          }
-          playedAvatarAudio = true;
-        } else if (contentType.includes("audio/mpeg") || mode === "elevenlabs") {
+        if (contentType.includes("audio/mpeg") || mode === "elevenlabs") {
           const blob = new Blob([res.data], { type: "audio/mpeg" });
           const url = URL.createObjectURL(blob);
           setAvatarAudioUrl(url);

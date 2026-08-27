@@ -1,6 +1,19 @@
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../config/prisma";
+import { env } from "../config/env";
 import { evaluateFeatureAccess, normalizePlanKind } from "../services/feature-access.service";
+
+/**
+ * Privileged accounts bypass premium gates. Only explicit role ADMIN or an
+ * email on the configured OWNER_EMAILS allowlist qualifies — never a
+ * substring match, which previously let any user register e.g.
+ * "admin@attacker.com" and unlock premium for free.
+ */
+function isPrivilegedAccount(role: string | undefined, email: string | undefined): boolean {
+  if (role === "ADMIN") return true;
+  const normalized = (email || "").toLowerCase();
+  return Boolean(normalized) && env.privilegedEmails.includes(normalized);
+}
 
 /**
  * Maps Express mount prefixes to their feature keys.
@@ -87,7 +100,7 @@ export async function requirePremiumEntitlement(
     const email = req.user?.email || "";
 
     // Admin accounts bypass premium checks
-    if (!userId || role === "ADMIN" || /admin|ashish/i.test(email)) {
+    if (!userId || isPrivilegedAccount(role, email)) {
       return next();
     }
 
@@ -100,8 +113,10 @@ export async function requirePremiumEntitlement(
     const subscriptionStatus = user?.subscriptionStatus ?? null;
     const planKind = normalizePlanKind(plan);
 
-    // Allow active premium/enterprise subscriptions
-    const isActive = subscriptionStatus === "ACTIVE" || subscriptionStatus === "TRIALING";
+    // Allow active premium/enterprise subscriptions (status casing has varied
+    // across writers: "active"/"ACTIVE" — compare case-insensitively)
+    const statusLower = String(subscriptionStatus ?? "").toLowerCase();
+    const isActive = statusLower === "active" || statusLower === "trialing";
     if (isActive && (planKind === "premium" || planKind === "enterprise")) {
       return next();
     }
@@ -142,7 +157,7 @@ export function requireFeature(featureKey: string) {
       const role = req.user?.role || "USER";
       const email = req.user?.email || "";
 
-      if (!userId || role === "ADMIN" || /admin|ashish/i.test(email)) {
+      if (!userId || isPrivilegedAccount(role, email)) {
         return next();
       }
 

@@ -12,6 +12,7 @@ import { ComplexityService } from "../services/complexity.service";
 import { CodingRoadmapService } from "../services/coding-roadmap.service";
 import { requireUserId } from "../utils/request";
 import { generateText, MODELS } from "../lib/ai/openrouter";
+import { generateHiddenTestCases, detectHardcodedOutput } from "../services/testcase-generator.service";
 
 
 
@@ -365,8 +366,10 @@ router.get("/questions", async (req: any, res) => {
 
     let mappedQuestions = questions.map((q: any) => {
       const p: any = progressMap.get(q.id);
+      // Hide internal IDs from user display, but keep id for internal operations
+      const { externalId, ...questionData } = q;
       return {
-        ...q,
+        ...questionData,
         progress: {
           status: p ? p.status : "unsolved",
           viewed: p ? p.viewed : false,
@@ -1139,14 +1142,26 @@ router.post("/workspace/:id/run", async (req: any, res) => {
 
     let sampleResults: Array<{ input: string; expected: string; actual: string; passed: boolean }> = [];
     if (examples.length > 0) {
-      const testCases = examples.map(ex => ({ input: ex.input, expectedOutput: ex.output }));
-      const submission = await runTestCases(language, code, testCases, 10000);
-      sampleResults = submission.testResults.map(tr => ({
-        input: tr.input,
-        expected: tr.expectedOutput,
-        actual: tr.actualOutput,
-        passed: tr.passed,
-      }));
+      // Anti-cheat: detect hardcoded outputs
+      const cheatCheck = detectHardcodedOutput(code, examples.map(e => ({ input: e.input, output: e.output })));
+      
+      if (cheatCheck.isHardcoded && cheatCheck.confidence >= 0.7) {
+        sampleResults = examples.map((ex, i) => ({
+          input: ex.input,
+          expected: ex.output,
+          actual: "Hardcoded output detected — your code must read and process the input.",
+          passed: false,
+        }));
+      } else {
+        const testCases = examples.map(ex => ({ input: ex.input, expectedOutput: ex.output }));
+        const submission = await runTestCases(language, code, testCases, 10000);
+        sampleResults = submission.testResults.map(tr => ({
+          input: tr.input,
+          expected: tr.expectedOutput,
+          actual: tr.actualOutput,
+          passed: tr.passed,
+        }));
+      }
     }
 
     res.json({
@@ -1193,10 +1208,73 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
       ];
     }
 
-    const testCases = examples.map(ex => ({ input: ex.input, expectedOutput: ex.output }));
-    const submission = await runTestCases(language, code, testCases, 10000);
+    // Step 1: Anti-cheat detection
+    const cheatCheck = detectHardcodedOutput(code, examples.map(e => ({ input: e.input, output: e.output })));
+    if (cheatCheck.isHardcoded && cheatCheck.confidence >= 0.85) {
+      return res.json({
+        allPassed: false,
+        totalTests: examples.length,
+        passedTests: 0,
+        executionTime: 0,
+        memory: 0,
+        testResults: [{
+          testCase: 1,
+          input: "(hidden)",
+          expected: "(hidden)",
+          actual: "Hardcoded output detected",
+          passed: false,
+          executionTime: 0,
+        }],
+        cheatingDetected: true,
+        cheatingReason: cheatCheck.reason,
+      });
+    }
 
-    const testResults = submission.testResults.map((tr, i) => ({
+    // Step 2: Run against sample test cases (visible to user)
+    const sampleTestCases = examples.map(ex => ({ input: ex.input, expectedOutput: ex.output }));
+    const sampleSubmission = await runTestCases(language, code, sampleTestCases, 10000);
+
+    // Step 3: Generate and run against hidden test cases (not visible to user)
+    let hiddenResults = { allPassed: true, passedTests: 0, totalTests: 0, testResults: [] as any[] };
+
+    try {
+      const hiddenTestCases = await generateHiddenTestCases(
+        questionId,
+        analysis.problem_explanation || question.title,
+        analysis.inputSpecification || "",
+        analysis.outputSpecification || "",
+        analysis.constraints || "",
+        examples.map(e => ({ input: e.input, output: e.output })),
+        question.difficulty
+      );
+
+      if (hiddenTestCases.length > 0) {
+        const hiddenFormatted = hiddenTestCases.map(tc => ({ input: tc.input, expectedOutput: tc.output }));
+        const hiddenSubmission = await runTestCases(language, code, hiddenFormatted, 12000);
+        hiddenResults = {
+          allPassed: hiddenSubmission.allPassed,
+          passedTests: hiddenSubmission.passedTests,
+          totalTests: hiddenSubmission.totalTests,
+          testResults: hiddenSubmission.testResults.map((tr, i) => ({
+            testCase: sampleSubmission.totalTests + i + 1,
+            input: "(hidden test case)",
+            expected: "(hidden)",
+            actual: tr.passed ? "(correct)" : tr.actualOutput.substring(0, 50) + (tr.actualOutput.length > 50 ? "..." : ""),
+            passed: tr.passed,
+            executionTime: tr.executionResult.executionTime,
+          })),
+        };
+      }
+    } catch (err) {
+      console.warn("[Submit] Hidden test case generation/execution failed, using sample results only:", err);
+    }
+
+    // Step 4: Combine results
+    const totalTests = sampleSubmission.totalTests + hiddenResults.totalTests;
+    const totalPassed = sampleSubmission.passedTests + hiddenResults.passedTests;
+    const isAllPassed = sampleSubmission.allPassed && hiddenResults.allPassed;
+
+    const sampleTestResults = sampleSubmission.testResults.map((tr, i) => ({
       testCase: i + 1,
       input: tr.input,
       expected: tr.expectedOutput,
@@ -1205,8 +1283,9 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
       executionTime: tr.executionResult.executionTime,
     }));
 
+    const testResults = [...sampleTestResults, ...hiddenResults.testResults];
+
     const userPrisma = await getUserPrismaFromRequest(req);
-    const isAllPassed = submission.allPassed;
     const status = isAllPassed ? "Accepted" : "Failed";
 
     // Save Execution
@@ -1217,10 +1296,10 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
         language,
         codeSnapshot: code,
         stdin: "all_test_cases",
-        stdout: `Passed ${submission.passedTests}/${submission.totalTests} test cases.`,
+        stdout: `Passed ${totalPassed}/${totalTests} test cases (${sampleSubmission.passedTests}/${sampleSubmission.totalTests} sample + ${hiddenResults.passedTests}/${hiddenResults.totalTests} hidden).`,
         stderr: isAllPassed ? "" : "Some test cases failed.",
         status,
-        executionTime: submission.executionTime,
+        executionTime: sampleSubmission.executionTime + (hiddenResults.testResults.reduce((sum: number, t: any) => sum + (t.executionTime || 0), 0)),
       }
     });
 
@@ -1298,11 +1377,11 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
     });
 
     res.json({
-      allPassed: submission.allPassed,
-      totalTests: submission.totalTests,
-      passedTests: submission.passedTests,
-      executionTime: submission.executionTime,
-      memory: submission.memory,
+      allPassed: isAllPassed,
+      totalTests,
+      passedTests: totalPassed,
+      executionTime: sampleSubmission.executionTime,
+      memory: sampleSubmission.memory,
       testResults,
     });
   } catch (error) {

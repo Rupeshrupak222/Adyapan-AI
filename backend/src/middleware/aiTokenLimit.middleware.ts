@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../config/prisma";
+import { env } from "../config/env";
 import { AiUsageService } from "../services/token-tracking.service";
 import { evaluateFeatureAccess } from "../services/feature-access.service";
 
@@ -75,8 +76,11 @@ export async function enforceAiTokenLimit(req: Request, res: Response, next: Nex
     const role = req.user?.role || "USER";
     const email = req.user?.email || "";
 
-    // Unauthenticated or admin accounts are never gated.
-    if (!userId || role === "ADMIN" || /admin|ashish/i.test(email)) {
+    // Unauthenticated or admin accounts are never gated. Privileged emails
+    // come from the explicit OWNER_EMAILS allowlist only (never substring
+    // matching, which previously allowed self-service bypass at registration).
+    const normalizedEmail = email.toLowerCase();
+    if (!userId || role === "ADMIN" || env.privilegedEmails.includes(normalizedEmail)) {
       return next();
     }
 

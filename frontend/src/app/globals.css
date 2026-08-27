@@ -259,6 +259,17 @@ button, input, select, textarea {
   border-radius: 14px;
 }
 
+/* Date input calendar icon visibility in dark/light mode */
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+html.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.9) brightness(1.2);
+  cursor: pointer;
+}
+
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
 .text-gradient {
   background: var(--gradient-main);
   -webkit-background-clip: text;
@@ -380,6 +391,10 @@ button, input, select, textarea {
 .dash-sidebar:hover ~ .dash-main { margin-left: 220px; }
 
 /* ── Dashboard Light Theme Scrollbar + Sidebar Overrides ── */
+[data-theme="light"] .dash-sidebar {
+  background: #ffffff !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
 [data-theme="light"] .dash-sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
 [data-theme="light"] .dash-sidebar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.22); }
 [data-theme="light"] .dash-sidebar { scrollbar-color: rgba(0,0,0,0.12) transparent; }
@@ -514,7 +529,7 @@ button, input, select, textarea {
 }
 
 /* ── Dashboard Responsive Media Queries ── */
-@media (max-width: 1024px) {
+@media (max-width: 1150px) {
   .desktop-search,
   .desktop-nav-center,
   .desktop-premium {
@@ -654,41 +669,47 @@ button, input, select, textarea {
 /* ── Universal Curved & High-Contrast Select Dropdown System ── */
 select {
   cursor: pointer;
-  border-radius: 0.75rem !important; /* Curved edges (12px) */
+  border-radius: 18px !important; /* Smooth curved edges */
   font-weight: 500;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   outline: none;
 }
 
 /* Dark mode select element default styling */
-html.dark select,
 [data-theme="dark"] select,
+html[data-theme="dark"] select,
+body[data-theme="dark"] select,
 .dark select {
-  color-scheme: dark;
-  background-color: #1e293b !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color-scheme: dark !important;
+  background-color: #121218 !important;
+  color: #f3f4f6 !important;
+  -webkit-text-fill-color: #f3f4f6 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
-html.dark select:focus,
 [data-theme="dark"] select:focus,
+html[data-theme="dark"] select:focus,
+body[data-theme="dark"] select:focus,
 .dark select:focus {
   border-color: #f59e0b !important;
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25) !important;
 }
 
 /* Light mode select element default styling */
-html:not(.dark) select,
 [data-theme="light"] select,
+html[data-theme="light"] select,
+body[data-theme="light"] select,
 .light select {
-  color-scheme: light;
+  color-scheme: light !important;
   background-color: #ffffff !important;
   color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
   border: 1px solid #cbd5e1 !important;
 }
 
-html:not(.dark) select:focus,
 [data-theme="light"] select:focus,
+html[data-theme="light"] select:focus,
+body[data-theme="light"] select:focus,
 .light select:focus {
   border-color: #f59e0b !important;
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2) !important;
@@ -700,18 +721,24 @@ select option {
   border-radius: 0.5rem;
 }
 
-html.dark select option,
 [data-theme="dark"] select option,
+html[data-theme="dark"] select option,
+body[data-theme="dark"] select option,
 .dark select option {
-  background-color: #1e293b !important;
+  color-scheme: dark !important;
+  background-color: #181824 !important;
   color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
 }
 
-html:not(.dark) select option,
 [data-theme="light"] select option,
+html[data-theme="light"] select option,
+body[data-theme="light"] select option,
 .light select option {
+  color-scheme: light !important;
   background-color: #ffffff !important;
   color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
 }
 
 /* Prose (markdown) readability in light mode */

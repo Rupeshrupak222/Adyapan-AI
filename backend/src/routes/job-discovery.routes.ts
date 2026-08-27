@@ -13,42 +13,94 @@ jobDiscoveryRouter.use(requireAuth);
 // ─── GET /jobs - Search jobs with filters ──────────────────────────────
 jobDiscoveryRouter.get("/jobs", async (req: Request, res: Response) => {
   try {
+    const parseArray = (val: any): string[] | undefined => {
+      if (!val) return undefined;
+      if (Array.isArray(val)) return val.map(s => String(s).trim()).filter(Boolean);
+      if (typeof val === "string") return val.split(",").map(s => s.trim()).filter(Boolean);
+      return undefined;
+    };
+
     const {
-      query, company, location, country, state, city, workMode, employmentType,
-      experienceMin, experienceMax, salaryMin, salaryMax, skills, industry,
-      education, companySize, source, isFeatured, postedWithin,
-      sortBy = "postedAt", sortOrder = "desc", page = "1", limit = "20",
+      query, company, location, locations, country, state, city, workMode, workModes,
+      employmentType, employmentTypes, experienceMin, experienceMax, salaryMin, salaryMax,
+      skills, industry, education, educationList, companySize, source, sources,
+      isFeatured, postedWithin, targetRole, departments,
+      sortBy = "recommended", sortOrder = "desc", page = "1", limit = "20",
     } = req.query;
+
+    const userId = (req as any).user?.userId;
+    let userTargetRole = (targetRole as string) || "";
+    let userSkills: string[] = [];
+
+    if (userId) {
+      try {
+        const userPrisma = await getUserPrismaFromRequest(req);
+        const profile = await userPrisma.profile.findUnique({ where: { userId } });
+        if (profile) {
+          if (!userTargetRole && profile.targetRole) {
+            userTargetRole = profile.targetRole;
+          }
+          if (!userTargetRole && profile.careerGoal) {
+            userTargetRole = profile.careerGoal;
+          }
+          if (profile.skills && Array.isArray(profile.skills)) {
+            userSkills = profile.skills;
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch user profile for recommendations", err);
+      }
+    }
+
+    if (!userTargetRole) {
+      userTargetRole = "Software Developer";
+    }
+
+    const parsedWorkModes = parseArray(workModes) || parseArray(workMode);
+    const parsedLocations = parseArray(locations) || parseArray(location);
+    const parsedEmploymentTypes = parseArray(employmentTypes) || parseArray(employmentType);
+    const parsedSources = parseArray(sources) || parseArray(source);
+    const parsedSkills = parseArray(skills);
+    const parsedDepartments = parseArray(departments);
+    const parsedEducationList = parseArray(educationList) || parseArray(education);
 
     const filters: any = {
       query: query as string,
       company: company as string,
       location: location as string,
+      locations: parsedLocations,
       country: country as string,
       state: state as string,
       city: city as string,
       workMode: workMode as string,
+      workModes: parsedWorkModes,
       employmentType: employmentType as string,
+      employmentTypes: parsedEmploymentTypes,
       experienceMin: experienceMin ? parseInt(experienceMin as string) : undefined,
       experienceMax: experienceMax ? parseInt(experienceMax as string) : undefined,
       salaryMin: salaryMin ? parseInt(salaryMin as string) : undefined,
       salaryMax: salaryMax ? parseInt(salaryMax as string) : undefined,
-      skills: skills ? (skills as string).split(",").map(s => s.trim()).filter(Boolean) : undefined,
+      skills: parsedSkills,
+      departments: parsedDepartments,
+      educationList: parsedEducationList,
       industry: industry as string,
       education: education as string,
       companySize: companySize as string,
       source: source as string,
+      sources: parsedSources,
       isFeatured: isFeatured === "true" ? true : undefined,
       postedWithin: postedWithin as any,
       sortBy: sortBy as string,
       sortOrder: sortOrder as "asc" | "desc",
       page: parseInt(page as string) || 1,
       limit: Math.min(100, parseInt(limit as string) || 20),
+      targetRole: userTargetRole,
+      userSkills,
+      userId,
     };
 
     const result = await JobSearchService.search(filters);
 
-    const userId = (req as any).user?.userId;
     if (userId && query) {
       JobSearchService.logSearch(userId, query as string, filters, result.total).catch(() => {});
     }
@@ -120,6 +172,40 @@ jobDiscoveryRouter.get("/jobs/:id", async (req: Request, res: Response) => {
     res.json({ success: true, job });
   } catch (error) {
     handleRouteError(res, error, "Discovery.getJob", "Failed to get job");
+  }
+});
+
+// ─── GET /recommended - Personalized job recommendations ─────────────
+jobDiscoveryRouter.get("/recommended", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
+    const jobs = await JobSearchService.getRecommendedJobs(userId, limit);
+    res.json({ success: true, jobs });
+  } catch (error) {
+    handleRouteError(res, error, "Discovery.recommended", "Failed to get recommended jobs");
+  }
+});
+
+// ─── GET /trending - Trending jobs ───────────────────────────────────
+jobDiscoveryRouter.get("/trending", async (req: Request, res: Response) => {
+  try {
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
+    const jobs = await JobSearchService.getTrendingJobs(limit);
+    res.json({ success: true, jobs });
+  } catch (error) {
+    handleRouteError(res, error, "Discovery.trending", "Failed to get trending jobs");
+  }
+});
+
+// ─── GET /suggestions - Search autocomplete suggestions ──────────────
+jobDiscoveryRouter.get("/suggestions", async (req: Request, res: Response) => {
+  try {
+    const q = (req.query.q as string) || "";
+    const suggestions = await JobSearchService.getSuggestions(q);
+    res.json({ success: true, suggestions });
+  } catch (error) {
+    handleRouteError(res, error, "Discovery.suggestions", "Failed to get suggestions");
   }
 });
 

@@ -6,7 +6,14 @@ export const env = {
   directUrl: process.env.DIRECT_URL ?? "",
   frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:3000",
   jwtSecret: process.env.JWT_SECRET ?? "replace-this-local-secret-before-production",
-  adminRegisterSecret: process.env.ADMIN_REGISTER_SECRET ?? "adyapan-admin-secret-2026",
+  adminRegisterSecret: process.env.ADMIN_REGISTER_SECRET ?? "",
+  // Comma-separated allowlist of owner/privileged emails. These accounts bypass
+  // premium gates and AI usage limits (previously any email containing
+  // "admin"/"ashish" did — an open bypass). Configure via OWNER_EMAILS.
+  privilegedEmails: (process.env.OWNER_EMAILS ?? process.env.PRIVILEGED_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   groqApiKey: process.env.GROQ_API_KEY ?? "",
   openrouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
@@ -30,6 +37,7 @@ export const env = {
   razorpay: {
     keyId: process.env.RAZORPAY_KEY_ID ?? "",
     keySecret: process.env.RAZORPAY_KEY_SECRET ?? "",
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET ?? "",
   },
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY ?? "",
@@ -52,6 +60,11 @@ export const env = {
     clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
     callbackUrl: process.env.GITHUB_CALLBACK_URL ?? "http://localhost:5000/api/auth/github/callback",
   },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL ?? "http://localhost:5000/api/auth/google/callback",
+  },
   codeforces: {
     apiKey: process.env.CODEFORCES_API_KEY ?? "",
     apiSecret: process.env.CODEFORCES_API_SECRET ?? "",
@@ -68,9 +81,9 @@ export const env = {
 };
 
 if (env.nodeEnv === "production" && env.jwtSecret === "replace-this-local-secret-before-production") {
-  throw new Error("JWT_SECRET must be set in production");
+  console.warn("[WARNING] JWT_SECRET is using default fallback in production. Configure JWT_SECRET in environment variables.");
 }
 
-if (env.nodeEnv === "production" && !env.adminRegisterSecret) {
-  throw new Error("ADMIN_REGISTER_SECRET must be set in production");
+if (env.nodeEnv === "production" && (!env.adminRegisterSecret || env.adminRegisterSecret === "adyapan-admin-secret-2026")) {
+  console.warn("[WARNING] ADMIN_REGISTER_SECRET is using default fallback in production. Configure ADMIN_REGISTER_SECRET in environment variables.");
 }

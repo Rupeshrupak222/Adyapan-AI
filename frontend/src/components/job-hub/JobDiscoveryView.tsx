@@ -48,6 +48,7 @@ interface Job {
   isSaved?: boolean;
   source?: string;
   matchScore?: number;
+  matchReasons?: { type: string; text: string; weight: number }[];
   applyUrl?: string;
   industry?: string;
   companySize?: string;
@@ -131,6 +132,29 @@ function formatCap99(val: number | string | undefined | null): string {
 }
 
 const WORK_MODES = ["Remote", "Hybrid", "On-site"];
+const TOP_CITIES = ["Bangalore", "Hyderabad", "Pune", "Gurgaon", "Noida", "Mumbai", "Chennai", "Delhi NCR", "Remote"];
+const DEPARTMENTS = [
+  "Software Development", "Data Science", "Product Management", "DevOps",
+  "QA / Testing", "System Design", "Analytics", "HR", "Marketing", "Finance"
+];
+const EXPERIENCE_PRESETS = [
+  { label: "Freshers (0 yrs)", min: "0", max: "0" },
+  { label: "0-2 yrs", min: "0", max: "2" },
+  { label: "2-5 yrs", min: "2", max: "5" },
+  { label: "5-8 yrs", min: "5", max: "8" },
+  { label: "8+ yrs", min: "8", max: "30" },
+];
+const SALARY_PRESETS = [
+  { label: "0-3 LPA", min: "0", max: "300000" },
+  { label: "3-6 LPA", min: "300000", max: "600000" },
+  { label: "6-10 LPA", min: "600000", max: "1000000" },
+  { label: "10-15 LPA", min: "1000000", max: "1500000" },
+  { label: "15-25 LPA", min: "1500000", max: "2500000" },
+  { label: "25+ LPA", min: "2500000", max: "10000000" },
+];
+const EDUCATION_PRESETS = [
+  "B.Tech / B.E.", "M.Tech / M.E.", "BCA / MCA", "B.Sc / M.Sc", "Any Graduate"
+];
 const EMPLOYMENT_TYPES = ["Full-Time", "Part-Time", "Contract", "Internship", "Freelance"];
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"];
 const SOURCES = ["LinkedIn", "Naukri", "Indeed", "Internshala", "RemoteOK", "Wellfound", "Adzuna"];
@@ -138,12 +162,15 @@ const POSTED_WITHIN = [
   { label: "Today", value: "today" },
   { label: "Last 3 Days", value: "3days" },
   { label: "Last Week", value: "week" },
+  { label: "Last 15 Days", value: "15days" },
   { label: "Last Month", value: "month" },
+  { label: "Last 60 Days", value: "60days" },
 ];
 
 const SORT_OPTIONS = [
+  { value: "recommended", label: "Recommended for You" },
   { value: "postedAt", label: "Newest" },
-  { value: "matchScore", label: "Best Match" },
+  { value: "matchScore", label: "Best Match Score" },
   { value: "salaryMax", label: "Salary High-Low" },
   { value: "experienceMin", label: "Experience" },
   { value: "company", label: "Company" },
@@ -483,13 +510,53 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   // ─── Filter State ───────────────────────────────────────────────────────
   const [filters, setFilters] = useState({
-    location: "", workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
+    location: "", workModes: [] as string[], employmentTypes: [] as string[], experienceMin: "", experienceMax: "",
     salaryMin: "", salaryMax: "", skills: "", industry: "", education: "",
-    companySize: "", source: "", postedWithin: "", company: "",
+    companySize: "", sources: [] as string[], postedWithin: "", company: "",
   });
   const [filterOpen, setFilterOpen] = useState(true);
   const [skillInput, setSkillInput] = useState("");
   const [skillTags, setSkillTags] = useState<string[]>([]);
+
+  // ─── URL Persistence (read on mount) ───────────────────────────────────
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const q = sp.get("q") || "";
+    const loc = sp.get("location") || "";
+    const wm = sp.get("workModes") || sp.get("workMode") || "";
+    const et = sp.get("employmentTypes") || sp.get("employmentType") || "";
+    const src = sp.get("sources") || sp.get("source") || "";
+    const sk = sp.get("skills") || "";
+    const pw = sp.get("postedWithin") || "";
+    const comp = sp.get("company") || "";
+    const ind = sp.get("industry") || "";
+    const expMin = sp.get("experienceMin") || "";
+    const expMax = sp.get("experienceMax") || "";
+    const salMin = sp.get("salaryMin") || "";
+    const salMax = sp.get("salaryMax") || "";
+    const sort = sp.get("sortBy") || "";
+
+    if (q) { setSearchQuery(q); setDebouncedQuery(q); }
+    if (loc || wm || et || src || sk || pw || comp || ind || expMin || expMax || salMin || salMax) {
+      setFilters(prev => ({
+        ...prev,
+        location: loc,
+        workModes: wm ? wm.split(",").filter(Boolean) : prev.workModes,
+        employmentTypes: et ? et.split(",").filter(Boolean) : prev.employmentTypes,
+        sources: src ? src.split(",").filter(Boolean) : prev.sources,
+        postedWithin: pw,
+        company: comp,
+        industry: ind,
+        experienceMin: expMin,
+        experienceMax: expMax,
+        salaryMin: salMin,
+        salaryMax: salMax,
+      }));
+    }
+    if (sk) setSkillTags(sk.split(",").filter(Boolean));
+    if (sort) setSortBy(sort);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Results State ──────────────────────────────────────────────────────
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -497,9 +564,10 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [targetRole, setTargetRole] = useState<string>("Software Developer");
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState("postedAt");
+  const [sortBy, setSortBy] = useState("recommended");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // ─── Facets State ───────────────────────────────────────────────────────
@@ -537,8 +605,8 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   const activeFilters = useMemo(() => {
     const chips: { key: string; label: string }[] = [];
     if (filters.location) chips.push({ key: "location", label: `Location: ${filters.location}` });
-    if (filters.workMode) chips.push({ key: "workMode", label: filters.workMode });
-    if (filters.employmentType) chips.push({ key: "employmentType", label: filters.employmentType });
+    filters.workModes.forEach(w => chips.push({ key: `workMode-${w}`, label: w }));
+    filters.employmentTypes.forEach(e => chips.push({ key: `employmentType-${e}`, label: e }));
     if (filters.experienceMin) chips.push({ key: "experienceMin", label: `Min Exp: ${filters.experienceMin}y` });
     if (filters.experienceMax) chips.push({ key: "experienceMax", label: `Max Exp: ${filters.experienceMax}y` });
     if (filters.salaryMin) chips.push({ key: "salaryMin", label: `Min Salary: ${filters.salaryMin}` });
@@ -546,7 +614,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     if (filters.industry) chips.push({ key: "industry", label: filters.industry });
     if (filters.education) chips.push({ key: "education", label: filters.education });
     if (filters.companySize) chips.push({ key: "companySize", label: `Size: ${filters.companySize}` });
-    if (filters.source) chips.push({ key: "source", label: filters.source });
+    filters.sources.forEach(s => chips.push({ key: `source-${s}`, label: s }));
     if (filters.postedWithin) chips.push({ key: "postedWithin", label: `Posted: ${POSTED_WITHIN.find(p => p.value === filters.postedWithin)?.label || filters.postedWithin}` });
     if (filters.company) chips.push({ key: "company", label: filters.company });
     skillTags.forEach((s, i) => chips.push({ key: `skill-${i}`, label: s }));
@@ -565,11 +633,12 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
       const params: Record<string, string> = {
         page: String(pageNum), limit: String(PAGE_LIMIT),
         sortBy, sortOrder: sortOrder,
+        targetRole: targetRole,
       };
       if (debouncedQuery) params.query = debouncedQuery;
       if (filters.location) params.location = filters.location;
-      if (filters.workMode) params.workMode = filters.workMode;
-      if (filters.employmentType) params.employmentType = filters.employmentType;
+      if (filters.workModes.length) params.workModes = filters.workModes.join(",");
+      if (filters.employmentTypes.length) params.employmentTypes = filters.employmentTypes.join(",");
       if (filters.experienceMin) params.experienceMin = filters.experienceMin;
       if (filters.experienceMax) params.experienceMax = filters.experienceMax;
       if (filters.salaryMin) params.salaryMin = filters.salaryMin;
@@ -578,7 +647,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
       if (filters.industry) params.industry = filters.industry;
       if (filters.education) params.education = filters.education;
       if (filters.companySize) params.companySize = filters.companySize;
-      if (filters.source) params.source = filters.source;
+      if (filters.sources.length) params.sources = filters.sources.join(",");
       if (filters.postedWithin) params.postedWithin = filters.postedWithin;
       if (filters.company) params.company = filters.company;
 
@@ -598,7 +667,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [debouncedQuery, filters, sortBy, sortOrder, skillTags]);
+  }, [debouncedQuery, filters, sortBy, sortOrder, skillTags, targetRole]);
 
   const fetchSavedJobs = useCallback(async () => {
     try {
@@ -701,6 +770,28 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     fetchJobs(1, false);
   }, [debouncedQuery, filters, sortBy, sortOrder, skillTags, fetchJobs]);
 
+  // ─── URL Persistence (sync on change) ──────────────────────────────────
+  useEffect(() => {
+    const sp = new URLSearchParams();
+    if (debouncedQuery) sp.set("q", debouncedQuery);
+    if (filters.location) sp.set("location", filters.location);
+    if (filters.workModes.length) sp.set("workModes", filters.workModes.join(","));
+    if (filters.employmentTypes.length) sp.set("employmentTypes", filters.employmentTypes.join(","));
+    if (filters.sources.length) sp.set("sources", filters.sources.join(","));
+    if (filters.postedWithin) sp.set("postedWithin", filters.postedWithin);
+    if (filters.company) sp.set("company", filters.company);
+    if (filters.industry) sp.set("industry", filters.industry);
+    if (filters.experienceMin) sp.set("experienceMin", filters.experienceMin);
+    if (filters.experienceMax) sp.set("experienceMax", filters.experienceMax);
+    if (filters.salaryMin) sp.set("salaryMin", filters.salaryMin);
+    if (filters.salaryMax) sp.set("salaryMax", filters.salaryMax);
+    if (skillTags.length) sp.set("skills", skillTags.join(","));
+    if (sortBy !== "recommended") sp.set("sortBy", sortBy);
+    const qs = sp.toString();
+    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState(null, "", newUrl);
+  }, [debouncedQuery, filters, skillTags, sortBy]);
+
   useEffect(() => { fetchSavedJobs(); }, [fetchSavedJobs]);
   useEffect(() => { if (savedPage === "saved") fetchSavedJobs(); }, [savedPage]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { fetchSidebarData(); }, [fetchSidebarData]);
@@ -725,9 +816,9 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   const clearAllFilters = useCallback(() => {
     setFilters({
-      location: "", workMode: "", employmentType: "", experienceMin: "", experienceMax: "",
+      location: "", workModes: [], employmentTypes: [], experienceMin: "", experienceMax: "",
       salaryMin: "", salaryMax: "", skills: "", industry: "", education: "",
-      companySize: "", source: "", postedWithin: "", company: "",
+      companySize: "", sources: [], postedWithin: "", company: "",
     });
     setSkillTags([]);
     setSearchQuery("");
@@ -738,6 +829,15 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     if (key.startsWith("skill-")) {
       const idx = parseInt(key.split("-")[1]);
       setSkillTags(prev => prev.filter((_, i) => i !== idx));
+    } else if (key.startsWith("workMode-")) {
+      const val = key.replace("workMode-", "");
+      setFilters(prev => ({ ...prev, workModes: prev.workModes.filter(w => w !== val) }));
+    } else if (key.startsWith("employmentType-")) {
+      const val = key.replace("employmentType-", "");
+      setFilters(prev => ({ ...prev, employmentTypes: prev.employmentTypes.filter(e => e !== val) }));
+    } else if (key.startsWith("source-")) {
+      const val = key.replace("source-", "");
+      setFilters(prev => ({ ...prev, sources: prev.sources.filter(s => s !== val) }));
     } else {
       setFilters(prev => ({ ...prev, [key]: "" }));
     }
@@ -834,166 +934,175 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         <div className="space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Work Mode</span>
           <div className="flex flex-wrap gap-1.5">
-            {WORK_MODES.map(mode => (
-              <button key={mode} onClick={() => handleFilterChange("workMode", filters.workMode === mode ? "" : mode)}
-                className="px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all hover:scale-[1.03]"
+            {WORK_MODES.map(mode => {
+              const active = filters.workModes.includes(mode);
+              return (
+              <button key={mode} onClick={() => setFilters(prev => ({
+                ...prev,
+                workModes: active ? prev.workModes.filter(w => w !== mode) : [...prev.workModes, mode],
+              }))}
+                className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-all hover:scale-[1.03]"
                 style={{
-                  background: filters.workMode === mode ? "rgba(245,158,11,0.12)" : c.surface,
-                  color: filters.workMode === mode ? c.primary : c.textMuted,
-                  borderColor: filters.workMode === mode ? "rgba(245,158,11,0.25)" : c.border,
+                  background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                  color: active ? c.primary : c.textMuted,
+                  borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
                 }}>{mode}</button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* Location */}
+        {/* Top Cities / Locations */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Location</span>
-          <input type="text" placeholder="City, state, or country..." value={filters.location}
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Top Cities</span>
+            {filters.location && (
+              <button onClick={() => handleFilterChange("location", "")} className="text-[10px] font-bold text-amber-500 hover:underline">Clear</button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {TOP_CITIES.map(city => {
+              const active = filters.location.toLowerCase() === city.toLowerCase();
+              return (
+                <button key={city} onClick={() => handleFilterChange("location", active ? "" : city)}
+                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                  style={{
+                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                    color: active ? c.primary : c.textMuted,
+                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                  }}>{city}</button>
+              );
+            })}
+          </div>
+          <input type="text" placeholder="Custom city, state, or country..." value={filters.location}
             onChange={e => handleFilterChange("location", e.target.value)}
-            className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
+            className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all mt-1"
             style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+        </div>
+
+        {/* Department / Role Category */}
+        <div className="space-y-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Department & Role</span>
+          <div className="flex flex-wrap gap-1.5">
+            {DEPARTMENTS.map(dept => {
+              const active = filters.industry.toLowerCase() === dept.toLowerCase();
+              return (
+                <button key={dept} onClick={() => handleFilterChange("industry", active ? "" : dept)}
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                  style={{
+                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                    color: active ? c.primary : c.textMuted,
+                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                  }}>{dept}</button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Employment Type */}
         <div className="space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Employment Type</span>
           <div className="flex flex-wrap gap-1.5">
-            {EMPLOYMENT_TYPES.map(type => (
-              <button key={type} onClick={() => handleFilterChange("employmentType", filters.employmentType === type ? "" : type)}
-                className="px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all hover:scale-[1.03]"
+            {EMPLOYMENT_TYPES.map(type => {
+              const active = filters.employmentTypes.includes(type);
+              return (
+              <button key={type} onClick={() => setFilters(prev => ({
+                ...prev,
+                employmentTypes: active ? prev.employmentTypes.filter(e => e !== type) : [...prev.employmentTypes, type],
+              }))}
+                className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
                 style={{
-                  background: filters.employmentType === type ? "rgba(245,158,11,0.12)" : c.surface,
-                  color: filters.employmentType === type ? c.primary : c.textMuted,
-                  borderColor: filters.employmentType === type ? "rgba(245,158,11,0.25)" : c.border,
+                  background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                  color: active ? c.primary : c.textMuted,
+                  borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
                 }}>{type}</button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* Experience Range */}
+        {/* Experience Level Presets */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Experience (Years)</span>
-          <div className="flex gap-2">
-            <input type="number" min={0} max={30} placeholder="Min" value={filters.experienceMin}
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Experience Level</span>
+          <div className="flex flex-wrap gap-1.5">
+            {EXPERIENCE_PRESETS.map(exp => {
+              const active = filters.experienceMin === exp.min && filters.experienceMax === exp.max;
+              return (
+                <button key={exp.label} onClick={() => {
+                  if (active) {
+                    setFilters(prev => ({ ...prev, experienceMin: "", experienceMax: "" }));
+                  } else {
+                    setFilters(prev => ({ ...prev, experienceMin: exp.min, experienceMax: exp.max }));
+                  }
+                }}
+                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                  style={{
+                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                    color: active ? c.primary : c.textMuted,
+                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                  }}>{exp.label}</button>
+              );
+            })}
+          </div>
+          <div className="flex gap-2 mt-1">
+            <input type="number" min={0} max={30} placeholder="Min y" value={filters.experienceMin}
               onChange={e => handleFilterChange("experienceMin", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
+              className="w-full px-2.5 py-1.5 rounded-lg text-xs border outline-none transition-all"
               style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-            <input type="number" min={0} max={30} placeholder="Max" value={filters.experienceMax}
+            <input type="number" min={0} max={30} placeholder="Max y" value={filters.experienceMax}
               onChange={e => handleFilterChange("experienceMax", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
+              className="w-full px-2.5 py-1.5 rounded-lg text-xs border outline-none transition-all"
               style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
           </div>
         </div>
 
-        {/* Salary Range */}
+        {/* Salary Range Presets (LPA) */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Salary (Per Annum)</span>
-          <div className="flex gap-2">
-            <input type="number" min={0} placeholder="Min" value={filters.salaryMin}
-              onChange={e => handleFilterChange("salaryMin", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-            <input type="number" min={0} placeholder="Max" value={filters.salaryMax}
-              onChange={e => handleFilterChange("salaryMax", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-          </div>
-        </div>
-
-        {/* Skills */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Skills</span>
-          <div className="flex gap-2">
-            <input type="text" placeholder="Add skill..." value={skillInput}
-              onChange={e => setSkillInput(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addSkillTag(); } }}
-              className="flex-1 px-3 py-2 rounded-lg text-xs border outline-none transition-all"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-            <button onClick={addSkillTag}
-              className="px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-105"
-              style={{ background: `${c.primary}20`, color: c.primary }}>Add</button>
-          </div>
-          {skillTags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {skillTags.map(tag => (
-                <span key={tag}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border cursor-pointer transition-all hover:scale-[1.03]"
-                  style={{ background: "rgba(245,158,11,0.06)", color: c.primary, borderColor: "rgba(245,158,11,0.18)" }}
-                  onClick={() => removeSkillTag(tag)}>{tag} <X size={10} /></span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Industry */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Industry</span>
-          <CustomSelect
-            value={filters.industry}
-            options={[{ value: "", label: "All Industries" }, ...INDUSTRIES.map(ind => ({ value: ind, label: ind }))]}
-            onChange={val => handleFilterChange("industry", val)}
-            placeholder="All Industries"
-            c={c}
-            isDark={isDark}
-          />
-        </div>
-
-        {/* Education */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Education</span>
-          <CustomSelect
-            value={filters.education}
-            options={[
-              { value: "", label: "Any Education" },
-              { value: "High School", label: "High School" },
-              { value: "Diploma", label: "Diploma" },
-              { value: "Bachelor's", label: "Bachelor's" },
-              { value: "Master's", label: "Master's" },
-              { value: "PhD", label: "PhD" },
-            ]}
-            onChange={val => handleFilterChange("education", val)}
-            placeholder="Any Education"
-            c={c}
-            isDark={isDark}
-          />
-        </div>
-
-        {/* Company Size */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Company Size</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Salary Range (LPA)</span>
           <div className="flex flex-wrap gap-1.5">
-            {COMPANY_SIZES.map(size => (
-              <button key={size} onClick={() => handleFilterChange("companySize", filters.companySize === size ? "" : size)}
-                className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
-                style={{
-                  background: filters.companySize === size ? "rgba(245,158,11,0.12)" : c.surface,
-                  color: filters.companySize === size ? c.primary : c.textMuted,
-                  borderColor: filters.companySize === size ? "rgba(245,158,11,0.25)" : c.border,
-                }}>{size}</button>
-            ))}
+            {SALARY_PRESETS.map(sal => {
+              const active = filters.salaryMin === sal.min && filters.salaryMax === sal.max;
+              return (
+                <button key={sal.label} onClick={() => {
+                  if (active) {
+                    setFilters(prev => ({ ...prev, salaryMin: "", salaryMax: "" }));
+                  } else {
+                    setFilters(prev => ({ ...prev, salaryMin: sal.min, salaryMax: sal.max }));
+                  }
+                }}
+                  className="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                  style={{
+                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                    color: active ? c.primary : c.textMuted,
+                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                  }}>{sal.label}</button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Source */}
+        {/* Education Presets */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Source</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Education Qualification</span>
           <div className="flex flex-wrap gap-1.5">
-            {SOURCES.map(src => (
-              <button key={src} onClick={() => handleFilterChange("source", filters.source === src ? "" : src)}
-                className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
-                style={{
-                  background: filters.source === src ? `${SOURCE_COLORS[src]?.bg || c.surface}` : c.surface,
-                  color: filters.source === src ? (SOURCE_COLORS[src]?.text || c.primary) : c.textMuted,
-                  borderColor: filters.source === src ? `${SOURCE_COLORS[src]?.text || c.primary}30` : c.border,
-                }}>{src}</button>
-            ))}
+            {EDUCATION_PRESETS.map(edu => {
+              const active = filters.education.toLowerCase() === edu.toLowerCase();
+              return (
+                <button key={edu} onClick={() => handleFilterChange("education", active ? "" : edu)}
+                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                  style={{
+                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                    color: active ? c.primary : c.textMuted,
+                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                  }}>{edu}</button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Posted Within */}
+        {/* Posted Within / Freshness */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Posted Within</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Freshness</span>
           <div className="flex flex-wrap gap-1.5">
             {POSTED_WITHIN.map(pw => (
               <button key={pw.value} onClick={() => handleFilterChange("postedWithin", filters.postedWithin === pw.value ? "" : pw.value)}
@@ -1052,14 +1161,20 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         className="rounded-2xl border p-5 cursor-pointer group transition-all duration-200 relative overflow-hidden"
         style={{ background: c.cardBg, borderColor: c.border }} onClick={() => openJobDetail(job)}>
 
-        {job.isFeatured && (
+        {(job as any).isRecommended ? (
+          <div className="absolute top-0 right-0">
+            <div className="px-2.5 py-1 text-[8px] font-black uppercase tracking-wider rounded-bl-xl bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md flex items-center gap-1">
+              <Sparkles size={9} /> Recommended
+            </div>
+          </div>
+        ) : job.isFeatured ? (
           <div className="absolute top-0 right-0">
             <div className="px-2.5 py-1 text-[8px] font-black uppercase tracking-wider rounded-bl-xl"
               style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
               <Star size={8} className="inline mr-1" /> Featured
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className="flex items-start gap-3 mb-3">
           <CompanyLogo company={job.company} logoUrl={job.logoUrl} />
@@ -1129,6 +1244,17 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             {job.skills.length > 5 && (
               <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ color: c.textMuted }}>+{job.skills.length - 5}</span>
             )}
+          </div>
+        )}
+
+        {job.matchReasons && job.matchReasons.length > 0 && (
+          <div className="mb-3 space-y-1">
+            {job.matchReasons.slice(0, 2).map((r, i) => (
+              <div key={i} className="flex items-center gap-1.5 text-[9px] font-semibold" style={{ color: "#10b981" }}>
+                <CheckCircle2 size={9} className="shrink-0" />
+                <span className="truncate">{r.text}</span>
+              </div>
+            ))}
           </div>
         )}
 

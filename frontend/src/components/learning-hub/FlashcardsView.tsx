@@ -425,39 +425,39 @@ export function FlashcardsView() {
                     <div className="inline-flex h-12 w-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-orange-600 items-center justify-center text-white shadow-lg mb-1">
                       <Brain size={22} />
                     </div>
-                    <h2 className="text-lg font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Flashcard Generator</h2>
-                    <p className="text-xs" style={{ color: c.textMuted }}>Provide any study topic to receive tailored flashcards.</p>
+                    <h2 className="text-xl font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Flashcard Generator</h2>
+                    <p className="text-sm font-medium" style={{ color: c.textSec }}>Provide any study topic to receive tailored flashcards.</p>
                   </div>
 
                   {error && (
-                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="p-3 rounded-xl flex gap-2 items-center text-xs" style={{ background: c.roseBg, border: `1px solid ${c.rose}20`, color: c.rose }}>
-                      <AlertCircle size={14} className="shrink-0" />
+                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="p-3.5 rounded-xl flex gap-2 items-center text-sm font-semibold" style={{ background: c.roseBg, border: `1px solid ${c.rose}20`, color: c.rose }}>
+                      <AlertCircle size={16} className="shrink-0" />
                       <span>{error}</span>
                     </motion.div>
                   )}
 
-                  <div className="space-y-3 max-w-xl mx-auto">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold" style={{ color: c.textSec }}>Topic of Study</label>
+                  <div className="space-y-4 max-w-xl mx-auto">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-extrabold uppercase tracking-widest" style={{ color: c.textSec }}>Topic of Study</label>
                       <div className="relative">
                         <input
                           type="text"
                           placeholder="Enter a topic to generate flashcards..."
                           value={inputTopic}
                           onChange={(e) => setInputTopic(e.target.value)}
-                          className="w-full rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none"
-                          style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text }}
+                          className="w-full px-5 py-3.5 text-base font-medium transition-all focus:outline-none"
+                          style={{ background: c.inputBg, border: `1px solid ${c.border}`, color: c.text, borderRadius: "18px" }}
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-xs font-semibold flex items-center gap-1.5" style={{ color: c.textSec }}>
-                          <Sliders size={13} style={{ color: "#f59e0b" }} />
+                        <label className="text-xs font-extrabold uppercase tracking-widest flex items-center gap-1.5" style={{ color: c.textSec }}>
+                          <Sliders size={14} style={{ color: "#f59e0b" }} />
                           Learning Mode
                         </label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2.5">
                           {[
                             { id: "beginner" as const, label: "Beginner", desc: "Basics & Examples" },
                             { id: "intermediate" as const, label: "Intermediate", desc: "Core Details" },
@@ -466,40 +466,44 @@ export function FlashcardsView() {
                           ].map((m) => (
                             <button
                               key={m.id}
+                              type="button"
                               onClick={() => setMode(m.id)}
-                              className="p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-1"
-                              style={
-                                mode === m.id
-                                  ? { background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: c.text }
-                                  : { background: "transparent", border: `1px solid ${c.border}`, color: c.textMuted }
-                              }
+                              className="p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-1"
+                              style={{
+                                background: mode === m.id ? c.amberBg : c.pill,
+                                border: `1px solid ${mode === m.id ? c.amberBorder : c.pillBorder}`,
+                                color: c.text,
+                                borderRadius: "14px",
+                              }}
                             >
-                              <span className="text-xs font-bold" style={{ color: mode === m.id ? "#f59e0b" : c.textSec }}>{m.label}</span>
-                              <span className="text-[9px]" style={{ color: c.textMuted }}>{m.desc}</span>
+                              <span className="text-sm font-extrabold" style={{ color: mode === m.id ? "#f59e0b" : c.text }}>{m.label}</span>
+                              <span className="text-xs font-medium" style={{ color: mode === m.id ? c.amber : c.textSec }}>{m.desc}</span>
                             </button>
                           ))}
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-xs font-semibold flex items-center gap-1.5" style={{ color: c.textSec }}>
-                          <Sparkles size={13} style={{ color: "#f59e0b" }} />
+                        <label className="text-xs font-extrabold uppercase tracking-widest flex items-center gap-1.5" style={{ color: c.textSec }}>
+                          <Sparkles size={14} style={{ color: "#f59e0b" }} />
                           Flashcard Count
                         </label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-2.5">
                           {[5, 10, 20].map((count) => (
                             <button
                               key={count}
+                              type="button"
                               onClick={() => setCardCount(count as 5 | 10 | 20)}
-                              className="p-3.5 rounded-xl border text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-1"
-                              style={
-                                cardCount === count
-                                  ? { background: c.amberBg, border: `1px solid ${c.amberBorder}`, color: c.text }
-                                  : { background: "transparent", border: `1px solid ${c.border}`, color: c.textMuted }
-                              }
+                              className="p-3.5 rounded-2xl border text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-1"
+                              style={{
+                                background: cardCount === count ? c.amberBg : c.pill,
+                                border: `1px solid ${cardCount === count ? c.amberBorder : c.pillBorder}`,
+                                color: c.text,
+                                borderRadius: "14px",
+                              }}
                             >
-                              <span className="text-sm font-extrabold" style={{ color: cardCount === count ? "#f59e0b" : c.textSec }}>{count}</span>
-                              <span className="text-[9px] uppercase tracking-wider font-bold" style={{ color: c.textMuted }}>Cards</span>
+                              <span className="text-base font-extrabold" style={{ color: cardCount === count ? "#f59e0b" : c.text }}>{count}</span>
+                              <span className="text-xs font-extrabold uppercase tracking-wider" style={{ color: cardCount === count ? c.amber : c.textSec }}>Cards</span>
                             </button>
                           ))}
                         </div>
@@ -510,10 +514,10 @@ export function FlashcardsView() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleGenerate}
-                      className="w-full py-2.5 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 transition-all"
-                      style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff" }}
+                      className="w-full py-3.5 rounded-2xl text-base font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", borderRadius: "18px" }}
                     >
-                      <Play size={15} fill="currentColor" />
+                      <Play size={16} fill="currentColor" />
                       Generate Flashcards
                     </motion.button>
                   </div>
@@ -521,8 +525,8 @@ export function FlashcardsView() {
               </motion.div>
 
               <div>
-                <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text }}>
-                  <Sparkles size={15} style={{ color: "#f59e0b" }} /> How It Works
+                <h2 className="text-sm font-extrabold uppercase tracking-wider mb-3.5 flex items-center gap-2" style={{ color: c.text }}>
+                  <Sparkles size={16} style={{ color: "#f59e0b" }} /> How It Works
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
@@ -542,11 +546,11 @@ export function FlashcardsView() {
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.surface, border: `1px solid ${c.border}` }}>{item.icon}</div>
                         <div>
-                          <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: "#f59e0b" }}>Step {item.step}</span>
+                          <span className="text-xs font-extrabold uppercase tracking-widest block" style={{ color: "#f59e0b" }}>Step {item.step}</span>
                           <h4 className="text-sm font-extrabold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>{item.title}</h4>
                         </div>
                       </div>
-                      <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>{item.desc}</p>
+                      <p className="text-sm leading-relaxed font-medium" style={{ color: c.textSec }}>{item.desc}</p>
                     </motion.div>
                   ))}
                 </div>

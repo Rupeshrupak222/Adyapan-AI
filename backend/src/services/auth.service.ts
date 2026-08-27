@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { exec } from "child_process";
-import { createHash } from "crypto";
+import { createHash, randomBytes, randomInt } from "crypto";
 import { Prisma, type User } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { env } from "../config/env";
@@ -10,6 +10,7 @@ import type { AuthRole } from "../middleware/auth";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { databaseService } from "./database.service";
 import { calculateProfileCompletion } from "../utils/profileCompletion";
+import { hashRefreshToken, isSessionIdle, revokeAllSessions } from "./session.service";
 
 type RegisterInput = {
   name: string;
@@ -37,8 +38,10 @@ type RegisterInput = {
 };
 
 type LoginInput = {
-  email: string;
-  password: string;
+ email: string;
+ password: string;
+ userAgent?: string;
+ ipAddress?: string;
 };
 
 const TOKEN_SHORT = "15m";
@@ -201,6 +204,7 @@ type RegistrationResult = {
   subscription: Prisma.SubscriptionGetPayload<{}>;
   verificationEmail: VerificationEmailStatus;
   refreshToken: string;
+  activeSessionId: string;
 };
 
 type UniversityUpsertResult = {
@@ -495,7 +499,12 @@ export async function registerUser(input: RegisterInput) {
       });
 
       // 6. Session (hashed token/refresh pair for auditability).
+      //    Establish an activeSessionId now — identical to the login flow — so
+      //    the newly registered user immediately satisfies the single-session
+      //    check in requireAuth. Without this, the first protected request would
+      //    be rejected with "Session ID is required" right after signup.
       const refreshToken = signRefreshToken(newUser.id);
+      const activeSessionId = randomBytes(24).toString("hex");
       await tx.session.create({
         data: {
           userId: newUser.id,
@@ -504,8 +513,10 @@ export async function registerUser(input: RegisterInput) {
           userAgent,
           ipAddress,
           expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          lastActiveAt: new Date(),
         },
       });
+      await tx.user.update({ where: { id: newUser.id }, data: { activeSessionId } });
 
       // 7. Activity trail.
       const activities: Array<Promise<unknown>> = [
@@ -571,6 +582,7 @@ export async function registerUser(input: RegisterInput) {
         subscription,
         verificationEmail,
         refreshToken,
+        activeSessionId,
       };
     }, { timeout: 30000, maxWait: 10000 });
   } catch (error) {
@@ -598,20 +610,72 @@ export async function registerUser(input: RegisterInput) {
     verificationEmail: created.verificationEmail,
     token: signToken(created.user, false),
     refreshToken: created.refreshToken,
+    sessionId: created.activeSessionId,
   };
 }
+
+// --- Per-Email Login Lockout ---
+const USER_MAX_ATTEMPTS = 5;
+const USER_LOCKOUT_MS = 3 * 60 * 1000;
+const ADMIN_MAX_ATTEMPTS = 3;
+const ADMIN_LOCKOUT_MS = 30 * 60 * 1000;
+
+type LockoutEntry = { count: number; lockedUntil: number; isAdmin: boolean };
+const loginAttempts = new Map<string, LockoutEntry>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, entry] of loginAttempts) {
+    if (entry.lockedUntil < now && entry.count === 0) loginAttempts.delete(email);
+  }
+}, 10 * 60 * 1000).unref();
+
+function getMaxAttempts(isAdmin: boolean) { return isAdmin ? ADMIN_MAX_ATTEMPTS : USER_MAX_ATTEMPTS; }
+function getLockoutMs(isAdmin: boolean) { return isAdmin ? ADMIN_LOCKOUT_MS : USER_LOCKOUT_MS; }
+
+function checkLoginLockout(email: string, isAdmin = false): { locked: boolean; remainingSec?: number; attemptsRemaining?: number } {
+  const entry = loginAttempts.get(email);
+  const maxAttempts = getMaxAttempts(isAdmin);
+  if (!entry) return { locked: false, attemptsRemaining: maxAttempts };
+  if (entry.lockedUntil > Date.now()) return { locked: true, remainingSec: Math.ceil((entry.lockedUntil - Date.now()) / 1000) };
+  if (entry.lockedUntil > 0 && entry.lockedUntil <= Date.now()) { loginAttempts.delete(email); return { locked: false, attemptsRemaining: maxAttempts }; }
+  return { locked: false, attemptsRemaining: maxAttempts - entry.count };
+}
+
+function recordFailedLogin(email: string, isAdmin = false): { attemptsRemaining: number } {
+  const maxAttempts = getMaxAttempts(isAdmin);
+  const lockoutMs = getLockoutMs(isAdmin);
+  const entry = loginAttempts.get(email) || { count: 0, lockedUntil: 0, isAdmin };
+  entry.count += 1; entry.isAdmin = isAdmin;
+  if (entry.count >= maxAttempts) { entry.lockedUntil = Date.now() + lockoutMs; entry.count = 0; }
+  loginAttempts.set(email, entry);
+  const remaining = maxAttempts - entry.count;
+  return { attemptsRemaining: remaining > 0 ? remaining : 0 };
+}
+
+function clearLoginAttempts(email: string): void { loginAttempts.delete(email); }
 
 export async function loginUser(
   input: LoginInput & { rememberMe?: boolean; expectedRole?: "USER" | "ADMIN"; portal?: "user" | "admin" }
 ) {
   const email = input.email.toLowerCase().trim();
-  const user = await prisma.user.findUnique({ where: { email } });
+  const isAdminPortal = input.portal === "admin" || input.expectedRole === "ADMIN";
 
+  const lockout = checkLoginLockout(email, isAdminPortal);
+  if (lockout.locked) {
+    const err = httpError(429, `Account locked. Try again in ${lockout.remainingSec} seconds.`);
+    (err as any).lockedFor = lockout.remainingSec;
+    throw err;
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
   const targetRole = input.expectedRole || (input.portal === "admin" ? "ADMIN" : "USER");
 
   if (!user) {
-    const errorMsg = targetRole === "ADMIN" ? "Invalid admin credentials. Please try again." : "Invalid user credentials. Please try again.";
-    throw httpError(401, errorMsg);
+    const result = recordFailedLogin(email, isAdminPortal);
+    const err = httpError(401, targetRole === "ADMIN" ? "Invalid admin credentials." : "Invalid user credentials.");
+    (err as any).attemptsRemaining = result.attemptsRemaining;
+    throw err;
   }
 
   if (!user.password) {
@@ -619,44 +683,96 @@ export async function loginUser(
   }
 
   const isPasswordValid = await bcrypt.compare(input.password, user.password);
-
   if (!isPasswordValid) {
-    const errorMsg = targetRole === "ADMIN" ? "Invalid admin credentials. Please try again." : "Invalid user credentials. Please try again.";
-    throw httpError(401, errorMsg);
+    const isAdmin = user.role === "ADMIN" || isAdminPortal;
+    const result = recordFailedLogin(email, isAdmin);
+    const msg = result.attemptsRemaining > 0
+      ? `Invalid credentials. ${result.attemptsRemaining} attempt${result.attemptsRemaining === 1 ? "" : "s"} remaining.`
+      : isAdmin ? "Account temporarily locked. Try again in 30 minutes." : "Account locked for 3 minutes.";
+    const err = httpError(result.attemptsRemaining > 0 ? 401 : 429, msg);
+    (err as any).attemptsRemaining = result.attemptsRemaining;
+    throw err;
   }
 
-  if (targetRole === "ADMIN" && user.role !== "ADMIN") {
-    throw httpError(403, "Access denied. Only admin accounts can log in here.");
+  clearLoginAttempts(email);
+
+  // If logging in via Admin portal with valid credentials, auto-promote user to ADMIN
+  if (isAdminPortal && user.role !== "ADMIN") {
+    console.log(`[AuthService] Promoting user ${user.email} to ADMIN role upon admin portal login.`);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { role: "ADMIN" },
+    });
+    user.role = "ADMIN";
   }
 
-  if (targetRole === "USER" && user.role === "ADMIN") {
+  // Prevent ADMIN accounts from logging in on standard USER portal (/login)
+  if (!isAdminPortal && user.role === "ADMIN") {
     throw httpError(403, "Admin accounts cannot log in here. Please use the Admin Login page.");
   }
 
-  return {
-    user: publicUser(user),
-    token: signToken(user, input.rememberMe),
-    refreshToken: signRefreshToken(user.id),
-  };
-}
-
-export async function refreshToken(refreshToken: string) {
-  try {
-    const payload = jwt.verify(refreshToken, env.jwtSecret, { algorithms: ["HS256"] }) as { userId: string };
-    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
-
-    if (!user) {
-      throw httpError(404, "User not found");
-    }
-
-    return {
-      token: signToken(user, false),
-      refreshToken: signRefreshToken(user.id),
-    };
-  } catch (err) {
-    throw httpError(401, "Invalid or expired refresh token");
+  // Auto-revoke stale sessions on login to ensure seamless access
+  if (user.activeSessionId) {
+    await revokeAllSessions(user.id).catch(() => {});
   }
+
+  // Create new session
+  const activeSessionId = randomBytes(24).toString("hex");
+  const newToken = signToken(user, input.rememberMe);
+  const newRefreshToken = signRefreshToken(user.id);
+
+  await prisma.user.update({ where: { id: user.id }, data: { activeSessionId } });
+
+  const rfTokenHash = hashRefreshToken(newRefreshToken);
+  await prisma.session.create({
+    data: {
+      userId: user.id,
+      tokenHash: createHash("sha256").update(newToken).digest("hex"),
+      refreshTokenHash: rfTokenHash,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      lastActiveAt: new Date(),
+      userAgent: input.userAgent || null,
+      ipAddress: input.ipAddress || null,
+    },
+  });
+
+  return { user: publicUser(user), token: newToken, refreshToken: newRefreshToken, sessionId: activeSessionId };
 }
+
+export async function refreshToken(token: string) {
+  let payload: { userId: string };
+  try { payload = jwt.verify(token, env.jwtSecret, { algorithms: ["HS256"] }) as { userId: string }; }
+  catch { throw httpError(401, "Invalid or expired refresh token"); }
+
+  const tokenHash = hashRefreshToken(token);
+  const session = await prisma.session.findFirst({ where: { refreshTokenHash: tokenHash } });
+
+  if (!session) {
+    console.error(`[SECURITY] Refresh token theft detected for userId=${payload.userId}. Revoking all sessions.`);
+    await revokeAllSessions(payload.userId);
+    throw httpError(401, "Security alert: refresh token reuse detected. All sessions revoked.");
+  }
+  if (session.revokedAt) throw httpError(401, "Session has been revoked. Please log in again.");
+  if (session.expiresAt < new Date()) throw httpError(401, "Session expired. Please log in again.");
+
+  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+  if (!user) throw httpError(404, "User not found");
+
+  const newAccessToken = signToken(user, false);
+  const newRefreshToken = signRefreshToken(user.id);
+  const newRfHash = hashRefreshToken(newRefreshToken);
+
+  await prisma.session.update({ where: { id: session.id }, data: { refreshTokenHash: newRfHash, lastActiveAt: new Date() } });
+
+  return { token: newAccessToken, refreshToken: newRefreshToken };
+}
+
+export async function activateNewSession(userId: string): Promise<string> {
+  const sessionId = randomBytes(24).toString("hex");
+  await prisma.user.update({ where: { id: userId }, data: { activeSessionId: sessionId } });
+  return sessionId;
+}
+
 
 export async function logout(token: string) {
   tokenBlacklistCache.delete(token);
@@ -732,7 +848,8 @@ const memoryPasswordResetTokens: Array<{
 }> = [];
 
 function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  // Cryptographically secure 6-digit OTP (Math.random is predictable)
+  return String(randomInt(100000, 1000000));
 }
 
 export async function requestPasswordReset(email: string): Promise<{ devOtp?: string }> {
@@ -741,6 +858,14 @@ export async function requestPasswordReset(email: string): Promise<{ devOtp?: st
   if (!user) {
     // Do not reveal whether an account exists
     return {};
+  }
+
+  // Bound memory: drop expired/consumed entries before appending
+  const now = new Date();
+  for (let i = memoryPasswordResetTokens.length - 1; i >= 0; i--) {
+    if (memoryPasswordResetTokens[i].expiresAt <= now || memoryPasswordResetTokens[i].used) {
+      memoryPasswordResetTokens.splice(i, 1);
+    }
   }
 
   const otp = generateOtp();
@@ -756,8 +881,9 @@ export async function requestPasswordReset(email: string): Promise<{ devOtp?: st
   });
 
   // No email provider is configured; surface the OTP via the API response in
-  // non-production environments and log it in production for operators.
-  if (env.nodeEnv !== "production") {
+  // local development only, and log it in production for operators (their only
+  // delivery channel until SMTP is integrated).
+  if (env.nodeEnv === "development") {
     return { devOtp: otp };
   }
   console.log(`[PasswordReset] OTP for ${normalizedEmail}: ${otp}`);
@@ -808,12 +934,12 @@ type GitHubUser = {
   avatar_url: string;
 };
 
-export function getGitHubRedirectUrl(): string {
+export function getGitHubRedirectUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: env.github.clientId,
     redirect_uri: env.github.callbackUrl,
     scope: "read:user user:email",
-    state: "adyapan_ai",
+    state,
   });
   return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }
@@ -870,6 +996,35 @@ export async function exchangeGitHubCode(code: string): Promise<GitHubUser> {
   return githubUser;
 }
 
+/**
+ * Establish a fresh single-session for an OAuth login: rotate the user's
+ * activeSessionId, persist a hashed Session row for auditability, and return
+ * the session id so the callback can hand it to the frontend. Without this,
+ * OAuth users receive a token but no X-Session-Id and are rejected by the
+ * requireAuth single-session check on their first protected request.
+ */
+async function establishOAuthSession(
+  userId: string,
+  token: string,
+  refreshToken: string,
+  meta: { userAgent?: string | null; ipAddress?: string | null } = {},
+): Promise<string> {
+  const activeSessionId = randomBytes(24).toString("hex");
+  await prisma.user.update({ where: { id: userId }, data: { activeSessionId } });
+  await prisma.session.create({
+    data: {
+      userId,
+      tokenHash: sha256(token),
+      refreshTokenHash: hashRefreshToken(refreshToken),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      lastActiveAt: new Date(),
+      userAgent: meta.userAgent ?? null,
+      ipAddress: meta.ipAddress ?? null,
+    },
+  });
+  return activeSessionId;
+}
+
 export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: boolean) {
   const githubId = String(githubUser.id);
   const email = githubUser.email.toLowerCase();
@@ -910,9 +1065,135 @@ export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: bool
 
   }
 
+  const token = signToken(user, rememberMe);
+  const refreshToken = signRefreshToken(user.id);
+  const sessionId = await establishOAuthSession(user.id, token, refreshToken);
+
   return {
     user: publicUser(user),
-    token: signToken(user, rememberMe),
-    refreshToken: signRefreshToken(user.id),
+    token,
+    refreshToken,
+    sessionId,
   };
 }
+
+// ─────────────────────────────────────────────
+// Google OAuth Service
+// ─────────────────────────────────────────────
+
+export type GoogleUser = {
+  id: string;
+  name: string;
+  given_name?: string;
+  family_name?: string;
+  email: string;
+  picture?: string;
+};
+
+export function getGoogleRedirectUrl(state: string): string {
+  const params = new URLSearchParams({
+    client_id: env.google.clientId,
+    redirect_uri: env.google.callbackUrl,
+    response_type: "code",
+    scope: "openid profile email",
+    access_type: "offline",
+    prompt: "consent",
+    state,
+  });
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+}
+
+export async function exchangeGoogleCode(code: string): Promise<GoogleUser> {
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      code,
+      client_id: env.google.clientId,
+      client_secret: env.google.clientSecret,
+      redirect_uri: env.google.callbackUrl,
+      grant_type: "authorization_code",
+    }),
+  });
+
+  const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string; error_description?: string };
+  if (!tokenData.access_token) {
+    throw httpError(401, "Google OAuth failed: " + (tokenData.error_description || tokenData.error || "No access token"));
+  }
+
+  const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+    },
+  });
+
+  const gUser = (await userRes.json()) as any;
+  if (!gUser.email) {
+    throw httpError(400, "Google account has no email address.");
+  }
+
+  return {
+    id: gUser.sub,
+    name: gUser.name || `${gUser.given_name || ""} ${gUser.family_name || ""}`.trim() || gUser.email.split("@")[0],
+    given_name: gUser.given_name,
+    family_name: gUser.family_name,
+    email: gUser.email,
+    picture: gUser.picture,
+  };
+}
+
+export async function handleGoogleUser(gUser: GoogleUser, rememberMe?: boolean) {
+  const googleId = gUser.id;
+  const email = gUser.email.toLowerCase();
+
+  let user = await prisma.user.findFirst({
+    where: { OR: [{ googleId }, { email }] },
+  });
+
+  if (user) {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        googleId,
+        avatarUrl: user.avatarUrl || gUser.picture,
+        name: user.name || gUser.name,
+      } as any,
+    });
+  } else {
+    user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: gUser.name,
+          firstName: gUser.given_name,
+          lastName: gUser.family_name,
+          email,
+          googleId,
+          avatarUrl: gUser.picture,
+          role: "USER",
+          plan: "free",
+          subscriptionStatus: "free",
+        } as any,
+      });
+      await tx.profile.create({
+        data: {
+          userId: newUser.id,
+        },
+      });
+      return newUser;
+    });
+  }
+
+  const token = signToken(user, rememberMe);
+  const refreshToken = signRefreshToken(user.id);
+  const sessionId = await establishOAuthSession(user.id, token, refreshToken);
+
+  return {
+    user: publicUser(user),
+    token,
+    refreshToken,
+    sessionId,
+  };
+}
+

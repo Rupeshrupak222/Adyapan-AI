@@ -21,7 +21,7 @@ export interface ScrapflyJob {
   source: string;
 }
 
-// ─── Scrapfly Fetch Helper ─────────────────────────────────────────────────────
+let scrapflyThrottledUntil = 0;
 
 async function scrapflyFetch(
   url: string,
@@ -32,6 +32,10 @@ async function scrapflyFetch(
     headers?: Record<string, string>;
   } = {}
 ): Promise<string> {
+  if (Date.now() < scrapflyThrottledUntil) {
+    throw new Error("Scrapfly API is currently throttled/rate-limited. Cooldown active.");
+  }
+
   const apiKey = env.scrapflyApiKey || process.env.SCRAPFLY_API_KEY || "";
   if (!apiKey) throw new Error("SCRAPFLY_API_KEY not configured");
 
@@ -53,6 +57,10 @@ async function scrapflyFetch(
   });
 
   if (!res.ok) {
+    if (res.status === 429) {
+      scrapflyThrottledUntil = Date.now() + 15 * 60 * 1000;
+      console.warn("[Scrapfly] Rate limit / account throttle encountered (HTTP 429). Activating 15m cooldown.");
+    }
     const errBody = await res.text().catch(() => "");
     throw new Error(`Scrapfly error ${res.status}: ${errBody.slice(0, 200)}`);
   }

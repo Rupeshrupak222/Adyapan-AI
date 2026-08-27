@@ -15,7 +15,9 @@ model User {
   password  String?
   role      Role     @default(USER)
   githubId  String?  @unique @map("github_id")
+  googleId  String?  @unique @map("google_id")
   avatarUrl String?  @map("avatar_url")
+ activeSessionId String? @map("active_session_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   profile   Profile?
@@ -3120,6 +3122,26 @@ model AptitudeAnalytics {
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("aptitude_analytics")
+}
+
+
+model AptitudeTopicTest {
+  id             String   @id @default(cuid())
+  category       String   // quantitative, logical, verbal, data-interpretation, analytical
+  topic          String   // Number System, Percentages, etc.
+  testNumber     Int      @map("test_number") // 1, 2, 3...
+  title          String   // e.g. "Test 1", "Test 2"
+  weekNumber     Int      @default(1) @map("week_number")
+  questionsJson  Json     @map("questions_json") // 30 questions array
+  totalQuestions Int      @default(30) @map("total_questions")
+  difficulty     String   @default("medium")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([topic, testNumber])
+  @@index([category])
+  @@index([topic])
+  @@map("aptitude_topic_tests")
 }
 
 

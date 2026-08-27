@@ -14,6 +14,11 @@ import {
   type AptitudeCategory,
   type Difficulty,
 } from "../services/aptitude-engine.service";
+import {
+  getTopicTestsFromDb,
+  getTopicTestByIdFromDb,
+  generateWeeklyTopicTest,
+} from "../services/aptitude-test-bank.service";
 
 /**
  * 1. Get all aptitude categories with topics
@@ -22,6 +27,42 @@ export async function getCategories(_req: Request, res: Response, next: NextFunc
   try {
     const data = await getAptitudeCategories();
     res.json({ success: true, ...data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Get DB-stored tests for a topic (Test 1, Test 2, Test 3, etc.)
+ */
+export async function getTopicTests(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { topic, category } = req.query;
+    if (!topic) {
+      throw httpError(400, "topic parameter is required");
+    }
+    const userPrisma = await getUserPrismaFromRequest(req);
+    const tests = await getTopicTestsFromDb(String(topic), String(category || "quantitative"), userPrisma);
+    
+    const userId = (req.user as any)?.id || (req.user as any)?.userId || (req as any).userId;
+    if (userId) {
+      const userSessions = await userPrisma.aptitudeSession.findMany({
+        where: { userId, topic: String(topic) },
+        orderBy: { createdAt: "desc" },
+      });
+      const enriched = tests.map(t => {
+        const match = userSessions.find((s: any) => s.questionsJson && Array.isArray(s.questionsJson) && s.questionsJson.length === t.totalQuestions);
+        return {
+          ...t,
+          completed: !!match,
+          score: match?.score || 0,
+          accuracy: match?.accuracy || 0,
+        };
+      });
+      return res.json({ success: true, tests: enriched });
+    }
+
+    res.json({ success: true, tests });
   } catch (error) {
     next(error);
   }
@@ -54,6 +95,7 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
       topic,
       difficulty,
       count,
+      testId,
     } = req.body;
 
     if (!mode) {
@@ -69,41 +111,61 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
     let questions;
     let sessionDifficulty = (difficulty as Difficulty) || "medium";
 
-    if (mode === "adaptive") {
-      const analytics = await userPrisma.aptitudeAnalytics.findUnique({ where: { userId } });
+    // If testId is provided or mode is topic_test with topic, fetch 30 questions from DB test bank!
+    if (testId) {
+      const dbTest = await getTopicTestByIdFromDb(testId, userPrisma);
+      if (dbTest) {
+        questions = dbTest.questions;
+        sessionDifficulty = (dbTest.difficulty as Difficulty) || "medium";
+      }
+    } else if (mode === "topic_test" && topic) {
+      const tests = await getTopicTestsFromDb(topic, category || "quantitative", userPrisma);
+      if (tests.length > 0) {
+        const firstTest = await getTopicTestByIdFromDb(tests[0].id, userPrisma);
+        if (firstTest) {
+          questions = firstTest.questions;
+          sessionDifficulty = (firstTest.difficulty as Difficulty) || "medium";
+        }
+      }
+    }
 
-      const weakTopics: string[] = analytics
-        ? (analytics.topicMastery as any)?.weakTopics || []
-        : [];
-      const strongTopics: string[] = analytics
-        ? (analytics.topicMastery as any)?.strongTopics || []
-        : [];
-      const recentAccuracy = analytics?.overallAccuracy || 50;
+    if (!questions || questions.length === 0) {
+      if (mode === "adaptive") {
+        const analytics = await userPrisma.aptitudeAnalytics.findUnique({ where: { userId } });
 
-      sessionDifficulty =
-        recentAccuracy >= 80 ? "hard" : recentAccuracy >= 50 ? "medium" : "easy";
+        const weakTopics: string[] = analytics
+          ? (analytics.topicMastery as any)?.weakTopics || []
+          : [];
+        const strongTopics: string[] = analytics
+          ? (analytics.topicMastery as any)?.strongTopics || []
+          : [];
+        const recentAccuracy = analytics?.overallAccuracy || 50;
 
-      questions = await generateAdaptiveQuestions({
-        weakTopics,
-        strongTopics,
-        recentAccuracy,
-        targetDifficulty: sessionDifficulty,
-        count: questionCount,
-      });
-    } else if (mode === "company_test" && company) {
-      questions = await generateAptitudeQuestions({
-        company,
-        count: questionCount,
-        difficulty: sessionDifficulty,
-      });
-    } else {
-      questions = await generateAptitudeQuestions({
-        topic,
-        category: category as AptitudeCategory | undefined,
-        count: questionCount,
-        difficulty: sessionDifficulty,
-        company,
-      });
+        sessionDifficulty =
+          recentAccuracy >= 80 ? "hard" : recentAccuracy >= 50 ? "medium" : "easy";
+
+        questions = await generateAdaptiveQuestions({
+          weakTopics,
+          strongTopics,
+          recentAccuracy,
+          targetDifficulty: sessionDifficulty,
+          count: questionCount,
+        });
+      } else if (mode === "company_test" && company) {
+        questions = await generateAptitudeQuestions({
+          company,
+          count: questionCount,
+          difficulty: sessionDifficulty,
+        });
+      } else {
+        questions = await generateAptitudeQuestions({
+          topic,
+          category: category as AptitudeCategory | undefined,
+          count: questionCount,
+          difficulty: sessionDifficulty,
+          company,
+        });
+      }
     }
 
     if (!questions || questions.length === 0) {

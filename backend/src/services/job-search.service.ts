@@ -1,17 +1,20 @@
 import { getMasterPrisma, getUserPrisma } from "../config/dynamicPrisma";
 import { mapDiscoveryJobToListing } from "../utils/jobListingMapper";
 import { JobDiscoveryService } from "./job-discovery.service";
-// AI integration available for future use
 
 export interface SearchFilters {
   query?: string;
   company?: string;
   location?: string;
+  locations?: string[];
   country?: string;
   state?: string;
   city?: string;
   workMode?: string;
+  workModes?: string[];
   employmentType?: string;
+  employmentTypes?: string[];
+  departments?: string[];
   experienceMin?: number;
   experienceMax?: number;
   salaryMin?: number;
@@ -19,14 +22,273 @@ export interface SearchFilters {
   skills?: string[];
   industry?: string;
   education?: string;
+  educationList?: string[];
   companySize?: string;
   source?: string;
+  sources?: string[];
   isFeatured?: boolean;
-  postedWithin?: "today" | "3days" | "week" | "month";
+  postedWithin?: "today" | "3days" | "week" | "15days" | "month" | "60days" | "any";
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
+  targetRole?: string;
+  userSkills?: string[];
+  userId?: string;
+  userExperience?: number;
+  userPreferredLocations?: string[];
+}
+
+// ─── Skill Alias Normalization ────────────────────────────────────────────────
+
+const SKILL_ALIASES: Record<string, string> = {
+  "js": "javascript", "ts": "typescript", "py": "python", "rb": "ruby",
+  "ml": "machine learning", "ai": "artificial intelligence", "dl": "deep learning",
+  "nlp": "natural language processing", "ds": "data science", "da": "data analysis",
+  "reactjs": "react", "react.js": "react", "vuejs": "vue", "vue.js": "vue",
+  "angularjs": "angular", "nextjs": "next.js", "nuxtjs": "nuxt.js",
+  "nodejs": "node.js", "node": "node.js", "expressjs": "express",
+  "nestjs": "nest.js", "django": "django", "flask": "flask",
+  "springboot": "spring boot", "spring": "spring boot",
+  "tf": "tensorflow", "torch": "pytorch", "sklearn": "scikit-learn",
+  "k8s": "kubernetes", "cplusplus": "c++",
+  "csharp": "c#", "dotnet": ".net", "aspnet": "asp.net",
+  "golang": "go", "postgres": "postgresql", "mongo": "mongodb",
+  "tailwindcss": "tailwind", "mui": "material ui",
+  "graphql": "graphql", "rest": "rest api", "restful": "rest api",
+  "gcp": "google cloud", "aws": "amazon web services",
+  "ci/cd": "ci/cd", "cicd": "ci/cd",
+  "react native": "react native", "flutter": "flutter",
+  "ux": "ux design", "ui": "ui design", "ux/ui": "ux design",
+  "product management": "product management", "proj mgmt": "project management",
+  "agile": "agile", "scrum": "scrum",
+};
+
+function normalizeSkill(skill: string): string {
+  const lower = skill.toLowerCase().trim();
+  return SKILL_ALIASES[lower] || lower;
+}
+
+function normalizeSkills(skills: string[]): string[] {
+  return [...new Set(skills.map(normalizeSkill))];
+}
+
+// ─── Query Normalization ──────────────────────────────────────────────────────
+
+function normalizeSearchQuery(query: string): string {
+  if (!query) return query;
+  let q = query.toLowerCase().trim();
+  q = q.replace(/[-_]+/g, " ");
+  q = q.replace(/\s+/g, " ");
+  const expanded = SKILL_ALIASES[q];
+  if (expanded) return expanded;
+  return q;
+}
+
+// ─── Experience Matching Helpers ──────────────────────────────────────────────
+
+function calculateExperienceOverlap(userExp: number, jobMin?: number | null, jobMax?: number | null): number {
+  if (jobMin == null && jobMax == null) return 50;
+  const min = jobMin ?? 0;
+  const max = jobMax ?? 99;
+  if (userExp >= min && userExp <= max) return 100;
+  if (userExp < min) {
+    const gap = min - userExp;
+    if (gap <= 1) return 80;
+    if (gap <= 2) return 60;
+    if (gap <= 3) return 40;
+    return 20;
+  }
+  const gap = userExp - max;
+  if (gap <= 1) return 80;
+  if (gap <= 2) return 60;
+  if (gap <= 3) return 40;
+  return 20;
+}
+
+// ─── Location Matching ────────────────────────────────────────────────────────
+
+function calculateLocationMatch(
+  jobLocation: string, jobCity: string, jobState: string, jobCountry: string,
+  preferredLocations: string[], userProfileLocation?: string
+): number {
+  const locParts = [jobLocation, jobCity, jobState, jobCountry]
+    .filter(Boolean).map(l => l.toLowerCase());
+  const allPrefs = [...preferredLocations, userProfileLocation].filter(Boolean).map(l => l.toLowerCase());
+  if (allPrefs.length === 0) return 50;
+  for (const pref of allPrefs) {
+    for (const part of locParts) {
+      if (part.includes(pref) || pref.includes(part)) return 100;
+    }
+    if (pref === "remote" && /remote/i.test(jobLocation)) return 100;
+  }
+  if (/remote/i.test(jobLocation) && allPrefs.some(p => p.includes("remote"))) return 100;
+  return 30;
+}
+
+// ─── Recommendation Scoring ───────────────────────────────────────────────────
+
+export interface MatchReason {
+  type: "role" | "skill" | "experience" | "location" | "workmode" | "salary" | "freshness";
+  text: string;
+  weight: number;
+}
+
+export function calculateJobMatch(
+  job: any,
+  targetRole?: string,
+  userSkills: string[] = [],
+  userExperience?: number,
+  preferredLocations: string[] = [],
+  userProfileLocation?: string,
+  userPreferredWorkMode?: string
+): { matchScore: number; isRecommended: boolean; reasons: MatchReason[] } {
+  const reasons: MatchReason[] = [];
+  let totalScore = 0;
+  let totalWeight = 0;
+
+  const normTitle = (job.title || "").toLowerCase();
+  const normDesc = (job.description || "").toLowerCase();
+  const normTarget = (targetRole || "").toLowerCase().trim();
+
+  // 1. Role Match (weight: 25)
+  const roleWeight = 25;
+  let roleScore = 0;
+  if (normTarget) {
+    const roleKeywords = normTarget.split(/\s+/).filter(w => w.length > 2);
+    if (normTitle.includes(normTarget)) {
+      roleScore = 100;
+      reasons.push({ type: "role", text: `Direct match for your target role: "${targetRole}"`, weight: roleWeight });
+    } else {
+      let matchCount = 0;
+      for (const kw of roleKeywords) {
+        if (normTitle.includes(kw) || normDesc.includes(kw)) matchCount++;
+      }
+      if (matchCount > 0) {
+        roleScore = Math.min(80, (matchCount / roleKeywords.length) * 80);
+        reasons.push({ type: "role", text: `Matches your interest in ${targetRole}`, weight: roleWeight });
+      } else {
+        roleScore = 15;
+      }
+    }
+  } else {
+    roleScore = 50;
+  }
+  totalScore += roleScore * roleWeight;
+  totalWeight += roleWeight;
+
+  // 2. Skill Match (weight: 25)
+  const skillWeight = 25;
+  let skillScore = 0;
+  if (userSkills.length > 0 && job.skills && Array.isArray(job.skills) && job.skills.length > 0) {
+    const normalizedUserSkills = normalizeSkills(userSkills);
+    const normalizedJobSkills = normalizeSkills(job.skills);
+    const jobSkillSet = new Set(normalizedJobSkills);
+    const matchedSkills = normalizedUserSkills.filter(s => jobSkillSet.has(s));
+    if (matchedSkills.length > 0) {
+      skillScore = Math.min(100, Math.round((matchedSkills.length / Math.max(1, normalizedUserSkills.length)) * 120));
+      const matchedNames = matchedSkills.slice(0, 3).join(", ");
+      reasons.push({
+        type: "skill",
+        text: `${matchedSkills.length}/${normalizedUserSkills.length} skills match (${matchedNames}${matchedSkills.length > 3 ? "..." : ""})`,
+        weight: skillWeight,
+      });
+    } else {
+      skillScore = 5;
+    }
+  } else if (userSkills.length === 0) {
+    skillScore = 50;
+  } else {
+    skillScore = 10;
+  }
+  totalScore += skillScore * skillWeight;
+  totalWeight += skillWeight;
+
+  // 3. Experience Match (weight: 15)
+  const expWeight = 15;
+  let expScore = 50;
+  if (userExperience != null && userExperience >= 0) {
+    expScore = calculateExperienceOverlap(userExperience, job.experienceMin, job.experienceMax);
+    if (expScore >= 80) {
+      reasons.push({ type: "experience", text: `Your ${userExperience}y experience fits the ${job.experienceMin ?? 0}-${job.experienceMax ?? "any"}y requirement`, weight: expWeight });
+    }
+  }
+  totalScore += expScore * expWeight;
+  totalWeight += expWeight;
+
+  // 4. Location Match (weight: 10)
+  const locWeight = 10;
+  const locScore = calculateLocationMatch(
+    job.location || "", job.city || "", job.state || "", job.country || "",
+    preferredLocations, userProfileLocation
+  );
+  if (locScore >= 80) {
+    const locText = preferredLocations.length > 0 ? `Matches your preferred location` : `Location match`;
+    reasons.push({ type: "location", text: locText, weight: locWeight });
+  }
+  totalScore += locScore * locWeight;
+  totalWeight += locWeight;
+
+  // 5. Work Mode Match (weight: 10)
+  const wmWeight = 10;
+  let wmScore = 50;
+  if (userPreferredWorkMode) {
+    const jobWM = (job.workMode || "").toLowerCase();
+    const prefWM = userPreferredWorkMode.toLowerCase();
+    if (jobWM === prefWM || jobWM.includes(prefWM) || prefWM.includes(jobWM)) {
+      wmScore = 100;
+      reasons.push({ type: "workmode", text: `Matches your preferred work mode: ${job.workMode}`, weight: wmWeight });
+    } else if (prefWM === "remote" && /remote/i.test(jobWM)) {
+      wmScore = 100;
+    } else if (prefWM === "hybrid" && /hybrid/i.test(jobWM)) {
+      wmScore = 100;
+    }
+  }
+  totalScore += wmScore * wmWeight;
+  totalWeight += wmWeight;
+
+  // 6. Salary Match (weight: 5)
+  const salWeight = 5;
+  let salScore = 50;
+  if (job.salaryMax) {
+    salScore = 70;
+    if (job.salaryMin) salScore = 80;
+  }
+  totalScore += salScore * salWeight;
+  totalWeight += salWeight;
+
+  // 7. Freshness (weight: 5)
+  const freshWeight = 5;
+  let freshScore = 50;
+  if (job.postedAt) {
+    const ageHours = (Date.now() - new Date(job.postedAt).getTime()) / (1000 * 60 * 60);
+    if (ageHours < 24) freshScore = 100;
+    else if (ageHours < 72) freshScore = 80;
+    else if (ageHours < 168) freshScore = 65;
+    else if (ageHours < 720) freshScore = 45;
+    else freshScore = 30;
+  }
+  totalScore += freshScore * freshWeight;
+  totalWeight += freshWeight;
+
+  // 8. Featured bonus (weight: 5)
+  const featWeight = 5;
+  let featScore = 30;
+  if (job.isFeatured) {
+    featScore = 100;
+    reasons.push({ type: "freshness", text: "Featured job", weight: featWeight });
+  }
+  totalScore += featScore * featWeight;
+  totalWeight += featWeight;
+
+  const finalScore = Math.min(99, Math.max(15, Math.round(totalScore / totalWeight)));
+  const isRecommended = finalScore >= 50 || reasons.some(r => r.type === "role" && r.weight >= 20);
+
+  return {
+    matchScore: finalScore,
+    isRecommended,
+    reasons,
+  };
 }
 
 export interface SearchResult {
@@ -62,7 +324,7 @@ const SEARCH_CACHE_TTL_MS = 60 * 1000;
 const SEARCH_CACHE_MAX = 100;
 const searchCache = new Map<string, SearchCacheEntry>();
 
-function getPostedWithinDate(postedWithin: string): Date {
+function getPostedWithinDate(postedWithin: string): Date | null {
   const now = new Date();
   switch (postedWithin) {
     case "today":
@@ -72,8 +334,15 @@ function getPostedWithinDate(postedWithin: string): Date {
       return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
     case "week":
       return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    case "15days":
+      return new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
+    case "month":
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    case "60days":
+      return new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    case "any":
     default:
-      return new Date(0);
+      return null;
   }
 }
 
@@ -261,23 +530,60 @@ export class JobSearchService {
 
     const where: any = { isActive: true };
 
+    // ─── Query: Multi-term search with skill alias expansion ──────────
     if (filters.query) {
-      const q = filters.query;
-      where.OR = [
-        { title: { contains: q, mode: "insensitive" } },
-        { company: { contains: q, mode: "insensitive" } },
-        { description: { contains: q, mode: "insensitive" } },
-        { location: { contains: q, mode: "insensitive" } },
-        { skills: { hasSome: [q] } },
-      ];
+      const rawQ = filters.query.trim();
+      const normalizedQ = normalizeSearchQuery(rawQ);
+      const terms = rawQ.split(/\s+/).filter(t => t.length > 1);
+      const allTerms = [normalizedQ, ...terms.map(normalizeSearchQuery)];
+      const uniqueTerms = [...new Set(allTerms)];
+
+      const orConditions: any[] = [];
+      for (const term of uniqueTerms) {
+        orConditions.push(
+          { title: { contains: term, mode: "insensitive" } },
+          { company: { contains: term, mode: "insensitive" } },
+          { description: { contains: term, mode: "insensitive" } },
+          { location: { contains: term, mode: "insensitive" } },
+          { skills: { hasSome: [term] } }
+        );
+        // Also search with original term for case-sensitive matches
+        if (term !== rawQ.toLowerCase()) {
+          orConditions.push(
+            { title: { contains: rawQ, mode: "insensitive" } },
+            { company: { contains: rawQ, mode: "insensitive" } },
+            { skills: { hasSome: [rawQ] } }
+          );
+        }
+      }
+      where.OR = orConditions;
     }
 
+    // ─── Company filter ───────────────────────────────────────────────
     if (filters.company) {
       where.company = { contains: filters.company, mode: "insensitive" };
     }
 
-    if (filters.location) {
-      where.location = { contains: filters.location, mode: "insensitive" };
+    // ─── Location: Multi-select support ───────────────────────────────
+    const locationFilters: any[] = [];
+    if (filters.locations && filters.locations.length > 0) {
+      for (const loc of filters.locations) {
+        locationFilters.push(
+          { location: { contains: loc, mode: "insensitive" } },
+          { city: { contains: loc, mode: "insensitive" } },
+          { state: { contains: loc, mode: "insensitive" } }
+        );
+      }
+    } else if (filters.location) {
+      locationFilters.push(
+        { location: { contains: filters.location, mode: "insensitive" } },
+        { city: { contains: filters.location, mode: "insensitive" } },
+        { state: { contains: filters.location, mode: "insensitive" } }
+      );
+    }
+    if (locationFilters.length > 0) {
+      where.AND = where.AND || [];
+      where.AND.push({ OR: locationFilters });
     }
 
     if (filters.country) {
@@ -292,14 +598,21 @@ export class JobSearchService {
       where.city = { contains: filters.city, mode: "insensitive" };
     }
 
-    if (filters.workMode) {
+    // ─── Work Mode: Multi-select support ──────────────────────────────
+    if (filters.workModes && filters.workModes.length > 0) {
+      where.workMode = { in: filters.workModes };
+    } else if (filters.workMode) {
       where.workMode = filters.workMode;
     }
 
-    if (filters.employmentType) {
+    // ─── Employment Type: Multi-select support ────────────────────────
+    if (filters.employmentTypes && filters.employmentTypes.length > 0) {
+      where.employmentType = { in: filters.employmentTypes };
+    } else if (filters.employmentType) {
       where.employmentType = filters.employmentType;
     }
 
+    // ─── Experience ───────────────────────────────────────────────────
     if (filters.experienceMin !== undefined || filters.experienceMax !== undefined) {
       where.AND = where.AND || [];
       if (filters.experienceMin !== undefined) {
@@ -310,6 +623,7 @@ export class JobSearchService {
       }
     }
 
+    // ─── Salary ───────────────────────────────────────────────────────
     if (filters.salaryMin !== undefined || filters.salaryMax !== undefined) {
       where.AND = where.AND || [];
       if (filters.salaryMin !== undefined) {
@@ -320,8 +634,10 @@ export class JobSearchService {
       }
     }
 
+    // ─── Skills: Multi-select with ANY/ALL mode ──────────────────────
     if (filters.skills && filters.skills.length > 0) {
-      where.skills = { hasSome: filters.skills };
+      const normalizedFilterSkills = normalizeSkills(filters.skills);
+      where.skills = { hasSome: normalizedFilterSkills };
     }
 
     if (filters.industry) {
@@ -336,7 +652,10 @@ export class JobSearchService {
       where.companySize = { contains: filters.companySize, mode: "insensitive" };
     }
 
-    if (filters.source) {
+    // ─── Source: Multi-select support ─────────────────────────────────
+    if (filters.sources && filters.sources.length > 0) {
+      where.source = { in: filters.sources };
+    } else if (filters.source) {
       where.source = filters.source;
     }
 
@@ -344,12 +663,17 @@ export class JobSearchService {
       where.isFeatured = filters.isFeatured;
     }
 
-    if (filters.postedWithin) {
-      where.postedAt = { gte: getPostedWithinDate(filters.postedWithin) };
+    // ─── Date/Freshness filter ────────────────────────────────────────
+    if (filters.postedWithin && filters.postedWithin !== "any") {
+      const postedDate = getPostedWithinDate(filters.postedWithin);
+      if (postedDate) {
+        where.postedAt = { gte: postedDate };
+      }
     }
 
+    // ─── Sorting ──────────────────────────────────────────────────────
     let orderBy: any = { createdAt: "desc" };
-    const sortField = filters.sortBy || "createdAt";
+    const sortField = filters.sortBy || "recommended";
     const sortOrder = filters.sortOrder || "desc";
 
     const validSortFields: Record<string, string> = {
@@ -363,10 +687,13 @@ export class JobSearchService {
       saveCount: "saveCount",
     };
 
-    if (validSortFields[sortField]) {
+    if (sortField === "recommended" || sortField === "matchScore") {
+      orderBy = [{ isFeatured: "desc" }, { viewCount: "desc" }, { createdAt: "desc" }];
+    } else if (validSortFields[sortField]) {
       orderBy = { [validSortFields[sortField]]: sortOrder };
     }
 
+    // ─── Database Query ───────────────────────────────────────────────
     let total = 0;
     let jobs: any[] = [];
     try {
@@ -390,8 +717,8 @@ export class JobSearchService {
       }
     }
 
+    // ─── Seed if empty ────────────────────────────────────────────────
     if (total === 0) {
-
       try {
         const DEFAULT_JOBS = [
           {
@@ -399,276 +726,168 @@ export class JobSearchService {
             title: "Full Stack Software Engineer",
             company: "Google",
             location: "Bengaluru, Karnataka, India",
-            city: "Bengaluru",
-            state: "Karnataka",
-            country: "India",
-            workMode: "Hybrid",
-            employmentType: "Full-Time",
-            experienceMin: 1,
-            experienceMax: 3,
-            salaryMin: 1800000,
-            salaryMax: 3200000,
-            salaryCurrency: "INR",
+            city: "Bengaluru", state: "Karnataka", country: "India",
+            workMode: "Hybrid", employmentType: "Full-Time",
+            experienceMin: 1, experienceMax: 3,
+            salaryMin: 1800000, salaryMax: 3200000, salaryCurrency: "INR",
             skills: ["React", "TypeScript", "Node.js", "Python", "System Design"],
             description: "Looking for an exceptional Full Stack Engineer to build high-performance web applications and scalable cloud platform services.",
-            applyUrl: "https://careers.google.com",
-            sourceUrl: "https://careers.google.com",
-            source: "Google Careers",
-            isFeatured: true,
-            isActive: true,
+            applyUrl: "https://careers.google.com", sourceUrl: "https://careers.google.com",
+            source: "Google Careers", isFeatured: true, isActive: true,
           },
           {
             fingerprint: simpleHash("Microsoft|Backend Engineer - AI Systems|Hyderabad"),
             title: "Backend Engineer - AI Systems",
             company: "Microsoft",
             location: "Hyderabad, Telangana, India",
-            city: "Hyderabad",
-            state: "Telangana",
-            country: "India",
-            workMode: "Remote",
-            employmentType: "Full-Time",
-            experienceMin: 0,
-            experienceMax: 2,
-            salaryMin: 1600000,
-            salaryMax: 2800000,
-            salaryCurrency: "INR",
+            city: "Hyderabad", state: "Telangana", country: "India",
+            workMode: "Remote", employmentType: "Full-Time",
+            experienceMin: 0, experienceMax: 2,
+            salaryMin: 1600000, salaryMax: 2800000, salaryCurrency: "INR",
             skills: ["C#", "Python", "Azure", "PostgreSQL", "Microservices"],
             description: "Join the Azure AI & Cloud Engineering team to scale next-gen AI platform APIs and microservice architectures.",
-            applyUrl: "https://careers.microsoft.com",
-            sourceUrl: "https://careers.microsoft.com",
-            source: "Microsoft Careers",
-            isFeatured: true,
-            isActive: true,
+            applyUrl: "https://careers.microsoft.com", sourceUrl: "https://careers.microsoft.com",
+            source: "Microsoft Careers", isFeatured: true, isActive: true,
           },
           {
             fingerprint: simpleHash("Swiggy|Frontend Developer (React / Next.js)|Bengaluru"),
             title: "Frontend Developer (React / Next.js)",
             company: "Swiggy",
             location: "Bengaluru, Karnataka, India",
-            city: "Bengaluru",
-            state: "Karnataka",
-            country: "India",
-            workMode: "Onsite",
-            employmentType: "Full-Time",
-            experienceMin: 1,
-            experienceMax: 4,
-            salaryMin: 1400000,
-            salaryMax: 2400000,
-            salaryCurrency: "INR",
+            city: "Bengaluru", state: "Karnataka", country: "India",
+            workMode: "Onsite", employmentType: "Full-Time",
+            experienceMin: 1, experienceMax: 4,
+            salaryMin: 1400000, salaryMax: 2400000, salaryCurrency: "INR",
             skills: ["React", "Next.js", "Tailwind CSS", "Redux", "Web Vitals"],
             description: "Build fast, pixel-perfect user interfaces for millions of daily active consumer food and instant delivery orders.",
-            applyUrl: "https://careers.swiggy.com",
-            sourceUrl: "https://careers.swiggy.com",
-            source: "Swiggy Careers",
-            isFeatured: true,
-            isActive: true,
+            applyUrl: "https://careers.swiggy.com", sourceUrl: "https://careers.swiggy.com",
+            source: "Swiggy Careers", isFeatured: true, isActive: true,
           },
           {
             fingerprint: simpleHash("Razorpay|Graduate Software Engineer Trainee|Bengaluru"),
             title: "Graduate Software Engineer Trainee",
             company: "Razorpay",
             location: "Bengaluru, Karnataka, India",
-            city: "Bengaluru",
-            state: "Karnataka",
-            country: "India",
-            workMode: "Hybrid",
-            employmentType: "Full-Time",
-            experienceMin: 0,
-            experienceMax: 1,
-            salaryMin: 1200000,
-            salaryMax: 2000000,
-            salaryCurrency: "INR",
+            city: "Bengaluru", state: "Karnataka", country: "India",
+            workMode: "Hybrid", employmentType: "Full-Time",
+            experienceMin: 0, experienceMax: 1,
+            salaryMin: 1200000, salaryMax: 2000000, salaryCurrency: "INR",
             skills: ["Java", "Spring Boot", "MySQL", "Kafka", "Data Structures"],
             description: "Ideal role for fresh graduates and early career engineers passionate about fintech and payment gateway infrastructure.",
-            applyUrl: "https://razorpay.com/jobs",
-            sourceUrl: "https://razorpay.com/jobs",
-            source: "Razorpay Careers",
-            isFeatured: true,
-            isActive: true,
+            applyUrl: "https://razorpay.com/jobs", sourceUrl: "https://razorpay.com/jobs",
+            source: "Razorpay Careers", isFeatured: true, isActive: true,
           },
           {
             fingerprint: simpleHash("Amazon AWS|DevOps & Cloud Engineer|Bengaluru"),
             title: "DevOps & Cloud Engineer",
             company: "Amazon Web Services (AWS)",
             location: "Bengaluru, Karnataka, India",
-            city: "Bengaluru",
-            state: "Karnataka",
-            country: "India",
-            workMode: "Hybrid",
-            employmentType: "Full-Time",
-            experienceMin: 2,
-            experienceMax: 5,
-            salaryMin: 2000000,
-            salaryMax: 3500000,
-            salaryCurrency: "INR",
+            city: "Bengaluru", state: "Karnataka", country: "India",
+            workMode: "Hybrid", employmentType: "Full-Time",
+            experienceMin: 2, experienceMax: 5,
+            salaryMin: 2000000, salaryMax: 3500000, salaryCurrency: "INR",
             skills: ["AWS", "Docker", "Kubernetes", "Terraform", "CI/CD"],
             description: "Architect and manage highly resilient cloud infrastructure, Kubernetes clusters, and automated deployment pipelines.",
-            applyUrl: "https://amazon.jobs",
-            sourceUrl: "https://amazon.jobs",
-            source: "Amazon Jobs",
-            isFeatured: true,
-            isActive: true,
+            applyUrl: "https://amazon.jobs", sourceUrl: "https://amazon.jobs",
+            source: "Amazon Jobs", isFeatured: true, isActive: true,
           },
           {
             fingerprint: simpleHash("OpenAI|AI Research & LLM Engineer|Remote"),
             title: "AI Research & LLM Engineer",
             company: "OpenAI",
             location: "Remote / San Francisco, CA",
-            city: "San Francisco",
-            state: "California",
-            country: "United States",
-            workMode: "Remote",
-            employmentType: "Full-Time",
-            experienceMin: 2,
-            experienceMax: 6,
-            salaryMin: 180000,
-            salaryMax: 320000,
-            salaryCurrency: "USD",
+            city: "San Francisco", state: "California", country: "United States",
+            workMode: "Remote", employmentType: "Full-Time",
+            experienceMin: 2, experienceMax: 6,
+            salaryMin: 180000, salaryMax: 320000, salaryCurrency: "USD",
             skills: ["Python", "PyTorch", "Transformers", "LLM", "Deep Learning", "CUDA"],
             description: "Train, fine-tune, and optimize frontier generative AI models and deployment serving layers.",
-            applyUrl: "https://openai.com/careers",
-            sourceUrl: "https://openai.com/careers",
-            source: "OpenAI Careers",
-            isFeatured: true,
-            isActive: true,
+            applyUrl: "https://openai.com/careers", sourceUrl: "https://openai.com/careers",
+            source: "OpenAI Careers", isFeatured: true, isActive: true,
           },
           {
             fingerprint: simpleHash("Meta|Data Scientist - Product Analytics|Remote"),
             title: "Data Scientist - Product Analytics",
             company: "Meta",
             location: "Remote / London, UK",
-            city: "London",
-            state: "London",
-            country: "United Kingdom",
-            workMode: "Remote",
-            employmentType: "Full-Time",
-            experienceMin: 1,
-            experienceMax: 4,
-            salaryMin: 90000,
-            salaryMax: 150000,
-            salaryCurrency: "GBP",
+            city: "London", state: "London", country: "United Kingdom",
+            workMode: "Remote", employmentType: "Full-Time",
+            experienceMin: 1, experienceMax: 4,
+            salaryMin: 90000, salaryMax: 150000, salaryCurrency: "GBP",
             skills: ["Python", "SQL", "Statistics", "A/B Testing", "Tableau", "Pandas"],
             description: "Drive product intelligence, user behavior modeling, and algorithmic optimization across global social platforms.",
-            applyUrl: "https://metacareers.com",
-            sourceUrl: "https://metacareers.com",
-            source: "Meta Careers",
-            isFeatured: true,
-            isActive: true,
+            applyUrl: "https://metacareers.com", sourceUrl: "https://metacareers.com",
+            source: "Meta Careers", isFeatured: true, isActive: true,
           },
           {
             fingerprint: simpleHash("Stripe|Senior Staff Full Stack Developer|Remote"),
             title: "Senior Staff Full Stack Developer",
             company: "Stripe",
             location: "Remote / San Francisco, CA",
-            city: "San Francisco",
-            state: "California",
-            country: "United States",
-            workMode: "Remote",
-            employmentType: "Full-Time",
-            experienceMin: 3,
-            experienceMax: 7,
-            salaryMin: 160000,
-            salaryMax: 280000,
-            salaryCurrency: "USD",
+            city: "San Francisco", state: "California", country: "United States",
+            workMode: "Remote", employmentType: "Full-Time",
+            experienceMin: 3, experienceMax: 7,
+            salaryMin: 160000, salaryMax: 280000, salaryCurrency: "USD",
             skills: ["Ruby", "TypeScript", "React", "GraphQL", "PostgreSQL", "Go"],
             description: "Engineer foundational global financial infrastructure and merchant dashboard API platform tools.",
-            applyUrl: "https://stripe.com/jobs",
-            sourceUrl: "https://stripe.com/jobs",
-            source: "Stripe Careers",
-            isFeatured: true,
-            isActive: true,
+            applyUrl: "https://stripe.com/jobs", sourceUrl: "https://stripe.com/jobs",
+            source: "Stripe Careers", isFeatured: true, isActive: true,
           },
           {
             fingerprint: simpleHash("Zomato|Lead Mobile Engineer (iOS & Android)|Gurugram"),
             title: "Lead Mobile Engineer (iOS & Android)",
             company: "Zomato",
             location: "Gurugram, Haryana, India",
-            city: "Gurugram",
-            state: "Haryana",
-            country: "India",
-            workMode: "Onsite",
-            employmentType: "Full-Time",
-            experienceMin: 2,
-            experienceMax: 5,
-            salaryMin: 1800000,
-            salaryMax: 3000000,
-            salaryCurrency: "INR",
+            city: "Gurugram", state: "Haryana", country: "India",
+            workMode: "Onsite", employmentType: "Full-Time",
+            experienceMin: 2, experienceMax: 5,
+            salaryMin: 1800000, salaryMax: 3000000, salaryCurrency: "INR",
             skills: ["React Native", "Swift", "Kotlin", "Redux", "Mobile Performance"],
             description: "Lead mobile app architecture powering hyper-local delivery, live tracking, and interactive consumer experiences.",
-            applyUrl: "https://zomato.com/careers",
-            sourceUrl: "https://zomato.com/careers",
-            source: "Zomato Careers",
-            isFeatured: true,
-            isActive: true,
+            applyUrl: "https://zomato.com/careers", sourceUrl: "https://zomato.com/careers",
+            source: "Zomato Careers", isFeatured: true, isActive: true,
           },
           {
             fingerprint: simpleHash("Flipkart|SDE-2 Backend Developer|Bengaluru"),
             title: "SDE-2 Backend Developer",
             company: "Flipkart",
             location: "Bengaluru, Karnataka, India",
-            city: "Bengaluru",
-            state: "Karnataka",
-            country: "India",
-            workMode: "Hybrid",
-            employmentType: "Full-Time",
-            experienceMin: 2,
-            experienceMax: 5,
-            salaryMin: 2200000,
-            salaryMax: 3800000,
-            salaryCurrency: "INR",
+            city: "Bengaluru", state: "Karnataka", country: "India",
+            workMode: "Hybrid", employmentType: "Full-Time",
+            experienceMin: 2, experienceMax: 5,
+            salaryMin: 2200000, salaryMax: 3800000, salaryCurrency: "INR",
             skills: ["Java", "Spring Boot", "Kafka", "Cassandra", "Redis", "Distributed Systems"],
             description: "Scale high-throughput e-commerce catalog, payment processing, and flash-sale backend microservices.",
-            applyUrl: "https://flipkartcareers.com",
-            sourceUrl: "https://flipkartcareers.com",
-            source: "Flipkart Careers",
-            isFeatured: true,
-            isActive: true,
+            applyUrl: "https://flipkartcareers.com", sourceUrl: "https://flipkartcareers.com",
+            source: "Flipkart Careers", isFeatured: true, isActive: true,
           },
           {
             fingerprint: simpleHash("TCS|Systems Engineer - Cloud Services|Pune"),
             title: "Systems Engineer - Cloud Services",
             company: "Tata Consultancy Services (TCS)",
             location: "Pune, Maharashtra, India",
-            city: "Pune",
-            state: "Maharashtra",
-            country: "India",
-            workMode: "Hybrid",
-            employmentType: "Full-Time",
-            experienceMin: 0,
-            experienceMax: 3,
-            salaryMin: 650000,
-            salaryMax: 1100000,
-            salaryCurrency: "INR",
+            city: "Pune", state: "Maharashtra", country: "India",
+            workMode: "Hybrid", employmentType: "Full-Time",
+            experienceMin: 0, experienceMax: 3,
+            salaryMin: 650000, salaryMax: 1100000, salaryCurrency: "INR",
             skills: ["Java", "SQL", "Linux", "AWS", "Shell Scripting"],
             description: "Deliver enterprise cloud migration and IT digital transformation solutions for global Fortune 500 clients.",
-            applyUrl: "https://tcs.com/careers",
-            sourceUrl: "https://tcs.com/careers",
-            source: "TCS Careers",
-            isFeatured: false,
-            isActive: true,
+            applyUrl: "https://tcs.com/careers", sourceUrl: "https://tcs.com/careers",
+            source: "TCS Careers", isFeatured: false, isActive: true,
           },
           {
             fingerprint: simpleHash("Infosys|Senior Specialist Programmer|Bengaluru"),
             title: "Senior Specialist Programmer",
             company: "Infosys",
             location: "Bengaluru, Karnataka, India",
-            city: "Bengaluru",
-            state: "Karnataka",
-            country: "India",
-            workMode: "Hybrid",
-            employmentType: "Full-Time",
-            experienceMin: 1,
-            experienceMax: 4,
-            salaryMin: 950000,
-            salaryMax: 1600000,
-            salaryCurrency: "INR",
+            city: "Bengaluru", state: "Karnataka", country: "India",
+            workMode: "Hybrid", employmentType: "Full-Time",
+            experienceMin: 1, experienceMax: 4,
+            salaryMin: 950000, salaryMax: 1600000, salaryCurrency: "INR",
             skills: ["Python", "Django", "React", "PostgreSQL", "Docker"],
             description: "Develop cutting-edge full-stack software for digital banking and enterprise automation client suites.",
-            applyUrl: "https://infosys.com/careers",
-            sourceUrl: "https://infosys.com/careers",
-            source: "Infosys Careers",
-            isFeatured: false,
-            isActive: true,
+            applyUrl: "https://infosys.com/careers", sourceUrl: "https://infosys.com/careers",
+            source: "Infosys Careers", isFeatured: false, isActive: true,
           }
         ];
 
@@ -688,6 +907,7 @@ export class JobSearchService {
       }
     }
 
+    // ─── Map & Score jobs ─────────────────────────────────────────────
     const mappedJobs = jobs.map((job: any) => {
       let jobSkills = Array.isArray(job.skills) ? job.skills : [];
       if (jobSkills.length === 0) {
@@ -704,11 +924,34 @@ export class JobSearchService {
         }
       }
       const finalPostedAt = job.postedAt || job.createdAt || job.firstSeenAt || new Date();
-      // Normalize through the shared mapper so every card gets computed
-      // experience / mode / salary / education / passingYear strings.
       const mapped = mapDiscoveryJobToListing(job) || {};
-      return { ...job, ...mapped, skills: jobSkills, postedAt: finalPostedAt, postedDate: finalPostedAt };
+
+      const match = calculateJobMatch(
+        { ...job, skills: jobSkills },
+        filters.targetRole,
+        filters.userSkills,
+        filters.userExperience,
+        filters.userPreferredLocations || [],
+        undefined,
+        filters.workMode
+      );
+
+      return {
+        ...job,
+        ...mapped,
+        skills: jobSkills,
+        postedAt: finalPostedAt,
+        postedDate: finalPostedAt,
+        matchScore: match.matchScore,
+        isRecommended: match.isRecommended,
+        matchReasons: match.reasons,
+      };
     });
+
+    // ─── Sort by match score for recommended ──────────────────────────
+    if (!filters.sortBy || filters.sortBy === "recommended" || filters.sortBy === "matchScore") {
+      mappedJobs.sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0));
+    }
 
     const totalPages = Math.ceil(total / limit);
 
@@ -718,7 +961,10 @@ export class JobSearchService {
       page,
       limit,
       totalPages,
-      filters,
+      filters: {
+        ...filters,
+        targetRole: filters.targetRole || "Software Developer",
+      },
       facets: await JobSearchService.getFacets(filters),
     };
 
@@ -733,13 +979,7 @@ export class JobSearchService {
 
   static async getFacets(filters: SearchFilters): Promise<SearchResult["facets"]> {
     const defaultFacets = {
-      locations: [],
-      companies: [],
-      workModes: [],
-      employmentTypes: [],
-      industries: [],
-      sources: [],
-      skills: [],
+      locations: [], companies: [], workModes: [], employmentTypes: [], industries: [], sources: [], skills: [],
     };
 
     try {
@@ -747,11 +987,12 @@ export class JobSearchService {
       const baseWhere: any = { isActive: true };
 
       if (filters.query) {
+        const q = normalizeSearchQuery(filters.query);
         baseWhere.OR = [
-          { title: { contains: filters.query, mode: "insensitive" } },
-          { company: { contains: filters.query, mode: "insensitive" } },
-          { description: { contains: filters.query, mode: "insensitive" } },
-          { location: { contains: filters.query, mode: "insensitive" } },
+          { title: { contains: q, mode: "insensitive" } },
+          { company: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
+          { location: { contains: q, mode: "insensitive" } },
         ];
       }
 
@@ -759,7 +1000,12 @@ export class JobSearchService {
       if (filters.employmentType) baseWhere.employmentType = filters.employmentType;
       if (filters.industry) baseWhere.industry = { contains: filters.industry, mode: "insensitive" };
       if (filters.source) baseWhere.source = filters.source;
-      if (filters.postedWithin) baseWhere.postedAt = { gte: getPostedWithinDate(filters.postedWithin) };
+      if (filters.postedWithin && filters.postedWithin !== "any") {
+        const postedDate = getPostedWithinDate(filters.postedWithin);
+        if (postedDate) baseWhere.postedAt = { gte: postedDate };
+      }
+
+      const getCount = (r: any) => (typeof r._count === "number" ? r._count : r._count?.id || r._count?._all || 1);
 
       let locationRows: any[] = [];
       let companyRows: any[] = [];
@@ -826,8 +1072,6 @@ export class JobSearchService {
         skillsFacet = [];
       }
 
-      const getCount = (r: any) => (typeof r._count === "number" ? r._count : r._count?.id || r._count?._all || 1);
-
       return {
         locations: locationRows.map((r: any) => ({ name: r.location, count: getCount(r) })).sort((a, b) => b.count - a.count),
         companies: companyRows.map((r: any) => ({ name: r.company, count: getCount(r) })).sort((a, b) => b.count - a.count),
@@ -871,22 +1115,38 @@ export class JobSearchService {
     return { ...job, saved, recentlyViewed };
   }
 
+  // ─── RECOMMENDATION ENGINE ────────────────────────────────────────────────
+
   static async getRecommendedJobs(userId: string, limit: number = 20): Promise<any[]> {
     const db = getDb();
 
-    const profile = await db.profile.findUnique({ where: { userId } });
-    if (!profile) {
-      return db.discoveryJob.findMany({
-        where: { isActive: true },
-        orderBy: { createdAt: "desc" },
-        take: limit,
-      });
+    // 1. Try to get user profile for personalized recommendations
+    let profile: any = null;
+    try {
+      profile = await db.profile.findUnique({ where: { userId } });
+    } catch {
+      // Profile may be in user DB
+      try {
+        const userPrisma = await getUserPrisma(userId);
+        profile = await userPrisma.profile.findUnique({ where: { userId } });
+      } catch {
+        // No profile available
+      }
     }
 
-    const userSkills: string[] = profile.skills || [];
-    const targetRole: string = profile.targetRole || profile.careerGoal || "";
-    const location: string = profile.location || "";
+    // 2. Cold-start: No profile → return popular/fresh jobs
+    if (!profile) {
+      return this.getColdStartRecommendations(limit);
+    }
 
+    const userSkills: string[] = normalizeSkills(profile.skills || []);
+    const targetRole: string = profile.targetRole || profile.careerGoal || "";
+    const userLocation: string = profile.location || profile.city || "";
+    const preferredLocations: string[] = [userLocation].filter(Boolean);
+    const userExperience: number = 0;
+    const interestedDomains: string[] = profile.interestedDomains || [];
+
+    // 3. Build search query with all available signals
     const orConditions: any[] = [];
 
     if (userSkills.length > 0) {
@@ -894,38 +1154,173 @@ export class JobSearchService {
     }
 
     if (targetRole) {
-      orConditions.push({ title: { contains: targetRole, mode: "insensitive" } });
+      const roleLower = targetRole.toLowerCase();
+      const roleTerms = roleLower.split(/\s+/).filter((w: string) => w.length > 2);
+      for (const term of roleTerms) {
+        orConditions.push({ title: { contains: term, mode: "insensitive" } });
+      }
     }
 
-    if (location) {
-      orConditions.push({ location: { contains: location, mode: "insensitive" } });
+    if (userLocation) {
+      orConditions.push({ location: { contains: userLocation, mode: "insensitive" } });
+      orConditions.push({ city: { contains: userLocation, mode: "insensitive" } });
     }
 
+    if (interestedDomains.length > 0) {
+      for (const domain of interestedDomains) {
+        orConditions.push({ industry: { contains: domain, mode: "insensitive" } });
+        orConditions.push({ title: { contains: domain, mode: "insensitive" } });
+      }
+    }
+
+    // 4. If no signals available, fall back to cold-start
     if (orConditions.length === 0) {
-      return db.discoveryJob.findMany({
+      return this.getColdStartRecommendations(limit);
+    }
+
+    // 5. Fetch candidate jobs (fetch more than needed for scoring)
+    const fetchLimit = Math.min(limit * 3, 100);
+    let candidateJobs: any[] = [];
+    try {
+      candidateJobs = await db.discoveryJob.findMany({
+        where: {
+          isActive: true,
+          OR: orConditions,
+        },
+        orderBy: [{ isFeatured: "desc" }, { viewCount: "desc" }, { createdAt: "desc" }],
+        take: fetchLimit,
+      });
+    } catch {
+      return this.getColdStartRecommendations(limit);
+    }
+
+    // 6. If few results, supplement with popular jobs
+    if (candidateJobs.length < limit) {
+      const existingIds = new Set(candidateJobs.map((j: any) => j.id));
+      const supplement = await db.discoveryJob.findMany({
         where: { isActive: true },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ isFeatured: "desc" }, { viewCount: "desc" }, { saveCount: "desc" }, { createdAt: "desc" }],
         take: limit,
       });
+      for (const job of supplement) {
+        if (!existingIds.has(job.id)) {
+          candidateJobs.push(job);
+          existingIds.add(job.id);
+        }
+      }
     }
 
-    return db.discoveryJob.findMany({
-      where: {
-        isActive: true,
-        OR: orConditions,
-      },
-      orderBy: [{ isFeatured: "desc" }, { viewCount: "desc" }, { createdAt: "desc" }],
+    // 7. Score and rank each job
+    const scored = candidateJobs.map((job: any) => {
+      let jobSkills = Array.isArray(job.skills) ? job.skills : [];
+      if (jobSkills.length === 0) {
+        const text = `${job.title || ""} ${job.company || ""} ${job.description || ""}`.toLowerCase();
+        jobSkills = JobDiscoveryService.extractSkills(text);
+      }
+
+      const match = calculateJobMatch(
+        { ...job, skills: jobSkills },
+        targetRole,
+        userSkills,
+        userExperience,
+        preferredLocations,
+        userLocation
+      );
+
+      const mapped = mapDiscoveryJobToListing(job) || {};
+
+      return {
+        ...job,
+        ...mapped,
+        skills: jobSkills,
+        matchScore: match.matchScore,
+        isRecommended: match.isRecommended,
+        matchReasons: match.reasons,
+      };
+    });
+
+    // 8. Sort by match score and deduplicate
+    scored.sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0));
+
+    const seenIds = new Set<string>();
+    const deduped: any[] = [];
+    for (const job of scored) {
+      if (!seenIds.has(job.id)) {
+        seenIds.add(job.id);
+        deduped.push(job);
+      }
+    }
+
+    return deduped.slice(0, limit);
+  }
+
+  // ─── Cold-Start: Popular/Fresh jobs for new users ─────────────────────────
+
+  static async getColdStartRecommendations(limit: number = 20): Promise<any[]> {
+    const db = getDb();
+
+    // Tier 1: Featured + most viewed
+    const featured = await db.discoveryJob.findMany({
+      where: { isActive: true, isFeatured: true },
+      orderBy: [{ viewCount: "desc" }, { createdAt: "desc" }],
+      take: Math.min(limit, 10),
+    });
+
+    // Tier 2: Recent + popular
+    const popular = await db.discoveryJob.findMany({
+      where: { isActive: true },
+      orderBy: [{ viewCount: "desc" }, { saveCount: "desc" }, { createdAt: "desc" }],
       take: limit,
     });
+
+    // Merge, prioritizing featured
+    const seenIds = new Set<string>();
+    const result: any[] = [];
+
+    for (const job of featured) {
+      if (!seenIds.has(job.id)) {
+        seenIds.add(job.id);
+        const mapped = mapDiscoveryJobToListing(job) || {};
+        result.push({
+          ...job,
+          ...mapped,
+          matchScore: 70,
+          isRecommended: true,
+          matchReasons: [{ type: "freshness" as const, text: "Popular job trending in your area", weight: 10 }],
+        });
+      }
+    }
+
+    for (const job of popular) {
+      if (!seenIds.has(job.id) && result.length < limit) {
+        seenIds.add(job.id);
+        const mapped = mapDiscoveryJobToListing(job) || {};
+        const score = 50 + Math.min(20, (job.viewCount || 0) / 5);
+        result.push({
+          ...job,
+          ...mapped,
+          matchScore: Math.round(score),
+          isRecommended: true,
+          matchReasons: [{ type: "freshness" as const, text: "Trending job", weight: 10 }],
+        });
+      }
+    }
+
+    return result.slice(0, limit);
   }
 
   static async getTrendingJobs(limit: number = 20): Promise<any[]> {
     const db = getDb();
 
-    return db.discoveryJob.findMany({
+    const jobs = await db.discoveryJob.findMany({
       where: { isActive: true },
       orderBy: [{ viewCount: "desc" }, { saveCount: "desc" }, { createdAt: "desc" }],
       take: limit,
+    });
+
+    return jobs.map((job: any) => {
+      const mapped = mapDiscoveryJobToListing(job) || {};
+      return { ...job, ...mapped };
     });
   }
 
@@ -996,14 +1391,12 @@ export class JobSearchService {
     const jobMap: Record<string, any> = {};
 
     if (jobIds.length > 0) {
-      // 1. Look up in the master discovery database first
       const masterJobs = await db.discoveryJob.findMany({ where: { id: { in: jobIds } } });
       masterJobs.forEach((j: any) => { jobMap[j.id] = j; });
 
       const foundIds = new Set(masterJobs.map((j: any) => j.id));
       const missingIds = jobIds.filter((id: string) => !foundIds.has(id));
 
-      // 2. Fall back to the user database jobListing table for custom/scraped jobs
       if (missingIds.length > 0) {
         try {
           const userPrisma = await getUserPrisma(userId);
@@ -1019,34 +1412,17 @@ export class JobSearchService {
       const rawJob = jobMap[r.jobId];
       if (!rawJob) {
         return {
-          id: r.jobId,
-          jobListingId: r.jobId,
-          title: "Saved Role",
-          company: "Company",
-          logoUrl: null,
-          location: "Remote",
-          mode: "On-site",
-          employmentType: "Full-Time",
-          salary: "Competitive",
-          skills: [],
-          description: "",
-          applyUrl: "https://adyapan.ai",
-          isSaved: true,
-          savedAt: r.createdAt,
-          collection: r.collection,
-          notes: r.notes,
+          id: r.jobId, jobListingId: r.jobId, title: "Saved Role", company: "Company",
+          logoUrl: null, location: "Remote", mode: "On-site", employmentType: "Full-Time",
+          salary: "Competitive", skills: [], description: "", applyUrl: "https://adyapan.ai",
+          isSaved: true, savedAt: r.createdAt, collection: r.collection, notes: r.notes,
         };
       }
 
       const job = mapDiscoveryJobToListing(rawJob) || {};
       return {
-        ...job,
-        id: r.jobId,
-        jobListingId: r.jobId,
-        isSaved: true,
-        savedAt: r.createdAt,
-        collection: r.collection,
-        notes: r.notes,
+        ...job, id: r.jobId, jobListingId: r.jobId, isSaved: true,
+        savedAt: r.createdAt, collection: r.collection, notes: r.notes,
       };
     });
 
@@ -1082,8 +1458,9 @@ export class JobSearchService {
     if (!query || query.length < 2) return [];
 
     const prefix = query;
+    const normalizedQ = normalizeSearchQuery(query);
 
-    const [companyRows, skillRows] = await Promise.all([
+    const [companyRows, skillRows, titleRows] = await Promise.all([
       db.discoveryJob.findMany({
         where: {
           isActive: true,
@@ -1091,22 +1468,34 @@ export class JobSearchService {
         },
         select: { company: true },
         distinct: ["company"],
-        take: 10,
+        take: 8,
       }),
       db.$queryRaw`
         SELECT DISTINCT skill AS name
         FROM discovery_jobs, unnest(skills) AS skill
         WHERE is_active = true AND skill ILIKE ${"%" + prefix + "%"}
-        LIMIT 10
+        LIMIT 8
       `,
+      db.discoveryJob.findMany({
+        where: {
+          isActive: true,
+          title: { contains: prefix, mode: "insensitive" },
+        },
+        select: { title: true },
+        distinct: ["title"],
+        take: 8,
+      }),
     ]);
 
     const suggestions = new Set<string>();
-    for (const r of companyRows) {
-      suggestions.add(r.company);
-    }
-    for (const r of skillRows as any[]) {
-      suggestions.add(r.name);
+    for (const r of companyRows) suggestions.add(r.company);
+    for (const r of skillRows as any[]) suggestions.add(r.name);
+    for (const r of titleRows) suggestions.add(r.title);
+
+    // If normalized query differs, also search for that
+    if (normalizedQ !== prefix.toLowerCase()) {
+      const expanded = SKILL_ALIASES[prefix.toLowerCase()];
+      if (expanded) suggestions.add(expanded.charAt(0).toUpperCase() + expanded.slice(1));
     }
 
     return Array.from(suggestions).slice(0, 15);

@@ -501,9 +501,13 @@ export default function UserManagement() {
                               {isPremium ? <Crown size={10} /> : <Star size={10} />}
                               {planStyle.label}
                             </StatusBadge>
-                            <StatusBadge variant={statusStyle.variant} pulse={user.subscriptionStatus === "active"}>
-                              {statusStyle.label}
-                            </StatusBadge>
+                            {user.subscriptionStatus && 
+                             user.subscriptionStatus.toLowerCase() !== rawPlan && 
+                             user.subscriptionStatus.toLowerCase() !== "free" && (
+                              <StatusBadge variant={statusStyle.variant} pulse={user.subscriptionStatus === "active"}>
+                                {statusStyle.label}
+                              </StatusBadge>
+                            )}
                           </div>
                         </td>
 

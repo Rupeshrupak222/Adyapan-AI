@@ -61,6 +61,7 @@ describe("errorHandler", () => {
   it("masks 500 error messages in production", () => {
     process.env.NODE_ENV = "production";
     process.env.JWT_SECRET = "x";
+    process.env.ADMIN_REGISTER_SECRET = "unique-secret";
     const errorHandler = loadHandler();
     const res = createMockResponse();
 
@@ -73,6 +74,7 @@ describe("errorHandler", () => {
   it("does not mask non-500 messages in production", () => {
     process.env.NODE_ENV = "production";
     process.env.JWT_SECRET = "x";
+    process.env.ADMIN_REGISTER_SECRET = "unique-secret";
     const errorHandler = loadHandler();
     const res = createMockResponse();
     const err = Object.assign(new Error("Unauthorized"), { statusCode: 401 });

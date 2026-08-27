@@ -47,7 +47,9 @@ const GitHubIcon = ({ color }: { color: string }) => (
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [showSessionConfirm, setShowSessionConfirm] = useState(false);
   const [tab, setTab] = useState<Tab>("login");
+  const [sessionPopup, setSessionPopup] = useState<{ type: "warning" | "info" | "error"; text: string } | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   const [loginEmail, setLoginEmail] = useState("");
@@ -104,13 +106,41 @@ function LoginPageContent() {
     document.documentElement.setAttribute("data-theme", "dark");
     setTheme("dark");
 
-    // Handle GitHub OAuth callback
+    // Handle GitHub / Google OAuth callback
     const params = new URLSearchParams(window.location.search);
 
     const githubStatus = params.get("github");
-    if (githubStatus === "success") {
+    const googleStatus = params.get("google");
+    const oauthStatus = githubStatus || googleStatus;
+
+    if (oauthStatus === "success") {
       const token = params.get("token");
       const userStr = params.get("user");
+
+      // New flow: token is in httpOnly cookie, user info in URL params
+      if (!token && userStr) {
+        (async () => {
+          try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+            const sessionRes = await fetch(`${apiUrl}/auth/session`, { credentials: "include" });
+            const sessionData = await sessionRes.json();
+            if (sessionData.success && sessionData.token && sessionData.user) {
+              const user = sessionData.user as PlatformUser;
+              if (user.role === "ADMIN") {
+                setLoginError("Admin accounts cannot log in here. Please use the Admin Login page.");
+                return;
+              }
+              saveAuthSession(sessionData.token, user, true);
+              router.replace(getPostLoginTarget(user.role));
+              return;
+            }
+          } catch { /* fall through to error handling */ }
+          setLoginError("Failed to complete OAuth login. Please try again.");
+        })();
+        return;
+      }
+
+      // Legacy flow: token in URL params (backward compatibility)
       if (token && userStr) {
         try {
           const user = JSON.parse(userStr) as PlatformUser;
@@ -118,21 +148,25 @@ function LoginPageContent() {
             setLoginError("Admin accounts cannot log in here. Please use the Admin Login page.");
             return;
           }
-          saveAuthSession(token, user, true);
+          saveAuthSession(token, user, true, params.get("sessionId") || undefined, params.get("refreshToken") || undefined);
           router.replace(getPostLoginTarget(user.role));
           return;
         } catch { return; }
       }
-    } else if (githubStatus === "error") {
-      setLoginError(params.get("message") || "GitHub login failed. Please try again.");
+    } else if (oauthStatus === "error") {
+      const providerName = githubStatus ? "GitHub" : "Google";
+      setLoginError(params.get("message") || `${providerName} login failed. Please try again.`);
     }
 
-    // Strip GitHub params from URL without reload
-    if (githubStatus) {
+    // Strip OAuth params from URL without reload
+    if (oauthStatus) {
       const url = new URL(window.location.href);
       url.searchParams.delete("github");
+      url.searchParams.delete("google");
       url.searchParams.delete("token");
       url.searchParams.delete("user");
+      url.searchParams.delete("sessionId");
+      url.searchParams.delete("refreshToken");
       url.searchParams.delete("message");
       window.history.replaceState({}, "", url.toString());
     }
@@ -188,16 +222,34 @@ function LoginPageContent() {
     e.preventDefault(); setLoginError(""); setLoginLoading(true);
     try {
       const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe, portal: "user" });
+      // Handle session confirmation popup
+      if (data.requireSessionConfirmation) {
+        setShowSessionConfirm(true);
+        return;
+      }
       if (data.user?.role === "ADMIN") {
         setLoginError("Admin accounts cannot log in here. Please use the Admin Login page.");
         return;
       }
-      saveAuthSession(data.token, data.user, rememberMe);
+      saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
       router.replace(getPostLoginTarget(data.user.role));
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data;
       const serverMsg = data?.message || data?.error;
       setLoginError(serverMsg || "Invalid user credentials. Please try again.");
+    } finally { setLoginLoading(false); }
+  };
+
+  const handleForceLogin = async () => {
+    setShowSessionConfirm(false);
+    setLoginLoading(true);
+    try {
+      const { data } = await api.post("/auth/login", { email: loginEmail.trim(), password: loginPassword, rememberMe, portal: "user", forceLogin: true });
+      saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
+      router.replace(getPostLoginTarget(data.user.role));
+    } catch (err: unknown) {
+      const resp = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      setLoginError(resp?.message || "Login failed. Please try again.");
     } finally { setLoginLoading(false); }
   };
 
@@ -219,7 +271,7 @@ function LoginPageContent() {
       sessionStorage.setItem("adyapan-just-registered", "true");
       localStorage.setItem("adyapan-just-registered", "true");
       if (data?.token && data?.user) {
-        saveAuthSession(data.token, data.user, true);
+        saveAuthSession(data.token, data.user, true, data.sessionId, data.refreshToken);
         toast.success("Account created successfully! Welcome to Adyapan AI.");
         router.replace(getPostLoginTarget(data.user.role));
       } else {
@@ -285,6 +337,20 @@ function LoginPageContent() {
 
   return (
     <div className="min-h-screen transition-colors relative overflow-hidden">
+ {showSessionConfirm && (<div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}><div className="rounded-2xl p-6 w-full max-w-sm shadow-2xl border" style={{ background: "var(--bg-card, #1a1a2e)", borderColor: "var(--border-color, rgba(255,255,255,0.1))" }}><p className="text-sm leading-relaxed mb-5" style={{ color: "var(--text-primary, #fff)" }}>There is an active session on another device. Do you want to end it and login here?</p><div className="flex gap-3 justify-end"><button onClick={() => setShowSessionConfirm(false)} className="px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.08)" }}>Cancel</button><button onClick={handleForceLogin} className="px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer" style={{ background: "rgba(245,158,11,0.15)", color: "var(--primary, #f59e0b)", border: "1px solid rgba(245,158,11,0.2)" }}>Login Here</button></div></div></div>)}
+      {sessionPopup && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
+          <div className="rounded-2xl p-6 w-full max-w-sm shadow-2xl border" style={{ background: "#1a1a2e", borderColor: "rgba(255,255,255,0.1)" }}>
+            <div className="flex items-start gap-3 mb-5">
+              <span className="text-xl mt-0.5">{sessionPopup.type === "warning" ? "⚡" : sessionPopup.type === "error" ? "\u26A0\uFE0F" : "\u2139\uFE0F"}</span>
+              <p className="text-sm leading-relaxed text-white/90">{sessionPopup.text}</p>
+            </div>
+            <div className="flex justify-end">
+              <button onClick={() => setSessionPopup(null)} className="px-5 py-2 rounded-xl text-xs font-bold cursor-pointer" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Video Background */}
       <video
         autoPlay
@@ -368,7 +434,7 @@ function LoginPageContent() {
                       <span className="relative px-3 text-xs" style={{ background: cardBg, color: mutedClr }}>OR LOGIN WITH</span>
                     </motion.div>
                     <motion.div className="flex gap-2" custom={5} variants={staggerItem} initial="hidden" animate="visible">
-                      <button type="button" className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
+                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/google`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
                       <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
                     </motion.div>
                     <motion.p className="text-center text-xs" style={{ color: labelClr }} custom={6} variants={staggerItem} initial="hidden" animate="visible">
@@ -535,7 +601,7 @@ function LoginPageContent() {
                       <span className="relative px-3 text-xs font-semibold tracking-widest uppercase" style={{ background: cardBg, color: mutedClr }}>OR SIGN UP WITH</span>
                     </motion.div>
                     <motion.div className="col-span-2 flex gap-2" custom={10} variants={staggerItem} initial="hidden" animate="visible">
-                      <button type="button" className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
+                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/google`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
                       <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
                     </motion.div>
                     <motion.p className="col-span-2 text-center text-xs" style={{ color: labelClr }} custom={11} variants={staggerItem} initial="hidden" animate="visible">

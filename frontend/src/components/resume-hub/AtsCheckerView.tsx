@@ -179,135 +179,7 @@ function Dots() {
 }
 
 function FloatingOrbs({ theme }: { theme: string }) {
-  const d = theme === "dark";
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      <motion.div
-        className="absolute rounded-full blur-[120px]"
-        style={{ top: "-8%", right: "10%", width: 320, height: 320, background: d ? "rgba(245,158,11,0.08)" : "rgba(245,158,11,0.06)" }}
-        animate={{ scale: [1, 1.15, 1], x: [0, 25, 0], y: [0, -15, 0] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute rounded-full blur-[140px]"
-        style={{ bottom: "5%", left: "5%", width: 360, height: 360, background: d ? "rgba(139,92,246,0.06)" : "rgba(139,92,246,0.05)" }}
-        animate={{ scale: [1, 1.12, 1], x: [0, -30, 0], y: [0, 20, 0] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-      />
-      <motion.div
-        className="absolute rounded-full blur-[100px]"
-        style={{ top: "35%", left: "45%", width: 250, height: 250, background: d ? "rgba(59,130,246,0.05)" : "rgba(59,130,246,0.04)" }}
-        animate={{ scale: [0.9, 1.1, 0.9], opacity: [0.4, 0.7, 0.4] }}
-        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-      />
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full"
-          style={{
-            width: 3 + i * 1.5,
-            height: 3 + i * 1.5,
-            background: i % 2 === 0 ? "rgba(245,158,11,0.3)" : "rgba(139,92,246,0.25)",
-            top: `${15 + i * 12}%`,
-            left: `${10 + i * 15}%`,
-          }}
-          animate={{
-            y: [0, -20 - i * 5, 0],
-            opacity: [0.3, 0.8, 0.3],
-            scale: [1, 1.3, 1],
-          }}
-          transition={{
-            duration: 4 + i * 0.8,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.6,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function CustomRoleDropdown({ value, onChange, theme }: { value: string; onChange: (v: string) => void; theme: string }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const d = theme === "dark";
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    if (open) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative" style={{ zIndex: open ? 50 : "auto" }}>
-      <motion.button
-        whileHover={{ scale: 1.01, borderColor: "rgba(245,158,11,0.5)" }}
-        whileTap={{ scale: 0.99 }}
-        onClick={() => setOpen(p => !p)}
-        className="w-full flex items-center justify-between p-3.5 rounded-xl text-sm outline-none cursor-pointer"
-        style={{
-          background: d ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
-          border: `1px solid ${d ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
-          color: d ? "#e5e7eb" : "#0f172a",
-          textAlign: "left",
-        }}
-      >
-        <span className="flex items-center gap-2.5">
-          <span className="text-base">{ATS_ROLE_ICONS[value] || "\u{1F3AF}"}</span>
-          <span className="font-semibold text-sm">{value}</span>
-        </span>
-        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown size={14} style={{ color: d ? "#6b7280" : "#94a3b8" }} />
-        </motion.span>
-      </motion.button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.96 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="absolute w-full mt-2 rounded-xl overflow-hidden"
-            style={{
-              zIndex: 9999,
-              background: d ? "rgba(15,20,35,0.98)" : "#ffffff",
-              border: `1px solid ${d ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
-              boxShadow: d
-                ? "0 16px 48px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.4)"
-                : "0 16px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06)",
-              maxHeight: "240px",
-              overflowY: "auto",
-            }}
-          >
-            {ATS_ROLES.map((r) => (
-              <button
-                key={r}
-                onMouseDown={(e) => { e.preventDefault(); onChange(r); setOpen(false); }}
-                className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors"
-                style={{
-                  background: r === value
-                    ? d ? "rgba(245,158,11,0.12)" : "rgba(245,158,11,0.08)"
-                    : "transparent",
-                  color: d ? "#e5e7eb" : "#0f172a",
-                  borderBottom: `1px solid ${d ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"}`,
-                }}
-              >
-                <span className="text-base w-7 text-center">{ATS_ROLE_ICONS[r] || "\u{1F3AF}"}</span>
-                <span className="text-sm font-medium flex-1">{r}</span>
-                {r === value && (
-                  <CheckCircle size={14} style={{ color: "#f59e0b" }} />
-                )}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+  return null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -743,24 +615,6 @@ export function AtsCheckerView({ setView }: Props) {
                 transition={{ duration: 0.6, ease: "easeOut" }}
                 className="text-center mb-8 relative z-10"
               >
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.15 }}
-                  className="w-20 h-20 mx-auto mb-5 rounded-2xl flex items-center justify-center relative"
-                  style={{
-                    background: "linear-gradient(135deg, #f59e0b, #d97706, #b45309)",
-                    boxShadow: "0 8px 32px rgba(245,158,11,0.35), 0 2px 8px rgba(245,158,11,0.2)",
-                  }}
-                >
-                  <BarChart3 size={36} style={{ color: "#000" }} />
-                  <motion.div
-                    className="absolute inset-0 rounded-2xl"
-                    style={{ border: "2px solid rgba(245,158,11,0.3)" }}
-                    animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                </motion.div>
 
                 <motion.h1
                   initial={{ opacity: 0, y: 12 }}
@@ -865,7 +719,20 @@ export function AtsCheckerView({ setView }: Props) {
                     <label className="block text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5" style={{ color: c.tx2 }}>
                       <Target size={11} style={{ color: c.am }} /> Target Job Role
                     </label>
-                    <CustomRoleDropdown value={role} onChange={setRole} theme={theme} />
+                    <div className="w-full flex items-center p-3.5 rounded-xl border"
+                      style={{
+                        background: c.d ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
+                        border: `1px solid ${c.d ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
+                      }}>
+                      <input
+                        type="text"
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        placeholder="Enter target job role (e.g. Full Stack Developer, Data Scientist)..."
+                        className="w-full bg-transparent border-none outline-none font-semibold text-sm"
+                        style={{ color: c.d ? "#e5e7eb" : "#0f172a" }}
+                      />
+                    </div>
                   </Card>
                 </motion.div>
 
@@ -960,12 +827,9 @@ export function AtsCheckerView({ setView }: Props) {
                           </motion.div>
                         ) : (
                           <div className="space-y-1.5 relative z-10">
-                            <motion.div
-                              animate={{ y: [0, -4, 0] }}
-                              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                            >
+                            <div>
                               <Upload size={22} className="mx-auto" style={{ color: drag ? c.am : c.txM }} />
-                            </motion.div>
+                            </div>
                             <p className="text-xs font-bold" style={{ color: drag ? c.am : c.tx }}>Drag & drop your resume</p>
                             <p className="text-[9px]" style={{ color: c.txM }}>PDF, DOCX up to 5MB</p>
                           </div>

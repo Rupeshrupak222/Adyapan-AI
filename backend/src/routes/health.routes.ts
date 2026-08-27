@@ -3,7 +3,14 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { prisma } from "../config/prisma";
 
-const pkg = JSON.parse(readFileSync(join(__dirname, "..", "..", "package.json"), "utf-8"));
+let pkg: any = { name: "adyapan-ai-backend", version: "1.0.0" };
+try {
+  pkg = JSON.parse(readFileSync(join(__dirname, "..", "..", "package.json"), "utf-8"));
+} catch {
+  try {
+    pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8"));
+  } catch {}
+}
 
 export const healthRouter = Router();
 
@@ -40,11 +47,12 @@ healthRouter.get("/ready", async (_req, res) => {
       database: "connected",
     });
   } catch (e: any) {
+    // Log the full error server-side; return a generic message to clients
+    console.error("[Health] Readiness probe failed:", e?.message || e);
     res.status(503).json({
       success: false,
       status: "not_ready",
       database: "disconnected",
-      error: e?.message || String(e),
     });
   }
 });

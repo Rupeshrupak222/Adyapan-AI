@@ -56,6 +56,10 @@ router.get("/:id", async (req: any, res) => {
       include: { _count: { select: { comments: true, likes: true } }, likes: { where: { userId: req.user.id }, select: { id: true } } },
     });
     if (!blog) return res.status(404).json({ success: false, error: "Blog not found" });
+    // Drafts are only visible to their author; other users see 404
+    if (!blog.published && blog.userId !== req.user.id) {
+      return res.status(404).json({ success: false, error: "Blog not found" });
+    }
     await userPrisma.blog.update({ where: { id: req.params.id }, data: { views: { increment: 1 } } });
     res.json({ success: true, blog: { ...blog, likedByMe: blog.likes.length > 0, likes: undefined } });
   } catch (error) {

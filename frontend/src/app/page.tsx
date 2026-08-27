@@ -16,6 +16,7 @@ import dynamic from "next/dynamic";
 import { AnimatedRocket, AnimatedSparkles, AnimatedCheck, AnimatedCode, AnimatedZap } from "@/components/ui/AnimatedIcons";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CookieConsentBanner } from "@/components/ui/CookieConsentBanner";
 import { landingFAQs } from "@/data/platform";
 
 const Scene = dynamic(() => import("@/components/3d/Scene"), {
@@ -1505,6 +1506,7 @@ export default function LandingPage() {
       </Section>
 
       <Footer />
+      <CookieConsentBanner />
 
       <style>{`
         @keyframes scan {
