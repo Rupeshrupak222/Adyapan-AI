@@ -35,11 +35,6 @@ export const FeatureCreditBadge: React.FC<FeatureCreditBadgeProps> = ({
   const { remaining, limit, plan, allowed, resetAt } = usage;
   const isPaid = plan !== "free";
   const isExhausted = !allowed || remaining === 0;
-  // Running low (but not out): show an amber warning state.
-  const isWarning = !isExhausted && limit > 0 && (remaining / limit) <= 0.25;
-  // Getting low (milder than a warning): show a subtle notice.
-  const isSubtleNotice = !isExhausted && !isWarning && remaining <= 5;
-
   // Warning thresholds
   // 30-limit features: >10 normal, 6-10 subtle, 1-5 warning, 0 blocked
   // 9-limit features: >2 normal, 1-2 warning, 0 blocked

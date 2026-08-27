@@ -163,7 +163,7 @@ export async function callAIRobust(
         model: provider.model,
         messages,
         temperature: options.temperature ?? 0.7,
-        max_tokens: options.maxTokens ?? 1200,
+        max_tokens: options.maxTokens ? Math.max(options.maxTokens, 16384) : 16384,
       };
 
       if (options.responseFormat?.type === "json_object") {
@@ -174,7 +174,7 @@ export async function callAIRobust(
       }
 
       const controller = new AbortController();
-      const fetchTimeoutMs = (options.maxTokens ?? 1200) > 2000 ? 25000 : 12000;
+      const fetchTimeoutMs = 60000; // 60s generous timeout for unlimited token generation
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
 
       let res: Response;
