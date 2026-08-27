@@ -392,7 +392,7 @@ export function AtsCheckerView({ setView }: Props) {
     }
     if (quota.exhausted) {
       toast.error("You've used all free ATS Checker analyses this month.", {
-        description: "Upgrade to Premium for unlimited ATS scans.",
+        description: "Upgrade to Premium for 9 monthly ATS scans.",
       });
       return;
     }

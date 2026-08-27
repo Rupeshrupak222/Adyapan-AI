@@ -517,7 +517,7 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
     if (!topicVal) return;
     if (quota.exhausted) {
       toast.error("You've used all free AI Quiz Generator attempts this month.", {
-        description: "Upgrade to Premium for unlimited quizzes.",
+        description: "Upgrade to Premium for 30 monthly quizzes.",
       });
       return;
     }

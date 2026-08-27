@@ -40,8 +40,9 @@ export const FeatureKey = {
 
 export type FeatureKeyValue = (typeof FeatureKey)[keyof typeof FeatureKey];
 
-/** Default free-tier monthly limits. Admin-configurable overrides live in the
- *  `usage_limits` table and take precedence when present. */
+export type PlanCode = "free" | "premium" | "pro" | "enterprise";
+
+/** Default free-tier monthly limits (Group A: 10, Group B: 3). */
 export const DEFAULT_FREE_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.STUDY_ASSISTANT]: 10,
   [FeatureKey.NOTES_GENERATOR]: 10,
@@ -62,6 +63,57 @@ export const DEFAULT_FREE_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.ATS_CHECKER]: 3,
   [FeatureKey.COVER_LETTER_GENERATOR]: 3,
   [FeatureKey.LINKEDIN_OPTIMIZER]: 3,
+};
+
+/** Default premium-tier monthly limits (Group A: 30, Group B: 9 - 3x Free allowance). */
+export const DEFAULT_PREMIUM_LIMITS: Record<FeatureKeyValue, number> = {
+  [FeatureKey.STUDY_ASSISTANT]: 30,
+  [FeatureKey.NOTES_GENERATOR]: 30,
+  [FeatureKey.QUIZ_GENERATOR]: 30,
+  [FeatureKey.ASSIGNMENT_GENERATOR]: 30,
+  [FeatureKey.MIND_MAPS]: 30,
+  [FeatureKey.FLASHCARDS]: 30,
+  [FeatureKey.RESEARCH_PAPER_AI]: 30,
+  [FeatureKey.PLAGIARISM_CHECKER]: 30,
+  [FeatureKey.AI_APTITUDE_ENGINE]: 30,
+  [FeatureKey.TECHNICAL_MCQS]: 30,
+  [FeatureKey.AI_CHAT_ASSISTANT]: 30,
+  [FeatureKey.STUDY_PLANNER]: 9,
+  [FeatureKey.CODING_ROADMAP]: 9,
+  [FeatureKey.GITHUB_PORTFOLIO_BUILDER]: 9,
+  [FeatureKey.RESUME_UPLOAD]: 9,
+  [FeatureKey.RESUME_BUILDER]: 9,
+  [FeatureKey.ATS_CHECKER]: 9,
+  [FeatureKey.COVER_LETTER_GENERATOR]: 9,
+  [FeatureKey.LINKEDIN_OPTIMIZER]: 9,
+};
+
+/** Centralized plan entitlement matrix for standard platform tiers. */
+export const DEFAULT_PLAN_LIMITS: Record<string, Record<FeatureKeyValue, number>> = {
+  free: DEFAULT_FREE_LIMITS,
+  premium: DEFAULT_PREMIUM_LIMITS,
+  pro: {
+    ...DEFAULT_PREMIUM_LIMITS,
+    [FeatureKey.STUDY_ASSISTANT]: 100,
+    [FeatureKey.NOTES_GENERATOR]: 100,
+    [FeatureKey.QUIZ_GENERATOR]: 100,
+    [FeatureKey.ASSIGNMENT_GENERATOR]: 100,
+    [FeatureKey.MIND_MAPS]: 100,
+    [FeatureKey.FLASHCARDS]: 100,
+    [FeatureKey.RESEARCH_PAPER_AI]: 100,
+    [FeatureKey.PLAGIARISM_CHECKER]: 100,
+    [FeatureKey.AI_APTITUDE_ENGINE]: 100,
+    [FeatureKey.TECHNICAL_MCQS]: 100,
+    [FeatureKey.AI_CHAT_ASSISTANT]: 100,
+    [FeatureKey.STUDY_PLANNER]: 30,
+    [FeatureKey.CODING_ROADMAP]: 30,
+    [FeatureKey.GITHUB_PORTFOLIO_BUILDER]: 30,
+    [FeatureKey.RESUME_UPLOAD]: 30,
+    [FeatureKey.RESUME_BUILDER]: 30,
+    [FeatureKey.ATS_CHECKER]: 30,
+    [FeatureKey.COVER_LETTER_GENERATOR]: 30,
+    [FeatureKey.LINKEDIN_OPTIMIZER]: 30,
+  },
 };
 
 /** Human-readable display names used by admin tooling and error copy. */

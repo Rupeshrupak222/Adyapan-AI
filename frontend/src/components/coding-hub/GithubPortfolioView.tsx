@@ -307,7 +307,7 @@ export function GithubPortfolioView() {
       toast.error(
         "You've used all free GitHub Portfolio Builder attempts this month.",
         {
-          description: "Upgrade to Premium for unlimited access.",
+          description: "Upgrade to Premium for 9 monthly portfolio generations.",
           action: { label: "Upgrade", onClick: () => (window.location.href = "/premium") },
         }
       );
@@ -316,7 +316,7 @@ export function GithubPortfolioView() {
     const res = await checkAndConsume("GITHUB_PORTFOLIO_BUILDER", attemptIdRef.current || undefined);
     if (!res.allowed) {
       toast.error(res.message || "You've used all free GitHub Portfolio Builder attempts this month.", {
-        description: "Upgrade to Premium for unlimited access.",
+        description: "Upgrade to Premium for 9 monthly portfolio generations.",
         action: { label: "Upgrade", onClick: () => (window.location.href = "/premium") },
       });
       await quota.refresh();

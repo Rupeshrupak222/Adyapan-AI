@@ -104,18 +104,22 @@ export async function checkAndConsumeFeatureUsage(req: Request, res: Response, n
     }
 
     if (!result.allowed) {
+      const isFree = result.status.plan === "free";
       res.status(429).json({
         success: false,
         allowed: false,
         code: "FEATURE_LIMIT_REACHED",
         feature: result.status.featureKey,
         featureName: result.status.featureName,
-        message: `You've used all ${result.status.limit} free ${result.status.featureName} attempts this month.`,
+        plan: result.status.plan,
+        message: isFree
+          ? `You've used all ${result.status.limit} free ${result.status.featureName} attempts this month.`
+          : `You've used all ${result.status.limit} Premium ${result.status.featureName} attempts this month.`,
         limit: result.status.limit,
         used: result.status.used,
         remaining: 0,
         resetAt: result.status.resetAt,
-        upgradeRequired: true,
+        upgradeRequired: isFree,
       });
       return;
     }

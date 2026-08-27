@@ -246,7 +246,7 @@ export function StudyPlannerDashboard() {
     if (!formData.title) return toast.error("Please enter a study goal or exam name.");
     if (quota.exhausted) {
       toast.error("You've used all free AI Study Planner attempts this month.", {
-        description: "Upgrade to Premium for unlimited study plans.",
+        description: "Upgrade to Premium for 9 monthly study plans.",
       });
       return;
     }

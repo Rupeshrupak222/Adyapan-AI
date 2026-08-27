@@ -259,7 +259,7 @@ export function FlashcardsView() {
     }
     if (quota.exhausted) {
       toast.error("You've used all free Flashcard Generator attempts this month.", {
-        description: "Upgrade to Premium for unlimited flashcards.",
+        description: "Upgrade to Premium for 30 monthly flashcard sets.",
       });
       return;
     }

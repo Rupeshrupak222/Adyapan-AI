@@ -218,8 +218,11 @@ export function initSocketServer(server: HttpServer) {
           try {
             const consume = await FeatureUsageService.checkAndConsume(userId, quotaFeatureKey);
             if (!consume.allowed) {
+              const isFree = consume.status.plan === "free";
+              const planLabel = isFree ? "free" : "Premium";
+              const suffix = isFree ? " Upgrade to Premium for 3x higher allowances." : "";
               socket.emit("generate:error", {
-                error: `You've used all ${consume.status.limit} free attempts for this tool this month. Credits reset on ${new Date(consume.status.resetAt).toLocaleDateString()}. Upgrade to Premium for unlimited access.`,
+                error: `You've used all ${consume.status.limit} ${planLabel} attempts for this tool this month. Credits reset on ${new Date(consume.status.resetAt).toLocaleDateString()}.${suffix}`,
                 code: "FEATURE_LIMIT_REACHED",
               });
               return;
@@ -427,8 +430,11 @@ export function initSocketServer(server: HttpServer) {
         try {
           const consume = await FeatureUsageService.checkAndConsume(quotaUserId, "STUDY_ASSISTANT");
           if (!consume.allowed) {
+            const isFree = consume.status.plan === "free";
+            const planLabel = isFree ? "free" : "Premium";
+            const suffix = isFree ? " Upgrade to Premium for 3x higher allowances." : "";
             socket.emit("lesson:error", {
-              error: `You've used all ${consume.status.limit} free Study Assistant attempts this month. Credits reset on ${new Date(consume.status.resetAt).toLocaleDateString()}. Upgrade to Premium for unlimited access.`,
+              error: `You've used all ${consume.status.limit} ${planLabel} Study Assistant attempts this month. Credits reset on ${new Date(consume.status.resetAt).toLocaleDateString()}.${suffix}`,
               code: "FEATURE_LIMIT_REACHED",
             });
             return;

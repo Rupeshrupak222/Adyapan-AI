@@ -480,26 +480,105 @@ describe("Scenario 8 — monthly reset yields a fresh allowance", () => {
   });
 });
 
-describe("Scenario 9 — paid plans receive unlimited entitlement", () => {
-  it("never blocks active premium subscribers regardless of usage count", async () => {
-    seedQuota("STUDY_ASSISTANT", 999, U_PAID);
-    const res = await FeatureUsageService.checkAndConsume(U_PAID, "STUDY_ASSISTANT", "rq-pro-1");
+describe("Scenario 9 — Premium plan receives 3x higher monthly allowance", () => {
+  it("reports 30/30 for fresh Premium user on Group A features", async () => {
+    const s = await FeatureUsageService.getFeatureUsage(U_PAID, "STUDY_ASSISTANT");
+    expect(s.limit).toBe(30);
+    expect(s.used).toBe(0);
+    expect(s.remaining).toBe(30);
+    expect(s.unlimited).toBe(false);
+    expect(s.plan).toBe("premium");
+  });
+
+  it("reports 9/9 for fresh Premium user on Group B features", async () => {
+    const s = await FeatureUsageService.getFeatureUsage(U_PAID, "ATS_CHECKER");
+    expect(s.limit).toBe(9);
+    expect(s.used).toBe(0);
+    expect(s.remaining).toBe(9);
+    expect(s.unlimited).toBe(false);
+  });
+
+  it("decrements Premium allowance from 30 to 29 on first execution", async () => {
+    const res = await FeatureUsageService.checkAndConsume(U_PAID, "STUDY_ASSISTANT", "rq-prem-1");
     expect(res.allowed).toBe(true);
     expect(res.consumed).toBe(true);
-    expect(res.status.unlimited).toBe(true);
-    expect(res.status.plan.toLowerCase()).toContain("premium");
+    expect(res.status.limit).toBe(30);
+    expect(res.status.used).toBe(1);
+    expect(res.status.remaining).toBe(29);
+    expect(res.status.unlimited).toBe(false);
   });
 
-  it("treats expired subscriptions as free again", async () => {
-    const s = await FeatureUsageService.getFeatureUsage(U_EXPIRED, "QUIZ_GENERATOR");
-    expect(s.unlimited).toBe(false);
-    expect(s.limit).toBe(10);
+  it("blocks Premium user on Group A after 30 attempts (31st attempt rejected)", async () => {
+    seedQuota("QUIZ_GENERATOR", 30, U_PAID);
+    const res = await FeatureUsageService.checkAndConsume(U_PAID, "QUIZ_GENERATOR", "rq-prem-31");
+    expect(res.allowed).toBe(false);
+    expect(res.consumed).toBe(false);
+    expect(res.status.limit).toBe(30);
+    expect(res.status.used).toBe(30);
+    expect(res.status.remaining).toBe(0);
   });
 
-  it("still tracks usage counters for paid analytics without limiting", async () => {
-    seedQuota("AI_CHAT_ASSISTANT", 41, U_PAID);
-    await FeatureUsageService.checkAndConsume(U_PAID, "AI_CHAT_ASSISTANT", "rq-track");
-    expect(rowFor("AI_CHAT_ASSISTANT", U_PAID).used).toBe(42);
+  it("blocks Premium user on Group B after 9 attempts (10th attempt rejected)", async () => {
+    seedQuota("ATS_CHECKER", 9, U_PAID);
+    const res = await FeatureUsageService.checkAndConsume(U_PAID, "ATS_CHECKER", "rq-prem-10");
+    expect(res.allowed).toBe(false);
+    expect(res.consumed).toBe(false);
+    expect(res.status.limit).toBe(9);
+    expect(res.status.used).toBe(9);
+    expect(res.status.remaining).toBe(0);
+  });
+
+  it("refunds Premium attempt after a failed execution", async () => {
+    const res = await FeatureUsageService.checkAndConsume(U_PAID, "NOTES_GENERATOR", "rq-prem-fail");
+    expect(res.allowed).toBe(true);
+    const refunded = await FeatureUsageService.refundAttempt(U_PAID, "NOTES_GENERATOR", "rq-prem-fail");
+    expect(refunded).toBe(true);
+    const after = await FeatureUsageService.getFeatureUsage(U_PAID, "NOTES_GENERATOR");
+    expect(after.used).toBe(0);
+    expect(after.remaining).toBe(30);
+  });
+});
+
+describe("Scenario 9.1 — Mid-month Plan Upgrade and Downgrade", () => {
+  it("preserves usage count against new entitlement upon upgrading from Free to Premium", async () => {
+    // User starts Free and uses 8 / 10 Quiz attempts
+    seedQuota("QUIZ_GENERATOR", 8, "user-upgrading");
+    prismaAny.user.findUnique.mockImplementation(async ({ where }: any) => {
+      if (where.id === "user-upgrading") return { plan: "free", subscriptionStatus: "" };
+      return null;
+    });
+
+    const before = await FeatureUsageService.getFeatureUsage("user-upgrading", "QUIZ_GENERATOR");
+    expect(before.limit).toBe(10);
+    expect(before.used).toBe(8);
+    expect(before.remaining).toBe(2);
+
+    // User upgrades to Premium
+    prismaAny.user.findUnique.mockImplementation(async ({ where }: any) => {
+      if (where.id === "user-upgrading") return { plan: "premium", subscriptionStatus: "active" };
+      return null;
+    });
+
+    const after = await FeatureUsageService.getFeatureUsage("user-upgrading", "QUIZ_GENERATOR");
+    expect(after.limit).toBe(30);
+    expect(after.used).toBe(8);
+    expect(after.remaining).toBe(22); // 30 - 8 = 22 remaining!
+  });
+
+  it("gracefully clamps remaining to 0 upon plan downgrade or subscription expiration", async () => {
+    // User used 18 / 30 Quiz attempts on Premium
+    seedQuota("QUIZ_GENERATOR", 18, "user-downgrading");
+    prismaAny.user.findUnique.mockImplementation(async ({ where }: any) => {
+      if (where.id === "user-downgrading") return { plan: "premium", subscriptionStatus: "expired" };
+      return null;
+    });
+
+    const status = await FeatureUsageService.getFeatureUsage("user-downgrading", "QUIZ_GENERATOR");
+    expect(status.plan).toBe("free");
+    expect(status.limit).toBe(10);
+    expect(status.used).toBe(18);
+    expect(status.remaining).toBe(0); // Math.max(0, 10 - 18) = 0, never negative!
+    expect(status.allowed).toBe(false);
   });
 });
 
@@ -614,14 +693,14 @@ describe("Admin-configured limit overrides", () => {
     expect(paidLimit).toEqual({ limit: 100, unlimited: false });
   });
 
-  it("falls back to unlimited for paid plans with no explicit row", async () => {
+  it("falls back to DEFAULT_PREMIUM_LIMITS for paid plans with no explicit admin row", async () => {
     expireCache();
     prismaAny.usageLimit.findMany.mockResolvedValueOnce([
       { featureKey: "ats-checker", planCode: "free", monthlyLimit: 3, enabled: true },
     ]);
     const paidInfo = { plan: "premium", planKind: "premium" as const, isPaid: true };
     const res = await FeatureUsageService.resolveMonthlyLimit("ATS_CHECKER", paidInfo);
-    expect(res.unlimited).toBe(true);
+    expect(res).toEqual({ limit: 9, unlimited: false });
   });
 
   it("ignores disabled override rows", async () => {
