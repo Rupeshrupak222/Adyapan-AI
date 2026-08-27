@@ -1323,7 +1323,7 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: c.textMuted }} />
               <input ref={searchRef} value={filters.search} onChange={e => updateFilter("search", e.target.value)}
                 onKeyDown={e => e.key === "Enter" && applyFilters()}
-                placeholder="Search jobs, skills, companies..."
+                placeholder="Job title, keywords, or company"
                 className="w-full pl-10 pr-4 py-3 rounded-xl text-xs font-semibold outline-none transition-all border"
                 style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
                 onFocus={e => e.currentTarget.style.borderColor = c.primary}

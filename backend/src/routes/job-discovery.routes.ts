@@ -175,6 +175,16 @@ jobDiscoveryRouter.get("/jobs/:id", async (req: Request, res: Response) => {
   }
 });
 
+// ─── GET /filter-options - Sidebar filter options (data-driven) ──────
+jobDiscoveryRouter.get("/filter-options", async (req: Request, res: Response) => {
+  try {
+    const options = await JobSearchService.getFilterOptions();
+    res.json({ success: true, options });
+  } catch (error) {
+    handleRouteError(res, error, "Discovery.filterOptions", "Failed to get filter options");
+  }
+});
+
 // ─── GET /recommended - Personalized job recommendations ─────────────
 jobDiscoveryRouter.get("/recommended", async (req: Request, res: Response) => {
   try {
@@ -308,7 +318,7 @@ jobDiscoveryRouter.post("/jobs/:id/match", async (req: Request, res: Response) =
     const userId = (req as any).user?.userId;
     const jobId = req.params.id as string;
 
-    const job = await JobSearchService.getJobById(jobId);
+    const job = await JobSearchService.getJobById(jobId, undefined, { countView: false });
     if (!job) {
       return res.status(404).json({ success: false, message: "Job not found" });
     }
@@ -384,7 +394,7 @@ jobDiscoveryRouter.post("/jobs/:id/missing-skills", async (req: Request, res: Re
     const userId = (req as any).user?.userId;
     const jobId = req.params.id as string;
 
-    const job = await JobSearchService.getJobById(jobId);
+    const job = await JobSearchService.getJobById(jobId, undefined, { countView: false });
     if (!job) {
       return res.status(404).json({ success: false, message: "Job not found" });
     }

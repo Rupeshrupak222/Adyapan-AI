@@ -510,19 +510,22 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   // ─── Filter State ───────────────────────────────────────────────────────
   const [filters, setFilters] = useState({
-    location: "", workModes: [] as string[], employmentTypes: [] as string[], experienceMin: "", experienceMax: "",
+    locations: [] as string[], workModes: [] as string[], employmentTypes: [] as string[], experienceMin: "", experienceMax: "",
     salaryMin: "", salaryMax: "", skills: "", industry: "", education: "",
     companySize: "", sources: [] as string[], postedWithin: "", company: "",
   });
   const [filterOpen, setFilterOpen] = useState(true);
   const [skillInput, setSkillInput] = useState("");
   const [skillTags, setSkillTags] = useState<string[]>([]);
+  const [locationDraft, setLocationDraft] = useState("");
+  const [showLocSuggestions, setShowLocSuggestions] = useState(false);
+  const locSearchRef = useRef<HTMLDivElement>(null);
 
   // ─── URL Persistence (read on mount) ───────────────────────────────────
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const q = sp.get("q") || "";
-    const loc = sp.get("location") || "";
+    const loc = (sp.get("locations") || sp.get("location") || "").split(",").filter(Boolean);
     const wm = sp.get("workModes") || sp.get("workMode") || "";
     const et = sp.get("employmentTypes") || sp.get("employmentType") || "";
     const src = sp.get("sources") || sp.get("source") || "";
@@ -537,10 +540,10 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     const sort = sp.get("sortBy") || "";
 
     if (q) { setSearchQuery(q); setDebouncedQuery(q); }
-    if (loc || wm || et || src || sk || pw || comp || ind || expMin || expMax || salMin || salMax) {
+    if (loc.length || wm || et || src || sk || pw || comp || ind || expMin || expMax || salMin || salMax) {
       setFilters(prev => ({
         ...prev,
-        location: loc,
+        locations: loc.length ? loc : prev.locations,
         workModes: wm ? wm.split(",").filter(Boolean) : prev.workModes,
         employmentTypes: et ? et.split(",").filter(Boolean) : prev.employmentTypes,
         sources: src ? src.split(",").filter(Boolean) : prev.sources,
@@ -573,6 +576,17 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   // ─── Facets State ───────────────────────────────────────────────────────
   const [facets, setFacets] = useState<Facets | null>(null);
 
+  // ─── Data-driven Filter Options (top cities, industries, education count) ─
+  const [filterOptions, setFilterOptions] = useState<{
+    topCities?: { name: string; count: number }[];
+    industries?: { name: string; count: number }[];
+    companies?: { name: string; count: number }[];
+    skills?: { name: string; count: number }[];
+    workModes?: { name: string; count: number }[];
+    employmentTypes?: { name: string; count: number }[];
+    education?: { name: string; count: number }[];
+  } | null>(null);
+
   // ─── Saved State ────────────────────────────────────────────────────────
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
@@ -604,7 +618,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   // ─── Active Filters ─────────────────────────────────────────────────────
   const activeFilters = useMemo(() => {
     const chips: { key: string; label: string }[] = [];
-    if (filters.location) chips.push({ key: "location", label: `Location: ${filters.location}` });
+    filters.locations.forEach(l => chips.push({ key: `location-${l}`, label: `Location: ${l}` }));
     filters.workModes.forEach(w => chips.push({ key: `workMode-${w}`, label: w }));
     filters.employmentTypes.forEach(e => chips.push({ key: `employmentType-${e}`, label: e }));
     if (filters.experienceMin) chips.push({ key: "experienceMin", label: `Min Exp: ${filters.experienceMin}y` });
@@ -621,6 +635,18 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     return chips;
   }, [filters, skillTags]);
 
+  // ─── Location suggestions (Naukri-style "search by location" entries) ─────
+  const locSuggestions = useMemo(() => {
+    const list = (filterOptions?.topCities && filterOptions.topCities.length > 0)
+      ? filterOptions.topCities
+      : TOP_CITIES.map(c => ({ name: c, count: 0 }));
+    const q = locationDraft.trim().toLowerCase();
+    if (!q) return list.slice(0, 8);
+    return list
+      .filter(c => c.name.toLowerCase().includes(q) || q.split(/\s+/).every(tok => c.name.toLowerCase().includes(tok)))
+      .slice(0, 8);
+  }, [filterOptions, locationDraft]);
+
   // ═══════════════════════════════════════════════════════════════════════════
   // DATA FETCHING
   // ═══════════════════════════════════════════════════════════════════════════
@@ -636,7 +662,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         targetRole: targetRole,
       };
       if (debouncedQuery) params.query = debouncedQuery;
-      if (filters.location) params.location = filters.location;
+      if (filters.locations.length) params.locations = filters.locations.join(",");
       if (filters.workModes.length) params.workModes = filters.workModes.join(",");
       if (filters.employmentTypes.length) params.employmentTypes = filters.employmentTypes.join(",");
       if (filters.experienceMin) params.experienceMin = filters.experienceMin;
@@ -703,14 +729,16 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   const fetchSidebarData = useCallback(async () => {
     try {
-      const [recRes, trendRes, analyticsRes] = await Promise.allSettled([
+      const [recRes, trendRes, analyticsRes, optionsRes] = await Promise.allSettled([
         api.get("/discovery/recommended"),
         api.get("/discovery/trending"),
         api.get("/discovery/analytics"),
+        api.get("/discovery/filter-options"),
       ]);
       if (recRes.status === "fulfilled") setRecommendedJobs(recRes.value.data?.jobs || recRes.value.data || []);
       if (trendRes.status === "fulfilled") setTrendingJobs(trendRes.value.data?.jobs || trendRes.value.data || []);
       if (analyticsRes.status === "fulfilled") setAnalytics(analyticsRes.value.data?.analytics || analyticsRes.value.data || null);
+      if (optionsRes.status === "fulfilled") setFilterOptions(optionsRes.value.data?.options || optionsRes.value.data || null);
     } catch { /* silent */ }
   }, []);
 
@@ -774,7 +802,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   useEffect(() => {
     const sp = new URLSearchParams();
     if (debouncedQuery) sp.set("q", debouncedQuery);
-    if (filters.location) sp.set("location", filters.location);
+    if (filters.locations.length) sp.set("locations", filters.locations.join(","));
     if (filters.workModes.length) sp.set("workModes", filters.workModes.join(","));
     if (filters.employmentTypes.length) sp.set("employmentTypes", filters.employmentTypes.join(","));
     if (filters.sources.length) sp.set("sources", filters.sources.join(","));
@@ -801,6 +829,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowSuggestions(false);
+      if (locSearchRef.current && !locSearchRef.current.contains(e.target as Node)) setShowLocSuggestions(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -814,9 +843,24 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     setFilters(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  const addLocation = useCallback((locName: string) => {
+    const name = locName.trim();
+    if (!name) return;
+    setFilters(prev => prev.locations.some(l => l.toLowerCase() === name.toLowerCase())
+      ? prev
+      : { ...prev, locations: [...prev.locations, name] });
+    setLocationDraft("");
+  }, []);
+
+  const toggleLocation = useCallback((locName: string) => {
+    setFilters(prev => prev.locations.some(l => l.toLowerCase() === locName.toLowerCase())
+      ? { ...prev, locations: prev.locations.filter(l => l.toLowerCase() !== locName.toLowerCase()) }
+      : { ...prev, locations: [...prev.locations, locName] });
+  }, []);
+
   const clearAllFilters = useCallback(() => {
     setFilters({
-      location: "", workModes: [], employmentTypes: [], experienceMin: "", experienceMax: "",
+      locations: [], workModes: [], employmentTypes: [], experienceMin: "", experienceMax: "",
       salaryMin: "", salaryMax: "", skills: "", industry: "", education: "",
       companySize: "", sources: [], postedWithin: "", company: "",
     });
@@ -829,6 +873,9 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     if (key.startsWith("skill-")) {
       const idx = parseInt(key.split("-")[1]);
       setSkillTags(prev => prev.filter((_, i) => i !== idx));
+    } else if (key.startsWith("location-")) {
+      const val = key.replace("location-", "");
+      setFilters(prev => ({ ...prev, locations: prev.locations.filter(l => l !== val) }));
     } else if (key.startsWith("workMode-")) {
       const val = key.replace("workMode-", "");
       setFilters(prev => ({ ...prev, workModes: prev.workModes.filter(w => w !== val) }));
@@ -956,15 +1003,15 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Top Cities</span>
-            {filters.location && (
-              <button onClick={() => handleFilterChange("location", "")} className="text-[10px] font-bold text-amber-500 hover:underline">Clear</button>
+            {filters.locations.length > 0 && (
+              <button onClick={() => setFilters(prev => ({ ...prev, locations: [] }))} className="text-[10px] font-bold text-amber-500 hover:underline">Clear</button>
             )}
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {TOP_CITIES.map(city => {
-              const active = filters.location.toLowerCase() === city.toLowerCase();
+            {(filterOptions?.topCities && filterOptions.topCities.length > 0 ? filterOptions.topCities.map(tc => tc.name) : TOP_CITIES).map(city => {
+              const active = filters.locations.some(l => l.toLowerCase() === city.toLowerCase());
               return (
-                <button key={city} onClick={() => handleFilterChange("location", active ? "" : city)}
+                <button key={city} onClick={() => toggleLocation(city)}
                   className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
                   style={{
                     background: active ? "rgba(245,158,11,0.12)" : c.surface,
@@ -974,17 +1021,36 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
               );
             })}
           </div>
-          <input type="text" placeholder="Custom city, state, or country..." value={filters.location}
-            onChange={e => handleFilterChange("location", e.target.value)}
-            className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all mt-1"
-            style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+          <div className="flex gap-1.5 mt-1">
+            <input type="text" placeholder="Add city, state, or country..." value={locationDraft}
+              onChange={e => setLocationDraft(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") addLocation(locationDraft); }}
+              className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
+              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+            {locationDraft && (
+              <button onClick={() => addLocation(locationDraft)}
+                className="px-3 py-2 rounded-lg text-xs font-bold border transition-all hover:scale-105 shrink-0"
+                style={{ background: "rgba(245,158,11,0.12)", color: c.primary, borderColor: "rgba(245,158,11,0.25)" }}>Add</button>
+            )}
+          </div>
+          {filters.locations.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {filters.locations.map(loc => (
+                <button key={loc} onClick={() => toggleLocation(loc)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border transition-all hover:scale-105"
+                  style={{ background: "rgba(245,158,11,0.12)", color: c.primary, borderColor: "rgba(245,158,11,0.25)" }}>
+                  {loc} <X size={10} />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Department / Role Category */}
         <div className="space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Department & Role</span>
           <div className="flex flex-wrap gap-1.5">
-            {DEPARTMENTS.map(dept => {
+            {(filterOptions?.industries && filterOptions.industries.length > 0 ? filterOptions.industries.map(ind => ind.name).slice(0, 10) : DEPARTMENTS).map(dept => {
               const active = filters.industry.toLowerCase() === dept.toLowerCase();
               return (
                 <button key={dept} onClick={() => handleFilterChange("industry", active ? "" : dept)}
@@ -1081,24 +1147,26 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           </div>
         </div>
 
-        {/* Education Presets */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Education Qualification</span>
-          <div className="flex flex-wrap gap-1.5">
-            {EDUCATION_PRESETS.map(edu => {
-              const active = filters.education.toLowerCase() === edu.toLowerCase();
-              return (
-                <button key={edu} onClick={() => handleFilterChange("education", active ? "" : edu)}
-                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
-                  style={{
-                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
-                    color: active ? c.primary : c.textMuted,
-                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
-                  }}>{edu}</button>
-              );
-            })}
+        {/* Education Presets — hidden when the backend reports no education data */}
+        {(!filterOptions || (filterOptions.education && filterOptions.education.length > 0)) && (
+          <div className="space-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Education Qualification</span>
+            <div className="flex flex-wrap gap-1.5">
+              {EDUCATION_PRESETS.map(edu => {
+                const active = filters.education.toLowerCase() === edu.toLowerCase();
+                return (
+                  <button key={edu} onClick={() => handleFilterChange("education", active ? "" : edu)}
+                    className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                    style={{
+                      background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                      color: active ? c.primary : c.textMuted,
+                      borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                    }}>{edu}</button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Posted Within / Freshness */}
         <div className="space-y-2">
@@ -2072,7 +2140,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             <div>
               <h1 className="text-xl font-bold" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>Job Discovery</h1>
               <p className="text-[11px]" style={{ color: c.textMuted }}>
-                {formatCap99(total)} jobs found {activeFilters.length > 0 ? `· ${activeFilters.length} filters` : ""}
+                {total.toLocaleString()} jobs found {activeFilters.length > 0 ? `· ${activeFilters.length} filters` : ""}
               </p>
             </div>
           </div>
@@ -2107,7 +2175,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           <div ref={searchRef} className="relative flex-1 min-w-[200px]">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: c.textMuted }} />
-              <input type="text" placeholder="Search jobs, companies, skills..." value={searchQuery}
+              <input type="text" placeholder="Job title, keywords, or company" value={searchQuery}
                 onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
                 onFocus={() => setShowSuggestions(true)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl text-sm border outline-none transition-all"
@@ -2127,6 +2195,59 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                     <button key={i} onClick={() => { setSearchQuery(sug); setShowSuggestions(false); }}
                       className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-2 transition-colors hover:bg-white/5"
                       style={{ color: c.text }}><Search size={12} style={{ color: c.textMuted }} /> {sug}</button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Location search — pick multiple cities/states/countries */}
+          <div ref={locSearchRef} className="relative w-full sm:flex-1 min-w-[200px]">
+            <div className="relative">
+              <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: c.textMuted }} />
+              <input type="text" placeholder="Enter city, state, or country — press Enter"
+                value={locationDraft}
+                onChange={e => { setLocationDraft(e.target.value); setShowLocSuggestions(true); }}
+                onFocus={() => setShowLocSuggestions(true)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && locationDraft.trim()) {
+                    addLocation(locationDraft);
+                    setShowLocSuggestions(false);
+                  } else if (e.key === "Backspace" && !locationDraft && filters.locations.length > 0) {
+                    setFilters(prev => ({ ...prev, locations: prev.locations.slice(0, -1) }));
+                  }
+                }}
+                className="w-full pl-10 pr-10 py-3 rounded-xl text-sm border outline-none transition-all"
+                style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+              {filters.locations.length > 0 && (
+                <button onClick={() => setFilters(prev => ({ ...prev, locations: [] }))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-white/5 transition-colors"
+                  style={{ color: c.textMuted }}><X size={14} /></button>
+              )}
+            </div>
+            {filters.locations.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {filters.locations.map(loc => (
+                  <button key={loc} onClick={() => toggleLocation(loc)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border transition-all hover:scale-105"
+                    style={{ background: "rgba(245,158,11,0.12)", color: c.primary, borderColor: "rgba(245,158,11,0.25)" }}>
+                    <MapPin size={9} /> {loc} <X size={9} />
+                  </button>
+                ))}
+              </div>
+            )}
+            <AnimatePresence>
+              {showLocSuggestions && locSuggestions.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  className="absolute top-full left-0 right-0 mt-1 rounded-xl border overflow-hidden z-30 shadow-lg"
+                  style={{ background: isDark ? "rgba(15, 23, 42, 0.98)" : "rgba(255, 255, 255, 0.98)", borderColor: c.border }}>
+                  {locSuggestions.map((sug, i) => (
+                    <button key={i} onClick={() => { addLocation(sug.name); setShowLocSuggestions(false); }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-2 transition-colors hover:bg-white/5"
+                      style={{ color: c.text }}>
+                      <MapPin size={12} style={{ color: c.textMuted }} /> {sug.name}
+                      {sug.count > 0 && <span className="ml-auto text-[10px]" style={{ color: c.textMuted }}>{formatCap99(sug.count)}</span>}
+                    </button>
                   ))}
                 </motion.div>
               )}
@@ -2283,7 +2404,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                   {jobs.length > 0 && (
                     <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t mt-6 pt-6" style={{ borderColor: c.border }}>
                       <div className="text-xs font-semibold" style={{ color: c.textMuted }}>
-                        Showing {((page - 1) * PAGE_LIMIT) + 1} - {Math.min(page * PAGE_LIMIT, total)} of {formatCap99(total)} jobs
+                        Showing {((page - 1) * PAGE_LIMIT) + 1} - {Math.min(page * PAGE_LIMIT, total)} of {total.toLocaleString()} jobs
                       </div>
                       
                       <div className="flex items-center gap-2">

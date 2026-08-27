@@ -73,6 +73,128 @@ function normalizeSkills(skills: string[]): string[] {
   return [...new Set(skills.map(normalizeSkill))];
 }
 
+// ─── Work Mode Normalization ──────────────────────────────────────────────────
+// Job data arrives with inconsistent labels ("Onsite", "On-Site", "Office", etc).
+// Normalization is done purely at query time — no job rows are ever modified.
+
+const WORK_MODE_CANONICAL: Record<string, string> = {
+  onsite: "On-site",
+  "on-site": "On-site",
+  "on site": "On-site",
+  "in-office": "On-site",
+  "in office": "On-site",
+  office: "On-site",
+  "work from office": "On-site",
+  remote: "Remote",
+  "remote-first": "Remote",
+  "remote first": "Remote",
+  "fully remote": "Remote",
+  "work from home": "Remote",
+  wfh: "Remote",
+  hybrid: "Hybrid",
+};
+
+const WORK_MODE_VARIANTS: Record<string, string[]> = {
+  "On-site": ["On-site", "Onsite", "On-Site", "On site", "Office", "In-office", "In-Office", "Work From Office"],
+  Remote: ["Remote", "Remote-First", "Remote First", "Fully Remote", "Work From Home", "WFH"],
+  Hybrid: ["Hybrid"],
+};
+
+function normalizeWorkMode(value: string): string {
+  return WORK_MODE_CANONICAL[value.toLowerCase().trim()] || value.trim();
+}
+
+function expandWorkModes(workModes: string[]): string[] {
+  const out = new Set<string>();
+  for (const wm of workModes) {
+    const canonical = normalizeWorkMode(wm);
+    for (const variant of WORK_MODE_VARIANTS[canonical] || [canonical]) out.add(variant);
+  }
+  return [...out];
+}
+
+// ─── City / Location Synonym Expansion ────────────────────────────────────────
+// "Bangalore" vs "Bengaluru" vs "Bengaluru / Bangalore, Karnataka, India | India"
+// are all the same city. We expand a user-selected city into its synonym set and
+// match across location/city/state columns so filters behave like a clean portal.
+
+const CITY_SYNONYMS: Record<string, string[]> = {
+  bengaluru: ["bengaluru", "bangalore", "bengalooru", "bangaluru"],
+  bangalore: ["bengaluru", "bangalore", "bengalooru", "bangaluru"],
+  hyderabad: ["hyderabad", "secunderabad"],
+  mumbai: ["mumbai", "bombay"],
+  pune: ["pune"],
+  chennai: ["chennai", "madras"],
+  kolkata: ["kolkata", "calcutta", "greater kolkata"],
+  "delhi ncr": ["delhi", "new delhi", "delhi ncr", "delhi ncr", "ncr", "gurugram", "gurgaon", "noida", "faridabad", "ghaziabad", "dwarka"],
+  gurugram: ["gurugram", "gurgaon"],
+  gurgaon: ["gurgaon", "gurugram"],
+  noida: ["noida", "greater noida"],
+  coimbatore: ["coimbatore"],
+  kochi: ["kochi", "cochin"],
+  trivandrum: ["trivandrum", "thiruvananthapuram"],
+  indore: ["indore"],
+  jaipur: ["jaipur"],
+  surat: ["surat"],
+  lucknow: ["lucknow", "greater lucknow"],
+  ahmedabad: ["ahmedabad"],
+  remote: ["remote", "anywhere", "work from home", "work-from-home", "remote-first", "remote first", "fully remote", "worldwide"],
+  anywhere: ["remote", "anywhere", "work from home", "remote-first", "remote first", "worldwide", "global"],
+};
+
+const CITY_LABELS: Record<string, string> = {
+  bengaluru: "Bengaluru",
+  bangalore: "Bengaluru",
+  hyderabad: "Hyderabad",
+  mumbai: "Mumbai",
+  pune: "Pune",
+  chennai: "Chennai",
+  kolkata: "Kolkata",
+  "delhi ncr": "Delhi NCR",
+  gurugram: "Gurugram",
+  gurgaon: "Gurugram",
+  noida: "Noida",
+  coimbatore: "Coimbatore",
+  kochi: "Kochi",
+  trivandrum: "Trivandrum",
+  indore: "Indore",
+  jaipur: "Jaipur",
+  surat: "Surat",
+  lucknow: "Lucknow",
+  ahmedabad: "Ahmedabad",
+  remote: "Remote",
+  anywhere: "Remote",
+};
+
+function expandLocationTerms(loc: string): string[] {
+  const key = loc.toLowerCase().trim();
+  return CITY_SYNONYMS[key] || [loc.trim()];
+}
+
+// Reduce a messy city/location string to its canonical key (used by facets &
+// the sidebar so "Bangalore", "Bengaluru / Bangalore, Karnataka, India | India"
+// and "New Delhi" all collapse to a single clean entry).
+function canonicalCityKey(city: string | undefined | null): string | undefined {
+  if (!city) return undefined;
+  const cleaned = city.trim().toLowerCase();
+  if (!cleaned) return undefined;
+  const tokens = cleaned.split(/[\s,|/()]+/).filter(t => t.length > 0);
+  if (tokens.length === 0) return undefined;
+  const tokenSet = new Set(tokens);
+  for (const [key, synonyms] of Object.entries(CITY_SYNONYMS)) {
+    if (synonyms.some(s => tokenSet.has(s))) {
+      return key === "anywhere" ? "remote" : key;
+    }
+  }
+  const first = tokens[0];
+  for (const [key, synonyms] of Object.entries(CITY_SYNONYMS)) {
+    if (synonyms.includes(first)) {
+      return key === "anywhere" ? "remote" : key;
+    }
+  }
+  return undefined;
+}
+
 // ─── Query Normalization ──────────────────────────────────────────────────────
 
 function normalizeSearchQuery(query: string): string {
@@ -177,8 +299,8 @@ export function calculateJobMatch(
   totalScore += roleScore * roleWeight;
   totalWeight += roleWeight;
 
-  // 2. Skill Match (weight: 25)
-  const skillWeight = 25;
+  // 2. Skill Match (weight: 30)
+  const skillWeight = 30;
   let skillScore = 0;
   if (userSkills.length > 0 && job.skills && Array.isArray(job.skills) && job.skills.length > 0) {
     const normalizedUserSkills = normalizeSkills(userSkills);
@@ -268,18 +390,8 @@ export function calculateJobMatch(
     else if (ageHours < 720) freshScore = 45;
     else freshScore = 30;
   }
-  totalScore += freshScore * freshWeight;
+totalScore += freshScore * freshWeight;
   totalWeight += freshWeight;
-
-  // 8. Featured bonus (weight: 5)
-  const featWeight = 5;
-  let featScore = 30;
-  if (job.isFeatured) {
-    featScore = 100;
-    reasons.push({ type: "freshness", text: "Featured job", weight: featWeight });
-  }
-  totalScore += featScore * featWeight;
-  totalWeight += featWeight;
 
   const finalScore = Math.min(99, Math.max(15, Math.round(totalScore / totalWeight)));
   const isRecommended = finalScore >= 50 || reasons.some(r => r.type === "role" && r.weight >= 20);
@@ -289,6 +401,148 @@ export function calculateJobMatch(
     isRecommended,
     reasons,
   };
+}
+
+// ─── Shared WHERE Builder ────────────────────────────────────────────────────
+// Single source of truth for search + facets so both stay in sync. All
+// normalization here is query-time only — discovery_jobs rows are never mutated.
+
+function buildSearchWhere(filters: SearchFilters): any {
+  const where: any = { isActive: true };
+
+  if (filters.query) {
+    const rawQ = filters.query.trim();
+    const normalizedQ = normalizeSearchQuery(rawQ);
+    const terms = rawQ.split(/\s+/).filter(t => t.length > 1);
+    const allTerms = [normalizedQ, ...terms.map(normalizeSearchQuery)];
+    const uniqueTerms = [...new Set(allTerms)];
+
+    const orConditions: any[] = [];
+    for (const term of uniqueTerms) {
+      orConditions.push(
+        { title: { contains: term, mode: "insensitive" } },
+        { company: { contains: term, mode: "insensitive" } },
+        { description: { contains: term, mode: "insensitive" } },
+        { location: { contains: term, mode: "insensitive" } },
+        { skills: { hasSome: [term] } }
+      );
+      if (term !== rawQ.toLowerCase()) {
+        orConditions.push(
+          { title: { contains: rawQ, mode: "insensitive" } },
+          { company: { contains: rawQ, mode: "insensitive" } },
+          { skills: { hasSome: [rawQ] } }
+        );
+      }
+    }
+    where.OR = orConditions;
+  }
+
+  if (filters.company) {
+    where.company = { contains: filters.company, mode: "insensitive" };
+  }
+
+  // Location: multi-select with city-synonym expansion (OR within the group)
+  const locationFilters: any[] = [];
+  const requestedLocations = (filters.locations && filters.locations.length > 0) ? filters.locations
+    : (filters.location ? [filters.location] : []);
+  for (const loc of requestedLocations) {
+    for (const term of expandLocationTerms(loc)) {
+      locationFilters.push(
+        { location: { contains: term, mode: "insensitive" } },
+        { city: { contains: term, mode: "insensitive" } },
+        { state: { contains: term, mode: "insensitive" } },
+        { country: { contains: term, mode: "insensitive" } }
+      );
+    }
+  }
+  if (locationFilters.length > 0) {
+    where.AND = where.AND || [];
+    where.AND.push({ OR: locationFilters });
+  }
+
+  if (filters.country) {
+    where.country = { contains: filters.country, mode: "insensitive" };
+  }
+  if (filters.state) {
+    where.state = { contains: filters.state, mode: "insensitive" };
+  }
+  if (filters.city) {
+    where.city = { contains: filters.city, mode: "insensitive" };
+  }
+
+  // Work Mode: multi-select with variant expansion
+  if (filters.workModes && filters.workModes.length > 0) {
+    where.workMode = { in: [...new Set(expandWorkModes(filters.workModes))] };
+  } else if (filters.workMode) {
+    where.workMode = { in: [...new Set(expandWorkModes([filters.workMode]))] };
+  }
+
+  // Employment Type: multi-select
+  if (filters.employmentTypes && filters.employmentTypes.length > 0) {
+    where.employmentType = { in: filters.employmentTypes };
+  } else if (filters.employmentType) {
+    where.employmentType = filters.employmentType;
+  }
+
+  // Experience
+  if (filters.experienceMin !== undefined || filters.experienceMax !== undefined) {
+    where.AND = where.AND || [];
+    if (filters.experienceMin !== undefined) {
+      where.AND.push({ experienceMax: { gte: filters.experienceMin } });
+    }
+    if (filters.experienceMax !== undefined) {
+      where.AND.push({ experienceMin: { lte: filters.experienceMax } });
+    }
+  }
+
+  // Salary
+  if (filters.salaryMin !== undefined || filters.salaryMax !== undefined) {
+    where.AND = where.AND || [];
+    if (filters.salaryMin !== undefined) {
+      where.AND.push({ salaryMax: { gte: filters.salaryMin } });
+    }
+    if (filters.salaryMax !== undefined) {
+      where.AND.push({ salaryMin: { lte: filters.salaryMax } });
+    }
+  }
+
+  // Skills: multi-select (ANY)
+  if (filters.skills && filters.skills.length > 0) {
+    where.skills = { hasSome: normalizeSkills(filters.skills) };
+  }
+
+  if (filters.industry) {
+    where.industry = { contains: filters.industry, mode: "insensitive" };
+  }
+
+  if (filters.education) {
+    where.education = { contains: filters.education, mode: "insensitive" };
+  }
+
+  if (filters.companySize) {
+    where.companySize = { contains: filters.companySize, mode: "insensitive" };
+  }
+
+  // Source: multi-select
+  if (filters.sources && filters.sources.length > 0) {
+    where.source = { in: filters.sources };
+  } else if (filters.source) {
+    where.source = filters.source;
+  }
+
+  if (filters.isFeatured !== undefined) {
+    where.isFeatured = filters.isFeatured;
+  }
+
+  // Date/Freshness
+  if (filters.postedWithin && filters.postedWithin !== "any") {
+    const postedDate = getPostedWithinDate(filters.postedWithin);
+    if (postedDate) {
+      where.postedAt = { gte: postedDate };
+    }
+  }
+
+  return where;
 }
 
 export interface SearchResult {
@@ -528,153 +782,13 @@ export class JobSearchService {
     const limit = Math.min(filters.limit || 20, 100);
     const skip = (page - 1) * limit;
 
-    const where: any = { isActive: true };
-
-    // ─── Query: Multi-term search with skill alias expansion ──────────
-    if (filters.query) {
-      const rawQ = filters.query.trim();
-      const normalizedQ = normalizeSearchQuery(rawQ);
-      const terms = rawQ.split(/\s+/).filter(t => t.length > 1);
-      const allTerms = [normalizedQ, ...terms.map(normalizeSearchQuery)];
-      const uniqueTerms = [...new Set(allTerms)];
-
-      const orConditions: any[] = [];
-      for (const term of uniqueTerms) {
-        orConditions.push(
-          { title: { contains: term, mode: "insensitive" } },
-          { company: { contains: term, mode: "insensitive" } },
-          { description: { contains: term, mode: "insensitive" } },
-          { location: { contains: term, mode: "insensitive" } },
-          { skills: { hasSome: [term] } }
-        );
-        // Also search with original term for case-sensitive matches
-        if (term !== rawQ.toLowerCase()) {
-          orConditions.push(
-            { title: { contains: rawQ, mode: "insensitive" } },
-            { company: { contains: rawQ, mode: "insensitive" } },
-            { skills: { hasSome: [rawQ] } }
-          );
-        }
-      }
-      where.OR = orConditions;
-    }
-
-    // ─── Company filter ───────────────────────────────────────────────
-    if (filters.company) {
-      where.company = { contains: filters.company, mode: "insensitive" };
-    }
-
-    // ─── Location: Multi-select support ───────────────────────────────
-    const locationFilters: any[] = [];
-    if (filters.locations && filters.locations.length > 0) {
-      for (const loc of filters.locations) {
-        locationFilters.push(
-          { location: { contains: loc, mode: "insensitive" } },
-          { city: { contains: loc, mode: "insensitive" } },
-          { state: { contains: loc, mode: "insensitive" } }
-        );
-      }
-    } else if (filters.location) {
-      locationFilters.push(
-        { location: { contains: filters.location, mode: "insensitive" } },
-        { city: { contains: filters.location, mode: "insensitive" } },
-        { state: { contains: filters.location, mode: "insensitive" } }
-      );
-    }
-    if (locationFilters.length > 0) {
-      where.AND = where.AND || [];
-      where.AND.push({ OR: locationFilters });
-    }
-
-    if (filters.country) {
-      where.country = { contains: filters.country, mode: "insensitive" };
-    }
-
-    if (filters.state) {
-      where.state = { contains: filters.state, mode: "insensitive" };
-    }
-
-    if (filters.city) {
-      where.city = { contains: filters.city, mode: "insensitive" };
-    }
-
-    // ─── Work Mode: Multi-select support ──────────────────────────────
-    if (filters.workModes && filters.workModes.length > 0) {
-      where.workMode = { in: filters.workModes };
-    } else if (filters.workMode) {
-      where.workMode = filters.workMode;
-    }
-
-    // ─── Employment Type: Multi-select support ────────────────────────
-    if (filters.employmentTypes && filters.employmentTypes.length > 0) {
-      where.employmentType = { in: filters.employmentTypes };
-    } else if (filters.employmentType) {
-      where.employmentType = filters.employmentType;
-    }
-
-    // ─── Experience ───────────────────────────────────────────────────
-    if (filters.experienceMin !== undefined || filters.experienceMax !== undefined) {
-      where.AND = where.AND || [];
-      if (filters.experienceMin !== undefined) {
-        where.AND.push({ experienceMax: { gte: filters.experienceMin } });
-      }
-      if (filters.experienceMax !== undefined) {
-        where.AND.push({ experienceMin: { lte: filters.experienceMax } });
-      }
-    }
-
-    // ─── Salary ───────────────────────────────────────────────────────
-    if (filters.salaryMin !== undefined || filters.salaryMax !== undefined) {
-      where.AND = where.AND || [];
-      if (filters.salaryMin !== undefined) {
-        where.AND.push({ salaryMax: { gte: filters.salaryMin } });
-      }
-      if (filters.salaryMax !== undefined) {
-        where.AND.push({ salaryMin: { lte: filters.salaryMax } });
-      }
-    }
-
-    // ─── Skills: Multi-select with ANY/ALL mode ──────────────────────
-    if (filters.skills && filters.skills.length > 0) {
-      const normalizedFilterSkills = normalizeSkills(filters.skills);
-      where.skills = { hasSome: normalizedFilterSkills };
-    }
-
-    if (filters.industry) {
-      where.industry = { contains: filters.industry, mode: "insensitive" };
-    }
-
-    if (filters.education) {
-      where.education = { contains: filters.education, mode: "insensitive" };
-    }
-
-    if (filters.companySize) {
-      where.companySize = { contains: filters.companySize, mode: "insensitive" };
-    }
-
-    // ─── Source: Multi-select support ─────────────────────────────────
-    if (filters.sources && filters.sources.length > 0) {
-      where.source = { in: filters.sources };
-    } else if (filters.source) {
-      where.source = filters.source;
-    }
-
-    if (filters.isFeatured !== undefined) {
-      where.isFeatured = filters.isFeatured;
-    }
-
-    // ─── Date/Freshness filter ────────────────────────────────────────
-    if (filters.postedWithin && filters.postedWithin !== "any") {
-      const postedDate = getPostedWithinDate(filters.postedWithin);
-      if (postedDate) {
-        where.postedAt = { gte: postedDate };
-      }
-    }
+    const where: any = buildSearchWhere(filters);
 
     // ─── Sorting ──────────────────────────────────────────────────────
     let orderBy: any = { createdAt: "desc" };
     const sortField = filters.sortBy || "recommended";
     const sortOrder = filters.sortOrder || "desc";
+    const isMatchSort = sortField === "recommended" || sortField === "matchScore";
 
     const validSortFields: Record<string, string> = {
       postedAt: "postedAt",
@@ -687,11 +801,14 @@ export class JobSearchService {
       saveCount: "saveCount",
     };
 
-    if (sortField === "recommended" || sortField === "matchScore") {
-      orderBy = [{ isFeatured: "desc" }, { viewCount: "desc" }, { createdAt: "desc" }];
+    if (isMatchSort) {
+      orderBy = { createdAt: "desc" };
     } else if (validSortFields[sortField]) {
       orderBy = { [validSortFields[sortField]]: sortOrder };
     }
+
+    // For recommendation/match sorting, fetch a candidate pool and rank in memory.
+    const poolLimit = isMatchSort ? Math.min(Math.max(limit * 3, 60), 150) : limit;
 
     // ─── Database Query ───────────────────────────────────────────────
     let total = 0;
@@ -702,8 +819,8 @@ export class JobSearchService {
         db.discoveryJob.findMany({
           where,
           orderBy,
-          skip,
-          take: limit,
+          skip: isMatchSort ? 0 : skip,
+          take: poolLimit,
         }),
       ]);
     } catch (dbErr: any) {
@@ -948,15 +1065,18 @@ export class JobSearchService {
       };
     });
 
-    // ─── Sort by match score for recommended ──────────────────────────
-    if (!filters.sortBy || filters.sortBy === "recommended" || filters.sortBy === "matchScore") {
-      mappedJobs.sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0));
+    // ─── Rank + page for recommendation/match sorts ───────────────────
+    let pagedJobs = mappedJobs;
+    if (isMatchSort) {
+      pagedJobs = mappedJobs
+        .sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0))
+        .slice(skip, skip + limit);
     }
 
     const totalPages = Math.ceil(total / limit);
 
     const result: SearchResult = {
-      jobs: mappedJobs,
+      jobs: pagedJobs,
       total,
       page,
       limit,
@@ -984,30 +1104,12 @@ export class JobSearchService {
 
     try {
       const db = getDb();
-      const baseWhere: any = { isActive: true };
-
-      if (filters.query) {
-        const q = normalizeSearchQuery(filters.query);
-        baseWhere.OR = [
-          { title: { contains: q, mode: "insensitive" } },
-          { company: { contains: q, mode: "insensitive" } },
-          { description: { contains: q, mode: "insensitive" } },
-          { location: { contains: q, mode: "insensitive" } },
-        ];
-      }
-
-      if (filters.workMode) baseWhere.workMode = filters.workMode;
-      if (filters.employmentType) baseWhere.employmentType = filters.employmentType;
-      if (filters.industry) baseWhere.industry = { contains: filters.industry, mode: "insensitive" };
-      if (filters.source) baseWhere.source = filters.source;
-      if (filters.postedWithin && filters.postedWithin !== "any") {
-        const postedDate = getPostedWithinDate(filters.postedWithin);
-        if (postedDate) baseWhere.postedAt = { gte: postedDate };
-      }
+      // Facets reflect the same (un-paginated) filtered set as the search itself.
+      const baseWhere: any = buildSearchWhere(filters);
 
       const getCount = (r: any) => (typeof r._count === "number" ? r._count : r._count?.id || r._count?._all || 1);
 
-      let locationRows: any[] = [];
+      let cityRows: any[] = [];
       let companyRows: any[] = [];
       let workModeRows: any[] = [];
       let employmentTypeRows: any[] = [];
@@ -1015,10 +1117,10 @@ export class JobSearchService {
       let sourceRows: any[] = [];
 
       try {
-        const [locs, comps, wModes, empTypes, inds, srcs] = await Promise.all([
+        const [cities, comps, wModes, empTypes, inds, srcs] = await Promise.all([
           db.discoveryJob.groupBy({
-            by: ["location"],
-            where: { ...baseWhere, location: { not: "" } },
+            by: ["city"],
+            where: { ...baseWhere, city: { not: "" } },
             _count: true,
           }),
           db.discoveryJob.groupBy({
@@ -1047,7 +1149,7 @@ export class JobSearchService {
             _count: true,
           }),
         ]);
-        locationRows = locs;
+        cityRows = cities;
         companyRows = comps;
         workModeRows = wModes;
         employmentTypeRows = empTypes;
@@ -1056,6 +1158,39 @@ export class JobSearchService {
       } catch {
         // Fallback: silence groupBy error if any
       }
+
+      // ─── Locations facet: canonicalize messy city values ────────────
+      const cityCounts = new Map<string, number>();
+      for (const r of cityRows) {
+        const canonical = canonicalCityKey(r.city);
+        if (!canonical) continue;
+        cityCounts.set(canonical, (cityCounts.get(canonical) || 0) + getCount(r));
+      }
+      try {
+        const remoteCount = await db.discoveryJob.count({
+          where: { ...baseWhere, workMode: { in: WORK_MODE_VARIANTS.Remote } },
+        });
+        if (remoteCount > 0) {
+          cityCounts.set("remote", (cityCounts.get("remote") || 0) + remoteCount);
+        }
+      } catch {
+        // ignore remote-count errors
+      }
+      const locations = [...cityCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15)
+        .map(([key, count]) => ({ name: CITY_LABELS[key] || key, count }));
+
+      // ─── Work Mode facet: merge variant labels into canonical ones ──
+      const wmCounts = new Map<string, number>();
+      for (const r of workModeRows) {
+        if (!r.workMode) continue;
+        const canonical = normalizeWorkMode(r.workMode);
+        wmCounts.set(canonical, (wmCounts.get(canonical) || 0) + getCount(r));
+      }
+      const workModes = [...wmCounts.entries()]
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count);
 
       let skillsFacet: { name: string; count: number }[] = [];
       try {
@@ -1073,12 +1208,12 @@ export class JobSearchService {
       }
 
       return {
-        locations: locationRows.map((r: any) => ({ name: r.location, count: getCount(r) })).sort((a, b) => b.count - a.count),
-        companies: companyRows.map((r: any) => ({ name: r.company, count: getCount(r) })).sort((a, b) => b.count - a.count),
-        workModes: workModeRows.map((r: any) => ({ name: r.workMode, count: getCount(r) })).sort((a, b) => b.count - a.count),
+        locations,
+        companies: companyRows.map((r: any) => ({ name: r.company, count: getCount(r) })).sort((a, b) => b.count - a.count).slice(0, 20),
+        workModes,
         employmentTypes: employmentTypeRows.map((r: any) => ({ name: r.employmentType, count: getCount(r) })).sort((a, b) => b.count - a.count),
-        industries: industryRows.map((r: any) => ({ name: r.industry, count: getCount(r) })).sort((a, b) => b.count - a.count),
-        sources: sourceRows.map((r: any) => ({ name: r.source, count: getCount(r) })).sort((a, b) => b.count - a.count),
+        industries: industryRows.map((r: any) => ({ name: r.industry, count: getCount(r) })).sort((a, b) => b.count - a.count).slice(0, 20),
+        sources: sourceRows.map((r: any) => ({ name: r.source, count: getCount(r) })).sort((a, b) => b.count - a.count).slice(0, 20),
         skills: skillsFacet,
       };
     } catch {
@@ -1086,16 +1221,113 @@ export class JobSearchService {
     }
   }
 
-  static async getJobById(jobId: string, userId?: string): Promise<any> {
+  static async getFilterOptions(): Promise<any> {
+    const defaultOptions = {
+      topCities: [], industries: [], companies: [], skills: [], workModes: [], employmentTypes: [], education: [],
+    };
+    try {
+      const db = getDb();
+      const baseWhere: any = { isActive: true };
+      const getCount = (r: any) => (typeof r._count === "number" ? r._count : r._count?.id || r._count?._all || 1);
+
+      let cityRows: any[] = [];
+      let industryRows: any[] = [];
+      let companyRows: any[] = [];
+      let workModeRows: any[] = [];
+      let employmentTypeRows: any[] = [];
+      let educationRows: any[] = [];
+      let skillRows: any[] = [];
+
+      try {
+        const [cities, inds, comps, wModes, empTypes, edus, skills] = await Promise.all([
+          db.discoveryJob.groupBy({ by: ["city"], where: { ...baseWhere, city: { not: "" } }, _count: true }),
+          db.discoveryJob.groupBy({ by: ["industry"], where: { ...baseWhere, industry: { not: "" } }, _count: true }),
+          db.discoveryJob.groupBy({ by: ["company"], where: baseWhere, _count: true }),
+          db.discoveryJob.groupBy({ by: ["workMode"], where: baseWhere, _count: true }),
+          db.discoveryJob.groupBy({ by: ["employmentType"], where: baseWhere, _count: true }),
+          db.discoveryJob.groupBy({ by: ["education"], where: { ...baseWhere, education: { not: "" } }, _count: true }),
+          db.$queryRaw`
+            SELECT skill AS name, COUNT(*)::int AS count
+            FROM discovery_jobs, unnest(skills) AS skill
+            WHERE is_active = true
+            GROUP BY skill
+            ORDER BY count DESC
+            LIMIT 30
+          `,
+        ]);
+        cityRows = cities;
+        industryRows = inds;
+        companyRows = comps;
+        workModeRows = wModes;
+        employmentTypeRows = empTypes;
+        educationRows = edus;
+        skillRows = skills || [];
+      } catch {
+        // fall back to empty option lists
+      }
+
+      // Top cities: canonical city labels with counts, plus remote jobs.
+      const cityCounts = new Map<string, number>();
+      for (const r of cityRows) {
+        const canonical = canonicalCityKey(r.city);
+        if (!canonical) continue;
+        cityCounts.set(canonical, (cityCounts.get(canonical) || 0) + getCount(r));
+      }
+      try {
+        const remoteCount = await db.discoveryJob.count({
+          where: { ...baseWhere, workMode: { in: WORK_MODE_VARIANTS.Remote } },
+        });
+        if (remoteCount > 0) {
+          cityCounts.set("remote", (cityCounts.get("remote") || 0) + remoteCount);
+        }
+      } catch {
+        // ignore remote-count errors
+      }
+      const topCities = [...cityCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15)
+        .map(([key, count]) => ({ name: CITY_LABELS[key] || key, count }));
+
+      const wmCounts = new Map<string, number>();
+      for (const r of workModeRows) {
+        if (!r.workMode) continue;
+        const canonical = normalizeWorkMode(r.workMode);
+        wmCounts.set(canonical, (wmCounts.get(canonical) || 0) + getCount(r));
+      }
+      const workModes = [...wmCounts.entries()]
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count);
+
+      return {
+        topCities,
+        industries: industryRows.map((r: any) => ({ name: r.industry, count: getCount(r) })).sort((a, b) => b.count - a.count).slice(0, 20),
+        companies: companyRows.map((r: any) => ({ name: r.company, count: getCount(r) })).sort((a, b) => b.count - a.count).slice(0, 20),
+        skills: (skillRows || []).map((r: any) => ({ name: r.name || r.skill, count: r.count })),
+        workModes,
+        employmentTypes: employmentTypeRows.map((r: any) => ({ name: r.employmentType, count: getCount(r) })).sort((a, b) => b.count - a.count),
+        education: educationRows.map((r: any) => ({ name: r.education, count: getCount(r) })).sort((a, b) => b.count - a.count).slice(0, 15),
+      };
+    } catch {
+      return defaultOptions;
+    }
+  }
+
+  static async getJobById(jobId: string, userId?: string, options: { countView?: boolean } = {}): Promise<any> {
     const db = getDb();
+    const countView = options.countView !== false;
 
     const job = await db.discoveryJob.findUnique({ where: { id: jobId } });
     if (!job) return null;
 
-    await db.discoveryJob.update({
-      where: { id: jobId },
-      data: { viewCount: { increment: 1 } },
-    });
+    if (countView) {
+      await db.discoveryJob.update({
+        where: { id: jobId },
+        data: { viewCount: { increment: 1 } },
+      });
+      if (userId) {
+        await this.trackView(userId, jobId).catch(() => {});
+      }
+    }
 
     let saved = false;
     let recentlyViewed = false;
