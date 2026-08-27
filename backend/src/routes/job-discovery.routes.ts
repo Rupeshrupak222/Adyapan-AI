@@ -13,10 +13,18 @@ jobDiscoveryRouter.use(requireAuth);
 // ─── GET /jobs - Search jobs with filters ──────────────────────────────
 jobDiscoveryRouter.get("/jobs", async (req: Request, res: Response) => {
   try {
+    const parseArray = (val: any): string[] | undefined => {
+      if (!val) return undefined;
+      if (Array.isArray(val)) return val.map(s => String(s).trim()).filter(Boolean);
+      if (typeof val === "string") return val.split(",").map(s => s.trim()).filter(Boolean);
+      return undefined;
+    };
+
     const {
-      query, company, location, country, state, city, workMode, employmentType,
-      experienceMin, experienceMax, salaryMin, salaryMax, skills, industry,
-      education, companySize, source, isFeatured, postedWithin, targetRole,
+      query, company, location, locations, country, state, city, workMode, workModes,
+      employmentType, employmentTypes, experienceMin, experienceMax, salaryMin, salaryMax,
+      skills, industry, education, educationList, companySize, source, sources,
+      isFeatured, postedWithin, targetRole, departments,
       sortBy = "recommended", sortOrder = "desc", page = "1", limit = "20",
     } = req.query;
 
@@ -48,24 +56,38 @@ jobDiscoveryRouter.get("/jobs", async (req: Request, res: Response) => {
       userTargetRole = "Software Developer";
     }
 
+    const parsedWorkModes = parseArray(workModes) || parseArray(workMode);
+    const parsedLocations = parseArray(locations) || parseArray(location);
+    const parsedEmploymentTypes = parseArray(employmentTypes) || parseArray(employmentType);
+    const parsedSources = parseArray(sources) || parseArray(source);
+    const parsedSkills = parseArray(skills);
+    const parsedDepartments = parseArray(departments);
+    const parsedEducationList = parseArray(educationList) || parseArray(education);
+
     const filters: any = {
       query: query as string,
       company: company as string,
       location: location as string,
+      locations: parsedLocations,
       country: country as string,
       state: state as string,
       city: city as string,
       workMode: workMode as string,
+      workModes: parsedWorkModes,
       employmentType: employmentType as string,
+      employmentTypes: parsedEmploymentTypes,
       experienceMin: experienceMin ? parseInt(experienceMin as string) : undefined,
       experienceMax: experienceMax ? parseInt(experienceMax as string) : undefined,
       salaryMin: salaryMin ? parseInt(salaryMin as string) : undefined,
       salaryMax: salaryMax ? parseInt(salaryMax as string) : undefined,
-      skills: skills ? (skills as string).split(",").map(s => s.trim()).filter(Boolean) : undefined,
+      skills: parsedSkills,
+      departments: parsedDepartments,
+      educationList: parsedEducationList,
       industry: industry as string,
       education: education as string,
       companySize: companySize as string,
       source: source as string,
+      sources: parsedSources,
       isFeatured: isFeatured === "true" ? true : undefined,
       postedWithin: postedWithin as any,
       sortBy: sortBy as string,

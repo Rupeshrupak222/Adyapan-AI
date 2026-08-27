@@ -132,6 +132,29 @@ function formatCap99(val: number | string | undefined | null): string {
 }
 
 const WORK_MODES = ["Remote", "Hybrid", "On-site"];
+const TOP_CITIES = ["Bangalore", "Hyderabad", "Pune", "Gurgaon", "Noida", "Mumbai", "Chennai", "Delhi NCR", "Remote"];
+const DEPARTMENTS = [
+  "Software Development", "Data Science", "Product Management", "DevOps",
+  "QA / Testing", "System Design", "Analytics", "HR", "Marketing", "Finance"
+];
+const EXPERIENCE_PRESETS = [
+  { label: "Freshers (0 yrs)", min: "0", max: "0" },
+  { label: "0-2 yrs", min: "0", max: "2" },
+  { label: "2-5 yrs", min: "2", max: "5" },
+  { label: "5-8 yrs", min: "5", max: "8" },
+  { label: "8+ yrs", min: "8", max: "30" },
+];
+const SALARY_PRESETS = [
+  { label: "0-3 LPA", min: "0", max: "300000" },
+  { label: "3-6 LPA", min: "300000", max: "600000" },
+  { label: "6-10 LPA", min: "600000", max: "1000000" },
+  { label: "10-15 LPA", min: "1000000", max: "1500000" },
+  { label: "15-25 LPA", min: "1500000", max: "2500000" },
+  { label: "25+ LPA", min: "2500000", max: "10000000" },
+];
+const EDUCATION_PRESETS = [
+  "B.Tech / B.E.", "M.Tech / M.E.", "BCA / MCA", "B.Sc / M.Sc", "Any Graduate"
+];
 const EMPLOYMENT_TYPES = ["Full-Time", "Part-Time", "Contract", "Internship", "Freelance"];
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"];
 const SOURCES = ["LinkedIn", "Naukri", "Indeed", "Internshala", "RemoteOK", "Wellfound", "Adzuna"];
@@ -918,7 +941,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                 ...prev,
                 workModes: active ? prev.workModes.filter(w => w !== mode) : [...prev.workModes, mode],
               }))}
-                className="px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all hover:scale-[1.03]"
+                className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-all hover:scale-[1.03]"
                 style={{
                   background: active ? "rgba(245,158,11,0.12)" : c.surface,
                   color: active ? c.primary : c.textMuted,
@@ -929,13 +952,51 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           </div>
         </div>
 
-        {/* Location */}
+        {/* Top Cities / Locations */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Location</span>
-          <input type="text" placeholder="City, state, or country..." value={filters.location}
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Top Cities</span>
+            {filters.location && (
+              <button onClick={() => handleFilterChange("location", "")} className="text-[10px] font-bold text-amber-500 hover:underline">Clear</button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {TOP_CITIES.map(city => {
+              const active = filters.location.toLowerCase() === city.toLowerCase();
+              return (
+                <button key={city} onClick={() => handleFilterChange("location", active ? "" : city)}
+                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                  style={{
+                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                    color: active ? c.primary : c.textMuted,
+                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                  }}>{city}</button>
+              );
+            })}
+          </div>
+          <input type="text" placeholder="Custom city, state, or country..." value={filters.location}
             onChange={e => handleFilterChange("location", e.target.value)}
-            className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
+            className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all mt-1"
             style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+        </div>
+
+        {/* Department / Role Category */}
+        <div className="space-y-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Department & Role</span>
+          <div className="flex flex-wrap gap-1.5">
+            {DEPARTMENTS.map(dept => {
+              const active = filters.industry.toLowerCase() === dept.toLowerCase();
+              return (
+                <button key={dept} onClick={() => handleFilterChange("industry", active ? "" : dept)}
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                  style={{
+                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                    color: active ? c.primary : c.textMuted,
+                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                  }}>{dept}</button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Employment Type */}
@@ -949,7 +1010,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                 ...prev,
                 employmentTypes: active ? prev.employmentTypes.filter(e => e !== type) : [...prev.employmentTypes, type],
               }))}
-                className="px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all hover:scale-[1.03]"
+                className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
                 style={{
                   background: active ? "rgba(245,158,11,0.12)" : c.surface,
                   color: active ? c.primary : c.textMuted,
@@ -960,135 +1021,88 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           </div>
         </div>
 
-        {/* Experience Range */}
+        {/* Experience Level Presets */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Experience (Years)</span>
-          <div className="flex gap-2">
-            <input type="number" min={0} max={30} placeholder="Min" value={filters.experienceMin}
-              onChange={e => handleFilterChange("experienceMin", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-            <input type="number" min={0} max={30} placeholder="Max" value={filters.experienceMax}
-              onChange={e => handleFilterChange("experienceMax", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-          </div>
-        </div>
-
-        {/* Salary Range */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Salary (Per Annum)</span>
-          <div className="flex gap-2">
-            <input type="number" min={0} placeholder="Min" value={filters.salaryMin}
-              onChange={e => handleFilterChange("salaryMin", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-            <input type="number" min={0} placeholder="Max" value={filters.salaryMax}
-              onChange={e => handleFilterChange("salaryMax", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-all"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-          </div>
-        </div>
-
-        {/* Skills */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Skills</span>
-          <div className="flex gap-2">
-            <input type="text" placeholder="Add skill..." value={skillInput}
-              onChange={e => setSkillInput(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addSkillTag(); } }}
-              className="flex-1 px-3 py-2 rounded-lg text-xs border outline-none transition-all"
-              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-            <button onClick={addSkillTag}
-              className="px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-105"
-              style={{ background: `${c.primary}20`, color: c.primary }}>Add</button>
-          </div>
-          {skillTags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {skillTags.map(tag => (
-                <span key={tag}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border cursor-pointer transition-all hover:scale-[1.03]"
-                  style={{ background: "rgba(245,158,11,0.06)", color: c.primary, borderColor: "rgba(245,158,11,0.18)" }}
-                  onClick={() => removeSkillTag(tag)}>{tag} <X size={10} /></span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Industry */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Industry</span>
-          <CustomSelect
-            value={filters.industry}
-            options={[{ value: "", label: "All Industries" }, ...INDUSTRIES.map(ind => ({ value: ind, label: ind }))]}
-            onChange={val => handleFilterChange("industry", val)}
-            placeholder="All Industries"
-            c={c}
-            isDark={isDark}
-          />
-        </div>
-
-        {/* Education */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Education</span>
-          <CustomSelect
-            value={filters.education}
-            options={[
-              { value: "", label: "Any Education" },
-              { value: "High School", label: "High School" },
-              { value: "Diploma", label: "Diploma" },
-              { value: "Bachelor's", label: "Bachelor's" },
-              { value: "Master's", label: "Master's" },
-              { value: "PhD", label: "PhD" },
-            ]}
-            onChange={val => handleFilterChange("education", val)}
-            placeholder="Any Education"
-            c={c}
-            isDark={isDark}
-          />
-        </div>
-
-        {/* Company Size */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Company Size</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Experience Level</span>
           <div className="flex flex-wrap gap-1.5">
-            {COMPANY_SIZES.map(size => (
-              <button key={size} onClick={() => handleFilterChange("companySize", filters.companySize === size ? "" : size)}
-                className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
-                style={{
-                  background: filters.companySize === size ? "rgba(245,158,11,0.12)" : c.surface,
-                  color: filters.companySize === size ? c.primary : c.textMuted,
-                  borderColor: filters.companySize === size ? "rgba(245,158,11,0.25)" : c.border,
-                }}>{size}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* Source */}
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Source</span>
-          <div className="flex flex-wrap gap-1.5">
-            {SOURCES.map(src => {
-              const active = filters.sources.includes(src);
+            {EXPERIENCE_PRESETS.map(exp => {
+              const active = filters.experienceMin === exp.min && filters.experienceMax === exp.max;
               return (
-              <button key={src} onClick={() => setFilters(prev => ({
-                ...prev,
-                sources: active ? prev.sources.filter(s => s !== src) : [...prev.sources, src],
-              }))}
-                className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
-                style={{
-                  background: active ? `${SOURCE_COLORS[src]?.bg || c.surface}` : c.surface,
-                  color: active ? (SOURCE_COLORS[src]?.text || c.primary) : c.textMuted,
-                  borderColor: active ? `${SOURCE_COLORS[src]?.text || c.primary}30` : c.border,
-                }}>{src}</button>
+                <button key={exp.label} onClick={() => {
+                  if (active) {
+                    setFilters(prev => ({ ...prev, experienceMin: "", experienceMax: "" }));
+                  } else {
+                    setFilters(prev => ({ ...prev, experienceMin: exp.min, experienceMax: exp.max }));
+                  }
+                }}
+                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                  style={{
+                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                    color: active ? c.primary : c.textMuted,
+                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                  }}>{exp.label}</button>
+              );
+            })}
+          </div>
+          <div className="flex gap-2 mt-1">
+            <input type="number" min={0} max={30} placeholder="Min y" value={filters.experienceMin}
+              onChange={e => handleFilterChange("experienceMin", e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-lg text-xs border outline-none transition-all"
+              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+            <input type="number" min={0} max={30} placeholder="Max y" value={filters.experienceMax}
+              onChange={e => handleFilterChange("experienceMax", e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-lg text-xs border outline-none transition-all"
+              style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
+          </div>
+        </div>
+
+        {/* Salary Range Presets (LPA) */}
+        <div className="space-y-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Salary Range (LPA)</span>
+          <div className="flex flex-wrap gap-1.5">
+            {SALARY_PRESETS.map(sal => {
+              const active = filters.salaryMin === sal.min && filters.salaryMax === sal.max;
+              return (
+                <button key={sal.label} onClick={() => {
+                  if (active) {
+                    setFilters(prev => ({ ...prev, salaryMin: "", salaryMax: "" }));
+                  } else {
+                    setFilters(prev => ({ ...prev, salaryMin: sal.min, salaryMax: sal.max }));
+                  }
+                }}
+                  className="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                  style={{
+                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                    color: active ? c.primary : c.textMuted,
+                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                  }}>{sal.label}</button>
               );
             })}
           </div>
         </div>
 
-        {/* Posted Within */}
+        {/* Education Presets */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Posted Within</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Education Qualification</span>
+          <div className="flex flex-wrap gap-1.5">
+            {EDUCATION_PRESETS.map(edu => {
+              const active = filters.education.toLowerCase() === edu.toLowerCase();
+              return (
+                <button key={edu} onClick={() => handleFilterChange("education", active ? "" : edu)}
+                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-[1.03]"
+                  style={{
+                    background: active ? "rgba(245,158,11,0.12)" : c.surface,
+                    color: active ? c.primary : c.textMuted,
+                    borderColor: active ? "rgba(245,158,11,0.25)" : c.border,
+                  }}>{edu}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Posted Within / Freshness */}
+        <div className="space-y-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Freshness</span>
           <div className="flex flex-wrap gap-1.5">
             {POSTED_WITHIN.map(pw => (
               <button key={pw.value} onClick={() => handleFilterChange("postedWithin", filters.postedWithin === pw.value ? "" : pw.value)}
