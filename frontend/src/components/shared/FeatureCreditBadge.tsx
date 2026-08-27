@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, AlertCircle, Crown, ShieldAlert, Zap } from "lucide-react";
+import { Sparkles, AlertCircle, Crown, Zap } from "lucide-react";
 import { useFeatureUsageStore, formatResetDate } from "@/store/feature-usage-store";
 
 interface FeatureCreditBadgeProps {
@@ -35,7 +35,9 @@ export const FeatureCreditBadge: React.FC<FeatureCreditBadgeProps> = ({
   const { remaining, limit, plan, allowed, resetAt } = usage;
   const isPaid = plan !== "free";
   const isExhausted = !allowed || remaining === 0;
+  // Running low (but not out): show an amber warning state.
   const isWarning = !isExhausted && limit > 0 && (remaining / limit) <= 0.25;
+  // Getting low (milder than a warning): show a subtle notice.
   const isSubtleNotice = !isExhausted && !isWarning && remaining <= 5;
 
   if (isPaid) {
