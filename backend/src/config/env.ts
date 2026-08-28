@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { createHmac } from "crypto";
 
 export const env = {
   port: Number(process.env.PORT ?? 5000),
@@ -6,6 +7,15 @@ export const env = {
   directUrl: process.env.DIRECT_URL ?? "",
   frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:3000",
   jwtSecret: process.env.JWT_SECRET ?? "replace-this-local-secret-before-production",
+  // Refresh tokens are signed with a SECRET DERIVED FROM (but distinct from) the
+  // access-token secret. Using a separate key prevents token-type confusion: a
+  // refresh token can never be replayed as an access token and vice-versa, even
+  // though only one secret needs to be configured in the environment.
+  refreshSecret:
+    process.env.JWT_REFRESH_SECRET ??
+    createHmac("sha256", process.env.JWT_SECRET ?? "replace-this-local-secret-before-production")
+      .update("adyapan-refresh-token-derivation-v1")
+      .digest("hex"),
   adminRegisterSecret: process.env.ADMIN_REGISTER_SECRET ?? "",
   // Comma-separated allowlist of owner/privileged emails. These accounts bypass
   // premium gates and AI usage limits (previously any email containing
@@ -80,10 +90,26 @@ export const env = {
   emailVerificationEnabled: String(process.env.EMAIL_VERIFICATION_ENABLED ?? "").toLowerCase() === "true",
 };
 
-if (env.nodeEnv === "production" && env.jwtSecret === "replace-this-local-secret-before-production") {
-  console.warn("[WARNING] JWT_SECRET is using default fallback in production. Configure JWT_SECRET in environment variables.");
-}
+// ─── Fail-fast secret validation ─────────────────────────────────────────────
+// In production, a missing/default signing secret means tokens are forgeable by
+// anyone who knows the public default string. Refuse to boot rather than run in
+// an insecure state. A weak (too-short) secret is also rejected.
+if (env.nodeEnv === "production") {
+  const errors: string[] = [];
 
-if (env.nodeEnv === "production" && (!env.adminRegisterSecret || env.adminRegisterSecret === "adyapan-admin-secret-2026")) {
-  console.warn("[WARNING] ADMIN_REGISTER_SECRET is using default fallback in production. Configure ADMIN_REGISTER_SECRET in environment variables.");
+  if (!process.env.JWT_SECRET || env.jwtSecret === "replace-this-local-secret-before-production") {
+    errors.push("JWT_SECRET must be set to a strong, unique value in production.");
+  } else if (env.jwtSecret.length < 32) {
+    errors.push("JWT_SECRET is too short; use at least 32 characters.");
+  }
+
+  if (!env.adminRegisterSecret || env.adminRegisterSecret === "adyapan-admin-secret-2026") {
+    errors.push("ADMIN_REGISTER_SECRET must be set to a strong, unique value in production.");
+  }
+
+  if (errors.length > 0) {
+    throw new Error(
+      "Insecure configuration — refusing to start:\n  - " + errors.join("\n  - "),
+    );
+  }
 }

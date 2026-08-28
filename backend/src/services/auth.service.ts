@@ -75,6 +75,7 @@ function signToken(user: Pick<User, "id" | "email" | "role">, rememberMe?: boole
       userId: user.id,
       email: user.email,
       role: user.role,
+      type: "access",
     },
     env.jwtSecret,
     {
@@ -85,16 +86,45 @@ function signToken(user: Pick<User, "id" | "email" | "role">, rememberMe?: boole
 }
 
 function signRefreshToken(userId: string) {
+  // Signed with a DISTINCT secret and tagged type:"refresh" so it can never be
+  // presented as an access token (and vice-versa).
   return jwt.sign(
-    { userId },
-    env.jwtSecret,
+    { userId, type: "refresh" },
+    env.refreshSecret,
     { expiresIn: REFRESH_TOKEN_EXPIRY, algorithm: "HS256" }
   );
 }
 
+// Verify a refresh token with the refresh secret and enforce the type claim.
+// Rejects access tokens presented as refresh tokens.
+export function verifyRefreshToken(token: string): { userId: string } {
+  const payload = jwt.verify(token, env.refreshSecret, { algorithms: ["HS256"] }) as {
+    userId?: string;
+    type?: string;
+  };
+  if (payload.type !== "refresh" || !payload.userId) {
+    throw httpError(401, "Invalid refresh token");
+  }
+  return { userId: payload.userId };
+}
+
+// Password policy: minimum 8 chars with upper, lower, digit, and special char.
+const PASSWORD_SPECIAL_CHARS = "!@#$%^&*_\\-+=?.,;:";
 function validatePasswordStrength(password: string) {
-  if (!password || password.length < 6) {
-    throw httpError(400, "Password must be at least 6 characters long");
+  if (!password || password.length < 8) {
+    throw httpError(400, "Password must be at least 8 characters long");
+  }
+  if (!/[a-z]/.test(password)) {
+    throw httpError(400, "Password must include a lowercase letter");
+  }
+  if (!/[A-Z]/.test(password)) {
+    throw httpError(400, "Password must include an uppercase letter");
+  }
+  if (!/[0-9]/.test(password)) {
+    throw httpError(400, "Password must include a number");
+  }
+  if (!new RegExp(`[${PASSWORD_SPECIAL_CHARS}]`).test(password)) {
+    throw httpError(400, "Password must include a special character (!@#$%^&*_-+=?.,;:)");
   }
 }
 
@@ -741,8 +771,21 @@ export async function loginUser(
 
 export async function refreshToken(token: string) {
   let payload: { userId: string };
-  try { payload = jwt.verify(token, env.jwtSecret, { algorithms: ["HS256"] }) as { userId: string }; }
-  catch { throw httpError(401, "Invalid or expired refresh token"); }
+  try {
+    // Preferred: refresh secret + enforced type claim.
+    payload = verifyRefreshToken(token);
+  } catch {
+    // Backward compatibility: refresh tokens issued before the secret split were
+    // signed with the access secret and carried no type claim. Accept those once
+    // during the transition; they'll be rotated to the new format below.
+    try {
+      const legacy = jwt.verify(token, env.jwtSecret, { algorithms: ["HS256"] }) as { userId?: string };
+      if (!legacy.userId) throw new Error("no userId");
+      payload = { userId: legacy.userId };
+    } catch {
+      throw httpError(401, "Invalid or expired refresh token");
+    }
+  }
 
   const tokenHash = hashRefreshToken(token);
   const session = await prisma.session.findFirst({ where: { refreshTokenHash: tokenHash } });
