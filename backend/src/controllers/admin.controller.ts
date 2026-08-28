@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import type { AdminAuthRequest } from "../middleware/adminAuth";
 import { prisma } from "../config/prisma";
 import { adminDbService } from "../services/admin-db.service";
 import { databaseService } from "../services/database.service";
@@ -585,12 +586,24 @@ export async function createAdminUser(req: Request, res: Response, next: NextFun
       throw httpError(400, "Name, email, and password are required");
     }
 
+    const targetRole = role === "ADMIN" ? "ADMIN" : "USER";
+
+    // Only designated super-admins may create ADMIN accounts. Any other admin
+    // can still create regular USER accounts, but minting new admins is
+    // restricted to the allowlist (env.superAdminEmails).
+    if (targetRole === "ADMIN") {
+      const requesterEmail = (req as AdminAuthRequest).adminUser?.email?.toLowerCase();
+      if (!requesterEmail || !env.superAdminEmails.includes(requesterEmail)) {
+        throw httpError(403, "You are not authorized to create admin accounts. Contact a super administrator.");
+      }
+    }
+
     // Use the same registration flow as normal signup
     const result = await registerUser({
       name,
       email,
       password,
-      role: role === "ADMIN" ? "ADMIN" : "USER",
+      role: targetRole,
       firstName,
       lastName,
       phone,
@@ -672,6 +685,21 @@ export async function editAdminUser(req: Request, res: Response, next: NextFunct
 
     const user = await prisma.user.findUnique({ where: { id: userId }, include: { profile: true } });
     if (!user) throw httpError(404, "User not found");
+
+    // Promoting an account to ADMIN (or demoting an existing ADMIN) is
+    // restricted to super-admins — the same allowlist that gates admin creation.
+    // This closes the edit-user path as a privilege-escalation route.
+    if (role !== undefined) {
+      const changesAdminRole =
+        (role === "ADMIN" && user.role !== "ADMIN") ||
+        (role !== "ADMIN" && user.role === "ADMIN");
+      if (changesAdminRole) {
+        const requesterEmail = (req as AdminAuthRequest).adminUser?.email?.toLowerCase();
+        if (!requesterEmail || !env.superAdminEmails.includes(requesterEmail)) {
+          throw httpError(403, "You are not authorized to change admin privileges. Contact a super administrator.");
+        }
+      }
+    }
 
     // Build user update data
     const userData: any = {};

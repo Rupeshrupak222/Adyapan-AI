@@ -24,6 +24,13 @@ export const env = {
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
+  // Only these admin accounts may CREATE new admin accounts. Every other admin
+  // keeps normal admin access but cannot mint admins. Configured exclusively
+  // via the SUPER_ADMIN_EMAILS env var (comma-separated). No hardcoded default.
+  superAdminEmails: (process.env.SUPER_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   groqApiKey: process.env.GROQ_API_KEY ?? "",
   openrouterApiKey: process.env.OPENROUTER_API_KEY ?? "",

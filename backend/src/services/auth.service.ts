@@ -726,14 +726,16 @@ export async function loginUser(
 
   clearLoginAttempts(email);
 
-  // If logging in via Admin portal with valid credentials, auto-promote user to ADMIN
+  // Admin portal is ADMIN-only. A valid password does NOT grant admin rights —
+  // the account must already have the ADMIN role (granted via the secret-gated
+  // admin registration flow). Auto-promoting on login was a privilege-escalation
+  // hole: any user could make themselves an admin just by using the admin login
+  // page with their own credentials.
   if (isAdminPortal && user.role !== "ADMIN") {
-    console.log(`[AuthService] Promoting user ${user.email} to ADMIN role upon admin portal login.`);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { role: "ADMIN" },
-    });
-    user.role = "ADMIN";
+    // Count as a failed admin attempt so brute-forcing the admin portal is
+    // rate-limited/locked like any other invalid admin login.
+    recordFailedLogin(email, true);
+    throw httpError(403, "Access denied. This account does not have admin privileges.");
   }
 
   // Prevent ADMIN accounts from logging in on standard USER portal (/login)
