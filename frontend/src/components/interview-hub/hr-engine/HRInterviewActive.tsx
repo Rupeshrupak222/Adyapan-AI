@@ -153,30 +153,19 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
       setSending(true);
 
       try {
-        let timeoutId: any;
-        const timeoutPromise = new Promise((resolve) => {
-          timeoutId = setTimeout(
-            () =>
-              resolve({
-                data: {
-                  nextQuestion: `That is a strong behavioral example. Can you share a specific situation where you faced conflict in a team and how you resolved it?`,
-                },
-              }),
-            9500
-          );
-        });
-
-        const res = (await Promise.race([
-          api.post(`/interview/hr/${sessionId}/answer`, {
-            answer: transcript,
-            questionNumber,
-          }),
-          timeoutPromise,
-        ])) as any;
-
-        if (timeoutId) clearTimeout(timeoutId);
+        const res = (await api.post(`/interview/hr/${sessionId}/answer`, {
+          answer: transcript,
+          questionNumber,
+          requestId: `ans-hr-${sessionId}-${questionNumber}-${Date.now()}`,
+        })) as any;
 
         if (res.data) {
+          if (res.data.isComplete) {
+            toast.success("HR Interview completed! Generating report...");
+            onComplete(sessionId);
+            return;
+          }
+
           if (res.data.currentCompetency) {
             setLocalCompetency(res.data.currentCompetency);
             setCurrentCompetency(res.data.currentCompetency);
@@ -205,15 +194,9 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
               setLiveCommunication(res.data.liveAnalysis.communicationAnalysis);
             }
           }
-
-          if (res.data.isComplete) {
-            toast.success("HR Interview completed! Generating report...");
-            onComplete(sessionId);
-            return;
-          }
         }
       } catch (err: any) {
-        const fallbackText = `Thank you for sharing that experience. How do you handle feedback from leadership when plans change unexpectedly?`;
+        const fallbackText = `Thank you for sharing that experience. How do you handle feedback and align with your team when priorities shift?`;
         const aiMsg: HRMessage = {
           id: `ai-${Date.now()}`,
           role: "interviewer",

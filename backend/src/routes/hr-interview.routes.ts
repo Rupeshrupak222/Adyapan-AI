@@ -10,13 +10,15 @@ import {
   ensureQuestionFormat,
 } from "../lib/ai/hr-interview.service";
 import { handleRouteError } from "../utils/routeError";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
+import { FeatureKey } from "../services/feature-keys";
 
 export const hrInterviewRouter = Router();
 
 hrInterviewRouter.use(requireAuth);
 
 // ─── Start new HR interview session ─────────────────────────────────────
-hrInterviewRouter.post("/start", async (req, res) => {
+hrInterviewRouter.post("/start", requireFeatureQuota(FeatureKey.HR_INTERVIEW), async (req, res) => {
   try {
     const {
       interviewType, targetRole, targetCompany, difficulty,

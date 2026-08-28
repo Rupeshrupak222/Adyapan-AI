@@ -220,7 +220,7 @@ export async function generateIntelligenceLayer(
     commonMistakes: bd.commonMistakes || ["Lacks quantitative metrics", "Did not explain edge cases"],
     improvedAnswer: bd.improvedAnswer || "In my previous role, I optimized the query latency by 40% using Redis caching.",
     recruiterPerspective: bd.recruiterPerspective || "Candidate demonstrated potential but needs stronger structured communication.",
-    score: bd.score ?? evaluation.overallScore ?? 65,
+    score: bd.score ?? evaluation.overallScore ?? 0,
   }));
 
   if (defaultQuestionReviews.length === 0) {
@@ -234,7 +234,7 @@ export async function generateIntelligenceLayer(
       commonMistakes: ["Focusing only on the problem, not the exact solution", "Omitting metrics"],
       improvedAnswer: "I diagnosed a slow PostgreSQL query using EXPLAIN ANALYZE, added a composite index, and reduced p99 latency from 1.2s to 80ms.",
       recruiterPerspective: "Shows strong problem solving capability when guided; expand on technical specifics.",
-      score: evaluation.overallScore || 70,
+      score: evaluation.overallScore ?? 0,
     });
   }
 
@@ -251,10 +251,10 @@ export async function generateIntelligenceLayer(
   }));
 
   const defaultTechnicalFeedback: TechnicalFeedbackDetails = {
-    codeCorrectnessScore: evaluation.technical || evaluation.technicalScore || evaluation.overallScore || 75,
-    optimizationScore: evaluation.technicalDepth || 70,
-    namingScore: 80,
-    architectureScore: evaluation.problemSolving || 75,
+    codeCorrectnessScore: evaluation.technical || evaluation.technicalScore || evaluation.overallScore || 0,
+    optimizationScore: evaluation.technicalDepth || evaluation.overallScore || 0,
+    namingScore: evaluation.overallScore ? Math.min(100, evaluation.overallScore + 5) : 0,
+    architectureScore: evaluation.problemSolving || evaluation.overallScore || 0,
     edgeCasesHandled: ["Empty input arrays", "Large datasets", "Null inputs"],
     testingAdvice: ["Add unit tests for boundary conditions", "Verify performance with large inputs"],
     timeComplexity: evaluation.timeComplexity || "O(N log N)",
@@ -269,43 +269,43 @@ export async function generateIntelligenceLayer(
   const defaultCharts: ChartAnalyticsData = {
     performanceByQuestion: defaultQuestionReviews.map((q) => ({ question: `Q${q.questionNumber}`, score: q.score })),
     technicalVsCommunication: [
-      { metric: "Problem Solving", technicalScore: evaluation.problemSolving || 75, communicationScore: evaluation.communication || 70 },
-      { metric: "Clarity", technicalScore: evaluation.technical || 70, communicationScore: evaluation.confidence || 75 },
-      { metric: "Structure", technicalScore: evaluation.codeQuality || 70, communicationScore: evaluation.communication || 65 },
+      { metric: "Problem Solving", technicalScore: evaluation.problemSolving || evaluation.overallScore || 0, communicationScore: evaluation.communication || evaluation.overallScore || 0 },
+      { metric: "Clarity", technicalScore: evaluation.technical || evaluation.overallScore || 0, communicationScore: evaluation.confidence || evaluation.overallScore || 0 },
+      { metric: "Structure", technicalScore: evaluation.codeQuality || evaluation.overallScore || 0, communicationScore: evaluation.communication || evaluation.overallScore || 0 },
     ],
-    confidenceTrend: defaultQuestionReviews.map((q, idx) => ({ questionIndex: idx + 1, confidenceScore: Math.min(100, Math.max(30, q.score + (idx % 2 === 0 ? 5 : -5))) })),
+    confidenceTrend: defaultQuestionReviews.map((q, idx) => ({ questionIndex: idx + 1, confidenceScore: Math.min(100, Math.max(0, q.score + (idx % 2 === 0 ? 5 : -5))) })),
     speakingTimeDistribution: [
       { category: "Candidate Explanation", percentage: 65 },
       { category: "Interviewer Clarification", percentage: 20 },
       { category: "Pause & Thinking Time", percentage: 15 },
     ],
     topicPerformance: [
-      { topic: "Communication", score: evaluation.communication || evaluation.communicationScore || 70 },
-      { topic: "Technical Depth", score: evaluation.technical || evaluation.technicalScore || 75 },
-      { topic: "Problem Solving", score: evaluation.problemSolving || 75 },
-      { topic: "STAR Structure", score: isHR ? 80 : 65 },
-      { topic: "Role Alignment", score: evaluation.roleFit || 75 },
+      { topic: "Communication", score: evaluation.communication || evaluation.communicationScore || evaluation.overallScore || 0 },
+      { topic: "Technical Depth", score: evaluation.technical || evaluation.technicalScore || evaluation.overallScore || 0 },
+      { topic: "Problem Solving", score: evaluation.problemSolving || evaluation.overallScore || 0 },
+      { topic: "STAR Structure", score: isHR ? (evaluation.overallScore || 0) : (evaluation.overallScore || 0) },
+      { topic: "Role Alignment", score: evaluation.roleFit || evaluation.overallScore || 0 },
     ],
   };
 
   const fallback: IntelligenceData = {
     communicationInsights: {
-      confidence: evaluation.confidence || evaluation.confidenceScore || 50,
-      clarity: evaluation.communication || evaluation.communicationScore || 50,
-      professionalism: 60,
-      answerStructure: 55,
-      conciseness: 50,
+      confidence: evaluation.confidence || evaluation.confidenceScore || 0,
+      clarity: evaluation.communication || evaluation.communicationScore || 0,
+      professionalism: evaluation.overallScore || 0,
+      answerStructure: evaluation.overallScore || 0,
+      conciseness: evaluation.overallScore || 0,
       fillerWordsDetected: false,
       speakingPace: "Moderate",
       feedback: "Focus on structuring answers clearly using STAR format and maintaining professional tone.",
       suggestions: ["Use STAR format for behavioral questions", "Keep answers under 2 minutes", "Quantify results with metrics"],
     },
     interviewFlow: [
-      { phase: "Introduction", startTime: 0, endTime: 120, questionCount: 1, averageScore: 70, trend: "stable", notes: "Opening rapport" },
-      { phase: "Warm-up", startTime: 120, endTime: 300, questionCount: 2, averageScore: 65, trend: "stable", notes: "Initial question handling" },
-      { phase: "Core Questions", startTime: 300, endTime: 900, questionCount: 6, averageScore: evaluation.overallScore || 65, trend: "improving", notes: "Main technical and behavioral depth" },
-      { phase: "Follow-ups", startTime: 900, endTime: 1200, questionCount: 3, averageScore: (evaluation.overallScore || 65) - 5, trend: "stable", notes: "Deeper probing" },
-      { phase: "Closing", startTime: 1200, endTime: 1500, questionCount: 1, averageScore: (evaluation.overallScore || 65) + 5, trend: "improving", notes: "Final thoughts" },
+      { phase: "Introduction", startTime: 0, endTime: 120, questionCount: 1, averageScore: evaluation.overallScore || 0, trend: "stable", notes: "Opening rapport" },
+      { phase: "Warm-up", startTime: 120, endTime: 300, questionCount: 2, averageScore: evaluation.overallScore || 0, trend: "stable", notes: "Initial question handling" },
+      { phase: "Core Questions", startTime: 300, endTime: 900, questionCount: 6, averageScore: evaluation.overallScore || 0, trend: "improving", notes: "Main technical and behavioral depth" },
+      { phase: "Follow-ups", startTime: 900, endTime: 1200, questionCount: 3, averageScore: Math.max(0, (evaluation.overallScore || 0) - 5), trend: "stable", notes: "Deeper probing" },
+      { phase: "Closing", startTime: 1200, endTime: 1500, questionCount: 1, averageScore: Math.min(100, (evaluation.overallScore || 0) + 5), trend: "improving", notes: "Final thoughts" },
     ],
     followUpAnalysis: {
       questionsAnsweredConfidently: defaultQuestionReviews.filter(q => q.score >= 75).map(q => ({ question: q.question, score: q.score })),
@@ -330,7 +330,7 @@ export async function generateIntelligenceLayer(
       careerRoadmapUpdates: ["Increase Interview Readiness score", "Schedule Technical Mock 2"],
       biggestStrength: evaluation.strengths?.[0] || "Clear problem-solving initiative",
       biggestWeakness: evaluation.weaknesses?.[0] || "Needs more quantitative STAR results",
-      interviewReadiness: evaluation.overallScore || 65,
+      interviewReadiness: evaluation.overallScore || 0,
       nextRecommendedInterview: isTech ? "hr" : "technical",
       overallSummary: evaluation.summary || "Solid overall performance. Focus on structured delivery and trade-off explanations.",
     },

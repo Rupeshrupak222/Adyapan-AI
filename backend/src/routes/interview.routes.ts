@@ -20,13 +20,15 @@ import { analyzeProctoringEvent } from "../lib/ai/proctoring";
 import { generateViolationReport } from "../lib/ai/proctoring";
 import { handleRouteError } from "../utils/routeError";
 import { getSessionState } from "../services/interview-session.service";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
+import { FeatureKey } from "../services/feature-keys";
 
 export const interviewRouter = Router();
 
 interviewRouter.use(requireAuth);
 
 // ─── Phase 3: Start new interview session ──────────────────────────────────
-interviewRouter.post("/start", async (req, res) => {
+interviewRouter.post("/start", requireFeatureQuota(FeatureKey.INTERVIEW_ENGINE), async (req, res) => {
   try {
     const {
       role, company, type, difficulty,

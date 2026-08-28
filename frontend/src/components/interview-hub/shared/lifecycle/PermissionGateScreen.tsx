@@ -18,6 +18,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { MediaValidationStatus } from "./useInterviewLifecycle";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 
 interface PermissionGateScreenProps {
   interviewTitle: string;
@@ -26,6 +27,7 @@ interface PermissionGateScreenProps {
   onProceedToInterview: () => void;
   onCancel: () => void;
   isDark?: boolean;
+  featureKey?: string;
 }
 
 export const PermissionGateScreen: React.FC<PermissionGateScreenProps> = ({
@@ -35,6 +37,7 @@ export const PermissionGateScreen: React.FC<PermissionGateScreenProps> = ({
   onProceedToInterview,
   onCancel,
   isDark = true,
+  featureKey,
 }) => {
   const [loading, setLoading] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -77,15 +80,18 @@ export const PermissionGateScreen: React.FC<PermissionGateScreenProps> = ({
           <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
             <ShieldCheck size={32} className="text-black" />
           </div>
-          <span
-            className={`px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider border ${
-              isDark
-                ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
-                : "bg-amber-100 text-amber-800 border-amber-300"
-            }`}
-          >
-            Pre-Interview Device Check
-          </span>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span
+              className={`px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider border ${
+                isDark
+                  ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                  : "bg-amber-100 text-amber-800 border-amber-300"
+              }`}
+            >
+              Pre-Interview Device Check
+            </span>
+            {featureKey && <FeatureCreditBadge featureKey={featureKey} isDark={isDark} compact />}
+          </div>
           <h2 className="text-2xl md:text-3xl font-extrabold">{interviewTitle}</h2>
           <p
             className={`text-xs md:text-sm max-w-md mx-auto ${

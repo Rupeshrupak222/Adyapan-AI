@@ -1211,7 +1211,7 @@ export default function LandingPage() {
                 price: pricingPeriod === "annually" ? "₹1,999" : "₹199",
                 period: pricingPeriod === "annually" ? "/yr" : "/mo",
                 desc: pricingPeriod === "annually" ? "Billed ₹1,999/year (₹166/mo)" : "Full access, cancel anytime.",
-                features: ["Infinite Resume SWOT Reviews", "Unlimited AI Mock Interviews", "All AI Models (GPT-4o, Claude, Gemini)", "Direct LinkedIn Profile Optimizer", "Micro-internships matching channels", "Priority Support"],
+                features: ["Infinite Resume SWOT Reviews", "5 Monthly AI Mock Interviews per engine (15/mo total)", "All AI Models (GPT-4o, Claude, Gemini)", "Direct LinkedIn Profile Optimizer", "Micro-internships matching channels", "Priority Support"],
                 cta: "Upgrade to Pro",
                 pro: true,
                 popular: true,

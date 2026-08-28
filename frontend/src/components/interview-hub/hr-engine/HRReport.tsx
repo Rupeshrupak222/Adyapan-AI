@@ -76,34 +76,41 @@ export default function HRReport({ sessionId, evaluation, messages, config, onRe
   };
 
   const detailed = (evaluation as any)?.detailedAnalysis || {};
+  const safeOverall = evaluation?.overallScore ?? detailed.overallScore ?? 0;
   const safeEval = {
-    overallScore: evaluation?.overallScore ?? detailed.overallScore ?? 75,
-    communicationScore: evaluation?.communicationScore ?? detailed.communicationScore ?? 75,
-    starScore: evaluation?.starScore ?? detailed.starScore ?? 70,
-    confidenceScore: evaluation?.confidenceScore ?? detailed.confidenceScore ?? 75,
-    leadershipScore: evaluation?.leadershipScore ?? detailed.leadershipScore ?? 70,
-    teamworkScore: evaluation?.teamworkScore ?? detailed.teamworkScore ?? 75,
-    ownershipScore: evaluation?.ownershipScore ?? detailed.ownershipScore ?? 70,
-    adaptabilityScore: evaluation?.adaptabilityScore ?? detailed.adaptabilityScore ?? 75,
-    emotionalIntelligence: evaluation?.emotionalIntelligence ?? detailed.emotionalIntelligence ?? 70,
-    professionalism: evaluation?.professionalism ?? detailed.professionalism ?? 75,
-    culturalFit: evaluation?.culturalFit ?? detailed.culturalFit ?? 75,
-    motivation: evaluation?.motivation ?? detailed.motivation ?? 70,
+    overallScore: safeOverall,
+    communicationScore: evaluation?.communicationScore ?? detailed.communicationScore ?? safeOverall,
+    starScore: evaluation?.starScore ?? detailed.starScore ?? (safeOverall > 0 ? Math.round(safeOverall * 0.9) : 0),
+    confidenceScore: evaluation?.confidenceScore ?? detailed.confidenceScore ?? safeOverall,
+    leadershipScore: evaluation?.leadershipScore ?? detailed.leadershipScore ?? (safeOverall > 0 ? Math.round(safeOverall * 0.8) : 0),
+    teamworkScore: evaluation?.teamworkScore ?? detailed.teamworkScore ?? (safeOverall > 0 ? Math.round(safeOverall * 0.85) : 0),
+    ownershipScore: evaluation?.ownershipScore ?? detailed.ownershipScore ?? (safeOverall > 0 ? Math.round(safeOverall * 0.8) : 0),
+    adaptabilityScore: evaluation?.adaptabilityScore ?? detailed.adaptabilityScore ?? (safeOverall > 0 ? Math.round(safeOverall * 0.8) : 0),
+    emotionalIntelligence: evaluation?.emotionalIntelligence ?? detailed.emotionalIntelligence ?? (safeOverall > 0 ? Math.round(safeOverall * 0.75) : 0),
+    professionalism: evaluation?.professionalism ?? detailed.professionalism ?? safeOverall,
+    culturalFit: evaluation?.culturalFit ?? detailed.culturalFit ?? safeOverall,
+    motivation: evaluation?.motivation ?? detailed.motivation ?? safeOverall,
     strengths: Array.isArray(evaluation?.strengths) && evaluation.strengths.length > 0
       ? evaluation.strengths
       : Array.isArray(detailed.strengths) && detailed.strengths.length > 0
       ? detailed.strengths
-      : ["Strong articulation of experiences", "Clear demonstration of teamwork and problem solving"],
+      : safeOverall > 0
+      ? ["Completed interview questions", "Engaged with the interviewer"]
+      : ["No candidate responses were provided in the transcript."],
     weaknesses: Array.isArray(evaluation?.weaknesses) && evaluation.weaknesses.length > 0
       ? evaluation.weaknesses
       : Array.isArray(detailed.weaknesses) && detailed.weaknesses.length > 0
       ? detailed.weaknesses
-      : ["Quantify project impact with explicit metrics", "Enhance STAR Situation setup"],
+      : safeOverall > 0
+      ? ["Quantify project impact with explicit metrics", "Enhance STAR Situation setup"]
+      : ["No candidate responses were recorded to evaluate behavioral competency."],
     improvements: Array.isArray(evaluation?.improvements) && evaluation.improvements.length > 0
       ? evaluation.improvements
       : Array.isArray(detailed.improvements) && detailed.improvements.length > 0
       ? detailed.improvements
-      : ["Use structured STAR method consistently", "Highlight key learnings from challenging situations"],
+      : safeOverall > 0
+      ? ["Use structured STAR method consistently", "Highlight key learnings from challenging situations"]
+      : ["Provide responses to all interview questions to enable evaluation."],
     nextPracticeTopics: Array.isArray(evaluation?.nextPracticeTopics) && evaluation.nextPracticeTopics.length > 0
       ? evaluation.nextPracticeTopics
       : Array.isArray(detailed.nextPracticeTopics) && detailed.nextPracticeTopics.length > 0

@@ -4,13 +4,15 @@ import { getUserPrismaFromRequest } from "../utils/prisma";
 import { generateEngineQuestion, generateEngineEvaluation } from "../lib/ai/engine-question.service";
 import { handleRouteError } from "../utils/routeError";
 import { logProctoringEvent, addViolationPoints } from "../services/interview-session.service";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
+import { FeatureKey } from "../services/feature-keys";
 
 export const engineRouter = Router();
 
 engineRouter.use(requireAuth);
 
 // ─── Start new engine interview session ──────────────────────────────────
-engineRouter.post("/start", async (req, res) => {
+engineRouter.post("/start", requireFeatureQuota(FeatureKey.INTERVIEW_ENGINE), async (req, res) => {
   try {
     const {
       interviewType, targetRole, targetCompany, difficulty,
@@ -466,20 +468,54 @@ engineRouter.post("/:sessionId/evaluate", async (req, res) => {
     }
 
     if (!evaluation) {
+      const candidateMsgs = history.filter((m: any) => m.role === "candidate");
+      const interviewerMsgs = history.filter((m: any) => m.role === "interviewer");
+      const hasAnswers = candidateMsgs.length > 0;
+      
+      let computedScore = 0;
+      if (hasAnswers) {
+        let total = 0;
+        for (const a of candidateMsgs) {
+          const len = String(a.content || "").trim().length;
+          if (len < 20) total += 20;
+          else if (len < 60) total += 40;
+          else if (len < 150) total += 55;
+          else if (len < 400) total += 70;
+          else total += 80;
+        }
+        computedScore = Math.round(total / Math.max(1, interviewerMsgs.length));
+      }
+
       evaluation = {
-        overallScore: 40,
-        communicationScore: 45,
-        technicalScore: 40,
-        hrScore: 45,
-        confidenceScore: 40,
-        fluencyScore: 40,
-        bodyLanguageScore: 50,
-        strengths: ["Interview session initialized"],
-        weaknesses: ["Session completed early or terminated due to security rules"],
-        improvements: ["Answer all interview questions for full evaluation"],
-        summary: "Interview session was concluded early or ended due to proctoring rules.",
-        hiringRecommendation: "maybe",
-        detailedAnalysis: {},
+        overallScore: computedScore,
+        communicationScore: hasAnswers ? Math.min(100, computedScore + 5) : 0,
+        technicalScore: session.type === "technical" || session.type === "coding" ? computedScore : null,
+        hrScore: session.type === "behavioral" || session.type === "hr" ? computedScore : null,
+        confidenceScore: hasAnswers ? Math.max(0, computedScore - 5) : 0,
+        fluencyScore: hasAnswers ? computedScore : 0,
+        bodyLanguageScore: hasAnswers ? computedScore : 0,
+        strengths: hasAnswers
+          ? [`Completed ${candidateMsgs.length} of ${interviewerMsgs.length} questions`]
+          : ["Session initialized"],
+        weaknesses: hasAnswers && candidateMsgs.length < interviewerMsgs.length
+          ? ["Session was concluded before answering all planned questions"]
+          : hasAnswers
+            ? ["Detailed AI breakdown was unavailable for this session"]
+            : ["No candidate responses were recorded in the interview transcript"],
+        improvements: hasAnswers
+          ? ["Review complete transcript and practice structuring responses with the STAR method"]
+          : ["Ensure microphone and audio permissions are functioning properly"],
+        summary: hasAnswers
+          ? `Candidate answered ${candidateMsgs.length} of ${interviewerMsgs.length} questions in a ${session.type} interview for ${session.role}. Evaluated based on submitted answers with an overall score of ${computedScore}/100.`
+          : "The interview was concluded with no candidate answers recorded in the transcript.",
+        hiringRecommendation: computedScore >= 75 ? "recommend" : computedScore >= 50 ? "maybe" : "do_not_recommend",
+        detailedAnalysis: {
+          answerQuality: computedScore,
+          technicalDepth: computedScore,
+          communicationClarity: computedScore,
+          problemSolving: computedScore,
+          culturalFit: computedScore,
+        },
       };
     }
 
@@ -660,20 +696,54 @@ engineRouter.post("/:sessionId/end", async (req, res) => {
     }
 
     if (!evaluation) {
+      const candidateMsgs = messages.filter((m: any) => m.role === "candidate");
+      const interviewerMsgs = messages.filter((m: any) => m.role === "interviewer");
+      const hasAnswers = candidateMsgs.length > 0;
+      
+      let computedScore = 0;
+      if (hasAnswers) {
+        let total = 0;
+        for (const a of candidateMsgs) {
+          const len = String(a.content || "").trim().length;
+          if (len < 20) total += 20;
+          else if (len < 60) total += 40;
+          else if (len < 150) total += 55;
+          else if (len < 400) total += 70;
+          else total += 80;
+        }
+        computedScore = Math.round(total / Math.max(1, interviewerMsgs.length));
+      }
+
       evaluation = {
-        overallScore: 40,
-        communicationScore: 45,
-        technicalScore: 40,
-        hrScore: 45,
-        confidenceScore: 40,
-        fluencyScore: 40,
-        bodyLanguageScore: 50,
-        strengths: ["Interview session initialized"],
-        weaknesses: ["Session completed early or terminated due to security rules"],
-        improvements: ["Answer all interview questions for full evaluation"],
-        summary: "Interview session was concluded early or ended due to proctoring rules.",
-        hiringRecommendation: "maybe",
-        detailedAnalysis: {},
+        overallScore: computedScore,
+        communicationScore: hasAnswers ? Math.min(100, computedScore + 5) : 0,
+        technicalScore: session.type === "technical" || session.type === "coding" ? computedScore : null,
+        hrScore: session.type === "behavioral" || session.type === "hr" ? computedScore : null,
+        confidenceScore: hasAnswers ? Math.max(0, computedScore - 5) : 0,
+        fluencyScore: hasAnswers ? computedScore : 0,
+        bodyLanguageScore: hasAnswers ? computedScore : 0,
+        strengths: hasAnswers
+          ? [`Answered ${candidateMsgs.length} questions before concluding session`]
+          : ["Interview session initialized"],
+        weaknesses: hasAnswers && candidateMsgs.length < interviewerMsgs.length
+          ? ["Interview ended early before all questions were completed"]
+          : hasAnswers
+            ? ["Detailed AI analysis was not generated"]
+            : ["No candidate responses recorded in transcript"],
+        improvements: hasAnswers
+          ? ["Complete full interview sessions to receive complete dimension-by-dimension evaluation"]
+          : ["Ensure microphone and audio setup are operational"],
+        summary: hasAnswers
+          ? `Interview concluded early with ${candidateMsgs.length} answered questions. Calculated provisional score: ${computedScore}/100.`
+          : "Interview session concluded early with no candidate responses recorded.",
+        hiringRecommendation: computedScore >= 75 ? "recommend" : computedScore >= 50 ? "maybe" : "do_not_recommend",
+        detailedAnalysis: {
+          answerQuality: computedScore,
+          technicalDepth: computedScore,
+          communicationClarity: computedScore,
+          problemSolving: computedScore,
+          culturalFit: computedScore,
+        },
       };
     }
 

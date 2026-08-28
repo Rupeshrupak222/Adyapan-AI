@@ -260,6 +260,7 @@ export default function HRView({ theme }: HRViewProps) {
                 setScreen("landing");
               }}
               isDark={isDark}
+              featureKey="HR_INTERVIEW"
             />
           </motion.div>
         )}

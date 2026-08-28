@@ -14,6 +14,7 @@ import { api } from "@/services/api";
 import { SectionHeader } from "@/components/admin/shared/SectionHeader";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
 import { MetricCard } from "@/components/admin/shared/MetricCard";
+import { toast } from "sonner";
 
 interface LearningHubData {
   total: number;
@@ -62,8 +63,25 @@ const STATUS_VARIANT: Record<string, "success" | "warning" | "info" | "error"> =
 
 export default function LearningEcosystem() {
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [data, setData] = useState<LearningHubData | null>(null);
+
+  const handleGenerateAllTests = async () => {
+    setGenerating(true);
+    toast.loading("Batch generating 30-question tests across all topics...", { id: "admin-gen-tests" });
+    try {
+      const res = await api.post("/admin/generate-all-tests");
+      if (res.data.success) {
+        toast.success(`Successfully generated ${res.data.generatedCount || 33} new tests across all topics!`, { id: "admin-gen-tests" });
+        fetchData();
+      }
+    } catch {
+      toast.error("Failed to batch generate topic tests", { id: "admin-gen-tests" });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -120,6 +138,14 @@ export default function LearningEcosystem() {
               <Clock size={12} />
               Last refreshed: {lastRefreshed.toLocaleTimeString()}
             </div>
+            <button
+              onClick={handleGenerateAllTests}
+              disabled={generating}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider text-black bg-amber-500 hover:bg-amber-400 transition-all hover:scale-[1.03] shadow-md disabled:opacity-50"
+            >
+              <Sparkles size={12} className={generating ? "animate-spin" : ""} />
+              <span>{generating ? "Generating..." : "+ Generate New Tests (All Topics)"}</span>
+            </button>
             <button
               onClick={fetchData}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all hover:scale-[1.03]"

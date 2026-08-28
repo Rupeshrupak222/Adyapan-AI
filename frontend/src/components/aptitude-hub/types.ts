@@ -392,7 +392,7 @@ export const COMPANY_PRESETS = [
     logo: 'I',
     color: '#007cc3',
     difficulty: 'medium-hard',
-    questionCount: 40,
+    questionCount: 30,
     durationMin: 100,
     focusCategories: ['quantitative', 'verbal'] as AptitudeCategory[],
     topicWeights: {
@@ -414,7 +414,7 @@ export const COMPANY_PRESETS = [
     logo: 'W',
     color: '#3266a1',
     difficulty: 'medium',
-    questionCount: 35,
+    questionCount: 30,
     durationMin: 90,
     focusCategories: ['quantitative', 'logical'] as AptitudeCategory[],
     topicWeights: {
@@ -436,7 +436,7 @@ export const COMPANY_PRESETS = [
     logo: 'A',
     color: '#a100ff',
     difficulty: 'medium-hard',
-    questionCount: 40,
+    questionCount: 30,
     durationMin: 90,
     focusCategories: ['quantitative', 'logical', 'verbal'] as AptitudeCategory[],
     topicWeights: {
@@ -460,7 +460,7 @@ export const COMPANY_PRESETS = [
     logo: 'C',
     color: '#0070ad',
     difficulty: 'medium',
-    questionCount: 32,
+    questionCount: 30,
     durationMin: 80,
     focusCategories: ['quantitative', 'logical'] as AptitudeCategory[],
     topicWeights: {
@@ -504,7 +504,7 @@ export const COMPANY_PRESETS = [
     logo: 'D',
     color: '#86bc25',
     difficulty: 'hard',
-    questionCount: 40,
+    questionCount: 30,
     durationMin: 100,
     focusCategories: ['quantitative', 'logical', 'verbal'] as AptitudeCategory[],
     topicWeights: {
@@ -527,7 +527,7 @@ export const COMPANY_PRESETS = [
     logo: 'E',
     color: '#ffe600',
     difficulty: 'hard',
-    questionCount: 40,
+    questionCount: 30,
     durationMin: 100,
     focusCategories: ['quantitative', 'logical', 'verbal'] as AptitudeCategory[],
     topicWeights: {
@@ -549,7 +549,7 @@ export const COMPANY_PRESETS = [
     logo: 'P',
     color: '#d04a02',
     difficulty: 'hard',
-    questionCount: 40,
+    questionCount: 30,
     durationMin: 100,
     focusCategories: ['quantitative', 'logical', 'verbal'] as AptitudeCategory[],
     topicWeights: {

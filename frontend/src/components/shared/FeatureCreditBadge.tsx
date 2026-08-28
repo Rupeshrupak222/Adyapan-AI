@@ -35,11 +35,20 @@ export const FeatureCreditBadge: React.FC<FeatureCreditBadgeProps> = ({
   const { remaining, limit, plan, allowed, resetAt } = usage;
   const isPaid = plan !== "free";
   const isExhausted = !allowed || remaining === 0;
-  // Warning thresholds
+  // Warning thresholds based on quota size:
   // 30-limit features: >10 normal, 6-10 subtle, 1-5 warning, 0 blocked
   // 9-limit features: >2 normal, 1-2 warning, 0 blocked
-  const isWarning = limit >= 20 ? remaining > 0 && remaining <= 5 : remaining > 0 && remaining <= 2;
-  const isSubtleNotice = limit >= 20 && remaining > 5 && remaining <= 10;
+  // 5-limit features (Interviews): >2 normal, 2 subtle, 1 warning, 0 blocked
+  const isWarning = !isExhausted && (
+    limit >= 20 ? remaining <= 5 :
+    limit >= 9 ? remaining <= 2 :
+    remaining <= 1
+  );
+  const isSubtleNotice = !isExhausted && !isWarning && (
+    limit >= 20 ? (remaining > 5 && remaining <= 10) :
+    limit >= 9 ? (remaining === 3) :
+    remaining === 2
+  );
 
   const pct = limit > 0 ? Math.max(0, Math.min(100, ((limit - remaining) / limit) * 100)) : 0;
   const resetLabel = formatResetDate(resetAt);

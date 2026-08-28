@@ -69,6 +69,23 @@ export async function getTopicTests(req: Request, res: Response, next: NextFunct
 }
 
 /**
+ * Generate a brand-new 30-question topic test (Test 2, Test 3...)
+ */
+export async function generateNewTestController(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { topic, category } = req.body;
+    if (!topic) {
+      throw httpError(400, "topic parameter is required");
+    }
+    const userPrisma = await getUserPrismaFromRequest(req);
+    const newTest = await generateWeeklyTopicTest(String(topic), String(category || "quantitative"), userPrisma);
+    res.json({ success: true, test: newTest });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * 2. Get all company presets
  */
 export async function getCompanyPresetsCtrl(_req: Request, res: Response, next: NextFunction) {
@@ -120,6 +137,15 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
       }
     } else if (mode === "topic_test" && topic) {
       const tests = await getTopicTestsFromDb(topic, category || "quantitative", userPrisma);
+      if (tests.length > 0) {
+        const firstTest = await getTopicTestByIdFromDb(tests[0].id, userPrisma);
+        if (firstTest) {
+          questions = firstTest.questions;
+          sessionDifficulty = (firstTest.difficulty as Difficulty) || "medium";
+        }
+      }
+    } else if (mode === "company_test" && company) {
+      const tests = await getTopicTestsFromDb(company, "company", userPrisma);
       if (tests.length > 0) {
         const firstTest = await getTopicTestByIdFromDb(tests[0].id, userPrisma);
         if (firstTest) {
@@ -672,7 +698,26 @@ export async function getAnalytics(req: Request, res: Response, next: NextFuncti
     const rawTopicMastery = (analytics.topicMastery as any) || {};
     const rawCompanyReadiness = (analytics.companyReadiness as any) || {};
     const categoryScores = (analytics.categoryScores as any) || {};
-    const weeklyProgress = (analytics.weeklyProgress as any[]) || [];
+    let weeklyProgress = (analytics.weeklyProgress as any[]) || [];
+    if (!Array.isArray(weeklyProgress) || weeklyProgress.length === 0) {
+      const getWeekKey = (d: Date) => {
+        const date = new Date(d.getTime());
+        date.setHours(0, 0, 0, 0);
+        date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
+        const week1 = new Date(date.getFullYear(), 0, 4);
+        const weekNum = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+        return `W${weekNum}`;
+      };
+      const now = new Date();
+      const currentWeekKey = getWeekKey(now);
+      const wNum = parseInt(currentWeekKey.replace("W", "")) || 35;
+      weeklyProgress = [
+        { week: `W${Math.max(1, wNum - 3)}`, sessionsCompleted: 0, accuracy: 0, xpEarned: 0 },
+        { week: `W${Math.max(1, wNum - 2)}`, sessionsCompleted: 0, accuracy: 0, xpEarned: 0 },
+        { week: `W${Math.max(1, wNum - 1)}`, sessionsCompleted: 0, accuracy: 0, xpEarned: 0 },
+        { week: currentWeekKey, sessionsCompleted: analytics.totalSessions || 0, accuracy: analytics.overallAccuracy || 0, xpEarned: analytics.xp || 0 }
+      ];
+    }
 
     const weakTopics: string[] = rawTopicMastery.weakTopics || [];
     const strongTopics: string[] = rawTopicMastery.strongTopics || [];

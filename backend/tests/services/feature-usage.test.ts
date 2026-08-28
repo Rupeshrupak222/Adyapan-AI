@@ -211,8 +211,8 @@ describe("Feature key registry — final feature matrix", () => {
     FeatureKey.LINKEDIN_OPTIMIZER,
   ];
 
-  it("registers exactly 19 limited features", () => {
-    expect(Object.keys(DEFAULT_FREE_LIMITS)).toHaveLength(19);
+  it("registers all 22 limited features (19 tools + 3 interviews)", () => {
+    expect(Object.keys(DEFAULT_FREE_LIMITS)).toHaveLength(22);
   });
 
   it("assigns 10 free attempts/month to every 10-limit feature", () => {
@@ -280,7 +280,7 @@ describe("Scenario 1 — fresh user receives full allowance", () => {
 
   it("global summary covers every registered feature", async () => {
     const summary = await FeatureUsageService.getGlobalUsageSummary(U_FREE);
-    expect(Object.keys(summary.features)).toHaveLength(19);
+    expect(Object.keys(summary.features)).toHaveLength(22);
     expect(summary.features["QUIZ_GENERATOR"].remaining).toBe(10);
     expect(summary.features["LINKEDIN_OPTIMIZER"].remaining).toBe(3);
   });
