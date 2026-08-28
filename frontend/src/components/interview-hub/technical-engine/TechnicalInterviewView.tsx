@@ -619,8 +619,13 @@ export default function TechnicalInterviewView({
   });
 
   const getFeatureUsage = useFeatureUsageStore((s) => s.getFeatureUsage);
+  const fetchFeatureUsage = useFeatureUsageStore((s) => s.fetchFeatureUsage);
   const techUsage = getFeatureUsage("TECHNICAL_INTERVIEW");
   const isLimitReached = Boolean(techUsage && (!techUsage.allowed || techUsage.remaining === 0));
+
+  useEffect(() => {
+    fetchFeatureUsage();
+  }, [fetchFeatureUsage]);
 
   const handleStartInterview = useCallback(async () => {
     if (!isPremium) {

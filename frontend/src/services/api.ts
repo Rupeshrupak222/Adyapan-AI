@@ -41,7 +41,17 @@ function onRefreshFailed() { refreshSubscribers = []; }
 
 // Response interceptor
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    if (typeof window !== "undefined") {
+      const featureKey = res.headers?.["x-feature-key"] || res.data?.featureUsage?.featureKey;
+      if (featureKey) {
+        import("@/store/feature-usage-store").then(({ useFeatureUsageStore }) => {
+          useFeatureUsageStore.getState().fetchFeatureUsage();
+        });
+      }
+    }
+    return res;
+  },
   async (err) => {
     const { config, response } = err;
 
