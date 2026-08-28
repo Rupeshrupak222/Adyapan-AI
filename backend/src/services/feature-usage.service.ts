@@ -5,6 +5,7 @@ import {
   DEFAULT_PREMIUM_LIMITS,
   DEFAULT_PLAN_LIMITS,
   FEATURE_DISPLAY_NAMES,
+  isKnownFeatureKey,
 } from "./feature-keys";
 import { normalizePlanKind } from "./feature-access.service";
 
@@ -322,7 +323,7 @@ export class FeatureUsageService {
     requestId?: string
   ): Promise<ConsumeResult> {
     const key = String(featureKey || "").toUpperCase();
-    if (!DEFAULT_FREE_LIMITS[key]) {
+    if (!isKnownFeatureKey(key)) {
       throw new Error(`Unknown feature key: ${key}`);
     }
 

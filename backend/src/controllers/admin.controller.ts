@@ -13,6 +13,8 @@ import { emitBroadcastNotification } from "../lib/notificationEmitter";
 import { AdminAuditService } from "../services/admin-audit.service";
 import { registerUser } from "../services/auth.service";
 import { calculateProfileCompletion } from "../utils/profileCompletion";
+import { generateAllTopicTestsForAdmin } from "../services/aptitude-test-bank.service";
+import { getUserPrismaFromRequest } from "../utils/prisma";
 
 // ─── Global admin settings (DB-backed via AdminSetting) ──────────
 
@@ -2000,6 +2002,16 @@ export async function deleteAdminBlog(req: Request, res: Response, next: NextFun
     const p = prisma as any;
     await p.blog.delete({ where: { id } });
     res.json({ success: true, message: "Blog deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function generateAllTopicTestsAdminCtrl(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userPrisma = await getUserPrismaFromRequest(req);
+    const result = await generateAllTopicTestsForAdmin(userPrisma);
+    res.json({ success: true, ...result });
   } catch (error) {
     next(error);
   }

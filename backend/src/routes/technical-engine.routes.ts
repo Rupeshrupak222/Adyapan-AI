@@ -12,12 +12,14 @@ import {
   type InterviewMode,
 } from "../lib/ai/technical-engine.service";
 import { generateIntelligenceLayer } from "../lib/ai/intelligence.service";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
+import { FeatureKey } from "../services/feature-keys";
 
 export const technicalEngineRouter = Router();
 technicalEngineRouter.use(requireAuth);
 
 // ─── Start technical interview ──────────────────────────────────────────────
-technicalEngineRouter.post("/start", async (req, res) => {
+technicalEngineRouter.post("/start", requireFeatureQuota(FeatureKey.TECHNICAL_INTERVIEW), async (req, res) => {
   try {
     const {
       topic, role, company, difficulty, experienceLevel,

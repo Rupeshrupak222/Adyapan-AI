@@ -391,7 +391,7 @@ async function aiGenerateQuestions(
     : "All questions should be hard — advanced level. Require multi-step reasoning, clever shortcuts, or tricky cases.";
 
   const companyContext = companyTags.length > 0
-    ? `These questions are tagged for company-specific patterns relevant to: ${companyTags.join(", ")}. Align style with how these companies frame questions.`
+    ? `CRITICAL COMPANY EXAM REQUIREMENT: You MUST generate REAL, ACTUAL PAST EXAM QUESTIONS and OFFICIAL EXAM PATTERNS used in official ${companyTags.join(", ")} placement papers (e.g. ${companyTags[0]} NQT / Campus Recruitment Assessment). Do NOT use generic placeholder text. Format the questions exactly as they appear in official ${companyTags.join(", ")} placement papers with real numbers, accurate options, detailed step-by-step solutions, and company-specific shortcuts!`
     : "Design questions that are universally relevant for campus placements at major Indian IT and consulting companies.";
 
   const systemPrompt = `You are a world-class placement preparation question architect specializing in Indian campus placements and competitive exams.

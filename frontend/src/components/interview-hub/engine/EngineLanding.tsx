@@ -27,6 +27,8 @@ import {
   DifficultyLevel,
   ExperienceLevel,
 } from "./EngineTypes";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { useFeatureUsageStore, formatResetDate } from "@/store/feature-usage-store";
 
 interface EngineLandingProps {
   onStart: (config: EngineConfig) => void;
@@ -87,6 +89,10 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
   const theme = propTheme || (typeof window !== "undefined" ? (localStorage.getItem("adyapan-theme") || "dark") : "dark");
   const { isPremium } = useUserPlan();
   const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
+  const getFeatureUsage = useFeatureUsageStore((s) => s.getFeatureUsage);
+  const engineUsage = getFeatureUsage("INTERVIEW_ENGINE");
+  const isLimitReached = Boolean(engineUsage && (!engineUsage.allowed || engineUsage.remaining === 0));
+
   const [step, setStep] = useState(0);
   const [stepDir, setStepDir] = useState(1);
   const [launching, setLaunching] = useState(false);
@@ -254,8 +260,11 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-3 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider">
-                <Flame size={12} className="animate-pulse" /> AI Interview Engine
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider">
+                  <Flame size={12} className="animate-pulse" /> AI Interview Engine
+                </div>
+                <FeatureCreditBadge featureKey="INTERVIEW_ENGINE" isDark={isDark} compact />
               </div>
               <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight">
                 AI Interview Engine
@@ -1044,6 +1053,20 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                   </div>
                 )}
 
+                {isLimitReached && (
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400" />
+                    <div className="flex-1">
+                      <div>You&apos;ve used all {engineUsage?.limit || 5} Interview Engine attempts this month.</div>
+                      {engineUsage?.resetAt && (
+                        <div className="text-[11px] text-amber-400/80 mt-0.5">
+                          Resets on {formatResetDate(engineUsage.resetAt)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex justify-between">
                   <motion.button
                     type="button"
@@ -1057,18 +1080,20 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                   </motion.button>
                   <motion.button
                     type="submit"
-                    disabled={launching}
-                    whileHover={!launching ? { scale: 1.03 } : {}}
-                    whileTap={!launching ? { scale: 0.97 } : {}}
-                    className="px-8 py-3 rounded-xl bg-amber-500 text-black font-extrabold text-sm hover:bg-amber-400 transition-colors disabled:opacity-60 flex items-center gap-2 shadow-lg"
+                    disabled={launching || isLimitReached}
+                    whileHover={!launching && !isLimitReached ? { scale: 1.03 } : {}}
+                    whileTap={!launching && !isLimitReached ? { scale: 0.97 } : {}}
+                    className="px-8 py-3 rounded-xl bg-amber-500 text-black font-extrabold text-sm hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
                     style={{ boxShadow: "0 0 30px rgba(245,158,11,0.25)" }}
                   >
                     {launching ? (
                       <><Loader2 size={16} className="animate-spin" /> Launching...</>
+                    ) : isLimitReached ? (
+                      <><AlertTriangle size={16} /> Monthly Limit Reached</>
                     ) : (
                       <><Play size={16} /> Launch Interview</>
                     )}
-                    {!isPremium && !launching && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
+                    {!isPremium && !launching && !isLimitReached && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
                   </motion.button>
                 </div>
               </motion.div>

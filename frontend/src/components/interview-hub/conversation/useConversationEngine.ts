@@ -202,10 +202,12 @@ export function useConversationEngine({
       await callbacks.onSubmitAnswer(fullText);
       setLiveTranscript("");
       setAccumulatedTranscript("");
+      SharedSpeechEngine.getInstance().clearAccumulatedTranscript();
     } catch (err) {
       logInterviewError("Turn", "Submission error in engine", err);
       setLiveTranscript("");
       setAccumulatedTranscript("");
+      SharedSpeechEngine.getInstance().clearAccumulatedTranscript();
     } finally {
       isSubmittingRef.current = false;
     }
@@ -422,6 +424,9 @@ export function useConversationEngine({
       if (!text) return;
       stopSpeech();
       clearSilenceTimers();
+      setLiveTranscript("");
+      setAccumulatedTranscript("");
+      SharedSpeechEngine.getInstance().clearAccumulatedTranscript();
 
       setState("AI_SPEAKING");
       logInterview("SpeechSynthesis", "AI Speaking started", text.substring(0, 40) + "...");

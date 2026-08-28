@@ -18,6 +18,8 @@ import {
   HR_INTERVIEW_TYPES, HR_COMPANY_PRESETS, HR_BEHAVIORAL_TOPICS,
 } from "./HRTypes";
 import CompanyLogo from "../CompanyLogo";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { useFeatureUsageStore, formatResetDate } from "@/store/feature-usage-store";
 
 interface HRLandingProps {
   onStart: (config: HRConfig) => void;
@@ -56,6 +58,10 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
   const theme = propTheme || (typeof window !== "undefined" ? (localStorage.getItem("adyapan-theme") || "dark") : "dark");
   const { isPremium } = useUserPlan();
   const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
+  const getFeatureUsage = useFeatureUsageStore((s) => s.getFeatureUsage);
+  const hrUsage = getFeatureUsage("HR_INTERVIEW");
+  const isLimitReached = Boolean(hrUsage && (!hrUsage.allowed || hrUsage.remaining === 0));
+
   const [step, setStep] = useState(0);
   const [stepDir, setStepDir] = useState(1);
   const [config, setConfig] = useState<HRConfig>({
@@ -110,6 +116,10 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
       openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "hr-interview", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
       return;
     }
+    if (isLimitReached) {
+      toast.error(`You've used all ${hrUsage?.limit || 5} HR Interview attempts this month.`);
+      return;
+    }
     toast.success("HR Interview configured! Launching...");
     onStart(config);
   };
@@ -133,8 +143,11 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
           style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(139,92,246,0.05) 50%, rgba(59,130,246,0.05) 100%)", border: "1px solid rgba(245,158,11,0.12)" }}>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-3 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider">
-                <Flame size={12} className="animate-pulse" /> AI HR Interview
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider">
+                  <Flame size={12} className="animate-pulse" /> AI HR Interview
+                </div>
+                <FeatureCreditBadge featureKey="HR_INTERVIEW" isDark={isDark} compact />
               </div>
               <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight">AI HR Interview Engine</h1>
               <p className="text-sm leading-relaxed" style={{ color: c.textSec }}>
@@ -556,17 +569,38 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
                 </div>
               </div>
 
+              {isLimitReached && (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400" />
+                  <div className="flex-1">
+                    <div>You&apos;ve used all {hrUsage?.limit || 5} HR Interview attempts this month.</div>
+                    {hrUsage?.resetAt && (
+                      <div className="text-[11px] text-amber-400/80 mt-0.5">
+                        Resets on {formatResetDate(hrUsage.resetAt)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-between">
                 <motion.button type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => goToStep(2)}
                   className="px-5 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-2" style={{ borderColor: c.border, color: c.textSec }}>
                   <ChevronLeft size={14} /> Back
                 </motion.button>
-                <motion.button type="button" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                <motion.button type="button"
+                  whileHover={!isLimitReached ? { scale: 1.03 } : {}}
+                  whileTap={!isLimitReached ? { scale: 0.97 } : {}}
                   onClick={handleLaunch}
-                  className="px-8 py-3 rounded-xl bg-amber-500 text-black font-extrabold text-sm hover:bg-amber-400 transition-colors flex items-center gap-2 shadow-lg"
+                  disabled={isLimitReached}
+                  className="px-8 py-3 rounded-xl bg-amber-500 text-black font-extrabold text-sm hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
                   style={{ boxShadow: "0 0 30px rgba(245,158,11,0.25)" }}>
-                  <Play size={16} /> Launch HR Interview
-                  {!isPremium && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
+                  {isLimitReached ? (
+                    <><AlertTriangle size={16} /> Monthly Limit Reached</>
+                  ) : (
+                    <><Play size={16} /> Launch HR Interview</>
+                  )}
+                  {!isPremium && !isLimitReached && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
                 </motion.button>
               </div>
             </motion.div>

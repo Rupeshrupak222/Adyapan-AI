@@ -5,6 +5,7 @@ import {
   getCategories,
   getCompanyPresetsCtrl,
   getTopicTests,
+  generateNewTestController,
   startSession,
   submitAnswer,
   completeSession,
@@ -23,6 +24,7 @@ export const aptitudeEngineRouter = Router();
 aptitudeEngineRouter.get("/categories", requireAuth, getCategories);
 aptitudeEngineRouter.get("/companies", requireAuth, getCompanyPresetsCtrl);
 aptitudeEngineRouter.get("/topic-tests", requireAuth, getTopicTests);
+aptitudeEngineRouter.post("/generate-test", requireAuth, generateNewTestController);
 
 // Session Management
 aptitudeEngineRouter.post("/session/start", requireAuth, requireFeatureQuota("AI_APTITUDE_ENGINE"), startSession);

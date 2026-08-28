@@ -116,14 +116,25 @@ Return the evaluation as JSON:
   "tags": ["tag1", "tag2"]
 }`;
 
+  const trimmedAnswer = (answer || "").trim();
+  const isNoAnswer = !trimmedAnswer || trimmedAnswer.toLowerCase() === "no answer provided" || trimmedAnswer.toLowerCase() === "no answer";
+  const len = trimmedAnswer.length;
+  const computedFallbackScore = isNoAnswer ? 0 : len < 40 ? 20 : len < 100 ? 40 : len < 250 ? 55 : len < 500 ? 70 : 80;
+
   const fallback: SingleAnswerEvaluation = {
-    score: answer.length > 200 ? 65 : answer.length > 80 ? 50 : 35,
-    analysis: `The candidate provided a response of ${answer.length} characters. ${answer.length < 80 ? "The answer appears too brief for an interview context." : "The answer has reasonable length but would benefit from more specific details and structure."}`,
-    suggestedBetterAnswer: `A stronger answer would include: (1) a clear structure with context, action, and result, (2) specific examples or metrics where applicable, (3) connection to the ${config.targetRole} role requirements, and (4) demonstration of relevant skills.`,
-    interviewerPerspective: answer.length > 200
-      ? "The candidate provided a substantive response. I would want to probe deeper on specific claims."
-      : "The answer was too brief. I would expect more depth before advancing this candidate.",
-    tags: answer.length > 200 ? ["adequate-length"] : ["vague", "too-brief"],
+    score: computedFallbackScore,
+    analysis: isNoAnswer
+      ? "No candidate response was provided for this question."
+      : `The candidate provided a response of ${len} characters. ${len < 80 ? "The answer appears too brief for an interview context." : "The answer has reasonable length but would benefit from more specific details and structure."}`,
+    suggestedBetterAnswer: isNoAnswer
+      ? `A complete answer is required to assess this competency for the ${config.targetRole} role.`
+      : `A stronger answer would include: (1) a clear structure with context, action, and result, (2) specific examples or metrics where applicable, (3) connection to the ${config.targetRole} role requirements, and (4) demonstration of relevant skills.`,
+    interviewerPerspective: isNoAnswer
+      ? "Without a response, I cannot evaluate the candidate's skills for this question."
+      : len > 200
+        ? "The candidate provided a substantive response. I would want to probe deeper on specific claims."
+        : "The answer was too brief. I would expect more depth before advancing this candidate.",
+    tags: isNoAnswer ? ["no-response"] : len > 200 ? ["adequate-length"] : ["vague", "too-brief"],
   };
 
   try {

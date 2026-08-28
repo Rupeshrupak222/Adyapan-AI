@@ -33,6 +33,7 @@ import {
   getAdminBlogs,
   updateAdminBlogStatus,
   deleteAdminBlog,
+  generateAllTopicTestsAdminCtrl,
 } from "../controllers/admin.controller";
 import { requireAdminAuth } from "../middleware/adminAuth";
 import { requireAdminPermission } from "../middleware/adminPermission";
@@ -103,6 +104,7 @@ adminRouter.get("/analytics/bi", ...can("analytics", "read"), getAnalyticsBI);
 adminRouter.get("/analytics/premium", ...can("analytics", "read"), getPremiumAnalytics);
 adminRouter.get("/system-health", ...can("system", "read"), getSystemHealth);
 adminRouter.get("/modules", ...can("analytics", "read"), getModuleAnalytics);
+adminRouter.post("/generate-all-tests", requireAdminAuth, generateAllTopicTestsAdminCtrl);
 adminRouter.get("/security", ...can("security", "read"), getSecurityLogs);
 adminRouter.post("/notifications/:id/read", ...can("security", "write"), markNotificationRead);
 adminRouter.get("/notifications", ...can("notifications", "read"), getAdminNotifications);
