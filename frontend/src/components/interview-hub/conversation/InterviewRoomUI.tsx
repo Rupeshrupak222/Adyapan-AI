@@ -218,6 +218,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
                 interviewerName="AI Recruiter"
                 interviewerRole={targetRole}
                 companyName={companyName}
+                currentQuestion={lastInterviewerMessage}
                 avatarVideoUrl={avatarVideoUrl}
                 avatarAudioUrl={avatarAudioUrl}
                 theme={theme}

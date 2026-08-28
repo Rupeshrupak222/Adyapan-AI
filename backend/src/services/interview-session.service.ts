@@ -255,39 +255,77 @@ export async function endInterviewSession(
     const improvements =
       comprehensiveEvaluation?.improvements || evaluation.areasForImprovement;
 
+    const candidateMessages = (session.messages || []).filter((m: any) => m.role === "candidate" || m.role === "user");
+    const interviewerMessages = (session.messages || []).filter((m: any) => m.role === "interviewer");
+    const hasAnswers = candidateMessages.length > 0;
+    
+    let fallbackScore = 0;
+    if (hasAnswers) {
+      let total = 0;
+      for (const a of candidateMessages) {
+        const len = String(a.content || "").trim().length;
+        if (len < 20) total += 20;
+        else if (len < 60) total += 40;
+        else if (len < 150) total += 55;
+        else if (len < 400) total += 70;
+        else total += 80;
+      }
+      fallbackScore = Math.round(total / Math.max(1, interviewerMessages.length));
+    }
+
+    const calculatedOverallScore = comprehensiveEvaluation?.overallScore ?? evaluation?.overallScore ?? fallbackScore;
+    const calculatedCommScore = comprehensiveEvaluation?.communicationScore ?? (hasAnswers ? Math.min(100, calculatedOverallScore + 5) : 0);
+
     savedEvaluation = await (prisma as any).interviewEvaluation.create({
       data: {
         sessionId,
-        overallScore: comprehensiveEvaluation?.overallScore || evaluation.overallScore || 65,
-        communicationScore: comprehensiveEvaluation?.communicationScore || 70,
-        technicalScore: comprehensiveEvaluation?.technicalScore || null,
-        hrScore: comprehensiveEvaluation?.hrScore || null,
-        confidenceScore: comprehensiveEvaluation?.confidenceScore || null,
-        fluencyScore: comprehensiveEvaluation?.fluencyScore || null,
-        bodyLanguageScore: comprehensiveEvaluation?.bodyLanguageScore || null,
-        strengths: strengths as any,
-        weaknesses: weaknesses as any,
-        improvements: improvements as any,
-        summary: comprehensiveEvaluation?.summary || generateSummaryFromFeedback(evaluation),
+        overallScore: calculatedOverallScore,
+        communicationScore: calculatedCommScore,
+        technicalScore: comprehensiveEvaluation?.technicalScore ?? (session.type === "technical" ? calculatedOverallScore : null),
+        hrScore: comprehensiveEvaluation?.hrScore ?? (session.type === "behavioral" || session.type === "hr" ? calculatedOverallScore : null),
+        confidenceScore: comprehensiveEvaluation?.confidenceScore ?? (hasAnswers ? Math.max(0, calculatedOverallScore - 5) : 0),
+        fluencyScore: comprehensiveEvaluation?.fluencyScore ?? (hasAnswers ? calculatedOverallScore : 0),
+        bodyLanguageScore: comprehensiveEvaluation?.bodyLanguageScore ?? (hasAnswers ? calculatedOverallScore : 0),
+        strengths: (strengths && strengths.length > 0) ? strengths : (hasAnswers ? [`Answered ${candidateMessages.length} questions`] : ["Session initialized"]),
+        weaknesses: (weaknesses && weaknesses.length > 0) ? weaknesses : (hasAnswers ? ["Session concluded early"] : ["No candidate responses recorded in transcript"]),
+        improvements: (improvements && improvements.length > 0) ? improvements : ["Complete full interview responses for deeper analysis"],
+        summary: comprehensiveEvaluation?.summary || (evaluation ? generateSummaryFromFeedback(evaluation) : (hasAnswers ? `Interview concluded with ${candidateMessages.length} answered questions. Calculated score: ${calculatedOverallScore}/100.` : "Interview session concluded with no candidate responses recorded.")),
         hiringRecommendation:
           comprehensiveEvaluation?.hiringRecommendation ||
-          (evaluation.overallScore >= 70 ? "recommend" : "maybe"),
+          (calculatedOverallScore >= 75 ? "recommend" : calculatedOverallScore >= 50 ? "maybe" : "do_not_recommend"),
         detailedAnalysis: comprehensiveEvaluation?.detailedAnalysis || null,
       },
     });
   } catch (error) {
-    console.error("[InterviewSession] Evaluation generation failed, saving default evaluation:", error);
+    console.error("[InterviewSession] Evaluation generation failed, saving data-driven fallback evaluation:", error);
     try {
+      const candidateMessages = (session.messages || []).filter((m: any) => m.role === "candidate" || m.role === "user");
+      const interviewerMessages = (session.messages || []).filter((m: any) => m.role === "interviewer");
+      const hasAnswers = candidateMessages.length > 0;
+      let fallbackScore = 0;
+      if (hasAnswers) {
+        let total = 0;
+        for (const a of candidateMessages) {
+          const len = String(a.content || "").trim().length;
+          if (len < 20) total += 20;
+          else if (len < 60) total += 40;
+          else if (len < 150) total += 55;
+          else if (len < 400) total += 70;
+          else total += 80;
+        }
+        fallbackScore = Math.round(total / Math.max(1, interviewerMessages.length));
+      }
+
       savedEvaluation = await (prisma as any).interviewEvaluation.create({
         data: {
           sessionId,
-          overallScore: 65,
-          communicationScore: 70,
-          strengths: ["Completed interview session"],
-          weaknesses: ["Session concluded early or evaluated with partial responses"],
+          overallScore: fallbackScore,
+          communicationScore: hasAnswers ? Math.min(100, fallbackScore + 5) : 0,
+          strengths: hasAnswers ? [`Completed ${candidateMessages.length} questions`] : ["Session initialized"],
+          weaknesses: hasAnswers ? ["Session concluded early or evaluated with partial responses"] : ["No candidate responses recorded in transcript"],
           improvements: ["Complete full interview responses for deeper analysis"],
-          summary: "Interview session concluded and saved.",
-          hiringRecommendation: "maybe",
+          summary: hasAnswers ? `Interview session concluded with ${candidateMessages.length} answered questions. Score: ${fallbackScore}/100.` : "Interview session concluded with no candidate responses recorded.",
+          hiringRecommendation: fallbackScore >= 75 ? "recommend" : fallbackScore >= 50 ? "maybe" : "do_not_recommend",
         },
       });
     } catch {}

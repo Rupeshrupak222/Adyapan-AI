@@ -146,31 +146,19 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
       setSending(true);
 
       try {
-        let timeoutId: any;
-        const timeoutPromise = new Promise((resolve) => {
-          timeoutId = setTimeout(
-            () =>
-              resolve({
-                data: {
-                  nextQuestion: `That provides great insight into your experience. How do you approach prioritizing deliverables under tight deadlines for ${config.targetRole}?`,
-                  nextQuestionNumber: questionNumber + 1,
-                },
-              }),
-            9500
-          );
-        });
-
-        const res = (await Promise.race([
-          api.post(`/engine/${sessionId}/answer`, {
-            answer: transcript,
-            questionNumber,
-          }),
-          timeoutPromise,
-        ])) as any;
-
-        if (timeoutId) clearTimeout(timeoutId);
+        const res = (await api.post(`/engine/${sessionId}/answer`, {
+          answer: transcript,
+          questionNumber,
+          requestId: `ans-${sessionId}-${questionNumber}-${Date.now()}`,
+        })) as any;
 
         const data = res.data || {};
+
+        if (data.isComplete) {
+          toast.success("Interview complete! Generating report...");
+          onComplete(sessionId);
+          return;
+        }
 
         const aiResponse: EngineMessage = {
           id: `ai-${Date.now()}`,
@@ -191,16 +179,10 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
         setQuestionNumber(newQNum);
         if (data.totalQuestions) setTotalQuestions(data.totalQuestions);
 
-        if (data.isComplete) {
-          toast.success("Interview complete! Generating report...");
-          onComplete(sessionId);
-          return;
-        }
-
         conversationEngine.speak(aiResponse.content);
       } catch (err: any) {
-        // Fast local recovery
-        const fallbackText = `Thank you for detailing that. How do you ensure effective communication across team members in ${config.targetRole}?`;
+        // Fast local recovery on true network failure
+        const fallbackText = `Thank you for detailing that. How do you approach problem-solving and collaboration for ${config.targetRole}?`;
         const aiResponse: EngineMessage = {
           id: `ai-${Date.now()}`,
           role: "interviewer",

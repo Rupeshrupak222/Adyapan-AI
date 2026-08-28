@@ -36,13 +36,18 @@ export const FeatureKey = {
   ATS_CHECKER: "ATS_CHECKER",
   COVER_LETTER_GENERATOR: "COVER_LETTER_GENERATOR",
   LINKEDIN_OPTIMIZER: "LINKEDIN_OPTIMIZER",
+
+  // Interviews — Premium-only, 5 attempts / month per interview type
+  INTERVIEW_ENGINE: "INTERVIEW_ENGINE",
+  TECHNICAL_INTERVIEW: "TECHNICAL_INTERVIEW",
+  HR_INTERVIEW: "HR_INTERVIEW",
 } as const;
 
 export type FeatureKeyValue = (typeof FeatureKey)[keyof typeof FeatureKey];
 
 export type PlanCode = "free" | "premium" | "pro" | "enterprise";
 
-/** Default free-tier monthly limits (Group A: 10, Group B: 3). */
+/** Default free-tier monthly limits (Group A: 10, Group B: 3, Interviews: 0 / Premium required). */
 export const DEFAULT_FREE_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.STUDY_ASSISTANT]: 10,
   [FeatureKey.NOTES_GENERATOR]: 10,
@@ -63,9 +68,12 @@ export const DEFAULT_FREE_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.ATS_CHECKER]: 3,
   [FeatureKey.COVER_LETTER_GENERATOR]: 3,
   [FeatureKey.LINKEDIN_OPTIMIZER]: 3,
+  [FeatureKey.INTERVIEW_ENGINE]: 0,
+  [FeatureKey.TECHNICAL_INTERVIEW]: 0,
+  [FeatureKey.HR_INTERVIEW]: 0,
 };
 
-/** Default premium-tier monthly limits (Group A: 30, Group B: 9 - 3x Free allowance). */
+/** Default premium-tier monthly limits (Group A: 30, Group B: 9, Interviews: 5 attempts/month each). */
 export const DEFAULT_PREMIUM_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.STUDY_ASSISTANT]: 30,
   [FeatureKey.NOTES_GENERATOR]: 30,
@@ -86,6 +94,9 @@ export const DEFAULT_PREMIUM_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.ATS_CHECKER]: 9,
   [FeatureKey.COVER_LETTER_GENERATOR]: 9,
   [FeatureKey.LINKEDIN_OPTIMIZER]: 9,
+  [FeatureKey.INTERVIEW_ENGINE]: 5,
+  [FeatureKey.TECHNICAL_INTERVIEW]: 5,
+  [FeatureKey.HR_INTERVIEW]: 5,
 };
 
 /** Centralized plan entitlement matrix for standard platform tiers. */
@@ -113,6 +124,9 @@ export const DEFAULT_PLAN_LIMITS: Record<string, Record<FeatureKeyValue, number>
     [FeatureKey.ATS_CHECKER]: 30,
     [FeatureKey.COVER_LETTER_GENERATOR]: 30,
     [FeatureKey.LINKEDIN_OPTIMIZER]: 30,
+    [FeatureKey.INTERVIEW_ENGINE]: 20,
+    [FeatureKey.TECHNICAL_INTERVIEW]: 20,
+    [FeatureKey.HR_INTERVIEW]: 20,
   },
 };
 
@@ -137,6 +151,9 @@ export const FEATURE_DISPLAY_NAMES: Record<FeatureKeyValue, string> = {
   [FeatureKey.ATS_CHECKER]: "ATS Checker",
   [FeatureKey.COVER_LETTER_GENERATOR]: "Cover Letter Generator",
   [FeatureKey.LINKEDIN_OPTIMIZER]: "LinkedIn Optimizer",
+  [FeatureKey.INTERVIEW_ENGINE]: "Interview Engine",
+  [FeatureKey.TECHNICAL_INTERVIEW]: "Technical Interview",
+  [FeatureKey.HR_INTERVIEW]: "HR Interview",
 };
 
 export function isKnownFeatureKey(key: string): boolean {

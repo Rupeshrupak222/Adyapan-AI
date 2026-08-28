@@ -89,95 +89,110 @@ export const LiveTranscriptTimeline: React.FC<LiveTranscriptTimelineProps> = ({
         )}
 
         <AnimatePresence initial={false}>
-          {messages.map((msg) => {
-            const isSystem = msg.role === "system";
-            const isInterviewer = msg.role === "interviewer";
+          {(() => {
+            let qCounter = 0;
+            let aCounter = 0;
+            return messages.map((msg) => {
+              const isSystem = msg.role === "system";
+              const isInterviewer = msg.role === "interviewer";
+              const badgeLabel = isInterviewer ? `Question #${++qCounter}` : `Your Answer #${++aCounter}`;
 
-            if (isSystem) {
+              if (isSystem) {
+                return (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="flex justify-center my-2"
+                  >
+                    <span
+                      className={`text-[11px] px-3 py-1 rounded-full border font-medium ${
+                        isDark
+                          ? "bg-slate-800/80 border-slate-700/50 text-slate-400"
+                          : "bg-slate-100 border-slate-200 text-slate-600"
+                      }`}
+                    >
+                      {msg.content}
+                    </span>
+                  </motion.div>
+                );
+              }
+
               return (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, y: 4 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="flex justify-center my-2"
-                >
-                  <span
-                    className={`text-[11px] px-3 py-1 rounded-full border font-medium ${
-                      isDark
-                        ? "bg-slate-800/80 border-slate-700/50 text-slate-400"
-                        : "bg-slate-100 border-slate-200 text-slate-600"
-                    }`}
-                  >
-                    {msg.content}
-                  </span>
-                </motion.div>
-              );
-            }
-
-            return (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                className="flex items-start space-x-3 text-sm"
-              >
-                <div
-                  className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 border ${
+                  transition={{ duration: 0.25 }}
+                  className={`p-3 rounded-2xl border flex items-start space-x-3 text-sm transition-colors ${
                     isInterviewer
                       ? isDark
-                        ? "bg-purple-600/20 text-purple-400 border-purple-500/30"
-                        : "bg-purple-100 text-purple-700 border-purple-200"
+                        ? "bg-purple-950/20 border-purple-500/20 text-slate-100"
+                        : "bg-purple-50/70 border-purple-200/80 text-slate-900 shadow-sm"
                       : isDark
-                      ? "bg-cyan-600/20 text-cyan-400 border-cyan-500/30"
-                      : "bg-cyan-100 text-cyan-700 border-cyan-200"
+                      ? "bg-cyan-950/20 border-cyan-500/20 text-slate-100"
+                      : "bg-cyan-50/70 border-cyan-200/80 text-slate-900 shadow-sm"
                   }`}
                 >
-                  {isInterviewer ? (
-                    <Bot className="w-3.5 h-3.5" />
-                  ) : (
-                    <User className="w-3.5 h-3.5" />
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <span
-                      className={`text-xs font-bold ${
-                        isInterviewer
-                          ? isDark
-                            ? "text-purple-300"
-                            : "text-purple-700"
-                          : isDark
-                          ? "text-cyan-300"
-                          : "text-cyan-700"
-                      }`}
-                    >
-                      {isInterviewer ? "Interviewer" : "Candidate"}
-                    </span>
-                    {msg.timestamp && (
-                      <span
-                        className={`text-[10px] ${
-                          isDark ? "text-slate-500" : "text-slate-400"
-                        }`}
-                      >
-                        {msg.timestamp}
-                      </span>
-                    )}
-                  </div>
-                  <p
-                    className={`mt-0.5 leading-relaxed text-sm ${
-                      isDark ? "text-slate-200" : "text-slate-800 font-medium"
+                  <div
+                    className={`mt-0.5 w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 border ${
+                      isInterviewer
+                        ? isDark
+                          ? "bg-purple-600/20 text-purple-300 border-purple-500/30"
+                          : "bg-purple-100 text-purple-700 border-purple-200"
+                        : isDark
+                        ? "bg-cyan-600/20 text-cyan-300 border-cyan-500/30"
+                        : "bg-cyan-100 text-cyan-700 border-cyan-200"
                     }`}
                   >
-                    {msg.content}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
+                    {isInterviewer ? (
+                      <Bot className="w-4 h-4" />
+                    ) : (
+                      <User className="w-4 h-4" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`text-[11px] font-extrabold uppercase px-2 py-0.5 rounded-md border ${
+                            isInterviewer
+                              ? isDark
+                                ? "bg-purple-500/15 border-purple-500/30 text-purple-300"
+                                : "bg-purple-100 border-purple-300 text-purple-800"
+                              : isDark
+                              ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-300"
+                              : "bg-cyan-100 border-cyan-300 text-cyan-800"
+                          }`}
+                        >
+                          {badgeLabel}
+                        </span>
+                      </div>
+                      {msg.timestamp && (
+                        <span
+                          className={`text-[10px] font-medium ${
+                            isDark ? "text-slate-500" : "text-slate-400"
+                          }`}
+                        >
+                          {msg.timestamp}
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className={`leading-relaxed text-xs sm:text-sm font-medium ${
+                        isDark ? "text-slate-200" : "text-slate-800"
+                      }`}
+                    >
+                      {msg.content}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            });
+          })()}
         </AnimatePresence>
 
         {/* Live Interim Streaming Transcript for Candidate */}

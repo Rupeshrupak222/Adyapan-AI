@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Bot, Loader2 } from "lucide-react";
+import { Bot, Loader2, Sparkles, HelpCircle } from "lucide-react";
 import AIAvatar from "@/components/interview-hub/shared/AIAvatar";
 import type { ConversationState } from "./conversation-types";
 
@@ -13,6 +13,7 @@ interface InterviewerCardProps {
   avatarVideoUrl?: string | null;
   avatarAudioUrl?: string | null;
   companyName?: string;
+  currentQuestion?: string;
   theme?: string;
   className?: string;
 }
@@ -24,6 +25,7 @@ export const InterviewerCard: React.FC<InterviewerCardProps> = ({
   avatarVideoUrl,
   avatarAudioUrl,
   companyName,
+  currentQuestion,
   theme = "dark",
   className = "",
 }) => {
@@ -132,6 +134,23 @@ export const InterviewerCard: React.FC<InterviewerCardProps> = ({
           companyName={companyName}
         />
       </div>
+
+      {/* Active Question Banner */}
+      {currentQuestion && (
+        <div
+          className={`w-full my-1.5 p-2.5 rounded-xl border text-xs leading-relaxed max-h-24 overflow-y-auto ${
+            isDark
+              ? "bg-slate-950/80 border-purple-500/30 text-purple-100 shadow-inner"
+              : "bg-purple-50/90 border-purple-200 text-purple-950 shadow-sm"
+          }`}
+        >
+          <div className="flex items-center space-x-1.5 font-bold uppercase text-[10px] tracking-wider mb-1 text-purple-400">
+            <Sparkles className="w-3 h-3 text-purple-400 shrink-0" />
+            <span>Active Question</span>
+          </div>
+          <p className="font-semibold text-xs leading-snug">{currentQuestion}</p>
+        </div>
+      )}
 
       {/* Footer / Dynamic Waveform */}
       <div className="w-full flex items-center justify-center h-6 shrink-0">

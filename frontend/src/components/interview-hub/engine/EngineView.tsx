@@ -297,6 +297,7 @@ export default function EngineView({ theme }: EngineViewProps) {
                 setScreen("landing");
               }}
               isDark={isDark}
+              featureKey="INTERVIEW_ENGINE"
             />
           </motion.div>
         )}

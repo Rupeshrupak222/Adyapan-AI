@@ -10,6 +10,7 @@ import {
   Volume2, VolumeX, Target, Building2, Search, ArrowRight, ArrowLeft,
   Briefcase, Sliders, Check, Settings2, Flame, Layers, Server, Cpu, Database,
   ChevronLeft, ChevronRight, Trophy, BarChart3, Award, FileText, Download, Crown,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
@@ -33,6 +34,8 @@ import {
   PermissionGateScreen,
   InterviewRouteGuard,
 } from "@/components/interview-hub/shared/lifecycle";
+import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { useFeatureUsageStore, formatResetDate } from "@/store/feature-usage-store";
 
 const LANG_MAP: Record<string, string> = {
   javascript: "javascript",
@@ -285,30 +288,12 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
       setMessages((prev) => [...prev, candidateMsg]);
 
       try {
-        let timeoutId: any;
-        const timeoutPromise = new Promise((resolve) => {
-          timeoutId = setTimeout(
-            () =>
-              resolve({
-                data: {
-                  nextQuestion: `Great explanation on ${config.topic}. Could you elaborate on the time and space complexity trade-offs of your approach?`,
-                  questionNumber: questionNumber + 1,
-                },
-              }),
-            9500
-          );
-        });
-
-        const res = (await Promise.race([
-          api.post(`/technical-engine/${sessionId}/answer`, {
-            answer: transcript,
-            questionNumber,
-            codeSubmitted: showCoding ? code : undefined,
-          }),
-          timeoutPromise,
-        ])) as any;
-
-        if (timeoutId) clearTimeout(timeoutId);
+        const res = (await api.post(`/technical-engine/${sessionId}/answer`, {
+          answer: transcript,
+          questionNumber,
+          codeSubmitted: showCoding ? code : undefined,
+          requestId: `ans-tech-${sessionId}-${questionNumber}-${Date.now()}`,
+        })) as any;
 
         const data = res.data || {};
 
@@ -344,7 +329,7 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
         conversationEngine.speak(aiMsg.content);
       } catch (err: any) {
         // Fast Fallback Recovery
-        const fallbackText = `That is a solid foundation. Let's delve into optimization: how would you improve performance under edge cases?`;
+        const fallbackText = `That is a solid foundation. Let's delve into optimization: how would you improve performance under edge cases in ${config.topic}?`;
         const aiMsg: EngineMessage = {
           id: `ai-${Date.now()}`,
           role: "interviewer",
@@ -633,38 +618,56 @@ export default function TechnicalInterviewView({
     },
   });
 
+  const getFeatureUsage = useFeatureUsageStore((s) => s.getFeatureUsage);
+  const techUsage = getFeatureUsage("TECHNICAL_INTERVIEW");
+  const isLimitReached = Boolean(techUsage && (!techUsage.allowed || techUsage.remaining === 0));
+
   const handleStartInterview = useCallback(async () => {
     if (!isPremium) {
-      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "technical-engine", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
+      openPremiumModal({ code: "PREMIUM_REQUIRED" as any, featureKey: "technical-interview", requiredPlan: "premium", upgradeUrl: "/premium", upgrade: true });
+      return;
+    }
+    if (isLimitReached) {
+      toast.error(`You've used all ${techUsage?.limit || 5} Technical Interview attempts this month.`);
       return;
     }
     setScreen("permission_gate");
     await lifecycle.validateAndRequestPermissions();
-  }, [lifecycle, isPremium, openPremiumModal]);
+  }, [lifecycle, isPremium, openPremiumModal, isLimitReached, techUsage]);
 
   const handleLoadingComplete = useCallback(async () => {
     try {
-      const res = await api.post("/engine/start", {
+      const payload = {
         interviewType: "technical",
+        topic: config.topic,
+        role: config.role,
         targetRole: config.role,
+        company: config.company,
         targetCompany: config.company,
         difficulty: config.difficulty,
         experienceLevel: config.experienceLevel,
         durationMinutes: config.durationMinutes,
         technology: config.topic,
         language: config.language,
+        codingLanguage: config.codingLanguage,
+        mode: config.mode,
         aiVoiceEnabled: config.aiVoiceEnabled,
         voiceGender: config.voiceGender,
         voiceSpeed: config.voiceSpeed,
         voicePitch: config.voicePitch,
         resumeAware: config.resumeAware,
         customInstructions: config.customInstructions,
+        requestId: `start-tech-${Date.now()}`,
+      };
+
+      let res = await api.post("/technical-engine/start", payload).catch(async () => {
+        return await api.post("/engine/start", payload);
       });
 
-      if (res.data && res.data.session) {
+      if (res?.data && res.data.session) {
         setSessionId(res.data.session.id);
         if (res.data.firstQuestion) {
-          setInitialQuestion({ question: res.data.firstQuestion });
+          setInitialQuestion(typeof res.data.firstQuestion === "string" ? { question: res.data.firstQuestion } : res.data.firstQuestion);
         }
         setScreen("active");
         lifecycle.markInterviewStarted();
@@ -692,6 +695,7 @@ export default function TechnicalInterviewView({
           setScreen("landing");
         }}
         isDark={isDark}
+        featureKey="TECHNICAL_INTERVIEW"
       />
     );
   }
@@ -823,15 +827,18 @@ export default function TechnicalInterviewView({
         >
           <div className="relative z-10 flex items-center justify-between">
             <div>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-                  isDark
-                    ? "bg-purple-500/20 text-purple-300 border-purple-500/30"
-                    : "bg-purple-200 text-purple-800 border-purple-300"
-                }`}
-              >
-                AI Technical Interview Suite
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border ${
+                    isDark
+                      ? "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                      : "bg-purple-200 text-purple-800 border-purple-300"
+                  }`}
+                >
+                  AI Technical Interview Suite
+                </span>
+                <FeatureCreditBadge featureKey="TECHNICAL_INTERVIEW" isDark={isDark} compact />
+              </div>
               <h1 className="text-2xl md:text-3xl font-extrabold mt-2">
                 Technical Interview Configuration
               </h1>
@@ -1245,13 +1252,37 @@ export default function TechnicalInterviewView({
                   </div>
                 </div>
 
+                {isLimitReached && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2.5">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+                    <div className="flex-1">
+                      <div>You&apos;ve used all {techUsage?.limit || 5} Technical Interview attempts this month.</div>
+                      {techUsage?.resetAt && (
+                        <div className="text-[10px] text-amber-400/80 mt-0.5">
+                          Resets on {formatResetDate(techUsage.resetAt)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <button
                   onClick={handleStartInterview}
-                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl flex items-center justify-center space-x-2 transition-all transform active:scale-95"
+                  disabled={isLimitReached}
+                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all transform active:scale-95"
                 >
-                  <span>Start Technical Interview</span>
-                  {!isPremium && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
-                  <ArrowRight className="w-4 h-4" />
+                  {isLimitReached ? (
+                    <>
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>Monthly Limit Reached</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Start Technical Interview</span>
+                      {!isPremium && <span className="text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
