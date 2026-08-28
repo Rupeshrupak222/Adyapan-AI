@@ -59,8 +59,13 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
   const { isPremium } = useUserPlan();
   const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
   const getFeatureUsage = useFeatureUsageStore((s) => s.getFeatureUsage);
+  const fetchFeatureUsage = useFeatureUsageStore((s) => s.fetchFeatureUsage);
   const hrUsage = getFeatureUsage("HR_INTERVIEW");
   const isLimitReached = Boolean(hrUsage && (!hrUsage.allowed || hrUsage.remaining === 0));
+
+  useEffect(() => {
+    fetchFeatureUsage();
+  }, [fetchFeatureUsage]);
 
   const [step, setStep] = useState(0);
   const [stepDir, setStepDir] = useState(1);

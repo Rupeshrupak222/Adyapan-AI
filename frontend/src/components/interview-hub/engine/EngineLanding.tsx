@@ -90,8 +90,13 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
   const { isPremium } = useUserPlan();
   const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
   const getFeatureUsage = useFeatureUsageStore((s) => s.getFeatureUsage);
+  const fetchFeatureUsage = useFeatureUsageStore((s) => s.fetchFeatureUsage);
   const engineUsage = getFeatureUsage("INTERVIEW_ENGINE");
   const isLimitReached = Boolean(engineUsage && (!engineUsage.allowed || engineUsage.remaining === 0));
+
+  useEffect(() => {
+    fetchFeatureUsage();
+  }, [fetchFeatureUsage]);
 
   const [step, setStep] = useState(0);
   const [stepDir, setStepDir] = useState(1);

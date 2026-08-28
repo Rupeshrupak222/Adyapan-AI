@@ -23,10 +23,8 @@ export const FeatureCreditBadge: React.FC<FeatureCreditBadgeProps> = ({
   const features = useFeatureUsageStore((s) => s.features);
 
   useEffect(() => {
-    if (Object.keys(features).length === 0) {
-      fetchFeatureUsage();
-    }
-  }, [fetchFeatureUsage, features]);
+    fetchFeatureUsage();
+  }, [fetchFeatureUsage]);
 
   const usage = getFeatureUsage(featureKey);
 
