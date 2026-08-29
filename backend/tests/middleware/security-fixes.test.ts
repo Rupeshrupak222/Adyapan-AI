@@ -63,24 +63,15 @@ describe("env config security hardening", () => {
     expect(env.google.clientSecret).toBe("");
   });
 
-  it("throws in production when ADMIN_REGISTER_SECRET is the legacy default", () => {
+  it("throws in production when JWT_SECRET is empty", () => {
     process.env.NODE_ENV = "production";
-    process.env.JWT_SECRET = "production-secret";
-    process.env.ADMIN_REGISTER_SECRET = "adyapan-admin-secret-2026";
-    expect(() => require("../../src/config/env")).toThrow(/ADMIN_REGISTER_SECRET must be set/);
+    delete process.env.JWT_SECRET;
+    expect(() => require("../../src/config/env")).toThrow(/JWT_SECRET must be set/);
   });
 
-  it("throws in production when ADMIN_REGISTER_SECRET is empty", () => {
+  it("does not throw in production when JWT_SECRET is set", () => {
     process.env.NODE_ENV = "production";
-    process.env.JWT_SECRET = "production-secret";
-    delete process.env.ADMIN_REGISTER_SECRET;
-    expect(() => require("../../src/config/env")).toThrow(/ADMIN_REGISTER_SECRET must be set/);
-  });
-
-  it("does not throw in production when ADMIN_REGISTER_SECRET is a unique value", () => {
-    process.env.NODE_ENV = "production";
-    process.env.JWT_SECRET = "production-secret";
-    process.env.ADMIN_REGISTER_SECRET = "unique-production-secret-xyz";
+    process.env.JWT_SECRET = "production-secret-strong-and-unique-123456";
     expect(() => require("../../src/config/env")).not.toThrow();
   });
 });

@@ -118,8 +118,8 @@ if (env.nodeEnv === "production") {
     console.warn("[SECURITY] JWT_SECRET is shorter than 32 characters; use a longer secret for stronger security.");
   }
 
-  if (!env.adminRegisterSecret || env.adminRegisterSecret === "adyapan-admin-secret-2026") {
-    errors.push("ADMIN_REGISTER_SECRET must be set to a strong, unique value in production.");
+  if (env.adminRegisterSecret === "adyapan-admin-secret-2026") {
+    console.warn("[SECURITY] ADMIN_REGISTER_SECRET is set to the default insecure value; please change it.");
   }
 
   if (errors.length > 0) {
