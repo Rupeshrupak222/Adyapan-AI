@@ -1,5 +1,5 @@
 import { masterPrisma, getUserPrismaFromRequest } from "../utils/prisma";
-import { generateAptitudeQuestions, type AptitudeCategory, type GeneratedQuestion } from "./aptitude-engine.service";
+import { generateAptitudeQuestions, type AptitudeCategory, type Difficulty, type GeneratedQuestion } from "./aptitude-engine.service";
 
 /**
  * Interface for stored topic test summary
@@ -18,277 +18,328 @@ export interface TopicTestSummary {
   accuracy?: number;
 }
 
-// ─── Default 30-Question Template Generator per Topic Category ────────────────
-function generateDefaultTopicTestQuestions(topic: string, category: string, testNum: number): GeneratedQuestion[] {
+function getSeedHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function shuffleWithOptions(correctVal: string, distractors: string[], targetIdx: number): string[] {
+  const opts: string[] = [];
+  let dIdx = 0;
+  for (let k = 0; k < 4; k++) {
+    if (k === targetIdx) {
+      opts.push(correctVal);
+    } else {
+      opts.push(distractors[dIdx % distractors.length]);
+      dIdx++;
+    }
+  }
+  return opts;
+}
+
+export function generateDefaultTopicTestQuestions(topic: string, category: string, testNum: number): GeneratedQuestion[] {
   const questions: GeneratedQuestion[] = [];
   const count = 30;
+  const normalizedCategory = (category || "quantitative").toLowerCase();
 
+  if (normalizedCategory === "company" || normalizedCategory === "company_test") {
+    const companyName = (topic || "Placement").trim();
+    const seed = getSeedHash(companyName.toUpperCase() + `-TEST-${testNum}`);
+
+    for (let i = 1; i <= count; i++) {
+      const isEasy = i <= 10;
+      const isHard = i > 20;
+      const diff: Difficulty = isEasy ? "easy" : isHard ? "hard" : "medium";
+      const qSeed = seed + i * 97;
+      const correctIdx = (qSeed + i * 3) % 4;
+
+      let qText = "";
+      let correctVal = "";
+      let distractors: string[] = [];
+      let explanation = "";
+      let shortcut = "";
+      let qCategory: AptitudeCategory = "quantitative";
+      let qTopic = "Quantitative Aptitude";
+
+      const sectionIdx = (i - 1) % 4; // 0: Quant, 1: Logical, 2: Verbal, 3: DI / Analytical
+
+      if (sectionIdx === 0) {
+        qCategory = "quantitative";
+        const quantVariant = (qSeed + i) % 6;
+        if (quantVariant === 0) {
+          qTopic = "Percentages & Profit";
+          const base = 5000 + ((qSeed * 13) % 25000);
+          const p1 = 8 + ((qSeed * 7) % 20);
+          const p2 = 4 + ((qSeed * 3) % 15);
+          const ans = Math.round(base * (1 + p1 / 100) * (1 - p2 / 100));
+          qText = `[${companyName} Exam Pattern] A department budget of ₹${base} for ${companyName} project operations was increased by ${p1}% in Quarter-1 and then reduced by ${p2}% in Quarter-2. What is the final allocation?`;
+          correctVal = `₹${ans}`;
+          distractors = [`₹${ans + 350}`, `₹${ans - 240}`, `₹${ans + 750}`];
+          explanation = `Base = ₹${base}. Q1 = ₹${base} × ${(1 + p1 / 100).toFixed(2)}. Q2 = Q1 × ${(1 - p2 / 100).toFixed(2)} = ₹${ans}.`;
+          shortcut = `Successive % change: Base × (1 + ${p1}/100) × (1 - ${p2}/100).`;
+        } else if (quantVariant === 1) {
+          qTopic = "Time Speed & Distance";
+          const dist = 180 + ((qSeed * 11) % 320);
+          const timeHrs = 3 + ((qSeed * 5) % 5);
+          const speed = Math.round(dist / timeHrs);
+          qText = `[${companyName} Exam Pattern] A shuttle vehicle traveling between ${companyName} offices covers ${dist} km in ${timeHrs} hours. Calculate its average speed.`;
+          correctVal = `${speed} km/hr`;
+          distractors = [`${speed + 12} km/hr`, `${speed - 8} km/hr`, `${speed + 20} km/hr`];
+          explanation = `Speed = Distance / Time = ${dist} / ${timeHrs} = ${speed} km/hr.`;
+          shortcut = `Direct S = D / T calculation.`;
+        } else if (quantVariant === 2) {
+          qTopic = "Time & Work";
+          const daysA = 10 + ((qSeed * 3) % 15);
+          const daysB = 15 + ((qSeed * 7) % 20);
+          const combined = Number(((daysA * daysB) / (daysA + daysB)).toFixed(1));
+          qText = `[${companyName} Exam Pattern] Developer A can build a feature in ${daysA} days and Developer B in ${daysB} days. How long will they take working together?`;
+          correctVal = `${combined} days`;
+          distractors = [`${(combined + 2.1).toFixed(1)} days`, `${Math.max(1, combined - 1.4).toFixed(1)} days`, `${(combined + 3.8).toFixed(1)} days`];
+          explanation = `Combined work rate = 1/${daysA} + 1/${daysB} = (${daysA + daysB})/${daysA * daysB}. Time = ${daysA * daysB}/${daysA + daysB} = ${combined} days.`;
+          shortcut = `Product / Sum formula: (A × B) / (A + B).`;
+        } else if (quantVariant === 3) {
+          qTopic = "Compound Interest";
+          const P = 10000 + ((qSeed * 17) % 20000);
+          const amt = Math.round(P * 1.21);
+          qText = `[${companyName} Exam Pattern] An investment of ₹${P} in a corporate fund earns 10% per annum compound interest. What is the total amount after 2 years?`;
+          correctVal = `₹${amt}`;
+          distractors = [`₹${P + P * 0.20}`, `₹${amt + 450}`, `₹${amt - 300}`];
+          explanation = `A = P(1 + r/100)^n = ${P} × (1.10)^2 = ${P} × 1.21 = ₹${amt}.`;
+          shortcut = `For 2 years at 10%, effective CI is 21%. Amt = P × 1.21.`;
+        } else if (quantVariant === 4) {
+          qTopic = "Ratio & Proportion";
+          const total = 120 + ((qSeed * 19) % 240);
+          const rA = 3;
+          const rB = 5;
+          const shareB = Math.round(total * (rB / (rA + rB)));
+          qText = `[${companyName} Exam Pattern] A bonus pool of ₹${total * 1000} is divided between Team A and Team B in the ratio ${rA}:${rB}. What is Team B's allocation?`;
+          correctVal = `₹${shareB * 1000}`;
+          distractors = [`₹${(total - shareB) * 1000}`, `₹${(shareB + 15) * 1000}`, `₹${(shareB - 20) * 1000}`];
+          explanation = `Team B share = ${rB}/(${rA} + ${rB}) × ${total * 1000} = ${rB}/8 × ${total * 1000} = ₹${shareB * 1000}.`;
+          shortcut = `Ratio fraction: 5/8 of total.`;
+        } else {
+          qTopic = "Averages";
+          const n = 6;
+          const avg = 75 + ((qSeed * 3) % 20);
+          const newScore = 95;
+          const newAvg = Number((((n * avg) + newScore) / (n + 1)).toFixed(1));
+          qText = `[${companyName} Exam Pattern] The average score of ${n} candidates in a ${companyName} screening is ${avg}. If a 7th candidate scoring 95 is added, what is the new average?`;
+          correctVal = `${newAvg}`;
+          distractors = [`${(newAvg + 2.5).toFixed(1)}`, `${(newAvg - 1.8).toFixed(1)}`, `${(newAvg + 4.2).toFixed(1)}`];
+          explanation = `Total = ${n} × ${avg} = ${n * avg}. New sum = ${n * avg} + 95. New Avg = Sum / 7 = ${newAvg}.`;
+          shortcut = `Deviation method: Add (95 - ${avg}) / 7 to old average.`;
+        }
+      } else if (sectionIdx === 1) {
+        qCategory = "logical";
+        const logVariant = (qSeed + i) % 5;
+        if (logVariant === 0) {
+          qTopic = "Coding-Decoding";
+          qText = `[${companyName} Exam Pattern] In a ${companyName} cipher, if "DATA" is written as "FCVC" (+2 shift), how is "SERVER" encoded under the same rule?`;
+          correctVal = "UFTWGT";
+          distractors = ["TFSUFS", "UGTWGU", "RESDDQ"];
+          explanation = `Each letter is shifted forward by +2 positions in the alphabet: S->U, E->G, R->T, V->X...`;
+          shortcut = `Apply +2 alphabet offset.`;
+        } else if (logVariant === 1) {
+          qTopic = "Blood Relations";
+          qText = `[${companyName} Exam Pattern] Pointing to a team member, Anita said, "His father is the only son of my grandfather." How is Anita related to the team member?`;
+          correctVal = "Sister";
+          distractors = ["Mother", "Aunt", "Cousin"];
+          explanation = `"Only son of my grandfather" = Anita's father. The person's father is Anita's father, so they are siblings. Anita is his sister.`;
+          shortcut = `Grandfather's only son = Father.`;
+        } else if (logVariant === 2) {
+          qTopic = "Seating Arrangement";
+          qText = `[${companyName} Exam Pattern] Five engineers (A, B, C, D, E) sit in a row facing North. C is sitting in the middle. A is to the immediate right of C. B is at the extreme left end. Who is sitting immediately to the left of C?`;
+          correctVal = "D or E (neither A nor B)";
+          distractors = ["A", "B", "Cannot be determined"];
+          explanation = `Positions 1 to 5: Pos 3 is C. Pos 4 is A. Pos 1 is B. Pos 2 must be D or E. Thus immediately left of C is Pos 2 (D or E).`;
+          shortcut = `Map linear indices 1, 2, 3, 4, 5.`;
+        } else if (logVariant === 3) {
+          qTopic = "Number Series";
+          const start = 4 + ((qSeed * 7) % 10);
+          const diffVal = 3 + ((qSeed * 2) % 5);
+          const t1 = start;
+          const t2 = t1 + diffVal;
+          const t3 = t2 + diffVal * 2;
+          const t4 = t3 + diffVal * 3;
+          const t5 = t4 + diffVal * 4;
+          qText = `[${companyName} Exam Pattern] Find the missing term in the sequence: ${t1}, ${t2}, ${t3}, ${t4}, ?`;
+          correctVal = `${t5}`;
+          distractors = [`${t4 + diffVal * 3}`, `${t5 + 5}`, `${t5 - 4}`];
+          explanation = `Differences between terms increase as multiples of ${diffVal}: +${diffVal}, +${diffVal * 2}, +${diffVal * 3}, +${diffVal * 4}. Next term = ${t4} + ${diffVal * 4} = ${t5}.`;
+          shortcut = `Second-order difference pattern.`;
+        } else {
+          qTopic = "Syllogisms";
+          qText = `[${companyName} Exam Pattern] Statements: All servers are nodes. All nodes are endpoints. Conclusions: I. All servers are endpoints. II. Some endpoints are nodes.`;
+          correctVal = "Both conclusions I and II follow";
+          distractors = ["Only conclusion I follows", "Only conclusion II follows", "Neither conclusion follows"];
+          explanation = `Since Servers ⊆ Nodes ⊆ Endpoints, all servers are endpoints (I is true) and some endpoints are nodes (II is true).`;
+          shortcut = `Universal transitive inclusion: All A in B and All B in C implies All A in C.`;
+        }
+      } else if (sectionIdx === 2) {
+        qCategory = "verbal";
+        const verbVariant = (qSeed + i) % 4;
+        if (verbVariant === 0) {
+          qTopic = "Grammar & Subject-Verb Agreement";
+          qText = `[${companyName} Exam Pattern] Select the grammatically correct sentence for professional communication:`;
+          correctVal = `Neither the project lead nor the engineers were aware of the system crash.`;
+          distractors = [
+            `Neither the project lead nor the engineers was aware of the system crash.`,
+            `Neither the project lead or the engineers were aware of the system crash.`,
+            `Neither the project lead nor the engineer were aware of the system crash.`
+          ];
+          explanation = `With 'neither... nor', the verb agrees with the closer subject ('engineers' -> plural verb 'were').`;
+          shortcut = `Rule of proximity for neither/nor.`;
+        } else if (verbVariant === 1) {
+          qTopic = "Vocabulary & Antonyms";
+          qText = `[${companyName} Exam Pattern] Select the word that is most opposite in meaning (Antonym) to "METICULOUS":`;
+          correctVal = "Careless";
+          distractors = ["Thorough", "Precise", "Detailed"];
+          explanation = `"Meticulous" means showing great attention to detail. Its antonym is "Careless".`;
+          shortcut = `Meticulous = Diligent. Antonym = Careless.`;
+        } else if (verbVariant === 2) {
+          qTopic = "Para Jumbles";
+          qText = `[${companyName} Exam Pattern] Rearrange parts P, Q, R, S: P: to enhance security / Q: the authentication service / R: has been updated / S: with multi-factor support`;
+          correctVal = "Q-R-S-P";
+          distractors = ["P-Q-R-S", "R-S-P-Q", "S-P-Q-R"];
+          explanation = `Subject (Q: the authentication service) + Verb (R: has been updated) + Modifier (S: with multi-factor support) + Purpose (P: to enhance security) -> Q-R-S-P.`;
+          shortcut = `Identify subject-verb core sequence (Q-R).`;
+        } else {
+          qTopic = "Sentence Correction";
+          qText = `[${companyName} Exam Pattern] Identify the phrase that best replaces the underlined segment: "The system performance had *drastic degraded* after the update."`;
+          correctVal = "degraded drastically";
+          distractors = ["drastically degrading", "drastic degradation", "degraded drastic"];
+          explanation = `An adverb ("drastically") is required to modify the verb ("degraded").`;
+          shortcut = `Verb modification requires an adverb.`;
+        }
+      } else {
+        qCategory = "data-interpretation";
+        const diVariant = (qSeed + i) % 4;
+        if (diVariant === 0) {
+          qTopic = "Data Interpretation - Revenue";
+          const r1 = 120 + ((qSeed * 5) % 80);
+          const r2 = 150 + ((qSeed * 9) % 100);
+          const pct = Math.round(((r2 - r1) / r1) * 100);
+          qText = `[${companyName} Exam Pattern] A ${companyName} business unit reported revenue of ₹${r1} Cr in Year 1 and ₹${r2} Cr in Year 2. What was the percentage growth?`;
+          correctVal = `${pct}%`;
+          distractors = [`${pct + 6}%`, `${pct - 4}%`, `${pct + 12}%`];
+          explanation = `% Growth = ((Year 2 - Year 1) / Year 1) × 100 = ((${r2} - ${r1}) / ${r1}) × 100 = ${pct}%.`;
+          shortcut = `Growth % = (Diff / Base) × 100.`;
+        } else if (diVariant === 1) {
+          qTopic = "Data Interpretation - Pie Chart";
+          const totalEmp = 1000 + ((qSeed * 13) % 2000);
+          const deptPct = 25;
+          const countEmp = Math.round(totalEmp * (deptPct / 100));
+          qText = `[${companyName} Exam Pattern] In a pie chart showing ${companyName}'s workforce distribution, the Cloud division accounts for ${deptPct}% of total ${totalEmp} employees. How many employees work in Cloud?`;
+          correctVal = `${countEmp}`;
+          distractors = [`${countEmp + 50}`, `${countEmp - 40}`, `${countEmp + 100}`];
+          explanation = `Count = ${deptPct}% of ${totalEmp} = 0.25 × ${totalEmp} = ${countEmp}.`;
+          shortcut = `25% = 1/4 of Total.`;
+        } else if (diVariant === 2) {
+          qTopic = "Critical Reasoning";
+          qText = `[${companyName} Exam Pattern] Statement: "Deploying automated testing reduced regression bugs by 60%." Which assumption is implicit?`;
+          correctVal = "Manual testing previously missed certain regression bugs";
+          distractors = [
+            "All software bugs are regression bugs",
+            "Automated testing completely eliminates human developers",
+            "Regression testing is no longer necessary"
+          ];
+          explanation = `A 60% reduction implies that the previous process (manual testing) was missing bugs that automated testing now catches.`;
+          shortcut = `Identify the underlying baseline premise.`;
+        } else {
+          qTopic = "Logic Puzzle";
+          const weighings = 2;
+          qText = `[${companyName} Exam Pattern] Out of 9 microchips produced in a ${companyName} lab, 8 weigh identical and 1 is defective (heavier). What is the minimum number of balance scale weighings needed to identify the defective chip?`;
+          correctVal = `${weighings} weighings`;
+          distractors = ["3 weighings", "1 weighing", "4 weighings"];
+          explanation = `Divide 9 chips into 3 groups of 3 (3, 3, 3). Weigh Group 1 vs Group 2. This identifies the heavier group in 1 weighing. Weigh 1 vs 1 from the heavier group (2nd weighing). Total = 2.`;
+          shortcut = `Ternary division: 3^2 = 9, so 2 weighings needed.`;
+        }
+      }
+
+      const opts = shuffleWithOptions(correctVal, distractors, correctIdx);
+
+      questions.push({
+        id: `db-${companyName.toLowerCase().replace(/[^a-z0-9]/g, "-")}-t${testNum}-q${i}`,
+        text: qText,
+        options: opts,
+        correctIdx,
+        explanation,
+        shortcut,
+        difficulty: diff,
+        estimatedTimeSec: diff === "easy" ? 45 : diff === "hard" ? 90 : 60,
+        topic: qTopic,
+        category: qCategory,
+        companyTags: [companyName],
+        commonMistakes: ["Calculation error", "Misinterpreting condition details"]
+      });
+    }
+    return questions;
+  }
+
+  // Topic specific non-company test generator
   for (let i = 1; i <= count; i++) {
     const isEasy = i <= 10;
     const isHard = i > 20;
-    const diff = isEasy ? "easy" : isHard ? "hard" : "medium";
+    const diff: Difficulty = isEasy ? "easy" : isHard ? "hard" : "medium";
+    const seedVal = getSeedHash(topic + `-T${testNum}-Q${i}`);
+    const correctIdx = (seedVal + i) % 4;
 
-    if (category === "company" || category === "company_test") {
-      const companyName = topic || "Placement";
-      const section = i <= 8 ? "quant" : i <= 16 ? "logical" : i <= 24 ? "verbal" : "di";
+    let qText = "";
+    let correctVal = "";
+    let distractors: string[] = [];
+    let explanation = "";
 
-      if (section === "quant") {
-        const quantExams = [
-          {
-            q: `A sum of ₹${10000 + testNum * 2500 + i * 300} deposited at compound interest becomes double after 5 years. How much will it become after 20 years at the same rate of interest?`,
-            opts: [`₹${(10000 + testNum * 2500 + i * 300) * 16}`, `₹${(10000 + testNum * 2500 + i * 300) * 8}`, `₹${(10000 + testNum * 2500 + i * 300) * 4}`, `₹${(10000 + testNum * 2500 + i * 300) * 32}`],
-            correct: 0,
-            exp: `At compound interest, if P becomes 2P in 5 yrs (2^1 times), in 20 yrs (4 cycles of 5 yrs) it becomes P × 2^4 = 16P.`,
-            top: "Compound Interest"
-          },
-          {
-            q: `A train ${120 + i * 10}m long passes a telegraph post in ${10 + (i % 4)} seconds. Find the speed of the train in km/hr.`,
-            opts: [`${Math.round(((120 + i * 10) / (10 + (i % 4))) * 3.6)} km/hr`, `${Math.round(((120 + i * 10) / (10 + (i % 4))) * 3.6) + 12} km/hr`, `${Math.round(((120 + i * 10) / (10 + (i % 4))) * 3.6) - 9} km/hr`, `${Math.round(((120 + i * 10) / (10 + (i % 4))) * 3.6) + 20} km/hr`],
-            correct: 0,
-            exp: `Speed in m/s = Distance / Time = ${120 + i * 10} / ${10 + (i % 4)}. Speed in km/hr = (m/s) × (18/5).`,
-            top: "Speed, Distance & Time"
-          },
-          {
-            q: `Two pipes A and B can fill a tank in ${20 + i * 2} minutes and ${30 + i * 2} minutes respectively. If both pipes are opened together, after how many minutes should pipe B be closed so that the tank is full in ${15 + (i % 3)} minutes?`,
-            opts: [`${Math.round((1 - (15 + (i % 3)) / (20 + i * 2)) * (30 + i * 2))} minutes`, `${Math.round((1 - (15 + (i % 3)) / (20 + i * 2)) * (30 + i * 2)) + 4} minutes`, `${Math.round((1 - (15 + (i % 3)) / (20 + i * 2)) * (30 + i * 2)) - 3} minutes`, `${Math.round((1 - (15 + (i % 3)) / (20 + i * 2)) * (30 + i * 2)) + 8} minutes`],
-            correct: 0,
-            exp: `Pipe A works for all ${15 + (i % 3)} mins. Fraction filled by A = ${15 + (i % 3)} / ${20 + i * 2}. Remaining fraction = 1 - (${15 + (i % 3)} / ${20 + i * 2}). Time for B = Remaining × ${30 + i * 2}.`,
-            top: "Pipes & Cisterns"
-          },
-          {
-            q: `By selling an article for ₹${720 + i * 40}, a trader loses ${10 + (i % 5)}%. At what price should he sell it to gain ${15 + (i % 5)}%?`,
-            opts: [`₹${Math.round(((720 + i * 40) / (100 - (10 + (i % 5)))) * (100 + (15 + (i % 5))))}`, `₹${Math.round(((720 + i * 40) / (100 - (10 + (i % 5)))) * (100 + (15 + (i % 5)))) + 80}`, `₹${Math.round(((720 + i * 40) / (100 - (10 + (i % 5)))) * (100 + (15 + (i % 5)))) - 60}`, `₹${Math.round(((720 + i * 40) / (100 - (10 + (i % 5)))) * (100 + (15 + (i % 5)))) + 150}`],
-            correct: 0,
-            exp: `Cost Price = SP / (1 - Loss%) = ${720 + i * 40} / ${(100 - (10 + (i % 5))) / 100}. Required SP = CP × (1 + Gain%).`,
-            top: "Profit & Loss"
-          }
-        ];
-        const examItem = quantExams[(testNum + i) % quantExams.length];
-        questions.push({
-          id: `db-${companyName.toLowerCase().replace(/\s+/g, "-")}-t${testNum}-q${i}`,
-          text: examItem.q,
-          options: examItem.opts,
-          correctIdx: examItem.correct,
-          explanation: examItem.exp,
-          shortcut: `Apply standard official ${companyName} quantitative placement shortcut formula.`,
-          difficulty: diff,
-          estimatedTimeSec: 60,
-          topic: examItem.top,
-          category: "quantitative",
-          companyTags: [companyName],
-          commonMistakes: ["Calculation error", "Using wrong base value"]
-        });
-      } else if (section === "logical") {
-        const logicalExams = [
-          {
-            q: `In a certain code language, if "SYSTEM" is written as "SYSMET" and "NEARER" is written as "AEREN", how is "FRACTION" written in that code?`,
-            opts: ["CARFNOIT", "NOITCARF", "ARFCNOIT", "FRACNOIT"],
-            correct: 0,
-            exp: `Divide the word into two equal parts: SYS-TEM -> SYS-MET (reversing second part). FRACTION (8 letters) -> FRAC-TION -> CARF-NOIT.`,
-            top: "Coding-Decoding"
-          },
-          {
-            q: `Pointing to a photograph, a person said, "I have no brother or sister, but that man's father is my father's son." Whose photograph was it?`,
-            opts: ["His son's photograph", "His father's photograph", "His own photograph", "His nephew's photograph"],
-            correct: 0,
-            exp: `"My father's son" = the speaker himself (since he has no brother or sister). So, "That man's father is ME" -> The photograph is of his son.`,
-            top: "Blood Relations"
-          },
-          {
-            q: `Find the missing number in the sequence: ${ testNum * 2 + 4 }, ${ testNum * 2 + 18 }, ${ testNum * 2 + 48 }, ${ testNum * 2 + 100 }, ${ testNum * 2 + 180 }, ?`,
-            opts: [`${ testNum * 2 + 294 }`, `${ testNum * 2 + 270 }`, `${ testNum * 2 + 310 }`, `${ testNum * 2 + 250 }`],
-            correct: 0,
-            exp: `The pattern is n^3 + n^2 for n = 1, 2, 3, 4, 5, 6... For n=6: 6^3 + 6^2 = 216 + 36 = 252 (offset added).`,
-            top: "Number Series"
-          },
-          {
-            q: `Statements: All laptops are devices. Some devices are phones. Conclusions: I. Some laptops are phones. II. No laptop is a phone.`,
-            opts: ["Either conclusion I or II follows", "Only conclusion I follows", "Only conclusion II follows", "Neither conclusion I nor II follows"],
-            correct: 0,
-            exp: `Conclusion I and II form a complementary pair (Some + No) for laptops and phones, so either I or II must hold true.`,
-            top: "Syllogisms"
-          }
-        ];
-        const examItem = logicalExams[(testNum + i) % logicalExams.length];
-        questions.push({
-          id: `db-${companyName.toLowerCase().replace(/\s+/g, "-")}-t${testNum}-q${i}`,
-          text: examItem.q,
-          options: examItem.opts,
-          correctIdx: examItem.correct,
-          explanation: examItem.exp,
-          shortcut: `Logical pattern identification.`,
-          difficulty: diff,
-          estimatedTimeSec: 50,
-          topic: examItem.top,
-          category: "logical",
-          companyTags: [companyName],
-          commonMistakes: ["Misinterpreting family relations", "Assuming absolute syllogism rule without complementary check"]
-        });
-      } else if (section === "verbal") {
-        const verbalExams = [
-          {
-            q: `Identify the sentence with the correct grammatical usage:`,
-            opts: [
-              "Neither the manager nor the employees were present at the meeting.",
-              "Neither the manager nor the employees was present at the meeting.",
-              "Neither the manager or the employees were present at the meeting.",
-              "Neither the manager nor the employee were present at the meeting."
-            ],
-            correct: 0,
-            exp: `When subject connected by 'neither... nor' consists of singular and plural nouns, the verb agrees with the closer subject ('employees' -> 'were').`,
-            top: "Grammar"
-          },
-          {
-            q: `Select the word that is most opposite in meaning (Antonym) to "TRANSIENT":`,
-            opts: ["Permanent", "Fleeting", "Temporary", "Ephemeral"],
-            correct: 0,
-            exp: `"Transient" means lasting only for a short time. Its opposite is "Permanent".`,
-            top: "Synonyms & Antonyms"
-          },
-          {
-            q: `Rearrange the parts P, Q, R, S to form a coherent sentence: P: to increase productivity / Q: the new software / R: has been deployed / S: across all departments`,
-            opts: ["Q-R-S-P", "P-Q-R-S", "R-S-P-Q", "S-P-Q-R"],
-            correct: 0,
-            exp: `Subject: 'The new software' (Q), Verb: 'has been deployed' (R), Location: 'across all departments' (S), Purpose: 'to increase productivity' (P). Sequence: Q-R-S-P.`,
-            top: "Para Jumbles"
-          }
-        ];
-        const examItem = verbalExams[(testNum + i) % verbalExams.length];
-        questions.push({
-          id: `db-${companyName.toLowerCase().replace(/\s+/g, "-")}-t${testNum}-q${i}`,
-          text: examItem.q,
-          options: examItem.opts,
-          correctIdx: examItem.correct,
-          explanation: examItem.exp,
-          shortcut: `Verbal grammar rule match.`,
-          difficulty: diff,
-          estimatedTimeSec: 40,
-          topic: examItem.top,
-          category: "verbal",
-          companyTags: [companyName],
-          commonMistakes: ["Subject-verb disagreement", "Selecting synonym instead of antonym"]
-        });
-      } else {
-        // Data Interpretation & Analytical Puzzles (Q25 to Q30)
-        const diExams = [
-          {
-            q: `You are given 8 identical-looking balls, 7 of which weigh the same and 1 is slightly heavier. What is the minimum number of weighings on a balance scale needed to guarantee finding the heavier ball?`,
-            opts: ["2 weighings", "3 weighings", "1 weighing", "4 weighings"],
-            correct: 0,
-            exp: `Divide balls into 3, 3, 2. Weigh 3 vs 3. If equal, weigh the 2 remaining balls (2nd weighing). If unequal, weigh 1 vs 1 from the heavier group of 3 (2nd weighing). Total = 2 weighings.`,
-            top: "Logic Puzzles"
-          },
-          {
-            q: `A company's revenue increased by 20% in Year-1 and then decreased by 15% in Year-2. What is the net percentage change in revenue over the two years?`,
-            opts: ["2% increase", "5% increase", "2% decrease", "3.5% increase"],
-            correct: 0,
-            exp: `Net % change = A + B + (A×B)/100 = 20 - 15 + (20 × -15)/100 = 5 - 3 = +2% increase.`,
-            top: "Data Interpretation"
-          }
-        ];
-        const examItem = diExams[(testNum + i) % diExams.length];
-        questions.push({
-          id: `db-${companyName.toLowerCase().replace(/\s+/g, "-")}-t${testNum}-q${i}`,
-          text: examItem.q,
-          options: examItem.opts,
-          correctIdx: examItem.correct,
-          explanation: examItem.exp,
-          shortcut: `Successive % formula: A + B + (A*B)/100.`,
-          difficulty: diff,
-          estimatedTimeSec: 60,
-          topic: examItem.top,
-          category: "data-interpretation",
-          companyTags: [companyName],
-          commonMistakes: ["Subtracting 15% from 20% directly to get 5%", "Forgetting balance scale division by 3"]
-        });
-      }
-    } else if (category === "quantitative" || category === "math") {
-      const valA = (testNum * 7 + i * 5) % 40 + 10;
-      const valB = (testNum * 3 + i * 8) % 30 + 15;
-      const valAns = valA * valB;
-      questions.push({
-        id: `db-${topic.toLowerCase().replace(/\s+/g, "-")}-t${testNum}-q${i}`,
-        text: `[${topic} Test ${testNum} - Q${i}] If quantity A is ${valA} units and rate B is ${valB} units/hr, what is the combined output required for completion?`,
-        options: [
-          `${valAns} units`,
-          `${valAns + 20} units`,
-          `${valAns - 15} units`,
-          `${valAns + 50} units`
-        ],
-        correctIdx: 0,
-        explanation: `Multiply quantity A (${valA}) by rate B (${valB}). Formula: Total = A × B = ${valA} × ${valB} = ${valAns}.`,
-        shortcut: `Direct multiplication: ${valA} × ${valB} = ${valAns}.`,
-        difficulty: diff,
-        estimatedTimeSec: isEasy ? 45 : isHard ? 90 : 60,
-        topic,
-        category: category as AptitudeCategory,
-        companyTags: ["TCS", "Infosys", "Wipro"],
-        commonMistakes: ["Adding instead of multiplying", "Calculation error on units"]
-      });
-    } else if (category === "logical") {
-      questions.push({
-        id: `db-${topic.toLowerCase().replace(/\s+/g, "-")}-t${testNum}-q${i}`,
-        text: `[${topic} Test ${testNum} - Q${i}] In a logical sequence based on ${topic}, which element comes next in the pattern: ${i * 2}, ${i * 4}, ${i * 8}, ?`,
-        options: [
-          `${i * 16}`,
-          `${i * 12}`,
-          `${i * 14}`,
-          `${i * 10}`
-        ],
-        correctIdx: 0,
-        explanation: `Each number in the pattern doubles the previous number. Next number = ${i * 8} × 2 = ${i * 16}.`,
-        shortcut: `Pattern: × 2 progression.`,
-        difficulty: diff,
-        estimatedTimeSec: isEasy ? 45 : isHard ? 90 : 60,
-        topic,
-        category: category as AptitudeCategory,
-        companyTags: ["Cognizant", "Accenture", "TCS"],
-        commonMistakes: ["Adding static difference", "Missing geometric progression"]
-      });
-    } else if (category === "verbal") {
-      questions.push({
-        id: `db-${topic.toLowerCase().replace(/\s+/g, "-")}-t${testNum}-q${i}`,
-        text: `[${topic} Test ${testNum} - Q${i}] Select the correct option that best completes the sentence regarding ${topic}: "The analysis was conducted _______ to ensure absolute precision."`,
-        options: [
-          "meticulously",
-          "hastily",
-          "reluctantly",
-          "carelessly"
-        ],
-        correctIdx: 0,
-        explanation: `"Meticulously" means with great attention to detail and thoroughness, matching "absolute precision".`,
-        shortcut: `Look for tone alignment: precision -> meticulously.`,
-        difficulty: diff,
-        estimatedTimeSec: isEasy ? 30 : isHard ? 75 : 45,
-        topic,
-        category: category as AptitudeCategory,
-        companyTags: ["Deloitte", "Capgemini"],
-        commonMistakes: ["Confusing antonyms", "Ignoring context clues"]
-      });
+    if (normalizedCategory === "quantitative" || normalizedCategory === "math") {
+      const valA = (seedVal % 30) + 10;
+      const valB = ((seedVal * 3) % 25) + 5;
+      const ans = valA * valB;
+      qText = `[${topic} Test ${testNum} - Q${i}] If component A produces ${valA} units/hr and operates for ${valB} hours, what is the total units produced?`;
+      correctVal = `${ans} units`;
+      distractors = [`${ans + 25} units`, `${ans - 18} units`, `${ans + 60} units`];
+      explanation = `Total units = Rate × Time = ${valA} × ${valB} = ${ans} units.`;
+    } else if (normalizedCategory === "logical") {
+      const start = (seedVal % 15) + 2;
+      const mult = 2;
+      const ans = start * Math.pow(mult, 3);
+      qText = `[${topic} Test ${testNum} - Q${i}] Find the next number in the pattern: ${start}, ${start * 2}, ${start * 4}, ?`;
+      correctVal = `${ans}`;
+      distractors = [`${ans - 4}`, `${ans + 8}`, `${ans + 12}`];
+      explanation = `Pattern multiplies by 2 each step. Next term = ${start * 4} × 2 = ${ans}.`;
+    } else if (normalizedCategory === "verbal") {
+      qText = `[${topic} Test ${testNum} - Q${i}] Choose the most appropriate word to complete: "The team approached the audit _______ to ensure complete accuracy."`;
+      correctVal = "meticulously";
+      distractors = ["hastily", "reluctantly", "carelessly"];
+      explanation = `"Meticulously" means with great care and precision, matching the context of accuracy.`;
     } else {
-      // Data interpretation & analytical
-      const val1 = i * 15 + 100;
-      const val2 = i * 25 + 150;
-      questions.push({
-        id: `db-${topic.toLowerCase().replace(/\s+/g, "-")}-t${testNum}-q${i}`,
-        text: `[${topic} Test ${testNum} - Q${i}] Based on the analytical dataset for ${topic}, if value Year-1 is ${val1} and Year-2 is ${val2}, calculate the percentage growth.`,
-        options: [
-          `${Math.round(((val2 - val1) / val1) * 100)}%`,
-          `${Math.round(((val2 - val1) / val1) * 100) + 5}%`,
-          `${Math.round(((val2 - val1) / val1) * 100) - 8}%`,
-          `${Math.round(((val2 - val1) / val1) * 100) + 12}%`
-        ],
-        correctIdx: 0,
-        explanation: `Percentage growth = ((Year 2 - Year 1) / Year 1) × 100 = ((${val2} - ${val1}) / ${val1}) × 100 = ${Math.round(((val2 - val1) / val1) * 100)}%.`,
-        shortcut: `Growth Formula: (Difference / Base) × 100.`,
-        difficulty: diff,
-        estimatedTimeSec: isEasy ? 60 : isHard ? 110 : 75,
-        topic,
-        category: category as AptitudeCategory,
-        companyTags: ["EY", "PwC", "Amazon"],
-        commonMistakes: ["Dividing by Year 2 instead of base Year 1", "Percentage calculation error"]
-      });
+      const baseVal = (seedVal % 80) + 100;
+      const inc = 20;
+      const finalVal = Math.round(baseVal * 1.2);
+      qText = `[${topic} Test ${testNum} - Q${i}] Data point baseline is ${baseVal}. If it increases by ${inc}%, what is the updated value?`;
+      correctVal = `${finalVal}`;
+      distractors = [`${finalVal + 10}`, `${finalVal - 8}`, `${finalVal + 25}`];
+      explanation = `Updated value = ${baseVal} × (1 + 20/100) = ${baseVal} × 1.2 = ${finalVal}.`;
     }
+
+    const opts = shuffleWithOptions(correctVal, distractors, correctIdx);
+
+    questions.push({
+      id: `db-${topic.toLowerCase().replace(/[^a-z0-9]/g, "-")}-t${testNum}-q${i}`,
+      text: qText,
+      options: opts,
+      correctIdx,
+      explanation,
+      shortcut: "Standard formula application.",
+      difficulty: diff,
+      estimatedTimeSec: diff === "easy" ? 45 : diff === "hard" ? 90 : 60,
+      topic,
+      category: (normalizedCategory as AptitudeCategory) || "quantitative",
+      companyTags: ["Placement"],
+      commonMistakes: ["Calculation slip", "Reading error"]
+    });
   }
 
   return questions;
@@ -425,7 +476,8 @@ export async function getTopicTestByIdFromDb(testId: string, userPrisma?: any) {
       if (test) {
         let questions = test.questionsJson as any as GeneratedQuestion[];
         const hasOnlySingleTopic = questions.length >= 10 && questions.every(q => q.category === questions[0]?.category);
-        if (test.category === "company" && hasOnlySingleTopic) {
+        const hasLegacyDuplicate = questions.some(q => q.text?.includes("A sum of ₹") || q.text?.includes("A train 120m") || q.text?.includes("SYSMET") || q.text?.includes("temporarily busy"));
+        if (test.category === "company" && (hasOnlySingleTopic || hasLegacyDuplicate)) {
           questions = generateDefaultTopicTestQuestions(test.topic, "company", test.testNumber);
         }
         return {
@@ -469,22 +521,33 @@ export async function generateWeeklyTopicTest(
   const normalizedCategory = (category || "quantitative").toLowerCase();
   const normalizedTopic = topic.trim();
 
-  // Find max test number for topic
-  const latestTest = await db.aptitudeTopicTest.findFirst({
-    where: { topic: normalizedTopic },
+  // Find all existing tests for this topic/company to collect existing question texts
+  const existingTests = await db.aptitudeTopicTest.findMany({
+    where: { topic: { equals: normalizedTopic, mode: "insensitive" } },
     orderBy: { testNumber: "desc" },
   });
 
-  const nextTestNum = (latestTest?.testNumber || 0) + 1;
+  const nextTestNum = (existingTests[0]?.testNumber || 0) + 1;
+
+  // Collect all question texts previously generated for this topic/company
+  const existingQuestionTexts = new Set<string>();
+  for (const test of existingTests) {
+    if (Array.isArray(test.questionsJson)) {
+      for (const q of (test.questionsJson as any[])) {
+        if (q.text) existingQuestionTexts.add(q.text.toLowerCase().trim());
+      }
+    }
+  }
 
   let questions: GeneratedQuestion[] = [];
   try {
-    // Attempt AI generation of 30 questions
+    // Attempt AI generation of 30 questions for this test number
     if (normalizedCategory === "company") {
       questions = await generateAptitudeQuestions({
         company: normalizedTopic,
         count: 30,
         difficulty: nextTestNum % 3 === 1 ? "easy" : nextTestNum % 3 === 2 ? "medium" : "hard",
+        testNumber: nextTestNum,
       });
     } else {
       questions = await generateAptitudeQuestions({
@@ -492,16 +555,39 @@ export async function generateWeeklyTopicTest(
         category: normalizedCategory as AptitudeCategory,
         count: 30,
         difficulty: nextTestNum % 3 === 1 ? "easy" : nextTestNum % 3 === 2 ? "medium" : "hard",
+        testNumber: nextTestNum,
       });
     }
   } catch {
-    // Fallback template generation
     questions = generateDefaultTopicTestQuestions(normalizedTopic, normalizedCategory, nextTestNum);
   }
 
-  if (!questions || questions.length < 30) {
-    const defaultQs = generateDefaultTopicTestQuestions(normalizedTopic, normalizedCategory, nextTestNum);
-    questions = [...(questions || []), ...defaultQs].slice(0, 30);
+  // Filter out any duplicate questions that already existed in previous tests
+  let uniqueQuestions = questions.filter(q => !existingQuestionTexts.has(q.text.toLowerCase().trim()));
+
+  // Fill up to 30 with fallback seeded questions for nextTestNum if needed
+  if (uniqueQuestions.length < 30) {
+    const fallbackQs = generateDefaultTopicTestQuestions(normalizedTopic, normalizedCategory, nextTestNum);
+    for (const fq of fallbackQs) {
+      if (uniqueQuestions.length >= 30) break;
+      const cleanFq = fq.text.toLowerCase().trim();
+      if (!existingQuestionTexts.has(cleanFq) && !uniqueQuestions.some(uq => uq.text.toLowerCase().trim() === cleanFq)) {
+        uniqueQuestions.push(fq);
+      }
+    }
+  }
+
+  // Guaranteed offset seed loop to guarantee 30 100% unique questions
+  let offsetSeed = nextTestNum + 100;
+  while (uniqueQuestions.length < 30) {
+    const fallbackQs = generateDefaultTopicTestQuestions(normalizedTopic, normalizedCategory, offsetSeed++);
+    for (const fq of fallbackQs) {
+      if (uniqueQuestions.length >= 30) break;
+      const cleanFq = fq.text.toLowerCase().trim();
+      if (!existingQuestionTexts.has(cleanFq) && !uniqueQuestions.some(uq => uq.text.toLowerCase().trim() === cleanFq)) {
+        uniqueQuestions.push(fq);
+      }
+    }
   }
 
   const newTest = await db.aptitudeTopicTest.create({
@@ -511,7 +597,7 @@ export async function generateWeeklyTopicTest(
       testNumber: nextTestNum,
       title: `Test ${nextTestNum}`,
       weekNumber: Math.ceil(nextTestNum / 1),
-      questionsJson: questions as any,
+      questionsJson: uniqueQuestions as any,
       totalQuestions: 30,
       difficulty: nextTestNum % 3 === 1 ? "easy" : nextTestNum % 3 === 2 ? "medium" : "hard",
     },
@@ -520,7 +606,7 @@ export async function generateWeeklyTopicTest(
   return newTest;
 }
 
-const ALL_TOPICS_BY_CATEGORY: Record<string, string[]> = {
+export const ALL_TOPICS_BY_CATEGORY: Record<string, string[]> = {
   quantitative: [
     'Percentages', 'Profit & Loss', 'Time & Work', 'Time, Speed & Distance',
     'Simple & Compound Interest', 'Ratio & Proportion', 'Probability',
@@ -545,7 +631,7 @@ const ALL_TOPICS_BY_CATEGORY: Record<string, string[]> = {
   ]
 };
 
-const ALL_COMPANY_IDS = [
+export const ALL_COMPANY_IDS = [
   'TCS', 'Infosys', 'Wipro', 'Accenture', 'Capgemini', 'Cognizant',
   'Deloitte', 'EY', 'PwC', 'KPMG', 'Google', 'Amazon', 'Microsoft'
 ];
@@ -577,4 +663,112 @@ export async function generateAllTopicTestsForAdmin(userPrisma?: any) {
   }
 
   return { generatedCount: generated.length, tests: generated };
+}
+
+export async function getAllAptitudeTestsForAdmin(userPrisma?: any) {
+  const db = getPrisma(userPrisma);
+  let tests = await db.aptitudeTopicTest.findMany({
+    orderBy: [{ category: "asc" }, { topic: "asc" }, { testNumber: "asc" }],
+  });
+
+  // If no tests exist in DB yet, auto-seed Test 1 for all topics & companies
+  if (tests.length === 0) {
+    const generated: any[] = [];
+    for (const [cat, topics] of Object.entries(ALL_TOPICS_BY_CATEGORY)) {
+      for (const topic of topics) {
+        const questions = generateDefaultTopicTestQuestions(topic, cat, 1);
+        try {
+          const t = await db.aptitudeTopicTest.create({
+            data: {
+              category: cat,
+              topic: topic,
+              testNumber: 1,
+              title: `Test 1`,
+              weekNumber: 1,
+              questionsJson: questions as any,
+              totalQuestions: 30,
+              difficulty: "medium",
+            },
+          });
+          generated.push(t);
+        } catch {
+          generated.push({
+            id: `mem-${cat}-${topic.toLowerCase().replace(/[^a-z0-9]/g, "-")}-t1`,
+            category: cat,
+            topic: topic,
+            testNumber: 1,
+            title: `Test 1`,
+            totalQuestions: 30,
+            difficulty: "medium",
+            createdAt: new Date(),
+            questionsJson: questions,
+          });
+        }
+      }
+    }
+    for (const company of ALL_COMPANY_IDS) {
+      const questions = generateDefaultTopicTestQuestions(company, "company", 1);
+      try {
+        const t = await db.aptitudeTopicTest.create({
+          data: {
+            category: "company",
+            topic: company,
+            testNumber: 1,
+            title: `Test 1`,
+            weekNumber: 1,
+            questionsJson: questions as any,
+            totalQuestions: 30,
+            difficulty: "medium",
+          },
+        });
+        generated.push(t);
+      } catch {
+        generated.push({
+          id: `mem-company-${company.toLowerCase()}-t1`,
+          category: "company",
+          topic: company,
+          testNumber: 1,
+          title: `Test 1`,
+          totalQuestions: 30,
+          difficulty: "medium",
+          createdAt: new Date(),
+          questionsJson: questions,
+        });
+      }
+    }
+    tests = generated;
+  }
+
+  return tests;
+}
+
+export async function deleteAptitudeTestById(id: string, userPrisma?: any) {
+  const db = getPrisma(userPrisma);
+  return await db.aptitudeTopicTest.delete({ where: { id } });
+}
+
+export async function getAptitudeAdminOverview(userPrisma?: any) {
+  const tests = await getAllAptitudeTestsForAdmin(userPrisma);
+  let totalQuestions = 0;
+  for (const t of tests) {
+    if (Array.isArray(t.questionsJson)) {
+      totalQuestions += (t.questionsJson as any[]).length;
+    } else {
+      totalQuestions += t.totalQuestions || 30;
+    }
+  }
+
+  let totalTopics = 0;
+  for (const topics of Object.values(ALL_TOPICS_BY_CATEGORY)) {
+    totalTopics += topics.length;
+  }
+
+  return {
+    totalTests: tests.length,
+    totalQuestions,
+    topicsCount: totalTopics,
+    companiesCount: ALL_COMPANY_IDS.length,
+    topicsByCategory: ALL_TOPICS_BY_CATEGORY,
+    companies: ALL_COMPANY_IDS,
+  };
 }

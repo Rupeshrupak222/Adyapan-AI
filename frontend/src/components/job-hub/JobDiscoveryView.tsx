@@ -1260,13 +1260,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         className="rounded-2xl border p-5 cursor-pointer group transition-all duration-200 relative overflow-hidden"
         style={{ background: c.cardBg, borderColor: c.border }} onClick={() => openJobDetail(job)}>
 
-        {(job as any).isRecommended ? (
-          <div className="absolute top-0 right-0">
-            <div className="px-2.5 py-1 text-[8px] font-black uppercase tracking-wider rounded-bl-xl bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md flex items-center gap-1">
-              <Sparkles size={9} /> Recommended
-            </div>
-          </div>
-        ) : job.isFeatured ? (
+        {job.isFeatured ? (
           <div className="absolute top-0 right-0">
             <div className="px-2.5 py-1 text-[8px] font-black uppercase tracking-wider rounded-bl-xl"
               style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
@@ -1283,15 +1277,9 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             </h3>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[11px] font-semibold truncate" style={{ color: c.textSec }}>{job.company}</span>
-              {job.matchScore != null && job.matchScore > 0 && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}>
-                  {job.matchScore}% match
-                </span>
-              )}
             </div>
           </div>
           <div className="flex flex-col items-center gap-1.5 shrink-0">
-            {job.matchScore != null && job.matchScore > 0 && <ScoreCircle score={job.matchScore} size={36} />}
             <button onClick={e => toggleSave(job.id, e)}
               className="p-2 rounded-lg transition-all hover:scale-110 cursor-pointer bg-transparent border-none"
               style={{ color: job.isSaved || savedIds.has(job.id) ? "#f59e0b" : c.textMuted }}
@@ -1343,17 +1331,6 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             {job.skills.length > 5 && (
               <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ color: c.textMuted }}>+{job.skills.length - 5}</span>
             )}
-          </div>
-        )}
-
-        {job.matchReasons && job.matchReasons.length > 0 && (
-          <div className="mb-3 space-y-1">
-            {job.matchReasons.slice(0, 2).map((r, i) => (
-              <div key={i} className="flex items-center gap-1.5 text-[9px] font-semibold" style={{ color: "#10b981" }}>
-                <CheckCircle2 size={9} className="shrink-0" />
-                <span className="truncate">{r.text}</span>
-              </div>
-            ))}
           </div>
         )}
 

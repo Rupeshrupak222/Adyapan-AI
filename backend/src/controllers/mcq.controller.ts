@@ -4,11 +4,22 @@ import {
   getCompanies,
   getCompanyByName,
   getQuestions,
-  generateAIMCQs,
   submitAttempt,
   toggleBookmark,
   getProgress,
+  getAllTests,
+  getTestsForTarget,
+  getTestById,
+  createNewTest,
+  generateAITestWithAntiRepetition,
+  updateTest,
+  deleteTest,
+  addQuestionToTest,
+  deleteQuestionFromTest,
+  getMCQOverview,
 } from "../services/mcq.service";
+
+// ─── Topics & Companies Directory ───────────────────────────────────────────
 
 export async function handleGetTopics(req: Request, res: Response): Promise<void> {
   try {
@@ -42,6 +53,40 @@ export async function handleGetCompanyByName(req: Request, res: Response): Promi
   }
 }
 
+// ─── Tests & Questions ──────────────────────────────────────────────────────
+
+export async function handleGetTests(req: Request, res: Response): Promise<void> {
+  try {
+    const targetId = req.query.targetId ? String(req.query.targetId) : undefined;
+    const targetName = req.query.targetName ? String(req.query.targetName) : undefined;
+
+    if (targetId || targetName) {
+      const tests = await getTestsForTarget(targetId || targetName || "");
+      res.json({ success: true, count: tests.length, tests });
+      return;
+    }
+
+    const tests = await getAllTests();
+    res.json({ success: true, count: tests.length, tests });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch tests" });
+  }
+}
+
+export async function handleGetTestById(req: Request, res: Response): Promise<void> {
+  try {
+    const testId = String(req.params.testId || "");
+    const test = await getTestById(testId);
+    if (!test) {
+      res.status(404).json({ success: false, error: "Test not found" });
+      return;
+    }
+    res.json({ success: true, test });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch test details" });
+  }
+}
+
 export async function handleGetQuestions(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as any).user?.id || "guest";
@@ -50,28 +95,14 @@ export async function handleGetQuestions(req: Request, res: Response): Promise<v
     const company = req.query.company ? String(req.query.company) : undefined;
     const difficulty = req.query.difficulty ? String(req.query.difficulty) : undefined;
     const search = req.query.search ? String(req.query.search) : undefined;
+    const testId = req.query.testId ? String(req.query.testId) : undefined;
     const page = req.query.page ? Number(req.query.page) : 1;
-    const limit = req.query.limit ? Number(req.query.limit) : 10;
+    const limit = req.query.limit ? Number(req.query.limit) : 15;
 
-    const data = await getQuestions({ technology, category, company, difficulty, search, page, limit, userId });
+    const data = await getQuestions({ technology, category, company, difficulty, search, testId, page, limit, userId });
     res.json({ success: true, ...data });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to fetch questions" });
-  }
-}
-
-export async function handleGenerateAIMCQs(req: Request, res: Response): Promise<void> {
-  try {
-    const { prompt, technology, company, count, difficulty } = req.body || {};
-    if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
-      res.status(400).json({ success: false, error: "Prompt is required to generate AI MCQs" });
-      return;
-    }
-
-    const questions = await generateAIMCQs(prompt, { technology, company, count: Number(count) || 5, difficulty });
-    res.json({ success: true, count: questions.length, questions });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to generate AI MCQs" });
   }
 }
 
@@ -116,5 +147,126 @@ export async function handleGetProgress(req: Request, res: Response): Promise<vo
     res.json({ success: true, progress });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to fetch progress" });
+  }
+}
+
+// ─── Admin Controller Handlers ──────────────────────────────────────────────
+
+export async function handleAdminGetMCQOverview(req: Request, res: Response): Promise<void> {
+  try {
+    const overview = await getMCQOverview();
+    res.json({ success: true, overview });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch MCQ overview" });
+  }
+}
+
+export async function handleAdminCreateTest(req: Request, res: Response): Promise<void> {
+  try {
+    const { targetId, targetType, targetName, title, description, difficulty, questionCount, durationMinutes, questions } = req.body || {};
+
+    if (!targetId || !targetType || !targetName) {
+      res.status(400).json({ success: false, error: "targetId, targetType, and targetName are required" });
+      return;
+    }
+
+    const newTest = await createNewTest({
+      targetId,
+      targetType,
+      targetName,
+      title,
+      description,
+      difficulty,
+      questionCount: Number(questionCount) || 15,
+      durationMinutes: Number(durationMinutes) || 20,
+      questions,
+    });
+
+    res.status(201).json({ success: true, test: newTest });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to create test" });
+  }
+}
+
+export async function handleAdminGenerateAITest(req: Request, res: Response): Promise<void> {
+  try {
+    const { targetId, targetType, targetName, count, difficulty, prompt } = req.body || {};
+
+    if (!targetId || !targetType || !targetName) {
+      res.status(400).json({ success: false, error: "targetId, targetType, and targetName are required" });
+      return;
+    }
+
+    const newTest = await generateAITestWithAntiRepetition({
+      targetId,
+      targetType,
+      targetName,
+      count: Number(count) || 15,
+      difficulty: difficulty || "Medium",
+      prompt,
+    });
+
+    res.status(201).json({ success: true, test: newTest });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to AI generate test" });
+  }
+}
+
+export async function handleAdminUpdateTest(req: Request, res: Response): Promise<void> {
+  try {
+    const testId = String(req.params.testId || "");
+    const updates = req.body || {};
+    const updated = await updateTest(testId, updates);
+    if (!updated) {
+      res.status(404).json({ success: false, error: "Test not found" });
+      return;
+    }
+    res.json({ success: true, test: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update test" });
+  }
+}
+
+export async function handleAdminDeleteTest(req: Request, res: Response): Promise<void> {
+  try {
+    const testId = String(req.params.testId || "");
+    const deleted = await deleteTest(testId);
+    if (!deleted) {
+      res.status(404).json({ success: false, error: "Test not found" });
+      return;
+    }
+    res.json({ success: true, message: "Test deleted successfully" });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to delete test" });
+  }
+}
+
+export async function handleAdminAddQuestionToTest(req: Request, res: Response): Promise<void> {
+  try {
+    const testId = String(req.params.testId || "");
+    const questionData = req.body || {};
+    const updated = await addQuestionToTest(testId, questionData);
+    if (!updated) {
+      res.status(404).json({ success: false, error: "Test not found" });
+      return;
+    }
+    res.json({ success: true, test: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to add question to test" });
+  }
+}
+
+export async function handleAdminDeleteQuestion(req: Request, res: Response): Promise<void> {
+  try {
+    const testId = String(req.params.testId || "");
+    const questionId = String(req.params.questionId || "");
+    const updated = await deleteQuestionFromTest(testId, questionId);
+    if (!updated) {
+      res.status(404).json({ success: false, error: "Test not found" });
+      return;
+    }
+    res.json({ success: true, test: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to delete question from test" });
   }
 }

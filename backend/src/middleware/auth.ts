@@ -100,6 +100,25 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
   }
 }
 
+export async function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+
+  if (!token) {
+    next();
+    return;
+  }
+
+  try {
+    if (!(await isTokenBlacklisted(token))) {
+      req.user = jwt.verify(token, env.jwtSecret, { algorithms: ["HS256"] }) as AuthUser;
+    }
+  } catch {
+    // Non-blocking: proceed without req.user
+  }
+  next();
+}
+
 /**
  * Validates that the client's session ID matches the active session in the DB.
  */
@@ -110,28 +129,21 @@ async function validateSessionId(req: Request): Promise<void> {
   // Skip for endpoints that handle session logic themselves
   if (SESSION_CHECK_SKIP_PATHS.has(originalPath) || SESSION_CHECK_SKIP_PATHS.has(routePath)) return;
 
-  const clientSessionId = req.headers["x-session-id"] as string | undefined;
+  const clientSessionId = (req.headers["x-session-id"] || req.headers["X-Session-Id"]) as string | undefined;
 
-  // Session ID is mandatory for single-session enforcement
-  if (!clientSessionId) {
-    throw httpError(401, "Session ID is required. Please log in again.");
-  }
+  // If client provided a session ID, validate single-session consistency
+  if (clientSessionId && /^[0-9a-f]{48}$/.test(clientSessionId)) {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: { activeSessionId: true },
+    });
 
-  // Validate format (48-char hex string)
-  if (!/^[0-9a-f]{48}$/.test(clientSessionId)) {
-    throw httpError(401, "Invalid session ID format. Please log in again.");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: req.user!.userId },
-    select: { activeSessionId: true },
-  });
-
-  // If user has an active session and it doesn't match the client's, reject
-  if (user?.activeSessionId && user.activeSessionId !== clientSessionId) {
-    const err = httpError(401, "Session ended. You have been logged in on another device.");
-    (err as any).code = "FORCE_LOGOUT";
-    throw err;
+    // If user has an active session and it doesn't match the client's, reject
+    if (user?.activeSessionId && user.activeSessionId !== clientSessionId) {
+      const err = httpError(401, "Session ended. You have been logged in on another device.");
+      (err as any).code = "FORCE_LOGOUT";
+      throw err;
+    }
   }
 }
 

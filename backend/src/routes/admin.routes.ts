@@ -34,7 +34,22 @@ import {
   updateAdminBlogStatus,
   deleteAdminBlog,
   generateAllTopicTestsAdminCtrl,
+  getAptitudeOverviewAdminCtrl,
+  getAptitudeTestsAdminCtrl,
+  generateAptitudeTestAdminCtrl,
+  deleteAptitudeTestAdminCtrl,
 } from "../controllers/admin.controller";
+import {
+  handleAdminGetMCQOverview,
+  handleAdminCreateTest,
+  handleAdminGenerateAITest,
+  handleAdminUpdateTest,
+  handleAdminDeleteTest,
+  handleAdminAddQuestionToTest,
+  handleAdminDeleteQuestion,
+  handleGetTests,
+  handleGetTestById,
+} from "../controllers/mcq.controller";
 import { requireAdminAuth } from "../middleware/adminAuth";
 import { requireAdminPermission } from "../middleware/adminPermission";
 import {
@@ -134,6 +149,24 @@ adminRouter.get("/users/:userId/settings", ...can("users", "read"), getAdminUser
 adminRouter.get("/blogs", ...can("content", "read"), getAdminBlogs);
 adminRouter.put("/blogs/:id/status", ...can("content", "write"), updateAdminBlogStatus);
 adminRouter.delete("/blogs/:id", ...can("content", "write"), deleteAdminBlog);
+
+// AI Technical Engine & MCQ Dynamic Tests Management
+adminRouter.get("/mcq/overview", ...can("content", "read"), handleAdminGetMCQOverview);
+adminRouter.get("/mcq/tests", ...can("content", "read"), handleGetTests);
+adminRouter.get("/mcq/tests/:testId", ...can("content", "read"), handleGetTestById);
+adminRouter.post("/mcq/tests", ...can("content", "write"), handleAdminCreateTest);
+adminRouter.post("/mcq/tests/generate-ai", ...can("content", "write"), handleAdminGenerateAITest);
+adminRouter.put("/mcq/tests/:testId", ...can("content", "write"), handleAdminUpdateTest);
+adminRouter.delete("/mcq/tests/:testId", ...can("content", "write"), handleAdminDeleteTest);
+adminRouter.post("/mcq/tests/:testId/questions", ...can("content", "write"), handleAdminAddQuestionToTest);
+adminRouter.delete("/mcq/tests/:testId/questions/:questionId", ...can("content", "write"), handleAdminDeleteQuestion);
+
+// AI Aptitude Engine & Topic Tests Management
+adminRouter.get("/aptitude/overview", ...can("content", "read"), getAptitudeOverviewAdminCtrl);
+adminRouter.get("/aptitude/tests", ...can("content", "read"), getAptitudeTestsAdminCtrl);
+adminRouter.post("/aptitude/tests/generate", ...can("content", "write"), generateAptitudeTestAdminCtrl);
+adminRouter.post("/aptitude/tests/generate-all", ...can("content", "write"), generateAllTopicTestsAdminCtrl);
+adminRouter.delete("/aptitude/tests/:id", ...can("content", "write"), deleteAptitudeTestAdminCtrl);
 
 // Coupon Management
 adminRouter.get("/coupons", ...can("billing", "read"), getCoupons);

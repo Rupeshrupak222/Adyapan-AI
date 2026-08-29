@@ -39,6 +39,12 @@ const LearningEcosystem = dynamic(() => import("@/components/admin/sections/Lear
 const PlacementEcosystem = dynamic(() => import("@/components/admin/sections/PlacementEcosystem"), {
   loading: () => <PageLoading />,
 });
+const TechnicalEngineManagement = dynamic(() => import("@/components/admin/sections/TechnicalEngineManagement"), {
+  loading: () => <PageLoading />,
+});
+const AptitudeEngineManagement = dynamic(() => import("@/components/admin/sections/AptitudeEngineManagement"), {
+  loading: () => <PageLoading />,
+});
 const ContentManagement = dynamic(() => import("@/components/admin/sections/ContentManagement"), {
   loading: () => <PageLoading />,
 });
@@ -123,6 +129,8 @@ const sectionComponents: Record<string, React.ComponentType> = {
   features: FeatureManagement,
   learning: LearningEcosystem,
   placement: PlacementEcosystem,
+  "technical-mcqs": TechnicalEngineManagement,
+  "aptitude-tests": AptitudeEngineManagement,
   content: ContentManagement,
   "blog-management": BlogManagement,
   billing: BillingFinance,

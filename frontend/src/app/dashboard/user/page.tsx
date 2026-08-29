@@ -208,7 +208,7 @@ import type { AdyapanUser } from "@/components/dashboard-shell";
 // page file breaks the production build — import ProfileDropdown / sidebarItems /
 // SidebarItem directly from "@/components/dashboard-shell" where needed.
 
-// ΓöÇΓöÇΓöÇ Stat Widget Card ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Stat Widget Card ────────────────────────────────────────────────────────
 function StatCard({
   icon, iconBg, iconColor, value, label, trend, trendUp,
 }: {

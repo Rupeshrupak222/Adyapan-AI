@@ -1,3 +1,4 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "../../config/env";
 import type { ChatModelId } from "./openrouter";
 
@@ -12,45 +13,139 @@ interface StreamCallbacks {
   onError: (error: Error) => void;
 }
 
+/**
+ * Stream chat using official Google Generative AI SDK
+ */
+async function streamGeminiNative(
+  apiKey: string,
+  modelName: string,
+  messages: ChatMessage[],
+  callbacks: StreamCallbacks,
+  signal?: AbortSignal
+): Promise<boolean> {
+  const cleanKey = apiKey.trim();
+  if (!cleanKey) return false;
+
+  const genAI = new GoogleGenerativeAI(cleanKey);
+
+  const systemMessage = messages.find((m) => m.role === "system")?.content;
+  const conversationMessages = messages.filter((m) => m.role !== "system" && m.content?.trim());
+
+  const model = genAI.getGenerativeModel({
+    model: modelName,
+    systemInstruction: systemMessage || undefined,
+  });
+
+  if (conversationMessages.length === 0) {
+    callbacks.onDone("");
+    return true;
+  }
+
+  // Format previous history for Gemini (must start with user and alternate)
+  const rawHistory = conversationMessages.slice(0, -1);
+  const formattedHistory: { role: "user" | "model"; parts: { text: string }[] }[] = [];
+
+  for (const m of rawHistory) {
+    const role: "user" | "model" = m.role === "assistant" ? "model" : "user";
+    if (formattedHistory.length > 0 && formattedHistory[formattedHistory.length - 1].role === role) {
+      formattedHistory[formattedHistory.length - 1].parts[0].text += `\n\n${m.content}`;
+    } else {
+      formattedHistory.push({
+        role,
+        parts: [{ text: m.content || " " }],
+      });
+    }
+  }
+
+  if (formattedHistory.length > 0 && formattedHistory[0].role !== "user") {
+    formattedHistory.shift();
+  }
+
+  const lastUserMsg = conversationMessages[conversationMessages.length - 1];
+  const lastPrompt = lastUserMsg?.content || "Hello";
+
+  const chat = model.startChat({
+    history: formattedHistory,
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 4096,
+    },
+  });
+
+  const result = await chat.sendMessageStream(lastPrompt);
+
+  let fullText = "";
+  for await (const chunk of result.stream) {
+    if (signal?.aborted) {
+      callbacks.onDone(fullText);
+      return true;
+    }
+    const text = chunk.text();
+    if (text) {
+      fullText += text;
+      callbacks.onChunk(text);
+    }
+  }
+
+  callbacks.onDone(fullText);
+  return true;
+}
+
 export async function streamChat(
   messages: ChatMessage[],
   model: ChatModelId,
   callbacks: StreamCallbacks,
   signal?: AbortSignal
 ): Promise<void> {
-  const providers = [];
+  let lastError: Error | null = null;
 
-  // 1. Add Google Gemini if key exists (primary for chat)
+  // 1. Primary: Google Gemini Native SDK (Fastest, most reliable)
   if (env.geminiApiKey) {
-    let primaryModel = "gemini-2.5-flash";
     const requestedLower = (model || "").toLowerCase();
-    if (requestedLower.includes("pro")) {
-      primaryModel = "gemini-2.5-pro";
-    }
-    const geminiChain = [primaryModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"];
-    const uniqueGemini = Array.from(new Set(geminiChain));
+    const primaryGeminiModel = requestedLower.includes("pro")
+      ? "gemini-1.5-pro"
+      : "gemini-2.0-flash";
 
-    for (const gModel of uniqueGemini) {
-      providers.push({
-        name: `Gemini (${gModel})`,
-        url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        key: env.geminiApiKey,
-        model: gModel,
-      });
+    const geminiModelsToTry = [
+      primaryGeminiModel,
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-1.5-pro",
+    ].filter((m, i, arr) => arr.indexOf(m) === i);
+
+    for (const gModel of geminiModelsToTry) {
+      try {
+        const success = await streamGeminiNative(
+          env.geminiApiKey,
+          gModel,
+          messages,
+          callbacks,
+          signal
+        );
+        if (success) return; // Successfully streamed!
+      } catch (err: any) {
+        if (err.name === "AbortError" || signal?.aborted) {
+          callbacks.onDone("");
+          return;
+        }
+        console.warn(`[Gemini SDK] ${gModel} stream error:`, err?.message || err);
+        lastError = err;
+      }
     }
   }
 
-  // 2. Add OpenRouter if key exists (secondary for chat)
+  // 2. Secondary fallback: OpenRouter / OpenAI compatible providers
+  const providers: { name: string; url: string; key: string; model: string }[] = [];
+
+  // OpenRouter
   if (env.openrouterApiKey) {
-    let orModel = "openai/gpt-4o-mini";
+    let orModel = "google/gemini-2.0-flash-001";
     const modelLower = (model || "").toLowerCase();
     if (modelLower.includes("kimi")) orModel = "moonshotai/kimi-k2";
-    else if (modelLower.includes("pro")) orModel = "google/gemini-2.5-pro";
-    else if (modelLower.includes("gemini")) orModel = "google/gemini-2.5-flash";
     else if (modelLower.includes("deepseek")) orModel = "deepseek/deepseek-chat";
     else if (modelLower.includes("llama")) orModel = "meta-llama/llama-3.3-70b-instruct";
-    else if (modelLower.includes("mistral")) orModel = "mistralai/mistral-medium";
-    else if (modelLower.includes("glm")) orModel = "z-ai/glm-4.5";
+    else if (modelLower.includes("gpt")) orModel = "openai/gpt-4o-mini";
+
     providers.push({
       name: `OpenRouter (${orModel})`,
       url: "https://openrouter.ai/api/v1/chat/completions",
@@ -59,46 +154,42 @@ export async function streamChat(
     });
   }
 
-  // 3. Add Groq if key exists
+  // Groq
   if (env.groqApiKey) {
-    providers.push({
-      name: "Groq (llama-3.3-70b)",
-      url: "https://api.groq.com/openai/v1/chat/completions",
-      key: env.groqApiKey,
-      model: "llama-3.3-70b-versatile",
-    });
-    providers.push({
-      name: "Groq (llama-3.1-8b)",
-      url: "https://api.groq.com/openai/v1/chat/completions",
-      key: env.groqApiKey,
-      model: "llama-3.1-8b-instant",
-    });
+    providers.push(
+      {
+        name: "Groq (llama-3.3-70b)",
+        url: "https://api.groq.com/openai/v1/chat/completions",
+        key: env.groqApiKey,
+        model: "llama-3.3-70b-versatile",
+      },
+      {
+        name: "Groq (llama-3.1-8b)",
+        url: "https://api.groq.com/openai/v1/chat/completions",
+        key: env.groqApiKey,
+        model: "llama-3.1-8b-instant",
+      }
+    );
   }
 
-  // 4. Add NVIDIA NIM if key exists (valid active NIM endpoints only)
+  // NVIDIA NIM (active endpoints)
   const nimKey = env.nvidiaApiKey || (env.nvidiaApiKeys && env.nvidiaApiKeys[0]);
   if (nimKey) {
-    const validNimModels = [
-      "meta/llama-3.3-70b-instruct",
-      "deepseek-ai/deepseek-r1",
-      "mistralai/mistral-large-2-instruct",
-    ];
-
-    for (const nimModel of validNimModels) {
-      providers.push({
-        name: `NVIDIA (${nimModel})`,
+    providers.push(
+      {
+        name: "NVIDIA (Llama 3.3 70B)",
         url: "https://integrate.api.nvidia.com/v1/chat/completions",
         key: nimKey,
-        model: nimModel,
-      });
-    }
+        model: "meta/llama-3.3-70b-instruct",
+      },
+      {
+        name: "NVIDIA (DeepSeek R1)",
+        url: "https://integrate.api.nvidia.com/v1/chat/completions",
+        key: nimKey,
+        model: "deepseek-ai/deepseek-r1",
+      }
+    );
   }
-
-  if (providers.length === 0) {
-    throw new Error("No AI providers configured. Please check environment keys.");
-  }
-
-  let lastError: Error | null = null;
 
   for (const provider of providers) {
     try {
@@ -162,7 +253,7 @@ export async function streamChat(
       callbacks.onDone(fullText);
       return; // Success! Return immediately.
     } catch (error: any) {
-      if (error.name === "AbortError") {
+      if (error.name === "AbortError" || signal?.aborted) {
         callbacks.onDone("");
         return;
       }
@@ -171,5 +262,7 @@ export async function streamChat(
     }
   }
 
-  callbacks.onError(new Error(`All AI streaming providers failed. Last Error: ${lastError?.message}`));
+  callbacks.onError(
+    new Error(`All AI streaming providers failed. Last Error: ${lastError?.message || "Unknown error"}`)
+  );
 }
