@@ -686,7 +686,7 @@ function recordFailedLogin(email: string, isAdmin = false): { attemptsRemaining:
 function clearLoginAttempts(email: string): void { loginAttempts.delete(email); }
 
 export async function loginUser(
-  input: LoginInput & { rememberMe?: boolean; expectedRole?: "USER" | "ADMIN"; portal?: "user" | "admin" }
+  input: LoginInput & { rememberMe?: boolean; expectedRole?: "USER" | "ADMIN"; portal?: "user" | "admin"; forceLogin?: boolean }
 ) {
   const email = input.email.toLowerCase().trim();
   const isAdminPortal = input.portal === "admin" || input.expectedRole === "ADMIN";
@@ -743,8 +743,24 @@ export async function loginUser(
     throw httpError(403, "Admin accounts cannot log in here. Please use the Admin Login page.");
   }
 
-  // Auto-revoke stale sessions on login to ensure seamless access
-  if (user.activeSessionId) {
+  // ─── Single-session enforcement ──────────────────────────────
+  // If the account already has an active session that is NOT idle, do not
+  // silently take it over. Ask the client to confirm ("You're logged in on
+  // another device — end it and continue?"). The frontend shows a popup and
+  // retries with forceLogin=true. An idle session is safe to replace silently.
+  const forceLogin = input.forceLogin === true;
+  if (user.activeSessionId && !forceLogin) {
+    const idle = await isSessionIdle(user.id);
+    if (!idle) {
+      return {
+        requireSessionConfirmation: true,
+        message: "You're already logged in on another device. End that session and continue here?",
+      } as any;
+    }
+    // Idle → safe to take over.
+    await revokeAllSessions(user.id).catch(() => {});
+  } else if (user.activeSessionId && forceLogin) {
+    // User explicitly chose to end the other session.
     await revokeAllSessions(user.id).catch(() => {});
   }
 
