@@ -7,13 +7,14 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { api } from "@/services/api";
 import { saveAuthSession } from "@/hooks/useAuth";
+import { Navbar } from "@/components/layout/Navbar";
+import { SessionPopup } from "@/components/ui/SessionPopup";
 import {
   ShieldCheck, Mail, Lock, Eye, EyeOff, KeyRound, ArrowRight, Shield,
 } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,33 +25,31 @@ export default function AdminLoginPage() {
   const [showSessionConfirm, setShowSessionConfirm] = useState(false);
   const [sessionConfirmMsg, setSessionConfirmMsg] = useState("");
 
+  // Login screens render on the dark video background — force dark like the
+  // user login page so the glass card looks identical.
   useEffect(() => {
-    const saved = (localStorage.getItem("adyapan-theme") as "dark" | "light") || "dark";
-    setTheme(saved);
-
-    const observer = new MutationObserver(() => {
-      const t = document.documentElement.getAttribute("data-theme");
-      setTheme(t === "light" ? "light" : "dark");
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => observer.disconnect();
+    document.body.classList.add("landing");
+    document.documentElement.setAttribute("data-theme", "dark");
+    return () => { document.body.classList.remove("landing"); };
   }, []);
 
-  const isDark = theme === "dark";
-  const bg         = isDark ? "var(--bg-dark, #060b0e)"        : "#f1f5f9";
-  const cardBg     = isDark ? "rgba(18,18,30,0.95)"             : "rgba(255,255,255,0.98)";
-  const cardBorder = isDark ? "rgba(255,255,255,0.1)"           : "rgba(0,0,0,0.1)";
-  const cardText   = isDark ? "#ffffff"                          : "#0f172a";
-  const labelClr   = isDark ? "rgba(255,255,255,0.65)"          : "#475569";
-  const mutedClr   = isDark ? "rgba(255,255,255,0.45)"          : "#64748b";
-  const iconClr    = isDark ? "rgba(255,255,255,0.75)"          : "#475569";
-  const inputBg    = isDark ? "rgba(255,255,255,0.06)"          : "rgba(0,0,0,0.04)";
-  const inputBdr   = isDark ? "rgba(255,255,255,0.12)"          : "rgba(0,0,0,0.12)";
+  // Card sits on the video background, so it uses the SAME fixed dark-glass
+  // palette as the user login page (translucent + blur + white text) in both
+  // themes — matching the user login card exactly.
+  const cardBg     = "rgba(18,18,30,0.15)";
+  const cardBorder = "rgba(255,255,255,0.15)";
+  const cardText   = "#ffffff";
+  const labelClr   = "rgba(255,255,255,0.75)";
+  const mutedClr   = "rgba(255,255,255,0.6)";
+  const iconClr    = "rgba(255,255,255,0.75)";
+  const inputBg    = "rgba(255,255,255,0.1)";
+  const inputBdr   = "rgba(255,255,255,0.2)";
 
   const inpStyle: React.CSSProperties = {
     width: "100%", padding: "0.65rem 0.75rem 0.65rem 2.4rem",
     background: inputBg, border: `1px solid ${inputBdr}`,
     borderRadius: 10, color: cardText, fontSize: "0.85rem",
+    WebkitTextFillColor: "#ffffff", colorScheme: "dark",
     outline: "none", transition: "border-color 0.2s",
   };
 
@@ -119,23 +118,24 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh", background: bg, display: "flex",
-        alignItems: "center", justifyContent: "center", padding: "1.5rem",
-        position: "relative", overflow: "hidden",
-      }}
-    >
-      {/* Background Glow */}
-      <div
-        style={{
-          position: "absolute", top: "20%", left: "50%",
-          transform: "translate(-50%, -50%)", width: "400px", height: "400px",
-          background: "radial-gradient(circle, rgba(245,158,11,0.15) 0%, rgba(0,0,0,0) 70%)",
-          pointerEvents: "none", borderRadius: "50%",
-        }}
-      />
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Video Background — same as the user login page */}
+      <video
+        autoPlay
+        muted
+        loop
+        className="fixed inset-0 w-full h-full object-cover"
+        style={{ zIndex: 0 }}
+      >
+        <source src="/login-bg.mp4" type="video/mp4" />
+      </video>
 
+      {/* Overlay for readability */}
+      <div className="fixed inset-0" style={{ background: "rgba(0,0,0,0.35)", zIndex: 1 }} />
+
+      <Navbar forceWhiteText hideThemeToggle />
+
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-6 relative z-10">
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -143,8 +143,8 @@ export default function AdminLoginPage() {
         style={{
           width: "100%", maxWidth: 440, background: cardBg,
           border: `1px solid ${cardBorder}`, borderRadius: 20,
-          padding: "2.25rem 2rem", backdropFilter: "blur(20px)",
-          boxShadow: isDark ? "0 20px 50px rgba(0,0,0,0.6)" : "0 20px 40px rgba(0,0,0,0.08)",
+          padding: "2.25rem 2rem", backdropFilter: "blur(24px)",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.6)",
           position: "relative", zIndex: 10,
         }}
       >
@@ -293,52 +293,17 @@ export default function AdminLoginPage() {
           </Link>
         </div>
       </motion.div>
+      </div>
 
-      {showSessionConfirm && (
-        <div
-          style={{
-            position: "fixed", inset: 0, zIndex: 50, display: "flex",
-            alignItems: "center", justifyContent: "center", padding: "1.5rem",
-            background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
-          }}
-        >
-          <div
-            style={{
-              width: "100%", maxWidth: 400, background: cardBg,
-              border: `1px solid ${cardBorder}`, borderRadius: 16,
-              padding: "1.75rem", color: cardText,
-              boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
-            }}
-          >
-            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1.05rem", fontWeight: 700 }}>Active session detected</h3>
-            <p style={{ margin: "0 0 1.5rem", fontSize: "0.85rem", color: mutedClr, lineHeight: 1.5 }}>
-              {sessionConfirmMsg}
-            </p>
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              <button
-                type="button"
-                onClick={() => { setShowSessionConfirm(false); setLoading(false); }}
-                style={{
-                  flex: 1, padding: "0.6rem", borderRadius: 10, cursor: "pointer",
-                  background: inputBg, border: `1px solid ${inputBdr}`, color: cardText, fontWeight: 600,
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleForceAdminLogin}
-                style={{
-                  flex: 1, padding: "0.6rem", borderRadius: 10, cursor: "pointer",
-                  background: "linear-gradient(135deg,#fbbf24,#f59e0b)", border: "none", color: "#000", fontWeight: 700,
-                }}
-              >
-                End &amp; Log In
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Active-session confirm popup — shared style */}
+      <SessionPopup
+        open={showSessionConfirm}
+        message={sessionConfirmMsg || "There is an active session on another device. Do you want to end it and login here?"}
+        actions={[
+          { label: "Cancel", variant: "secondary", onClick: () => { setShowSessionConfirm(false); setLoading(false); } },
+          { label: "Login Here", variant: "primary", onClick: handleForceAdminLogin },
+        ]}
+      />
     </div>
   );
 }
