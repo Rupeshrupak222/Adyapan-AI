@@ -40,8 +40,8 @@ function BarChart({ data, metrics, isDark }: { data: GrowthDataPoint[]; metrics:
       {/* Y-axis labels */}
       <div className="flex">
         <div className="w-8 flex flex-col justify-between text-right pr-2">
-          {[maxVal, Math.round(maxVal * 0.5), 0].map((v) => (
-            <span key={v} className="text-[10px] font-semibold" style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(15,23,42,0.3)" }}>{v}</span>
+          {[maxVal, Math.round(maxVal * 0.5), 0].map((v, i) => (
+            <span key={`y-axis-${i}`} className="text-[10px] font-semibold" style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(15,23,42,0.3)" }}>{v}</span>
           ))}
         </div>
 

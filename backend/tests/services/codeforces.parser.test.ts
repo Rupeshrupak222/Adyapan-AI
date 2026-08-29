@@ -29,7 +29,7 @@ jest.mock("../../src/config/env", () => ({
 // at build time (they're file-level functions), let's test them via
 // ─── Import the helpers directly from the production module ─────────────────
 
-import { htmlToMarkdown, preservePreText } from "../../src/services/codeforces.service";
+import { htmlToMarkdown, preservePreText, splitMultiTestCaseExample } from "../../src/services/codeforces.service";
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
@@ -697,5 +697,43 @@ describe("Codeforces HTML parsing simulation", () => {
     expect(constraintTexts.length).toBeGreaterThanOrEqual(2);
     expect(constraintTexts.some((c) => c.includes("10"))).toBe(true);
     expect(constraintTexts.some((c) => c.includes("n"))).toBe(true);
+  });
+});
+
+describe("splitMultiTestCaseExample", () => {
+  it("splits multi-testcase example with variable line lengths into separate examples", () => {
+    const input = "3\n7 20 88\n9\n16 20 30 40 50 60 70 80 90\n9\n15 20 30 40 50 60 70 80 90";
+    const output = "35\n15\n90";
+    const results = splitMultiTestCaseExample({ input, output });
+
+    expect(results).toHaveLength(3);
+    expect(results[0].input).toBe("1\n7 20 88");
+    expect(results[0].output).toBe("35");
+    expect(results[1].input).toBe("1\n9\n16 20 30 40 50 60 70 80 90");
+    expect(results[1].output).toBe("15");
+    expect(results[2].input).toBe("1\n9\n15 20 30 40 50 60 70 80 90");
+    expect(results[2].output).toBe("90");
+  });
+
+  it("splits multi-testcase example with even line distribution", () => {
+    const input = "2\n3\n1 2 3\n4\n10 20 30 40";
+    const output = "6\n100";
+    const results = splitMultiTestCaseExample({ input, output });
+
+    expect(results).toHaveLength(2);
+    expect(results[0].input).toBe("1\n3\n1 2 3");
+    expect(results[0].output).toBe("6");
+    expect(results[1].input).toBe("1\n4\n10 20 30 40");
+    expect(results[1].output).toBe("100");
+  });
+
+  it("leaves single-testcase example unmodified", () => {
+    const input = "5\n1 2 3 4 5";
+    const output = "15";
+    const results = splitMultiTestCaseExample({ input, output });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].input).toBe(input);
+    expect(results[0].output).toBe(output);
   });
 });

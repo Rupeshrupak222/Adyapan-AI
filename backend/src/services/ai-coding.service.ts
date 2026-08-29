@@ -1,6 +1,6 @@
 import { prisma } from "../config/prisma";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
-import { scrapeCodeforcesProblem } from "./codeforces.service";
+import { scrapeCodeforcesProblem, splitMultiTestCaseExample } from "./codeforces.service";
 
 export interface Example {
   input: string;
@@ -57,6 +57,11 @@ export class AICodingService {
       const data = cached.explanationJson as unknown as AIAnalysisSchema;
       if (data && data.examples && data.examples.length > 0 && data.problem_explanation && !data.problem_explanation.includes("A structured explanation of the problem")) {
         if (!scrapedData || (data.inputSpecification && data.problem_explanation.length > 100)) {
+          const expanded: Example[] = [];
+          for (const ex of data.examples) {
+            expanded.push(...splitMultiTestCaseExample(ex));
+          }
+          data.examples = expanded;
           return data;
         }
       }
