@@ -906,48 +906,117 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   </motion.div>
                 )}
 
-                {analytics && analytics.weeklyProgress && analytics.weeklyProgress.length > 0 && (
-                  <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={7} className="p-5 rounded-2xl border space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp size={15} className="text-amber-500" />
-                      <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Weekly Progress</h3>
+                {/* ── Performance Dashboard: Weekly Progress & Activity ── */}
+                <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={7} className="p-6 rounded-3xl border space-y-6" style={{ background: c.cardBg, borderColor: c.border }}>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500">
+                        <TrendingUp size={16} />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Weekly Progress & Activity</h3>
+                        <p className="text-[11px]" style={{ color: c.textMuted }}>7-day aptitude session practice & accuracy trends</p>
+                      </div>
                     </div>
-                    <div className="flex items-end gap-2 h-28 pt-4">
-                      {analytics.weeklyProgress.slice(-7).map((week, idx) => {
-                        const maxAccuracy = 100;
-                        const barHeight = Math.max((week.accuracy / maxAccuracy) * 100, 14);
-                        return (
-                          <motion.div
-                            key={week.week}
-                            initial={{ height: 0 }}
-                            animate={{ height: `${barHeight}%` }}
-                            transition={{ duration: 0.5, delay: idx * 0.05 }}
-                            className="flex-1 rounded-t-lg relative group transition-all"
-                            style={{
-                              background: week.accuracy > 0
-                                ? `linear-gradient(180deg, ${c.primary}, ${c.primaryDark})`
-                                : "rgba(245,158,11,0.18)",
-                              border: "1px solid rgba(245,158,11,0.3)"
-                            }}
-                          >
-                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-black/80 text-amber-400 px-2 py-0.5 rounded shadow">
-                              {week.accuracy}% accuracy
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-3 py-1 rounded-xl text-[11px] font-bold border" style={{ background: c.surface, borderColor: c.border, color: c.textSec }}>
+                        Sessions: <strong className="text-amber-500">{analytics?.totalSessions || 0}</strong>
+                      </span>
+                      <span className="px-3 py-1 rounded-xl text-[11px] font-bold border" style={{ background: c.surface, borderColor: c.border, color: c.textSec }}>
+                        Accuracy: <strong className="text-emerald-400">{analytics?.overallAccuracy || 0}%</strong>
+                      </span>
+                      <span className="px-3 py-1 rounded-xl text-[11px] font-bold border" style={{ background: c.surface, borderColor: c.border, color: c.textSec }}>
+                        Readiness: <strong className="text-blue-400">{analytics?.placementReadiness || 0}%</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Interactive Weekly Bar Chart */}
+                  <div className="p-4 rounded-2xl border" style={{ background: isDark ? "rgba(0,0,0,0.3)" : "rgba(245,158,11,0.03)", borderColor: c.border }}>
+                    <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end h-40 pt-6 pb-2">
+                      {(() => {
+                        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+                        const todayIndex = (new Date().getDay() + 6) % 7; // 0=Mon, 6=Sun
+                        const weeklyList = days.map((day, idx) => {
+                          const matchingWeek = analytics?.weeklyProgress && analytics.weeklyProgress.length > idx
+                            ? analytics.weeklyProgress[idx]
+                            : null;
+                          return {
+                            day,
+                            accuracy: matchingWeek ? matchingWeek.accuracy : (idx === todayIndex ? (analytics?.overallAccuracy || 0) : 0),
+                            sessions: matchingWeek ? matchingWeek.sessionsCompleted : (idx === todayIndex ? (analytics?.totalSessions || 0) : 0),
+                            xp: matchingWeek ? matchingWeek.xpEarned : 0,
+                          };
+                        });
+
+                        return weeklyList.map((item, idx) => {
+                          const isToday = idx === todayIndex;
+                          const heightPercent = item.accuracy > 0
+                            ? Math.min(100, Math.max(20, Math.round(item.accuracy)))
+                            : (isToday ? 14 : 8);
+
+                          return (
+                            <div key={item.day} className="flex flex-col items-center justify-end h-full group relative">
+                              {/* Hover Tooltip */}
+                              <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none px-2 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap shadow-lg border z-10" style={{ background: isDark ? "#0A0A0C" : "#FFFFFF", borderColor: c.border, color: c.text }}>
+                                {item.day}: {item.accuracy}% Accuracy ({item.sessions} Sessions)
+                              </div>
+
+                              {/* Top Value */}
+                              <span className={`text-[10px] font-bold mb-1 transition-colors ${item.accuracy > 0 ? "text-amber-500" : (isDark ? "text-slate-600" : "text-slate-400")}`}>
+                                {item.accuracy > 0 ? `${item.accuracy}%` : (isToday ? "0%" : "·")}
+                              </span>
+
+                              {/* Bar Fill */}
+                              <div className="w-full max-w-[36px] bg-slate-200 dark:bg-white/5 rounded-xl h-24 flex items-end overflow-hidden p-0.5">
+                                <motion.div
+                                  initial={{ height: "0%" }}
+                                  animate={{ height: `${heightPercent}%` }}
+                                  transition={{ duration: 0.6, delay: idx * 0.05 }}
+                                  className={`w-full rounded-lg transition-all ${
+                                    item.accuracy > 0
+                                      ? "bg-gradient-to-t from-amber-600 to-amber-400 shadow-sm"
+                                      : isToday
+                                      ? "bg-amber-500/30 border border-amber-500/40"
+                                      : "bg-slate-300 dark:bg-white/10"
+                                  }`}
+                                />
+                              </div>
+
+                              {/* Day Label */}
+                              <div className="flex items-center gap-0.5 mt-2">
+                                <span className={`text-[10px] font-bold ${isToday ? "text-amber-500 font-black" : (isDark ? "text-slate-400" : "text-slate-600")}`}>
+                                  {item.day}
+                                </span>
+                                {isToday && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+                                )}
+                              </div>
                             </div>
-                          </motion.div>
-                        );
-                      })}
+                          );
+                        });
+                      })()}
                     </div>
-                    <div className="flex gap-2">
-                      {analytics.weeklyProgress.slice(-7).map(week => (
-                        <div key={week.week} className="flex-1 text-center">
-                          <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>
-                            {week.week.split("-").pop()}
+                  </div>
+
+                  {/* Category Performance Breakdown */}
+                  {analytics?.categoryBreakdown && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t" style={{ borderColor: c.border }}>
+                      {Object.entries(analytics.categoryBreakdown).map(([catKey, catData]) => (
+                        <div key={catKey} className="p-3.5 rounded-2xl border flex items-center justify-between" style={{ background: c.surface, borderColor: c.border }}>
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-wider capitalize" style={{ color: c.textMuted }}>{catKey}</p>
+                            <p className="text-xs font-bold mt-0.5" style={{ color: c.text }}>{catData.total} Attempted</p>
+                          </div>
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-md ${catData.accuracy >= 60 ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" : "text-amber-400 bg-amber-500/10 border border-amber-500/20"}`}>
+                            {catData.accuracy}%
                           </span>
                         </div>
                       ))}
                     </div>
-                  </motion.div>
-                )}
+                  )}
+                </motion.div>
 
                 <div className="h-4" />
               </motion.div>

@@ -100,6 +100,25 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
   }
 }
 
+export async function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+
+  if (!token) {
+    next();
+    return;
+  }
+
+  try {
+    if (!(await isTokenBlacklisted(token))) {
+      req.user = jwt.verify(token, env.jwtSecret, { algorithms: ["HS256"] }) as AuthUser;
+    }
+  } catch {
+    // Non-blocking: proceed without req.user
+  }
+  next();
+}
+
 /**
  * Validates that the client's session ID matches the active session in the DB.
  */

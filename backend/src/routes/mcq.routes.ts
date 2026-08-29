@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth";
-import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
+import { optionalAuth } from "../middleware/auth";
 import {
   handleGetTopics,
   handleGetCompanies,
   handleGetCompanyByName,
+  handleGetTests,
+  handleGetTestById,
   handleGetQuestions,
-  handleGenerateAIMCQs,
   handleSubmitAttempt,
   handleToggleBookmark,
   handleGetProgress,
@@ -15,15 +15,18 @@ import {
 export const mcqRouter = Router();
 
 // Topic & Company Directory
-mcqRouter.get("/topics", requireAuth, handleGetTopics);
-mcqRouter.get("/companies", requireAuth, handleGetCompanies);
-mcqRouter.get("/company/:name", requireAuth, handleGetCompanyByName);
+mcqRouter.get("/topics", optionalAuth, handleGetTopics);
+mcqRouter.get("/companies", optionalAuth, handleGetCompanies);
+mcqRouter.get("/company/:name", optionalAuth, handleGetCompanyByName);
+
+// Dynamic Multi-Test Endpoints
+mcqRouter.get("/tests", optionalAuth, handleGetTests);
+mcqRouter.get("/test/:testId", optionalAuth, handleGetTestById);
 
 // Questions & Practice
-mcqRouter.get("/questions", requireAuth, handleGetQuestions);
-mcqRouter.post("/generate", requireAuth, requireFeatureQuota("TECHNICAL_MCQS"), handleGenerateAIMCQs);
-mcqRouter.post("/submit", requireAuth, handleSubmitAttempt);
+mcqRouter.get("/questions", optionalAuth, handleGetQuestions);
+mcqRouter.post("/submit", optionalAuth, handleSubmitAttempt);
 
 // Progress & Bookmarks
-mcqRouter.get("/progress", requireAuth, handleGetProgress);
-mcqRouter.post("/bookmark", requireAuth, handleToggleBookmark);
+mcqRouter.get("/progress", optionalAuth, handleGetProgress);
+mcqRouter.post("/bookmark", optionalAuth, handleToggleBookmark);
