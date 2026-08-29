@@ -1001,19 +1001,22 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   </div>
 
                   {/* Category Performance Breakdown */}
-                  {analytics?.categoryBreakdown && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t" style={{ borderColor: c.border }}>
-                      {Object.entries(analytics.categoryBreakdown).map(([catKey, catData]) => (
-                        <div key={catKey} className="p-3.5 rounded-2xl border flex items-center justify-between" style={{ background: c.surface, borderColor: c.border }}>
-                          <div>
-                            <p className="text-[10px] font-black uppercase tracking-wider capitalize" style={{ color: c.textMuted }}>{catKey}</p>
-                            <p className="text-xs font-bold mt-0.5" style={{ color: c.text }}>{catData.total} Attempted</p>
+                  {analytics?.categoryScores && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t" style={{ borderColor: c.border }}>
+                      {Object.entries(analytics.categoryScores).map(([catKey, score]) => {
+                        const numScore = typeof score === "number" ? score : 0;
+                        return (
+                          <div key={catKey} className="p-3.5 rounded-2xl border flex items-center justify-between" style={{ background: c.surface, borderColor: c.border }}>
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-wider capitalize" style={{ color: c.textMuted }}>{catKey}</p>
+                              <p className="text-xs font-bold mt-0.5" style={{ color: c.text }}>Mastery</p>
+                            </div>
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-md ${numScore >= 60 ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" : "text-amber-400 bg-amber-500/10 border border-amber-500/20"}`}>
+                              {numScore}%
+                            </span>
                           </div>
-                          <span className={`text-xs font-black px-2 py-0.5 rounded-md ${catData.accuracy >= 60 ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" : "text-amber-400 bg-amber-500/10 border border-amber-500/20"}`}>
-                            {catData.accuracy}%
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </motion.div>

@@ -202,10 +202,8 @@ import {
 
 import { DashboardSidebar, DashboardTopNav, ProfileDropdown, sidebarItems } from "@/components/dashboard-shell";
 import type { AdyapanUser, SidebarItem } from "@/components/dashboard-shell";
-export { DashboardSidebar, DashboardTopNav, ProfileDropdown, sidebarItems };
-export type { AdyapanUser, SidebarItem };
 
-// ΓöÇΓöÇΓöÇ Stat Widget Card ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Stat Widget Card ────────────────────────────────────────────────────────
 function StatCard({
   icon, iconBg, iconColor, value, label, trend, trendUp,
 }: {
