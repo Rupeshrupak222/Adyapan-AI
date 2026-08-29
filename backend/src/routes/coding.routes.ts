@@ -4,7 +4,7 @@ import { generateCode, debugCode, explainCode, generateProject, generateMultiLan
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { handleRouteError } from "../utils/routeError";
 import { prisma as masterPrisma } from "../config/prisma";
-import { CodeforcesService, scrapeCodeforcesProblem } from "../services/codeforces.service";
+import { CodeforcesService, scrapeCodeforcesProblem, splitMultiTestCaseExample } from "../services/codeforces.service";
 import { AICodingService } from "../services/ai-coding.service";
 import { executeCode, runTestCases, checkPistonHealth } from "../services/piston.service";
 import { AIReviewService } from "../services/ai-review.service";
@@ -684,7 +684,7 @@ router.get("/workspace/:id", async (req: any, res) => {
       }
     }
 
-    if (!aiAnalysisData) {
+    if (!aiAnalysisData || !aiAnalysisData.examples || aiAnalysisData.examples.length === 0) {
       aiAnalysisData = question.aiAnalyses[0] ? (question.aiAnalyses[0].explanationJson as any) : null;
       if (!aiAnalysisData || !aiAnalysisData.problem_explanation || !aiAnalysisData.examples || aiAnalysisData.examples.length === 0 || aiAnalysisData.problem_explanation.includes("You are given an array of integers")) {
         try {
@@ -693,6 +693,23 @@ router.get("/workspace/:id", async (req: any, res) => {
           console.warn("Failed to generate AI analysis on workspace load:", err);
         }
       }
+    }
+
+    // Ensure all examples in aiAnalysisData and scrapedProblem are expanded into individual test cases
+    if (aiAnalysisData && aiAnalysisData.examples && Array.isArray(aiAnalysisData.examples)) {
+      const expanded: any[] = [];
+      for (const ex of aiAnalysisData.examples) {
+        expanded.push(...splitMultiTestCaseExample(ex));
+      }
+      aiAnalysisData.examples = expanded;
+    }
+
+    if (scrapedProblemData && scrapedProblemData.examples && Array.isArray(scrapedProblemData.examples)) {
+      const expanded: any[] = [];
+      for (const ex of scrapedProblemData.examples) {
+        expanded.push(...splitMultiTestCaseExample(ex));
+      }
+      scrapedProblemData.examples = expanded;
     }
 
     res.json({

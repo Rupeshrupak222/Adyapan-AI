@@ -22,8 +22,8 @@ export function KatexMath({ math, displayMode = false }: { math: string; display
 
   if (displayMode) {
     return (
-      <div
-        className="my-3 overflow-x-auto py-2 px-3 rounded-xl bg-white/[0.03] border border-white/10 text-center text-sm leading-relaxed"
+      <span
+        className="block my-3 overflow-x-auto py-2 px-3 rounded-xl bg-white/[0.03] border border-white/10 text-center text-sm leading-relaxed"
         dangerouslySetInnerHTML={{ __html: html }}
       />
     );

@@ -594,9 +594,12 @@ Answer the student's question based on the coding problem. Provide hints or feed
       if (rawExamples) {
         try {
           const parsed = typeof rawExamples === 'string' ? JSON.parse(rawExamples) : rawExamples;
-          if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].input) {
-            effectiveStdin = parsed[0].input;
-            setStdin(parsed[0].input);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const split = splitMultiTestCase(parsed[0]);
+            if (split.length > 0 && split[0].input) {
+              effectiveStdin = split[0].input;
+              setStdin(split[0].input);
+            }
           }
         } catch { /* ignore */ }
       }
@@ -2060,6 +2063,130 @@ Answer the student's question based on the coding problem. Provide hints or feed
     );
   };
 
+  // Helper to split multi-testcase examples into individual test cases
+  const splitMultiTestCase = (ex: { input: string; output: string; explanation?: string }): Array<{ input: string; output: string; explanation?: string }> => {
+    if (!ex || !ex.input || !ex.output) return [ex];
+
+    const inRaw = ex.input.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+    const outRaw = ex.output.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+
+    const inLines = inRaw.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+    const outLines = outRaw.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+
+    if (inLines.length < 2 || outLines.length < 1) return [ex];
+
+    const firstLine = inLines[0].trim();
+    if (!/^\d+$/.test(firstLine)) {
+      return [ex];
+    }
+
+    const T = parseInt(firstLine, 10);
+    if (T < 2 || T > 100) {
+      return [ex];
+    }
+
+    const remainingInLines = inLines.slice(1);
+
+    if (outLines.length === T) {
+      if (remainingInLines.length % T === 0) {
+        const linesPerTest = remainingInLines.length / T;
+        const result: Array<{ input: string; output: string; explanation?: string }> = [];
+        for (let i = 0; i < T; i++) {
+          const chunk = remainingInLines.slice(i * linesPerTest, (i + 1) * linesPerTest);
+          result.push({
+            input: `1\n${chunk.join("\n")}`,
+            output: outLines[i],
+            explanation: ex.explanation ? (i === 0 ? ex.explanation : undefined) : undefined,
+          });
+        }
+        return result;
+      }
+
+      const testCaseInputs: string[][] = [];
+      let curLines: string[] = [];
+      let idx = 0;
+
+      while (idx < remainingInLines.length) {
+        const line = remainingInLines[idx];
+        const tokens = line.split(/\s+/).filter(Boolean);
+
+        if (curLines.length > 0) {
+          const testCasesLeft = T - testCaseInputs.length;
+          const linesLeft = remainingInLines.length - idx;
+
+          if (testCasesLeft === linesLeft) {
+            testCaseInputs.push(curLines);
+            curLines = [line];
+            idx++;
+            continue;
+          }
+        }
+
+        curLines.push(line);
+
+        if (tokens.length === 1 && /^\d+$/.test(tokens[0]) && idx + 1 < remainingInLines.length) {
+          const expectedCount = parseInt(tokens[0], 10);
+          const nextLine = remainingInLines[idx + 1];
+          const nextTokens = nextLine.split(/\s+/).filter(Boolean);
+          if (nextTokens.length >= expectedCount || expectedCount <= 20) {
+            curLines.push(nextLine);
+            idx += 2;
+            testCaseInputs.push(curLines);
+            curLines = [];
+            continue;
+          }
+        }
+
+        const testCasesLeft = T - testCaseInputs.length;
+        const linesLeft = remainingInLines.length - (idx + 1);
+        if (testCasesLeft > 1 && linesLeft >= testCasesLeft - 1 && curLines.length >= 1) {
+          if (tokens.length >= 2 || curLines.length >= 2) {
+            testCaseInputs.push(curLines);
+            curLines = [];
+          }
+        }
+
+        idx++;
+      }
+
+      if (curLines.length > 0) {
+        testCaseInputs.push(curLines);
+      }
+
+      if (testCaseInputs.length === T) {
+        const result: Array<{ input: string; output: string; explanation?: string }> = [];
+        for (let i = 0; i < T; i++) {
+          result.push({
+            input: `1\n${testCaseInputs[i].join("\n")}`,
+            output: outLines[i],
+            explanation: ex.explanation ? (i === 0 ? ex.explanation : undefined) : undefined,
+          });
+        }
+        return result;
+      }
+    }
+
+    if (outLines.length % T === 0 && outLines.length > T) {
+      const outPerTest = outLines.length / T;
+      if (remainingInLines.length % T === 0) {
+        const inPerTest = remainingInLines.length / T;
+        const result: Array<{ input: string; output: string; explanation?: string }> = [];
+        for (let i = 0; i < T; i++) {
+          const inChunk = remainingInLines.slice(i * inPerTest, (i + 1) * inPerTest);
+          const outChunk = outLines.slice(i * outPerTest, (i + 1) * outPerTest);
+          result.push({
+            input: `1\n${inChunk.join("\n")}`,
+            output: outChunk.join("\n"),
+            explanation: ex.explanation ? (i === 0 ? ex.explanation : undefined) : undefined,
+          });
+        }
+        return result;
+      }
+    }
+
+    return [ex];
+  };
+
   // Parse examples if present
   const renderExamples = () => {
     const rawExamples = aiAnalysis?.examples || scrapedProblem?.examples || problem?.examples;
@@ -2072,11 +2199,31 @@ Answer the student's question based on the coding problem. Provide hints or feed
     }
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
 
+    const finalExamples: any[] = [];
+    for (const ex of parsed) {
+      finalExamples.push(...splitMultiTestCase(ex));
+    }
+
     return (
       <div className="flex flex-col gap-4 mt-2">
-        {parsed.map((ex: any, idx: number) => (
+        {finalExamples.map((ex: any, idx: number) => (
           <div key={idx} className="bg-black/40 p-4 rounded-xl border border-[var(--border-color)] font-mono text-xs">
-            <p className="font-bold text-amber-500 mb-2 font-sans">Example {idx + 1}:</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-bold text-amber-500 font-sans">Example {idx + 1}:</p>
+              <button
+                onClick={() => {
+                  setStdin(ex.input);
+                  setOutputTab("input");
+                  setShowTerminal(true);
+                  toast.success(`Example ${idx + 1} loaded into Stdin`);
+                }}
+                className="text-[10px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-500/10 text-[var(--text-secondary)] hover:text-amber-400 border border-white/10 transition flex items-center gap-1 font-sans"
+                title="Load this test case into Stdin"
+              >
+                <Terminal size={10} />
+                Load to Stdin
+              </button>
+            </div>
             <div className="flex flex-col gap-2 text-[var(--text-primary)]">
               <div className="flex flex-col">
                 <span className="text-[var(--text-secondary)] font-sans font-semibold mb-0.5">Input:</span>

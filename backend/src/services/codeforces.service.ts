@@ -377,24 +377,23 @@ export async function scrapeCodeforcesProblem(externalId: string): Promise<Scrap
     const examples: Array<{ input: string; output: string; explanation?: string }> = [];
     const sampleTestsDiv = problemDiv.find(".sample-tests");
     if (sampleTestsDiv.length) {
-      sampleTestsDiv.find(".sample-test").each((_, sampleEl) => {
-        const inputPre = $(sampleEl).find(".input pre");
-        const outputPre = $(sampleEl).find(".output pre");
-        if (inputPre.length && outputPre.length) {
-          const inputText = preservePreText($, inputPre);
-          const outputText = preservePreText($, outputPre);
-          examples.push({ input: inputText, output: outputText });
-        }
+      const inputs: any[] = [];
+      const outputs: any[] = [];
+
+      sampleTestsDiv.find(".input").each((_, inEl) => {
+        inputs.push(inEl);
+      });
+      sampleTestsDiv.find(".output").each((_, outEl) => {
+        outputs.push(outEl);
       });
 
-      if (examples.length === 0) {
-        const inputs = sampleTestsDiv.find(".input pre").toArray();
-        const outputs = sampleTestsDiv.find(".output pre").toArray();
-        for (let i = 0; i < Math.min(inputs.length, outputs.length); i++) {
-          examples.push({
-            input: preservePreText($, $(inputs[i])),
-            output: preservePreText($, $(outputs[i]))
-          });
+      const count = Math.min(inputs.length, outputs.length);
+      for (let i = 0; i < count; i++) {
+        const inTxt = preservePreText($, $(inputs[i]));
+        const outTxt = preservePreText($, $(outputs[i]));
+        if (inTxt && outTxt) {
+          const split = splitMultiTestCaseExample({ input: inTxt, output: outTxt });
+          examples.push(...split);
         }
       }
     }
@@ -439,13 +438,35 @@ export async function scrapeCodeforcesProblem(externalId: string): Promise<Scrap
 }
 
 function preservePreText($: cheerio.CheerioAPI, el: any): string {
-  const rawHtml = $.html(el);
+  if (!el || !el.length) return "";
+
+  const clone = $(el).clone();
+  // Remove title header if present (e.g. <div class="title">Input</div>)
+  clone.find(".title").remove();
+
+  // If there are .test-example-line elements, extract each line cleanly
+  const testLines = clone.find(".test-example-line");
+  if (testLines.length > 0) {
+    const lines: string[] = [];
+    testLines.each((_, lineEl) => {
+      lines.push($(lineEl).text().trim());
+    });
+    const result = lines.filter(Boolean).join("\n");
+    if (result.length > 0) return result;
+  }
+
+  // If pre element is present inside, take that
+  const pre = clone.is("pre") ? clone : (clone.find("pre").length ? clone.find("pre").first() : clone);
+
+  const rawHtml = $.html(pre);
   let text = rawHtml
     .replace(/^<pre[^>]*>/i, "")
     .replace(/<\/pre>$/i, "")
     .trim();
   text = text
     .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
     .replace(/<[^>]+>/g, "")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
@@ -455,7 +476,12 @@ function preservePreText($: cheerio.CheerioAPI, el: any): string {
     .replace(/&nbsp;/g, " ")
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n");
-  return text;
+
+  return text
+    .split("\n")
+    .map(line => line.trimEnd())
+    .join("\n")
+    .trim();
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -548,6 +574,136 @@ function htmlToMarkdown($: cheerio.CheerioAPI, el: any): string {
     .trim();
 
   return md;
+}
+
+export function splitMultiTestCaseExample(ex: { input: string; output: string; explanation?: string }): Array<{ input: string; output: string; explanation?: string }> {
+  if (!ex || !ex.input || !ex.output) return [ex];
+
+  const inRaw = ex.input.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  const outRaw = ex.output.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+
+  const inLines = inRaw.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+  const outLines = outRaw.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+
+  if (inLines.length < 2 || outLines.length < 1) return [ex];
+
+  // Check if first line is number of test cases T
+  const firstLine = inLines[0].trim();
+  if (!/^\d+$/.test(firstLine)) {
+    return [ex];
+  }
+
+  const T = parseInt(firstLine, 10);
+  if (T < 2 || T > 100) {
+    return [ex];
+  }
+
+  const remainingInLines = inLines.slice(1);
+
+  // Case 1: Number of output lines matches T exactly
+  if (outLines.length === T) {
+    // Subcase 1a: Even division of remaining input lines
+    if (remainingInLines.length % T === 0) {
+      const linesPerTest = remainingInLines.length / T;
+      const result: Array<{ input: string; output: string; explanation?: string }> = [];
+      for (let i = 0; i < T; i++) {
+        const chunk = remainingInLines.slice(i * linesPerTest, (i + 1) * linesPerTest);
+        result.push({
+          input: `1\n${chunk.join("\n")}`,
+          output: outLines[i],
+          explanation: ex.explanation ? (i === 0 ? ex.explanation : undefined) : undefined,
+        });
+      }
+      return result;
+    }
+
+    // Subcase 1b: Variable lines per test case (e.g. n followed by array of n elements)
+    const testCaseInputs: string[][] = [];
+    let curLines: string[] = [];
+    let idx = 0;
+
+    while (idx < remainingInLines.length) {
+      const line = remainingInLines[idx];
+      const tokens = line.split(/\s+/).filter(Boolean);
+
+      // If we already have accumulated lines for current test case, check if we should finalize it
+      if (curLines.length > 0) {
+        const testCasesLeft = T - testCaseInputs.length;
+        const linesLeft = remainingInLines.length - idx;
+
+        if (testCasesLeft === linesLeft) {
+          testCaseInputs.push(curLines);
+          curLines = [line];
+          idx++;
+          continue;
+        }
+      }
+
+      curLines.push(line);
+
+      // Pattern A: line was a single integer n, and next line has >= n tokens
+      if (tokens.length === 1 && /^\d+$/.test(tokens[0]) && idx + 1 < remainingInLines.length) {
+        const expectedCount = parseInt(tokens[0], 10);
+        const nextLine = remainingInLines[idx + 1];
+        const nextTokens = nextLine.split(/\s+/).filter(Boolean);
+        if (nextTokens.length >= expectedCount || expectedCount <= 20) {
+          curLines.push(nextLine);
+          idx += 2;
+          testCaseInputs.push(curLines);
+          curLines = [];
+          continue;
+        }
+      }
+
+      const testCasesLeft = T - testCaseInputs.length;
+      const linesLeft = remainingInLines.length - (idx + 1);
+      if (testCasesLeft > 1 && linesLeft >= testCasesLeft - 1 && curLines.length >= 1) {
+        if (tokens.length >= 2 || curLines.length >= 2) {
+          testCaseInputs.push(curLines);
+          curLines = [];
+        }
+      }
+
+      idx++;
+    }
+
+    if (curLines.length > 0) {
+      testCaseInputs.push(curLines);
+    }
+
+    if (testCaseInputs.length === T) {
+      const result: Array<{ input: string; output: string; explanation?: string }> = [];
+      for (let i = 0; i < T; i++) {
+        result.push({
+          input: `1\n${testCaseInputs[i].join("\n")}`,
+          output: outLines[i],
+          explanation: ex.explanation ? (i === 0 ? ex.explanation : undefined) : undefined,
+        });
+      }
+      return result;
+    }
+  }
+
+  // Case 2: Output lines is divisible by T (e.g. multiple lines of output per test case)
+  if (outLines.length % T === 0 && outLines.length > T) {
+    const outPerTest = outLines.length / T;
+    if (remainingInLines.length % T === 0) {
+      const inPerTest = remainingInLines.length / T;
+      const result: Array<{ input: string; output: string; explanation?: string }> = [];
+      for (let i = 0; i < T; i++) {
+        const inChunk = remainingInLines.slice(i * inPerTest, (i + 1) * inPerTest);
+        const outChunk = outLines.slice(i * outPerTest, (i + 1) * outPerTest);
+        result.push({
+          input: `1\n${inChunk.join("\n")}`,
+          output: outChunk.join("\n"),
+          explanation: ex.explanation ? (i === 0 ? ex.explanation : undefined) : undefined,
+        });
+      }
+      return result;
+    }
+  }
+
+  return [ex];
 }
 
 export { htmlToMarkdown, preservePreText };
