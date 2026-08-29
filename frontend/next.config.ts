@@ -51,6 +51,18 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    // Route-level redirects for alias paths. Handled by Next at the routing
+    // layer so the target page component never has to render just to call
+    // redirect() — which was throwing a "negative time stamp" perf error for
+    // redirect-only Server Components (e.g. /profile/admin).
+    return [
+      { source: "/profile", destination: "/dashboard/user?view=profile", permanent: false },
+      { source: "/dashboard", destination: "/dashboard/user", permanent: false },
+      { source: "/dashboard/resume", destination: "/dashboard/user?view=resume-builder", permanent: false },
+      { source: "/dashboard/placement", destination: "/dashboard/user?view=placement-hub", permanent: false },
+    ];
+  },
   async rewrites() {
     return [
       {
