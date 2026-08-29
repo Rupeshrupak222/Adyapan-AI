@@ -11,6 +11,7 @@
     "build": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && npx prisma generate && npx prisma generate --schema=prisma/schema.user.prisma && node node_modules/typescript/bin/tsc -p tsconfig.json",
     "start": "node --max-old-space-size=500 dist/index.js",
     "prisma:generate": "prisma generate && prisma generate --schema=prisma/schema.user.prisma",
+    "prisma:push": "prisma db push --accept-data-loss && prisma db push --schema=prisma/schema.user.prisma --accept-data-loss",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:user": "prisma migrate deploy --schema=prisma/schema.user.prisma",
     "migrate:all": "ts-node src/scripts/migrate-all.ts",
