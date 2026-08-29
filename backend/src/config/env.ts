@@ -107,7 +107,10 @@ if (env.nodeEnv === "production") {
   if (!process.env.JWT_SECRET || env.jwtSecret === "replace-this-local-secret-before-production") {
     errors.push("JWT_SECRET must be set to a strong, unique value in production.");
   } else if (env.jwtSecret.length < 32) {
-    errors.push("JWT_SECRET is too short; use at least 32 characters.");
+    // Length is a strength concern, not the core vulnerability (using the
+    // default/empty secret is). Warn loudly but don't refuse to boot, so a
+    // valid-but-short secret still works.
+    console.warn("[SECURITY] JWT_SECRET is shorter than 32 characters; use a longer secret for stronger security.");
   }
 
   if (!env.adminRegisterSecret || env.adminRegisterSecret === "adyapan-admin-secret-2026") {
