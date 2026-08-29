@@ -15,27 +15,33 @@ export interface OpenRouterOptions {
 
 // Gemini model fallback chain — active supported models
 const GEMINI_MODEL_FALLBACKS = [
+  "gemini-3.6-flash",
+  "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-1.5-flash",
-  "gemini-1.5-pro",
 ];
 
 // Groq model fallback chain — active official fast models on Groq
 const GROQ_MODEL_FALLBACKS_STRONG = [
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
-  "mixtral-8x7b-32768",
+  "openai/gpt-oss-120b",
+  "qwen/qwen3.8-27b",
+  "openai/gpt-oss-20b",
+  "qwen/qwen3.6-27b",
+  "groq/compound",
 ];
 const GROQ_MODEL_FALLBACKS_FAST = [
-  "llama-3.1-8b-instant",
-  "llama3-70b-8192",
+  "qwen/qwen3.8-27b",
+  "openai/gpt-oss-20b",
+  "groq/compound-mini",
 ];
 
 // NVIDIA NIM model fallback chain
 const NVIDIA_NIM_MODELS = [
-  { model: "meta/llama-3.3-70b-instruct", label: "Llama 3.3 70B" },
-  { model: "deepseek-ai/deepseek-r1", label: "DeepSeek R1" },
-  { model: "qwen/qwen2.5-72b-instruct", label: "Qwen 2.5 72B" },
+  { model: "openai/gpt-oss-120b", label: "GPT OSS 120B" },
+  { model: "openai/gpt-oss-20b", label: "GPT OSS 20B" },
+  { model: "mistralai/mistral-large-2-instruct", label: "Mistral Large 2" },
+  { model: "nvidia/llama-3.1-nemotron-70b-instruct", label: "Nemotron 70B" },
+  { model: "moonshotai/kimi-k2.6", label: "Kimi K2.6" },
 ];
 
 const FAST_OPENROUTER_DEFAULT = "openai/gpt-4o-mini";

@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "../../config/env";
-import type { ChatModelId } from "./openrouter";
+import { callAIRobust, type ChatModelId, type OpenRouterMessage } from "./openrouter";
 
 interface ChatMessage {
   role: "user" | "assistant" | "system";
@@ -14,7 +14,7 @@ interface StreamCallbacks {
 }
 
 /**
- * Stream chat using official Google Generative AI SDK
+ * Stream chat using official Google Generative AI SDK (generateContentStream)
  */
 async function streamGeminiNative(
   apiKey: string,
@@ -31,48 +31,26 @@ async function streamGeminiNative(
   const systemMessage = messages.find((m) => m.role === "system")?.content;
   const conversationMessages = messages.filter((m) => m.role !== "system" && m.content?.trim());
 
-  const model = genAI.getGenerativeModel({
-    model: modelName,
-    systemInstruction: systemMessage || undefined,
-  });
-
   if (conversationMessages.length === 0) {
     callbacks.onDone("");
     return true;
   }
 
-  // Format previous history for Gemini (must start with user and alternate)
-  const rawHistory = conversationMessages.slice(0, -1);
-  const formattedHistory: { role: "user" | "model"; parts: { text: string }[] }[] = [];
-
-  for (const m of rawHistory) {
-    const role: "user" | "model" = m.role === "assistant" ? "model" : "user";
-    if (formattedHistory.length > 0 && formattedHistory[formattedHistory.length - 1].role === role) {
-      formattedHistory[formattedHistory.length - 1].parts[0].text += `\n\n${m.content}`;
-    } else {
-      formattedHistory.push({
-        role,
-        parts: [{ text: m.content || " " }],
-      });
-    }
-  }
-
-  if (formattedHistory.length > 0 && formattedHistory[0].role !== "user") {
-    formattedHistory.shift();
-  }
-
-  const lastUserMsg = conversationMessages[conversationMessages.length - 1];
-  const lastPrompt = lastUserMsg?.content || "Hello";
-
-  const chat = model.startChat({
-    history: formattedHistory,
+  const model = genAI.getGenerativeModel({
+    model: modelName,
+    systemInstruction: systemMessage ? { role: "system", parts: [{ text: systemMessage }] } : undefined,
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 4096,
     },
   });
 
-  const result = await chat.sendMessageStream(lastPrompt);
+  const contents = conversationMessages.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content || " " }],
+  }));
+
+  const result = await model.generateContentStream({ contents });
 
   let fullText = "";
   for await (const chunk of result.stream) {
@@ -99,7 +77,7 @@ export async function streamChat(
 ): Promise<void> {
   let lastError: Error | null = null;
 
-  // 1. Primary: Google Gemini Native SDK (Fastest, most reliable)
+  // 1. Primary: Google Gemini Native SDK
   if (env.geminiApiKey) {
     const requestedLower = (model || "").toLowerCase();
     const primaryGeminiModel = requestedLower.includes("pro")
@@ -108,9 +86,10 @@ export async function streamChat(
 
     const geminiModelsToTry = [
       primaryGeminiModel,
+      "gemini-3.6-flash",
+      "gemini-2.5-flash",
       "gemini-2.0-flash",
       "gemini-1.5-flash",
-      "gemini-1.5-pro",
     ].filter((m, i, arr) => arr.indexOf(m) === i);
 
     for (const gModel of geminiModelsToTry) {
@@ -122,7 +101,7 @@ export async function streamChat(
           callbacks,
           signal
         );
-        if (success) return; // Successfully streamed!
+        if (success) return;
       } catch (err: any) {
         if (err.name === "AbortError" || signal?.aborted) {
           callbacks.onDone("");
@@ -134,7 +113,7 @@ export async function streamChat(
     }
   }
 
-  // 2. Secondary fallback: OpenRouter / OpenAI compatible providers
+  // 2. Secondary fallback: OpenRouter / OpenAI compatible streaming providers
   const providers: { name: string; url: string; key: string; model: string }[] = [];
 
   // OpenRouter
@@ -146,49 +125,74 @@ export async function streamChat(
     else if (modelLower.includes("llama")) orModel = "meta-llama/llama-3.3-70b-instruct";
     else if (modelLower.includes("gpt")) orModel = "openai/gpt-4o-mini";
 
-    providers.push({
-      name: `OpenRouter (${orModel})`,
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      key: env.openrouterApiKey,
-      model: orModel,
-    });
+    providers.push(
+      {
+        name: `OpenRouter (${orModel})`,
+        url: "https://openrouter.ai/api/v1/chat/completions",
+        key: env.openrouterApiKey,
+        model: orModel,
+      },
+      {
+        name: "OpenRouter (gpt-4o-mini)",
+        url: "https://openrouter.ai/api/v1/chat/completions",
+        key: env.openrouterApiKey,
+        model: "openai/gpt-4o-mini",
+      }
+    );
   }
 
-  // Groq
+  // Groq (active high-speed models)
   if (env.groqApiKey) {
     providers.push(
       {
-        name: "Groq (llama-3.3-70b)",
+        name: "Groq (openai/gpt-oss-120b)",
         url: "https://api.groq.com/openai/v1/chat/completions",
         key: env.groqApiKey,
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
       },
       {
-        name: "Groq (llama-3.1-8b)",
+        name: "Groq (qwen/qwen3.8-27b)",
         url: "https://api.groq.com/openai/v1/chat/completions",
         key: env.groqApiKey,
-        model: "llama-3.1-8b-instant",
+        model: "qwen/qwen3.8-27b",
+      },
+      {
+        name: "Groq (openai/gpt-oss-20b)",
+        url: "https://api.groq.com/openai/v1/chat/completions",
+        key: env.groqApiKey,
+        model: "openai/gpt-oss-20b",
+      },
+      {
+        name: "Groq (qwen/qwen3.6-27b)",
+        url: "https://api.groq.com/openai/v1/chat/completions",
+        key: env.groqApiKey,
+        model: "qwen/qwen3.6-27b",
       }
     );
   }
 
-  // NVIDIA NIM (active endpoints)
-  const nimKey = env.nvidiaApiKey || (env.nvidiaApiKeys && env.nvidiaApiKeys[0]);
-  if (nimKey) {
-    providers.push(
-      {
-        name: "NVIDIA (Llama 3.3 70B)",
+  // NVIDIA NIM (rotate through all available API keys with validated models)
+  const nvidiaKeys = (env.nvidiaApiKeys && env.nvidiaApiKeys.length > 0)
+    ? env.nvidiaApiKeys
+    : (env.nvidiaApiKey ? [env.nvidiaApiKey] : []);
+
+  const nvidiaModels = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "mistralai/mistral-large-2-instruct",
+    "nvidia/llama-3.1-nemotron-70b-instruct",
+    "moonshotai/kimi-k2.6",
+  ];
+
+  for (const nKey of nvidiaKeys) {
+    for (const nModel of nvidiaModels) {
+      providers.push({
+        name: `NVIDIA (${nModel})`,
         url: "https://integrate.api.nvidia.com/v1/chat/completions",
-        key: nimKey,
-        model: "meta/llama-3.3-70b-instruct",
-      },
-      {
-        name: "NVIDIA (DeepSeek R1)",
-        url: "https://integrate.api.nvidia.com/v1/chat/completions",
-        key: nimKey,
-        model: "deepseek-ai/deepseek-r1",
-      }
-    );
+        key: nKey,
+        model: nModel,
+      });
+    }
   }
 
   for (const provider of providers) {
@@ -245,13 +249,15 @@ export async function streamChat(
               callbacks.onChunk(delta);
             }
           } catch {
-            // skip unparseable lines
+            // skip unparseable SSE lines
           }
         }
       }
 
-      callbacks.onDone(fullText);
-      return; // Success! Return immediately.
+      if (fullText.trim()) {
+        callbacks.onDone(fullText);
+        return; // Success!
+      }
     } catch (error: any) {
       if (error.name === "AbortError" || signal?.aborted) {
         callbacks.onDone("");
@@ -260,6 +266,29 @@ export async function streamChat(
       console.warn(`[Chat Stream] ${provider.name} stream failed:`, error.message || error);
       lastError = error;
     }
+  }
+
+  // 3. Ultimate Safety Net: Call multi-provider fallback engine (callAIRobust)
+  try {
+    console.log("[Chat Stream] Fallback to callAIRobust multi-provider fallback engine...");
+    const fallbackResponse = await callAIRobust(messages as OpenRouterMessage[], {
+      model: model || "google/gemini-2.0-flash-001",
+      maxTokens: 4096,
+    });
+
+    if (fallbackResponse && fallbackResponse.trim()) {
+      // Chunk response smoothly to client
+      const chunkSize = 24;
+      for (let i = 0; i < fallbackResponse.length; i += chunkSize) {
+        const chunk = fallbackResponse.slice(i, i + chunkSize);
+        callbacks.onChunk(chunk);
+      }
+      callbacks.onDone(fallbackResponse);
+      return;
+    }
+  } catch (robustErr: any) {
+    console.error("[Chat Stream] callAIRobust fallback also failed:", robustErr);
+    lastError = robustErr;
   }
 
   callbacks.onError(
