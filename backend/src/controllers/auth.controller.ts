@@ -58,56 +58,17 @@ export async function register(req: Request, res: Response, next: NextFunction) 
   }
 }
 
-export async function registerAdmin(req: Request, res: Response, next: NextFunction) {
+export async function registerAdmin(_req: Request, _res: Response, next: NextFunction) {
   try {
-    const rawSecret = String(req.body?.adminSecret || req.body?.secret || "").replace(/^["']|["']$/g, "").trim();
-    const configuredSecret = String(env.adminRegisterSecret || "").replace(/^["']|["']$/g, "").trim();
-
-    // The historical default secret is only honoured outside production so
-    // existing local/dev workflows keep working; production requires the
-    // configured ADMIN_REGISTER_SECRET.
-    const legacyDefaultSecret = "adyapan-admin-secret-2026";
-
-    const isSecretValid =
-      Boolean(rawSecret) && (
-        (Boolean(configuredSecret) && rawSecret === configuredSecret) ||
-        (env.nodeEnv !== "production" && rawSecret === legacyDefaultSecret)
-      );
-
-    if (!isSecretValid) {
-      throw httpError(403, "Invalid admin registration secret");
-    }
-
-
-    const result = await registerUser({
-      name: requireString(req.body?.name, "name").trim(),
-      email: requireString(req.body?.email, "email").trim(),
-      password: requireString(req.body?.password, "password"),
-      role: "ADMIN",
-      firstName: req.body?.firstName,
-      lastName: req.body?.lastName,
-      phone: req.body?.phone,
-      college: req.body?.college,
-      branch: req.body?.branch,
-      year: req.body?.year,
-      degree: req.body?.degree,
-      country: req.body?.country,
-      state: req.body?.state,
-      city: req.body?.city,
-      department: req.body?.department,
-      course: req.body?.course,
-      semester: req.body?.semester,
-      studentId: req.body?.studentId,
-      referralCode: req.body?.referralCode,
-      profileImageUrl: req.body?.profileImageUrl,
-      userAgent: String(req.headers["user-agent"] ?? ""),
-      ipAddress: req.ip,
-    });
-
-    res.status(201).json({
-      success: true,
-      ...result,
-    });
+    // DISABLED: shared-secret admin self-registration is no longer permitted.
+    // Anyone who knew ADMIN_REGISTER_SECRET could mint an admin account, which
+    // is a privilege-escalation risk. New admins must be created by an existing
+    // admin via the authenticated admin panel (POST /api/admin/users, guarded by
+    // requireAdminAuth + the "users:write" permission).
+    throw httpError(
+      403,
+      "Admin self-registration is disabled. New admin accounts can only be created by an existing administrator.",
+    );
   } catch (error) {
     next(error);
   }

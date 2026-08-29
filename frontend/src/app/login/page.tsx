@@ -7,6 +7,7 @@ import { api } from "@/services/api";
 import { toast } from "sonner";
 import { saveAuthSession } from "@/hooks/useAuth";
 import { Navbar } from "@/components/layout/Navbar";
+import { SessionPopup } from "@/components/ui/SessionPopup";
 import { AnimatedCheckCircle } from "@/components/ui/AnimatedIcons";
 import { Eye, EyeOff } from "lucide-react";
 import type { PlatformUser } from "@/types/user";
@@ -343,20 +344,19 @@ function LoginPageContent() {
 
   return (
     <div className="min-h-screen transition-colors relative overflow-hidden">
- {showSessionConfirm && (<div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}><div className="rounded-2xl p-6 w-full max-w-sm shadow-2xl border" style={{ background: "var(--bg-card, #1a1a2e)", borderColor: "var(--border-color, rgba(255,255,255,0.1))" }}><p className="text-sm leading-relaxed mb-5" style={{ color: "var(--text-primary, #fff)" }}>There is an active session on another device. Do you want to end it and login here?</p><div className="flex gap-3 justify-end"><button onClick={() => setShowSessionConfirm(false)} className="px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.08)" }}>Cancel</button><button onClick={handleForceLogin} className="px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer" style={{ background: "rgba(245,158,11,0.15)", color: "var(--primary, #f59e0b)", border: "1px solid rgba(245,158,11,0.2)" }}>Login Here</button></div></div></div>)}
-      {sessionPopup && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
-          <div className="rounded-2xl p-6 w-full max-w-sm shadow-2xl border" style={{ background: "#1a1a2e", borderColor: "rgba(255,255,255,0.1)" }}>
-            <div className="flex items-start gap-3 mb-5">
-              <span className="text-xl mt-0.5">{sessionPopup.type === "warning" ? "⚡" : sessionPopup.type === "error" ? "\u26A0\uFE0F" : "\u2139\uFE0F"}</span>
-              <p className="text-sm leading-relaxed text-white/90">{sessionPopup.text}</p>
-            </div>
-            <div className="flex justify-end">
-              <button onClick={() => setSessionPopup(null)} className="px-5 py-2 rounded-xl text-xs font-bold cursor-pointer" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>OK</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SessionPopup
+        open={showSessionConfirm}
+        message="There is an active session on another device. Do you want to end it and login here?"
+        actions={[
+          { label: "Cancel", variant: "secondary", onClick: () => setShowSessionConfirm(false) },
+          { label: "Login Here", variant: "primary", onClick: handleForceLogin },
+        ]}
+      />
+      <SessionPopup
+        open={!!sessionPopup}
+        message={sessionPopup?.text ?? ""}
+        actions={[{ label: "OK", variant: "primary", onClick: () => setSessionPopup(null) }]}
+      />
       {/* Video Background */}
       <video
         autoPlay

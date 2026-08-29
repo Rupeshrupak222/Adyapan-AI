@@ -129,8 +129,12 @@ describe("generateJSON", () => {
     ).rejects.toThrow(/AI extraction failed|all providers/);
   }, 120000);
 
-  it("retries on 429 and succeeds", async () => {
+  it("fails over to the next provider on 429 and succeeds", async () => {
+    // The engine does NOT retry the same provider on 429 — it cools that
+    // provider down and fails over to the next configured one. Configure two
+    // providers so the first (429) hands off to the second (200).
     process.env.OPENROUTER_API_KEY = "key";
+    process.env.GROQ_API_KEY = "groq-key";
     const { generateJSON } = loadModule();
     const retryBody = JSON.stringify({ error: { message: "rate limited" } });
     const successBody = JSON.stringify({ choices: [{ message: { content: '{"ok": true}' } }] });
@@ -145,6 +149,7 @@ describe("generateJSON", () => {
     await expect(
       generateJSON("sys", "user", { model: "x" }, { ok: false })
     ).resolves.toEqual({ ok: true });
+    expect(callCount).toBeGreaterThanOrEqual(2);
   }, 120000);
 });
 

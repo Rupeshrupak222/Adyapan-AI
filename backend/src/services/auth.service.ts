@@ -75,6 +75,7 @@ function signToken(user: Pick<User, "id" | "email" | "role">, rememberMe?: boole
       userId: user.id,
       email: user.email,
       role: user.role,
+      type: "access",
     },
     env.jwtSecret,
     {
@@ -85,16 +86,45 @@ function signToken(user: Pick<User, "id" | "email" | "role">, rememberMe?: boole
 }
 
 function signRefreshToken(userId: string) {
+  // Signed with a DISTINCT secret and tagged type:"refresh" so it can never be
+  // presented as an access token (and vice-versa).
   return jwt.sign(
-    { userId },
-    env.jwtSecret,
+    { userId, type: "refresh" },
+    env.refreshSecret,
     { expiresIn: REFRESH_TOKEN_EXPIRY, algorithm: "HS256" }
   );
 }
 
+// Verify a refresh token with the refresh secret and enforce the type claim.
+// Rejects access tokens presented as refresh tokens.
+export function verifyRefreshToken(token: string): { userId: string } {
+  const payload = jwt.verify(token, env.refreshSecret, { algorithms: ["HS256"] }) as {
+    userId?: string;
+    type?: string;
+  };
+  if (payload.type !== "refresh" || !payload.userId) {
+    throw httpError(401, "Invalid refresh token");
+  }
+  return { userId: payload.userId };
+}
+
+// Password policy: minimum 8 chars with upper, lower, digit, and special char.
+const PASSWORD_SPECIAL_CHARS = "!@#$%^&*_\\-+=?.,;:";
 function validatePasswordStrength(password: string) {
-  if (!password || password.length < 6) {
-    throw httpError(400, "Password must be at least 6 characters long");
+  if (!password || password.length < 8) {
+    throw httpError(400, "Password must be at least 8 characters long");
+  }
+  if (!/[a-z]/.test(password)) {
+    throw httpError(400, "Password must include a lowercase letter");
+  }
+  if (!/[A-Z]/.test(password)) {
+    throw httpError(400, "Password must include an uppercase letter");
+  }
+  if (!/[0-9]/.test(password)) {
+    throw httpError(400, "Password must include a number");
+  }
+  if (!new RegExp(`[${PASSWORD_SPECIAL_CHARS}]`).test(password)) {
+    throw httpError(400, "Password must include a special character (!@#$%^&*_-+=?.,;:)");
   }
 }
 
@@ -656,7 +686,7 @@ function recordFailedLogin(email: string, isAdmin = false): { attemptsRemaining:
 function clearLoginAttempts(email: string): void { loginAttempts.delete(email); }
 
 export async function loginUser(
-  input: LoginInput & { rememberMe?: boolean; expectedRole?: "USER" | "ADMIN"; portal?: "user" | "admin" }
+  input: LoginInput & { rememberMe?: boolean; expectedRole?: "USER" | "ADMIN"; portal?: "user" | "admin"; forceLogin?: boolean }
 ) {
   const email = input.email.toLowerCase().trim();
   const isAdminPortal = input.portal === "admin" || input.expectedRole === "ADMIN";
@@ -696,14 +726,16 @@ export async function loginUser(
 
   clearLoginAttempts(email);
 
-  // If logging in via Admin portal with valid credentials, auto-promote user to ADMIN
+  // Admin portal is ADMIN-only. A valid password does NOT grant admin rights —
+  // the account must already have the ADMIN role (granted via the secret-gated
+  // admin registration flow). Auto-promoting on login was a privilege-escalation
+  // hole: any user could make themselves an admin just by using the admin login
+  // page with their own credentials.
   if (isAdminPortal && user.role !== "ADMIN") {
-    console.log(`[AuthService] Promoting user ${user.email} to ADMIN role upon admin portal login.`);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { role: "ADMIN" },
-    });
-    user.role = "ADMIN";
+    // Count as a failed admin attempt so brute-forcing the admin portal is
+    // rate-limited/locked like any other invalid admin login.
+    recordFailedLogin(email, true);
+    throw httpError(403, "Access denied. This account does not have admin privileges.");
   }
 
   // Prevent ADMIN accounts from logging in on standard USER portal (/login)
@@ -711,8 +743,24 @@ export async function loginUser(
     throw httpError(403, "Admin accounts cannot log in here. Please use the Admin Login page.");
   }
 
-  // Auto-revoke stale sessions on login to ensure seamless access
-  if (user.activeSessionId) {
+  // ─── Single-session enforcement ──────────────────────────────
+  // If the account already has an active session that is NOT idle, do not
+  // silently take it over. Ask the client to confirm ("You're logged in on
+  // another device — end it and continue?"). The frontend shows a popup and
+  // retries with forceLogin=true. An idle session is safe to replace silently.
+  const forceLogin = input.forceLogin === true;
+  if (user.activeSessionId && !forceLogin) {
+    const idle = await isSessionIdle(user.id);
+    if (!idle) {
+      return {
+        requireSessionConfirmation: true,
+        message: "You're already logged in on another device. End that session and continue here?",
+      } as any;
+    }
+    // Idle → safe to take over.
+    await revokeAllSessions(user.id).catch(() => {});
+  } else if (user.activeSessionId && forceLogin) {
+    // User explicitly chose to end the other session.
     await revokeAllSessions(user.id).catch(() => {});
   }
 
@@ -741,8 +789,21 @@ export async function loginUser(
 
 export async function refreshToken(token: string) {
   let payload: { userId: string };
-  try { payload = jwt.verify(token, env.jwtSecret, { algorithms: ["HS256"] }) as { userId: string }; }
-  catch { throw httpError(401, "Invalid or expired refresh token"); }
+  try {
+    // Preferred: refresh secret + enforced type claim.
+    payload = verifyRefreshToken(token);
+  } catch {
+    // Backward compatibility: refresh tokens issued before the secret split were
+    // signed with the access secret and carried no type claim. Accept those once
+    // during the transition; they'll be rotated to the new format below.
+    try {
+      const legacy = jwt.verify(token, env.jwtSecret, { algorithms: ["HS256"] }) as { userId?: string };
+      if (!legacy.userId) throw new Error("no userId");
+      payload = { userId: legacy.userId };
+    } catch {
+      throw httpError(401, "Invalid or expired refresh token");
+    }
+  }
 
   const tokenHash = hashRefreshToken(token);
   const session = await prisma.session.findFirst({ where: { refreshTokenHash: tokenHash } });
