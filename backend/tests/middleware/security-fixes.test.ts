@@ -470,7 +470,7 @@ describe("piston.service env sandbox", () => {
     // Read the source to verify the allowlist
     const fs = require("fs");
     const src = fs.readFileSync(
-      "F:/Adyapan AI/backend/src/services/piston.service.ts",
+      require("path").join(__dirname, "../../src/services/piston.service.ts"),
       "utf8"
     );
 
@@ -495,7 +495,7 @@ describe("piston.service env sandbox", () => {
   it("SANDBOX_ENV includes only minimal system vars", () => {
     const fs = require("fs");
     const src = fs.readFileSync(
-      "F:/Adyapan AI/backend/src/services/piston.service.ts",
+      require("path").join(__dirname, "../../src/services/piston.service.ts"),
       "utf8"
     );
 
@@ -509,7 +509,7 @@ describe("piston.service env sandbox", () => {
   it("has output byte cap to prevent OOM", () => {
     const fs = require("fs");
     const src = fs.readFileSync(
-      "F:/Adyapan AI/backend/src/services/piston.service.ts",
+      require("path").join(__dirname, "../../src/services/piston.service.ts"),
       "utf8"
     );
     expect(src).toContain("MAX_OUTPUT_BYTES");
@@ -519,7 +519,7 @@ describe("piston.service env sandbox", () => {
   it("uses windowsHide to prevent console windows on Windows", () => {
     const fs = require("fs");
     const src = fs.readFileSync(
-      "F:/Adyapan AI/backend/src/services/piston.service.ts",
+      require("path").join(__dirname, "../../src/services/piston.service.ts"),
       "utf8"
     );
     expect(src).toContain("windowsHide: true");
@@ -533,7 +533,7 @@ describe("auth.service OTP generation", () => {
   it("generateOtp uses crypto.randomInt (CSPRNG), not Math.random", () => {
     const fs = require("fs");
     const src = fs.readFileSync(
-      "F:/Adyapan AI/backend/src/services/auth.service.ts",
+      require("path").join(__dirname, "../../src/services/auth.service.ts"),
       "utf8"
     );
     // Verify the OTP function uses randomInt from crypto module
@@ -550,7 +550,7 @@ describe("auth.service OTP generation", () => {
   it("devOtp is only returned in development mode", () => {
     const fs = require("fs");
     const src = fs.readFileSync(
-      "F:/Adyapan AI/backend/src/services/auth.service.ts",
+      require("path").join(__dirname, "../../src/services/auth.service.ts"),
       "utf8"
     );
     // Verify devOtp is gated to development only
@@ -565,7 +565,7 @@ describe("CORS origin tightening", () => {
   it("CORS patterns use anchored regexes, not broad wildcards", () => {
     const fs = require("fs");
     const src = fs.readFileSync(
-      "F:/Adyapan AI/backend/src/app.ts",
+      require("path").join(__dirname, "../../src/app.ts"),
       "utf8"
     );
 
