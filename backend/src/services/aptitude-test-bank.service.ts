@@ -606,7 +606,7 @@ export async function generateWeeklyTopicTest(
   return newTest;
 }
 
-const ALL_TOPICS_BY_CATEGORY: Record<string, string[]> = {
+export const ALL_TOPICS_BY_CATEGORY: Record<string, string[]> = {
   quantitative: [
     'Percentages', 'Profit & Loss', 'Time & Work', 'Time, Speed & Distance',
     'Simple & Compound Interest', 'Ratio & Proportion', 'Probability',
@@ -631,7 +631,7 @@ const ALL_TOPICS_BY_CATEGORY: Record<string, string[]> = {
   ]
 };
 
-const ALL_COMPANY_IDS = [
+export const ALL_COMPANY_IDS = [
   'TCS', 'Infosys', 'Wipro', 'Accenture', 'Capgemini', 'Cognizant',
   'Deloitte', 'EY', 'PwC', 'KPMG', 'Google', 'Amazon', 'Microsoft'
 ];
@@ -663,4 +663,112 @@ export async function generateAllTopicTestsForAdmin(userPrisma?: any) {
   }
 
   return { generatedCount: generated.length, tests: generated };
+}
+
+export async function getAllAptitudeTestsForAdmin(userPrisma?: any) {
+  const db = getPrisma(userPrisma);
+  let tests = await db.aptitudeTopicTest.findMany({
+    orderBy: [{ category: "asc" }, { topic: "asc" }, { testNumber: "asc" }],
+  });
+
+  // If no tests exist in DB yet, auto-seed Test 1 for all topics & companies
+  if (tests.length === 0) {
+    const generated: any[] = [];
+    for (const [cat, topics] of Object.entries(ALL_TOPICS_BY_CATEGORY)) {
+      for (const topic of topics) {
+        const questions = generateDefaultTopicTestQuestions(topic, cat, 1);
+        try {
+          const t = await db.aptitudeTopicTest.create({
+            data: {
+              category: cat,
+              topic: topic,
+              testNumber: 1,
+              title: `Test 1`,
+              weekNumber: 1,
+              questionsJson: questions as any,
+              totalQuestions: 30,
+              difficulty: "medium",
+            },
+          });
+          generated.push(t);
+        } catch {
+          generated.push({
+            id: `mem-${cat}-${topic.toLowerCase().replace(/[^a-z0-9]/g, "-")}-t1`,
+            category: cat,
+            topic: topic,
+            testNumber: 1,
+            title: `Test 1`,
+            totalQuestions: 30,
+            difficulty: "medium",
+            createdAt: new Date(),
+            questionsJson: questions,
+          });
+        }
+      }
+    }
+    for (const company of ALL_COMPANY_IDS) {
+      const questions = generateDefaultTopicTestQuestions(company, "company", 1);
+      try {
+        const t = await db.aptitudeTopicTest.create({
+          data: {
+            category: "company",
+            topic: company,
+            testNumber: 1,
+            title: `Test 1`,
+            weekNumber: 1,
+            questionsJson: questions as any,
+            totalQuestions: 30,
+            difficulty: "medium",
+          },
+        });
+        generated.push(t);
+      } catch {
+        generated.push({
+          id: `mem-company-${company.toLowerCase()}-t1`,
+          category: "company",
+          topic: company,
+          testNumber: 1,
+          title: `Test 1`,
+          totalQuestions: 30,
+          difficulty: "medium",
+          createdAt: new Date(),
+          questionsJson: questions,
+        });
+      }
+    }
+    tests = generated;
+  }
+
+  return tests;
+}
+
+export async function deleteAptitudeTestById(id: string, userPrisma?: any) {
+  const db = getPrisma(userPrisma);
+  return await db.aptitudeTopicTest.delete({ where: { id } });
+}
+
+export async function getAptitudeAdminOverview(userPrisma?: any) {
+  const tests = await getAllAptitudeTestsForAdmin(userPrisma);
+  let totalQuestions = 0;
+  for (const t of tests) {
+    if (Array.isArray(t.questionsJson)) {
+      totalQuestions += (t.questionsJson as any[]).length;
+    } else {
+      totalQuestions += t.totalQuestions || 30;
+    }
+  }
+
+  let totalTopics = 0;
+  for (const topics of Object.values(ALL_TOPICS_BY_CATEGORY)) {
+    totalTopics += topics.length;
+  }
+
+  return {
+    totalTests: tests.length,
+    totalQuestions,
+    topicsCount: totalTopics,
+    companiesCount: ALL_COMPANY_IDS.length,
+    topicsByCategory: ALL_TOPICS_BY_CATEGORY,
+    companies: ALL_COMPANY_IDS,
+  };
 }

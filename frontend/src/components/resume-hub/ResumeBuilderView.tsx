@@ -351,10 +351,19 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
     const message = msg || chatInput;
     if (!message.trim() || chatLoading) return;
     setChatInput(""); setChatMessages((prev) => [...prev, { role: "user", text: message }]); setChatLoading(true);
-    const token = typeof window !== "undefined" ? localStorage.getItem("adyapan-token") : null;
+    const token = typeof window !== "undefined" ? (sessionStorage.getItem("adyapan-token") || localStorage.getItem("adyapan-token")) : null;
+    const clientSessionId = typeof window !== "undefined" ? (sessionStorage.getItem("adyapan-session-id") || localStorage.getItem("adyapan-session-id")) : null;
     setChatMessages((prev) => [...prev, { role: "ai", text: "" }]);
     try {
-      const res = await fetch(`${api.defaults.baseURL}/resume/ai-chat/stream`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ resumeData: resumeJSON, message }) });
+      const res = await fetch(`${api.defaults.baseURL}/resume/ai-chat/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(clientSessionId ? { "X-Session-Id": clientSessionId } : {}),
+        },
+        body: JSON.stringify({ resumeData: resumeJSON, message }),
+      });
       if (!res.ok) {
         let data: unknown = null;
         try { data = await res.json(); } catch { data = null; }

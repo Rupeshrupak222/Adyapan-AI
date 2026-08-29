@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Activity, Users, Building2, Brain, ToggleLeft,
   GraduationCap, Briefcase, FileText, CreditCard, BarChart3,
   ActivitySquare, Shield, Server, Puzzle, ScrollText,
-  Bell, Terminal, Bot, Settings, LifeBuoy, BookOpen, Code2,
+  Bell, Terminal, Bot, Settings, LifeBuoy, BookOpen, Code2, Calculator,
 } from "lucide-react";
 
 interface SidebarSectionItem {
@@ -24,7 +24,8 @@ const sidebarSections: SidebarSectionItem[] = [
   { id: "features", label: "Feature Management", icon: <ToggleLeft size={18} /> },
   { id: "learning", label: "Learning Ecosystem", icon: <GraduationCap size={18} /> },
   { id: "placement", label: "Placement Ecosystem", icon: <Briefcase size={18} /> },
-  { id: "technical-mcqs", label: "Technical MCQ Tests", icon: <Code2 size={18} />, badge: "AI Anti-Dup" },
+  { id: "technical-mcqs", label: "Technical MCQ Tests", icon: <Code2 size={18} /> },
+  { id: "aptitude-tests", label: "Aptitude Tests", icon: <Calculator size={18} /> },
   { id: "content", label: "Content Management", icon: <FileText size={18} /> },
   { id: "blog-management", label: "Blog Management", icon: <BookOpen size={18} /> },
   { id: "billing", label: "Billing & Finance", icon: <CreditCard size={18} /> },

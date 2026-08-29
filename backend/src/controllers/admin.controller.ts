@@ -12,7 +12,13 @@ import { emitBroadcastNotification } from "../lib/notificationEmitter";
 import { AdminAuditService } from "../services/admin-audit.service";
 import { registerUser } from "../services/auth.service";
 import { calculateProfileCompletion } from "../utils/profileCompletion";
-import { generateAllTopicTestsForAdmin } from "../services/aptitude-test-bank.service";
+import {
+  generateAllTopicTestsForAdmin,
+  getAptitudeAdminOverview,
+  getAllAptitudeTestsForAdmin,
+  deleteAptitudeTestById,
+  generateWeeklyTopicTest,
+} from "../services/aptitude-test-bank.service";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 
 // ─── Global admin settings (DB-backed via AdminSetting) ──────────
@@ -1988,4 +1994,50 @@ export async function generateAllTopicTestsAdminCtrl(req: Request, res: Response
     next(error);
   }
 }
+
+export async function getAptitudeOverviewAdminCtrl(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userPrisma = await getUserPrismaFromRequest(req);
+    const overview = await getAptitudeAdminOverview(userPrisma);
+    res.json({ success: true, overview });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAptitudeTestsAdminCtrl(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userPrisma = await getUserPrismaFromRequest(req);
+    const tests = await getAllAptitudeTestsForAdmin(userPrisma);
+    res.json({ success: true, count: tests.length, tests });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function generateAptitudeTestAdminCtrl(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { topic, category } = req.body;
+    if (!topic) {
+      throw httpError(400, "topic is required");
+    }
+    const userPrisma = await getUserPrismaFromRequest(req);
+    const newTest = await generateWeeklyTopicTest(String(topic), String(category || "quantitative"), userPrisma);
+    res.json({ success: true, test: newTest });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteAptitudeTestAdminCtrl(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id || "");
+    const userPrisma = await getUserPrismaFromRequest(req);
+    await deleteAptitudeTestById(id, userPrisma);
+    res.json({ success: true, message: "Aptitude test deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
 

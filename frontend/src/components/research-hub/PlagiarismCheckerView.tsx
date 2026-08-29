@@ -320,6 +320,9 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
       const token = typeof window !== "undefined"
         ? localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token") || ""
         : "";
+      const clientSessionId = typeof window !== "undefined"
+        ? sessionStorage.getItem("adyapan-session-id") || localStorage.getItem("adyapan-session-id") || ""
+        : "";
 
       let sseSuccess = false;
       try {
@@ -327,7 +330,8 @@ export function PlagiarismCheckerView({ setView }: PlagiarismCheckerViewProps) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(clientSessionId ? { "X-Session-Id": clientSessionId } : {}),
           },
           body: JSON.stringify({
             text: documentText,

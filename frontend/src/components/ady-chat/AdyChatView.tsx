@@ -266,14 +266,20 @@ export function AdyChatView({ setView }: AdyChatViewProps) {
 
     const token =
       typeof window !== "undefined"
-        ? localStorage.getItem("adyapan-token") || sessionStorage.getItem("adyapan-token")
+        ? sessionStorage.getItem("adyapan-token") || localStorage.getItem("adyapan-token")
         : null;
+    const clientSessionId =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("adyapan-session-id") || localStorage.getItem("adyapan-session-id")
+        : null;
+
     try {
       const res = await fetch(`${api.defaults.baseURL}/ady-chat/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(clientSessionId ? { "X-Session-Id": clientSessionId } : {}),
         },
         body: JSON.stringify({ sessionId, message: finalMessage, model: selectedModel }),
       });
