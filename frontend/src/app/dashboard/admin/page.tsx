@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle2, Bot, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -147,14 +147,21 @@ const sectionComponents: Record<string, React.ComponentType> = {
   support: SupportTickets,
 };
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   useRequireAuth("ADMIN");
   useSessionHeartbeat();
   useIdleTimeout();
   const [forceLogoutMsg, dismissForceLogout] = useForceLogoutPopup();
-  const [activeSection, setActiveSection] = useState("executive");
+  
+  // Read initial tab from query string (?tab= or ?section=)
+  const initialUrlTab = searchParams.get("tab") || searchParams.get("section");
+  const [activeSection, setActiveSectionState] = useState<string>(
+    initialUrlTab && sectionComponents[initialUrlTab] ? initialUrlTab : "executive"
+  );
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -162,6 +169,19 @@ export default function AdminDashboard() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [ingestLoading, setIngestLoading] = useState(false);
+
+  // Sync tab change with URL query parameter without full reload
+  const handleSectionChange = useCallback((newSection: string) => {
+    if (!sectionComponents[newSection]) return;
+    setActiveSectionState(newSection);
+    localStorage.setItem("admin-active-section", newSection);
+    
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", newSection);
+      window.history.replaceState(null, "", url.toString());
+    }
+  }, []);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
@@ -176,16 +196,21 @@ export default function AdminDashboard() {
     document.documentElement.setAttribute("data-theme", t);
   }, []);
 
+  // Sync with URL query parameter on mount and when searchParams change
   useEffect(() => {
-    const savedSection = localStorage.getItem("admin-active-section");
-    if (savedSection && sectionComponents[savedSection]) {
-      setActiveSection(savedSection);
+    const queryTab = searchParams.get("tab") || searchParams.get("section");
+    if (queryTab && sectionComponents[queryTab]) {
+      setActiveSectionState(queryTab);
+      localStorage.setItem("admin-active-section", queryTab);
+    } else {
+      const savedSection = localStorage.getItem("admin-active-section");
+      if (savedSection && sectionComponents[savedSection]) {
+        handleSectionChange(savedSection);
+      } else {
+        handleSectionChange("executive");
+      }
     }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("admin-active-section", activeSection);
-  }, [activeSection]);
+  }, [searchParams, handleSectionChange]);
 
   useEffect(() => {
     if (user) setInitialLoading(false);
@@ -200,10 +225,10 @@ export default function AdminDashboard() {
       import("@/components/admin/sections/PlacementEcosystem");
       import("@/components/admin/sections/OperationsCenter");
       import("@/components/admin/sections/AnalyticsBI");
+      import("@/components/admin/sections/Notifications");
     }, 800);
     return () => clearTimeout(timer);
   }, []);
-
 
   const handleRefresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -240,7 +265,7 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ minHeight: "100vh", background: isDark ? "#080c10" : "#f8fafc", color: "var(--text-primary)" }}>
- <SessionPopup open={!!forceLogoutMsg} message={forceLogoutMsg ?? ""} actions={[{ label: "OK", variant: "primary", onClick: dismissForceLogout }]} />
+      <SessionPopup open={!!forceLogoutMsg} message={forceLogoutMsg ?? ""} actions={[{ label: "OK", variant: "primary", onClick: dismissForceLogout }]} />
       <AnimatePresence>
         {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg(null)} />}
       </AnimatePresence>
@@ -251,14 +276,15 @@ export default function AdminDashboard() {
         theme={theme}
         toggleTheme={toggleTheme}
         onRefresh={handleRefresh}
-        onAddJob={() => setActiveSection("placement")}
+        onAddJob={() => handleSectionChange("placement")}
         onIngestJobs={handleIngestJobs}
+        onOpenNotifications={() => handleSectionChange("notifications")}
         ingestLoading={ingestLoading}
       />
 
       <AdminSidebar
         activeSection={activeSection}
-        setActiveSection={setActiveSection}
+        setActiveSection={handleSectionChange}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         theme={theme}
@@ -368,5 +394,13 @@ export default function AdminDashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <Suspense fallback={<PageLoading />}>
+      <AdminDashboardContent />
+    </Suspense>
   );
 }

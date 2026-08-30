@@ -17,12 +17,13 @@ interface AdminHeaderProps {
   onRefresh: () => void;
   onAddJob?: () => void;
   onIngestJobs?: () => void;
+  onOpenNotifications?: () => void;
   ingestLoading?: boolean;
 }
 
 export function AdminHeader({
   sidebarOpen, setSidebarOpen, theme, toggleTheme,
-  onRefresh, onAddJob, onIngestJobs, ingestLoading
+  onRefresh, onAddJob, onIngestJobs, onOpenNotifications, ingestLoading
 }: AdminHeaderProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -87,7 +88,9 @@ export function AdminHeader({
         </motion.button>
 
         <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-          className="p-2 rounded-full border flex items-center justify-center transition-all relative"
+          onClick={onOpenNotifications}
+          title="Notifications & Broadcasts"
+          className="p-2 rounded-full border flex items-center justify-center transition-all relative cursor-pointer"
           style={{ background: isDark ? "#0d151c" : "#f1f5f9", borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", color: "var(--text-secondary)" }}>
           <Bell size={16} />
           <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500" />
