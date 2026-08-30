@@ -1099,3 +1099,203 @@ settingsRouter.post("/report-bug", async (req: any, res) => {
     handleRouteError(res, error, "Settings.reportBug", "Failed to submit bug report");
   }
 });
+
+// ─── GET /settings/support-tickets ── List all support tickets for user ─────
+settingsRouter.get("/support-tickets", async (req: any, res) => {
+  try {
+    const prisma = await getUserPrismaFromRequest(req);
+    const userId = req.user?.userId || req.user?.id;
+
+    await (prisma as any).$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "support_tickets" (
+          "id" TEXT NOT NULL,
+          "user_id" TEXT NOT NULL,
+          "ticket_id" TEXT NOT NULL,
+          "subject" TEXT NOT NULL,
+          "category" TEXT NOT NULL DEFAULT 'general',
+          "message" TEXT NOT NULL,
+          "severity" TEXT NOT NULL DEFAULT 'medium',
+          "status" TEXT NOT NULL DEFAULT 'open',
+          "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "support_tickets_pkey" PRIMARY KEY ("id")
+      );
+      CREATE TABLE IF NOT EXISTS "support_ticket_messages" (
+          "id" TEXT NOT NULL,
+          "ticket_id" TEXT NOT NULL,
+          "sender_id" TEXT NOT NULL,
+          "sender_type" TEXT NOT NULL DEFAULT 'USER',
+          "sender_name" TEXT NOT NULL DEFAULT 'User',
+          "message" TEXT NOT NULL,
+          "read" BOOLEAN NOT NULL DEFAULT false,
+          "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "support_ticket_messages_pkey" PRIMARY KEY ("id")
+      );
+      CREATE INDEX IF NOT EXISTS "support_tickets_user_id_idx" ON "support_tickets"("user_id");
+      CREATE INDEX IF NOT EXISTS "support_ticket_messages_ticket_id_idx" ON "support_ticket_messages"("ticket_id");
+    `).catch(() => {});
+
+    const tickets = await (prisma as any).supportTicket.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    }).catch(() => []);
+
+    const ticketsWithLastMsg = await Promise.all(
+      tickets.map(async (t: any) => {
+        const lastMsg = await (prisma as any).supportTicketMessage.findFirst({
+          where: { ticketId: t.id },
+          orderBy: { createdAt: "desc" },
+        }).catch(() => null);
+
+        return {
+          id: t.id,
+          ticketId: t.ticketId,
+          subject: t.subject,
+          category: t.category,
+          message: t.message,
+          severity: t.severity,
+          status: t.status,
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt,
+          lastMessage: lastMsg,
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      tickets: ticketsWithLastMsg,
+    });
+  } catch (error) {
+    handleRouteError(res, error, "Settings.getSupportTickets", "Failed to fetch tickets");
+  }
+});
+
+// ─── GET /settings/support-tickets/:ticketId/messages ── Get ticket messages 
+settingsRouter.get("/support-tickets/:ticketId/messages", async (req: any, res) => {
+  try {
+    const prisma = await getUserPrismaFromRequest(req);
+    const userId = req.user?.userId || req.user?.id;
+    const { ticketId } = req.params;
+
+    await (prisma as any).$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "support_ticket_messages" (
+          "id" TEXT NOT NULL,
+          "ticket_id" TEXT NOT NULL,
+          "sender_id" TEXT NOT NULL,
+          "sender_type" TEXT NOT NULL DEFAULT 'USER',
+          "sender_name" TEXT NOT NULL DEFAULT 'User',
+          "message" TEXT NOT NULL,
+          "read" BOOLEAN NOT NULL DEFAULT false,
+          "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "support_ticket_messages_pkey" PRIMARY KEY ("id")
+      );
+      CREATE INDEX IF NOT EXISTS "support_ticket_messages_ticket_id_idx" ON "support_ticket_messages"("ticket_id");
+    `).catch(() => {});
+
+    const ticket = await (prisma as any).supportTicket.findFirst({
+      where: {
+        userId,
+        OR: [{ id: ticketId }, { ticketId }],
+      },
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ success: false, error: "Support ticket not found" });
+    }
+
+    const messages = await (prisma as any).supportTicketMessage.findMany({
+      where: { ticketId: ticket.id },
+      orderBy: { createdAt: "asc" },
+    }).catch(() => []);
+
+    // Mark unread admin messages as read
+    await (prisma as any).supportTicketMessage.updateMany({
+      where: {
+        ticketId: ticket.id,
+        senderType: "ADMIN",
+        read: false,
+      },
+      data: { read: true },
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      ticket,
+      messages,
+    });
+  } catch (error) {
+    handleRouteError(res, error, "Settings.getTicketMessages", "Failed to fetch ticket messages");
+  }
+});
+
+// ─── POST /settings/support-tickets/:ticketId/messages ── Send user message ─
+settingsRouter.post("/support-tickets/:ticketId/messages", async (req: any, res) => {
+  try {
+    const prisma = await getUserPrismaFromRequest(req);
+    const userId = req.user?.userId || req.user?.id;
+    const userName = req.user?.name || "User";
+    const { ticketId } = req.params;
+    const { message } = req.body;
+
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({ success: false, error: "Message cannot be empty" });
+    }
+
+    await (prisma as any).$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "support_ticket_messages" (
+          "id" TEXT NOT NULL,
+          "ticket_id" TEXT NOT NULL,
+          "sender_id" TEXT NOT NULL,
+          "sender_type" TEXT NOT NULL DEFAULT 'USER',
+          "sender_name" TEXT NOT NULL DEFAULT 'User',
+          "message" TEXT NOT NULL,
+          "read" BOOLEAN NOT NULL DEFAULT false,
+          "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "support_ticket_messages_pkey" PRIMARY KEY ("id")
+      );
+      CREATE INDEX IF NOT EXISTS "support_ticket_messages_ticket_id_idx" ON "support_ticket_messages"("ticket_id");
+    `).catch(() => {});
+
+    const ticket = await (prisma as any).supportTicket.findFirst({
+      where: {
+        userId,
+        OR: [{ id: ticketId }, { ticketId }],
+      },
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ success: false, error: "Support ticket not found" });
+    }
+
+    const msgId = `msg_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
+
+    const newMsg = await (prisma as any).supportTicketMessage.create({
+      data: {
+        id: msgId,
+        ticketId: ticket.id,
+        senderId: userId,
+        senderType: "USER",
+        senderName: userName,
+        message: String(message).trim(),
+        read: false,
+      },
+    });
+
+    // Reopen ticket if it was resolved/closed
+    const updatedStatus = ticket.status === "closed" || ticket.status === "resolved" ? "open" : ticket.status;
+    await (prisma as any).supportTicket.update({
+      where: { id: ticket.id },
+      data: { status: updatedStatus, updatedAt: new Date() },
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      message: "Reply sent successfully",
+      chatMessage: newMsg,
+    });
+  } catch (error) {
+    handleRouteError(res, error, "Settings.sendTicketMessage", "Failed to send message");
+  }
+});
+

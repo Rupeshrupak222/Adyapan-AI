@@ -2542,10 +2542,29 @@ model SupportTicket {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  messages  SupportTicketMessage[]
+
   @@index([userId])
   @@index([status])
   @@index([createdAt])
   @@map("support_tickets")
+}
+
+model SupportTicketMessage {
+  id         String   @id @default(cuid())
+  ticketId   String   @map("ticket_id")
+  senderId   String   @map("sender_id")
+  senderType String   @default("USER") @map("sender_type") // USER or ADMIN
+  senderName String   @default("User") @map("sender_name")
+  message    String   @db.Text
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([ticketId, createdAt])
+  @@map("support_ticket_messages")
 }
 
 

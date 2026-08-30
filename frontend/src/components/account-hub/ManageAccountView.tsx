@@ -11,7 +11,7 @@ import {
   AlertTriangle, X, MessageSquare, Code, Link2, Clock, Star,
   Brain, Trophy, ArrowUpRight, Image, FolderOpen,
   Database, ShieldCheck, Fingerprint, Menu, Info, Loader2,
-  Heart, ClipboardList, TrendingUp, Target, Calendar, Users
+  Heart, ClipboardList, TrendingUp, Target, Calendar, Users, Send, ArrowLeft
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -2361,7 +2361,7 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
   const router = useRouter();
   const theme = useTheme();
   const isDark = theme === "dark";
-  const [activeModal, setActiveModal] = useState<"faq" | "support" | "bug" | "docs" | "about" | null>(null);
+  const [activeModal, setActiveModal] = useState<"faq" | "support" | "bug" | "docs" | "about" | "my-tickets" | null>(null);
 
   // FAQ state
   const [faqQuery, setFaqQuery] = useState("");
@@ -2379,6 +2379,16 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
   const [bugSteps, setBugSteps] = useState("");
   const [bugMessage, setBugMessage] = useState("");
   const [submittingBug, setSubmittingBug] = useState(false);
+
+  // User Tickets & Two-Way Live Chat State
+  const [userTickets, setUserTickets] = useState<any[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+  const [activeChatTicket, setActiveChatTicket] = useState<any | null>(null);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [loadingChat, setLoadingChat] = useState(false);
+  const [userReply, setUserReply] = useState("");
+  const [sendingUserReply, setSendingUserReply] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   const faqs = [
     {
@@ -2413,6 +2423,63 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
       item.a.toLowerCase().includes(faqQuery.toLowerCase())
   );
 
+  const fetchUserTickets = async () => {
+    setLoadingTickets(true);
+    try {
+      const res = await api.get("/settings/support-tickets");
+      if (res.data.success) {
+        setUserTickets(res.data.tickets || []);
+      }
+    } catch {
+      toast.error("Failed to load your support queries.");
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
+
+  const openTicketChat = async (ticket: any) => {
+    setActiveChatTicket(ticket);
+    setLoadingChat(true);
+    try {
+      const res = await api.get(`/settings/support-tickets/${ticket.ticketId}/messages`);
+      if (res.data.success) {
+        setChatMessages(res.data.messages || []);
+      }
+    } catch {
+      toast.error("Failed to load ticket messages.");
+    } finally {
+      setLoadingChat(false);
+    }
+  };
+
+  const handleSendUserReply = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!userReply.trim() || !activeChatTicket || sendingUserReply) return;
+
+    const messageContent = userReply.trim();
+    setSendingUserReply(true);
+    try {
+      const res = await api.post(`/settings/support-tickets/${activeChatTicket.ticketId}/messages`, {
+        message: messageContent,
+      });
+      if (res.data.success && res.data.chatMessage) {
+        setChatMessages((prev) => [...prev, res.data.chatMessage]);
+        setUserReply("");
+        toast.success("Reply sent to support team!");
+      }
+    } catch {
+      toast.error("Failed to send message.");
+    } finally {
+      setSendingUserReply(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeChatTicket && chatScrollRef.current) {
+      chatScrollRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages, activeChatTicket]);
+
   const handleSubmitSupport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supportSubject.trim() || !supportMessage.trim()) {
@@ -2429,7 +2496,8 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
       toast.success(res.data.message || "Support ticket submitted!");
       setSupportSubject("");
       setSupportMessage("");
-      setActiveModal(null);
+      setActiveModal("my-tickets");
+      fetchUserTickets();
     } catch {
       toast.error("Failed to submit support ticket.");
     } finally {
@@ -2455,7 +2523,8 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
       setBugTitle("");
       setBugSteps("");
       setBugMessage("");
-      setActiveModal(null);
+      setActiveModal("my-tickets");
+      fetchUserTickets();
     } catch {
       toast.error("Failed to submit bug report.");
     } finally {
@@ -2464,12 +2533,23 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
   };
 
   const cards = [
-    { id: "faq", title: "FAQ", desc: "Frequently asked questions about Adyapan AI", icon: HelpCircle, color: "text-blue-500", onClick: () => setActiveModal("faq") },
-    { id: "support", title: "Contact Support", desc: "Get help from our support team", icon: Mail, color: "text-emerald-500", onClick: () => setActiveModal("support") },
+    {
+      id: "my-tickets",
+      title: "My Tickets & Queries",
+      desc: "Chat live with Support & track bug reports",
+      icon: MessageSquare,
+      color: "text-amber-500",
+      onClick: () => {
+        setActiveModal("my-tickets");
+        setActiveChatTicket(null);
+        fetchUserTickets();
+      },
+    },
+    { id: "support", title: "Contact Support", desc: "Get help from our technical support team", icon: Mail, color: "text-emerald-500", onClick: () => setActiveModal("support") },
     { id: "bug", title: "Report Bug", desc: "Report issues or unexpected behavior", icon: AlertTriangle, color: "text-rose-500", onClick: () => setActiveModal("bug") },
-    { id: "docs", title: "Documentation", desc: "Explore guides and tutorials", icon: FileText, color: "text-purple-500", onClick: () => setActiveModal("docs") },
+    { id: "faq", title: "FAQ", desc: "Frequently asked questions about Adyapan AI", icon: HelpCircle, color: "text-blue-500", onClick: () => setActiveModal("faq") },
+    { id: "docs", title: "Documentation", desc: "Explore guides, tutorials and tips", icon: FileText, color: "text-purple-500", onClick: () => setActiveModal("docs") },
     { id: "community", title: "Community", desc: "Join the Adyapan developer community", icon: Users, color: "text-cyan-500", onClick: () => router.push("/dashboard/user?view=community-browse") },
-    { id: "about", title: "About Adyapan AI", desc: "Version 2.0.0 · Made with love", icon: Info, color: "text-amber-500", onClick: () => setActiveModal("about") },
   ];
 
   return (
@@ -2479,22 +2559,26 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
         style={{ background: c.cardBg, borderColor: c.border, backdropFilter: "blur(16px)" }}
       >
         <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.primary }}>
-          <HelpCircle size={16} /> Help & Support
+          <HelpCircle size={16} /> Help & Support Center
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {cards.map((item, i) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {cards.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.title}
+              <div
+                key={item.id}
                 onClick={item.onClick}
-                className="p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition-all"
-                style={{ borderColor: c.border, background: c.cardBgHover }}>
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
+                className="p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition-all hover:scale-[1.01]"
+                style={{ borderColor: c.border, background: c.cardBgHover }}
+              >
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: c.cardBg, border: `1px solid ${c.border}` }}
+                >
                   <Icon size={16} className={item.color} />
                 </div>
                 <div>
-                  <span className="text-xs font-bold block">{item.title}</span>
+                  <span className="text-xs font-bold block" style={{ color: c.text }}>{item.title}</span>
                   <span className="text-[10px] leading-relaxed" style={{ color: c.textMuted }}>{item.desc}</span>
                 </div>
               </div>
@@ -2504,212 +2588,496 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
       </div>
 
       {/* ── Modal Popups ── */}
-        {activeModal && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <div
-              onClick={() => setActiveModal(null)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      {activeModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div
+            onClick={() => setActiveModal(null)}
+            className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+          />
 
-            <div
-              className="relative w-full max-w-xl rounded-2xl border p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl"
-              style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: c.border, color: c.text }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: c.border }}>
-                <div className="flex items-center gap-2">
-                  <HelpCircle size={18} className="text-amber-500" />
-                  <h3 className="text-base font-extrabold capitalize" style={{ color: c.text }}>
-                    {activeModal === "faq" && "Frequently Asked Questions"}
-                    {activeModal === "support" && "Contact Support Team"}
-                    {activeModal === "bug" && "Report a Bug"}
-                    {activeModal === "docs" && "Documentation & Guides"}
-                    {activeModal === "about" && "About Adyapan AI"}
-                  </h3>
-                </div>
-                <button onClick={() => setActiveModal(null)} className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer">
-                  <X size={16} style={{ color: c.textMuted }} />
-                </button>
+          <div
+            className="relative w-full max-w-2xl rounded-3xl border p-6 space-y-4 max-h-[88vh] overflow-y-auto shadow-2xl"
+            style={{ background: isDark ? "#0c0d16" : "#ffffff", borderColor: c.border, color: c.text }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: c.border }}>
+              <div className="flex items-center gap-2">
+                <HelpCircle size={18} className="text-amber-500" />
+                <h3 className="text-base font-extrabold capitalize" style={{ color: c.text }}>
+                  {activeModal === "my-tickets" && (activeChatTicket ? `Ticket #${activeChatTicket.ticketId}` : "My Support Queries & Tickets")}
+                  {activeModal === "faq" && "Frequently Asked Questions"}
+                  {activeModal === "support" && "Contact Support Team"}
+                  {activeModal === "bug" && "Report a Bug"}
+                  {activeModal === "docs" && "Documentation & Guides"}
+                  {activeModal === "about" && "About Adyapan AI"}
+                </h3>
               </div>
-
-              {/* FAQ Modal Content */}
-              {activeModal === "faq" && (
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: c.textMuted }} />
-                    <input type="text" value={faqQuery} onChange={(e) => setFaqQuery(e.target.value)}
-                      placeholder="Search FAQs..."
-                      className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border outline-none"
-                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-                  </div>
-                  <div className="space-y-2">
-                    {filteredFaqs.map((faq, index) => {
-                      const isOpen = expandedFaq === index;
-                      return (
-                        <div key={index} className="rounded-xl border overflow-hidden" style={{ borderColor: c.border }}>
-                          <button onClick={() => setExpandedFaq(isOpen ? null : index)}
-                            className="w-full flex items-center justify-between p-3 text-xs font-bold text-left transition-all hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
-                            style={{ color: c.text }}>
-                            <span>{faq.q}</span>
-                            <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180 text-amber-500" : ""}`} />
-                          </button>
-                          {isOpen && (
-                            <div className="p-3 text-[11px] border-t leading-relaxed" style={{ borderColor: c.border, color: c.textMuted, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
-                              {faq.a}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Support Ticket Modal Content */}
-              {activeModal === "support" && (
-                <form onSubmit={handleSubmitSupport} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Subject</label>
-                    <input type="text" value={supportSubject} onChange={(e) => setSupportSubject(e.target.value)}
-                      placeholder="Brief summary of your issue..."
-                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-amber-500/40"
-                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} required />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Category</label>
-                    <select value={supportCategory} onChange={(e) => setSupportCategory(e.target.value)}
-                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
-                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-                      <option value="General Inquiry" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>General Inquiry</option>
-                      <option value="Technical Issue" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Technical Issue</option>
-                      <option value="Billing & Subscription" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Billing & Subscription</option>
-                      <option value="Feature Request" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Feature Request</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Message</label>
-                    <textarea rows={4} value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)}
-                      placeholder="Describe your issue in detail..."
-                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none resize-none"
-                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} required />
-                  </div>
-                  <div className="flex justify-end gap-2 pt-2">
-                    <PremiumButton variant="secondary" onClick={() => setActiveModal(null)} type="button">Cancel</PremiumButton>
-                    <button type="submit" disabled={submittingSupport}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold disabled:opacity-60 cursor-pointer">
-                      {submittingSupport ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
-                      Submit Ticket
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Bug Report Modal Content */}
-              {activeModal === "bug" && (
-                <form onSubmit={handleSubmitBug} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Bug Title</label>
-                    <input type="text" value={bugTitle} onChange={(e) => setBugTitle(e.target.value)}
-                      placeholder="What went wrong?"
-                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-amber-500/40"
-                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} required />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Severity</label>
-                    <select value={bugSeverity} onChange={(e) => setBugSeverity(e.target.value)}
-                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
-                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>
-                      <option value="Low" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Low - Minor UI issue</option>
-                      <option value="Medium" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Medium - Feature malfunctioning</option>
-                      <option value="High" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>High - Unable to complete task</option>
-                      <option value="Critical" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Critical - System crash or data issue</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Steps to Reproduce (Optional)</label>
-                    <input type="text" value={bugSteps} onChange={(e) => setBugSteps(e.target.value)}
-                      placeholder="e.g., Clicked upload photo -> Network error"
-                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
-                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Description</label>
-                    <textarea rows={3} value={bugMessage} onChange={(e) => setBugMessage(e.target.value)}
-                      placeholder="Explain what happened vs what you expected..."
-                      className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none resize-none"
-                      style={{ background: c.inputBg, borderColor: c.border, color: c.text }} required />
-                  </div>
-                  <div className="flex justify-end gap-2 pt-2">
-                    <PremiumButton variant="secondary" onClick={() => setActiveModal(null)} type="button">Cancel</PremiumButton>
-                    <button type="submit" disabled={submittingBug}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 text-white text-xs font-bold disabled:opacity-60 cursor-pointer">
-                      {submittingBug ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
-                      Report Bug
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Documentation Content */}
-              {activeModal === "docs" && (
-                <div className="space-y-4 text-xs leading-relaxed" style={{ color: c.textSec }}>
-                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold">
-                    🚀 Adyapan AI Quick Start Guide
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-extrabold text-sm" style={{ color: c.text }}>Core Modules & Hubs</h4>
-                    <ul className="list-disc list-inside space-y-1 text-[11px]" style={{ color: c.textMuted }}>
-                      <li><strong style={{ color: c.text }}>Ady Chat:</strong> Interactive AI assistant for custom queries and instant tutoring.</li>
-                      <li><strong style={{ color: c.text }}>Coding Hub:</strong> Practice DSA problems, generate solutions, and build GitHub portfolios.</li>
-                      <li><strong style={{ color: c.text }}>Interview Hub:</strong> Practice HR and Technical mock interviews with AI evaluation.</li>
-                      <li><strong style={{ color: c.text }}>Resume Hub:</strong> Build ATS-optimized resumes and generate cover letters.</li>
-                      <li><strong style={{ color: c.text }}>Placement Hub:</strong> Practice company MCQs and aptitude tests.</li>
-                    </ul>
-                  </div>
-                  <div className="space-y-1.5 border-t pt-3" style={{ borderColor: c.border }}>
-                    <h4 className="font-extrabold text-sm" style={{ color: c.text }}>Keyboard Shortcuts</h4>
-                    <div className="flex justify-between items-center text-[11px] py-1 border-b" style={{ borderColor: c.border }}>
-                      <span>Quick Search Tool</span>
-                      <kbd className="px-2 py-0.5 rounded text-[10px] font-mono border" style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>Ctrl + K</kbd>
-                    </div>
-                    <div className="flex justify-between items-center text-[11px] py-1 border-b" style={{ borderColor: c.border }}>
-                      <span>Close Modals / Overlays</span>
-                      <kbd className="px-2 py-0.5 rounded text-[10px] font-mono border" style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>Esc</kbd>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* About Modal Content */}
-              {activeModal === "about" && (
-                <div className="space-y-4 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto font-black text-xl">
-                    A
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-extrabold" style={{ color: c.text }}>Adyapan AI Platform</h4>
-                    <span className="text-xs text-amber-500 font-semibold block">Version 2.0.0 (Enterprise Build)</span>
-                  </div>
-                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left border-y py-3" style={{ borderColor: c.border }}>
-                    <div className="p-3 rounded-xl border" style={{ background: c.cardBg, borderColor: c.border }}>
-                      <span className="text-[10px] block" style={{ color: c.textMuted }}>Engine Status</span>
-                      <span className="text-xs font-bold text-emerald-500">● Operational</span>
-                    </div>
-                    <div className="p-3 rounded-xl border" style={{ background: c.cardBg, borderColor: c.border }}>
-                      <span className="text-[10px] block" style={{ color: c.textMuted }}>AI Model Integration</span>
-                      <span className="text-xs font-bold text-amber-500">Gemini / Claude / GPT-4</span>
-                    </div>
-                  </div>
-                  <p className="text-[11px] leading-relaxed" style={{ color: c.textMuted }}>
-                    Built with love to empower students, job seekers, and developers with next-gen AI learning tools.
-                  </p>
-                </div>
-              )}
+              <button
+                onClick={() => {
+                  if (activeChatTicket) {
+                    setActiveChatTicket(null);
+                  } else {
+                    setActiveModal(null);
+                  }
+                }}
+                className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X size={16} style={{ color: c.textMuted }} />
+              </button>
             </div>
+
+            {/* ── My Tickets & Live Thread Chat Content ── */}
+            {activeModal === "my-tickets" && (
+              <div>
+                {!activeChatTicket ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <p className="text-xs" style={{ color: c.textMuted }}>
+                        Track status, read responses, and chat directly with our technical support team.
+                      </p>
+                      <button
+                        onClick={fetchUserTickets}
+                        className="flex items-center gap-1 text-[11px] font-bold text-amber-500 hover:underline cursor-pointer"
+                      >
+                        <RefreshCw size={12} className={loadingTickets ? "animate-spin" : ""} /> Refresh
+                      </button>
+                    </div>
+
+                    {loadingTickets ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 size={24} className="animate-spin text-amber-500" />
+                      </div>
+                    ) : userTickets.length === 0 ? (
+                      <div className="text-center py-12 space-y-3">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+                          <MessageSquare size={22} />
+                        </div>
+                        <p className="text-xs font-bold" style={{ color: c.text }}>No tickets or bug reports found</p>
+                        <p className="text-[11px]" style={{ color: c.textMuted }}>
+                          Have a question or noticed an issue? Create a support request or report a bug.
+                        </p>
+                        <div className="flex justify-center gap-2 pt-2">
+                          <button
+                            onClick={() => setActiveModal("support")}
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold cursor-pointer"
+                          >
+                            + Contact Support
+                          </button>
+                          <button
+                            onClick={() => setActiveModal("bug")}
+                            className="px-4 py-2 rounded-xl border text-xs font-bold cursor-pointer"
+                            style={{ borderColor: c.border, color: c.text }}
+                          >
+                            + Report Bug
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {userTickets.map((t) => {
+                          const isBug = t.category === "bug";
+                          const isResolved = t.status === "resolved" || t.status === "closed";
+                          return (
+                            <div
+                              key={t.id}
+                              onClick={() => openTicketChat(t)}
+                              className="p-3.5 rounded-2xl border flex items-center justify-between gap-3 cursor-pointer transition-all hover:scale-[1.01]"
+                              style={{
+                                background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+                                borderColor: c.border,
+                              }}
+                            >
+                              <div className="space-y-1 max-w-[70%]">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-[10px] font-mono font-bold text-amber-500">#{t.ticketId}</span>
+                                  <span
+                                    className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                      isResolved
+                                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                        : t.status === "in_progress"
+                                        ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                                        : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                    }`}
+                                  >
+                                    {t.status.replace("_", " ")}
+                                  </span>
+                                  <span className="text-[10px] capitalize" style={{ color: c.textMuted }}>
+                                    {isBug ? "🐞 Bug Report" : `📋 ${t.category}`}
+                                  </span>
+                                </div>
+                                <h4 className="text-xs font-bold truncate" style={{ color: c.text }}>{t.subject}</h4>
+                                <p className="text-[10px] truncate" style={{ color: c.textMuted }}>
+                                  {t.lastMessage ? `Latest: ${t.lastMessage.message}` : t.message}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-[10px]" style={{ color: c.textMuted }}>
+                                  {new Date(t.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                                </span>
+                                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 font-bold text-xs flex items-center gap-1">
+                                  <MessageSquare size={13} /> Chat
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* ── Live Two-Way Chat Thread View ── */
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => setActiveChatTicket(null)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-amber-500 hover:underline cursor-pointer"
+                      >
+                        <ArrowLeft size={14} /> Back to Tickets
+                      </button>
+                      <span
+                        className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full ${
+                          activeChatTicket.status === "resolved" || activeChatTicket.status === "closed"
+                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                            : activeChatTicket.status === "in_progress"
+                            ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                            : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                        }`}
+                      >
+                        {activeChatTicket.status.replace("_", " ")}
+                      </span>
+                    </div>
+
+                    {/* Original Query Box */}
+                    <div
+                      className="p-3.5 rounded-2xl border space-y-1"
+                      style={{
+                        background: isDark ? "rgba(245,158,11,0.05)" : "rgba(245,158,11,0.08)",
+                        borderColor: "rgba(245,158,11,0.2)",
+                      }}
+                    >
+                      <div className="flex items-center justify-between text-[10px] font-bold text-amber-500">
+                        <span>Original Query: {activeChatTicket.subject}</span>
+                        <span>{new Date(activeChatTicket.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed whitespace-pre-wrap" style={{ color: c.text }}>
+                        {activeChatTicket.message}
+                      </p>
+                    </div>
+
+                    {/* Chat Messages */}
+                    <div
+                      className="h-[320px] overflow-y-auto p-4 rounded-2xl border space-y-3"
+                      style={{
+                        background: isDark ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.03)",
+                        borderColor: c.border,
+                      }}
+                    >
+                      {loadingChat ? (
+                        <div className="flex items-center justify-center h-full">
+                          <Loader2 size={24} className="animate-spin text-amber-500" />
+                        </div>
+                      ) : chatMessages.length === 0 ? (
+                        <div className="text-center py-10 text-[11px]" style={{ color: c.textMuted }}>
+                          Your ticket has been received! Our support team will reply here shortly. You can also send follow-up notes below.
+                        </div>
+                      ) : (
+                        chatMessages.map((msg) => {
+                          const isSupport = msg.senderType === "ADMIN";
+                          return (
+                            <div
+                              key={msg.id}
+                              className={`flex flex-col ${isSupport ? "items-start" : "items-end"}`}
+                            >
+                              <div className="text-[9px] font-bold mb-1 px-1" style={{ color: c.textMuted }}>
+                                {isSupport ? (
+                                  <span className="text-amber-500 flex items-center gap-1 font-bold">
+                                    <ShieldCheck size={11} /> Support Team ({msg.senderName})
+                                  </span>
+                                ) : (
+                                  <span>You</span>
+                                )}
+                              </div>
+                              <div
+                                className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed shadow-sm ${
+                                  isSupport
+                                    ? "rounded-tl-sm border"
+                                    : "rounded-tr-sm text-black font-medium"
+                                }`}
+                                style={{
+                                  background: isSupport
+                                    ? (isDark ? "rgba(255,255,255,0.08)" : "#f1f5f9")
+                                    : "linear-gradient(135deg, #f59e0b, #d97706)",
+                                  borderColor: isSupport ? c.border : "transparent",
+                                  color: isSupport ? c.text : "#000",
+                                }}
+                              >
+                                <p className="whitespace-pre-wrap">{msg.message}</p>
+                              </div>
+                              <span className="text-[8px] mt-0.5 px-1" style={{ color: c.textMuted }}>
+                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                      <div ref={chatScrollRef} />
+                    </div>
+
+                    {/* Chat Reply Composer */}
+                    <form onSubmit={handleSendUserReply} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={userReply}
+                        onChange={(e) => setUserReply(e.target.value)}
+                        placeholder="Type your message or follow-up details..."
+                        disabled={sendingUserReply}
+                        className="flex-1 px-4 py-2.5 rounded-xl text-xs border outline-none focus:border-amber-500/40"
+                        style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={!userReply.trim() || sendingUserReply}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold disabled:opacity-60 cursor-pointer shadow-md"
+                      >
+                        {sendingUserReply ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                        Send
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* FAQ Modal Content */}
+            {activeModal === "faq" && (
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: c.textMuted }} />
+                  <input
+                    type="text"
+                    value={faqQuery}
+                    onChange={(e) => setFaqQuery(e.target.value)}
+                    placeholder="Search FAQs..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border outline-none"
+                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  {filteredFaqs.map((faq, index) => {
+                    const isOpen = expandedFaq === index;
+                    return (
+                      <div key={index} className="rounded-xl border overflow-hidden" style={{ borderColor: c.border }}>
+                        <button
+                          onClick={() => setExpandedFaq(isOpen ? null : index)}
+                          className="w-full flex items-center justify-between p-3 text-xs font-bold text-left transition-all hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                          style={{ color: c.text }}
+                        >
+                          <span>{faq.q}</span>
+                          <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180 text-amber-500" : ""}`} />
+                        </button>
+                        {isOpen && (
+                          <div
+                            className="p-3 text-[11px] border-t leading-relaxed"
+                            style={{
+                              borderColor: c.border,
+                              color: c.textMuted,
+                              background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
+                            }}
+                          >
+                            {faq.a}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Support Ticket Modal Content */}
+            {activeModal === "support" && (
+              <form onSubmit={handleSubmitSupport} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Subject</label>
+                  <input
+                    type="text"
+                    value={supportSubject}
+                    onChange={(e) => setSupportSubject(e.target.value)}
+                    placeholder="Brief summary of your issue..."
+                    className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-amber-500/40"
+                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Category</label>
+                  <select
+                    value={supportCategory}
+                    onChange={(e) => setSupportCategory(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
+                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                  >
+                    <option value="General Inquiry" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>General Inquiry</option>
+                    <option value="Technical Issue" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Technical Issue</option>
+                    <option value="Billing & Subscription" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Billing & Subscription</option>
+                    <option value="Feature Request" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Feature Request</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Message</label>
+                  <textarea
+                    rows={4}
+                    value={supportMessage}
+                    onChange={(e) => setSupportMessage(e.target.value)}
+                    placeholder="Describe your issue in detail..."
+                    className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none resize-none"
+                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                    required
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <PremiumButton variant="secondary" onClick={() => setActiveModal(null)} type="button">Cancel</PremiumButton>
+                  <button
+                    type="submit"
+                    disabled={submittingSupport}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold disabled:opacity-60 cursor-pointer shadow-md"
+                  >
+                    {submittingSupport ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                    Submit Ticket
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Bug Report Modal Content */}
+            {activeModal === "bug" && (
+              <form onSubmit={handleSubmitBug} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Bug Title</label>
+                  <input
+                    type="text"
+                    value={bugTitle}
+                    onChange={(e) => setBugTitle(e.target.value)}
+                    placeholder="What went wrong?"
+                    className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none focus:border-amber-500/40"
+                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Severity</label>
+                  <select
+                    value={bugSeverity}
+                    onChange={(e) => setBugSeverity(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
+                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                  >
+                    <option value="Low" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Low - Minor UI issue</option>
+                    <option value="Medium" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Medium - Feature malfunctioning</option>
+                    <option value="High" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>High - Unable to complete task</option>
+                    <option value="Critical" style={{ background: isDark ? "#0c0d16" : "#ffffff", color: c.text }}>Critical - System crash or data issue</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Steps to Reproduce (Optional)</label>
+                  <input
+                    type="text"
+                    value={bugSteps}
+                    onChange={(e) => setBugSteps(e.target.value)}
+                    placeholder="e.g., Clicked upload photo -> Network error"
+                    className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none"
+                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Description</label>
+                  <textarea
+                    rows={3}
+                    value={bugMessage}
+                    onChange={(e) => setBugMessage(e.target.value)}
+                    placeholder="Explain what happened vs what you expected..."
+                    className="w-full rounded-xl px-4 py-2.5 text-xs border outline-none resize-none"
+                    style={{ background: c.inputBg, borderColor: c.border, color: c.text }}
+                    required
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <PremiumButton variant="secondary" onClick={() => setActiveModal(null)} type="button">Cancel</PremiumButton>
+                  <button
+                    type="submit"
+                    disabled={submittingBug}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 text-white text-xs font-bold disabled:opacity-60 cursor-pointer shadow-md"
+                  >
+                    {submittingBug ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
+                    Report Bug
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Documentation Content */}
+            {activeModal === "docs" && (
+              <div className="space-y-4 text-xs leading-relaxed" style={{ color: c.textSec }}>
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold">
+                  🚀 Adyapan AI Quick Start Guide
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-extrabold text-sm" style={{ color: c.text }}>Core Modules & Hubs</h4>
+                  <ul className="list-disc list-inside space-y-1 text-[11px]" style={{ color: c.textMuted }}>
+                    <li><strong style={{ color: c.text }}>Ady Chat:</strong> Interactive AI assistant for custom queries and instant tutoring.</li>
+                    <li><strong style={{ color: c.text }}>Coding Hub:</strong> Practice DSA problems, generate solutions, and build GitHub portfolios.</li>
+                    <li><strong style={{ color: c.text }}>Interview Hub:</strong> Practice HR and Technical mock interviews with AI evaluation.</li>
+                    <li><strong style={{ color: c.text }}>Resume Hub:</strong> Build ATS-optimized resumes and generate cover letters.</li>
+                    <li><strong style={{ color: c.text }}>Placement Hub:</strong> Practice company MCQs and aptitude tests.</li>
+                  </ul>
+                </div>
+                <div className="space-y-1.5 border-t pt-3" style={{ borderColor: c.border }}>
+                  <h4 className="font-extrabold text-sm" style={{ color: c.text }}>Keyboard Shortcuts</h4>
+                  <div className="flex justify-between items-center text-[11px] py-1 border-b" style={{ borderColor: c.border }}>
+                    <span>Quick Search Tool</span>
+                    <kbd className="px-2 py-0.5 rounded text-[10px] font-mono border" style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>Ctrl + K</kbd>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px] py-1 border-b" style={{ borderColor: c.border }}>
+                    <span>Close Modals / Overlays</span>
+                    <kbd className="px-2 py-0.5 rounded text-[10px] font-mono border" style={{ background: c.inputBg, borderColor: c.border, color: c.text }}>Esc</kbd>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* About Modal Content */}
+            {activeModal === "about" && (
+              <div className="space-y-4 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto font-black text-xl">
+                  A
+                </div>
+                <div>
+                  <h4 className="text-lg font-extrabold" style={{ color: c.text }}>Adyapan AI Platform</h4>
+                  <span className="text-xs text-amber-500 font-semibold block">Version 2.0.0 (Enterprise Build)</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left border-y py-3" style={{ borderColor: c.border }}>
+                  <div className="p-3 rounded-xl border" style={{ background: c.cardBg, borderColor: c.border }}>
+                    <span className="text-[10px] block" style={{ color: c.textMuted }}>Engine Status</span>
+                    <span className="text-xs font-bold text-emerald-500">● Operational</span>
+                  </div>
+                  <div className="p-3 rounded-xl border" style={{ background: c.cardBg, borderColor: c.border }}>
+                    <span className="text-[10px] block" style={{ color: c.textMuted }}>AI Model Integration</span>
+                    <span className="text-xs font-bold text-amber-500">Gemini / Claude / GPT-4</span>
+                  </div>
+                </div>
+                <p className="text-[11px] leading-relaxed" style={{ color: c.textMuted }}>
+                  Built with love to empower students, job seekers, and developers with next-gen AI learning tools.
+                </p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }
+
 
 

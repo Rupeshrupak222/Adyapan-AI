@@ -1943,6 +1943,194 @@ export async function updateSupportTicketStatus(req: Request, res: Response, nex
   }
 }
 
+export async function getAdminTicketMessages(req: Request, res: Response, next: NextFunction) {
+  try {
+    const ticketId = req.params.ticketId as string;
+    const tickets = await adminDbService.findRecentAcrossAllUserDbs("supportTicket", { take: 500 });
+    const ticket = tickets.find((t: any) => String(t.ticketId) === ticketId || t.id === ticketId);
+    if (!ticket) throw httpError(404, "Support ticket not found");
+
+    const ownerUserId = ticket.userId || ticket._dbUserId;
+    const user = ownerUserId
+      ? await prisma.user.findUnique({ where: { id: ownerUserId }, select: { id: true, name: true, email: true, plan: true } })
+      : null;
+
+    const dbUrl = await databaseService.getDatabaseUrlForUser(ownerUserId);
+    const client = createPrismaClient(dbUrl);
+    let messages: any[] = [];
+    try {
+      await client.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "support_ticket_messages" (
+            "id" TEXT NOT NULL,
+            "ticket_id" TEXT NOT NULL,
+            "sender_id" TEXT NOT NULL,
+            "sender_type" TEXT NOT NULL DEFAULT 'USER',
+            "sender_name" TEXT NOT NULL DEFAULT 'User',
+            "message" TEXT NOT NULL,
+            "read" BOOLEAN NOT NULL DEFAULT false,
+            "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "support_ticket_messages_pkey" PRIMARY KEY ("id")
+        );
+        CREATE INDEX IF NOT EXISTS "support_ticket_messages_ticket_id_idx" ON "support_ticket_messages"("ticket_id");
+      `).catch(() => {});
+
+      const dbTicket = await (client as any).supportTicket.findFirst({
+        where: { OR: [{ id: ticket.id }, { ticketId: ticket.ticketId }, { ticketId }] },
+      }).catch(() => null);
+
+      const targetId = dbTicket?.id || ticket.id;
+
+      messages = await (client as any).supportTicketMessage.findMany({
+        where: { ticketId: targetId },
+        orderBy: { createdAt: "asc" },
+      }).catch(() => []);
+
+      // Mark user messages as read by admin
+      await (client as any).supportTicketMessage.updateMany({
+        where: { ticketId: targetId, senderType: "USER", read: false },
+        data: { read: true },
+      }).catch(() => {});
+    } finally {
+      await client.$disconnect();
+    }
+
+    res.json({
+      success: true,
+      ticket: {
+        id: ticket.id,
+        ticketId: ticket.ticketId,
+        subject: ticket.subject,
+        category: ticket.category,
+        severity: ticket.severity,
+        status: ticket.status,
+        message: ticket.message,
+        createdAt: ticket.createdAt,
+        updatedAt: ticket.updatedAt,
+        user: user || { id: ownerUserId, name: "User", email: "" },
+      },
+      messages,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function sendAdminTicketMessage(req: Request, res: Response, next: NextFunction) {
+  try {
+    const ticketId = req.params.ticketId as string;
+    const { message, status } = req.body;
+    if (!message || !String(message).trim()) {
+      throw httpError(400, "Message cannot be empty");
+    }
+
+    const admin = (req as any).adminUser;
+    const adminId = admin?.id || "admin";
+    const adminName = admin?.name || "Support Team";
+
+    const tickets = await adminDbService.findRecentAcrossAllUserDbs("supportTicket", { take: 500 });
+    const ticket = tickets.find((t: any) => String(t.ticketId) === ticketId || t.id === ticketId);
+    if (!ticket) throw httpError(404, "Support ticket not found");
+
+    const ownerUserId = ticket.userId || ticket._dbUserId;
+    const dbUrl = await databaseService.getDatabaseUrlForUser(ownerUserId);
+    const client = createPrismaClient(dbUrl);
+    let newMsg: any;
+    try {
+      await client.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "support_ticket_messages" (
+            "id" TEXT NOT NULL,
+            "ticket_id" TEXT NOT NULL,
+            "sender_id" TEXT NOT NULL,
+            "sender_type" TEXT NOT NULL DEFAULT 'USER',
+            "sender_name" TEXT NOT NULL DEFAULT 'User',
+            "message" TEXT NOT NULL,
+            "read" BOOLEAN NOT NULL DEFAULT false,
+            "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "support_ticket_messages_pkey" PRIMARY KEY ("id")
+        );
+        CREATE INDEX IF NOT EXISTS "support_ticket_messages_ticket_id_idx" ON "support_ticket_messages"("ticket_id");
+      `).catch(() => {});
+
+      const dbTicket = await (client as any).supportTicket.findFirst({
+        where: { OR: [{ id: ticket.id }, { ticketId: ticket.ticketId }, { ticketId }] },
+      }).catch(() => null);
+
+      const targetId = dbTicket?.id || ticket.id;
+      const msgId = `msg_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
+
+      newMsg = await (client as any).supportTicketMessage.create({
+        data: {
+          id: msgId,
+          ticketId: targetId,
+          senderId: adminId,
+          senderType: "ADMIN",
+          senderName: adminName,
+          message: String(message).trim(),
+          read: false,
+        },
+      });
+
+      const nextStatus = status && SUPPORT_STATUSES.includes(String(status).toLowerCase())
+        ? String(status).toLowerCase()
+        : ticket.status === "open" ? "in_progress" : ticket.status;
+
+      await client.supportTicket.updateMany({
+        where: { OR: [{ id: targetId }, { ticketId: ticket.ticketId }] },
+        data: { status: nextStatus, updatedAt: new Date() },
+      }).catch(() => {});
+
+      // Create personal notification for user
+      await (client as any).notification.create({
+        data: {
+          userId: ownerUserId,
+          title: `Support Reply: #${ticket.ticketId}`,
+          message: `${adminName} replied to your query "${ticket.subject.slice(0, 50)}"`,
+          type: "system",
+          link: "/dashboard/user/settings/help",
+        },
+      }).catch(() => {});
+    } finally {
+      await client.$disconnect();
+    }
+
+    // Real-time emit notification to user socket
+    try {
+      const { emitNotification } = require("../lib/notificationEmitter");
+      emitNotification(ownerUserId, {
+        id: `sup_${newMsg?.id || Date.now()}`,
+        type: "support",
+        title: `Support Reply: #${ticket.ticketId}`,
+        message: `${adminName}: ${String(message).trim().slice(0, 100)}`,
+        link: "/dashboard/user/settings/help",
+        read: false,
+        createdAt: newMsg?.createdAt || new Date(),
+      });
+    } catch (e) {
+      console.warn("[sendAdminTicketMessage] Socket emit error:", e);
+    }
+
+    await (prisma as any).adminAuditLog.create({
+      data: {
+        adminId,
+        adminName,
+        action: "Support Ticket Replied",
+        module: "Support",
+        targetId: ownerUserId,
+        details: { ticketId: ticket.ticketId, messagePreview: String(message).trim().slice(0, 100) },
+        ipAddress: req.ip,
+      },
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      message: "Message sent to user successfully",
+      chatMessage: newMsg,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getAdminUserSettings(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.params.userId as string;

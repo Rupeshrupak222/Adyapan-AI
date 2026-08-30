@@ -29,6 +29,8 @@ import {
   deleteAdminNotification,
   getAdminSupportTickets,
   updateSupportTicketStatus,
+  getAdminTicketMessages,
+  sendAdminTicketMessage,
   getAdminUserSettings,
   getAdminBlogs,
   updateAdminBlogStatus,
@@ -143,6 +145,8 @@ adminRouter.get("/integrations", ...can("settings", "read"), getAdminIntegration
 // User Settings & Support Ticket Management
 adminRouter.get("/support-tickets", ...can("support", "read"), getAdminSupportTickets);
 adminRouter.put("/support-tickets/:ticketId/status", ...can("support", "write"), updateSupportTicketStatus);
+adminRouter.get("/support-tickets/:ticketId/messages", ...can("support", "read"), getAdminTicketMessages);
+adminRouter.post("/support-tickets/:ticketId/messages", ...can("support", "write"), sendAdminTicketMessage);
 adminRouter.get("/users/:userId/settings", ...can("users", "read"), getAdminUserSettings);
 
 // User Community Blog Management
