@@ -6,6 +6,11 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL ?? "postgresql://postgres:password@localhost:5432/adyapan_ai",
   directUrl: process.env.DIRECT_URL ?? "",
   frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:3000",
+  // Comma-separated allowlist of extra CORS origins (beyond the defaults in app.ts).
+  corsOrigins: (process.env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean),
   jwtSecret: process.env.JWT_SECRET ?? "replace-this-local-secret-before-production",
   // Refresh tokens are signed with a SECRET DERIVED FROM (but distinct from) the
   // access-token secret. Using a separate key prevents token-type confusion: a

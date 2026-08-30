@@ -26,6 +26,7 @@ export function createApp() {
 
   const allowedOrigins = [
     env.frontendUrl,
+    ...env.corsOrigins,
     "http://localhost:3000",
     "http://localhost:3001",
     "https://adyapan-ai-gamma.vercel.app",

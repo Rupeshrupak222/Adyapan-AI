@@ -411,7 +411,11 @@ export default function CompanyLogo({
 
   // 4. Logo.dev API
   if (domain) {
-    sources.push(`https://img.logo.dev/${domain}?token=pk_X6D7oqEASZ6tAIOG41dEoQ&size=128`);
+    const logoDevToken = process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN;
+    const logoDevSrc = logoDevToken
+      ? `https://img.logo.dev/${domain}?token=${encodeURIComponent(logoDevToken)}&size=128`
+      : `https://img.logo.dev/${domain}?size=128`;
+    sources.push(logoDevSrc);
   }
 
   // 5. Simple Icons SVG Repository

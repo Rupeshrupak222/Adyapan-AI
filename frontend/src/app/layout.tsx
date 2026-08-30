@@ -8,6 +8,7 @@ import ThemeScript from "@/components/providers/ThemeScript";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { PremiumUpgradeModal } from "@/components/premium/PremiumUpgradeModal";
 import { PremiumRequiredModal } from "@/components/premium/PremiumRequiredModal";
+import { SITE_URL } from "@/lib/site";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,7 +23,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ai.adyapan.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Adyapan AI | AI-Powered Learning & Career Platform",
     template: "%s | Adyapan AI",
@@ -31,12 +32,12 @@ export const metadata: Metadata = {
   keywords: ["Adyapan AI", "ai.adyapan.com", "AI learning platform", "Aptitude preparation", "Job discovery", "Career guidance", "EdTech AI"],
   authors: [{ name: "Adyapan AI Team" }],
   alternates: {
-    canonical: "https://ai.adyapan.com",
+    canonical: SITE_URL,
   },
   openGraph: {
     title: "Adyapan AI - Smart AI Learning Platform",
     description: "AI-powered learning and career platform for students and professionals.",
-    url: "https://ai.adyapan.com",
+    url: SITE_URL,
     siteName: "Adyapan AI",
     locale: "en_US",
     type: "website",

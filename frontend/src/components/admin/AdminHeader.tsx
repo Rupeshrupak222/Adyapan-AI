@@ -1,10 +1,9 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { api } from "@/services/api";
 import {
   Menu, Sun, Moon, RefreshCw, Plus, Zap, Loader2, Search, Bell, LogOut, User,
 } from "lucide-react";
@@ -29,6 +28,19 @@ export function AdminHeader({
   const router = useRouter();
   const isDark = theme === "dark";
   const [profileOpen, setProfileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  useEffect(() => {
+    let mounted = true;
+    api.get("/admin/notifications?limit=1")
+      .then((res) => {
+        if (mounted && res.data?.success && res.data?.stats) {
+          setUnreadCount(res.data.stats.activeBroadcasts || 0);
+        }
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, [onRefresh]);
 
   return (
     <header style={{
@@ -93,7 +105,11 @@ export function AdminHeader({
           className="p-2 rounded-full border flex items-center justify-center transition-all relative cursor-pointer"
           style={{ background: isDark ? "#0d151c" : "#f1f5f9", borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", color: "var(--text-secondary)" }}>
           <Bell size={16} />
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-black text-[9px] font-black flex items-center justify-center shadow-md">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
         </motion.button>
 
         <div className="relative">
