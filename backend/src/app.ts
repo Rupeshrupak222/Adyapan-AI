@@ -67,6 +67,23 @@ export function createApp() {
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));
 
+  // Global per-IP API rate limit (defense-in-depth against abuse/DoS). Tune via
+  // GLOBAL_RATE_LIMIT_PER_MIN. Preflights, health checks and the HMAC-signed
+  // payment webhook are excluded.
+  const apiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: env.globalRateLimitPerMin,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: "Too many requests. Please slow down." },
+    skip: (req) =>
+      req.method === "OPTIONS" ||
+      req.path === "/health" ||
+      req.path.startsWith("/api/health") ||
+      req.path.startsWith("/payment/webhook"),
+  });
+  app.use("/api", apiLimiter);
+
   // Standalone root healthcheck endpoint for container health probes (/health)
   app.get("/health", (_req, res) => {
     res.status(200).json({

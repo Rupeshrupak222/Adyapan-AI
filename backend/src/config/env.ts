@@ -105,6 +105,15 @@ export const env = {
   // on registration. No SMTP provider is bundled today, so delivery is recorded
   // in the activity log but never blocks or fails the registration.
   emailVerificationEnabled: String(process.env.EMAIL_VERIFICATION_ENABLED ?? "").toLowerCase() === "true",
+  // Explicit opt-in for the local native code-execution fallback. Production
+  // forbids native execution regardless of this flag; it must never be enabled
+  // on a shared/remote host.
+  allowNativeExec: String(process.env.ALLOW_NATIVE_EXEC ?? "").toLowerCase() === "true",
+  // When set, password-reset OTPs are printed to the server log as the delivery
+  // channel (no SMTP is bundled). Default OFF so secrets are not logged.
+  allowOtpLogDelivery: String(process.env.ALLOW_OTP_LOG_DELIVERY ?? "").toLowerCase() === "true",
+  // Global per-IP API rate limit (requests per minute). Tune per deployment.
+  globalRateLimitPerMin: Number(process.env.GLOBAL_RATE_LIMIT_PER_MIN ?? 300),
 };
 
 // ─── Fail-fast secret validation ─────────────────────────────────────────────

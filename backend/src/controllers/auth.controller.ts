@@ -21,6 +21,7 @@ import { env } from "../config/env";
 import { httpError } from "../utils/httpError";
 import { prisma } from "../config/prisma";
 import { AdminAuditService } from "../services/admin-audit.service";
+import { revokeAllSessions, forceLogoutAllForUser } from "../services/session.service";
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
@@ -217,11 +218,14 @@ export async function me(req: Request, res: Response, next: NextFunction) {
 export async function logout(req: Request, res: Response, next: NextFunction) {
   try {
     if (req.user?.userId) {
-      await prisma.user.update({ where: { id: req.user.userId }, data: { activeSessionId: null } });
+      await revokeAllSessions(req.user.userId);
+      forceLogoutAllForUser(req.user.userId, "User logged out");
     }
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
     if (token) await blacklistToken(token);
+    res.clearCookie("adyapan_session", { path: "/", secure: env.nodeEnv === "production", sameSite: env.nodeEnv === "production" ? "none" : "lax" });
+    res.clearCookie("adyapan_refresh", { path: "/", secure: env.nodeEnv === "production", sameSite: env.nodeEnv === "production" ? "none" : "lax" });
     res.json({ success: true, message: "Logged out successfully" });
   } catch (error) {
     next(error);
@@ -246,9 +250,17 @@ export async function sessionCheck(req: Request, res: Response, next: NextFuncti
 
 export async function refresh(req: Request, res: Response, next: NextFunction) {
   try {
-    const token = req.body?.refreshToken;
+    const bodyToken = typeof req.body?.refreshToken === "string" ? req.body.refreshToken : "";
+    const token = bodyToken || readCookie(req, "adyapan_refresh");
     if (!token || typeof token !== "string") return next(httpError(400, "Refresh token is required"));
     const result = await refreshTokenService(token);
+    res.cookie("adyapan_refresh", result.refreshToken, {
+      httpOnly: true,
+      secure: env.nodeEnv === "production",
+      sameSite: env.nodeEnv === "production" ? "none" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: "/",
+    });
     res.json({ success: true, token: result.token, refreshToken: result.refreshToken });
   } catch (error) { next(error); }
 }
@@ -382,13 +394,18 @@ export async function githubCallback(req: Request, res: Response, next: NextFunc
       path: "/",
     });
 
-    // Pass token & user in redirect params for seamless cross-domain login
-    const params = new URLSearchParams({
-      token: result.token,
-      user: JSON.stringify(result.user),
-      sessionId: result.sessionId,
-      refreshToken: result.refreshToken,
+    // Store the refresh token in an httpOnly cookie. Tokens and session ids are
+    // never passed through the redirect URL, which would leak them into browser
+    // history, referrer headers, and server logs.
+    res.cookie("adyapan_refresh", result.refreshToken, {
+      httpOnly: true,
+      secure: env.nodeEnv === "production",
+      sameSite: env.nodeEnv === "production" ? "none" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: "/",
     });
+
+    const params = new URLSearchParams({ user: JSON.stringify(result.user) });
 
     res.redirect(`${frontendUrl}/login?github=success&${params.toString()}`);
   } catch (error) {
@@ -429,13 +446,18 @@ export async function googleCallback(req: Request, res: Response, next: NextFunc
       path: "/",
     });
 
-    // Pass token & user in redirect params for seamless cross-domain login
-    const params = new URLSearchParams({
-      token: result.token,
-      user: JSON.stringify(result.user),
-      sessionId: result.sessionId,
-      refreshToken: result.refreshToken,
+    // Store the refresh token in an httpOnly cookie. Tokens and session ids are
+    // never passed through the redirect URL, which would leak them into browser
+    // history, referrer headers, and server logs.
+    res.cookie("adyapan_refresh", result.refreshToken, {
+      httpOnly: true,
+      secure: env.nodeEnv === "production",
+      sameSite: env.nodeEnv === "production" ? "none" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: "/",
     });
+
+    const params = new URLSearchParams({ user: JSON.stringify(result.user) });
 
     res.redirect(`${frontendUrl}/login?google=success&${params.toString()}`);
   } catch (error) {

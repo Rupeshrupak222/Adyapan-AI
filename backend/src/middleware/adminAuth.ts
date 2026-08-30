@@ -84,7 +84,7 @@ export async function requireAdminAuth(
               id: user.id,
               name: user.name,
               email: user.email,
-              password: user.password,
+              password: "",
               roleId: superRoleId || undefined,
               status: "ACTIVE",
             },

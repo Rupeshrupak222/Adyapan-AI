@@ -703,7 +703,10 @@ export async function loginUser(
 
   if (!user) {
     const result = recordFailedLogin(email, isAdminPortal);
-    const err = httpError(401, targetRole === "ADMIN" ? "Invalid admin credentials." : "Invalid user credentials.");
+    const msg = result.attemptsRemaining > 0
+      ? `Invalid credentials. ${result.attemptsRemaining} attempt${result.attemptsRemaining === 1 ? "" : "s"} remaining.`
+      : isAdminPortal ? "Account temporarily locked. Try again in 30 minutes." : "Account locked for 3 minutes.";
+    const err = httpError(result.attemptsRemaining > 0 ? 401 : 429, msg);
     (err as any).attemptsRemaining = result.attemptsRemaining;
     throw err;
   }
@@ -908,6 +911,11 @@ const memoryPasswordResetTokens: Array<{
   createdAt: Date;
 }> = [];
 
+// OTP brute-force protection: per-email failed-attempt counter with lockout.
+const otpFailedAttempts = new Map<string, { count: number; lockedAt: number }>();
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_LOCK_MS = 10 * 60 * 1000;
+
 function generateOtp(): string {
   // Cryptographically secure 6-digit OTP (Math.random is predictable)
   return String(randomInt(100000, 1000000));
@@ -941,13 +949,18 @@ export async function requestPasswordReset(email: string): Promise<{ devOtp?: st
     createdAt: new Date(),
   });
 
-  // No email provider is configured; surface the OTP via the API response in
-  // local development only, and log it in production for operators (their only
-  // delivery channel until SMTP is integrated).
+  // No email provider is configured. Surface the OTP via the API response in
+  // local development only, and log it only when the operator explicitly opted
+  // in (ALLOW_OTP_LOG_DELIVERY=true). Default OFF so reset codes are never
+  // written to server logs.
   if (env.nodeEnv === "development") {
     return { devOtp: otp };
   }
-  console.log(`[PasswordReset] OTP for ${normalizedEmail}: ${otp}`);
+  if (env.allowOtpLogDelivery) {
+    console.log(`[PasswordReset] OTP for ${normalizedEmail}: ${otp}`);
+  } else {
+    console.log(`[PasswordReset] OTP generated for ${normalizedEmail} (not printed: log delivery disabled and no email provider is configured).`);
+  }
   return {};
 }
 
@@ -957,6 +970,11 @@ export async function resetPassword(email: string, otp: string, newPassword: str
 
   if (!otp || !/^\d{6}$/.test(otp)) {
     throw httpError(400, "Invalid OTP. Please enter the 6-digit code.");
+  }
+
+  const failure = otpFailedAttempts.get(normalizedEmail);
+  if (failure && Date.now() - failure.lockedAt < OTP_LOCK_MS) {
+    throw httpError(429, "Too many incorrect OTP attempts. Please wait and request a new code.");
   }
 
   const tokenRecord = memoryPasswordResetTokens
@@ -969,8 +987,18 @@ export async function resetPassword(email: string, otp: string, newPassword: str
 
   const isValidOtp = await bcrypt.compare(otp, tokenRecord.otpHash);
   if (!isValidOtp) {
+    const attempt = otpFailedAttempts.get(normalizedEmail) || { count: 0, lockedAt: 0 };
+    attempt.count += 1;
+    attempt.lockedAt = Date.now();
+    otpFailedAttempts.set(normalizedEmail, attempt);
+    if (attempt.count >= OTP_MAX_ATTEMPTS) {
+      tokenRecord.used = true;
+      throw httpError(429, "Too many incorrect OTP attempts. Please request a new code.");
+    }
     throw httpError(400, "Invalid OTP.");
   }
+
+  otpFailedAttempts.delete(normalizedEmail);
 
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) {

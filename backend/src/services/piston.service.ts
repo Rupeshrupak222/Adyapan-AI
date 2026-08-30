@@ -420,9 +420,9 @@ export async function executeCode(
   }
 
   // Fallback to local native execution (Python / Node.js) if all Piston endpoints are offline/whitelisted.
-  // Disabled in production: native execution on the backend host is a critical
-  // privilege-escalation vector. In production, require Piston to be available.
-  if (env.nodeEnv === "production") {
+  // Disabled in production AND unless explicitly opted in via ALLOW_NATIVE_EXEC=true:
+  // native execution on the backend host is a critical privilege-escalation vector.
+  if (env.nodeEnv === "production" || !env.allowNativeExec) {
     return {
       stdout: "",
       stderr: "Code execution is temporarily unavailable. Piston service is offline.",

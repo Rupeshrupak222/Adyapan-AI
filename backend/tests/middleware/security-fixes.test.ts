@@ -362,9 +362,9 @@ describe("auth.controller logout blacklists token", () => {
     const req = {
       headers: { authorization: "Bearer test-jwt-token-here" },
     } as any;
-    const res = { json: jest.fn() } as any;
+    const res = { json: jest.fn(), clearCookie: jest.fn() } as any;
 
-    await logout(req, res);
+    await logout(req, res, jest.fn());
     expect(logoutMock).toHaveBeenCalledWith("test-jwt-token-here");
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true })
@@ -375,9 +375,9 @@ describe("auth.controller logout blacklists token", () => {
     const { logout } = require("../../src/controllers/auth.controller");
 
     const req = { headers: {} } as any;
-    const res = { json: jest.fn() } as any;
+    const res = { json: jest.fn(), clearCookie: jest.fn() } as any;
 
-    await logout(req, res);
+    await logout(req, res, jest.fn());
     expect(logoutMock).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true })

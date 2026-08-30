@@ -20,6 +20,15 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Higher ceiling for token refresh (fires automatically every ~15 min per tab)
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  message: { success: false, error: "Too many refresh attempts. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export const authRouter = Router();
 
 authRouter.post("/register", loginLimiter, register);
@@ -28,15 +37,15 @@ authRouter.post("/login", loginLimiter, login);
 authRouter.post("/admin-login", authLimiter, adminLogin);
 authRouter.post("/forgot-password", authLimiter, forgotPassword);
 authRouter.post("/reset-password", authLimiter, resetPasswordController);
-authRouter.post("/refresh", refresh);
+authRouter.post("/refresh", refreshLimiter, refresh);
 authRouter.post("/logout", requireAuth, logout);
 authRouter.get("/session", getSessionFromCookie);
 authRouter.get("/me", requireAuth, me);
 authRouter.get("/session-check", requireAuth, sessionCheck);
-authRouter.get("/github", githubAuth);
-authRouter.get("/github/callback", githubCallback);
-authRouter.get("/callback/github", githubCallback);
-authRouter.get("/google", googleAuth);
-authRouter.get("/google/callback", googleCallback);
-authRouter.get("/callback/google", googleCallback);
+authRouter.get("/github", authLimiter, githubAuth);
+authRouter.get("/github/callback", authLimiter, githubCallback);
+authRouter.get("/callback/github", authLimiter, githubCallback);
+authRouter.get("/google", authLimiter, googleAuth);
+authRouter.get("/google/callback", authLimiter, googleCallback);
+authRouter.get("/callback/google", authLimiter, googleCallback);
 

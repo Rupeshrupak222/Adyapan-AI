@@ -6,6 +6,7 @@ import { AdminAuditService } from "../services/admin-audit.service";
 import bcrypt from "bcrypt";
 import multer from "multer";
 import { cloudinary } from "../config/cloudinary";
+import { sniffImageType } from "../utils/fileSniff";
 
 export const settingsRouter = Router();
 settingsRouter.use(requireAuth);
@@ -773,6 +774,10 @@ settingsRouter.post("/profile-photo", uploadPhoto.single("photo"), async (req: a
     const userId = req.user?.userId || req.user?.id;
     if (!req.file) {
       res.status(400).json({ success: false, error: "No photo uploaded" });
+      return;
+    }
+    if (!sniffImageType(req.file.buffer)) {
+      res.status(400).json({ success: false, error: "File content is not a valid image." });
       return;
     }
     const photoUrl = await uploadPhotoToCloudinary(req.file);

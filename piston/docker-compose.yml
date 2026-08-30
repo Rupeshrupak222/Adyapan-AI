@@ -2,7 +2,9 @@ services:
   piston:
     build: .
     container_name: piston
-    privileged: true
+    privileged: false
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "2000:2000"
     volumes:

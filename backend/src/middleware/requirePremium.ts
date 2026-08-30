@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../config/prisma";
 import { env } from "../config/env";
+import { httpError } from "../utils/httpError";
 import { evaluateFeatureAccess, normalizePlanKind } from "../services/feature-access.service";
 
 /**
@@ -133,8 +134,9 @@ export async function requirePremiumEntitlement(
       upgrade: true,
     });
   } catch (error) {
-    // Fail open for unexpected errors — let downstream middleware handle limits
-    next();
+    // Fail closed: an inability to verify the plan must never grant premium
+    // access. Return a retryable error instead of allowing the request through.
+    next(httpError(503, "Unable to verify your plan right now. Please try again.", "PLAN_VERIFICATION_FAILED"));
   }
 }
 
@@ -190,7 +192,7 @@ export function requireFeature(featureKey: string) {
 
       next();
     } catch (error) {
-      next();
+      next(httpError(503, "Unable to verify your plan right now. Please try again.", "PLAN_VERIFICATION_FAILED"));
     }
   };
 }

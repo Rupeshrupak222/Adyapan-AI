@@ -96,7 +96,7 @@ api.interceptors.response.use(
       config.__refreshAttempted = true;
 
       try {
-        const refreshRes = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+        const refreshRes = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken }, { withCredentials: true });
         const { token: newToken, refreshToken: newRefreshToken } = refreshRes.data;
         const { updateStoredTokens } = await import("@/hooks/useAuth");
         updateStoredTokens(newToken, newRefreshToken);

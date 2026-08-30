@@ -53,7 +53,7 @@ import {
   handleGetTestById,
 } from "../controllers/mcq.controller";
 import { requireAdminAuth } from "../middleware/adminAuth";
-import { requireAdminPermission } from "../middleware/adminPermission";
+import { requireAdminPermission, requireSuperAdmin } from "../middleware/adminPermission";
 import {
   getUserDatabases,
   getUserDatabaseStats,
@@ -212,5 +212,5 @@ adminRouter.get("/performance", ...can("system", "read"), (req, res) => {
 adminRouter.get("/databases", ...can("databases", "read"), getUserDatabases);
 adminRouter.get("/databases/stats", ...can("databases", "read"), getUserDatabaseStats);
 adminRouter.get("/databases/aggregated", ...can("databases", "read"), getAggregatedStats);
-adminRouter.post("/databases/:userId/query", ...can("databases", "write"), queryUserDb);
+adminRouter.post("/databases/:userId/query", ...can("databases", "write"), requireSuperAdmin, queryUserDb);
 adminRouter.delete("/databases/:userId", ...can("databases", "write"), deleteUserDatabase);

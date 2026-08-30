@@ -7,6 +7,7 @@ import { cloudinary } from "../config/cloudinary";
 import mammoth from "mammoth";
 
 import { extractPdfText } from "../services/pdf-parser.service";
+import { sniffDocumentType } from "../utils/fileSniff";
 
 async function parsePdf(buffer: Buffer): Promise<string> {
   return extractPdfText(buffer);
@@ -20,17 +21,27 @@ async function extractTextFromFile(file: Express.Multer.File): Promise<string> {
   const mimeType = file.mimetype;
   let rawText: string;
 
+  // Verify the file CONTENT (magic bytes), not just the browser-declared MIME.
+  // Prevents polyglot/mismatched files (e.g. an .exe renamed to .pdf) from
+  // being parsed and uploaded.
+  const detected = sniffDocumentType(file.buffer);
+  if (!detected) {
+    throw httpError(400, "The file content is not a valid PDF, DOC, or DOCX document.");
+  }
+  const declaredOk =
+    (mimeType === "application/pdf" && detected === "pdf") ||
+    (mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && detected === "docx") ||
+    (mimeType === "application/msword" && detected === "doc");
+  if (!declaredOk) {
+    throw httpError(400, "The file content does not match the declared file type.");
+  }
+
   try {
-    if (mimeType === "application/pdf") {
+    if (detected === "pdf") {
       rawText = await parsePdf(file.buffer);
-    } else if (
-      mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-      mimeType === "application/msword"
-    ) {
+    } else {
       const parsed = await mammoth.extractRawText({ buffer: file.buffer });
       rawText = parsed.value;
-    } else {
-      throw httpError(400, "Unsupported file format. Please upload a PDF or DOCX file.");
     }
   } catch (parseErr: any) {
     if (parseErr.statusCode === 400) throw parseErr;

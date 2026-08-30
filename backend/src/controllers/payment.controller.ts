@@ -380,7 +380,16 @@ export async function handleRazorpayWebhook(req: Request, res: Response) {
       return res.status(403).json({ error: "Invalid signature" });
     }
 
-    const event = req.body;
+    // express.raw() is mounted on this path, so req.body is a Buffer. Parse it
+    // into the Razorpay event object so the lifecycle switch below can run —
+    // making the webhook the authoritative server-to-server premium activator.
+    let event: any;
+    try {
+      const raw = Buffer.isBuffer(rawBody) ? rawBody.toString("utf8") : String(rawBody ?? "");
+      event = raw ? JSON.parse(raw) : (req.body ?? null);
+    } catch {
+      return res.status(400).json({ error: "Invalid JSON body" });
+    }
     const eventType = event?.event;
     const payload = event?.payload;
 
