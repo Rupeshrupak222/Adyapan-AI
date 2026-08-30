@@ -66,11 +66,11 @@ interface UserSettingsView {
 const STATUS_OPTIONS = ["open", "in_progress", "resolved", "closed"];
 
 const QUICK_REPLIES = [
-  "Hello! We are currently investigating this issue for you.",
-  "This issue has been resolved. Please refresh your page and verify.",
-  "Could you please share more details or the exact steps to reproduce?",
-  "Thank you for reporting this bug! Our engineering team is on it.",
-  "Your account settings/quota have been updated.",
+  "We are investigating this report and will update you shortly.",
+  "This issue has been resolved in the latest release. Please verify.",
+  "Please provide additional details or reproduction steps regarding this issue.",
+  "Your support request has been escalated to our engineering team.",
+  "Your account configuration and permissions have been updated.",
 ];
 
 function statusVariant(status: string): "success" | "warning" | "error" | "info" | "default" {
@@ -266,8 +266,8 @@ export default function SupportTickets() {
   return (
     <div className="space-y-6 pb-12">
       <SectionHeader
-        title="Support Center & Live Query Chat"
-        description="Manage user inquiries, bug reports, and chat live with students on their specific support tickets"
+        title="Support Operations & Communications"
+        description="Manage user inquiries, technical bug reports, and customer resolution threads."
         actions={
           <button
             onClick={() => fetchTickets()}
@@ -541,8 +541,8 @@ export default function SupportTickets() {
                     <Loader2 size={24} className="animate-spin text-amber-500" />
                   </div>
                 ) : chatMessages.length === 0 ? (
-                  <div className="text-center py-8 text-xs" style={{ color: "var(--text-muted)" }}>
-                    No messages yet. Send the first response to {activeChatTicket.userName} below.
+                  <div className="text-center py-8 text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+                    No prior message history found on this ticket. Compose a response below.
                   </div>
                 ) : (
                   chatMessages.map((msg) => {

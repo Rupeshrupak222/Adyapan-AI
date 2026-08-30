@@ -2535,8 +2535,8 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
   const cards = [
     {
       id: "my-tickets",
-      title: "My Tickets & Queries",
-      desc: "Chat live with Support & track bug reports",
+      title: "Support Tickets & Inquiries",
+      desc: "Track status and communicate with the support desk",
       icon: MessageSquare,
       color: "text-amber-500",
       onClick: () => {
@@ -2634,7 +2634,7 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <p className="text-xs" style={{ color: c.textMuted }}>
-                        Track status, read responses, and chat directly with our technical support team.
+                        Track resolution status, review official responses, and communicate with support engineers.
                       </p>
                       <button
                         onClick={fetchUserTickets}
@@ -2779,8 +2779,8 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                           <Loader2 size={24} className="animate-spin text-amber-500" />
                         </div>
                       ) : chatMessages.length === 0 ? (
-                        <div className="text-center py-10 text-[11px]" style={{ color: c.textMuted }}>
-                          Your ticket has been received! Our support team will reply here shortly. You can also send follow-up notes below.
+                        <div className="text-center py-10 text-[11px] font-medium" style={{ color: c.textMuted }}>
+                          Your ticket has been logged with our support operations. Responses will appear here in real time.
                         </div>
                       ) : (
                         chatMessages.map((msg) => {
@@ -3068,7 +3068,7 @@ export function HelpSection({ c }: { c: Record<string, string> }) {
                   </div>
                 </div>
                 <p className="text-[11px] leading-relaxed" style={{ color: c.textMuted }}>
-                  Built with love to empower students, job seekers, and developers with next-gen AI learning tools.
+                  Enterprise AI platform engineered for scalable learning, technical assessments, and intelligent career acceleration.
                 </p>
               </div>
             )}
