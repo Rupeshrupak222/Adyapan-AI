@@ -1562,20 +1562,24 @@ export async function getAdminNotifications(req: Request, res: Response, next: N
         (prisma as any).systemNotification.findMany({ where, orderBy: { createdAt: "desc" }, skip, take: limit }),
         (prisma as any).systemNotification.count({ where }),
         prisma.user.count(),
-        prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: null }, { plan: "" }] } }),
-        prisma.user.count({ where: { plan: { in: ["pro", "premium", "enterprise", "pro_monthly", "pro_yearly"] } } }),
+        prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: "FREE" }, { plan: "" }] } }),
+        prisma.user.count({ where: { OR: [{ plan: { in: ["pro", "premium", "enterprise", "pro_monthly", "pro_yearly", "PRO", "PREMIUM"] } }, { subscriptionStatus: "active" }] } }),
       ]);
       activeCount = await (prisma as any).systemNotification.count({ where: { isRevoked: false } });
     } catch (dbErr: any) {
-      if (dbErr?.code === "P2021" || (typeof dbErr?.message === "string" && dbErr.message.includes("does not exist"))) {
-        await ensureSystemNotificationTableExists();
-        [totalAllUsers, freeUsersCount, premiumUsersCount] = await Promise.all([
-          prisma.user.count(),
-          prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: null }, { plan: "" }] } }),
-          prisma.user.count({ where: { OR: [{ plan: "pro" }, { plan: "premium" }, { subscriptionStatus: "active" }] } }),
+      console.warn("[getAdminNotifications] Initial query failed, verifying tables:", dbErr?.message || dbErr);
+      await ensureSystemNotificationTableExists();
+      try {
+        [notifications, total, totalAllUsers, freeUsersCount, premiumUsersCount] = await Promise.all([
+          (prisma as any).systemNotification.findMany({ where, orderBy: { createdAt: "desc" }, skip, take: limit }).catch(() => []),
+          (prisma as any).systemNotification.count({ where }).catch(() => 0),
+          prisma.user.count().catch(() => 0),
+          prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: "FREE" }, { plan: "" }] } }).catch(() => 0),
+          prisma.user.count({ where: { OR: [{ plan: { in: ["pro", "premium", "enterprise", "pro_monthly", "pro_yearly", "PRO", "PREMIUM"] } }, { subscriptionStatus: "active" }] } }).catch(() => 0),
         ]);
-      } else {
-        throw dbErr;
+        activeCount = await (prisma as any).systemNotification.count({ where: { isRevoked: false } }).catch(() => 0);
+      } catch (retryErr) {
+        console.error("[getAdminNotifications] Retry failed:", retryErr);
       }
     }
 
@@ -1691,9 +1695,9 @@ export async function createAdminBroadcastNotification(req: Request, res: Respon
     if (validAudience === "ALL") {
       targetCount = await prisma.user.count();
     } else if (validAudience === "FREE") {
-      targetCount = await prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: null }, { plan: "" }] } });
+      targetCount = await prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: "FREE" }, { plan: "" }] } });
     } else if (validAudience === "PREMIUM") {
-      targetCount = await prisma.user.count({ where: { OR: [{ plan: "pro" }, { plan: "premium" }, { subscriptionStatus: "active" }] } });
+      targetCount = await prisma.user.count({ where: { OR: [{ plan: { in: ["pro", "premium", "enterprise", "pro_monthly", "pro_yearly", "PRO", "PREMIUM"] } }, { subscriptionStatus: "active" }] } });
     } else if (validAudience === "ADMIN") {
       targetCount = await (prisma as any).adminUser.count();
     }
