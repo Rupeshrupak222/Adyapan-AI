@@ -44,12 +44,13 @@ const sidebarSections: SidebarSectionItem[] = [
 interface AdminSidebarProps {
   activeSection: string;
   setActiveSection: (id: string) => void;
+  onHoverSection?: (id: string) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   theme: string;
 }
 
-export function AdminSidebar({ activeSection, setActiveSection, sidebarOpen, setSidebarOpen, theme }: AdminSidebarProps) {
+export function AdminSidebar({ activeSection, setActiveSection, onHoverSection, sidebarOpen, setSidebarOpen, theme }: AdminSidebarProps) {
   const isDark = theme === "dark";
 
   return (
@@ -81,6 +82,7 @@ export function AdminSidebar({ activeSection, setActiveSection, sidebarOpen, set
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.12 }}
+                onMouseEnter={() => onHoverSection?.(item.id)}
                 onClick={() => { setActiveSection(item.id); setSidebarOpen(false); }}
                 style={{
                   display: "flex", alignItems: "center", gap: "0.75rem",

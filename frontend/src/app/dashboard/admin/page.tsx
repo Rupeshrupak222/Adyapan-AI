@@ -120,6 +120,39 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   );
 }
 
+const sectionImporters: Record<string, () => Promise<any>> = {
+  executive: () => import("@/components/admin/sections/ExecutiveDashboard"),
+  operations: () => import("@/components/admin/sections/OperationsCenter"),
+  users: () => import("@/components/admin/sections/UserManagement"),
+  organizations: () => import("@/components/admin/sections/OrganizationManagement"),
+  "ai-platform": () => import("@/components/admin/sections/AIPlatform"),
+  features: () => import("@/components/admin/sections/FeatureManagement"),
+  learning: () => import("@/components/admin/sections/LearningEcosystem"),
+  placement: () => import("@/components/admin/sections/PlacementEcosystem"),
+  "technical-mcqs": () => import("@/components/admin/sections/TechnicalEngineManagement"),
+  "aptitude-tests": () => import("@/components/admin/sections/AptitudeEngineManagement"),
+  content: () => import("@/components/admin/sections/ContentManagement"),
+  "blog-management": () => import("@/components/admin/sections/BlogManagement"),
+  billing: () => import("@/components/admin/sections/BillingFinance"),
+  analytics: () => import("@/components/admin/sections/AnalyticsBI"),
+  monitoring: () => import("@/components/admin/sections/Monitoring"),
+  security: () => import("@/components/admin/sections/SecurityCenter"),
+  infrastructure: () => import("@/components/admin/sections/Infrastructure"),
+  integrations: () => import("@/components/admin/sections/Integrations"),
+  audit: () => import("@/components/admin/sections/AuditCenter"),
+  notifications: () => import("@/components/admin/sections/Notifications"),
+  developer: () => import("@/components/admin/sections/DeveloperCenter"),
+  "ai-copilot": () => import("@/components/admin/sections/AICopilot"),
+  settings: () => import("@/components/admin/sections/SystemSettings"),
+  support: () => import("@/components/admin/sections/SupportTickets"),
+};
+
+function preloadSection(id: string) {
+  try {
+    sectionImporters[id]?.();
+  } catch {}
+}
+
 const sectionComponents: Record<string, React.ComponentType> = {
   executive: ExecutiveDashboard,
   operations: OperationsCenter,
@@ -226,7 +259,7 @@ function AdminDashboardContent() {
       import("@/components/admin/sections/OperationsCenter");
       import("@/components/admin/sections/AnalyticsBI");
       import("@/components/admin/sections/Notifications");
-    }, 800);
+    }, 400);
     return () => clearTimeout(timer);
   }, []);
 
@@ -285,6 +318,7 @@ function AdminDashboardContent() {
       <AdminSidebar
         activeSection={activeSection}
         setActiveSection={handleSectionChange}
+        onHoverSection={preloadSection}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         theme={theme}

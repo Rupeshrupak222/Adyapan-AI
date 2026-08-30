@@ -92,10 +92,34 @@ function ensureSettingsLoaded(): Promise<void> {
   return settingsLoadPromise;
 }
 
+// ─── High Performance In-Memory TTL Cache for Admin Analytics ───
+const adminStatsCache = new Map<string, { data: any; expiresAt: number }>();
+
+function getCachedData<T>(key: string): T | null {
+  const cached = adminStatsCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data as T;
+  }
+  return null;
+}
+
+function setCachedData(key: string, data: any, ttlSeconds = 15): void {
+  adminStatsCache.set(key, { data, expiresAt: Date.now() + ttlSeconds * 1000 });
+}
+
+export function invalidateAdminStatsCache(): void {
+  adminStatsCache.clear();
+}
+
 // ─── 1. Dashboard Overview ───────────────────────────────────────
 
 export async function getDashboardStats(_req: Request, res: Response, next: NextFunction) {
   try {
+    const cached = getCachedData<any>("admin:dashboard:stats");
+    if (cached) {
+      return res.json(cached);
+    }
+
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -164,7 +188,7 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
 
     const freeUsers = Math.max(0, totalUsers - premiumUsers - adminUsers);
 
-    res.json({
+    const responsePayload = {
       success: true,
       stats: {
         users: {
@@ -192,7 +216,10 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
         },
         totalAiRequests: resumeCount + atsCount + coverLetterCount + linkedinCount + studySessions + notesCount + quizzesCount + assignmentsCount + pptsCount + mindmapsCount + codingSessions + submissionsCount + interviewSessions + chatSessions,
       },
-    });
+    };
+
+    setCachedData("admin:dashboard:stats", responsePayload, 15);
+    res.json(responsePayload);
   } catch (error) {
     next(error);
   }
@@ -1536,6 +1563,12 @@ export async function getAdminNotifications(req: Request, res: Response, next: N
     const type = req.query.type as string;
     const search = (req.query.search as string)?.trim();
 
+    const cacheKey = `admin:notifications:${page}:${limit}:${targetAudience || "ALL"}:${type || "ALL"}:${search || ""}`;
+    const cached = getCachedData<any>(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const where: any = {};
     if (targetAudience && targetAudience !== "ALL_FILTER") {
       where.targetAudience = targetAudience;
@@ -1583,7 +1616,7 @@ export async function getAdminNotifications(req: Request, res: Response, next: N
       }
     }
 
-    res.json({
+    const responsePayload = {
       success: true,
       notifications,
       stats: {
@@ -1601,7 +1634,10 @@ export async function getAdminNotifications(req: Request, res: Response, next: N
         total,
         pages: Math.ceil(total / limit) || 1,
       },
-    });
+    };
+
+    setCachedData(cacheKey, responsePayload, 10);
+    res.json(responsePayload);
   } catch (error) {
     next(error);
   }
@@ -1727,6 +1763,8 @@ export async function createAdminBroadcastNotification(req: Request, res: Respon
       ipAddress: req.ip,
     });
 
+    invalidateAdminStatsCache();
+
     res.json({
       success: true,
       message: `Notification broadcasted to ${targetCount} ${validAudience.toLowerCase()} users`,
@@ -1759,6 +1797,8 @@ export async function toggleRevokeAdminNotification(req: Request, res: Response,
       ipAddress: req.ip,
     });
 
+    invalidateAdminStatsCache();
+
     res.json({
       success: true,
       message: updated.isRevoked ? "Notification broadcast revoked" : "Notification broadcast re-activated",
@@ -1784,6 +1824,8 @@ export async function deleteAdminNotification(req: Request, res: Response, next:
       details: { title: existing?.title || "" },
       ipAddress: req.ip,
     });
+
+    invalidateAdminStatsCache();
 
     res.json({ success: true, message: "Notification deleted" });
   } catch (error) {
