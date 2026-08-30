@@ -17,11 +17,14 @@ import {
   Star, Zap, LineChart, Trophy, MessageCircle, Users, X,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useUserPlan } from "@/hooks/useUserPlan";
+
 export interface AdyapanUser {
   id?: string;
   name: string;
   email: string;
   role?: string;
+  plan?: string;
 }
 
 export interface SidebarItem {
@@ -412,6 +415,8 @@ export function DashboardTopNav({
   onClearAll: () => void;
 }) {
   const router = useRouter();
+  const { isPremium } = useUserPlan();
+  const isUserPremium = isPremium || !!(user?.plan && ["premium", "pro", "enterprise"].includes(user.plan.toLowerCase()));
   const [generateOpen, setGenerateOpen] = useState(false);
   const [evaluateOpen, setEvaluateOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -789,7 +794,7 @@ export function DashboardTopNav({
             boxShadow: isDarkTheme ? "0 2px 12px rgba(245,158,11,0.2)" : "0 2px 10px rgba(245,158,11,0.15)",
           }}
         >
-          <Crown size={13} style={{ color: isDarkTheme ? "#f59e0b" : "#d97706" }} /> Premium
+          <Crown size={13} style={{ color: isDarkTheme ? "#f59e0b" : "#d97706" }} /> {isUserPremium ? "Premium" : "Upgrade to Premium"}
         </motion.button>
 
         {/* Theme toggle */}
