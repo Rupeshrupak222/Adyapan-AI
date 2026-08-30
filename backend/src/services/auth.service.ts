@@ -1029,29 +1029,38 @@ export async function exchangeGitHubCode(code: string): Promise<GitHubUser> {
     headers: {
       Authorization: `Bearer ${tokenData.access_token}`,
       Accept: "application/json",
+      "User-Agent": "Adyapan-AI-Application",
     },
   });
 
   const githubUser = (await userRes.json()) as GitHubUser;
 
   if (!githubUser.email) {
-    const emailsRes = await fetch("https://api.github.com/user/emails", {
-      headers: {
-        Authorization: `Bearer ${tokenData.access_token}`,
-        Accept: "application/json",
-      },
-    });
-    const emails = (await emailsRes.json()) as { email: string; primary: boolean }[];
-    const primary = emails.find((e) => e.primary);
-    if (primary) {
-      githubUser.email = primary.email;
-    } else if (emails.length > 0) {
-      githubUser.email = emails[0].email;
+    try {
+      const emailsRes = await fetch("https://api.github.com/user/emails", {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          Accept: "application/json",
+          "User-Agent": "Adyapan-AI-Application",
+        },
+      });
+      if (emailsRes.ok) {
+        const emails = (await emailsRes.json()) as { email: string; primary: boolean; verified?: boolean }[];
+        if (Array.isArray(emails) && emails.length > 0) {
+          const primary = emails.find((e) => e.primary && e.verified) || emails.find((e) => e.primary) || emails[0];
+          if (primary?.email) {
+            githubUser.email = primary.email;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[exchangeGitHubCode] Error fetching emails from GitHub:", e);
     }
   }
 
   if (!githubUser.email) {
-    throw httpError(400, "GitHub account has no public email. Please add one to your GitHub profile.");
+    const loginHandle = githubUser.login || `github_${githubUser.id}`;
+    githubUser.email = `${loginHandle.toLowerCase()}@users.noreply.github.com`;
   }
 
   return githubUser;
