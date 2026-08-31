@@ -4,15 +4,19 @@ import { useEffect, useRef, useCallback } from "react";
 import { api } from "@/services/api";
 import { getAuthToken, clearAuthSession } from "@/hooks/useAuth";
 
-// 24 Hours idle timeout
-const IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+// 15-minute idle timeout — matches the backend's isSessionIdle threshold
+// so session state stays consistent between client and server.
+const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
 
 /**
  * Tracks user activity (mouse, keyboard, scroll, click, touch, visibility change).
- * After 24 hours of total inactivity:
+ * After 15 minutes of total inactivity:
  * 1. Calls POST /auth/logout to clear session on server
  * 2. Clears localStorage/sessionStorage
  * 3. Redirects to /login page with idle_timeout reason
+ *
+ * Matches the backend's isSessionIdle threshold (15 min) so client and server
+ * stay consistent.
  */
 export function useIdleTimeout() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -77,12 +81,17 @@ export function useIdleTimeout() {
       "touchmove",
     ];
 
-    // Throttle event handling to avoid excessive timer resets
-    const THROTTLE_MS = 10000; // Only reset timer every 10 seconds max
+    // Always record the latest activity timestamp so the idle-check is accurate.
+    // Throttle the actual timer reset (clearing + re-setting setTimeout) to
+    // avoid O(events/sec) timer churn — reset at most once every 10 seconds.
+    const THROTTLE_MS = 10_000;
+    let lastReset = Date.now();
 
     const handleActivity = () => {
       const now = Date.now();
-      if (now - lastActivityRef.current >= THROTTLE_MS) {
+      lastActivityRef.current = now; // always up to date
+      if (now - lastReset >= THROTTLE_MS) {
+        lastReset = now;
         resetTimer();
       }
     };

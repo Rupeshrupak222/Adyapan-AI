@@ -35,6 +35,26 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "geolocation=(), interest-cohort=()",
           },
+          {
+            // CSP: lock down content sources to own origin + known CDNs used
+            // by the app (fonts, avatars, Unsplash images, KaTeX assets).
+            // unsafe-inline kept for style-src because Tailwind injects inline
+            // styles; remove once a nonce-based approach is in place.
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: blob: https://images.unsplash.com https://api.dicebear.com https://avatars.githubusercontent.com https://lh3.googleusercontent.com",
+              // connect-src: allow own origin + the configured backend + all
+              // Railway/Vercel deployments so the CSP doesn't break regardless
+              // of which deployment URL is active.
+              "connect-src 'self' https://*.up.railway.app wss://*.up.railway.app https://*.vercel.app",
+              "media-src 'self'",
+              "frame-ancestors 'none'",
+            ].join("; "),
+          },
         ],
       },
       {

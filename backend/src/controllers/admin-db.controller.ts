@@ -14,9 +14,23 @@ export async function getUserDatabaseStats(req: Request, res: Response) {
 export async function queryUserDb(req: Request, res: Response) {
   const userId = req.params.userId as string;
   const query = req.body?.query as string | undefined;
-  
-  if (!query) {
+
+  if (!query || typeof query !== "string") {
     res.status(400).json({ error: "Query is required" });
+    return;
+  }
+
+  // Only allow read-only SELECT statements. Reject any DDL (CREATE, DROP, ALTER),
+  // DML (INSERT, UPDATE, DELETE), or multiple statements that could cause
+  // destructive changes via SQL injection through this admin endpoint.
+  const normalised = query.trim().replace(/\s+/g, " ").toUpperCase();
+  if (!normalised.startsWith("SELECT ")) {
+    res.status(400).json({ error: "Only SELECT queries are permitted." });
+    return;
+  }
+  // Block statement terminators that could chain multiple queries.
+  if (query.includes(";") && query.trim().lastIndexOf(";") < query.trim().length - 1) {
+    res.status(400).json({ error: "Multiple statements are not allowed." });
     return;
   }
 
