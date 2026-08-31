@@ -6,12 +6,13 @@ import { databaseService } from "../services/database.service";
 import { createPrismaClient } from "../config/dynamicPrisma";
 import { httpError } from "../utils/httpError";
 import { env } from "../config/env";
+import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { autoResolveCompanyLogo } from "../utils/companyLogoResolver";
 import { JobDiscoveryService } from "../services/job-discovery.service";
 import { emitBroadcastNotification } from "../lib/notificationEmitter";
 import { AdminAuditService } from "../services/admin-audit.service";
-import { registerUser } from "../services/auth.service";
+import { registerUser, validatePasswordStrength } from "../services/auth.service";
 import { calculateProfileCompletion } from "../utils/profileCompletion";
 import {
   generateAllTopicTestsForAdmin,
@@ -507,6 +508,21 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
     const adminName = (req as any).adminUser?.name || "Admin";
     const auditDetails = () => ({ userId, email: user.email });
 
+    // Sensitive actions (suspend/delete/reset-password) must never be usable
+    // against another admin or super-admin account by a non-super admin.
+    const targetIsAdmin =
+      user.role === "ADMIN" || env.superAdminEmails.includes(String(user.email || "").toLowerCase());
+    const actorRole = (req as any).adminUser?.roleId
+      ? await (prisma as any).adminRole.findUnique({ where: { id: (req as any).adminUser.roleId }, select: { name: true } }).catch(() => null)
+      : null;
+    const actorIsSuper =
+      env.superAdminEmails.includes(String((req as any).adminUser?.email || "").toLowerCase()) ||
+      actorRole?.name === "Super Admin";
+    const SENSITIVE_ACTIONS = ["block", "suspend", "suspend_user", "delete", "delete_user", "reset-password", "reset_password"];
+    if (targetIsAdmin && !actorIsSuper && SENSITIVE_ACTIONS.includes(action)) {
+      throw httpError(403, "Managing admin accounts requires super admin privileges.");
+    }
+
     if (action === "block" || action === "suspend" || action === "suspend_user") {
       await prisma.user.update({ where: { id: userId }, data: { subscriptionStatus: "cancelled" } });
       await AdminAuditService.log({
@@ -544,7 +560,16 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
       return res.json({ success: true, message: "User deleted" });
     }
     if (action === "reset-password" || action === "reset_password") {
-      const pwd = newPassword || req.body.newPassword || "Adyapan@123";
+      const supplied = newPassword || req.body.newPassword;
+      let tempPassword: string | undefined;
+      let pwd: string;
+      if (supplied) {
+        validatePasswordStrength(supplied);
+        pwd = supplied;
+      } else {
+        tempPassword = randomBytes(12).toString("base64url");
+        pwd = tempPassword;
+      }
       const hashed = await bcrypt.hash(pwd, 10);
       await prisma.user.update({ where: { id: userId }, data: { password: hashed } });
       await AdminAuditService.log({
@@ -555,10 +580,18 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
         details: auditDetails(),
         ipAddress: req.ip,
       });
-      return res.json({ success: true, message: `Password reset to ${pwd}` });
+      return res.json(
+        tempPassword
+          ? { success: true, message: "Temporary password generated for user.", tempPassword }
+          : { success: true, message: "Password reset for user." }
+      );
     }
     if (action === "upgrade" || action === "upgrade_plan") {
-      const targetPlan = (plan || req.body.plan || "premium").toLowerCase();
+      const ALLOWED_PLANS = ["free", "premium", "pro", "pro_monthly", "pro_yearly", "enterprise"];
+      const targetPlan = String(plan || req.body.plan || "premium").toLowerCase().trim();
+      if (!ALLOWED_PLANS.includes(targetPlan)) {
+        throw httpError(400, `Unsupported plan "${targetPlan}"`);
+      }
       await prisma.user.update({
         where: { id: userId },
         data: { plan: targetPlan, subscriptionStatus: "active", subscriptionEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) },

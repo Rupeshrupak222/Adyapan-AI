@@ -812,9 +812,12 @@ router.post("/workspace/:id/notes", async (req: any, res) => {
 
     if (action === "delete") {
       if (!id) return res.status(400).json({ error: "Note ID is required for deletion" });
-      await userPrisma.problemNote.delete({
-        where: { id }
+      const deleted = await userPrisma.problemNote.deleteMany({
+        where: { id, userId }
       });
+      if (deleted.count === 0) {
+        return res.status(404).json({ error: "Note not found" });
+      }
       return res.json({ success: true, message: "Note deleted successfully" });
     }
 
@@ -824,7 +827,11 @@ router.post("/workspace/:id/notes", async (req: any, res) => {
 
     let note;
     if (id) {
-      // Update existing note
+      // Update existing note (ownership-checked)
+      const existing = await userPrisma.problemNote.findFirst({ where: { id, userId } });
+      if (!existing) {
+        return res.status(404).json({ error: "Note not found" });
+      }
       note = await userPrisma.problemNote.update({
         where: { id },
         data: {
@@ -1429,10 +1436,11 @@ router.get("/workspace/:id/executions", async (req: any, res) => {
 router.get("/workspace/:id/execution/:executionId", async (req: any, res) => {
   try {
     const executionId = req.params.executionId;
+    const userId = req.user.userId;
     const userPrisma = await getUserPrismaFromRequest(req);
 
-    const execution = await userPrisma.codeExecution.findUnique({
-      where: { id: executionId },
+    const execution = await userPrisma.codeExecution.findFirst({
+      where: { id: executionId, userId },
       include: {
         history: true
       }
@@ -1463,7 +1471,7 @@ router.post("/workspace/:id/execution/restore", async (req: any, res) => {
       where: { id: executionId }
     });
 
-    if (!execution || execution.questionId !== questionId) {
+    if (!execution || execution.questionId !== questionId || execution.userId !== userId) {
       return res.status(404).json({ error: "Execution history snapshot not found" });
     }
 
@@ -1579,10 +1587,11 @@ router.get("/complexity/history", async (req: any, res) => {
 router.get("/complexity/:id", async (req: any, res) => {
   try {
     const id = req.params.id;
+    const userId = req.user.userId;
     const userPrisma = await getUserPrismaFromRequest(req);
 
-    const complexityAnalysis = await userPrisma.complexityAnalysis.findUnique({
-      where: { id }
+    const complexityAnalysis = await userPrisma.complexityAnalysis.findFirst({
+      where: { id, userId }
     });
 
     if (!complexityAnalysis) {

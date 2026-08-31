@@ -51,7 +51,7 @@ export async function analyzePlagiarismSSE(req: Request, res: Response) {
     );
 
     const reportId = `report-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    reportStore.set(reportId, report);
+    reportStore.set(reportId, { owner: req.user?.userId, report });
     if (reportStore.size > 50) {
       const keys = Array.from(reportStore.keys());
       for (let i = 0; i < keys.length - 50; i++) reportStore.delete(keys[i]);
@@ -90,9 +90,13 @@ export async function analyzePlagiarismSync(req: Request, res: Response, next: N
 // GET /api/plagiarism/report/:id
 export async function getReport(req: Request, res: Response, next: NextFunction) {
   const id = String(req.params.id);
-  const report = reportStore.get(id);
-  if (!report) { next(httpError(404, "Report not found")); return; }
-  res.json({ success: true, report });
+  const entry = reportStore.get(id);
+  if (!entry) { next(httpError(404, "Report not found")); return; }
+  if (entry.owner && entry.owner !== req.user?.userId) {
+    next(httpError(404, "Report not found"));
+    return;
+  }
+  res.json({ success: true, report: entry.report });
 }
 
 // POST /api/plagiarism/humanize — Rewrite AI-generated text to sound human

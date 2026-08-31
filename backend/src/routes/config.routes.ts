@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { getPlatformConfig, updatePlatformConfig } from "../config/platform-config";
 import { getSystemSettingsMemory } from "../controllers/admin.controller";
-import { requireAuth, requireRole } from "../middleware/auth";
+import { requireAdminAuth } from "../middleware/adminAuth";
+import { requireAdminPermission } from "../middleware/adminPermission";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 
 export const configRouter = Router();
@@ -33,7 +34,7 @@ configRouter.get("/:key", async (req, res) => {
   res.json({ success: true, key, value });
 });
 
-configRouter.put("/:key", requireAuth, requireRole("ADMIN"), async (req, res) => {
+configRouter.put("/:key", requireAdminAuth, requireAdminPermission("settings", "write"), async (req, res) => {
   try {
     const key = String(req.params.key);
     const { value } = req.body;

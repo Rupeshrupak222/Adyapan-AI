@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { RecommendationService } from "../services/recommendation.service";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { getTimezone } from "../utils/request";
+import { handleRouteError } from "../utils/routeError";
 
 function adjustGreetingByTime(text: string, timezone: string): string {
   if (typeof text !== "string") return text;
@@ -58,7 +59,7 @@ export async function generateRecommendations(req: Request, res: Response): Prom
     res.json({ success: true, ...data });
   } catch (error: any) {
     console.error("Recommendation generateRecommendations error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to generate recommendations" });
+    handleRouteError(res, error, "Recommendation.generate", "Failed to generate recommendations");
   }
 }
 
@@ -134,7 +135,7 @@ export async function getDashboardRecommendations(req: Request, res: Response): 
     });
   } catch (error: any) {
     console.error("Recommendation getDashboardRecommendations error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to get dashboard recommendations" });
+    handleRouteError(res, error, "Recommendation.dashboard", "Failed to get dashboard recommendations");
   }
 }
 
@@ -152,7 +153,7 @@ export async function getStudyRecommendations(req: Request, res: Response): Prom
     res.json({ success: true, recommendations: dbRecommendations });
   } catch (error: any) {
     console.error("Recommendation getStudyRecommendations error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to get study recommendations" });
+    handleRouteError(res, error, "Recommendation.study", "Failed to get study recommendations");
   }
 }
 
@@ -170,7 +171,7 @@ export async function getRevisionRecommendations(req: Request, res: Response): P
     res.json({ success: true, recommendations: dbRecommendations });
   } catch (error: any) {
     console.error("Recommendation getRevisionRecommendations error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to get revision recommendations" });
+    handleRouteError(res, error, "Recommendation.revision", "Failed to get revision recommendations");
   }
 }
 
@@ -188,7 +189,7 @@ export async function getExamRecommendations(req: Request, res: Response): Promi
     res.json({ success: true, recommendations: dbRecommendations });
   } catch (error: any) {
     console.error("Recommendation getExamRecommendations error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to get exam recommendations" });
+    handleRouteError(res, error, "Recommendation.exam", "Failed to get exam recommendations");
   }
 }
 
@@ -206,6 +207,6 @@ export async function getInterviewRecommendations(req: Request, res: Response): 
     res.json({ success: true, recommendations: dbRecommendations });
   } catch (error: any) {
     console.error("Recommendation getInterviewRecommendations error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to get interview recommendations" });
+    handleRouteError(res, error, "Recommendation.interview", "Failed to get interview recommendations");
   }
 }

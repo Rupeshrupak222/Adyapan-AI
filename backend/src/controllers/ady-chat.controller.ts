@@ -258,7 +258,7 @@ export async function sendMessage(req: Request, res: Response, next: NextFunctio
       onError(error) {
         console.error("Chat stream error:", error);
         if (!res.headersSent) {
-          res.status(500).json({ success: false, message: error.message });
+          res.status(500).json({ success: false, message: "Stream failed" });
         } else {
           res.write(`data: ${JSON.stringify({ type: "error", message: error.message })}\n\n`);
           if (typeof (res as any).flush === "function") (res as any).flush();

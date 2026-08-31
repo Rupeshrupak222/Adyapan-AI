@@ -3,6 +3,14 @@
 # dependencies
 node_modules/
 
+# local environment files (never commit real secrets)
+.env
+.env.*
+!.env.example
+
+# local Python tooling virtualenv
+.venv311/
+
 # runtime logs & build artifacts
 *.log
 logs/

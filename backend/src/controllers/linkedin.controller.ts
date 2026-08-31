@@ -42,7 +42,7 @@ export async function generateFullLinkedInProfile(req: Request, res: Response, n
 
     // Try to get resume data from builder first
     if (resumeId) {
-      const resume = await userPrisma.resume.findUnique({ where: { id: resumeId } });
+      const resume = await userPrisma.resume.findFirst({ where: { id: resumeId, userId } });
       if (resume) {
         const legacy = extractLegacyFromRecord(resume);
         const p = legacy.personalInfo || {};
@@ -67,8 +67,8 @@ export async function generateFullLinkedInProfile(req: Request, res: Response, n
     if (!resumeText) {
       // If a specific resumeId was provided, try to find it as an uploaded resume
       if (resumeId) {
-        const uploaded = await userPrisma.uploadedResume.findUnique({
-          where: { id: resumeId },
+        const uploaded = await userPrisma.uploadedResume.findFirst({
+          where: { id: resumeId, userId },
           include: { candidateProfile: true },
         });
         if (uploaded) {

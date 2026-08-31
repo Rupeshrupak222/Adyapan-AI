@@ -83,6 +83,11 @@ export function updateStoredTokens(newToken: string, newRefreshToken: string): v
   if (typeof window === "undefined") return;
   sessionStorage.setItem(TOKEN_KEY, newToken);
   sessionStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
+  localStorage.setItem(TOKEN_KEY, newToken);
+  localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
+  // Keep Next.js middleware.ts + SocketContext on the fresh token too, or they
+  // would keep authenticating with the pre-refresh access token.
+  setCookie(TOKEN_KEY, newToken, 7);
 }
 
 export function clearAuthSession() {

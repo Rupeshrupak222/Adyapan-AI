@@ -26,7 +26,7 @@ router.get("/saved", async (req: any, res) => {
   try {
     const userPrisma = await getUserPrismaFromRequest(req);
     const saved = await userPrisma.jobSaved.findMany({
-      where: { userId: req.user.id },
+      where: { userId: req.user.userId },
       select: { jobId: true },
     });
     res.json({ success: true, savedIds: saved.map((s) => s.jobId) });
@@ -41,14 +41,14 @@ router.post("/saved/:jobId", async (req: any, res) => {
     const userPrisma = await getUserPrismaFromRequest(req);
     const { jobId } = req.params;
     const existing = await userPrisma.jobSaved.findUnique({
-      where: { userId_jobId: { userId: req.user.id, jobId } },
+      where: { userId_jobId: { userId: req.user.userId, jobId } },
     });
     if (existing) {
       await userPrisma.jobSaved.delete({ where: { id: existing.id } });
       res.json({ success: true, saved: false });
     } else {
       await userPrisma.jobSaved.create({
-        data: { userId: req.user.id, jobId },
+        data: { userId: req.user.userId, jobId },
       });
       res.json({ success: true, saved: true });
     }
@@ -63,13 +63,13 @@ router.post("/apply/:jobId", async (req: any, res) => {
     const userPrisma = await getUserPrismaFromRequest(req);
     const { jobId } = req.params;
     const existing = await userPrisma.jobApplication.findUnique({
-      where: { userId_jobId: { userId: req.user.id, jobId } },
+      where: { userId_jobId: { userId: req.user.userId, jobId } },
     });
     if (existing) {
       return res.json({ success: true, status: "already_applied" });
     }
     await userPrisma.jobApplication.create({
-      data: { userId: req.user.id, jobId },
+      data: { userId: req.user.userId, jobId },
     });
     res.json({ success: true, status: "applied" });
   } catch (error) {

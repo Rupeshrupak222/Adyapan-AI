@@ -1,6 +1,5 @@
 import bcrypt from "bcrypt";
 import jwt, { type SignOptions } from "jsonwebtoken";
-import { exec } from "child_process";
 import { createHash, randomBytes, randomInt } from "crypto";
 import { Prisma, type User } from "@prisma/client";
 import { prisma } from "../config/prisma";
@@ -110,7 +109,7 @@ export function verifyRefreshToken(token: string): { userId: string } {
 
 // Password policy: minimum 8 chars with upper, lower, digit, and special char.
 const PASSWORD_SPECIAL_CHARS = "!@#$%^&*_\\-+=?.,;:";
-function validatePasswordStrength(password: string) {
+export function validatePasswordStrength(password: string) {
   if (!password || password.length < 8) {
     throw httpError(400, "Password must be at least 8 characters long");
   }

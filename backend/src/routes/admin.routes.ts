@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { handleRouteError } from "../utils/routeError";
 import {
   getDashboardStats,
   getActivityFeed,
@@ -121,7 +122,7 @@ adminRouter.get("/analytics/bi", ...can("analytics", "read"), getAnalyticsBI);
 adminRouter.get("/analytics/premium", ...can("analytics", "read"), getPremiumAnalytics);
 adminRouter.get("/system-health", ...can("system", "read"), getSystemHealth);
 adminRouter.get("/modules", ...can("analytics", "read"), getModuleAnalytics);
-adminRouter.post("/generate-all-tests", requireAdminAuth, generateAllTopicTestsAdminCtrl);
+adminRouter.post("/generate-all-tests", ...can("content", "write"), generateAllTopicTestsAdminCtrl);
 adminRouter.get("/security", ...can("security", "read"), getSecurityLogs);
 adminRouter.post("/notifications/:id/read", ...can("security", "write"), markNotificationRead);
 adminRouter.get("/notifications", ...can("notifications", "read"), getAdminNotifications);
@@ -205,7 +206,7 @@ adminRouter.get("/performance", ...can("system", "read"), (req, res) => {
     const { PerformanceMonitor } = require("../utils/monitoring");
     res.json({ success: true, stats: PerformanceMonitor.getStats() });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to retrieve performance metrics" });
+    handleRouteError(res, error, "Admin.performance", "Failed to retrieve performance metrics");
   }
 });
 

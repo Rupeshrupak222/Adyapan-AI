@@ -34,7 +34,7 @@ const inMemExportStore: any[] = [];
 
 // GET /api/research/dashboard
 export async function getDashboardStats(req: Request, res: Response) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
 
   try {
     const papers = await prisma.researchPaper.findMany({
@@ -94,7 +94,7 @@ export async function getDashboardStats(req: Request, res: Response) {
 
 // GET /api/research/papers
 export async function listPapers(req: Request, res: Response) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   try {
     const papers = await prisma.researchPaper.findMany({
       where: { userId },
@@ -108,7 +108,7 @@ export async function listPapers(req: Request, res: Response) {
 
 // GET /api/research/drafts
 export async function listDrafts(req: Request, res: Response) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   try {
     const drafts = await prisma.paperDraft.findMany({
       where: { userId },
@@ -127,7 +127,7 @@ export async function listTemplates(_req: Request, res: Response) {
 
 // GET /api/research/export-history
 export async function getExportHistory(req: Request, res: Response) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   try {
     const exports = await prisma.paperExport.findMany({
       where: { userId },
@@ -172,7 +172,7 @@ export async function fetchSources(req: Request, res: Response, next: NextFuncti
 // ============================================================================
 
 export async function generatePaperSSE(req: Request, res: Response) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   const config = req.body as ResearchConfig;
   if (!config.topic?.trim()) {
     res.status(400).write(`data: ${JSON.stringify({ type: "error", message: "Research topic is required" })}\n\n`);
@@ -257,7 +257,7 @@ export async function generatePaperSSE(req: Request, res: Response) {
 }
 
 export async function generatePaperSync(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   const config = req.body as ResearchConfig;
   if (!config.topic?.trim()) {
     next(httpError(400, "Research topic is required"));
@@ -325,7 +325,7 @@ export async function generateSectionHandler(req: Request, res: Response, next: 
 }
 
 export async function saveDraftHandler(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   const { draftId, title, currentStep, configJson, contentJson } = req.body;
   if (!title) {
     next(httpError(400, "Draft title is required"));
@@ -380,7 +380,7 @@ export async function generateVisualHandler(req: Request, res: Response, next: N
 }
 
 export async function uploadPDFHandler(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   if (!req.file) {
     next(httpError(400, "PDF file is required"));
     return;
@@ -413,8 +413,9 @@ export async function uploadPDFHandler(req: Request, res: Response, next: NextFu
 
 export async function getPaper(req: Request, res: Response, next: NextFunction) {
   const paperId = String(req.params.id || "");
+  const userId = req.user?.userId || "default-user";
   try {
-    const dbPaper = await prisma.researchPaper.findUnique({ where: { id: paperId } });
+    const dbPaper = await prisma.researchPaper.findFirst({ where: { id: paperId, userId } });
     if (dbPaper) {
       res.json({ success: true, paper: dbPaper.contentJson });
       return;
@@ -454,7 +455,7 @@ function toTitleString(val: any): string {
 }
 
 export async function exportPdf(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   const { paper, template } = req.body as { paper?: any; template?: string };
   if (!paper) { next(httpError(400, "Paper data is required")); return; }
   try {
@@ -476,7 +477,7 @@ export async function exportPdf(req: Request, res: Response, next: NextFunction)
 }
 
 export async function exportDocx(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   const { paper, template } = req.body as { paper?: any; template?: string };
   if (!paper) { next(httpError(400, "Paper data is required")); return; }
   try {
@@ -498,7 +499,7 @@ export async function exportDocx(req: Request, res: Response, next: NextFunction
 }
 
 export async function exportLatex(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   const { paper, template } = req.body as { paper?: any; template?: string };
   if (!paper) { next(httpError(400, "Paper data is required")); return; }
   try {
@@ -520,7 +521,7 @@ export async function exportLatex(req: Request, res: Response, next: NextFunctio
 }
 
 export async function exportMarkdown(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id || "default-user";
+  const userId = req.user?.userId || "default-user";
   const { paper } = req.body as { paper?: any };
   if (!paper) { next(httpError(400, "Paper data is required")); return; }
   try {

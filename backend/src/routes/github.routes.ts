@@ -23,7 +23,7 @@ router.post("/analyze", async (req: any, res) => {
 
     const profile = await userPrisma.githubProfile.create({
       data: {
-        userId: req.user.id,
+        userId: req.user.userId,
         username,
         repos: analysis.keyProjects,
         languages: analysis.topLanguages,
@@ -65,7 +65,7 @@ router.post("/readme", async (req: any, res) => {
 
     const saved = await userPrisma.generatedReadme.create({
       data: {
-        userId: req.user.id,
+        userId: req.user.userId,
         projectName,
         content: result.readmeContent,
       },
@@ -85,7 +85,7 @@ router.post("/portfolio", requireFeatureQuota("GITHUB_PORTFOLIO_BUILDER"), async
 
     const portfolio = await userPrisma.portfolio.create({
       data: {
-        userId: req.user.id,
+        userId: req.user.userId,
         theme: theme || "modern",
         content: { ...result, title: title || result.homeHero?.title || "My Portfolio" },
       },
@@ -105,17 +105,17 @@ router.get("/history", async (req: any, res) => {
 
     const [profiles, readmes, portfolios] = await Promise.all([
       userPrisma.githubProfile.findMany({
-        where: { userId: req.user.id },
+        where: { userId: req.user.userId },
         orderBy: { lastSynced: "desc" },
         take: 20,
       }),
       userPrisma.generatedReadme.findMany({
-        where: { userId: req.user.id },
+        where: { userId: req.user.userId },
         orderBy: { createdAt: "desc" },
         take: 30,
       }),
       userPrisma.portfolio.findMany({
-        where: { userId: req.user.id },
+        where: { userId: req.user.userId },
         orderBy: { updatedAt: "desc" },
         take: 30,
       }),
@@ -161,7 +161,7 @@ router.post("/history/save", async (req: any, res) => {
     if (type === "readme") {
       if (!projectName || !content) return res.status(400).json({ error: "projectName and content required" });
       const saved = await userPrisma.generatedReadme.create({
-        data: { userId: req.user.id, projectName, content },
+        data: { userId: req.user.userId, projectName, content },
       });
       return res.json({ success: true, item: { id: saved.id, projectName, content, createdAt: saved.createdAt } });
     }
@@ -170,7 +170,7 @@ router.post("/history/save", async (req: any, res) => {
       if (!content) return res.status(400).json({ error: "content required" });
       const saved = await userPrisma.portfolio.create({
         data: {
-          userId: req.user.id,
+          userId: req.user.userId,
           theme: theme || "modern",
           content: { ...content, title: title || content?.homeHero?.title || "My Portfolio" },
         },
@@ -191,21 +191,21 @@ router.post("/history/duplicate", async (req: any, res) => {
     const userPrisma = await getUserPrismaFromRequest(req);
 
     if (type === "readme") {
-      const original = await userPrisma.generatedReadme.findFirst({ where: { id, userId: req.user.id } });
+      const original = await userPrisma.generatedReadme.findFirst({ where: { id, userId: req.user.userId } });
       if (!original) return res.status(404).json({ error: "Not found" });
       const copy = await userPrisma.generatedReadme.create({
-        data: { userId: req.user.id, projectName: `${original.projectName} (copy)`, content: original.content },
+        data: { userId: req.user.userId, projectName: `${original.projectName} (copy)`, content: original.content },
       });
       return res.json({ success: true, item: { id: copy.id, projectName: copy.projectName, content: copy.content, createdAt: copy.createdAt } });
     }
 
     if (type === "portfolio") {
-      const original = await userPrisma.portfolio.findFirst({ where: { id, userId: req.user.id } });
+      const original = await userPrisma.portfolio.findFirst({ where: { id, userId: req.user.userId } });
       if (!original) return res.status(404).json({ error: "Not found" });
       const content = (original.content as any) || {};
       const copy = await userPrisma.portfolio.create({
         data: {
-          userId: req.user.id,
+          userId: req.user.userId,
           theme: original.theme,
           content: { ...content, title: `${content.title || "Portfolio"} (copy)` },
         },
@@ -225,11 +225,11 @@ router.delete("/history/:type/:id", async (req: any, res) => {
     const userPrisma = await getUserPrismaFromRequest(req);
 
     if (type === "readme") {
-      await userPrisma.generatedReadme.deleteMany({ where: { id, userId: req.user.id } });
+      await userPrisma.generatedReadme.deleteMany({ where: { id, userId: req.user.userId } });
     } else if (type === "portfolio") {
-      await userPrisma.portfolio.deleteMany({ where: { id, userId: req.user.id } });
+      await userPrisma.portfolio.deleteMany({ where: { id, userId: req.user.userId } });
     } else if (type === "profile") {
-      await userPrisma.githubProfile.deleteMany({ where: { id, userId: req.user.id } });
+      await userPrisma.githubProfile.deleteMany({ where: { id, userId: req.user.userId } });
     } else {
       return res.status(400).json({ error: "Unsupported history type" });
     }
@@ -260,7 +260,7 @@ router.post("/deploy", async (req: any, res) => {
     }
 
     const latest = await userPrisma.portfolio.findFirst({
-      where: { userId: req.user.id },
+      where: { userId: req.user.userId },
       orderBy: { updatedAt: "desc" },
     });
 
