@@ -11,22 +11,24 @@ router.get("/", async (req: any, res) => {
   try {
     const userPrisma = await getUserPrismaFromRequest(req);
     const { q, category, page = "1", limit = "20" } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+    const pageNum = Math.max(1, Math.min(Number(page) || 1, 10000));
+    const pageSize = Math.max(1, Math.min(Number(limit) || 20, 100));
+    const skip = (pageNum - 1) * pageSize;
     const where: any = { published: true };
     if (q) where.OR = [{ title: { contains: String(q), mode: "insensitive" } }, { content: { contains: String(q), mode: "insensitive" } }, { tags: { has: String(q) } }];
     if (category && category !== "All") where.category = String(category);
     const [blogs, total] = await Promise.all([
       userPrisma.blog.findMany({
         where,
-        include: { _count: { select: { comments: true, likes: true } }, likes: { where: { userId: req.user.id }, select: { id: true } } },
+        include: { _count: { select: { comments: true, likes: true } }, likes: { where: { userId: req.user.userId }, select: { id: true } } },
         orderBy: { createdAt: "desc" },
         skip,
-        take: Number(limit),
+        take: pageSize,
       }),
       userPrisma.blog.count({ where }),
     ]);
     const enriched = blogs.map((b: any) => ({ ...b, likedByMe: b.likes.length > 0, likes: undefined }));
-    res.json({ success: true, blogs: enriched, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
+    res.json({ success: true, blogs: enriched, total, page: pageNum, pages: Math.ceil(total / pageSize) });
   } catch (error) {
     handleRouteError(res, error, "Blog.list", "Failed to fetch blogs");
   }
@@ -37,7 +39,7 @@ router.get("/my/blogs", async (req: any, res) => {
   try {
     const userPrisma = await getUserPrismaFromRequest(req);
     const blogs = await userPrisma.blog.findMany({
-      where: { userId: req.user.id },
+      where: { userId: req.user.userId },
       include: { _count: { select: { comments: true, likes: true } } },
       orderBy: { createdAt: "desc" },
     });
@@ -53,11 +55,11 @@ router.get("/:id", async (req: any, res) => {
     const userPrisma = await getUserPrismaFromRequest(req);
     const blog = await userPrisma.blog.findUnique({
       where: { id: req.params.id },
-      include: { _count: { select: { comments: true, likes: true } }, likes: { where: { userId: req.user.id }, select: { id: true } } },
+      include: { _count: { select: { comments: true, likes: true } }, likes: { where: { userId: req.user.userId }, select: { id: true } } },
     });
     if (!blog) return res.status(404).json({ success: false, error: "Blog not found" });
     // Drafts are only visible to their author; other users see 404
-    if (!blog.published && blog.userId !== req.user.id) {
+    if (!blog.published && blog.userId !== req.user.userId) {
       return res.status(404).json({ success: false, error: "Blog not found" });
     }
     await userPrisma.blog.update({ where: { id: req.params.id }, data: { views: { increment: 1 } } });
@@ -74,7 +76,7 @@ router.post("/", async (req: any, res) => {
     const { title, content, summary, category, tags, coverImage, published } = req.body;
     if (!title || !content) return res.status(400).json({ error: "Title and content required" });
     const blog = await userPrisma.blog.create({
-      data: { userId: req.user.id, title, content, summary: summary || content.slice(0, 200), category: category || "General", tags: tags || [], coverImage: coverImage || null, published: !!published },
+      data: { userId: req.user.userId, title, content, summary: summary || content.slice(0, 200), category: category || "General", tags: tags || [], coverImage: coverImage || null, published: !!published },
     });
     res.json({ success: true, blog });
   } catch (error) {
@@ -87,7 +89,7 @@ router.put("/:id", async (req: any, res) => {
   try {
     const userPrisma = await getUserPrismaFromRequest(req);
     const existing = await userPrisma.blog.findUnique({ where: { id: req.params.id } });
-    if (!existing || existing.userId !== req.user.id) return res.status(403).json({ error: "Not authorized" });
+    if (!existing || existing.userId !== req.user.userId) return res.status(403).json({ error: "Not authorized" });
     const { title, content, summary, category, tags, coverImage, published } = req.body;
     const blog = await userPrisma.blog.update({
       where: { id: req.params.id },
@@ -104,7 +106,7 @@ router.delete("/:id", async (req: any, res) => {
   try {
     const userPrisma = await getUserPrismaFromRequest(req);
     const existing = await userPrisma.blog.findUnique({ where: { id: req.params.id } });
-    if (!existing || existing.userId !== req.user.id) return res.status(403).json({ error: "Not authorized" });
+    if (!existing || existing.userId !== req.user.userId) return res.status(403).json({ error: "Not authorized" });
     await userPrisma.blog.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch (error) {
@@ -117,13 +119,13 @@ router.post("/:id/like", async (req: any, res) => {
   try {
     const userPrisma = await getUserPrismaFromRequest(req);
     const existing = await userPrisma.blogLike.findUnique({
-      where: { blogId_userId: { blogId: req.params.id, userId: req.user.id } },
+      where: { blogId_userId: { blogId: req.params.id, userId: req.user.userId } },
     });
     if (existing) {
       await userPrisma.blogLike.delete({ where: { id: existing.id } });
       res.json({ success: true, liked: false });
     } else {
-      await userPrisma.blogLike.create({ data: { blogId: req.params.id, userId: req.user.id } });
+      await userPrisma.blogLike.create({ data: { blogId: req.params.id, userId: req.user.userId } });
       res.json({ success: true, liked: true });
     }
   } catch (error) {
@@ -153,7 +155,7 @@ router.post("/:id/comments", async (req: any, res) => {
     const { content } = req.body;
     if (!content) return res.status(400).json({ error: "Content required" });
     const comment = await userPrisma.blogComment.create({
-      data: { blogId: req.params.id, userId: req.user.id, content },
+      data: { blogId: req.params.id, userId: req.user.userId, content },
     });
     res.json({ success: true, comment });
   } catch (error) {

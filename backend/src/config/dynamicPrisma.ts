@@ -49,6 +49,17 @@ function cacheClient(userId: string, client: ExtendedUserClient): void {
  */
 const syncPromises = new Map<string, Promise<boolean>>();
 
+function redactDbUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.username = "";
+    parsed.password = "";
+    return parsed.toString();
+  } catch {
+    return url.replace(/(\/\/[^/@]*:?[^/@]*)@/, "//***@");
+  }
+}
+
 function triggerSchemaSync(databaseUrl: string): Promise<boolean> {
   const existing = syncPromises.get(databaseUrl);
   if (existing) return existing;
@@ -64,10 +75,10 @@ function triggerSchemaSync(databaseUrl: string): Promise<boolean> {
       (error: any, _stdout: any, stderr: any) => {
         syncPromises.delete(databaseUrl);
         if (error) {
-          console.error(`[dynamicPrisma] Schema sync push failed for ${databaseUrl.slice(0, 60)}:`, error?.message || stderr);
+          console.error(`[dynamicPrisma] Schema sync push failed for ${redactDbUrl(databaseUrl)}:`, error?.message || stderr);
           resolve(false);
         } else {
-          console.log(`[dynamicPrisma] Schema sync push completed successfully for ${databaseUrl.slice(0, 60)}.`);
+          console.log(`[dynamicPrisma] Schema sync push completed successfully for ${redactDbUrl(databaseUrl)}.`);
           resolve(true);
         }
       }

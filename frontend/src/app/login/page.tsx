@@ -118,8 +118,10 @@ function LoginPageContent() {
       const token = params.get("token");
       const userStr = params.get("user");
 
-      // New flow: token is in httpOnly cookie, user info in URL params
-      if (!token && userStr) {
+      // Current flow: tokens + profile live in httpOnly cookies, never in the URL.
+      // Trigger whenever the backend reports a successful OAuth without a legacy
+      // token param (only present if the redirect was issued by an old backend).
+      if (!token) {
         (async () => {
           try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -176,8 +178,12 @@ function LoginPageContent() {
     if (params.get("logout") === "true") {
       localStorage.removeItem("adyapan-token");
       localStorage.removeItem("adyapan-user");
+      localStorage.removeItem("adyapan-session-id");
+      localStorage.removeItem("adyapan-refresh-token");
       sessionStorage.removeItem("adyapan-token");
       sessionStorage.removeItem("adyapan-user");
+      sessionStorage.removeItem("adyapan-session-id");
+      sessionStorage.removeItem("adyapan-refresh-token");
       document.cookie = "adyapan-token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
       document.cookie = "adyapan-user=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
     }
@@ -315,7 +321,7 @@ function LoginPageContent() {
       setForgotLoading(true);
       try {
         const { data } = await api.post("/auth/forgot-password", { email: forgotEmail });
-        setForgotMsg(data.devOtp ? `OTP sent. Development OTP: ${data.devOtp}` : "OTP sent. Check your email for the 6-digit code.");
+        setForgotMsg(data.devOtp && process.env.NODE_ENV !== "production" ? `OTP sent. Development OTP: ${data.devOtp}` : "OTP sent. Check your email for the 6-digit code.");
         setForgotStep("otp");
       }
       catch (err: unknown) { setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not send OTP."); }

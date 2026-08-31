@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { handleRouteError } from "../utils/routeError";
 import {
   getTopics,
   getCompanies,
@@ -15,7 +16,7 @@ export async function handleGetTopics(req: Request, res: Response): Promise<void
     const topics = await getTopics();
     res.json({ success: true, topics });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch topics" });
+    handleRouteError(res, error, "Reasoning.topics", "Failed to fetch topics");
   }
 }
 
@@ -24,7 +25,7 @@ export async function handleGetCompanies(req: Request, res: Response): Promise<v
     const companies = await getCompanies();
     res.json({ success: true, companies });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch companies" });
+    handleRouteError(res, error, "Reasoning.companies", "Failed to fetch companies");
   }
 }
 
@@ -38,13 +39,13 @@ export async function handleGetCompanyByName(req: Request, res: Response): Promi
     }
     res.json({ success: true, company });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch company details" });
+    handleRouteError(res, error, "Reasoning.companyByName", "Failed to fetch company details");
   }
 }
 
 export async function handleGetQuestions(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id || "guest";
+    const userId = req.user?.userId || "guest";
     const topic = req.query.topic ? String(req.query.topic) : undefined;
     const company = req.query.company ? String(req.query.company) : undefined;
     const difficulty = req.query.difficulty ? String(req.query.difficulty) : undefined;
@@ -55,7 +56,7 @@ export async function handleGetQuestions(req: Request, res: Response): Promise<v
     const data = await getQuestions({ topic, company, difficulty, search, page, limit, userId });
     res.json({ success: true, ...data });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch questions" });
+    handleRouteError(res, error, "Reasoning.questions", "Failed to fetch questions");
   }
 }
 
@@ -70,13 +71,13 @@ export async function handleGenerateAIQuestions(req: Request, res: Response): Pr
     const questions = await generateAIQuestions(prompt, { topic, company, count: Number(count) || 5, difficulty });
     res.json({ success: true, count: questions.length, questions });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to generate AI questions" });
+    handleRouteError(res, error, "Reasoning.aiQuestions", "Failed to generate AI questions");
   }
 }
 
 export async function handleSubmitAttempt(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id || "guest";
+    const userId = req.user?.userId || "guest";
     const { questionId, selectedIdx, timeTakenSeconds } = req.body || {};
 
     if (!questionId || typeof selectedIdx !== "number") {
@@ -87,13 +88,13 @@ export async function handleSubmitAttempt(req: Request, res: Response): Promise<
     const result = await submitAttempt(userId, { questionId, selectedIdx, timeTakenSeconds });
     res.json({ success: true, result });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to submit answer" });
+    handleRouteError(res, error, "Reasoning.submit", "Failed to submit answer");
   }
 }
 
 export async function handleToggleBookmark(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id || "guest";
+    const userId = req.user?.userId || "guest";
     const { questionId } = req.body || {};
 
     if (!questionId) {
@@ -104,16 +105,16 @@ export async function handleToggleBookmark(req: Request, res: Response): Promise
     const result = await toggleBookmark(userId, questionId);
     res.json({ success: true, ...result });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to toggle bookmark" });
+    handleRouteError(res, error, "Reasoning.bookmark", "Failed to toggle bookmark");
   }
 }
 
 export async function handleGetProgress(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id || "guest";
+    const userId = req.user?.userId || "guest";
     const progress = await getProgress(userId);
     res.json({ success: true, progress });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch progress" });
+    handleRouteError(res, error, "Reasoning.progress", "Failed to fetch progress");
   }
 }

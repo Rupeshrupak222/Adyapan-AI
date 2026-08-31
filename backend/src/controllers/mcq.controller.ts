@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { handleRouteError } from "../utils/routeError";
 import {
   getTopics,
   getCompanies,
@@ -26,7 +27,7 @@ export async function handleGetTopics(req: Request, res: Response): Promise<void
     const topics = await getTopics();
     res.json({ success: true, topics });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch MCQ topics" });
+    handleRouteError(res, error, "Mcq.topics", "Failed to fetch MCQ topics");
   }
 }
 
@@ -35,7 +36,7 @@ export async function handleGetCompanies(req: Request, res: Response): Promise<v
     const companies = await getCompanies();
     res.json({ success: true, companies });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch companies" });
+    handleRouteError(res, error, "Mcq.companies", "Failed to fetch companies");
   }
 }
 
@@ -49,7 +50,7 @@ export async function handleGetCompanyByName(req: Request, res: Response): Promi
     }
     res.json({ success: true, company });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch company details" });
+    handleRouteError(res, error, "Mcq.companyByName", "Failed to fetch company details");
   }
 }
 
@@ -69,7 +70,7 @@ export async function handleGetTests(req: Request, res: Response): Promise<void>
     const tests = await getAllTests();
     res.json({ success: true, count: tests.length, tests });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch tests" });
+    handleRouteError(res, error, "Mcq.tests", "Failed to fetch tests");
   }
 }
 
@@ -83,13 +84,13 @@ export async function handleGetTestById(req: Request, res: Response): Promise<vo
     }
     res.json({ success: true, test });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch test details" });
+    handleRouteError(res, error, "Mcq.testById", "Failed to fetch test details");
   }
 }
 
 export async function handleGetQuestions(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id || "guest";
+    const userId = req.user?.userId || "guest";
     const technology = req.query.technology ? String(req.query.technology) : undefined;
     const category = req.query.category ? String(req.query.category) : undefined;
     const company = req.query.company ? String(req.query.company) : undefined;
@@ -102,13 +103,13 @@ export async function handleGetQuestions(req: Request, res: Response): Promise<v
     const data = await getQuestions({ technology, category, company, difficulty, search, testId, page, limit, userId });
     res.json({ success: true, ...data });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch questions" });
+    handleRouteError(res, error, "Mcq.questions", "Failed to fetch questions");
   }
 }
 
 export async function handleSubmitAttempt(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id || "guest";
+    const userId = req.user?.userId || "guest";
     const { questionId, selectedIdx, timeTakenSeconds } = req.body || {};
 
     if (!questionId || typeof selectedIdx !== "number") {
@@ -119,13 +120,13 @@ export async function handleSubmitAttempt(req: Request, res: Response): Promise<
     const result = await submitAttempt(userId, { questionId, selectedIdx, timeTakenSeconds });
     res.json({ success: true, result });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to submit answer" });
+    handleRouteError(res, error, "Mcq.submit", "Failed to submit answer");
   }
 }
 
 export async function handleToggleBookmark(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id || "guest";
+    const userId = req.user?.userId || "guest";
     const { questionId } = req.body || {};
 
     if (!questionId) {
@@ -136,17 +137,17 @@ export async function handleToggleBookmark(req: Request, res: Response): Promise
     const result = await toggleBookmark(userId, questionId);
     res.json({ success: true, ...result });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to toggle bookmark" });
+    handleRouteError(res, error, "Mcq.bookmark", "Failed to toggle bookmark");
   }
 }
 
 export async function handleGetProgress(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id || "guest";
+    const userId = req.user?.userId || "guest";
     const progress = await getProgress(userId);
     res.json({ success: true, progress });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch progress" });
+    handleRouteError(res, error, "Mcq.progress", "Failed to fetch progress");
   }
 }
 
@@ -157,7 +158,7 @@ export async function handleAdminGetMCQOverview(req: Request, res: Response): Pr
     const overview = await getMCQOverview();
     res.json({ success: true, overview });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to fetch MCQ overview" });
+    handleRouteError(res, error, "Mcq.overview", "Failed to fetch MCQ overview");
   }
 }
 
@@ -184,7 +185,7 @@ export async function handleAdminCreateTest(req: Request, res: Response): Promis
 
     res.status(201).json({ success: true, test: newTest });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to create test" });
+    handleRouteError(res, error, "Mcq.createTest", "Failed to create test");
   }
 }
 
@@ -208,7 +209,7 @@ export async function handleAdminGenerateAITest(req: Request, res: Response): Pr
 
     res.status(201).json({ success: true, test: newTest });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to AI generate test" });
+    handleRouteError(res, error, "Mcq.aiGenerateTest", "Failed to AI generate test");
   }
 }
 
@@ -223,7 +224,7 @@ export async function handleAdminUpdateTest(req: Request, res: Response): Promis
     }
     res.json({ success: true, test: updated });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to update test" });
+    handleRouteError(res, error, "Mcq.updateTest", "Failed to update test");
   }
 }
 
@@ -237,7 +238,7 @@ export async function handleAdminDeleteTest(req: Request, res: Response): Promis
     }
     res.json({ success: true, message: "Test deleted successfully" });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to delete test" });
+    handleRouteError(res, error, "Mcq.deleteTest", "Failed to delete test");
   }
 }
 
@@ -252,7 +253,7 @@ export async function handleAdminAddQuestionToTest(req: Request, res: Response):
     }
     res.json({ success: true, test: updated });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to add question to test" });
+    handleRouteError(res, error, "Mcq.addQuestion", "Failed to add question to test");
   }
 }
 
@@ -267,6 +268,6 @@ export async function handleAdminDeleteQuestion(req: Request, res: Response): Pr
     }
     res.json({ success: true, test: updated });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || "Failed to delete question from test" });
+    handleRouteError(res, error, "Mcq.deleteQuestion", "Failed to delete question from test");
   }
 }

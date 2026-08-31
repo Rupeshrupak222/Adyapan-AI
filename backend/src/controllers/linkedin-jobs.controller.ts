@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { handleRouteError } from "../utils/routeError";
 import { requireUserId } from "../utils/request";
 import {
   runLinkedInScraper,
@@ -19,19 +20,28 @@ export async function searchJobs(req: Request, res: Response, next: NextFunction
       res.status(400).json({ success: false, error: "URL is required" });
       return;
     }
-    if (!url.includes("linkedin.com/jobs")) {
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      res.status(400).json({ success: false, error: "Please provide a valid LinkedIn jobs search URL" });
+      return;
+    }
+    if (parsedUrl.hostname !== "www.linkedin.com" && parsedUrl.hostname !== "linkedin.com") {
+      res.status(400).json({ success: false, error: "Please provide a valid LinkedIn jobs search URL" });
+      return;
+    }
+    if (!parsedUrl.pathname.includes("/jobs/")) {
       res.status(400).json({ success: false, error: "Please provide a valid LinkedIn jobs search URL" });
       return;
     }
 
-    const result = await runLinkedInScraper(url, count || 50);
+    const scrapeCount = Math.min(Math.max(Number(count) || 50, 1), 200);
+    const result = await runLinkedInScraper(url, scrapeCount);
     res.json({ success: true, ...result });
   } catch (err: any) {
     console.error("LinkedIn job scrape failed:", err);
-    res.status(500).json({
-      success: false,
-      error: err.message || "Job scraping failed. Please try again.",
-    });
+    handleRouteError(res, err, "LinkedInJobs.runScraper", "Job scraping failed. Please try again.");
   }
 }
 
@@ -75,7 +85,7 @@ export async function saveJobHandler(req: Request, res: Response, next: NextFunc
     res.json({ success: true, job: saved });
   } catch (err: any) {
     console.error("Failed to save job:", err);
-    res.status(500).json({ success: false, error: err.message || "Failed to save job" });
+    handleRouteError(res, err, "LinkedInJobs.saveJob", "Failed to save job");
   }
 }
 
@@ -121,6 +131,6 @@ export async function analyzeJobFitHandler(req: Request, res: Response, next: Ne
     res.json({ success: true, analysis });
   } catch (err: any) {
     console.error("Job fit analysis failed:", err);
-    res.status(500).json({ success: false, error: err.message || "Analysis failed" });
+    handleRouteError(res, err, "LinkedInJobs.analysis", "Analysis failed");
   }
 }

@@ -8,6 +8,7 @@ import {
   bulkRegisterStudentsService,
 } from "../services/organization.service";
 import { AdminAuditService } from "../services/admin-audit.service";
+import { handleRouteError } from "../utils/routeError";
 
 export async function getAdminOrganizations(_req: Request, res: Response, next: NextFunction) {
   try {
@@ -37,7 +38,7 @@ export async function createAdminOrganization(req: Request, res: Response, next:
     });
     res.json({ success: true, organization, message: `${type || "Organization"} created successfully!` });
   } catch (error: any) {
-    res.status(400).json({ success: false, message: error.message || "Failed to create organization." });
+    handleRouteError(res, error, "Organization.create", "Failed to create organization.");
   }
 }
 
@@ -56,7 +57,7 @@ export async function updateAdminOrganization(req: Request, res: Response, next:
     });
     res.json({ success: true, organization, message: "Organization updated successfully!" });
   } catch (error: any) {
-    res.status(400).json({ success: false, message: error.message || "Failed to update organization." });
+    handleRouteError(res, error, "Organization.update", "Failed to update organization.");
   }
 }
 
@@ -74,7 +75,7 @@ export async function deleteAdminOrganization(req: Request, res: Response, next:
     });
     res.json({ success: true, message: "Organization deleted successfully!" });
   } catch (error: any) {
-    res.status(400).json({ success: false, message: error.message || "Failed to delete organization." });
+    handleRouteError(res, error, "Organization.delete", "Failed to delete organization.");
   }
 }
 
@@ -108,6 +109,6 @@ export async function bulkRegisterOrganizationStudents(req: Request, res: Respon
     });
     res.json({ success: true, ...result });
   } catch (error: any) {
-    res.status(400).json({ success: false, message: error.message || "Bulk registration failed." });
+    handleRouteError(res, error, "Organization.bulkRegister", "Bulk registration failed.");
   }
 }

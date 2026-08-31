@@ -65,7 +65,9 @@ function createMockPrisma(overrides: Record<string, any> = {}) {
       findMany: jest.fn().mockResolvedValue([]),
     },
     leaderboard: {
-      upsert: jest.fn().mockResolvedValue({}),
+      findFirst: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockResolvedValue({}),
+      create: jest.fn().mockResolvedValue({ id: "lb-1" }),
       findMany: jest.fn().mockResolvedValue([]),
     },
   };
@@ -458,7 +460,8 @@ describe("Challenges Routes", () => {
       expect(res.body.allPassed).toBe(true);
       expect(res.body.submission.status).toBe("Accepted");
       expect(res.body.submission.score).toBe(250);
-      expect(mockPrisma.leaderboard.upsert).toHaveBeenCalled();
+      expect(mockPrisma.leaderboard.findFirst).toHaveBeenCalledWith({ where: { userId: "user-1" } });
+      expect(mockPrisma.leaderboard.create).toHaveBeenCalledWith({ data: { userId: "user-1", score: 250 } });
       expect(mockPrisma.challengeSubmission.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ status: "Accepted", score: 250 }),
@@ -492,7 +495,7 @@ describe("Challenges Routes", () => {
       expect(res.body.allPassed).toBe(false);
       expect(res.body.submission.status).toBe("Failed");
       expect(res.body.submission.score).toBe(0);
-      expect(mockPrisma.leaderboard.upsert).not.toHaveBeenCalled();
+      expect(mockPrisma.leaderboard.findFirst).not.toHaveBeenCalled();
     });
 
     it("handles no test cases by running code directly", async () => {

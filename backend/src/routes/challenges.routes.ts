@@ -275,14 +275,15 @@ router.post("/submit", async (req: any, res) => {
       const score = status === "Accepted" ? (challenge.points || 100) : 0;
 
       const submission = await userPrisma.challengeSubmission.create({
-        data: { userId: req.user.id, challengeId, code, language, status, score },
+        data: { userId: req.user.userId, challengeId, code, language, status, score },
       });
       if (status === "Accepted") {
-        await userPrisma.leaderboard.upsert({
-          where: { id: req.user.id },
-          create: { userId: req.user.id, score },
-          update: { score: { increment: score } },
-        });
+        const existing = await userPrisma.leaderboard.findFirst({ where: { userId: req.user.userId } });
+        if (existing) {
+          await userPrisma.leaderboard.update({ where: { id: existing.id }, data: { score: { increment: score } } });
+        } else {
+          await userPrisma.leaderboard.create({ data: { userId: req.user.userId, score } });
+        }
       }
       res.json({
         submission,
@@ -302,15 +303,16 @@ router.post("/submit", async (req: any, res) => {
     const score = isAllPassed ? (challenge.points || 100) : 0;
 
     const record = await userPrisma.challengeSubmission.create({
-      data: { userId: req.user.id, challengeId, code, language, status, score },
+      data: { userId: req.user.userId, challengeId, code, language, status, score },
     });
 
     if (isAllPassed) {
-      await userPrisma.leaderboard.upsert({
-        where: { id: req.user.id },
-        create: { userId: req.user.id, score },
-        update: { score: { increment: score } },
-      });
+      const existing = await userPrisma.leaderboard.findFirst({ where: { userId: req.user.userId } });
+      if (existing) {
+        await userPrisma.leaderboard.update({ where: { id: existing.id }, data: { score: { increment: score } } });
+      } else {
+        await userPrisma.leaderboard.create({ data: { userId: req.user.userId, score } });
+      }
     }
 
     res.json({

@@ -4,8 +4,21 @@ import { handleRouteError } from "../utils/routeError";
 import { generateAssignmentPdf } from "../services/assignment-pdf.service";
 import { generateAssignmentDocx } from "../services/assignment-docx.service";
 import { formatAssignmentHtml } from "../services/assignment-formatter.service";
+import { httpError } from "../utils/httpError";
 
 export const assignmentExportRouter = Router();
+
+const MAX_EXPORT_CONTENT_CHARS = 500_000;
+
+function extractMarkdownContent(content: any): string {
+  const text = typeof content === "string"
+    ? content
+    : (content?.sections ? content.sections.map((s: any) => `## ${s.title} (${s.pageEstimate || ""})\n\n${s.content}`).join("\n\n") : "");
+  if (text && text.length > MAX_EXPORT_CONTENT_CHARS) {
+    throw httpError(400, "Assignment content exceeds the maximum allowed size");
+  }
+  return text;
+}
 
 // Allow optional auth for seamless public/preview export access
 assignmentExportRouter.use((req, res, next) => {
@@ -29,9 +42,7 @@ assignmentExportRouter.post(["/", "/export"], async (req, res) => {
       wordCount, content, citationStyle, format = "pdf"
     } = req.body;
 
-    const markdownText = typeof content === "string" 
-      ? content 
-      : (content?.sections ? content.sections.map((s: any) => `## ${s.title} (${s.pageEstimate || ""})\n\n${s.content}`).join("\n\n") : "");
+    const markdownText = extractMarkdownContent(content);
 
     const topicName = topic || assignmentTitle || "Assignment";
     const options = {
@@ -87,9 +98,7 @@ assignmentExportRouter.post(["/", "/export"], async (req, res) => {
 assignmentExportRouter.post(["/pdf", "/export/pdf"], async (req, res) => {
   try {
     const { assignmentTitle, subject, course, semester, studentName, registrationNumber, faculty, university, topic, academicLevel, wordCount, content, citationStyle } = req.body;
-    const markdownText = typeof content === "string" 
-      ? content 
-      : (content?.sections ? content.sections.map((s: any) => `## ${s.title} (${s.pageEstimate || ""})\n\n${s.content}`).join("\n\n") : "");
+    const markdownText = extractMarkdownContent(content);
     const topicName = topic || assignmentTitle || "Assignment";
 
     const pdfBuffer = await generateAssignmentPdf(markdownText, topicName, {
@@ -114,9 +123,7 @@ assignmentExportRouter.post(["/pdf", "/export/pdf"], async (req, res) => {
 assignmentExportRouter.post(["/docx", "/export/docx"], async (req, res) => {
   try {
     const { assignmentTitle, subject, course, semester, studentName, registrationNumber, faculty, university, topic, academicLevel, wordCount, content, citationStyle } = req.body;
-    const markdownText = typeof content === "string" 
-      ? content 
-      : (content?.sections ? content.sections.map((s: any) => `## ${s.title} (${s.pageEstimate || ""})\n\n${s.content}`).join("\n\n") : "");
+    const markdownText = extractMarkdownContent(content);
     const topicName = topic || assignmentTitle || "Assignment";
 
     const docxBuffer = await generateAssignmentDocx(markdownText, topicName, {

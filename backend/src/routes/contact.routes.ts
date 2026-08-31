@@ -155,7 +155,7 @@ contactRouter.patch("/:id/status", requireAuth, requireRole("ADMIN"), async (req
     }
 
     if (!submission) {
-      return res.status(44).json({ success: false, message: "Submission not found" });
+      return res.status(404).json({ success: false, message: "Submission not found" });
     }
 
     res.json({

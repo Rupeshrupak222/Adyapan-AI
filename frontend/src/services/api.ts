@@ -34,10 +34,31 @@ api.interceptors.request.use((config) => {
 
 // Token refresh state
 let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
-function subscribeToRefresh(cb: (token: string) => void) { refreshSubscribers.push(cb); }
-function onRefreshComplete(newToken: string) { refreshSubscribers.forEach((cb) => cb(newToken)); refreshSubscribers = []; }
-function onRefreshFailed() { refreshSubscribers = []; }
+let refreshSubscribers: Array<{ resolve: (token: string) => void; reject: () => void }> = [];
+function subscribeToRefresh(resolve: (token: string) => void, reject: () => void) { refreshSubscribers.push({ resolve, reject }); }
+function onRefreshComplete(newToken: string) { refreshSubscribers.forEach((s) => s.resolve(newToken)); refreshSubscribers = []; }
+function onRefreshFailed() { refreshSubscribers.forEach((s) => s.reject()); refreshSubscribers = []; }
+
+// Strip credentials/request payloads off the axios error before it reaches
+// `catch` blocks. Many components `console.error(err)` — an axios error object
+// serializes `err.config.headers.Authorization` (the bearer token) and
+// `err.config.data` into devtools/observability. Callers never need these after
+// the interceptor's own retry/refresh logic has run, so it is safe to scrub.
+interface ScrubableError {
+  config?: { headers?: Record<string, string>; data?: unknown };
+}
+
+function sanitizeRejectedError(err: unknown): Promise<never> {
+  try {
+    const config = (err as ScrubableError)?.config;
+    if (config?.headers) {
+      delete config.headers.Authorization;
+      delete config.headers["X-Session-Id"];
+    }
+    if (typeof config?.data !== "undefined") config.data = "[redacted]";
+  } catch { /* ignore */ }
+  return Promise.reject(err);
+}
 
 // Response interceptor
 api.interceptors.response.use(
@@ -57,17 +78,17 @@ api.interceptors.response.use(
 
     if (typeof window !== "undefined" && response?.data?.code === "LIMIT_EXCEEDED") {
       import("@/store/usage-store").then(({ useUsageStore }) => useUsageStore.getState().openLimitModal(response.data));
-      return Promise.reject(err);
+      return sanitizeRejectedError(err);
     }
     if (typeof window !== "undefined" && response?.data?.code === "PREMIUM_REQUIRED") {
       import("@/store/usage-store").then(({ useUsageStore }) => useUsageStore.getState().openPremiumRequiredModal(response.data));
-      return Promise.reject(err);
+      return sanitizeRejectedError(err);
     }
 
     if (typeof window !== "undefined" && response?.status === 401) {
       const path = window.location.pathname;
       const isAuthPage = path.startsWith("/login") || path.startsWith("/admin-login") || path.startsWith("/admin-register");
-      if (isAuthPage) return Promise.reject(err);
+      if (isAuthPage) return sanitizeRejectedError(err);
 
       const responseCode = response?.data?.code || "";
       const msg = response?.data?.message || "";
@@ -75,20 +96,23 @@ api.interceptors.response.use(
       // FORCE_LOGOUT — skip refresh, redirect immediately
       if (responseCode === "FORCE_LOGOUT" || msg.includes("Session ended") || msg.includes("Session ID is required")) {
         performForceLogout(path, msg);
-        return Promise.reject(err);
+        return sanitizeRejectedError(err);
       }
 
       // Don't retry the refresh endpoint itself
-      if (config?.url?.includes("/auth/refresh")) { performLogout(path, "session_expired"); return Promise.reject(err); }
-      if (config?.__refreshAttempted) { performLogout(path, "session_expired"); return Promise.reject(err); }
+      if (config?.url?.includes("/auth/refresh")) { performLogout(path, "session_expired"); return sanitizeRejectedError(err); }
+      if (config?.__refreshAttempted) { performLogout(path, "session_expired"); return sanitizeRejectedError(err); }
 
       const refreshToken = sessionStorage.getItem("adyapan-refresh-token") || localStorage.getItem("adyapan-refresh-token");
-      if (!refreshToken) { performLogout(path, "session_expired"); return Promise.reject(err); }
+      if (!refreshToken) { performLogout(path, "session_expired"); return sanitizeRejectedError(err); }
 
       // Queue if already refreshing
       if (isRefreshing) {
-        return new Promise((resolve) => {
-          subscribeToRefresh((newToken: string) => { config.headers.Authorization = `Bearer ${newToken}`; config.__refreshAttempted = true; resolve(api(config)); });
+        return new Promise((resolve, reject) => {
+          subscribeToRefresh(
+            (newToken: string) => { config.headers.Authorization = `Bearer ${newToken}`; config.__refreshAttempted = true; resolve(api(config)); },
+            () => { reject(err); }
+          );
         });
       }
 
@@ -108,11 +132,11 @@ api.interceptors.response.use(
         isRefreshing = false;
         onRefreshFailed();
         performLogout(path, "session_expired");
-        return Promise.reject(err);
+        return sanitizeRejectedError(err);
       }
     }
 
-    if (!config) return Promise.reject(err);
+    if (!config) return sanitizeRejectedError(err);
 
     // Retry on 5xx
     config.__retryCount = config.__retryCount || 0;
@@ -123,14 +147,20 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    return Promise.reject(err);
+    return sanitizeRejectedError(err);
   }
 );
 
 function clearAllAuthStorage() {
-  ["adyapan-token", "adyapan-user", "adyapan-session-id", "adyapan-refresh-token"].forEach((k) => {
-    localStorage.removeItem(k); sessionStorage.removeItem(k);
-  });
+  // Wipe every browser-stored per-session value except the theme preference,
+  // mirroring useAuth.clearAuthSession(). The forced-logout path must not leave
+  // refresh tokens or per-user content (coupons, cached stdin snippets,
+  // onboarding flags) behind on a shared machine.
+  try {
+    const keep = new Set(["adyapan-theme"]);
+    Object.keys(localStorage).forEach((k) => { if (!keep.has(k)) localStorage.removeItem(k); });
+    Object.keys(sessionStorage).forEach((k) => { if (!keep.has(k)) sessionStorage.removeItem(k); });
+  } catch { /* ignore */ }
   document.cookie = "adyapan-token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
   document.cookie = "adyapan-user=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
 }
