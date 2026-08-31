@@ -64,32 +64,11 @@ export async function requireAdminAuth(
       // admin_users table may not exist yet; fall through to users table
     }
 
-    // Fallback sync: if legacy admin in user table, auto-seed admin_users
+    // Fallback: check main users table for ADMIN role or superAdminEmails
     if (!admin) {
-      const user = await prisma.user.findUnique({ where: { id: adminUserId } });
-      if (user && user.role === "ADMIN") {
-        try {
-          let superRoleId: string | undefined;
-          try {
-            const superRole = await (prisma as any).adminRole.findUnique({
-              where: { name: "Super Admin" },
-              select: { id: true },
-            });
-            superRoleId = superRole?.id;
-          } catch {}
-          admin = await (prisma as any).adminUser.upsert({
-            where: { email: user.email },
-            update: { status: "ACTIVE", roleId: superRoleId || undefined },
-            create: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              password: "",
-              roleId: superRoleId || undefined,
-              status: "ACTIVE",
-            },
-          });
-        } catch {
+      try {
+        const user = await prisma.user.findUnique({ where: { id: adminUserId } });
+        if (user && (user.role === "ADMIN" || env.superAdminEmails.includes(user.email.toLowerCase()))) {
           admin = {
             id: user.id,
             name: user.name,
@@ -98,10 +77,21 @@ export async function requireAdminAuth(
             status: "ACTIVE",
           };
         }
-      }
+      } catch {}
     }
 
-    if (!admin || admin.status !== "ACTIVE") {
+    // Secondary fallback: check decoded JWT payload for ADMIN role
+    if (!admin && decoded.role === "ADMIN") {
+      admin = {
+        id: adminUserId,
+        name: "Admin",
+        email: decoded.email,
+        roleId: null,
+        status: "ACTIVE",
+      };
+    }
+
+    if (!admin || (admin.status && admin.status !== "ACTIVE")) {
       throw httpError(403, "Access denied. Active Admin credentials required.");
     }
 
