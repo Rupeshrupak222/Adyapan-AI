@@ -30,7 +30,7 @@ export function ConfirmModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[9999] flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
           onClick={onCancel}
         >
           <motion.div
@@ -41,8 +41,11 @@ export function ConfirmModal({
             onClick={e => e.stopPropagation()}
             className="rounded-2xl p-6 w-full max-w-sm shadow-2xl border"
             style={{
-              background: "var(--bg-card, #1a1a2e)",
-              borderColor: "var(--border-color, rgba(255,255,255,0.1))",
+              background: "rgba(15,17,27,0.35)",
+              borderColor: "rgba(255,255,255,0.18)",
+              backdropFilter: "blur(24px) saturate(1.8)",
+              WebkitBackdropFilter: "blur(24px) saturate(1.8)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.10)",
             }}
           >
             <p className="text-sm leading-relaxed mb-5" style={{ color: "var(--text-primary, #fff)" }}>

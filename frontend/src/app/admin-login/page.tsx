@@ -10,7 +10,7 @@ import { saveAuthSession } from "@/hooks/useAuth";
 import { Navbar } from "@/components/layout/Navbar";
 import { SessionPopup } from "@/components/ui/SessionPopup";
 import {
-  ShieldCheck, Mail, Lock, Eye, EyeOff, KeyRound, ArrowRight, Shield,
+  ShieldCheck, Mail, Lock, Eye, EyeOff, ArrowRight,
 } from "lucide-react";
 
 export default function AdminLoginPage() {
@@ -247,9 +247,6 @@ export default function AdminLoginPage() {
               />
               Keep me signed in
             </label>
-            <Link href="/admin-register" style={{ color: "#f59e0b", fontWeight: 600, textDecoration: "none" }}>
-              Register Admin
-            </Link>
           </div>
 
           {error && (

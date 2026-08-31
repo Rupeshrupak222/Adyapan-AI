@@ -289,7 +289,7 @@ export async function getSessionFromCookie(req: Request, res: Response, next: Ne
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, name: true, email: true, role: true, plan: true, createdAt: true },
+      select: { id: true, name: true, email: true, role: true, plan: true, createdAt: true, activeSessionId: true },
     });
 
     if (!user) {
@@ -299,7 +299,10 @@ export async function getSessionFromCookie(req: Request, res: Response, next: Ne
     // Clear the cookie (one-time use)
     res.clearCookie("adyapan_session", { path: "/" });
 
-    res.json({ success: true, token: sessionToken, user });
+    // Return sessionId so the frontend can set the X-Session-Id header on
+    // subsequent requests (required by requireAuth → validateSessionId).
+    // Without this, OAuth users would be rejected on their first protected call.
+    res.json({ success: true, token: sessionToken, user, sessionId: user.activeSessionId });
   } catch (error) {
     next(error);
   }

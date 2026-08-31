@@ -1148,6 +1148,8 @@ export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: bool
           githubId,
           avatarUrl: githubUser.avatar_url,
           role: "USER",
+          plan: "free",
+          subscriptionStatus: "free",
         } as any,
       });
       await tx.profile.create({
@@ -1156,10 +1158,20 @@ export async function handleGitHubUser(githubUser: GitHubUser, rememberMe?: bool
           github: githubUser.login,
         },
       });
+      // Create companion records so feature-gating and settings work out of
+      // the box for OAuth-only users, same as regular registrations.
+      const now = new Date();
+      await Promise.all([
+        tx.userSettings.create({ data: { userId: newUser.id } }),
+        tx.aiPreference.create({ data: { userId: newUser.id } }),
+        tx.notificationPreference.create({ data: { userId: newUser.id } }),
+        tx.learningPreference.create({ data: { userId: newUser.id } }),
+        tx.storageUsage.create({ data: { userId: newUser.id } }),
+        tx.aiUsage.create({ data: { userId: newUser.id, plan: "free", subscriptionStatus: "free", dailyResetAt: now, monthlyResetAt: now } }),
+        tx.subscription.create({ data: { userId: newUser.id, planCode: "free", billingCycle: "monthly", status: "free", provider: "free", price: 0, currency: "INR", autoRenew: false, currentPeriodStart: now, currentPeriodEnd: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) } }),
+      ]);
       return newUser;
     });
-
-
   }
 
   const token = signToken(user, rememberMe);
@@ -1278,6 +1290,18 @@ export async function handleGoogleUser(gUser: GoogleUser, rememberMe?: boolean) 
           userId: newUser.id,
         },
       });
+      // Create companion records so feature-gating and settings work out of
+      // the box for OAuth-only users, same as regular registrations.
+      const now = new Date();
+      await Promise.all([
+        tx.userSettings.create({ data: { userId: newUser.id } }),
+        tx.aiPreference.create({ data: { userId: newUser.id } }),
+        tx.notificationPreference.create({ data: { userId: newUser.id } }),
+        tx.learningPreference.create({ data: { userId: newUser.id } }),
+        tx.storageUsage.create({ data: { userId: newUser.id } }),
+        tx.aiUsage.create({ data: { userId: newUser.id, plan: "free", subscriptionStatus: "free", dailyResetAt: now, monthlyResetAt: now } }),
+        tx.subscription.create({ data: { userId: newUser.id, planCode: "free", billingCycle: "monthly", status: "free", provider: "free", price: 0, currency: "INR", autoRenew: false, currentPeriodStart: now, currentPeriodEnd: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) } }),
+      ]);
       return newUser;
     });
   }

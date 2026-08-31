@@ -81,6 +81,9 @@ export function getRefreshToken(): string | null {
 
 export function updateStoredTokens(newToken: string, newRefreshToken: string): void {
   if (typeof window === "undefined") return;
+  // Write to both storages to stay consistent with saveAuthSession which also
+  // writes both. Without this, api.ts reading localStorage as fallback would
+  // find the old (possibly expired) token after a refresh.
   sessionStorage.setItem(TOKEN_KEY, newToken);
   sessionStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
   localStorage.setItem(TOKEN_KEY, newToken);

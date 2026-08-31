@@ -567,10 +567,11 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
         validatePasswordStrength(supplied);
         pwd = supplied;
       } else {
+        // Auto-generate a cryptographically secure temp password.
         tempPassword = randomBytes(12).toString("base64url");
         pwd = tempPassword;
       }
-      const hashed = await bcrypt.hash(pwd, 10);
+      const hashed = await bcrypt.hash(pwd, 12);
       await prisma.user.update({ where: { id: userId }, data: { password: hashed } });
       await AdminAuditService.log({
         adminId, adminName,
@@ -580,10 +581,12 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
         details: auditDetails(),
         ipAddress: req.ip,
       });
+      // Only return the password when it was auto-generated (admin must share
+      // it with the user). Never echo back a password the admin supplied.
       return res.json(
         tempPassword
           ? { success: true, message: "Temporary password generated for user.", tempPassword }
-          : { success: true, message: "Password reset for user." }
+          : { success: true, message: "Password reset successfully." }
       );
     }
     if (action === "upgrade" || action === "upgrade_plan") {

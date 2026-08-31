@@ -48,16 +48,16 @@ export function SessionPopup({ open, message, actions, onOverlayClick }: Session
   // both themes.
   const card = isDark
     ? {
-        background: "rgba(20,22,34,0.72)",
-        borderColor: "rgba(255,255,255,0.14)",
+        background: "rgba(15,17,27,0.35)",
+        borderColor: "rgba(255,255,255,0.18)",
         color: "#ffffff",
-        boxShadow: "0 24px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1)",
       }
     : {
-        background: "rgba(255,255,255,0.72)",
-        borderColor: "rgba(255,255,255,0.9)",
+        background: "rgba(255,255,255,0.30)",
+        borderColor: "rgba(255,255,255,0.50)",
         color: "#0f172a",
-        boxShadow: "0 24px 60px rgba(31,38,135,0.22), inset 0 1px 0 rgba(255,255,255,0.6)",
+        boxShadow: "0 8px 32px rgba(31,38,135,0.15), inset 0 1px 0 rgba(255,255,255,0.5)",
       };
 
   const secondary = isDark
@@ -73,7 +73,7 @@ export function SessionPopup({ open, message, actions, onOverlayClick }: Session
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center px-4"
-      style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
+      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
       onClick={onOverlayClick}
     >
       <div
