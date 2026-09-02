@@ -43,15 +43,15 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://images.unsplash.com https://api.dicebear.com https://avatars.githubusercontent.com https://lh3.googleusercontent.com",
-              // connect-src: allow own origin + the configured backend + all
-              // Railway/Vercel deployments so the CSP doesn't break regardless
-              // of which deployment URL is active.
-              "connect-src 'self' https://*.up.railway.app wss://*.up.railway.app https://*.vercel.app",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://checkout.razorpay.com",
+              "worker-src 'self' blob:",
+              "child-src 'self' blob:",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+              "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+              "img-src 'self' data: blob: https://images.unsplash.com https://api.dicebear.com https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://upload.wikimedia.org https://cdn.jsdelivr.net",
+              "connect-src 'self' http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* https://*.up.railway.app wss://*.up.railway.app https://*.vercel.app https://cdn.jsdelivr.net https://api.razorpay.com https://lumberjack.razorpay.com",
               "media-src 'self'",
+              "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
               "frame-ancestors 'none'",
             ].join("; "),
           },

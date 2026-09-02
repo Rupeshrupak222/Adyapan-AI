@@ -5,6 +5,7 @@ import "./globals.css";
 import "katex/dist/katex.min.css";
 import LenisProvider from "@/components/providers/LenisProvider";
 import ThemeScript from "@/components/providers/ThemeScript";
+import "@/lib/monaco";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { PremiumUpgradeModal } from "@/components/premium/PremiumUpgradeModal";
 import { PremiumRequiredModal } from "@/components/premium/PremiumRequiredModal";
