@@ -973,6 +973,11 @@ function HeatmapGrid({ heatmap, isDark }: { heatmap: Record<string, number>; isD
                       (snakeHeadIndex - 3 + totalYearDays) % totalYearDays,
                     ].includes(globalIdx);
 
+                    const rowIdx = idx % 7;
+                    const isTopHalf = rowIdx < 4;
+                    const isFirstMonth = mIdx === 0;
+                    const isLastMonth = mIdx >= 10;
+
                     return (
                       <div
                         key={date}
@@ -985,8 +990,14 @@ function HeatmapGrid({ heatmap, isDark }: { heatmap: Record<string, number>; isD
                         {/* Snake Head Icon */}
                         {isSnakeHead && <span className="text-[7px] leading-none">🐍</span>}
 
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 rounded-xl bg-zinc-950/95 border border-white/15 text-xs text-white font-medium shadow-2xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all z-30 leading-normal">
+                        {/* Tooltip (Smart positioned below for top rows to avoid clipping/overlapping header) */}
+                        <div
+                          className={`absolute w-44 p-2 rounded-xl bg-zinc-950/95 border border-white/15 text-xs text-white font-medium shadow-2xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all z-50 leading-normal ${
+                            isTopHalf ? "top-full mt-2" : "bottom-full mb-2"
+                          } ${
+                            isFirstMonth ? "left-0" : isLastMonth ? "right-0" : "left-1/2 -translate-x-1/2"
+                          }`}
+                        >
                           <div className="font-extrabold text-white/90 border-b border-white/10 pb-1 mb-1">
                             {new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </div>
