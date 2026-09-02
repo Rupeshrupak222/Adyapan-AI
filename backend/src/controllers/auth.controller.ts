@@ -236,7 +236,10 @@ export async function sessionCheck(req: Request, res: Response, next: NextFuncti
   try {
     const clientSessionId = req.headers["x-session-id"] as string | undefined;
     if (!clientSessionId) {
-      res.status(401).json({ success: false, valid: false, message: "Session ID is required. Please log in again." });
+      // No session ID sent — this happens during the first few seconds after a
+      // fresh login before the client has written the sessionId to storage.
+      // Return valid:true so the heartbeat doesn't trigger a false FORCE_LOGOUT.
+      res.json({ success: true, valid: true });
       return;
     }
     const user = await prisma.user.findUnique({ where: { id: req.user?.userId }, select: { activeSessionId: true } });
