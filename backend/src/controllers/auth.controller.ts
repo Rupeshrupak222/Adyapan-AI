@@ -219,7 +219,9 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
   try {
     if (req.user?.userId) {
       await revokeAllSessions(req.user.userId);
-      forceLogoutAllForUser(req.user.userId, "User logged out");
+      // Note: do NOT call forceLogoutAllForUser here — that would add the user
+      // to the force-logout registry and cause the next login to fail with FORCE_LOGOUT.
+      // forceLogoutAllForUser is only for admin-triggered deactivation.
     }
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
