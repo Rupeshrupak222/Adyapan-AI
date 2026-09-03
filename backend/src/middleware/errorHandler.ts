@@ -24,9 +24,15 @@ export function errorHandler(error: HttpError, req: Request, res: Response, _nex
     return;
   }
 
+  const isPrismaError = error.message?.includes("prisma") || error.message?.includes("Prisma") || (error as any).code === "ETIMEDOUT";
+
   const message =
-    statusCode === 500 && env.nodeEnv === "production"
-      ? "Internal server error"
+    statusCode >= 500
+      ? isPrismaError
+        ? "Database error. Please try again."
+        : env.nodeEnv === "production"
+          ? "Internal server error"
+          : error.message
       : error.message;
 
   res.status(statusCode).json({
