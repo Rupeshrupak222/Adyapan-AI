@@ -168,6 +168,7 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-  res.setHeader("Content-Security-Policy", "default-src 'self'");
+  // No CSP on API responses — this is a JSON API, not a browser-rendered page.
+  // CSP is handled by the frontend (next.config.ts headers()).
   next();
 }

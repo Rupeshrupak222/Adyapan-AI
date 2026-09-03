@@ -139,7 +139,9 @@ describe("securityHeaders", () => {
     expect(res.headers["X-Content-Type-Options"]).toBe("nosniff");
     expect(res.headers["X-Frame-Options"]).toBe("DENY");
     expect(res.headers["Strict-Transport-Security"]).toContain("max-age=31536000");
-    expect(res.headers["Content-Security-Policy"]).toBe("default-src 'self'");
+    // CSP is intentionally NOT set on backend API responses — it is a JSON API,
+    // not a browser-rendered page. CSP is handled by the frontend (next.config.ts).
+    expect(res.headers["Content-Security-Policy"]).toBeUndefined();
     expect(next).toHaveBeenCalled();
   });
 });

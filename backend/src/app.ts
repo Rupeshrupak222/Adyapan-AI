@@ -26,23 +26,6 @@ export function createApp() {
   app.use(helmet());
   app.use(securityHeaders);
 
-  // Global rate limit — 500 requests per IP per minute.
-  // Sized for 1000+ concurrent students: a dashboard page load triggers ~15 API
-  // calls, the session heartbeat fires every 30 s (2/min), and AI features add
-  // another 20-50 calls/min at peak. 500/min never trips a real user but stops
-  // automated scanners and credential-stuffing bots dead.
-  // Per-route auth limiters (authLimiter/loginLimiter) apply much stricter
-  // limits on sensitive endpoints on top of this.
-  const globalLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 500,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, error: "Too many requests. Please slow down." },
-    skip: (req) => req.path === "/health" || req.path === "/ready",
-  });
-  app.use(globalLimiter);
-
   const allowedOrigins = [
     env.frontendUrl,
     ...env.corsOrigins,
