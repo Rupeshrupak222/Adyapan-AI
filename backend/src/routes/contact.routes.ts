@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../config/prisma";
 import { requireAuth, requireRole } from "../middleware/auth";
 import { handleRouteError } from "../utils/routeError";
+import { sendAdminContactAlert, sendUserContactConfirmation } from "../utils/mailer";
 
 export const contactRouter = Router();
 
@@ -60,6 +61,23 @@ contactRouter.post("/submit", async (req, res) => {
       };
       contactStore.push(contact);
     }
+
+    // Send emails (non-blocking — don't fail the request if email fails)
+    const emailData = {
+      fullName,
+      email,
+      phone,
+      subject: subject || "General Inquiry",
+      message,
+      submittedAt: contact.createdAt as Date,
+    };
+
+    Promise.all([
+      sendAdminContactAlert(emailData),
+      sendUserContactConfirmation(emailData),
+    ]).catch((err) => {
+      console.error("[Contact] Email send error:", err?.message || err);
+    });
 
     res.json({
       success: true,
