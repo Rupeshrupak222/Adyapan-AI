@@ -84,10 +84,13 @@ export default function AdminLoginPage() {
       saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
       window.location.href = "/dashboard/admin";
     } catch (err: unknown) {
+      const response = (err as { response?: { status?: number; data?: { message?: string; error?: string } } })?.response;
+      const status = response?.status;
+      const serverMsg = response?.data?.message || response?.data?.error;
       setError(
-        (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message ||
-        (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.error ||
-        "Invalid admin credentials. Please try again.",
+        status && status >= 500
+          ? "Server error. Please try again in a moment."
+          : serverMsg || "Invalid admin credentials. Please try again.",
       );
       setLoading(false);
     }

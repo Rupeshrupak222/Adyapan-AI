@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useCallback, useEffect } from "react";
 import type { PlatformUser } from "@/types/user";
+import { API_BASE_URL } from "@/services/api";
 
 const USER_KEY = "adyapan-user";
 const TOKEN_KEY = "adyapan-token";
@@ -143,8 +144,24 @@ export function useAuth() {
     return () => window.removeEventListener("storage", onStorage);
   }, [user]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     const isNavAdmin = user?.role === "ADMIN" || (typeof window !== "undefined" && window.location.pathname.includes("admin"));
+
+    // Call backend to blacklist the token + revoke the DB session so the token
+    // can't be replayed even if stolen. Use fetch directly (not api.ts) to
+    // avoid a circular dependency: api.ts dynamically imports useAuth.ts.
+    try {
+      const token = getAuthToken();
+      if (token) {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        });
+      }
+    } catch {
+      // Non-blocking — clear local state regardless.
+    }
+
     clearAuthSession();
     broadcastLogout("logout");
     setUser(null);

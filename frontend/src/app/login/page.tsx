@@ -247,9 +247,19 @@ function LoginPageContent() {
       saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
       router.replace(getPostLoginTarget(data.user.role));
     } catch (err: unknown) {
-      const data = (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data;
+      const response = (err as { response?: { status?: number; data?: { message?: string; error?: string; code?: string } } })?.response;
+      const status = response?.status;
+      const data = response?.data;
       const serverMsg = data?.message || data?.error;
-      setLoginError(serverMsg || "Invalid user credentials. Please try again.");
+      // Don't show "Invalid credentials" for server errors (5xx) or DB timeouts —
+      // those are infrastructure issues, not wrong passwords.
+      if (status && status >= 500) {
+        setLoginError("Server error. Please try again in a moment.");
+      } else if (data?.code === "ETIMEDOUT" || serverMsg?.includes("ETIMEDOUT") || serverMsg?.includes("prisma")) {
+        setLoginError("Connection error. Please try again.");
+      } else {
+        setLoginError(serverMsg || "Invalid user credentials. Please try again.");
+      }
     } finally { setLoginLoading(false); }
   };
 

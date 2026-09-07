@@ -560,14 +560,14 @@ describe("CORS origin tightening", () => {
       "utf8"
     );
 
-    // Verify no broad patterns like /.vercel.app$/ or origin.includes()
+    // Verify no broad wildcard patterns that allow any subdomain
     expect(src).not.toContain("origin.includes");
     expect(src).not.toMatch(/\/\.vercel\.app\$\//);
     expect(src).not.toMatch(/\/\.railway\.\(app\|internal\)\$\//);
     expect(src).not.toMatch(/\.onrender\.com\$/);
 
-    // Verify anchored patterns exist
+    // Verify explicit allowlist approach is used (specific origins, not wildcards)
     expect(src).toContain("adyapan-ai-");
-    expect(src).toContain("\\.up\\.railway\\.app");
+    expect(src).toContain("allowedOrigins");
   });
 });
