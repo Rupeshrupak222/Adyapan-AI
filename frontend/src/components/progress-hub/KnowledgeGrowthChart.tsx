@@ -194,7 +194,7 @@ export function KnowledgeGrowthChart({ data }: KnowledgeGrowthChartProps) {
       </motion.div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-3 pt-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
         {METRICS.map((m) => {
           const total = data.reduce((s, d) => s + (d[m.key as keyof GrowthDataPoint] as number), 0);
           const isActive = activeMetrics.has(m.key);

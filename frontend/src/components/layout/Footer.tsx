@@ -48,16 +48,33 @@ export function Footer() {
 
   return (
     <footer
-      className="border-t"
+      className="relative overflow-hidden border-t"
       style={{
-        background: "var(--bg-dark)",
+        background:
+          "radial-gradient(120% 100% at 50% 0%, rgba(245, 158, 11, 0.06) 0%, rgba(245, 158, 11, 0) 55%), var(--bg-dark)",
         borderColor: "var(--border-color)",
         padding: "5rem 0 2rem",
         color: "var(--text-primary)",
         fontFamily: "var(--font-sans), sans-serif",
       }}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Top gradient accent line */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.55), transparent)",
+        }}
+      />
+      {/* Soft ambient glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+        style={{ background: "rgba(245, 158, 11, 0.08)" }}
+      />
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="flex flex-col gap-5 lg:col-span-1">
@@ -92,8 +109,9 @@ export function Footer() {
 
           {/* Explore */}
           <div>
-            <h4 className="mb-6 text-base font-bold" style={{ fontFamily: "var(--font-display), sans-serif" }}>
+            <h4 className="relative mb-6 inline-block pb-2 text-base font-bold" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Explore
+              <span aria-hidden className="absolute bottom-0 left-0 h-0.5 w-8 rounded-full" style={{ background: "var(--gradient-main)" }} />
             </h4>
             <ul className="flex flex-col gap-4">
               {[
@@ -112,8 +130,9 @@ export function Footer() {
 
           {/* Tools */}
           <div>
-            <h4 className="mb-6 text-base font-bold" style={{ fontFamily: "var(--font-display), sans-serif" }}>
+            <h4 className="relative mb-6 inline-block pb-2 text-base font-bold" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Tools
+              <span aria-hidden className="absolute bottom-0 left-0 h-0.5 w-8 rounded-full" style={{ background: "var(--gradient-main)" }} />
             </h4>
             <ul className="flex flex-col gap-4">
               {["Study Assistant", "Resume Builder", "Interview Coach"].map((tool) => (
@@ -128,8 +147,9 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <h4 className="mb-6 text-base font-bold" style={{ fontFamily: "var(--font-display), sans-serif" }}>
+            <h4 className="relative mb-6 inline-block pb-2 text-base font-bold" style={{ fontFamily: "var(--font-display), sans-serif" }}>
               Support
+              <span aria-hidden className="absolute bottom-0 left-0 h-0.5 w-8 rounded-full" style={{ background: "var(--gradient-main)" }} />
             </h4>
             <ul className="flex flex-col gap-4">
               {[
@@ -154,7 +174,13 @@ export function Footer() {
           className="flex flex-col items-center justify-between gap-4 border-t pt-8 text-xs sm:flex-row"
           style={{ borderColor: "var(--border-color)", color: "var(--text-muted)" }}
         >
-          <p>&copy; {new Date().getFullYear()} Adyapan AI. All rights reserved.</p>
+          <p className="flex flex-wrap items-center justify-center gap-1.5 text-center sm:justify-start">
+            <span>&copy; {new Date().getFullYear()}</span>
+            <span className="font-semibold" style={{ color: "var(--text-secondary)" }}>
+              SR&apos;s Adyapan Edutech Pvt Ltd
+            </span>
+            <span>All rights reserved.</span>
+          </p>
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 uppercase tracking-wider font-semibold text-[11px]" style={{ color: "var(--text-secondary)" }}>
             <Link href="/privacy" className="transition-colors hover:text-amber-400">
               PRIVACY POLICY

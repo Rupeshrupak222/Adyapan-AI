@@ -557,9 +557,9 @@ export function DashboardTopNav({
           <Menu size={20} />
         </motion.button>
 
-        <Link href="/dashboard/user" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <Image src="/assets/logo.png" alt="Adyapan AI" width={237} height={208} style={{ width: 30, height: 30, borderRadius: "50%" }} />
-          <span style={{ fontWeight: 700, fontSize: "1.15rem", color: navBtnColor }}>Adyapan AI</span>
+        <Link href="/dashboard/user" className="dash-brand" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+          <Image src="/assets/logo.png" alt="Adyapan AI" width={237} height={208} className="dash-brand-logo" style={{ width: 30, height: 30, borderRadius: "50%" }} />
+          <span className="dash-brand-text" style={{ fontWeight: 700, fontSize: "1.15rem", color: navBtnColor, whiteSpace: "nowrap" }}>Adyapan AI</span>
         </Link>
         <motion.div ref={searchRef} className="desktop-search" style={{ position: "relative" }}
           animate={{ width: searchFocused ? 300 : 230 }}
