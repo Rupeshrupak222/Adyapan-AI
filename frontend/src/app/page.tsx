@@ -300,8 +300,8 @@ export default function LandingPage() {
         className="relative min-h-[85vh] flex flex-col items-center justify-center pt-20 pb-4 md:pb-6 px-4 md:px-8 z-10 overflow-hidden bg-[#030712]"
       >
         {/* Large "ADYAPAN" text background */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-          <div className="text-9xl md:text-[200px] font-bold text-amber-500/25 select-none overflow-hidden" style={{ letterSpacing: "0.05em", textShadow: "0 0 30px rgba(249, 115, 22, 0.2)" }}>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+          <div className="font-bold text-amber-500/25 select-none whitespace-nowrap" style={{ fontSize: "clamp(3.5rem, 22vw, 200px)", letterSpacing: "0.05em", textShadow: "0 0 30px rgba(249, 115, 22, 0.2)" }}>
             ADYAPAN
           </div>
         </div>
