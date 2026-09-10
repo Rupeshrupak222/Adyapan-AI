@@ -72,12 +72,34 @@ contactRouter.post("/submit", async (req, res) => {
       submittedAt: contact.createdAt as Date,
     };
 
-    Promise.all([
+    // Send emails with proper error handling
+    const emailPromises = Promise.all([
       sendAdminContactAlert(emailData),
       sendUserContactConfirmation(emailData),
     ]).catch((err) => {
-      console.error("[Contact] Email send error:", err?.message || err);
+      // Log detailed error for debugging
+      console.error("[Contact] Email send error:", {
+        error: err?.message || err,
+        code: err?.code,
+        command: err?.command,
+        stack: err?.stack,
+      });
+      
+      // In production, alert admins that email system is down
+      if (process.env.NODE_ENV === "production") {
+        console.error("[Contact] ⚠️  ALERT: Email system failure in production!");
+      }
     });
+
+    // Optional: Wait for email in development for better debugging
+    if (process.env.NODE_ENV === "development") {
+      try {
+        await emailPromises;
+        console.log("[Contact] ✅ Emails sent successfully");
+      } catch (e) {
+        // Error already logged above
+      }
+    }
 
     res.json({
       success: true,

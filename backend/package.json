@@ -18,6 +18,8 @@
     "db:reset-all": "ts-node src/scripts/reset-databases.ts",
     "test": "jest",
     "test:coverage": "jest --coverage",
+    "test:smtp": "npx tsx test-smtp.ts",
+    "check:env": "npx tsx check-env.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],

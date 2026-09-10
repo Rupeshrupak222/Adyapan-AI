@@ -2,14 +2,44 @@ import nodemailer from "nodemailer";
 
 // ── Transporter ──────────────────────────────────────────────────────────────
 
+// Validate SMTP configuration
+const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || "465");
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+
+// Check if SMTP is properly configured
+const isSmtpConfigured = Boolean(
+  SMTP_HOST && 
+  SMTP_PORT && 
+  SMTP_USER && 
+  SMTP_PASS && 
+  SMTP_PASS !== "your_gmail_app_password_here"
+);
+
+if (!isSmtpConfigured) {
+  console.warn("⚠️  [Mailer] SMTP not configured properly. Email sending will fail.");
+  console.warn("    Required: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS");
+  console.warn("    Current:", { 
+    SMTP_HOST, 
+    SMTP_PORT, 
+    SMTP_USER: SMTP_USER || "NOT SET",
+    SMTP_PASS: SMTP_PASS ? (SMTP_PASS === "your_gmail_app_password_here" ? "PLACEHOLDER" : "SET") : "NOT SET"
+  });
+}
+
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT || "465"),
+  host: SMTP_HOST,
+  port: SMTP_PORT,
   secure: true, // SSL on port 465
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: SMTP_USER,
+    pass: SMTP_PASS,
   },
+  // Add timeout and connection settings for better error handling
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -84,6 +114,12 @@ function baseTemplate(bodyHtml: string): string {
 // ── 1. Admin notification ─────────────────────────────────────────────────────
 
 export async function sendAdminContactAlert(data: ContactFormData): Promise<void> {
+  // Check if SMTP is configured
+  if (!isSmtpConfigured) {
+    console.error("[Mailer] Cannot send admin alert - SMTP not configured");
+    throw new Error("Email service not configured. Please contact system administrator.");
+  }
+
   const subjectLabel = data.subject
     ? data.subject.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
     : "General Inquiry";
@@ -119,17 +155,30 @@ export async function sendAdminContactAlert(data: ContactFormData): Promise<void
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `"Adyapan AI" <${process.env.SMTP_USER}>`,
-    to: process.env.ADMIN_EMAIL || "support@adyapan.com",
-    subject: `[Contact] ${subjectLabel} — ${data.fullName}`,
-    html: baseTemplate(body),
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: `"Adyapan AI" <${SMTP_USER}>`,
+      to: process.env.ADMIN_EMAIL || "support@adyapan.com",
+      subject: `[Contact] ${subjectLabel} — ${data.fullName}`,
+      html: baseTemplate(body),
+    });
+    
+    console.log(`[Mailer] Admin alert sent successfully. MessageId: ${info.messageId}`);
+  } catch (error: any) {
+    console.error("[Mailer] Failed to send admin alert:", error.message);
+    throw error;
+  }
 }
 
 // ── 2. User confirmation ──────────────────────────────────────────────────────
 
 export async function sendUserContactConfirmation(data: ContactFormData): Promise<void> {
+  // Check if SMTP is configured
+  if (!isSmtpConfigured) {
+    console.error("[Mailer] Cannot send user confirmation - SMTP not configured");
+    throw new Error("Email service not configured. Please contact system administrator.");
+  }
+
   const firstName = data.fullName.split(" ")[0];
 
   const body = `
@@ -173,12 +222,19 @@ export async function sendUserContactConfirmation(data: ContactFormData): Promis
     </p>
   `;
 
-  await transporter.sendMail({
-    from: `"Adyapan AI" <${process.env.SMTP_USER}>`,
-    to: data.email,
-    subject: `We received your message, ${firstName}! — Adyapan AI`,
-    html: baseTemplate(body),
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: `"Adyapan AI" <${SMTP_USER}>`,
+      to: data.email,
+      subject: `We received your message, ${firstName}! — Adyapan AI`,
+      html: baseTemplate(body),
+    });
+    
+    console.log(`[Mailer] User confirmation sent successfully to ${data.email}. MessageId: ${info.messageId}`);
+  } catch (error: any) {
+    console.error("[Mailer] Failed to send user confirmation:", error.message);
+    throw error;
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
