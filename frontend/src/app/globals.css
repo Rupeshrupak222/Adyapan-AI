@@ -1,6 +1,35 @@
 @import "tailwindcss";
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/* ── Restore pointer (hand) cursor on interactive elements ──
+   Tailwind v4 Preflight resets <button> cursor to `default`. Bring back the
+   familiar hand cursor for buttons and other clickable controls. */
+button,
+[role="button"],
+a[href],
+label[for],
+summary,
+select,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+input[type="color"],
+.cursor-pointer {
+  cursor: pointer;
+}
+
+button:disabled,
+button[disabled],
+[role="button"][aria-disabled="true"],
+input:disabled,
+select:disabled,
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
 /* ── CSS Variables ── */
 :root {
   --bg-dark: #070913;
@@ -1200,3 +1229,70 @@ canvas {
 }
 
 
+
+/* ══════════════════════════════════════════════════════════════════
+   Responsive hardening (site-wide, additive — no component overrides)
+   Prevents horizontal overflow and improves small-screen legibility.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Media never forces horizontal scroll */
+img,
+video,
+canvas,
+svg:not(.katex svg) {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Long unbroken strings (URLs, tokens, emails) wrap instead of overflowing */
+p, li, span, td, th, dd, dt,
+h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+}
+
+/* Tables scroll horizontally on small screens rather than blowing out layout */
+@media (max-width: 640px) {
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Tablet range: give the dashboard content a comfortable, non-overlapping gutter
+   between the collapsed sidebar rail and the main area. */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .dash-main {
+    padding: 1rem;
+  }
+}
+
+/* Phone: tighten large landing paddings so sections don't feel cramped/overflow */
+@media (max-width: 480px) {
+  .landing section {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  /* Prevent oversized display headings from overflowing very narrow screens */
+  .landing h1 {
+    word-break: break-word;
+  }
+}
+
+
+/* ══ Dashboard top-nav brand: smaller on mobile so it never wraps ══ */
+@media (max-width: 640px) {
+  .dash-brand-text {
+    font-size: 0.95rem !important;
+  }
+  .dash-brand-logo {
+    width: 26px !important;
+    height: 26px !important;
+  }
+}
+@media (max-width: 380px) {
+  .dash-brand-text {
+    font-size: 0.85rem !important;
+  }
+}

@@ -1,4 +1,6 @@
 import nodemailer from "nodemailer";
+import fs from "fs";
+import path from "path";
 
 // ── Transporter ──────────────────────────────────────────────────────────────
 
@@ -42,6 +44,44 @@ const transporter = nodemailer.createTransport({
   socketTimeout: 10000,
 });
 
+// ── Logo (attached inline via CID so Gmail & other clients render it) ─────────
+// Gmail blocks base64 `data:` URIs inside <img>, so we attach the file as an
+// inline CID attachment instead and reference it with src="cid:LOGO_CID".
+
+const LOGO_CID = "adyapan-logo";
+
+let cachedLogoPath: string | null = null;
+function getLogoPath(): string {
+  if (cachedLogoPath !== null) return cachedLogoPath;
+  try {
+    const cwd = process.cwd();
+    const candidatePaths = [
+      path.resolve(cwd, "frontend/public/assets/logo.png"),
+      path.resolve(cwd, "../frontend/public/assets/logo.png"),
+      path.resolve(cwd, "public/assets/logo.png"),
+      path.resolve(__dirname, "../../../frontend/public/assets/logo.png"),
+      path.resolve(__dirname, "../../frontend/public/assets/logo.png"),
+      path.resolve(__dirname, "../../public/assets/logo.png"),
+    ];
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        cachedLogoPath = p;
+        return cachedLogoPath;
+      }
+    }
+  } catch (err) {
+    console.warn("[Mailer] Could not locate logo image for email header:", err);
+  }
+  cachedLogoPath = "";
+  return cachedLogoPath;
+}
+
+/** Returns the nodemailer inline attachment array for the logo (empty if missing). */
+function logoAttachments(): Array<{ filename: string; path: string; cid: string }> {
+  const p = getLogoPath();
+  return p ? [{ filename: "logo.png", path: p, cid: LOGO_CID }] : [];
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface ContactFormData {
@@ -55,10 +95,18 @@ export interface ContactFormData {
 
 // ── Shared brand styles ───────────────────────────────────────────────────────
 
-const BRAND_COLOR = "#f59e0b";
-const BRAND_DARK  = "#12121e";
+const BRAND_COLOR    = "#f59e0b"; // amber (primary accent)
+const BRAND_COLOR_2  = "#d97706"; // deep orange (gradient partner)
+const BRAND_GRADIENT = `linear-gradient(135deg, #fbbf24 0%, ${BRAND_COLOR} 45%, ${BRAND_COLOR_2} 100%)`;
+const BRAND_DARK     = "#b45309"; // deep amber for the header base (fallback bg)
+const PAGE_BG        = "#fef7ec"; // soft warm page background
 
 function baseTemplate(bodyHtml: string): string {
+  const hasLogo = !!getLogoPath();
+  const logoMark = hasLogo
+    ? `<img src="cid:${LOGO_CID}" alt="Adyapan AI" width="52" height="52" style="display:block;width:52px;height:52px;border-radius:14px;background:#ffffff;padding:7px;object-fit:contain;box-shadow:0 4px 12px rgba(0,0,0,0.12);" />`
+    : `<span style="display:inline-block;width:52px;height:52px;line-height:52px;text-align:center;border-radius:14px;background:#ffffff;color:${BRAND_COLOR};font-weight:900;font-size:24px;">A</span>`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -66,21 +114,28 @@ function baseTemplate(bodyHtml: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Adyapan AI</title>
 </head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:32px 16px;">
+<body style="margin:0;padding:0;background:${PAGE_BG};font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:${PAGE_BG};padding:32px 16px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 10px 40px rgba(217,119,6,0.18);">
 
           <!-- Header -->
           <tr>
-            <td style="background:${BRAND_DARK};padding:28px 36px;text-align:center;">
-              <span style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-0.5px;">
-                Adyapan <span style="color:${BRAND_COLOR};">AI</span>
-              </span>
-              <p style="margin:6px 0 0;font-size:12px;color:#94a3b8;letter-spacing:0.5px;text-transform:uppercase;">
-                adyapan.com
-              </p>
+            <td style="background:${BRAND_DARK};background-image:${BRAND_GRADIENT};padding:32px 36px;text-align:center;">
+              <table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
+                <tr>
+                  <td style="padding-right:12px;vertical-align:middle;">${logoMark}</td>
+                  <td style="vertical-align:middle;text-align:left;">
+                    <span style="font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-0.5px;">
+                      Adyapan <span style="color:#fff7e6;">AI</span>
+                    </span>
+                    <p style="margin:2px 0 0;font-size:11px;color:#fff3d6;letter-spacing:1px;text-transform:uppercase;">
+                      adyapan.com
+                    </p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
@@ -93,12 +148,14 @@ function baseTemplate(bodyHtml: string): string {
 
           <!-- Footer -->
           <tr>
-            <td style="background:#f8fafc;padding:20px 36px;text-align:center;border-top:1px solid #e2e8f0;">
-              <p style="margin:0;font-size:11px;color:#94a3b8;">
+            <td style="background:#fef7ec;padding:22px 36px;text-align:center;border-top:1px solid #fbe6c2;">
+              <p style="margin:0;font-size:11px;color:#8b8aa3;">
                 Adyapan Edutech Pvt Ltd &bull; Sattva Magnus, Toli Chowki, Hyderabad 500008
               </p>
-              <p style="margin:6px 0 0;font-size:11px;color:#94a3b8;">
-                support@adyapan.com &bull; +91 81791 24566
+              <p style="margin:6px 0 0;font-size:11px;color:#8b8aa3;">
+                <a href="mailto:support@adyapan.com" style="color:${BRAND_COLOR};text-decoration:none;">support@adyapan.com</a>
+                &nbsp;&bull;&nbsp;
+                <a href="tel:+918179124566" style="color:${BRAND_COLOR};text-decoration:none;">+91 81791 24566</a>
               </p>
             </td>
           </tr>
@@ -141,20 +198,21 @@ export async function sendAdminContactAlert(data: ContactFormData): Promise<void
     </table>
 
     <!-- Message box -->
-    <div style="margin-top:20px;padding:18px 20px;background:#f8fafc;border-left:4px solid ${BRAND_COLOR};border-radius:0 10px 10px 0;">
-      <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.6px;">Message</p>
+    <div style="margin-top:20px;padding:18px 20px;background:#fffbeb;border-left:4px solid ${BRAND_COLOR};border-radius:0 10px 10px 0;">
+      <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#a16207;text-transform:uppercase;letter-spacing:0.6px;">Message</p>
       <p style="margin:0;font-size:14px;color:#334155;line-height:1.7;white-space:pre-wrap;">${escapeHtml(data.message)}</p>
     </div>
 
     <!-- CTA -->
     <div style="margin-top:28px;text-align:center;">
       <a href="mailto:${data.email}?subject=Re: ${encodeURIComponent(subjectLabel)}"
-         style="display:inline-block;padding:12px 28px;background:${BRAND_COLOR};color:#000000;font-weight:800;font-size:13px;border-radius:10px;text-decoration:none;">
+         style="display:inline-block;padding:13px 30px;background:${BRAND_COLOR};background-image:${BRAND_GRADIENT};color:#ffffff;font-weight:800;font-size:13px;border-radius:10px;text-decoration:none;box-shadow:0 6px 18px rgba(217,119,6,0.35);">
         Reply to ${data.fullName.split(" ")[0]}
       </a>
     </div>
   `;
 
+<<<<<<< HEAD
   try {
     const info = await transporter.sendMail({
       from: `"Adyapan AI" <${SMTP_USER}>`,
@@ -168,6 +226,15 @@ export async function sendAdminContactAlert(data: ContactFormData): Promise<void
     console.error("[Mailer] Failed to send admin alert:", error.message);
     throw error;
   }
+=======
+  await transporter.sendMail({
+    from: `"Adyapan AI" <${process.env.SMTP_USER}>`,
+    to: process.env.ADMIN_EMAIL || "support@adyapan.com",
+    subject: `[Contact] ${subjectLabel} — ${data.fullName}`,
+    html: baseTemplate(body),
+    attachments: logoAttachments(),
+  });
+>>>>>>> bc36e4b39f465dd632e79c8f662b30375227d2ec
 }
 
 // ── 2. User confirmation ──────────────────────────────────────────────────────
@@ -222,6 +289,7 @@ export async function sendUserContactConfirmation(data: ContactFormData): Promis
     </p>
   `;
 
+<<<<<<< HEAD
   try {
     const info = await transporter.sendMail({
       from: `"Adyapan AI" <${SMTP_USER}>`,
@@ -235,6 +303,15 @@ export async function sendUserContactConfirmation(data: ContactFormData): Promis
     console.error("[Mailer] Failed to send user confirmation:", error.message);
     throw error;
   }
+=======
+  await transporter.sendMail({
+    from: `"Adyapan AI" <${process.env.SMTP_USER}>`,
+    to: data.email,
+    subject: `We received your message, ${firstName}! — Adyapan AI`,
+    html: baseTemplate(body),
+    attachments: logoAttachments(),
+  });
+>>>>>>> bc36e4b39f465dd632e79c8f662b30375227d2ec
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
