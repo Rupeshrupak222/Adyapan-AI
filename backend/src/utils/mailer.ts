@@ -212,13 +212,13 @@ export async function sendAdminContactAlert(data: ContactFormData): Promise<void
     </div>
   `;
 
-<<<<<<< HEAD
   try {
     const info = await transporter.sendMail({
       from: `"Adyapan AI" <${SMTP_USER}>`,
       to: process.env.ADMIN_EMAIL || "support@adyapan.com",
       subject: `[Contact] ${subjectLabel} — ${data.fullName}`,
       html: baseTemplate(body),
+      attachments: logoAttachments(),
     });
     
     console.log(`[Mailer] Admin alert sent successfully. MessageId: ${info.messageId}`);
@@ -226,15 +226,6 @@ export async function sendAdminContactAlert(data: ContactFormData): Promise<void
     console.error("[Mailer] Failed to send admin alert:", error.message);
     throw error;
   }
-=======
-  await transporter.sendMail({
-    from: `"Adyapan AI" <${process.env.SMTP_USER}>`,
-    to: process.env.ADMIN_EMAIL || "support@adyapan.com",
-    subject: `[Contact] ${subjectLabel} — ${data.fullName}`,
-    html: baseTemplate(body),
-    attachments: logoAttachments(),
-  });
->>>>>>> bc36e4b39f465dd632e79c8f662b30375227d2ec
 }
 
 // ── 2. User confirmation ──────────────────────────────────────────────────────
@@ -289,13 +280,13 @@ export async function sendUserContactConfirmation(data: ContactFormData): Promis
     </p>
   `;
 
-<<<<<<< HEAD
   try {
     const info = await transporter.sendMail({
       from: `"Adyapan AI" <${SMTP_USER}>`,
       to: data.email,
       subject: `We received your message, ${firstName}! — Adyapan AI`,
       html: baseTemplate(body),
+      attachments: logoAttachments(),
     });
     
     console.log(`[Mailer] User confirmation sent successfully to ${data.email}. MessageId: ${info.messageId}`);
@@ -303,15 +294,6 @@ export async function sendUserContactConfirmation(data: ContactFormData): Promis
     console.error("[Mailer] Failed to send user confirmation:", error.message);
     throw error;
   }
-=======
-  await transporter.sendMail({
-    from: `"Adyapan AI" <${process.env.SMTP_USER}>`,
-    to: data.email,
-    subject: `We received your message, ${firstName}! — Adyapan AI`,
-    html: baseTemplate(body),
-    attachments: logoAttachments(),
-  });
->>>>>>> bc36e4b39f465dd632e79c8f662b30375227d2ec
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
