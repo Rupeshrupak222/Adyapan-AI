@@ -21,6 +21,11 @@ export const env = {
     createHmac("sha256", process.env.JWT_SECRET ?? "replace-this-local-secret-before-production")
       .update("adyapan-refresh-token-derivation-v1")
       .digest("hex"),
+  // DEAD/LEGACY: shared-secret admin self-registration is permanently disabled
+  // (see auth.controller.ts registerAdmin, which throws 403). This value is
+  // retained only so the production boot guard below can refuse to start if the
+  // old insecure default is still present in the environment. No live code path
+  // reads it to grant privileges.
   adminRegisterSecret: process.env.ADMIN_REGISTER_SECRET ?? "",
   // Comma-separated allowlist of owner/privileged emails. These accounts bypass
   // premium gates and AI usage limits (previously any email containing
@@ -132,8 +137,13 @@ if (env.nodeEnv === "production") {
     console.warn("[SECURITY] JWT_SECRET is shorter than 32 characters; use a longer secret for stronger security.");
   }
 
+  // The known-weak legacy default must never reach production. Admin
+  // self-registration is disabled in code, but shipping this value indicates a
+  // misconfigured/leaked environment — refuse to boot so it can't be relied on.
   if (env.adminRegisterSecret === "adyapan-admin-secret-2026") {
-    console.warn("[SECURITY] ADMIN_REGISTER_SECRET is set to the default insecure value; please change it.");
+    errors.push(
+      "ADMIN_REGISTER_SECRET is the known-insecure default. Remove it from the environment (admin self-registration is disabled).",
+    );
   }
 
   if (errors.length > 0) {

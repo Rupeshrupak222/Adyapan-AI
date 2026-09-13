@@ -28,7 +28,13 @@ function broadcastLogout(reason: string) {
 
 function setCookie(name: string, value: string, days = 7) {
   const expires = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+  // Add `Secure` on HTTPS so the cookie is never sent over plain HTTP.
+  // SameSite=Lax mitigates CSRF. These cookies are read server-side by
+  // middleware.ts for route protection (it cannot read sessionStorage), so they
+  // must remain; HttpOnly is not possible for a client-set cookie that JS also
+  // reads — moving to backend-set HttpOnly cookies is a tracked follow-up.
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax${secure}`;
 }
 
 function deleteCookie(name: string) {
@@ -47,17 +53,17 @@ export function saveAuthSession(token: string, user: PlatformUser, _rememberMe =
     clearAuthSession();
     broadcastLogout("account-switch");
   }
+  // sessionStorage ONLY for tokens/session — cleared when the tab/browser
+  // closes and never persisted to localStorage. This shrinks the XSS blast
+  // radius (no long-lived token sitting in localStorage) and matches the
+  // "tab close = logout" intent.
   sessionStorage.setItem(TOKEN_KEY, token);
   sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
   if (sessionId) {
     sessionStorage.setItem(SESSION_ID_KEY, sessionId);
-    localStorage.setItem(SESSION_ID_KEY, sessionId);
   }
   if (refreshToken) {
     sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
   }
 
   // Set cookies so Next.js middleware.ts server-side checks succeed
@@ -70,6 +76,12 @@ export function saveSessionId(sessionId: string) {
   sessionStorage.setItem(SESSION_ID_KEY, sessionId);
 }
 
+// NOTE ON THE localStorage FALLBACK (getSessionId/getRefreshToken/getAuthToken):
+// New logins write to sessionStorage ONLY. The localStorage read is a
+// migration-safety fallback so users who logged in BEFORE this change (whose
+// tokens are still in localStorage) keep their session until it expires,
+// instead of being force-logged-out on deploy. clearAuthSession() wipes
+// localStorage too, so nothing sensitive is left behind after logout.
 export function getSessionId(): string | null {
   if (typeof window === "undefined") return null;
   return sessionStorage.getItem(SESSION_ID_KEY) || localStorage.getItem(SESSION_ID_KEY);
@@ -82,15 +94,12 @@ export function getRefreshToken(): string | null {
 
 export function updateStoredTokens(newToken: string, newRefreshToken: string): void {
   if (typeof window === "undefined") return;
-  // Write to both storages to stay consistent with saveAuthSession which also
-  // writes both. Without this, api.ts reading localStorage as fallback would
-  // find the old (possibly expired) token after a refresh.
+  // sessionStorage only — consistent with saveAuthSession. api.ts reads
+  // sessionStorage for the token/refresh token.
   sessionStorage.setItem(TOKEN_KEY, newToken);
   sessionStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
-  localStorage.setItem(TOKEN_KEY, newToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
-  // Keep Next.js middleware.ts + SocketContext on the fresh token too, or they
-  // would keep authenticating with the pre-refresh access token.
+  // Keep the Next.js middleware.ts cookie on the fresh token too, or the
+  // server-side route check would keep using the pre-refresh access token.
   setCookie(TOKEN_KEY, newToken, 7);
 }
 

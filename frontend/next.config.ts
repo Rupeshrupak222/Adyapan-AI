@@ -43,6 +43,11 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
+              // 'unsafe-inline' is required by Next.js hydration/bootstrap scripts
+              // and 'unsafe-eval' by the Monaco editor workers (code editor used
+              // across coding/DSA/interview views). Removing either breaks the
+              // app today. FOLLOW-UP: move to a nonce-based script-src + configure
+              // Monaco workers to drop the eval requirement, then delete these.
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://checkout.razorpay.com",
               "worker-src 'self' blob:",
               "child-src 'self' blob:",
@@ -53,6 +58,12 @@ const nextConfig: NextConfig = {
               "media-src 'self'",
               "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
               "frame-ancestors 'none'",
+              // Additive hardening — none of these break current functionality:
+              // block plugin/object injection, prevent <base> tag hijacking of
+              // relative URLs, and restrict form submission targets.
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self' https://api.razorpay.com https://checkout.razorpay.com",
             ].join("; "),
           },
         ],
