@@ -36,6 +36,14 @@ const nextConfig: NextConfig = {
             value: "geolocation=(), interest-cohort=()",
           },
           {
+            // Defines the "csp-endpoint" reporting group referenced by the CSP
+            // `report-to` directive below. Same-origin path is proxied to the
+            // backend logger by the /api/:path* rewrite. Harmless if a browser
+            // ignores it (older browsers fall back to the legacy report-uri).
+            key: "Reporting-Endpoints",
+            value: 'csp-endpoint="/api/security/csp-report"',
+          },
+          {
             // CSP: lock down content sources to own origin + known CDNs used
             // by the app (fonts, avatars, Unsplash images, KaTeX assets).
             // unsafe-inline kept for style-src because Tailwind injects inline
@@ -64,6 +72,14 @@ const nextConfig: NextConfig = {
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self' https://api.razorpay.com https://checkout.razorpay.com",
+              // CSP violation reporting: browsers POST blocked-resource reports
+              // to this path, which the /api/:path* rewrite proxies to the
+              // backend's isolated /api/security/csp-report logger. Reporting
+              // only — does not change what the CSP allows/blocks. report-uri is
+              // the widely-supported legacy directive; report-to is the modern
+              // Reporting API successor (both included for coverage).
+              "report-uri /api/security/csp-report",
+              "report-to csp-endpoint",
             ].join("; "),
           },
         ],

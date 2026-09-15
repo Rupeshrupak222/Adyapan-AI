@@ -16,3 +16,8 @@ node_modules/
 logs/
 *.tsbuildinfo
 .next/
+
+# Private, local-only security presentation artifacts (never commit/push)
+Adyapan-AI-Security-Features.pptx
+Adyapan-AI-Security-Features.pdf
+scripts/build_security_ppt.py
