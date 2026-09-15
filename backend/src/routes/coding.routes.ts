@@ -1169,7 +1169,7 @@ router.post("/workspace/:id/run", async (req: any, res) => {
       // Anti-cheat: detect hardcoded outputs
       const cheatCheck = detectHardcodedOutput(code, examples.map(e => ({ input: e.input, output: e.output })));
       
-      if (cheatCheck.isHardcoded && cheatCheck.confidence >= 0.7) {
+      if (cheatCheck.isHardcoded && cheatCheck.confidence >= 0.85) {
         sampleResults = examples.map((ex, i) => ({
           input: ex.input,
           expected: ex.output,

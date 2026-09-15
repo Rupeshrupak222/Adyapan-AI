@@ -283,8 +283,8 @@ export function detectHardcodedOutput(
     return { isHardcoded: true, confidence: 0.85, reason: "Code doesn't read input and contains hardcoded output values" };
   }
 
-  // Multiple hardcoded outputs found + code is short
-  if (hardcodedCount >= 2 && isTooShort) {
+  // Multiple hardcoded outputs found + code is short AND doesn't read input
+  if (!readsInput && hardcodedCount >= 2 && isTooShort) {
     return { isHardcoded: true, confidence: 0.8, reason: "Multiple expected outputs found as literals in very short code" };
   }
 
