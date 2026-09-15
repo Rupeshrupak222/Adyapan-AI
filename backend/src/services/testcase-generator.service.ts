@@ -242,7 +242,7 @@ export function detectHardcodedOutput(
   const codeNormalized = code.replace(/\s+/g, " ").toLowerCase();
 
   // Check 1: Code doesn't read input at all
-  const readsInput = /input\(\)|sys\.stdin|scanf|cin|readline|readLine|Scanner|BufferedReader|gets|read_line|process\.stdin/i.test(code);
+  const readsInput = /input\(\)|sys\.stdin|scanf|cin|readline|readLine|Scanner|BufferedReader|InputStream|FastScanner|DataInputStream|gets|read_line|process\.stdin/i.test(code);
   
   // Check 2: Expected outputs appear as literals in the code (print(411), print("411"), etc.)
   let hardcodedCount = 0;

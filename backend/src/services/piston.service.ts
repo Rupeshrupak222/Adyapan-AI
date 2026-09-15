@@ -253,6 +253,7 @@ function getCandidateEndpoints(): string[] {
   const primary = getApiBase();
   const candidates = [
     primary,
+    "http://35.154.57.164:2000/api/v2",
     "http://localhost:2000/api/v2",
     "http://127.0.0.1:2000/api/v2",
     "https://emkc.org/api/v2/piston",
