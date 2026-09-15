@@ -56,6 +56,7 @@ import { usageRouter } from "./usage.routes";
 import { subscriptionRouter } from "./subscription.routes";
 import { contactRouter } from "./contact.routes";
 import { legalRouter } from "./legal.routes";
+import { securityRouter } from "./security.routes";
 import { enforceAiTokenLimit } from "../middleware/aiTokenLimit.middleware";
 import { requirePremiumEntitlement } from "../middleware/requirePremium";
 
@@ -182,3 +183,6 @@ apiRouter.use("/contact", contactRouter);
 
 // Legal & Cookie Compliance Routes
 apiRouter.use("/legal", legalRouter);
+
+// Security reporting (public, isolated) — receives browser CSP violation reports
+apiRouter.use("/security", securityRouter);

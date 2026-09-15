@@ -33,6 +33,12 @@ jobs:
         # making this a required check.
         run: npm run lint
         continue-on-error: true
+      - name: Dependency audit (SCA)
+        # Non-blocking report of known CVEs in dependencies. Surfaces high/critical
+        # advisories in the logs without failing the build. Dependabot opens the
+        # actual update PRs. Make this blocking once the backlog is triaged.
+        run: npm audit --audit-level=high
+        continue-on-error: true
 
   backend:
     name: Backend (typecheck + build + tests)
@@ -55,3 +61,9 @@ jobs:
         run: npm run build
       - name: Tests
         run: npm test
+      - name: Dependency audit (SCA)
+        # Non-blocking report of known CVEs in dependencies. Surfaces high/critical
+        # advisories in the logs without failing the build. Dependabot opens the
+        # actual update PRs. Make this blocking once the backlog is triaged.
+        run: npm audit --audit-level=high
+        continue-on-error: true

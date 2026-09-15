@@ -1,0 +1,9 @@
+# Adyapan-AI security contact — RFC 9116
+# https://www.rfc-editor.org/rfc/rfc9116
+# Update the Expires date at least annually.
+Contact: mailto:sathyamani@adyapan.com
+Contact: mailto:jagadeeshbaby@adyapan.com
+Contact: mailto:rupeshrupak@adyapan.com
+Expires: 2027-09-13T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://adyapan-ai-gamma.vercel.app/.well-known/security.txt
