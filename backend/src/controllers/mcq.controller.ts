@@ -18,6 +18,7 @@ import {
   addQuestionToTest,
   deleteQuestionFromTest,
   getMCQOverview,
+  getUserSeenQuestions,
 } from "../services/mcq.service";
 
 // ─── Topics & Companies Directory ───────────────────────────────────────────
@@ -191,12 +192,15 @@ export async function handleAdminCreateTest(req: Request, res: Response): Promis
 
 export async function handleAdminGenerateAITest(req: Request, res: Response): Promise<void> {
   try {
-    const { targetId, targetType, targetName, count, difficulty, prompt } = req.body || {};
+    const { targetId, targetType, targetName, count, difficulty, prompt, userId } = req.body || {};
 
     if (!targetId || !targetType || !targetName) {
       res.status(400).json({ success: false, error: "targetId, targetType, and targetName are required" });
       return;
     }
+
+    // Get user's seen questions if userId provided (for personalized generation)
+    const userSeenQuestions = userId ? getUserSeenQuestions(userId) : undefined;
 
     const newTest = await generateAITestWithAntiRepetition({
       targetId,
@@ -205,6 +209,7 @@ export async function handleAdminGenerateAITest(req: Request, res: Response): Pr
       count: Number(count) || 15,
       difficulty: difficulty || "Medium",
       prompt,
+      userSeenQuestions,
     });
 
     res.status(201).json({ success: true, test: newTest });

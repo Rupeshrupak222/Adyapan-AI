@@ -819,6 +819,7 @@ export async function generateAITestWithAntiRepetition(input: {
   count?: number;
   difficulty?: "Easy" | "Medium" | "Hard" | "Mixed";
   prompt?: string;
+  userSeenQuestions?: Set<string>;
 }): Promise<MCQTest> {
   const count = input.count || 15;
   const diff = input.difficulty || "Medium";
@@ -839,6 +840,14 @@ export async function generateAITestWithAntiRepetition(input: {
         existingConceptSnippets.push(snippet);
       }
     }
+  }
+
+  // Merge with user's seen questions if provided
+  if (input.userSeenQuestions && input.userSeenQuestions.size > 0) {
+    for (const seenQ of input.userSeenQuestions) {
+      existingQuestionTexts.add(seenQ);
+    }
+    console.log(`[MCQ] Added ${input.userSeenQuestions.size} user-seen questions to duplicate check`);
   }
 
   console.log(`[MCQ] Generating Test ${nextTestNum} for ${input.targetName}. Found ${existingQuestionTexts.size} existing questions to avoid.`);
@@ -1128,6 +1137,8 @@ interface UserMCQStats {
   streak: number;
   topicMastery: Record<string, UserTopicStat>;
   dailyHistory: Record<string, { solved: number; correct: number }>;
+  seenQuestionIds: Set<string>; // Track which questions user has seen
+  recentQuestionTexts: string[]; // Track recent question texts for duplicate prevention
 }
 
 const userStatsMap = new Map<string, UserMCQStats>();
@@ -1143,6 +1154,8 @@ function getOrCreateUserStats(userId: string): UserMCQStats {
       streak: 1,
       topicMastery: {},
       dailyHistory: {},
+      seenQuestionIds: new Set<string>(),
+      recentQuestionTexts: [],
     };
     userStatsMap.set(userId, stats);
   }
@@ -1156,6 +1169,7 @@ export async function submitAttempt(
   let isCorrect = false;
   let correctIdx = 0;
   let topicName = "General";
+  let questionText = "";
 
   for (const test of testMap.values()) {
     const found = test.questions.find((q) => q.id === data.questionId);
@@ -1163,6 +1177,7 @@ export async function submitAttempt(
       correctIdx = found.correctIdx;
       isCorrect = found.correctIdx === data.selectedIdx;
       topicName = found.technology || found.company || test.targetName || "General";
+      questionText = found.question;
       break;
     }
   }
@@ -1172,6 +1187,16 @@ export async function submitAttempt(
   stats.totalQuestions += 1;
   if (isCorrect) stats.totalCorrect += 1;
   stats.totalTimeSeconds += (data.timeTakenSeconds || 30);
+
+  // Track seen questions
+  stats.seenQuestionIds.add(data.questionId);
+  if (questionText) {
+    stats.recentQuestionTexts.push(questionText.toLowerCase().trim());
+    // Keep only last 100 question texts to prevent memory bloat
+    if (stats.recentQuestionTexts.length > 100) {
+      stats.recentQuestionTexts = stats.recentQuestionTexts.slice(-100);
+    }
+  }
 
   const tKey = topicName.toLowerCase();
   if (!stats.topicMastery[tKey]) {
@@ -1207,6 +1232,17 @@ export async function submitAttempt(
 
 export async function toggleBookmark(userId: string, questionId: string): Promise<{ bookmarked: boolean }> {
   return { bookmarked: true };
+}
+
+/**
+ * Get questions a user has already seen to avoid showing duplicates
+ */
+export function getUserSeenQuestions(userId: string): Set<string> {
+  const stats = userStatsMap.get(userId);
+  if (!stats || !stats.recentQuestionTexts || stats.recentQuestionTexts.length === 0) {
+    return new Set<string>();
+  }
+  return new Set(stats.recentQuestionTexts);
 }
 
 export async function getProgress(userId: string) {
