@@ -825,16 +825,65 @@ export async function generateAITestWithAntiRepetition(input: {
   const existingTests = await getTestsForTarget(input.targetId || input.targetName);
   const nextTestNum = existingTests.length > 0 ? Math.max(...existingTests.map((t) => t.testNumber)) + 1 : 1;
 
-  const existingSnippets = existingTests.flatMap((t) => t.questions.map((q) => q.question.slice(0, 60))).slice(0, 20);
+  // Collect ALL existing question texts for better deduplication
+  const existingQuestionTexts = new Set<string>();
+  const existingConceptSnippets: string[] = [];
+  
+  for (const test of existingTests) {
+    for (const q of test.questions) {
+      // Store full question text for exact matching
+      existingQuestionTexts.add(q.question.toLowerCase().trim());
+      // Store concept snippets for pattern matching
+      const snippet = q.question.slice(0, 80);
+      if (existingConceptSnippets.length < 30) {
+        existingConceptSnippets.push(snippet);
+      }
+    }
+  }
 
-  const systemPrompt = `You are an expert technical interviewer.
+  console.log(`[MCQ] Generating Test ${nextTestNum} for ${input.targetName}. Found ${existingQuestionTexts.size} existing questions to avoid.`);
+
+  const antiDuplicationContext = existingQuestionTexts.size > 0
+    ? `\n\n⚠️ CRITICAL ANTI-DUPLICATION REQUIREMENT ⚠️
+${existingQuestionTexts.size} questions have ALREADY been used in previous ${input.targetName} tests.
+
+YOU MUST NOT generate questions that:
+- Use similar wording or phrasing
+- Test the same specific concepts or scenarios
+- Have similar code patterns or logic
+- Cover the same edge cases or examples
+
+Sample of existing questions to AVOID (first 30):
+${existingConceptSnippets.slice(0, 30).map((s, idx) => `${idx + 1}. ${s}...`).join("\n")}
+
+REQUIREMENTS FOR COMPLETELY UNIQUE QUESTIONS:
+- Use different code examples, algorithms, and scenarios
+- Test different aspects of ${input.targetName} concepts
+- Vary the question format (concept, debugging, code output, best practice, optimization, etc.)
+- Use different programming paradigms and patterns
+- Focus on different difficulty dimensions
+- Create fresh, novel technical scenarios`
+    : "";
+
+  const systemPrompt = `You are an expert technical interviewer and question architect.
 Generate exactly ${count} 100% UNIQUE, fresh Technical MCQs for Target: "${input.targetName}" (${input.targetType}).
 Test Number: Test ${nextTestNum}, Difficulty: ${diff}.
-User Context Prompt: "${input.prompt || `Technical Assessment for ${input.targetName}`}".
+User Context Prompt: "${input.prompt || `Technical Assessment for ${input.targetName}`}".${antiDuplicationContext}
 
-CRITICAL ANTI-DUPLICATION RULE:
-These questions MUST NOT duplicate any previous concepts or existing questions. Avoid these topics/statements:
-${existingSnippets.map((s, idx) => `${idx + 1}. ${s}`).join("\n")}
+CRITICAL RULES:
+- MANDATORY UNIQUENESS: Every question MUST be completely different from all previous tests
+- VARIATION REQUIRED: Use diverse question types:
+  * Conceptual understanding questions
+  * Code output prediction questions
+  * Debugging/error detection questions
+  * Best practice and design pattern questions
+  * Performance and optimization questions
+  * Real-world scenario questions
+- CODE DIVERSITY: If using code snippets, vary:
+  * Programming constructs (loops, recursion, functions, classes, etc.)
+  * Data structures (arrays, objects, maps, sets, trees, etc.)
+  * Problem domains (math, string manipulation, data processing, algorithms, etc.)
+- SCENARIO DIVERSITY: Use varied contexts (web apps, APIs, databases, CLI tools, algorithms, system design)
 
 Return ONLY a valid JSON array of question objects:
 [
@@ -868,8 +917,19 @@ Return ONLY a valid JSON array of question objects:
       cleaned = cleaned.replace(/^```/, "").replace(/```$/, "").trim();
     }
     const parsed: any[] = JSON.parse(cleaned);
-    questions = parsed.map((item, idx) => ({
-      id: `ai-${input.targetId}-t${nextTestNum}-q${idx + 1}`,
+    
+    // Filter out any duplicates that slipped through
+    const uniqueParsed = parsed.filter(item => {
+      const questionText = (item.question || "").toLowerCase().trim();
+      return !existingQuestionTexts.has(questionText);
+    });
+    
+    if (uniqueParsed.length < parsed.length) {
+      console.log(`[MCQ] Filtered out ${parsed.length - uniqueParsed.length} duplicate questions from AI response`);
+    }
+    
+    questions = uniqueParsed.map((item, idx) => ({
+      id: `ai-${input.targetId}-t${nextTestNum}-q${idx + 1}-${Date.now()}`,
       question: item.question || `Technical Question ${idx + 1}`,
       technology: input.targetType === "technology" ? input.targetName : "Computer Science",
       company: input.targetType === "company" ? input.targetName : undefined,
@@ -885,6 +945,21 @@ Return ONLY a valid JSON array of question objects:
       estimatedTime: item.estimatedTime || "45 sec",
       interviewTip: item.interviewTip || "Focus on edge cases and standard library internals.",
     }));
+    
+    // If we filtered too many duplicates, generate fallback questions to reach the count
+    if (questions.length < count) {
+      console.log(`[MCQ] Only ${questions.length}/${count} unique questions from AI. Generating ${count - questions.length} fallback questions.`);
+      const fallbackQuestions = generateTestQuestionsWithAntiRepetition(
+        input.targetId,
+        input.targetType,
+        input.targetName,
+        nextTestNum,
+        count - questions.length,
+        diff
+      );
+      questions.push(...fallbackQuestions);
+    }
+    
   } catch (err) {
     console.warn("[MCQ] AI generation fallback to algorithmic anti-repetition generator:", err);
     questions = generateTestQuestionsWithAntiRepetition(

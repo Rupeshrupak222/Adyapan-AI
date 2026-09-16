@@ -384,7 +384,8 @@ async function aiGenerateQuestions(
   count: number,
   difficulty: Difficulty,
   companyTags: string[],
-  testNumber?: number
+  testNumber?: number,
+  existingQuestionTexts?: Set<string>
 ): Promise<GeneratedQuestion[]> {
   const diffInstruction =
     difficulty === "easy" ? "All questions should be easy — suitable for beginners. Focus on direct formula application."
@@ -397,18 +398,26 @@ async function aiGenerateQuestions(
     ? `CRITICAL COMPANY EXAM REQUIREMENT: You MUST generate REAL, ACTUAL PAST EXAM QUESTIONS and OFFICIAL EXAM PATTERNS used in official ${companyTags.join(", ")} placement papers (e.g. ${companyTags[0]} NQT / Campus Recruitment Assessment). Do NOT use generic placeholder text. Format the questions exactly as they appear in official ${companyTags.join(", ")} placement papers with real numbers, accurate options, detailed step-by-step solutions, and company-specific shortcuts! ${paperContext}`
     : `Design questions that are universally relevant for campus placements at major Indian IT and consulting companies. ${paperContext}`;
 
+  // Add anti-duplication context if we have existing questions
+  const antiDuplicationContext = existingQuestionTexts && existingQuestionTexts.size > 0
+    ? `\n\n⚠️ CRITICAL ANTI-DUPLICATION REQUIREMENT ⚠️\nThe following ${existingQuestionTexts.size} questions have ALREADY been used in previous tests for this topic. You MUST NOT generate any questions with similar wording, scenarios, or patterns:\n\n${Array.from(existingQuestionTexts).slice(0, 20).map((q, i) => `${i + 1}. ${q.substring(0, 100)}...`).join("\n")}\n\n${existingQuestionTexts.size > 20 ? `... and ${existingQuestionTexts.size - 20} more questions.\n\n` : ""}YOU MUST:\n- Use completely different scenarios, contexts, and numerical values\n- Vary the question structure and wording significantly\n- Create fresh, novel problems that test the same concepts differently\n- Think of creative new ways to assess ${topic} skills\n- Generate questions that feel entirely new and unique`
+    : "";
+
   const systemPrompt = `You are a world-class placement preparation question architect specializing in Indian campus placements and competitive exams.
 You have deep expertise in crafting questions that mirror the exact style, difficulty, and patterns found in actual placement tests at companies like TCS, Infosys, Wipro, Google, Amazon, Microsoft, and top consulting firms.
 
 TOPIC: "${topic}"
 CATEGORY: ${category}
 DIFFICULTY: ${difficulty}
-${companyContext}
+${companyContext}${antiDuplicationContext}
 
 ${diffInstruction}
 
 CRITICAL RULES:
 - CRITICAL ANTI-DUPLICATION MANDATE: Every question MUST be 100% unique with distinct scenario descriptions, company context, and unique numerical values. Do NOT generate repetitive or identical questions.
+- VARIATION REQUIREMENT: Use diverse question formats (word problems, data interpretation, pattern recognition, case studies, calculations, etc.)
+- SCENARIO DIVERSITY: Vary contexts (business, travel, sports, technology, science, finance, everyday life, etc.)
+- NUMERICAL VARIETY: Use different number ranges, scales, and units in each question
 - Each question must be self-contained with all necessary information in the question text.
 - Exactly 4 options, with exactly ONE correct answer.
 - Options must be plausible — no obviously wrong distractors.
@@ -423,7 +432,7 @@ CRITICAL RULES:
 
   const userPrompt = `Generate exactly ${count} high-quality ${difficulty}-level ${topic} questions for ${category} placement preparation.
 
-Return a JSON object with a "questions" key containing an array of questions with this exact structure:
+${existingQuestionTexts && existingQuestionTexts.size > 0 ? `⚠️ IMPORTANT: ${existingQuestionTexts.size} questions have already been used. Generate COMPLETELY DIFFERENT questions with:\n- Different scenarios and contexts\n- Different numerical values and ranges\n- Different question formats and structures\n- Fresh, creative approaches to testing ${topic} concepts\n\n` : ""}Return a JSON object with a "questions" key containing an array of questions with this exact structure:
 {
   "questions": [
     {
@@ -449,34 +458,57 @@ Rules:
 
   const fallback: GeneratedQuestion[] = Array.from({ length: count }, (_, i) => {
     const companyName = companyTags[0] || "Placement";
+    // Use test number and timestamp to ensure uniqueness
     const seedVal = Date.now() + i * 37 + (testNumber || 1) * 1000;
     const correctIdx = (seedVal + i) % 4;
-    const valA = 12 + (i * 7) + (testNumber || 1) * 3;
-    const valB = 5 + (i * 3) + (testNumber || 1) * 2;
+    
+    // Generate varied numerical values using multiple seed sources
+    const valA = 12 + (i * 7) + (testNumber || 1) * 3 + (seedVal % 50);
+    const valB = 5 + (i * 3) + (testNumber || 1) * 2 + ((seedVal * 7) % 30);
     const ans = valA * valB;
+    
+    // Create varied question scenarios
+    const scenarios = [
+      { context: "resource capacity", unit: "units", question: `If resource capacity A is ${valA} units/hr and operations run for ${valB} hours, what is the total system throughput required?` },
+      { context: "production efficiency", unit: "items", question: `A production line manufactures ${valA} items per batch. If ${valB} batches are completed, how many total items are produced?` },
+      { context: "data processing", unit: "records", question: `A system processes ${valA} records per second. How many records are processed in ${valB} seconds?` },
+      { context: "team productivity", unit: "tasks", question: `If a team completes ${valA} tasks per day and works for ${valB} days, what is the total tasks completed?` },
+      { context: "inventory management", unit: "units", question: `Each shipment contains ${valA} units. If ${valB} shipments arrive, what is the total inventory?` },
+      { context: "network bandwidth", unit: "MB", question: `A network transfers ${valA} MB per minute. What is the total data transferred in ${valB} minutes?` },
+      { context: "sales performance", unit: "sales", question: `A salesperson makes ${valA} sales per week. How many sales are made in ${valB} weeks?` },
+    ];
+    
+    const scenario = scenarios[(seedVal + i + (testNumber || 1)) % scenarios.length];
+    
     const opts = ["", "", "", ""];
-    opts[correctIdx] = `${ans} units`;
+    opts[correctIdx] = `${ans} ${scenario.unit}`;
     let dIdx = 0;
-    const distractors = [`${ans + 15} units`, `${ans - 12} units`, `${ans + 35} units`];
+    // Generate more plausible distractors
+    const distractors = [
+      `${ans + (valA + valB)} ${scenario.unit}`, 
+      `${Math.floor(ans * 0.9)} ${scenario.unit}`, 
+      `${Math.floor(ans * 1.1)} ${scenario.unit}`
+    ];
     for (let k = 0; k < 4; k++) {
       if (k !== correctIdx) {
         opts[k] = distractors[dIdx % distractors.length];
         dIdx++;
       }
     }
+    
     return {
       id: `ai-fb-${companyName.toLowerCase().replace(/[^a-z0-9]/g, "-")}-t${testNumber || 1}-${Date.now()}-${i}`,
-      text: `[${companyName} ${topic} - Test ${testNumber || 1}] If resource capacity A is ${valA} units/hr and operations run for ${valB} hours, what is the total system throughput required?`,
+      text: `[${companyName} ${topic} - Test ${testNumber || 1}, Q${i + 1}] ${scenario.question}`,
       options: opts,
       correctIdx,
-      explanation: `Total throughput = Capacity × Hours = ${valA} × ${valB} = ${ans} units.`,
-      shortcut: `Direct formula: A × B = ${ans}.`,
+      explanation: `Total ${scenario.context} = ${valA} × ${valB} = ${ans} ${scenario.unit}. This is a direct multiplication of rate and time/quantity.`,
+      shortcut: `Quick formula: Simply multiply ${valA} × ${valB} = ${ans}.`,
       difficulty,
       estimatedTimeSec: difficulty === "easy" ? 45 : difficulty === "hard" ? 90 : 60,
       topic,
       category,
       companyTags: [companyName],
-      commonMistakes: ["Calculation error", "Unit mismatch"],
+      commonMistakes: [`Adding instead of multiplying (${valA + valB})`, `Calculation error in multiplication`],
     };
   });
 
@@ -590,6 +622,7 @@ export async function generateAptitudeQuestions(params: {
   company?: string;
   testNumber?: number;
   previousPerformance?: { weakTopics: string[]; recentAccuracy: number };
+  existingQuestionTexts?: Set<string>;
 }): Promise<GeneratedQuestion[]> {
   const {
     topic,
@@ -599,12 +632,13 @@ export async function generateAptitudeQuestions(params: {
     company,
     testNumber,
     previousPerformance,
+    existingQuestionTexts,
   } = params;
 
   const companyTags = company && COMPANY_PRESETS[company] ? [company] : [];
 
   if (topic) {
-    return aiGenerateQuestions(topic, category, count, difficulty, companyTags, testNumber);
+    return aiGenerateQuestions(topic, category, count, difficulty, companyTags, testNumber, existingQuestionTexts);
   }
 
   if (company && COMPANY_PRESETS[company]) {
@@ -624,7 +658,7 @@ export async function generateAptitudeQuestions(params: {
 
       if (toGenerate <= 0) break;
 
-      const generated = await aiGenerateQuestions(topicName, topicCategory, toGenerate, difficulty, companyTags, testNumber);
+      const generated = await aiGenerateQuestions(topicName, topicCategory, toGenerate, difficulty, companyTags, testNumber, existingQuestionTexts);
       allQuestions.push(...generated);
       remaining -= toGenerate;
     }
@@ -638,12 +672,12 @@ export async function generateAptitudeQuestions(params: {
     const allQuestions: GeneratedQuestion[] = [];
 
     const weakTopic = previousPerformance.weakTopics[Math.floor(Math.random() * previousPerformance.weakTopics.length)];
-    const weakGenerated = await aiGenerateQuestions(weakTopic, category, weakTopicQuestions, difficulty, companyTags);
+    const weakGenerated = await aiGenerateQuestions(weakTopic, category, weakTopicQuestions, difficulty, companyTags, undefined, existingQuestionTexts);
     allQuestions.push(...weakGenerated);
 
     if (otherQuestions > 0) {
       const topicDef = APTITUDE_TOPICS[Math.floor(Math.random() * APTITUDE_TOPICS.length)];
-      const otherGenerated = await aiGenerateQuestions(topicDef.name, topicDef.category, otherQuestions, difficulty, companyTags);
+      const otherGenerated = await aiGenerateQuestions(topicDef.name, topicDef.category, otherQuestions, difficulty, companyTags, undefined, existingQuestionTexts);
       allQuestions.push(...otherGenerated);
     }
 
@@ -651,11 +685,20 @@ export async function generateAptitudeQuestions(params: {
   }
 
   const topicDef = APTITUDE_TOPICS[Math.floor(Math.random() * APTITUDE_TOPICS.length)];
-  return aiGenerateQuestions(topicDef.name, topicDef.category, count, difficulty, companyTags);
+  return aiGenerateQuestions(topicDef.name, topicDef.category, count, difficulty, companyTags, undefined, existingQuestionTexts);
+}
+
+export interface AdaptiveParams {
+  weakTopics: string[];
+  strongTopics: string[];
+  recentAccuracy: number;
+  targetDifficulty: Difficulty;
+  count: number;
+  existingQuestionTexts?: Set<string>;
 }
 
 export async function generateAdaptiveQuestions(params: AdaptiveParams): Promise<GeneratedQuestion[]> {
-  const { weakTopics, strongTopics, recentAccuracy, targetDifficulty, count } = params;
+  const { weakTopics, strongTopics, recentAccuracy, targetDifficulty, count, existingQuestionTexts } = params;
 
   const adjustedDifficulty: Difficulty =
     recentAccuracy >= 80 ? (targetDifficulty === "easy" ? "medium" : targetDifficulty === "medium" ? "hard" : "hard")
@@ -670,19 +713,19 @@ export async function generateAdaptiveQuestions(params: AdaptiveParams): Promise
 
   if (weakTopics.length > 0) {
     const primaryWeakTopic = weakTopics[0];
-    const weakGenerated = await aiGenerateQuestions(primaryWeakTopic, "quantitative", weakCount, adjustedDifficulty, []);
+    const weakGenerated = await aiGenerateQuestions(primaryWeakTopic, "quantitative", weakCount, adjustedDifficulty, [], undefined, existingQuestionTexts);
     allQuestions.push(...weakGenerated);
 
     if (weakTopics.length > 1 && weakCount > 1) {
       const secondWeakTopic = weakTopics[1];
-      const secondWeak = await aiGenerateQuestions(secondWeakTopic, "quantitative", Math.ceil(weakCount * 0.4), adjustedDifficulty, []);
+      const secondWeak = await aiGenerateQuestions(secondWeakTopic, "quantitative", Math.ceil(weakCount * 0.4), adjustedDifficulty, [], undefined, existingQuestionTexts);
       allQuestions.push(...secondWeak);
     }
   }
 
   if (strongTopics.length > 0 && strongCount > 0) {
     const strongTopic = strongTopics[Math.floor(Math.random() * strongTopics.length)];
-    const strongGenerated = await aiGenerateQuestions(strongTopic, "quantitative", strongCount, targetDifficulty, []);
+    const strongGenerated = await aiGenerateQuestions(strongTopic, "quantitative", strongCount, targetDifficulty, [], undefined, existingQuestionTexts);
     allQuestions.push(...strongGenerated);
   }
 
@@ -691,7 +734,7 @@ export async function generateAdaptiveQuestions(params: AdaptiveParams): Promise
     const challengeTopic = weakTopics.length > 0
       ? weakTopics[Math.floor(Math.random() * weakTopics.length)]
       : APTITUDE_TOPICS[Math.floor(Math.random() * APTITUDE_TOPICS.length)].name;
-    const challengeGenerated = await aiGenerateQuestions(challengeTopic, "quantitative", challengeCount, challengeDifficulty, []);
+    const challengeGenerated = await aiGenerateQuestions(challengeTopic, "quantitative", challengeCount, challengeDifficulty, [], undefined, existingQuestionTexts);
     allQuestions.push(...challengeGenerated);
   }
 

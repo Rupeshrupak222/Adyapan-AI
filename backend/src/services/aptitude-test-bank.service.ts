@@ -541,13 +541,14 @@ export async function generateWeeklyTopicTest(
 
   let questions: GeneratedQuestion[] = [];
   try {
-    // Attempt AI generation of 30 questions for this test number
+    // Attempt AI generation of 30 questions for this test number, passing existing questions to avoid duplicates
     if (normalizedCategory === "company") {
       questions = await generateAptitudeQuestions({
         company: normalizedTopic,
         count: 30,
         difficulty: nextTestNum % 3 === 1 ? "easy" : nextTestNum % 3 === 2 ? "medium" : "hard",
         testNumber: nextTestNum,
+        existingQuestionTexts,
       });
     } else {
       questions = await generateAptitudeQuestions({
@@ -556,6 +557,7 @@ export async function generateWeeklyTopicTest(
         count: 30,
         difficulty: nextTestNum % 3 === 1 ? "easy" : nextTestNum % 3 === 2 ? "medium" : "hard",
         testNumber: nextTestNum,
+        existingQuestionTexts,
       });
     }
   } catch {

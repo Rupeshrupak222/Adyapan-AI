@@ -156,6 +156,31 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
     }
 
     if (!questions || questions.length === 0) {
+      // Fetch user's previously seen questions to avoid duplicates
+      let existingQuestionTexts: Set<string> | undefined;
+      try {
+        const recentSessions = await userPrisma.aptitudeSession.findMany({
+          where: { userId },
+          orderBy: { startedAt: "desc" },
+          take: 10, // Look at last 10 sessions
+          select: { questionsJson: true },
+        });
+        
+        existingQuestionTexts = new Set<string>();
+        for (const session of recentSessions) {
+          if (Array.isArray(session.questionsJson)) {
+            for (const q of session.questionsJson as any[]) {
+              if (q?.text) {
+                existingQuestionTexts.add(q.text.toLowerCase().trim());
+              }
+            }
+          }
+        }
+        console.log(`[AptitudeEngine] Found ${existingQuestionTexts.size} existing questions for user ${userId}`);
+      } catch (err) {
+        console.warn("[AptitudeEngine] Could not fetch existing questions:", err);
+      }
+
       if (mode === "adaptive") {
         const analytics = await userPrisma.aptitudeAnalytics.findUnique({ where: { userId } });
 
@@ -176,12 +201,14 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
           recentAccuracy,
           targetDifficulty: sessionDifficulty,
           count: questionCount,
+          existingQuestionTexts,
         });
       } else if (mode === "company_test" && company) {
         questions = await generateAptitudeQuestions({
           company,
           count: questionCount,
           difficulty: sessionDifficulty,
+          existingQuestionTexts,
         });
       } else {
         questions = await generateAptitudeQuestions({
@@ -190,6 +217,7 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
           count: questionCount,
           difficulty: sessionDifficulty,
           company,
+          existingQuestionTexts,
         });
       }
     }
