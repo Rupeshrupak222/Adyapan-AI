@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/user-client";
+import { PrismaClient } from "@prisma/client";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
 
 export interface StreakDashboardData {

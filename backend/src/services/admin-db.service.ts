@@ -3,7 +3,7 @@ import { databaseService } from "./database.service";
 import { createPrismaClient } from "../config/dynamicPrisma";
 import { httpError } from "../utils/httpError";
 import { env } from "../config/env";
-import type { PrismaClient } from "@prisma/user-client";
+import type { PrismaClient } from "@prisma/client";
 
 interface DatabaseInfo {
   userId: string;

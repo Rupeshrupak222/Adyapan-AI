@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/user-client";
+import { PrismaClient } from "@prisma/client";
 import { prisma as masterPrisma } from "../config/prisma";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
 

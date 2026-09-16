@@ -1,5 +1,5 @@
-import type { PrismaClient } from "@prisma/user-client";
-import type { Prisma } from "@prisma/user-client";
+import type { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { httpError } from "../utils/httpError";
 import {
   generateInterviewQuestion,

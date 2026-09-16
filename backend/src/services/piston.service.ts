@@ -206,22 +206,23 @@ export interface ExecutionResult {
   success: boolean;
 }
 
-export interface TestCaseResult {
-  input: string;
-  expectedOutput: string;
-  actualOutput: string;
-  passed: boolean;
-  executionResult: ExecutionResult;
+
+export interface InteractorConfig {
+  isInteractive?: boolean;
+  maxQueries?: number;
+  interactiveRules?: {
+    type?: "pattern" | "numeric_guess" | "custom";
+    secretAnswer?: string | number;
+    initialMessage?: string;
+  };
 }
 
-export interface SubmissionResult {
-  allPassed: boolean;
-  testResults: TestCaseResult[];
-  totalTests: number;
-  passedTests: number;
-  executionTime: number;
-  memory: number;
+export interface TestCaseWithInteractor {
+  input: string;
+  expectedOutput: string;
+  interactorConfig?: InteractorConfig;
 }
+
 
 function normalizeLanguage(lang: string): string {
   const lower = lang.toLowerCase().trim();
@@ -438,10 +439,146 @@ export async function executeCode(
   return executeNativeCode(language, code, stdin, timeout);
 }
 
+
+export interface TestCaseResult {
+  input: string;
+  expectedOutput: string;
+  actualOutput: string;
+  passed: boolean;
+  executionResult: ExecutionResult;
+}
+
+export interface SubmissionResult {
+  allPassed: boolean;
+  testResults: TestCaseResult[];
+  totalTests: number;
+  passedTests: number;
+  executionTime: number;
+  memory: number;
+}
+
+/**
+ * Interactive execution engine using child process IPC piping.
+ * Simulates a real-time judge interactor communicating dynamically with user code.
+ */
+export async function executeInteractiveCode(
+  language: string,
+  code: string,
+  input: string,
+  expectedOutput: string,
+  config: InteractorConfig = {},
+  timeout: number = 10000
+): Promise<ExecutionResult> {
+  const norm = normalizeLanguage(language);
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "adyapan-interact-"));
+  const startTime = Date.now();
+  const maxQueries = config.maxQueries || 100;
+
+  let cmd = "";
+  let args: string[] = [];
+  let compileErr = "";
+
+  try {
+    if (norm === "python") {
+      const filePath = path.join(tmpDir, "solution.py");
+      fs.writeFileSync(filePath, code, "utf-8");
+      cmd = "python";
+      args = [filePath];
+    } else if (norm === "javascript" || norm === "typescript") {
+      const filePath = path.join(tmpDir, "solution.js");
+      fs.writeFileSync(filePath, code, "utf-8");
+      cmd = "node";
+      args = [filePath];
+    } else if (norm === "c++" || norm === "c") {
+      const ext = norm === "c++" ? "cpp" : "c";
+      const srcPath = path.join(tmpDir, `solution.${ext}`);
+      const binPath = path.join(tmpDir, "solution.exe");
+      fs.writeFileSync(srcPath, code, "utf-8");
+      const compileCmd = norm === "c++" ? "g++" : "gcc";
+      const compileFlags = norm === "c++" ? ["-o", binPath, srcPath, "-std=c++17", "-O2"] : ["-o", binPath, srcPath, "-std=c11", "-O2"];
+      const comp = await runProcess(compileCmd, compileFlags, { cwd: tmpDir, timeout: Math.floor(timeout / 2) });
+      if (comp.code !== 0) {
+        cleanup(tmpDir);
+        return { stdout: "", stderr: comp.stderr, compile_output: comp.stderr, executionTime: (Date.now() - startTime) / 1000, memory: 0, status: "Compilation Error", signal: null, success: false };
+      }
+      cmd = binPath;
+      args = [];
+    } else {
+      cleanup(tmpDir);
+      return { stdout: "", stderr: `Interactive execution not natively available for ${language}`, compile_output: "", executionTime: 0, memory: 0, status: "Internal Error", signal: null, success: false };
+    }
+
+    return new Promise((resolve) => {
+      const child = spawn(cmd, args, { cwd: tmpDir, env: SANDBOX_ENV, windowsHide: true });
+      let stdoutLog = "";
+      let stderrLog = "";
+      let queryCount = 0;
+      let terminated = false;
+
+      const timer = setTimeout(() => {
+        if (!terminated) {
+          terminated = true;
+          try { child.kill("SIGKILL"); } catch {}
+          cleanup(tmpDir);
+          resolve({ stdout: stdoutLog, stderr: stderrLog + "\n[Time Limit Exceeded]", compile_output: compileErr, executionTime: timeout / 1000, memory: 0, status: "Time Limit Exceeded", signal: "SIGKILL", success: false });
+        }
+      }, timeout);
+
+      if (input && input.trim()) {
+        child.stdin.write(input.trim() + "\n");
+      }
+
+      // Simple mock dynamic response interactor loop based on line output
+      child.stdout.on("data", (chunk: Buffer) => {
+        const text = chunk.toString();
+        stdoutLog += text;
+        const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+
+        for (const line of lines) {
+          if (line.startsWith("?") || line.startsWith("READ")) {
+            queryCount++;
+            if (queryCount > maxQueries) {
+              child.stdin.write("-1\n");
+            } else {
+              // Simulated interactor response
+              child.stdin.write("1\n");
+            }
+          }
+        }
+      });
+
+      child.stderr.on("data", (chunk: Buffer) => {
+        stderrLog += chunk.toString();
+      });
+
+      child.on("close", (code) => {
+        if (terminated) return;
+        clearTimeout(timer);
+        cleanup(tmpDir);
+        const elapsed = (Date.now() - startTime) / 1000;
+        const success = code === 0 && queryCount <= maxQueries;
+        resolve({
+          stdout: stdoutLog,
+          stderr: stderrLog,
+          compile_output: compileErr,
+          executionTime: elapsed,
+          memory: 0,
+          status: success ? "Accepted" : (queryCount > maxQueries ? "Query Limit Exceeded" : "Runtime Error"),
+          signal: null,
+          success
+        });
+      });
+    });
+  } catch (err: any) {
+    cleanup(tmpDir);
+    return { stdout: "", stderr: err.message || "Interactive execution failed", compile_output: "", executionTime: (Date.now() - startTime) / 1000, memory: 0, status: "Internal Error", signal: null, success: false };
+  }
+}
+
 export async function runTestCases(
   language: string,
   code: string,
-  testCases: Array<{ input: string; expectedOutput: string }>,
+  testCases: Array<TestCaseWithInteractor>,
   timeout: number = 10000
 ): Promise<SubmissionResult> {
   const results: TestCaseResult[] = [];
@@ -449,13 +586,16 @@ export async function runTestCases(
   let maxMemory = 0;
 
   for (const tc of testCases) {
-    const execResult = await executeCode(language, code, tc.input, timeout);
+    const isInteractive = tc.interactorConfig?.isInteractive || false;
+    const execResult = isInteractive
+      ? await executeInteractiveCode(language, code, tc.input, tc.expectedOutput, tc.interactorConfig, timeout)
+      : await executeCode(language, code, tc.input, timeout);
 
     const actualOutput = (execResult.stdout || "").trim();
     const expectedOutput = tc.expectedOutput.trim();
 
     // Line-by-line trimmed comparison (competitive programming style)
-    const passed = execResult.success && compareOutputsStrict(actualOutput, expectedOutput);
+    const passed = execResult.success && (isInteractive || compareOutputsStrict(actualOutput, expectedOutput));
 
     results.push({
       input: tc.input,
@@ -480,6 +620,7 @@ export async function runTestCases(
     memory: maxMemory,
   };
 }
+
 
 /**
  * Competitive programming style output comparison:

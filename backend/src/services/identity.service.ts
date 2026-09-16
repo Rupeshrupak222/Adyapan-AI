@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/user-client";
+import type { PrismaClient } from "@prisma/client";
 import { httpError } from "../utils/httpError";
 
 export interface IdentityVerificationData {

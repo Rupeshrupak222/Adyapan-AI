@@ -75,7 +75,7 @@
     "@types/marked": "^4.3.2",
     "@types/multer": "^2.2.0",
     "@types/node": "^26.1.1",
-    "@types/nodemailer": "^6.4.17",
+    "@types/nodemailer": "^6.4.24",
     "@types/pdfkit": "^0.17.6",
     "@types/pg": "^8.20.0",
     "@types/supertest": "^7.2.1",
