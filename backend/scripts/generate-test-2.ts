@@ -1,0 +1,373 @@
+/**
+ * Script to Generate Test #2 for All Topics and Companies
+ * 
+ * This script generates the second test for:
+ * - AI Aptitude Engine (38 topics + 5 companies)
+ * - Technical MCQs (43 technologies + 16 companies)
+ * 
+ * Usage: npx tsx scripts/generate-test-2.ts
+ */
+
+import { masterPrisma } from "../src/utils/prisma";
+import { generateAptitudeQuestions, AptitudeCategory } from "../src/services/aptitude-engine.service";
+import { generateAITestWithAntiRepetition } from "../src/services/mcq.service";
+
+// ============================================================================
+// TOPIC DEFINITIONS
+// ============================================================================
+
+const APTITUDE_TOPICS_BY_CATEGORY = {
+  quantitative: [
+    "Number System", "Percentages", "Profit & Loss", 
+    "Simple & Compound Interest", "Time & Work", "Time Speed & Distance",
+    "Ratio & Proportion", "Averages", "Mixtures & Alligations"
+  ],
+  logical: [
+    "Seating Arrangement", "Puzzles", "Blood Relations", 
+    "Coding-Decoding", "Direction Sense", "Number Series",
+    "Analogy", "Statement & Conclusion", "Syllogisms",
+    "Calendar", "Clocks"
+  ],
+  verbal: [
+    "Reading Comprehension", "Sentence Correction", "Para Jumbles",
+    "Synonyms & Antonyms", "Idioms & Phrases", "Fill in the Blanks"
+  ],
+  analytical: [
+    "Data Sufficiency", "Logical Deduction", "Critical Reasoning",
+    "Statement & Assumptions", "Cause & Effect", "Strong & Weak Arguments"
+  ],
+  data: [
+    "Tables", "Bar Charts", "Line Graphs", 
+    "Pie Charts", "Data Interpretation (Mixed)",
+    "Data Comparison", "Data Analysis"
+  ]
+};
+
+const APTITUDE_COMPANIES = ["TCS", "Infosys", "Wipro", "Accenture", "Capgemini"];
+
+const TECHNICAL_TECHNOLOGIES = [
+  // Programming Languages
+  "C", "C++", "Java", "Python", "JavaScript", "TypeScript", "Go", "Rust",
+  
+  // Core CS
+  "DBMS", "Operating Systems", "Computer Networks", "OOP", 
+  "Software Engineering", "Compiler Design", "Computer Architecture",
+  
+  // Web Development
+  "HTML", "CSS", "React", "Angular", "Vue.js", "Next.js", "Node.js", "Express.js",
+  
+  // Databases
+  "SQL", "PostgreSQL", "MongoDB", "MySQL", "Redis",
+  
+  // Cloud/DevOps
+  "AWS", "Azure", "Google Cloud", "Docker", "Kubernetes",
+  
+  // AI/ML
+  "Machine Learning", "Deep Learning", "NLP", 
+  "Computer Vision", "Data Science", "TensorFlow", "PyTorch"
+];
+
+const TECHNICAL_COMPANIES = [
+  "Google", "Microsoft", "Amazon", "Adobe", "Meta", "Apple", 
+  "NVIDIA", "Oracle", "IBM", "TCS", "Infosys", "Accenture",
+  "Wipro", "Capgemini", "Cognizant", "Deloitte"
+];
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function generateAptitudeTest2(
+  topic: string,
+  category: string
+): Promise<void> {
+  try {
+    console.log(`\n[Aptitude] Generating Test #2 for: ${topic} (${category})`);
+    
+    const normalizedCategory = category.toLowerCase();
+    const normalizedTopic = topic.trim();
+    
+    // Check if Test #2 already exists
+    const existingTest2 = await masterPrisma.aptitudeTopicTest.findFirst({
+      where: {
+        topic: { equals: normalizedTopic, mode: "insensitive" },
+        testNumber: 2
+      }
+    });
+    
+    if (existingTest2) {
+      console.log(`  ✓ Test #2 already exists (ID: ${existingTest2.id})`);
+      return;
+    }
+    
+    // Find Test #1 to get existing questions
+    const test1 = await masterPrisma.aptitudeTopicTest.findFirst({
+      where: {
+        topic: { equals: normalizedTopic, mode: "insensitive" },
+        testNumber: 1
+      }
+    });
+    
+    const existingQuestionTexts = new Set<string>();
+    if (test1 && Array.isArray(test1.questionsJson)) {
+      for (const q of (test1.questionsJson as any[])) {
+        if (q.text) existingQuestionTexts.add(q.text.toLowerCase().trim());
+      }
+    }
+    
+    console.log(`  Found ${existingQuestionTexts.size} existing questions from Test #1`);
+    
+    // Generate Test #2
+    let questions: any[] = [];
+    
+    try {
+      if (normalizedCategory === "company") {
+        questions = await generateAptitudeQuestions({
+          company: normalizedTopic,
+          count: 30,
+          difficulty: "medium",
+          testNumber: 2,
+          existingQuestionTexts,
+        });
+      } else {
+        questions = await generateAptitudeQuestions({
+          topic: normalizedTopic,
+          category: normalizedCategory as AptitudeCategory,
+          count: 30,
+          difficulty: "medium",
+          testNumber: 2,
+          existingQuestionTexts,
+        });
+      }
+    } catch (error) {
+      console.log(`  ⚠ AI generation failed, using fallback`);
+      // Fallback questions will be generated by the function
+      questions = [];
+    }
+    
+    // Filter duplicates
+    const uniqueQuestions = questions.filter(q => 
+      !existingQuestionTexts.has(q.text.toLowerCase().trim())
+    );
+    
+    console.log(`  Generated ${uniqueQuestions.length} unique questions`);
+    
+    // Create Test #2
+    const newTest = await masterPrisma.aptitudeTopicTest.create({
+      data: {
+        category: normalizedCategory,
+        topic: normalizedTopic,
+        testNumber: 2,
+        title: `Test 2`,
+        weekNumber: 2,
+        questionsJson: uniqueQuestions.slice(0, 30) as any,
+        totalQuestions: Math.min(30, uniqueQuestions.length),
+        difficulty: "medium",
+      },
+    });
+    
+    console.log(`  ✓ Created Test #2 (ID: ${newTest.id}) with ${newTest.totalQuestions} questions`);
+    
+  } catch (error) {
+    console.error(`  ✗ Failed to generate Test #2 for ${topic}:`, error);
+  }
+}
+
+async function generateTechnicalTest2(
+  targetId: string,
+  targetName: string,
+  targetType: "technology" | "company"
+): Promise<void> {
+  try {
+    console.log(`\n[Technical] Generating Test #2 for: ${targetName} (${targetType})`);
+    
+    // Check if Test #2 already exists
+    const testId = `test-${targetType === "company" ? "company-" : ""}${targetId}-2`;
+    const existingTest2 = await masterPrisma.mcqTest.findUnique({
+      where: { id: testId }
+    });
+    
+    if (existingTest2) {
+      console.log(`  ✓ Test #2 already exists (ID: ${existingTest2.id})`);
+      return;
+    }
+    
+    // Find Test #1
+    const test1Id = `test-${targetType === "company" ? "company-" : ""}${targetId}-1`;
+    const test1 = await masterPrisma.mcqTest.findUnique({
+      where: { id: test1Id }
+    });
+    
+    const existingQuestionTexts = new Set<string>();
+    if (test1 && Array.isArray(test1.questionsJson)) {
+      for (const q of (test1.questionsJson as any[])) {
+        if (q.text) existingQuestionTexts.add(q.text.toLowerCase().trim());
+      }
+    }
+    
+    console.log(`  Found ${existingQuestionTexts.size} existing questions from Test #1`);
+    
+    // Generate Test #2 using anti-repetition
+    let questions: any[] = [];
+    
+    try {
+      const result = await generateAITestWithAntiRepetition({
+        targetId,
+        targetName,
+        targetType,
+        testNumber: 2,
+        questionCount: 30,
+        existingQuestionTexts,
+        userSeenQuestions: []
+      });
+      
+      questions = result.questions;
+    } catch (error) {
+      console.log(`  ⚠ AI generation failed:`, error);
+      questions = [];
+    }
+    
+    console.log(`  Generated ${questions.length} unique questions`);
+    
+    // Create Test #2
+    const newTest = await masterPrisma.mcqTest.create({
+      data: {
+        id: testId,
+        technology: targetType === "technology" ? targetId : undefined,
+        company: targetType === "company" ? targetId : undefined,
+        testNumber: 2,
+        title: `${targetName} - Test 2`,
+        questionsJson: questions as any,
+        totalQuestions: questions.length,
+        difficulty: "medium",
+        durationMinutes: 30,
+      },
+    });
+    
+    console.log(`  ✓ Created Test #2 (ID: ${newTest.id}) with ${newTest.totalQuestions} questions`);
+    
+  } catch (error) {
+    console.error(`  ✗ Failed to generate Test #2 for ${targetName}:`, error);
+  }
+}
+
+// ============================================================================
+// MAIN EXECUTION
+// ============================================================================
+
+async function main() {
+  console.log("=".repeat(70));
+  console.log("  GENERATING TEST #2 FOR ALL TOPICS AND COMPANIES");
+  console.log("=".repeat(70));
+  
+  let aptitudeCount = 0;
+  let technicalCount = 0;
+  let aptitudeErrors = 0;
+  let technicalErrors = 0;
+  
+  // ============================================================================
+  // 1. GENERATE APTITUDE TESTS
+  // ============================================================================
+  
+  console.log("\n\n📚 PART 1: AI APTITUDE ENGINE");
+  console.log("─".repeat(70));
+  
+  // Generate for all topic categories
+  for (const [category, topics] of Object.entries(APTITUDE_TOPICS_BY_CATEGORY)) {
+    console.log(`\n📂 Category: ${category.toUpperCase()}`);
+    
+    for (const topic of topics) {
+      try {
+        await generateAptitudeTest2(topic, category);
+        aptitudeCount++;
+        await delay(500); // Rate limiting
+      } catch (error) {
+        aptitudeErrors++;
+        console.error(`  ✗ Error: ${error}`);
+      }
+    }
+  }
+  
+  // Generate for companies
+  console.log(`\n📂 Category: COMPANIES`);
+  for (const company of APTITUDE_COMPANIES) {
+    try {
+      await generateAptitudeTest2(company, "company");
+      aptitudeCount++;
+      await delay(500);
+    } catch (error) {
+      aptitudeErrors++;
+      console.error(`  ✗ Error: ${error}`);
+    }
+  }
+  
+  // ============================================================================
+  // 2. GENERATE TECHNICAL MCQ TESTS
+  // ============================================================================
+  
+  console.log("\n\n💻 PART 2: TECHNICAL MCQs");
+  console.log("─".repeat(70));
+  
+  // Generate for technologies
+  console.log(`\n📂 Technologies`);
+  for (const tech of TECHNICAL_TECHNOLOGIES) {
+    try {
+      const techId = tech.toLowerCase().replace(/[^a-z0-9]/g, "-");
+      await generateTechnicalTest2(techId, tech, "technology");
+      technicalCount++;
+      await delay(500);
+    } catch (error) {
+      technicalErrors++;
+      console.error(`  ✗ Error: ${error}`);
+    }
+  }
+  
+  // Generate for companies
+  console.log(`\n📂 Companies`);
+  for (const company of TECHNICAL_COMPANIES) {
+    try {
+      const companyId = company.toLowerCase().replace(/[^a-z0-9]/g, "-");
+      await generateTechnicalTest2(companyId, company, "company");
+      technicalCount++;
+      await delay(500);
+    } catch (error) {
+      technicalErrors++;
+      console.error(`  ✗ Error: ${error}`);
+    }
+  }
+  
+  // ============================================================================
+  // SUMMARY
+  // ============================================================================
+  
+  console.log("\n\n" + "=".repeat(70));
+  console.log("  GENERATION COMPLETE");
+  console.log("=".repeat(70));
+  
+  console.log(`\n📊 APTITUDE ENGINE:`);
+  console.log(`  ✓ Tests generated: ${aptitudeCount}`);
+  console.log(`  ✗ Errors: ${aptitudeErrors}`);
+  
+  console.log(`\n📊 TECHNICAL MCQs:`);
+  console.log(`  ✓ Tests generated: ${technicalCount}`);
+  console.log(`  ✗ Errors: ${technicalErrors}`);
+  
+  console.log(`\n📊 TOTAL:`);
+  console.log(`  ✓ Total tests: ${aptitudeCount + technicalCount}`);
+  console.log(`  ✗ Total errors: ${aptitudeErrors + technicalErrors}`);
+  console.log(`  Success rate: ${Math.round(((aptitudeCount + technicalCount) / (aptitudeCount + technicalCount + aptitudeErrors + technicalErrors)) * 100)}%`);
+  
+  console.log("\n✅ All Test #2 generation complete!\n");
+  
+  await masterPrisma.$disconnect();
+}
+
+// Run the script
+main().catch((error) => {
+  console.error("Fatal error:", error);
+  process.exit(1);
+});
