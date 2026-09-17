@@ -75,7 +75,7 @@ const TECHNICAL_TOPICS = [
 ];
 
 // ============================================================================
-// AI QUESTION GENERATION
+// AI QUESTION GENERATION WITH ANTI-DUPLICATION
 // ============================================================================
 
 interface AIQuestion {
@@ -87,12 +87,40 @@ interface AIQuestion {
   difficulty?: string;
 }
 
+// In-memory storage for tracking questions per user
+const userQuestionHistory = new Map<string, string[]>(); // userId -> last 100 question texts
+const topicQuestionHistory = new Map<string, Set<string>>(); // "category:topic" -> question texts
+
+function normalizeQuestionText(text: string): string {
+  return text.toLowerCase().trim().replace(/[^a-z0-9\s]/g, "").slice(0, 100);
+}
+
+function getTopicKey(category: string, topic: string): string {
+  return `${category}:${topic.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+}
+
 async function generateQuestions(
   topic: string,
   category: "aptitude" | "reasoning" | "mcqs",
   count: number = 10,
-  difficulty?: string
+  difficulty?: string,
+  userId?: string,
+  existingQuestionTexts: Set<string> = new Set()
 ): Promise<PlacementQuestion[]> {
+  // Build combined set of existing questions (topic-level + user-level)
+  const topicKey = getTopicKey(category, topic);
+  const topicQuestions = topicQuestionHistory.get(topicKey) || new Set<string>();
+  const userSeenQuestions = userId ? (userQuestionHistory.get(userId) || []) : [];
+  
+  const allExistingTexts = new Set([
+    ...existingQuestionTexts,
+    ...Array.from(topicQuestions),
+    ...userSeenQuestions
+  ]);
+
+  console.log(`[Placement] Generating ${count} questions for ${topic} (${category})`);
+  console.log(`[Placement] Found ${allExistingTexts.size} existing questions to avoid duplicates`);
+
   const categoryLabel =
     category === "aptitude" ? "Quantitative Aptitude" :
     category === "reasoning" ? "Logical Reasoning" :
@@ -102,11 +130,33 @@ async function generateQuestions(
     ? `All questions should be at "${difficulty}" difficulty level.`
     : `Mix difficulty levels: 30% easy, 50% medium, 20% hard.`;
 
+  // Prepare existing question snippets for AI context (max 30)
+  const existingSnippets = Array.from(allExistingTexts)
+    .slice(0, 30)
+    .map((q, i) => `${i + 1}. ${q.slice(0, 80)}...`)
+    .join("\n");
+
+  const antiDuplicationContext = allExistingTexts.size > 0
+    ? `\n\n⚠️ CRITICAL ANTI-DUPLICATION REQUIREMENT ⚠️
+${allExistingTexts.size} questions have ALREADY been used in previous ${topic} tests or by this user.
+
+EXISTING QUESTIONS TO AVOID (first 30 shown):
+${existingSnippets}
+
+YOU MUST NOT generate questions that:
+- Use similar wording or phrasing
+- Test the same specific concepts or scenarios
+- Have similar numerical values or examples
+- Repeat any patterns from above questions
+
+GENERATE COMPLETELY FRESH, UNIQUE QUESTIONS with new scenarios, different numerical patterns, and varied conceptual approaches.`
+    : "";
+
   const systemPrompt = `You are an expert placement preparation question setter for Indian IT company campus placements (TCS, Infosys, Wipro, Cognizant, HCL, etc.).
 Generate high-quality, exam-relevant ${categoryLabel} questions on the topic "${topic}".
 ${diffInstruction}
 Each question must have exactly 4 options with exactly ONE correct answer.
-Include a clear explanation and an optional shortcut/trick where applicable.`;
+Include a clear explanation and an optional shortcut/trick where applicable.${antiDuplicationContext}`;
 
   const userPrompt = `Generate exactly ${count} ${categoryLabel} multiple-choice questions on "${topic}".
 
@@ -184,7 +234,7 @@ Rules:
 
     if (!Array.isArray(result) || result.length === 0) return fallback;
 
-    return result.slice(0, count).map((q, i) => ({
+    const generatedQuestions = result.slice(0, count).map((q, i) => ({
       id: `ai-${Date.now()}-${i}`,
       text: q.text || `${topic} question ${i + 1}`,
       options: q.options?.length === 4 ? q.options : ["A", "B", "C", "D"],
@@ -195,6 +245,35 @@ Rules:
       category,
       difficulty: (q.difficulty as any) || "medium",
     }));
+
+    // Filter out duplicates post-generation
+    const uniqueQuestions = generatedQuestions.filter(q => {
+      const normalized = normalizeQuestionText(q.text);
+      return !allExistingTexts.has(normalized);
+    });
+
+    console.log(`[Placement] Generated ${generatedQuestions.length} questions, ${uniqueQuestions.length} unique after filtering`);
+
+    // Update topic history
+    uniqueQuestions.forEach(q => {
+      const normalized = normalizeQuestionText(q.text);
+      topicQuestions.add(normalized);
+    });
+    topicQuestionHistory.set(topicKey, topicQuestions);
+
+    // Update user history if userId provided
+    if (userId) {
+      const userHistory = userQuestionHistory.get(userId) || [];
+      uniqueQuestions.forEach(q => {
+        const normalized = normalizeQuestionText(q.text);
+        userHistory.push(normalized);
+      });
+      // Keep only last 100 questions per user
+      userQuestionHistory.set(userId, userHistory.slice(-100));
+      console.log(`[Placement] Updated user ${userId} history: ${userQuestionHistory.get(userId)?.length || 0} questions tracked`);
+    }
+
+    return uniqueQuestions.length > 0 ? uniqueQuestions : fallback;
   } catch (error) {
     console.warn(`[Placement] AI question generation failed for ${topic}:`, error);
     return fallback;
@@ -217,9 +296,10 @@ export async function startPracticeSession(
   topic: string,
   category: "aptitude" | "reasoning" | "mcqs",
   count: number = 10,
-  difficulty?: string
+  difficulty?: string,
+  userId?: string
 ): Promise<{ session: any; questions: PlacementQuestion[] }> {
-  const questions = await generateQuestions(topic, category, count, difficulty);
+  const questions = await generateQuestions(topic, category, count, difficulty, userId);
 
   const session = {
     id: `session-${Date.now()}`,
@@ -239,15 +319,24 @@ export async function startPracticeSession(
 
 export async function generateMockTest(
   company: string,
-  sections: { name: string; topic: string; questionCount: number }[]
+  sections: { name: string; topic: string; questionCount: number }[],
+  userId?: string
 ): Promise<MockTest> {
+  const allExistingTexts = new Set<string>();
+
   const generatedSections = await Promise.all(
     sections.map(async (s) => {
       const category = s.name.toLowerCase().includes("aptitude") ? "aptitude" as const
         : s.name.toLowerCase().includes("reasoning") ? "reasoning" as const
         : "mcqs" as const;
 
-      const questions = await generateQuestions(s.topic, category, s.questionCount);
+      const questions = await generateQuestions(s.topic, category, s.questionCount, undefined, userId, allExistingTexts);
+      
+      // Add generated questions to avoid cross-section duplicates
+      questions.forEach(q => {
+        allExistingTexts.add(normalizeQuestionText(q.text));
+      });
+
       return { name: s.name, questions };
     })
   );

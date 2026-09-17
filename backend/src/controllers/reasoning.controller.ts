@@ -62,13 +62,20 @@ export async function handleGetQuestions(req: Request, res: Response): Promise<v
 
 export async function handleGenerateAIQuestions(req: Request, res: Response): Promise<void> {
   try {
+    const userId = req.user?.userId || "guest";
     const { prompt, topic, company, count, difficulty } = req.body || {};
     if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
       res.status(400).json({ success: false, error: "Prompt is required to generate AI questions" });
       return;
     }
 
-    const questions = await generateAIQuestions(prompt, { topic, company, count: Number(count) || 5, difficulty });
+    const questions = await generateAIQuestions(prompt, { 
+      topic, 
+      company, 
+      count: Number(count) || 5, 
+      difficulty,
+      userId 
+    });
     res.json({ success: true, count: questions.length, questions });
   } catch (error: any) {
     handleRouteError(res, error, "Reasoning.aiQuestions", "Failed to generate AI questions");

@@ -28,6 +28,7 @@ export async function getPlacementTopics(_req: Request, res: Response, next: Nex
  */
 export async function startPractice(req: Request, res: Response, next: NextFunction) {
   try {
+    const userId = requireUserId(req);
     const { topic, category, count, difficulty } = req.body;
 
     if (!topic || !category) {
@@ -41,7 +42,8 @@ export async function startPractice(req: Request, res: Response, next: NextFunct
       topic,
       category,
       Math.min(Number(count) || 10, 30),
-      difficulty
+      difficulty,
+      userId
     );
 
     res.json({ success: true, ...result });
@@ -109,6 +111,7 @@ export async function getPracticeHistory(req: Request, res: Response, next: Next
  */
 export async function createMockTest(req: Request, res: Response, next: NextFunction) {
   try {
+    const userId = requireUserId(req);
     const { company, sections } = req.body;
 
     if (!company) {
@@ -121,7 +124,7 @@ export async function createMockTest(req: Request, res: Response, next: NextFunc
       { name: "Technical", topic: "Data Structures", questionCount: 10 },
     ];
 
-    const mockTest = await generateMockTest(company, defaultSections);
+    const mockTest = await generateMockTest(company, defaultSections, userId);
     res.json({ success: true, mockTest });
   } catch (error) {
     next(error);

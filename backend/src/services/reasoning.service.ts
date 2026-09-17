@@ -66,6 +66,26 @@ const userProgressStore: Record<string, {
   strongTopics: Record<string, number>;
 }> = {};
 
+// ============================================================================
+// ANTI-DUPLICATION TRACKING
+// ============================================================================
+
+// User-level question tracking (last 100 questions per user)
+const userQuestionHistory = new Map<string, string[]>(); // userId -> question texts
+
+// Topic/Company-level question tracking
+const topicQuestionHistory = new Map<string, Set<string>>(); // "topic:company" -> question texts
+
+function normalizeQuestionText(text: string): string {
+  return text.toLowerCase().trim().replace(/[^a-z0-9\s]/g, "").slice(0, 100);
+}
+
+function getTopicKey(topic: string, company?: string): string {
+  const t = topic.toLowerCase().replace(/[^a-z0-9]/g, "-");
+  const c = company ? company.toLowerCase().replace(/[^a-z0-9]/g, "-") : "general";
+  return `${t}:${c}`;
+}
+
 function getUserState(userId: string) {
   if (!userProgressStore[userId]) {
     userProgressStore[userId] = {
@@ -319,9 +339,51 @@ export async function getQuestions(filters: {
   };
 }
 
-export async function generateAIQuestions(promptText: string, options?: { topic?: string; company?: string; count?: number; difficulty?: string }): Promise<ReasoningQuestion[]> {
+export async function generateAIQuestions(
+  promptText: string,
+  options?: { topic?: string; company?: string; count?: number; difficulty?: string; userId?: string }
+): Promise<ReasoningQuestion[]> {
   const count = options?.count || 5;
-  const systemPrompt = `You are an expert AI Reasoning Coach for Adyapan AI. Generate ${count} placement-grade logical reasoning practice questions based on the user prompt: "${promptText}".
+  const topic = options?.topic || "Logical Reasoning";
+  const company = options?.company;
+  
+  // Build combined set of existing questions (topic-level + user-level)
+  const topicKey = getTopicKey(topic, company);
+  const topicQuestions = topicQuestionHistory.get(topicKey) || new Set<string>();
+  const userSeenQuestions = options?.userId ? (userQuestionHistory.get(options.userId) || []) : [];
+  
+  const allExistingTexts = new Set([
+    ...Array.from(topicQuestions),
+    ...userSeenQuestions,
+    ...SEED_QUESTIONS.map(q => normalizeQuestionText(q.question))
+  ]);
+
+  console.log(`[Reasoning] Generating ${count} questions for ${topic}${company ? ` (${company})` : ""}`);
+  console.log(`[Reasoning] Found ${allExistingTexts.size} existing questions to avoid duplicates`);
+
+  // Prepare existing question snippets for AI context (max 30)
+  const existingSnippets = Array.from(allExistingTexts)
+    .slice(0, 30)
+    .map((q, i) => `${i + 1}. ${q.slice(0, 80)}...`)
+    .join("\n");
+
+  const antiDuplicationContext = allExistingTexts.size > 0
+    ? `\n\n⚠️ CRITICAL ANTI-DUPLICATION REQUIREMENT ⚠️
+${allExistingTexts.size} questions have ALREADY been used in previous ${topic} tests or by this user.
+
+EXISTING QUESTIONS TO AVOID (first 30 shown):
+${existingSnippets}
+
+YOU MUST NOT generate questions that:
+- Use similar wording or phrasing
+- Test the same specific concepts or scenarios
+- Have similar problem structures or patterns
+- Repeat any patterns from above questions
+
+GENERATE COMPLETELY FRESH, UNIQUE QUESTIONS with new scenarios, different problem structures, and varied conceptual approaches.`
+    : "";
+
+  const systemPrompt = `You are an expert AI Reasoning Coach for Adyapan AI. Generate ${count} placement-grade logical reasoning practice questions based on the user prompt: "${promptText}".${antiDuplicationContext}
 Output ONLY valid JSON in the exact array format below:
 [
   {
@@ -350,7 +412,7 @@ Output ONLY valid JSON in the exact array format below:
 
     const parsed: any[] = JSON.parse(cleaned);
 
-    const generated: ReasoningQuestion[] = parsed.map((item, idx) => {
+    const generatedQuestions: ReasoningQuestion[] = parsed.map((item, idx) => {
       const correctIdx = typeof item.correctIdx === "number" ? item.correctIdx : 0;
       const opts = Array.isArray(item.options) && item.options.length >= 4 ? item.options : ["Option A", "Option B", "Option C", "Option D"];
       const correctAns = item.correctAnswer || opts[correctIdx];
@@ -373,9 +435,37 @@ Output ONLY valid JSON in the exact array format below:
       };
     });
 
+    // Filter out duplicates post-generation
+    const uniqueQuestions = generatedQuestions.filter(q => {
+      const normalized = normalizeQuestionText(q.question);
+      return !allExistingTexts.has(normalized);
+    });
+
+    console.log(`[Reasoning] Generated ${generatedQuestions.length} questions, ${uniqueQuestions.length} unique after filtering`);
+
+    // Update topic history
+    uniqueQuestions.forEach(q => {
+      const normalized = normalizeQuestionText(q.question);
+      topicQuestions.add(normalized);
+    });
+    topicQuestionHistory.set(topicKey, topicQuestions);
+
+    // Update user history if userId provided
+    if (options?.userId) {
+      const userHistory = userQuestionHistory.get(options.userId) || [];
+      uniqueQuestions.forEach(q => {
+        const normalized = normalizeQuestionText(q.question);
+        userHistory.push(normalized);
+      });
+      // Keep only last 100 questions per user
+      userQuestionHistory.set(options.userId, userHistory.slice(-100));
+      console.log(`[Reasoning] Updated user ${options.userId} history: ${userQuestionHistory.get(options.userId)?.length || 0} questions tracked`);
+    }
+
     // Save to seed questions memory pool
-    SEED_QUESTIONS.unshift(...generated);
-    return generated;
+    SEED_QUESTIONS.unshift(...uniqueQuestions);
+    
+    return uniqueQuestions.length > 0 ? uniqueQuestions : SEED_QUESTIONS.slice(0, count);
   } catch (error) {
     console.error("[ReasoningService] AI Question Generation Error, falling back to cached template:", error);
     return SEED_QUESTIONS.slice(0, count);
