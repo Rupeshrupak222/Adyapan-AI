@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { handleRouteError } from "../utils/routeError";
+import { getUserPrismaFromRequest } from "../utils/prisma";
 import {
   getTopics,
   getCompanies,
@@ -78,7 +79,9 @@ export async function handleGetTests(req: Request, res: Response): Promise<void>
 export async function handleGetTestById(req: Request, res: Response): Promise<void> {
   try {
     const testId = String(req.params.testId || "");
-    const test = await getTestById(testId);
+    const userId = req.user?.userId || "guest";
+    const userPrisma = userId && userId !== "guest" ? await getUserPrismaFromRequest(req) : undefined;
+    const test = await getTestById(testId, userPrisma, userId);
     if (!test) {
       res.status(404).json({ success: false, error: "Test not found" });
       return;
@@ -101,7 +104,8 @@ export async function handleGetQuestions(req: Request, res: Response): Promise<v
     const page = req.query.page ? Number(req.query.page) : 1;
     const limit = req.query.limit ? Number(req.query.limit) : 15;
 
-    const data = await getQuestions({ technology, category, company, difficulty, search, testId, page, limit, userId });
+    const userPrisma = userId && userId !== "guest" ? await getUserPrismaFromRequest(req) : undefined;
+    const data = await getQuestions({ technology, category, company, difficulty, search, testId, page, limit, userId, userPrisma });
     res.json({ success: true, ...data });
   } catch (error: any) {
     handleRouteError(res, error, "Mcq.questions", "Failed to fetch questions");
@@ -118,7 +122,7 @@ export async function handleSubmitAttempt(req: Request, res: Response): Promise<
       return;
     }
 
-    const result = await submitAttempt(userId, { questionId, selectedIdx, timeTakenSeconds });
+    const result = await submitAttempt(userId, { questionId, selectedIdx, timeTakenSeconds }, userId !== "guest" ? await getUserPrismaFromRequest(req) : undefined);
     res.json({ success: true, result });
   } catch (error: any) {
     handleRouteError(res, error, "Mcq.submit", "Failed to submit answer");

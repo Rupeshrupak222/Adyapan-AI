@@ -23,6 +23,7 @@ import SessionReviewComponent from "./SessionReview";
 import AptitudeAnalytics from "./AptitudeAnalytics";
 import CompanyLogo from "@/components/interview-hub/CompanyLogo";
 import { PlacementImpactCard } from "@/components/placement-hub/PlacementImpactCard";
+import { countSessionDuplicates } from "@/lib/questions";
 import type {
   AptitudeQuestion, AptitudeCategory, TestMode, AptitudeSession,
   AptitudeAnswer, SessionProgress, PerformanceAnalytics,
@@ -229,6 +230,13 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
       });
       if (data.success && data.session) {
         quota.onSuccess();
+        // Diagnostic only: aptitude grading is index-based on the server, so the
+        // client must not reorder/drop questions here. Backend dedup guarantees
+        // uniqueness; this merely surfaces any regression.
+        const dupCount = countSessionDuplicates(data.session.questions || []);
+        if (dupCount > 0) {
+          console.warn(`[Aptitude] Session ${data.session.id} returned ${dupCount} duplicate question(s).`);
+        }
         setSession(data.session);
         const timeLimit = (mode === "timed_quiz" || mode === "company_test")
           ? (data.session.totalQuestions * 90 * 1000)
@@ -261,6 +269,10 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     try {
       const { data } = await api.post("/aptitude/daily-challenge");
       if (data.success && data.session) {
+        const dupCount = countSessionDuplicates(data.session.questions || []);
+        if (dupCount > 0) {
+          console.warn(`[Aptitude] Daily challenge session ${data.session.id} returned ${dupCount} duplicate question(s).`);
+        }
         setSession(data.session);
         setProgress({
           currentIdx: 0, answers: [], timeElapsed: 0, timeRemaining: data.session.totalQuestions * 60 * 1000,

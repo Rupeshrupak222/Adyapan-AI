@@ -1,4 +1,5 @@
 import { generateJSON, generateText, MODELS } from "../lib/ai/openrouter";
+import { filterQuestionsAgainstSeen, sanitizeGeneratedQuestions, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
 
 // ============================================================================
 // TYPES
@@ -563,7 +564,19 @@ Rules:
       remaining -= batchSize;
     }
 
-    return allGenerated.length > 0 ? allGenerated.slice(0, count) : fallback;
+    const existingSeen = seenRegistryFromTexts(existingQuestionTexts || []);
+    let uniqueQuestions = filterQuestionsAgainstSeen(allGenerated, existingSeen);
+
+    const { valid: sanitized } = sanitizeGeneratedQuestions(uniqueQuestions);
+    uniqueQuestions = sanitized;
+
+    if (uniqueQuestions.length < count) {
+      const mergedSeen = seenRegistryFromTexts([...uniqueQuestions.map((q) => q.text), ...(existingQuestionTexts || [])]);
+      const extra = filterQuestionsAgainstSeen(fallback, mergedSeen).slice(0, count - uniqueQuestions.length);
+      uniqueQuestions = uniqueQuestions.concat(extra);
+    }
+
+    return uniqueQuestions.length > 0 ? uniqueQuestions.slice(0, count) : fallback;
   } catch (error) {
     console.warn(`[AptitudeEngine] AI question generation failed for topic="${topic}":`, error);
     return fallback;
@@ -741,7 +754,7 @@ export async function generateAdaptiveQuestions(params: AdaptiveParams): Promise
   return allQuestions.slice(0, count);
 }
 
-export async function generateDailyChallenge(): Promise<DailyChallenge> {
+export async function generateDailyChallenge(existingQuestionTexts?: Set<string>): Promise<DailyChallenge> {
   const today = new Date();
   const dateStr = today.toISOString().split("T")[0];
 
@@ -756,7 +769,7 @@ export async function generateDailyChallenge(): Promise<DailyChallenge> {
   const allQuestions: GeneratedQuestion[] = [];
 
   for (const { topic, category } of mixedTopics) {
-    const generated = await aiGenerateQuestions(topic, category, 2, "medium", []);
+    const generated = await aiGenerateQuestions(topic, category, 2, "medium", [], undefined, existingQuestionTexts);
     allQuestions.push(...generated);
   }
 

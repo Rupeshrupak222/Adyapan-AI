@@ -3,6 +3,10 @@ import { httpError } from "../utils/httpError";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { requireUserId } from "../utils/request";
 import {
+  filterQuestionsAgainstSeen,
+  seenRegistryFromTexts,
+} from "../lib/questions/question-fingerprint";
+import {
   getAptitudeCategories,
   getCompanyPresets,
   generateAptitudeQuestions,
@@ -19,6 +23,12 @@ import {
   getTopicTestByIdFromDb,
   generateWeeklyTopicTest,
 } from "../services/aptitude-test-bank.service";
+import {
+  APTITUDE_SOURCE,
+  getUserSeenState,
+  recordSeenQuestions,
+  selectQuestionsForUser,
+} from "../services/question-dedup.service";
 
 /**
  * 1. Get all aptitude categories with topics
@@ -155,6 +165,19 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
       }
     }
 
+    // Full per-user history (persistent across restarts) for anti-repetition
+    const userSeenState = await getUserSeenState(userPrisma, userId, APTITUDE_SOURCE);
+
+    // Re-rank questions picked from the DB bank: guarantee NO duplicate looks
+    // within this assessment, prefer unseen questions, and pull
+    // least-recently-seen only to fill back to the full batch.
+    if (questions && questions.length > 0) {
+      const withinSession = filterQuestionsAgainstSeen(questions, seenRegistryFromTexts([]));
+      const selection = withinSession.length > 0 ? withinSession : questions;
+      const { questions: ranked } = selectQuestionsForUser(selection, userSeenState, selection.length);
+      if (ranked.length > 0) questions = ranked;
+    }
+
     if (!questions || questions.length === 0) {
       // Fetch user's previously seen questions to avoid duplicates
       let existingQuestionTexts: Set<string> | undefined;
@@ -175,6 +198,10 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
               }
             }
           }
+        }
+        // Merge full persistent fingerprint history (prefix-stripped, normalized)
+        for (const text of userSeenState.recentTexts) {
+          existingQuestionTexts.add(text);
         }
         console.log(`[AptitudeEngine] Found ${existingQuestionTexts.size} existing questions for user ${userId}`);
       } catch (err) {
@@ -252,6 +279,18 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
         strongTopics: [],
         startedAt: new Date(),
       },
+    });
+
+    // Persist this session's questions into the user's fingerprint history
+    await recordSeenQuestions(userPrisma, {
+      userId,
+      source: APTITUDE_SOURCE,
+      questions: questions as any[],
+      sessionId: session.id,
+      topic: (topic as string) || null,
+      company: (company as string) || null,
+      category: (category as string) || null,
+      difficulty: sessionDifficulty,
     });
 
     res.json({
@@ -873,7 +912,10 @@ export async function getDailyChallenge(req: Request, res: Response, next: NextF
       });
     }
 
-    const challenge = await generateDailyChallenge();
+    const userSeenState = await getUserSeenState(userPrisma, userId, APTITUDE_SOURCE);
+    const existingQuestionTexts =
+      userSeenState.recentTexts.length > 0 ? new Set(userSeenState.recentTexts) : undefined;
+    const challenge = await generateDailyChallenge(existingQuestionTexts);
 
     const session = await userPrisma.aptitudeSession.create({
       data: {
@@ -897,6 +939,16 @@ export async function getDailyChallenge(req: Request, res: Response, next: NextF
         reportJson: { dailyChallengeId: challenge.id, rewardPoints: challenge.rewardPoints } as any,
         startedAt: new Date(),
       },
+    });
+
+    await recordSeenQuestions(userPrisma, {
+      userId,
+      source: APTITUDE_SOURCE,
+      questions: challenge.questions as any[],
+      sessionId: session.id,
+      topic: "Daily Challenge",
+      category: null,
+      difficulty: "medium",
     });
 
     res.json({

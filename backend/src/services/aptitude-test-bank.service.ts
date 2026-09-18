@@ -1,5 +1,6 @@
 import { masterPrisma, getUserPrismaFromRequest } from "../utils/prisma";
 import { generateAptitudeQuestions, type AptitudeCategory, type Difficulty, type GeneratedQuestion } from "./aptitude-engine.service";
+import { dedupInfoFromQuestion, isTextSeen, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
 
 /**
  * Interface for stored topic test summary
@@ -565,30 +566,28 @@ export async function generateWeeklyTopicTest(
   }
 
   // Filter out any duplicate questions that already existed in previous tests
-  let uniqueQuestions = questions.filter(q => !existingQuestionTexts.has(q.text.toLowerCase().trim()));
+  // (prefix-stripped, template + similarity aware)
+  const existingSeen = seenRegistryFromTexts(existingQuestionTexts);
+  const keptFingerprints = new Set<string>();
 
-  // Fill up to 30 with fallback seeded questions for nextTestNum if needed
-  if (uniqueQuestions.length < 30) {
-    const fallbackQs = generateDefaultTopicTestQuestions(normalizedTopic, normalizedCategory, nextTestNum);
-    for (const fq of fallbackQs) {
-      if (uniqueQuestions.length >= 30) break;
-      const cleanFq = fq.text.toLowerCase().trim();
-      if (!existingQuestionTexts.has(cleanFq) && !uniqueQuestions.some(uq => uq.text.toLowerCase().trim() === cleanFq)) {
-        uniqueQuestions.push(fq);
-      }
-    }
-  }
+  const isAccepted = (q: GeneratedQuestion): boolean => {
+    if (isTextSeen(q.text, existingSeen)) return false;
+    const d = dedupInfoFromQuestion(q);
+    if (!d.fingerprint || keptFingerprints.has(d.fingerprint)) return false;
+    keptFingerprints.add(d.fingerprint);
+    return true;
+  };
 
-  // Guaranteed offset seed loop to guarantee 30 100% unique questions
+  let uniqueQuestions = questions.filter(isAccepted);
+
+  // Fill up to 30 with deterministic seeded questions (each offset varies the
+  // embedded numbers; identical-exact and previously-seen questions are blocked)
   let offsetSeed = nextTestNum + 100;
-  while (uniqueQuestions.length < 30) {
+  for (let guard = 0; uniqueQuestions.length < 30 && guard < 40; guard++) {
     const fallbackQs = generateDefaultTopicTestQuestions(normalizedTopic, normalizedCategory, offsetSeed++);
     for (const fq of fallbackQs) {
       if (uniqueQuestions.length >= 30) break;
-      const cleanFq = fq.text.toLowerCase().trim();
-      if (!existingQuestionTexts.has(cleanFq) && !uniqueQuestions.some(uq => uq.text.toLowerCase().trim() === cleanFq)) {
-        uniqueQuestions.push(fq);
-      }
+      if (isAccepted(fq)) uniqueQuestions.push(fq);
     }
   }
 

@@ -22,6 +22,7 @@ import { api } from "@/services/api";
 import CompanyLogo from "@/components/interview-hub/CompanyLogo";
 import { useFeatureQuota } from "@/hooks/useFeatureQuota";
 import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
+import { dedupeSessionQuestions } from "@/lib/questions";
 
 // ─── Animation Variants ─────────────────────────────────────────────────────
 
@@ -825,8 +826,20 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
         finalQs = generateLocalDomainQuestions(test.targetName, test.targetType, test.testNumber, 15);
       }
 
+      // Client-side safety net: never show an exact or re-numbered duplicate in
+      // this assessment, even if the server response contains one. Submissions
+      // are keyed by questionId, so dropping dupes is index-safe.
+      let safeQs = dedupeSessionQuestions(finalQs);
+      let fillSeed = (test.testNumber || 1) + 100;
+      let guard = 0;
+      while (safeQs.length < 15 && guard < 40) {
+        const batch = generateLocalDomainQuestions(test.targetName, test.targetType, fillSeed++, 15);
+        safeQs = dedupeSessionQuestions([...safeQs, ...batch]);
+        guard++;
+      }
+
       // Ensure exact 15 questions
-      const exactQuestions = finalQs.slice(0, 15);
+      const exactQuestions = safeQs.slice(0, 15);
 
       setQuestions(exactQuestions);
       setSessionConfig({

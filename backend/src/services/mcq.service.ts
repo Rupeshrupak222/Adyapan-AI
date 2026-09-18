@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { generateText, MODELS } from "../lib/ai/openrouter";
+import { dedupInfoFromQuestion, filterQuestionsAgainstSeen, seenRegistryFromTexts, sanitizeGeneratedQuestions } from "../lib/questions/question-fingerprint";
+import { getUserSeenState, recordSeenQuestions, selectQuestionsForUser, MCQ_SOURCE } from "./question-dedup.service";
 
 // ─── Interfaces ─────────────────────────────────────────────────────────────
 
@@ -145,8 +147,12 @@ export const DEFAULT_COMPANIES: MCQCompany[] = [
 // ─── Question Deduplication & Anti-Repetition Registry ───────────────────────
 
 function normalizeQuestionSignature(qText: string, snippet?: string): string {
-  const combined = `${qText} ${snippet || ""}`.toLowerCase().replace(/[^a-z0-9]/g, "");
-  return combined.slice(0, 80);
+  return dedupInfoFromQuestion({ question: qText, codeSnippet: snippet }).fingerprint;
+}
+
+function questionDedupKeys(questionText: string, snippet?: string): { fingerprint: string; template: string } {
+  const d = dedupInfoFromQuestion({ question: questionText, codeSnippet: snippet });
+  return { fingerprint: d.fingerprint, template: d.templateFingerprint };
 }
 
 function getSeedHash(str: string): number {
@@ -176,7 +182,36 @@ function shuffleWithOptions(correctVal: string, distractors: string[], targetIdx
 
 const STORAGE_FILE = path.join(__dirname, "../../data/mcq-tests-store.json");
 const testMap = new Map<string, MCQTest>();
-const globalSeenSignatures = new Set<string>();
+const globalSeenPerTarget = new Map<string, { signatures: Set<string>; templates: Map<string, number> }>();
+
+function addSeenSignature(targetId: string, keys: { fingerprint: string; template: string }, testNumber: number): void {
+  if (!keys.fingerprint) return;
+  let reg = globalSeenPerTarget.get(targetId);
+  if (!reg) {
+    reg = { signatures: new Set(), templates: new Map() };
+    globalSeenPerTarget.set(targetId, reg);
+  }
+  reg.signatures.add(keys.fingerprint);
+  if (keys.template) {
+    reg.templates.set(keys.template, testNumber);
+  }
+}
+
+function isSeenForTarget(
+  targetId: string,
+  keys: { fingerprint: string; template: string },
+  testNumber: number,
+  templateCooldownTests: number
+): boolean {
+  const reg = globalSeenPerTarget.get(targetId);
+  if (!reg) return false;
+  if (keys.fingerprint && reg.signatures.has(keys.fingerprint)) return true;
+  if (keys.template) {
+    const lastUsed = reg.templates.get(keys.template);
+    if (lastUsed !== undefined && testNumber - lastUsed < templateCooldownTests) return true;
+  }
+  return false;
+}
 
 function loadTestsFromDisk(): boolean {
   try {
@@ -185,11 +220,11 @@ function loadTestsFromDisk(): boolean {
       const list: MCQTest[] = JSON.parse(data);
       if (Array.isArray(list) && list.length >= 52) {
         testMap.clear();
-        globalSeenSignatures.clear();
+        globalSeenPerTarget.clear();
         for (const t of list) {
           testMap.set(t.id, t);
           for (const q of t.questions) {
-            globalSeenSignatures.add(normalizeQuestionSignature(q.question, q.codeSnippet));
+            addSeenSignature(t.targetId, questionDedupKeys(q.question, q.codeSnippet), t.testNumber);
           }
         }
         return true;
@@ -489,12 +524,14 @@ export function generateTestQuestionsWithAntiRepetition(
   const questions: MCQQuestion[] = [];
   const baseSeed = getSeedHash(`${targetId.toUpperCase()}-T${testNumber}-${targetType}`);
   const localSeen = new Set<string>();
+  const localTemplates = new Set<string>();
+  const cooldownTests = Math.max(2, Math.min(4, Math.ceil(10 / Math.max(1, count))));
 
   for (let i = 1; i <= count; i++) {
     let attempt = 0;
     let questionObj: MCQQuestion | null = null;
 
-    while (attempt < 20) {
+    while (attempt < 40) {
       const qSeed = baseSeed + i * 239 + (testNumber - 1) * 1109 + attempt * 53;
       const correctIdx = (qSeed + i * 3 + attempt) % 4;
       const diffLabel: "Easy" | "Medium" | "Hard" =
@@ -510,11 +547,17 @@ export function generateTestQuestionsWithAntiRepetition(
 
       // Customize statement with target name, test number, and unique question number
       const qStatement = `[${targetName} • Test ${testNumber} • Q${i}] ${def.question.replace(/^\[.*?\]\s*/, "")}`;
-      const sig = normalizeQuestionSignature(qStatement, def.codeSnippet);
+      const keys = questionDedupKeys(qStatement, def.codeSnippet);
 
-      if (!localSeen.has(sig) && !globalSeenSignatures.has(sig)) {
-        localSeen.add(sig);
-        globalSeenSignatures.add(sig);
+      if (
+        keys.fingerprint &&
+        !localSeen.has(keys.fingerprint) &&
+        !localTemplates.has(keys.template) &&
+        !isSeenForTarget(targetId, keys, testNumber, cooldownTests)
+      ) {
+        localSeen.add(keys.fingerprint);
+        localTemplates.add(keys.template);
+        addSeenSignature(targetId, keys, testNumber);
 
         const opts = shuffleWithOptions(def.correct, def.distractors, correctIdx);
 
@@ -546,6 +589,10 @@ export function generateTestQuestionsWithAntiRepetition(
     }
   }
 
+  if (questions.length < count) {
+    console.warn(`[MCQ] Deterministic pool exhausted: ${questions.length}/${count} unique questions for ${targetName} Test ${testNumber}.`);
+  }
+
   return questions;
 }
 
@@ -554,7 +601,7 @@ export function generateTestQuestionsWithAntiRepetition(
 export function initializeTestStore(): void {
   // Clear any partial data
   testMap.clear();
-  globalSeenSignatures.clear();
+  globalSeenPerTarget.clear();
 
   if (loadTestsFromDisk() && testMap.size >= 52) {
     console.log(`[MCQ] Loaded ${testMap.size} dynamic tests from disk.`);
@@ -693,7 +740,7 @@ export async function getTestsForTarget(targetIdOrName: string): Promise<MCQTest
   return matches.sort((a, b) => a.testNumber - b.testNumber);
 }
 
-export async function getTestById(testId: string): Promise<MCQTest | null> {
+async function findTestById(testId: string): Promise<MCQTest | null> {
   if (testMap.has(testId)) return testMap.get(testId)!;
 
   const norm = testId.toLowerCase().trim();
@@ -740,6 +787,42 @@ export async function getTestById(testId: string): Promise<MCQTest | null> {
   }
 
   return null;
+}
+
+export async function getTestById(
+  testId: string,
+  userPrisma?: any,
+  userId?: string
+): Promise<MCQTest | null> {
+  const test = await findTestById(testId);
+  if (!test) return null;
+
+  // Per-user session view: guarantee NO duplicates within this assessment and
+  // bias the order toward questions the user has never seen before.
+  if (userPrisma && userId && userId !== "guest") {
+    try {
+      const withinSession = filterQuestionsAgainstSeen(test.questions, seenRegistryFromTexts([]));
+      if (withinSession.length > 0) {
+        const state = await getUserSeenState(userPrisma, userId, MCQ_SOURCE, {
+          companies: test.targetType === "company" ? [test.targetName] : undefined,
+        });
+        const { questions } = selectQuestionsForUser(withinSession, state, withinSession.length);
+        const deduped = { ...test, questions, questionCount: questions.length };
+        await recordSeenQuestions(userPrisma, {
+          userId,
+          source: MCQ_SOURCE,
+          questions,
+          company: test.targetType === "company" ? test.targetName : undefined,
+          topic: test.targetType === "technology" ? test.targetName : undefined,
+        });
+        return deduped;
+      }
+    } catch (err) {
+      console.warn("[MCQ] getTestById user dedup failed:", (err as Error)?.message || err);
+    }
+  }
+
+  return test;
 }
 
 export async function getAllTests(): Promise<MCQTest[]> {
@@ -926,16 +1009,20 @@ Return ONLY a valid JSON array of question objects:
       cleaned = cleaned.replace(/^```/, "").replace(/```$/, "").trim();
     }
     const parsed: any[] = JSON.parse(cleaned);
-    
-    // Filter out any duplicates that slipped through
-    const uniqueParsed = parsed.filter(item => {
-      const questionText = (item.question || "").toLowerCase().trim();
-      return !existingQuestionTexts.has(questionText);
-    });
-    
+
+    // Deduplicate against every existing question (normalized + template + similarity aware)
+    const aiSeen = seenRegistryFromTexts(existingQuestionTexts);
+    let uniqueParsed = filterQuestionsAgainstSeen(parsed, aiSeen);
+
     if (uniqueParsed.length < parsed.length) {
       console.log(`[MCQ] Filtered out ${parsed.length - uniqueParsed.length} duplicate questions from AI response`);
     }
+
+    const { valid: sanitized, rejected } = sanitizeGeneratedQuestions(uniqueParsed);
+    if (rejected.length > 0) {
+      console.log(`[MCQ] Dropped ${rejected.length} structurally invalid AI questions`);
+    }
+    uniqueParsed = sanitized;
     
     questions = uniqueParsed.map((item, idx) => ({
       id: `ai-${input.targetId}-t${nextTestNum}-q${idx + 1}-${Date.now()}`,
@@ -1061,10 +1148,15 @@ export async function getMCQOverview() {
   const techTests = allTests.filter((t) => t.targetType === "technology");
   const companyTests = allTests.filter((t) => t.targetType === "company");
 
+  const uniqueQuestionSignatures = Array.from(globalSeenPerTarget.values()).reduce(
+    (sum, entry) => sum + entry.signatures.size,
+    0
+  );
+
   return {
     totalTests: allTests.length,
     totalQuestions,
-    uniqueQuestionSignatures: globalSeenSignatures.size,
+    uniqueQuestionSignatures,
     technologiesCount: DEFAULT_TECHNOLOGIES.length,
     companiesCount: DEFAULT_COMPANIES.length,
     technologyTestsCount: techTests.length,
@@ -1074,7 +1166,7 @@ export async function getMCQOverview() {
 
 // ─── Legacy & Compatibility Helper Endpoints ────────────────────────────────
 
-export async function getQuestions(filter: {
+export interface GetQuestionsFilter {
   technology?: string;
   category?: string;
   company?: string;
@@ -1084,39 +1176,85 @@ export async function getQuestions(filter: {
   page?: number;
   limit?: number;
   userId?: string;
-}): Promise<{ total: number; questions: MCQQuestion[] }> {
+  userPrisma?: any;
+}
+
+export async function getQuestions(filter: GetQuestionsFilter): Promise<{ total: number; questions: MCQQuestion[]; reuseCount: number }> {
+  const limitActual = Math.min(Math.max(filter.limit || 15, 1), 100);
+  const hasUser = !!(filter.userId && filter.userId !== "guest" && filter.userPrisma);
+
   if (filter.testId) {
     const test = testMap.get(filter.testId);
     if (test) {
-      return {
-        total: test.questions.length,
-        questions: test.questions,
+      const localEmpty: { fingerprints: Set<string>; templates: Set<string>; recentTexts: string[] } = {
+        fingerprints: new Set(),
+        templates: new Set(),
+        recentTexts: [],
       };
+      const deduped = filterQuestionsAgainstSeen(test.questions, localEmpty);
+      const result = deduped.slice(0, limitActual);
+      if (hasUser) {
+        await recordSeenQuestions(filter.userPrisma!, {
+          userId: filter.userId!,
+          source: MCQ_SOURCE,
+          questions: result,
+          company: filter.company,
+          topic: filter.technology,
+        });
+      }
+      return { total: deduped.length, questions: result, reuseCount: 0 };
     }
   }
 
-  const target = filter.technology || filter.company || "General";
+  const target = (filter.technology || filter.company || "General").trim();
   const tests = await getTestsForTarget(target);
-  if (tests.length > 0) {
-    const primaryTest = tests[0];
-    return {
-      total: primaryTest.questions.length,
-      questions: primaryTest.questions,
-    };
+
+  let pool: MCQQuestion[] = [];
+  for (const t of tests) pool.push(...t.questions);
+
+  if (pool.length === 0) {
+    pool = generateTestQuestionsWithAntiRepetition(
+      target.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+      filter.company ? "company" : "technology",
+      target,
+      1,
+      limitActual
+    );
   }
 
-  const fallbackQuestions = generateTestQuestionsWithAntiRepetition(
-    target.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-    filter.company ? "company" : "technology",
-    target,
-    1,
-    filter.limit || 15
-  );
+  if (filter.difficulty) {
+    const d = filter.difficulty;
+    pool = pool.filter((q) => q.difficulty === d || d === "Mixed");
+  }
 
-  return {
-    total: fallbackQuestions.length,
-    questions: fallbackQuestions,
-  };
+  if (filter.search) {
+    const s = filter.search.toLowerCase();
+    pool = pool.filter(
+      (q) => q.question.toLowerCase().includes(s) || (q.relatedConcept || "").toLowerCase().includes(s)
+    );
+  }
+
+  if (!hasUser) {
+    const selected = filterQuestionsAgainstSeen(pool, seenRegistryFromTexts([]));
+    return { total: selected.length, questions: selected.slice(0, limitActual), reuseCount: 0 };
+  }
+
+  const state = await getUserSeenState(filter.userPrisma!, filter.userId!, MCQ_SOURCE, {
+    companies: filter.company ? [filter.company] : undefined,
+  });
+
+  const { questions: selected, reuseCount } = selectQuestionsForUser(pool, state, limitActual);
+  const result = selected.slice(0, limitActual);
+
+  await recordSeenQuestions(filter.userPrisma!, {
+    userId: filter.userId!,
+    source: MCQ_SOURCE,
+    questions: result,
+    company: filter.company,
+    topic: filter.technology,
+  });
+
+  return { total: result.length, questions: result, reuseCount };
 }
 
 // ─── Real-Time User MCQ Attempts & Progress Tracking ───────────────────────
@@ -1164,12 +1302,14 @@ function getOrCreateUserStats(userId: string): UserMCQStats {
 
 export async function submitAttempt(
   userId: string,
-  data: { questionId: string; selectedIdx: number; timeTakenSeconds?: number }
+  data: { questionId: string; selectedIdx: number; timeTakenSeconds?: number },
+  userPrisma?: any
 ): Promise<{ isCorrect: boolean; correctIdx: number; xpEarned: number }> {
   let isCorrect = false;
   let correctIdx = 0;
   let topicName = "General";
   let questionText = "";
+  let foundQuestion: MCQQuestion | null = null;
 
   for (const test of testMap.values()) {
     const found = test.questions.find((q) => q.id === data.questionId);
@@ -1178,6 +1318,7 @@ export async function submitAttempt(
       isCorrect = found.correctIdx === data.selectedIdx;
       topicName = found.technology || found.company || test.targetName || "General";
       questionText = found.question;
+      foundQuestion = found;
       break;
     }
   }
@@ -1222,6 +1363,15 @@ export async function submitAttempt(
   }
   stats.dailyHistory[dayKey].solved += 1;
   if (isCorrect) stats.dailyHistory[dayKey].correct += 1;
+
+  // Persist cross-restart history for the user (best-effort)
+  if (foundQuestion && userPrisma) {
+    await recordSeenQuestions(userPrisma, {
+      userId,
+      source: MCQ_SOURCE,
+      questions: [{ ...foundQuestion, topic: foundQuestion.technology || foundQuestion.company }],
+    });
+  }
 
   return {
     isCorrect,

@@ -3258,3 +3258,65 @@ model FeatureUsageAttempt {
   @@map("feature_usage_attempts")
 }
 
+// ─── Question Uniqueness & Anti-Repetition ───────────────────────────────────
+
+model QuestionFingerprint {
+  id                  String   @id @default(cuid())
+  fingerprint         String   @map("fingerprint")
+  templateFingerprint String   @map("template_fingerprint")
+  questionId          String?  @map("question_id")
+  source              String // "mcq" | "aptitude"
+  topic               String?
+  category            String?
+  company             String?
+  difficulty          String?
+  questionText        String   @map("question_text")
+  optionsJson         Json?    @map("options_json")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@unique([source, fingerprint], name: "sourceFingerprintUnique")
+  @@index([source, templateFingerprint])
+  @@index([source, topic])
+  @@index([source, company])
+  @@map("question_fingerprints")
+}
+
+model UserQuestionHistory {
+  id                  String   @id @default(cuid())
+  userId              String   @map("user_id")
+  source              String // "mcq" | "aptitude"
+  fingerprint         String   @map("fingerprint")
+  templateFingerprint String   @map("template_fingerprint")
+  questionId          String?  @map("question_id")
+  topic               String?
+  category            String?
+  company             String?
+  difficulty          String?
+  questionText        String?  @map("question_text")
+  timesSeen           Int      @default(1) @map("times_seen")
+  firstSeenAt         DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt          DateTime @default(now()) @map("last_seen_at")
+
+  @@unique([userId, source, fingerprint], name: "userSourceFingerprintUnique")
+  @@index([userId, source, lastSeenAt])
+  @@index([userId, source, topic])
+  @@index([userId, source, company])
+  @@map("user_question_history")
+}
+
+model SessionQuestion {
+  id          String   @id @default(cuid())
+  sessionId   String   @map("session_id")
+  userId      String   @map("user_id")
+  source      String // "mcq" | "aptitude"
+  fingerprint String   @map("fingerprint")
+  questionId  String?  @map("question_id")
+  position    Int
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([sessionId, fingerprint], name: "sessionFingerprintUnique")
+  @@unique([sessionId, position], name: "sessionPositionUnique")
+  @@index([sessionId])
+  @@map("session_questions")
+}
+
