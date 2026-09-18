@@ -1,6 +1,7 @@
 import {
   SIMILARITY_THRESHOLD,
   dedupInfoFromQuestion,
+  dedupeQuestions,
   filterQuestionsAgainstSeen,
   stripBracketedPrefix,
   type SeenRegistry,
@@ -200,13 +201,14 @@ export function selectQuestionsForUser<T extends { question?: string; text?: str
   limit: number,
   threshold: number = SIMILARITY_THRESHOLD
 ): SelectionResult<T> {
-  const unseen = filterQuestionsAgainstSeen(pool, state, threshold);
+  const deduped = dedupeQuestions(pool);
+  const unseen = filterQuestionsAgainstSeen(deduped, state, threshold);
   if (unseen.length >= limit) {
     return { questions: unseen.slice(0, limit), reuseCount: 0 };
   }
 
   const picked = new Set(unseen.map((q) => dedupInfoFromQuestion(q).fingerprint));
-  const candidates = pool.filter((q) => {
+  const candidates = deduped.filter((q) => {
     const f = dedupInfoFromQuestion(q).fingerprint;
     if (!f || picked.has(f)) return false;
     picked.add(f);

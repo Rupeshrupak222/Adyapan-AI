@@ -1,6 +1,6 @@
 import { masterPrisma, getUserPrismaFromRequest } from "../utils/prisma";
 import { generateAptitudeQuestions, type AptitudeCategory, type Difficulty, type GeneratedQuestion } from "./aptitude-engine.service";
-import { dedupInfoFromQuestion, isTextSeen, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
+import { dedupInfoFromQuestion, dedupeQuestions, isTextSeen, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
 
 /**
  * Interface for stored topic test summary
@@ -565,29 +565,29 @@ export async function generateWeeklyTopicTest(
     questions = generateDefaultTopicTestQuestions(normalizedTopic, normalizedCategory, nextTestNum);
   }
 
-  // Filter out any duplicate questions that already existed in previous tests
-  // (prefix-stripped, template + similarity aware)
+  // Cross-assessment: strictly avoid anything already used in previous tests of
+  // this target. Within-assessment: keep numeric/scenario variants (distinct
+  // questions) and drop only normalized-identical duplicates.
   const existingSeen = seenRegistryFromTexts(existingQuestionTexts);
-  const keptFingerprints = new Set<string>();
+  const exclude = new Set<string>(existingSeen.fingerprints);
 
-  const isAccepted = (q: GeneratedQuestion): boolean => {
-    if (isTextSeen(q.text, existingSeen)) return false;
-    const d = dedupInfoFromQuestion(q);
-    if (!d.fingerprint || keptFingerprints.has(d.fingerprint)) return false;
-    keptFingerprints.add(d.fingerprint);
-    return true;
-  };
-
-  let uniqueQuestions = questions.filter(isAccepted);
+  let uniqueQuestions = dedupeQuestions(
+    questions.filter((q) => !isTextSeen(q.text, existingSeen)),
+    exclude
+  );
 
   // Fill up to 30 with deterministic seeded questions (each offset varies the
-  // embedded numbers; identical-exact and previously-seen questions are blocked)
+  // embedded numbers). Block only normalized-exact repeats of history and of
+  // already-chosen questions so numeric variants restore full volume.
   let offsetSeed = nextTestNum + 100;
   for (let guard = 0; uniqueQuestions.length < 30 && guard < 40; guard++) {
     const fallbackQs = generateDefaultTopicTestQuestions(normalizedTopic, normalizedCategory, offsetSeed++);
     for (const fq of fallbackQs) {
       if (uniqueQuestions.length >= 30) break;
-      if (isAccepted(fq)) uniqueQuestions.push(fq);
+      const d = dedupInfoFromQuestion(fq);
+      if (!d.fingerprint || exclude.has(d.fingerprint)) continue;
+      exclude.add(d.fingerprint);
+      uniqueQuestions.push(fq);
     }
   }
 

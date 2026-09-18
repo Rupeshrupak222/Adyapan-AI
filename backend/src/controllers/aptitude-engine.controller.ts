@@ -3,8 +3,7 @@ import { httpError } from "../utils/httpError";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { requireUserId } from "../utils/request";
 import {
-  filterQuestionsAgainstSeen,
-  seenRegistryFromTexts,
+  dedupeQuestions,
 } from "../lib/questions/question-fingerprint";
 import {
   getAptitudeCategories,
@@ -168,11 +167,11 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
     // Full per-user history (persistent across restarts) for anti-repetition
     const userSeenState = await getUserSeenState(userPrisma, userId, APTITUDE_SOURCE);
 
-    // Re-rank questions picked from the DB bank: guarantee NO duplicate looks
-    // within this assessment, prefer unseen questions, and pull
+    // Re-rank questions picked from the DB bank: guarantee NO byte-identical
+    // duplicates within this assessment, prefer unseen questions, and pull
     // least-recently-seen only to fill back to the full batch.
     if (questions && questions.length > 0) {
-      const withinSession = filterQuestionsAgainstSeen(questions, seenRegistryFromTexts([]));
+      const withinSession = dedupeQuestions(questions);
       const selection = withinSession.length > 0 ? withinSession : questions;
       const { questions: ranked } = selectQuestionsForUser(selection, userSeenState, selection.length);
       if (ranked.length > 0) questions = ranked;

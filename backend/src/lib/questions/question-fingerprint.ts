@@ -158,6 +158,33 @@ export function isTextSeen(
   return false;
 }
 
+/**
+ * Within-assessment deduplication: removes only byte-identical (normalized)
+ * duplicates. Numeric/scenario variants of the same template are distinct
+ * questions and are kept so a batch is never collapsed to a single variant.
+ * An optional exclusion set of already-served/history fingerprints is respected.
+ */
+export function dedupeQuestions<T extends { question?: string; text?: string; codeSnippet?: string }>(
+  pool: T[],
+  excludeFingerprints: Set<string> = new Set()
+): T[] {
+  const seen = new Set<string>(excludeFingerprints);
+  const kept: T[] = [];
+  for (const q of pool) {
+    const d = dedupInfoFromQuestion(q);
+    if (!d.fingerprint || seen.has(d.fingerprint)) continue;
+    seen.add(d.fingerprint);
+    kept.push(q);
+  }
+  return kept;
+}
+
+/**
+ * Cross-assessment (history) filter: drops anything the user has ALREADY seen —
+ * exact fingerprints, renumbered template variants, and similar rewrites.
+ * It never collapses a fresh batch against itself (that is the job of
+ * dedupeQuestions within an assessment).
+ */
 export function filterQuestionsAgainstSeen<T extends { question?: string; text?: string; codeSnippet?: string }>(
   pool: T[],
   seen: SeenRegistry,
@@ -165,33 +192,18 @@ export function filterQuestionsAgainstSeen<T extends { question?: string; text?:
   extra: string[] = []
 ): T[] {
   const kept: T[] = [];
-  const localFingerprints = new Set<string>(seen.fingerprints);
-  const localTemplates = new Set<string>(seen.templates);
   for (const q of pool) {
     const d = dedupInfoFromQuestion(q, extra);
     if (!d.fingerprint) continue;
-    if (localFingerprints.has(d.fingerprint) || localTemplates.has(d.templateFingerprint)) continue;
+    if (seen.fingerprints.has(d.fingerprint) || seen.templates.has(d.templateFingerprint)) continue;
     let similar = false;
-    for (const keptQ of kept) {
-      const kd = dedupInfoFromQuestion(keptQ, extra);
-      if (d.tokens.size > 0 && jaccard(kd.tokens, d.tokens) >= threshold) {
+    for (const s of seen.recentTexts) {
+      if (areSimilar(d.text, s, threshold, extra)) {
         similar = true;
         break;
       }
     }
-    if (!similar) {
-      for (const s of seen.recentTexts) {
-        if (areSimilar(d.text, s, threshold, extra)) {
-          similar = true;
-          break;
-        }
-      }
-    }
-    if (!similar) {
-      localFingerprints.add(d.fingerprint);
-      localTemplates.add(d.templateFingerprint);
-      kept.push(q);
-    }
+    if (!similar) kept.push(q);
   }
   return kept;
 }

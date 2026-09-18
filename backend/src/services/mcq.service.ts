@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { generateText, MODELS } from "../lib/ai/openrouter";
-import { dedupInfoFromQuestion, filterQuestionsAgainstSeen, seenRegistryFromTexts, sanitizeGeneratedQuestions } from "../lib/questions/question-fingerprint";
+import { dedupInfoFromQuestion, dedupeQuestions, filterQuestionsAgainstSeen, seenRegistryFromTexts, sanitizeGeneratedQuestions } from "../lib/questions/question-fingerprint";
 import { getUserSeenState, recordSeenQuestions, selectQuestionsForUser, MCQ_SOURCE } from "./question-dedup.service";
 
 // ─── Interfaces ─────────────────────────────────────────────────────────────
@@ -801,7 +801,7 @@ export async function getTestById(
   // bias the order toward questions the user has never seen before.
   if (userPrisma && userId && userId !== "guest") {
     try {
-      const withinSession = filterQuestionsAgainstSeen(test.questions, seenRegistryFromTexts([]));
+      const withinSession = dedupeQuestions(test.questions);
       if (withinSession.length > 0) {
         const state = await getUserSeenState(userPrisma, userId, MCQ_SOURCE, {
           companies: test.targetType === "company" ? [test.targetName] : undefined,
@@ -1010,9 +1010,10 @@ Return ONLY a valid JSON array of question objects:
     }
     const parsed: any[] = JSON.parse(cleaned);
 
-    // Deduplicate against every existing question (normalized + template + similarity aware)
+    // Drop only within-response normalized-identical duplicates, then strictly
+    // avoid anything already published for this target.
     const aiSeen = seenRegistryFromTexts(existingQuestionTexts);
-    let uniqueParsed = filterQuestionsAgainstSeen(parsed, aiSeen);
+    let uniqueParsed = filterQuestionsAgainstSeen(dedupeQuestions(parsed), aiSeen);
 
     if (uniqueParsed.length < parsed.length) {
       console.log(`[MCQ] Filtered out ${parsed.length - uniqueParsed.length} duplicate questions from AI response`);
@@ -1186,12 +1187,7 @@ export async function getQuestions(filter: GetQuestionsFilter): Promise<{ total:
   if (filter.testId) {
     const test = testMap.get(filter.testId);
     if (test) {
-      const localEmpty: { fingerprints: Set<string>; templates: Set<string>; recentTexts: string[] } = {
-        fingerprints: new Set(),
-        templates: new Set(),
-        recentTexts: [],
-      };
-      const deduped = filterQuestionsAgainstSeen(test.questions, localEmpty);
+      const deduped = dedupeQuestions(test.questions);
       const result = deduped.slice(0, limitActual);
       if (hasUser) {
         await recordSeenQuestions(filter.userPrisma!, {
@@ -1235,7 +1231,7 @@ export async function getQuestions(filter: GetQuestionsFilter): Promise<{ total:
   }
 
   if (!hasUser) {
-    const selected = filterQuestionsAgainstSeen(pool, seenRegistryFromTexts([]));
+    const selected = dedupeQuestions(pool);
     return { total: selected.length, questions: selected.slice(0, limitActual), reuseCount: 0 };
   }
 

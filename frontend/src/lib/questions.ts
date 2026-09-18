@@ -1,9 +1,10 @@
 /**
  * Lightweight client-side question dedup helpers. These are a safety net on top
  * of server-side anti-repetition: they mirror the backend's normalization rules
- * (bracketed-prefix stripping, alnum-only tokens, digit masking) without needing
- * a hash, so a session never displays an exact or re-numbered duplicate even if
- * the server somehow returns one.
+ * (bracketed-prefix stripping, alnum-only keys) without needing a hash, so a
+ * session never displays an identical question twice even if the server somehow
+ * returns one. Within a single assessment only byte-identical questions are
+ * duplicates; numeric scenario variants are distinct questions and are kept.
  */
 
 const LEADING_PREFIX_RE = /^\s*(?:\[[^\]]*\]\s*)+/;
@@ -26,7 +27,7 @@ export function normalizeQuestionKey(text: string): string {
     .replace(NON_ALNUM_RE, "");
 }
 
-/** Same as the fingerprint key, but digit values are masked. */
+/** Same as the normalize key, but digit values are masked. */
 export function templateQuestionKey(text: string): string {
   return normalizeQuestionKey(text).replace(DIGITS_RE, "#");
 }
@@ -36,27 +37,25 @@ export function questionTextFrom(q: { question?: string; text?: string } | null 
 }
 
 /**
- * Removes any question whose normalized text (exact) or digit-masked form
- * (re-numbered copy) already appeared earlier in the list. Keeps first wins.
+ * Removes any question whose normalized text already appeared earlier in the
+ * list (keeps first wins). Numeric scenario variants are kept — they are
+ * distinct questions within an assessment.
  */
 export function dedupeSessionQuestions<T extends { question?: string; text?: string }>(list: T[]): T[] {
   const normalized = new Set<string>();
-  const templates = new Set<string>();
   const kept: T[] = [];
   for (const q of list) {
     const text = questionTextFrom(q);
     if (!text) continue;
     const key = normalizeQuestionKey(text);
-    const tkey = templateQuestionKey(text);
-    if (!key || normalized.has(key) || templates.has(tkey)) continue;
+    if (!key || normalized.has(key)) continue;
     normalized.add(key);
-    templates.add(tkey);
     kept.push(q);
   }
   return kept;
 }
 
-/** Counts duplicate (exact or renumbered) questions inside a session list. */
+/** Counts duplicates (identical normalized text) inside a session list. */
 export function countSessionDuplicates<T extends { question?: string; text?: string }>(list: T[]): number {
   return list.length - dedupeSessionQuestions(list).length;
 }

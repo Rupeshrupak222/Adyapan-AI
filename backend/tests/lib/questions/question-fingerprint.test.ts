@@ -1,6 +1,7 @@
 import {
   SIMILARITY_THRESHOLD,
   areSimilar,
+  dedupeQuestions,
   dedupInfoFromQuestion,
   filterQuestionsAgainstSeen,
   fingerprint,
@@ -123,20 +124,44 @@ describe("isTextSeen / seenRegistryFromTexts", () => {
 });
 
 describe("filterQuestionsAgainstSeen", () => {
-  it("drops duplicates, template variants and similar rewrites while keeping distinct questions", () => {
+  it("filters ONLY against the seen history; within-batch variants are never collapsed", () => {
     const seen = seenRegistryFromTexts(["Where does 5 + 5 land?"]);
     const pool = [
-      { question: "Where does 5 + 5 land?", id: "q1" },
-      { question: "Where does 25 + 25 land?", id: "q2" }, // same template
+      { question: "Where does 5 + 5 land?", id: "q1" }, // exact repeat of history
+      { question: "Where does 25 + 25 land?", id: "q2" }, // renumbered repeat of history
       { question: EXACT_A, id: "q3" },
-      { question: ATTR_ORDER_A, id: "q4" }, // similar to q3
+      { question: ATTR_ORDER_A, id: "q4" }, // similar to q3 but NOT in history — distinct
       { question: UNRELATED_B, id: "q5" },
     ];
     const kept = filterQuestionsAgainstSeen(pool, seen);
-    const ids = kept.map((k) => k.id);
-    expect(ids).toContain("q5");
-    expect(ids).not.toContain("q2");
-    expect(ids.reduce((acc, id) => acc + (id === "q3" || id === "q4" ? 1 : 0), 0)).toBe(1);
+    expect(kept.map((k) => k.id)).toEqual(["q3", "q4", "q5"]);
+  });
+});
+
+describe("dedupeQuestions", () => {
+  it("drops byte-identical normalized duplicates and keeps numeric variants", () => {
+    const pool = [
+      { question: "[Company Exam Pattern] A machine makes 40 units/hr. Total in 3 hours?", id: "q1" },
+      { question: "A machine makes 40 units/hr. Total in 3 hours?", id: "q2" }, // identical
+      { question: "A machine makes 72 units/hr. Total in 5 hours?", id: "q3" }, // numeric variant
+      { question: UNRELATED_B, id: "q4" },
+    ];
+    expect(dedupeQuestions(pool).map((q) => q.id)).toEqual(["q1", "q3", "q4"]);
+  });
+
+  it("respects an exclusion set of already-served/history fingerprints", () => {
+    const exclude = new Set<string>([fingerprint(UNRELATED_B)]);
+    const out = dedupeQuestions([{ question: UNRELATED_B }, { question: EXACT_A }], exclude);
+    expect(out.map((q) => q.question)).toEqual([EXACT_A]);
+  });
+
+  it("regression: a batch of numeric scenario variants is NOT collapsed to one question", () => {
+    const pool = [
+      { question: "A system processes 84 records per second. How many records in 47 seconds?", id: "a" },
+      { question: "A production line manufactures 63 items per batch. Total in 5 batches?", id: "b" },
+      { question: "Each shipment contains 29 units. If 11 shipments arrive, what is total inventory?", id: "c" },
+    ];
+    expect(dedupeQuestions(pool).map((q) => q.id)).toEqual(["a", "b", "c"]);
   });
 });
 

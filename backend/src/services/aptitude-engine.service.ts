@@ -1,5 +1,5 @@
 import { generateJSON, generateText, MODELS } from "../lib/ai/openrouter";
-import { filterQuestionsAgainstSeen, sanitizeGeneratedQuestions, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
+import { dedupInfoFromQuestion, dedupeQuestions, filterQuestionsAgainstSeen, sanitizeGeneratedQuestions, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
 
 // ============================================================================
 // TYPES
@@ -565,14 +565,27 @@ Rules:
     }
 
     const existingSeen = seenRegistryFromTexts(existingQuestionTexts || []);
-    let uniqueQuestions = filterQuestionsAgainstSeen(allGenerated, existingSeen);
+
+    // 1) Within this single response: drop only normalized-identical duplicates.
+    //    Numeric/scenario variants of the same template are distinct questions.
+    let uniqueQuestions = dedupeQuestions(allGenerated);
+
+    // 2) Cross-assessment: strictly avoid anything already used for this topic.
+    //    This never collapses the fresh batch against its own similarity.
+    uniqueQuestions = filterQuestionsAgainstSeen(uniqueQuestions, existingSeen);
 
     const { valid: sanitized } = sanitizeGeneratedQuestions(uniqueQuestions);
     uniqueQuestions = sanitized;
 
+    // 3) Guarantee the requested volume: top up with fallback variants, blocking
+    //    only normalized-exact repeats of history and already-chosen questions.
     if (uniqueQuestions.length < count) {
-      const mergedSeen = seenRegistryFromTexts([...uniqueQuestions.map((q) => q.text), ...(existingQuestionTexts || [])]);
-      const extra = filterQuestionsAgainstSeen(fallback, mergedSeen).slice(0, count - uniqueQuestions.length);
+      const exclude = new Set<string>(existingSeen.fingerprints);
+      for (const q of uniqueQuestions) {
+        const f = dedupInfoFromQuestion(q).fingerprint;
+        if (f) exclude.add(f);
+      }
+      const extra = dedupeQuestions(fallback, exclude).slice(0, count - uniqueQuestions.length);
       uniqueQuestions = uniqueQuestions.concat(extra);
     }
 

@@ -22,7 +22,7 @@ describe("frontend question dedup safety net", () => {
     expect(templateQuestionKey("What is 2 + 3?")).toBe(templateQuestionKey("What is 9 + 9?"));
   });
 
-  it("drops exact and re-numbered duplicates but keeps distinct questions", () => {
+  it("drops identical duplicates but keeps distinct and renumbered questions", () => {
     const list = [
       { question: "What is a mutex?" },
       { question: "[Company Exam Pattern] What is a mutex?" },
@@ -31,10 +31,11 @@ describe("frontend question dedup safety net", () => {
       { question: "What is a semaphore?" },
     ];
     const kept = dedupeSessionQuestions(list);
-    expect(kept).toHaveLength(3);
+    expect(kept).toHaveLength(4);
     expect(kept.map((q) => q.question)).toEqual([
       "What is a mutex?",
       "What is 2 + 3?",
+      "What is 9 + 9?",
       "What is a semaphore?",
     ]);
   });
