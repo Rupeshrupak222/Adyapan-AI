@@ -13,6 +13,7 @@ import { CodingRoadmapService } from "../services/coding-roadmap.service";
 import { requireUserId } from "../utils/request";
 import { generateText, MODELS } from "../lib/ai/openrouter";
 import { generateHiddenTestCases, detectHardcodedOutput } from "../services/testcase-generator.service";
+import { DsaProgressService } from "../services/dsa-progress.service";
 
 
 
@@ -61,36 +62,75 @@ router.post("/run", async (req: any, res) => {
 
 // ─── Existing AI Code Helper Routes ──────────────────────────────────────────
 
-router.post("/generate", async (req, res) => {
+router.post("/generate", async (req: any, res) => {
   try {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: "Prompt is required" });
     
     const result = await generateCode(prompt);
+    if (req.user?.userId) {
+      try {
+        const userPrisma = await getUserPrismaFromRequest(req);
+        await DsaProgressService.recordAICodingChat(
+          req.user.userId,
+          `Code Generator: ${prompt.substring(0, 30)}`,
+          prompt,
+          typeof result === "string" ? result : JSON.stringify(result),
+          userPrisma,
+          "generate"
+        );
+      } catch { }
+    }
     res.json(result);
   } catch (error) {
     handleRouteError(res, error, "Coding.generate", "Failed to generate code");
   }
 });
 
-router.post("/debug", async (req, res) => {
+router.post("/debug", async (req: any, res) => {
   try {
     const { errorMsg, codeSnippet } = req.body;
     if (!errorMsg || !codeSnippet) return res.status(400).json({ error: "Error message and code snippet are required" });
     
     const result = await debugCode(errorMsg, codeSnippet);
+    if (req.user?.userId) {
+      try {
+        const userPrisma = await getUserPrismaFromRequest(req);
+        await DsaProgressService.recordAICodingChat(
+          req.user.userId,
+          `AI Debugger: ${errorMsg.substring(0, 30)}`,
+          `${errorMsg}\n\n${codeSnippet}`,
+          typeof result === "string" ? result : JSON.stringify(result),
+          userPrisma,
+          "debug"
+        );
+      } catch { }
+    }
     res.json(result);
   } catch (error) {
     handleRouteError(res, error, "Coding.debug", "Failed to debug code");
   }
 });
 
-router.post("/explain", async (req, res) => {
+router.post("/explain", async (req: any, res) => {
   try {
     const { codeSnippet } = req.body;
     if (!codeSnippet) return res.status(400).json({ error: "Code snippet is required" });
     
     const result = await explainCode(codeSnippet);
+    if (req.user?.userId) {
+      try {
+        const userPrisma = await getUserPrismaFromRequest(req);
+        await DsaProgressService.recordAICodingChat(
+          req.user.userId,
+          `Code Explainer: Snippet`,
+          codeSnippet,
+          typeof result === "string" ? result : JSON.stringify(result),
+          userPrisma,
+          "explain"
+        );
+      } catch { }
+    }
     res.json(result);
   } catch (error) {
     handleRouteError(res, error, "Coding.explain", "Failed to explain code");
@@ -151,9 +191,17 @@ router.get("/dashboard", async (req: any, res) => {
     // 2. Fetch global statistics from Master DB
     const totalQuestions = await masterPrisma.codingQuestion.count();
     
-    // Solved & Attempted & Bookmarks from user progress
-    const solvedCount = userProgress.filter((p: any) => p.status === "solved").length;
-    const attemptedCount = userProgress.filter((p: any) => p.status === "attempted" || p.status === "solved").length;
+    // Solved & Attempted & Bookmarks from user progress & synced DSA progress
+    const dsaProgress = await DsaProgressService.calculateAndSyncProgress(userId, userPrisma).catch(() => null);
+    const solvedCount = Math.max(
+      userProgress.filter((p: any) => p.status?.toLowerCase() === "solved" || p.solved === true).length,
+      dsaProgress?.solved || 0
+    );
+    const attemptedCount = Math.max(
+      solvedCount,
+      userProgress.filter((p: any) => p.status === "attempted" || p.status?.toLowerCase() === "solved" || p.attempted === true || (p.runCount && p.runCount > 0)).length,
+      dsaProgress?.solved || 0
+    );
     const bookmarkedCount = userProgress.filter((p: any) => p.bookmarked).length;
 
     // 3. Topic Explorer metrics
@@ -308,7 +356,9 @@ router.get("/dashboard", async (req: any, res) => {
         topicsCovered: new Set(globalQuestions.map(q => q.topic)).size,
         solved: solvedCount,
         attempted: attemptedCount,
-        bookmarks: bookmarkedCount
+        bookmarks: bookmarkedCount,
+        accuracy: dsaProgress?.accuracy ?? (attemptedCount > 0 ? Math.round((solvedCount / attemptedCount) * 100) : 0),
+        streak: dsaProgress?.streak ?? 0,
       },
       topicExplorer,
       dailyChallenge: daily ? {
@@ -514,21 +564,13 @@ router.post("/question/:id/solve", async (req: any, res) => {
     const { timeSpent = 0 } = req.body;
 
     const userPrisma = await getUserPrismaFromRequest(req);
-    const progress = await userPrisma.userQuestionProgress.upsert({
-      where: { userId_questionId: { userId, questionId } },
-      update: {
-        solved: true,
-        status: "solved",
-        timeSpent: { increment: timeSpent }
-      },
-      create: {
-        userId,
-        questionId,
-        solved: true,
-        status: "solved",
-        timeSpent
-      }
-    });
+    const progress = await DsaProgressService.recordSolved(
+      userId,
+      questionId,
+      userPrisma,
+      req,
+      timeSpent
+    );
 
     res.json({ success: true, progress });
   } catch (error) {
@@ -1021,6 +1063,20 @@ Difficulty: ${question.difficulty}`;
 
     const explanation = await generateText(systemPrompt, userPrompt, { model: MODELS.CODE, temperature: 0.6 });
 
+    // Track AI Coding Chat session
+    try {
+      const userPrisma = await getUserPrismaFromRequest(req);
+      await DsaProgressService.recordAICodingChat(
+        req.user.userId,
+        `AI Coach: ${question.title}`,
+        type === "custom" ? (codeSnippet || "Student Question") : `Explain ${type} for ${question.title}`,
+        explanation,
+        userPrisma,
+        type,
+        [question.topic || "DSA"]
+      );
+    } catch { }
+
     res.json({ success: true, explanation });
   } catch (error) {
     handleRouteError(res, error, "Coding.workspace.explain", "Failed to generate AI explanation");
@@ -1049,6 +1105,19 @@ router.post("/workspace/:id/hint", async (req: any, res) => {
     } else {
       hint = analysis.hint_3;
     }
+
+    // Track AI Coding Chat hint session
+    try {
+      const userPrisma = await getUserPrismaFromRequest(req);
+      await DsaProgressService.recordAICodingChat(
+        req.user.userId,
+        `AI Hint ${hintIndex}: Problem`,
+        `Request Hint ${hintIndex}`,
+        hint,
+        userPrisma,
+        "hint"
+      );
+    } catch { }
 
     res.json({
       success: true,
@@ -1400,6 +1469,17 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
       }
     });
 
+    // Synchronize DSA progress and streak
+    try {
+      if (isAllPassed) {
+        await DsaProgressService.recordSolved(userId, questionId, userPrisma, req);
+      } else {
+        await DsaProgressService.calculateAndSyncProgress(userId, userPrisma);
+      }
+    } catch (syncErr) {
+      console.warn("[Coding.workspace.submit] DsaProgress sync warning:", syncErr);
+    }
+
     res.json({
       allPassed: isAllPassed,
       totalTests,
@@ -1721,11 +1801,15 @@ router.get("/dashboard/analytics", async (req: any, res) => {
     const userId = req.user.userId;
     const userPrisma = await getUserPrismaFromRequest(req);
 
-    // 1. User Question Progress
+    // 1. User Question Progress & Synced DSA Progress
     const userProgress = await userPrisma.userQuestionProgress.findMany({ where: { userId } });
+    const dsaProgress = await DsaProgressService.calculateAndSyncProgress(userId, userPrisma).catch(() => null);
     const progressMap = new Map(userProgress.map((p: any) => [p.questionId, p]));
-    const solvedCount = userProgress.filter((p: any) => p.status === "solved").length;
-    const attemptedCount = userProgress.length;
+    const solvedCount = Math.max(
+      userProgress.filter((p: any) => p.status?.toLowerCase() === "solved" || p.solved === true).length,
+      dsaProgress?.solved || 0
+    );
+    const attemptedCount = Math.max(userProgress.length, solvedCount);
 
     // 2. Topic Explorer (reuse existing logic pattern)
     const globalQuestions = await masterPrisma.codingQuestion.findMany({

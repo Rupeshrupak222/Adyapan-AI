@@ -21226,5 +21226,1003 @@
         "interviewTip": "Violating LSP often occurs when overriding methods with empty implementations or unexpected exceptions."
       }
     ]
+  },
+  {
+    "id": "test-tech-c-10",
+    "targetId": "tech-c",
+    "targetType": "technology",
+    "targetName": "C",
+    "testNumber": 10,
+    "title": "C - Test 10: Technical Assessment",
+    "description": "Dynamic Test 10 for C with 100% unique questions.",
+    "difficulty": "Medium",
+    "questionCount": 0,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-09-18T12:57:56.871Z",
+    "questions": []
+  },
+  {
+    "id": "test-tech-c-11",
+    "targetId": "tech-c",
+    "targetType": "technology",
+    "targetName": "C",
+    "testNumber": 11,
+    "title": "C - Test 11: AI Generated Assessment",
+    "description": "AI-generated Test 11 for C with guaranteed anti-repetition.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-09-18T12:58:14.182Z",
+    "questions": [
+      {
+        "id": "ai-tech-c-t11-q1-1789736294182",
+        "question": "What is the standard behavior when `longjmp()` is invoked from a nested function call, provided the corresponding `setjmp()` was called in an outer function that has already returned?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "jmp_buf buf;\nvoid inner() {\n    longjmp(buf, 1);\n}\nvoid outer() {\n    if (setjmp(buf) == 0) {\n        return;\n    }\n}\nint main() {\n    outer();\n    inner(); // What happens here?\n    return 0;\n}",
+        "language": "c",
+        "options": [
+          "Undefined behavior, typically resulting in corruption of the call stack or a segmentation fault.",
+          "The program cleanly exits with code 1.",
+          "It safely resets execution back to the `setjmp` call site inside `outer`.",
+          "A compilation error due to stack frame mismatch."
+        ],
+        "correctAnswer": "Undefined behavior, typically resulting in corruption of the call stack or a segmentation fault.",
+        "correctIdx": 0,
+        "explanation": "Invoking `longjmp` after the function that invoked `setjmp` has returned execution destroys the target stack frame context, leading to undefined behavior.",
+        "hint": "Think about what happens to local stack frames when functions exit.",
+        "relatedConcept": "Non-local jumps and stack lifetime",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always ensure `setjmp` scopes outlive any matching `longjmp` calls."
+      },
+      {
+        "id": "ai-tech-c-t11-q2-1789736294182",
+        "question": "How does the `restrict` keyword, introduced in C99, affect pointer analysis and compiler optimizations?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "void update(int * restrict a, int * restrict b, const int * restrict val) {\n    *a += *val;\n    *b += *val;\n}",
+        "language": "c",
+        "options": [
+          "It guarantees that the pointers are the sole initial means of referencing the memory objects they point to within their scope, enabling aggressive load/store optimizations.",
+          "It makes the pointers thread-safe by enforcing atomic memory operations.",
+          "It restricts pointer arithmetic, preventing out-of-bounds index errors at runtime.",
+          "It enforces that the pointer can only be read from and never written to."
+        ],
+        "correctAnswer": "It guarantees that the pointers are the sole initial means of referencing the memory objects they point to within their scope, enabling aggressive load/store optimizations.",
+        "correctIdx": 0,
+        "explanation": "The `restrict` type qualifier tells the compiler that for the lifetime of the pointer, only it (or a derivative) will be used to access the object it points to, allowing the compiler to optimize without worrying about aliasing.",
+        "hint": "Think about pointer aliasing and how compilers optimize loops and memory access.",
+        "relatedConcept": "Pointer Aliasing and Restrict Qualifier",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Mention alias analysis when discussing performance tuning in C."
+      },
+      {
+        "id": "ai-tech-c-t11-q3-1789736294182",
+        "question": "What is the output or behavior of the following C code snippet utilizing flexible array members?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "struct Packet {\n    int length;\n    char payload[];\n};\n\nint main() {\n    struct Packet *p = malloc(sizeof(struct Packet) + 10 * sizeof(char));\n    p->length = 10;\n    printf(\"%zu\", sizeof(struct Packet));\n    free(p);\n    return 0;\n}",
+        "language": "c",
+        "options": [
+          "It prints the size of `int` (typically 4) or slightly more with padding, because flexible array members contribute zero bytes to `sizeof` of the structure.",
+          "It prints 14, accounting for the `int` plus the 10 flexible chars.",
+          "It results in a compilation error because flexible array members cannot be used with `malloc`.",
+          "It prints 0 because the structure has no fixed members."
+        ],
+        "correctAnswer": "It prints the size of `int` (typically 4) or slightly more with padding, because flexible array members contribute zero bytes to `sizeof` of the structure.",
+        "correctIdx": 0,
+        "explanation": "Flexible array members allow a struct to have a trailing array of unspecified size. They do not occupy space in the `sizeof` operator evaluation.",
+        "hint": "Consider how `sizeof` handles trailing arrays with no explicit dimension inside a struct.",
+        "relatedConcept": "Flexible Array Members",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Flexible array members are a standard C99 idiom for implementing variable-length buffers inside structs."
+      },
+      {
+        "id": "ai-tech-c-t11-q4-1789736294182",
+        "question": "In the context of C preprocessor macros, what is the primary pitfall of the following macro definition?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "#define SQUARE(x) x * x",
+        "language": "c",
+        "options": [
+          "Operator precedence issues when expressions are passed as arguments (e.g., SQUARE(1 + 2) expands to 1 + 2 * 1 + 2 instead of (1+2)*(1+2)).",
+          "It causes syntax errors if `x` is of type `float` or `double`.",
+          "It results in multiple evaluations of `x` causing side effects if expressions like `SQUARE(i++)` are used.",
+          "Both A and C are correct."
+        ],
+        "correctAnswer": "Both A and C are correct.",
+        "correctIdx": 3,
+        "explanation": "Unparenthesized macro parameters cause operator precedence bugs, and side-effect expressions (like increment operators) get evaluated multiple times, making both A and C valid issues.",
+        "hint": "Look at what happens if you pass an expression with operators or side-effects.",
+        "relatedConcept": "Preprocessor Macro Pitfalls",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always wrap macro arguments and the macro body itself in parentheses, or prefer `static inline` functions."
+      },
+      {
+        "id": "ai-tech-c-t11-q5-1789736294182",
+        "question": "What is the execution outcome of the following snippet involving compound literals?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "struct Point { int x; int y; };\nstruct Point* get_origin() {\n    return &(struct Point){ 0, 0 };\n}\nint main() {\n    struct Point *p = get_origin();\n    printf(\"%d\", p->x);\n    return 0;\n}",
+        "language": "c",
+        "options": [
+          "It prints 0, but accessing `p` afterwards outside `get_origin` is technically undefined behavior because compound literals defined inside functions have block scope.",
+          "It prints 0 securely because compound literals have static storage duration by default.",
+          "It fails to compile because taking the address of a compound literal is illegal.",
+          "It causes a segmentation fault immediately during assignment."
+        ],
+        "correctAnswer": "It prints 0, but accessing `p` afterwards outside `get_origin` is technically undefined behavior because compound literals defined inside functions have block scope.",
+        "correctIdx": 0,
+        "explanation": "Compound literals have block scope when defined inside a function. Returning their address results in a dangling pointer once the block scope exits.",
+        "hint": "Think about the lifetime of compound literals declared inside block scopes.",
+        "relatedConcept": "Compound Literals and Storage Duration",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Compound literals at file scope have static duration, but inside functions, their lifetime is tied to the block."
+      },
+      {
+        "id": "ai-tech-c-t11-q6-1789736294182",
+        "question": "Which of the following statements accurately describes the behavior of `fflush()` when applied to an input stream (such as `stdin`) in standard C?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "// Usage scenario\nfflush(stdin);",
+        "language": "c",
+        "options": [
+          "The behavior is undefined according to the C standard.",
+          "It successfully clears all remaining characters from the input buffer.",
+          "It resets the file position indicator to the beginning of the stream.",
+          "It blocks execution until the user presses Enter."
+        ],
+        "correctAnswer": "The behavior is undefined according to the C standard.",
+        "correctIdx": 0,
+        "explanation": "The C standard specifies `fflush` for output streams. Using it on input streams is undefined behavior, although some compilers/libraries implement specific extensions.",
+        "hint": "Recall what the C standard says about flushing input streams vs output streams.",
+        "relatedConcept": "Stream I/O and Standard Behavior",
+        "estimatedTime": "40 sec",
+        "interviewTip": "Never rely on `fflush(stdin)` for input clearing; use manual loops with `getchar()` instead."
+      },
+      {
+        "id": "ai-tech-c-t11-q7-1789736294182",
+        "question": "What is the primary purpose of the `volatile` keyword in embedded or concurrent C programming?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "volatile uint32_t *const status_reg = (uint32_t*) 0x40001000;\nwhile ((*status_reg & 0x01) == 0) {\n    // wait for flag\n}",
+        "language": "c",
+        "options": [
+          "It prevents the compiler from optimizing out seemingly redundant reads or writes, ensuring every access goes directly to physical memory or hardware registers.",
+          "It ensures that the variable is stored in thread-local storage across multiple threads.",
+          "It makes operations on the variable atomic without requiring mutex locks.",
+          "It protects the memory region from being swapped out to disk."
+        ],
+        "correctAnswer": "It prevents the compiler from optimizing out seemingly redundant reads or writes, ensuring every access goes directly to physical memory or hardware registers.",
+        "correctIdx": 0,
+        "explanation": "`volatile` informs the compiler that the value can be changed by entities outside the control of the program (like hardware or interrupts), disabling memory access optimizations.",
+        "hint": "Think about memory-mapped I/O and compiler optimization loops.",
+        "relatedConcept": "Volatile Qualifier and Hardware Registers",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Remember that `volatile` deals with visibility and optimization, NOT atomicity or thread safety."
+      },
+      {
+        "id": "ai-tech-c-t11-q8-1789736294182",
+        "question": "What does the `sig_atomic_t` type guarantee in signal-handling contexts?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "volatile sig_atomic_t flag = 0;\nvoid handler(int sig) {\n    flag = 1;\n}",
+        "language": "c",
+        "options": [
+          "Access to objects of type `sig_atomic_t` can be performed atomically, without the possibility of reading or writing half-updated values.",
+          "It guarantees that the variable is protected by a hardware-level spinlock.",
+          "It forces the compiler to allocate the variable in CPU registers exclusively.",
+          "It allows safe execution of multi-threaded thread pools within signal handlers."
+        ],
+        "correctAnswer": "Access to objects of type `sig_atomic_t` can be performed atomically, without the possibility of reading or writing half-updated values.",
+        "correctIdx": 0,
+        "explanation": "`sig_atomic_t` is guaranteed to be read or written in a single uninterrupted operation, making it safe to modify in a signal handler and read in the main program (especially when combined with `volatile`).",
+        "hint": "Consider interrupt and signal safety when modifying variables shared with signal handlers.",
+        "relatedConcept": "Signal Safety and sig_atomic_t",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always mark shared signal flags as `volatile sig_atomic_t`."
+      },
+      {
+        "id": "ai-tech-c-t11-q9-1789736294182",
+        "question": "What is the behavior of the following code snippet regarding pointer arithmetic on `void *`?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "int arr[] = {10, 20, 30};\nvoid *ptr = arr;\nptr = ptr + 1; // Is this standard C?",
+        "language": "c",
+        "options": [
+          "It is a GNU C extension allowing arithmetic on `void *` by treating the size as 1 byte, but it is technically non-standard ISO C.",
+          "It fails to compile in standard C because the size of `void` is incomplete.",
+          "It advances the pointer by `sizeof(int)` bytes.",
+          "It advances the pointer by exactly 4 bytes on all architectures regardless of extensions."
+        ],
+        "correctAnswer": "It is a GNU C extension allowing arithmetic on `void *` by treating the size as 1 byte, but it is technically non-standard ISO C.",
+        "correctIdx": 0,
+        "explanation": "ISO C forbids pointer arithmetic on pointers to incomplete types like `void`. However, GCC/Clang allow it as an extension where `sizeof(void)` is treated as 1.",
+        "hint": "Check what standard ISO C says about `sizeof(void)` and pointer arithmetic.",
+        "relatedConcept": "Pointer Arithmetic on Void Pointers",
+        "estimatedTime": "50 sec",
+        "interviewTip": "To remain strictly portable, always cast `void *` to `char *` before performing arithmetic."
+      },
+      {
+        "id": "ai-tech-c-t11-q10-1789736294182",
+        "question": "What is the output of the following program involving promotion rules and bitwise operations?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "unsigned char a = 0x80;\nunsigned char res = ~a >> 4;\nprintf(\"%X\", res);\n(Assuming 8-bit char, 32-bit int)",
+        "language": "c",
+        "options": [
+          "0xF7 or equivalent bit pattern after integer promotion and truncation.",
+          "0x07",
+          "0x7F",
+          "0x8F"
+        ],
+        "correctAnswer": "0xF7 or equivalent bit pattern after integer promotion and truncation.",
+        "correctIdx": 0,
+        "explanation": "`a` is promoted to `int` during `~a` (~0x00000080 = 0xFFFFFF7F). Shifting right by 4 gives 0x0FFFFF7. Cast/truncation back to `unsigned char` results in 0xF7.",
+        "hint": "Remember that integer promotion (`int` promotion) happens to operands smaller than `int` before bitwise operations.",
+        "relatedConcept": "Integer Promotions and Bitwise Operators",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Be extremely careful with bitwise operations on `char` or `short` due to implicit integer promotions."
+      },
+      {
+        "id": "ai-tech-c-t11-q11-1789736294182",
+        "question": "Which of the following functions from the standard library performs a binary search on a sorted array?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "void *bsearch(const void *key, const void *base, size_t nitems, size_t size, int (*compar)(const void *, const void *));",
+        "language": "c",
+        "options": [
+          "`bsearch`",
+          "`qsort_search`",
+          "`binsearch`",
+          "`search_sorted`"
+        ],
+        "correctAnswer": "`bsearch`",
+        "correctIdx": 0,
+        "explanation": "`bsearch` is the standard library function defined in `<stdlib.h>` for performing binary searches on sorted arrays.",
+        "hint": "Look for the function name that matches the binary search abbreviation in `<stdlib.h>.",
+        "relatedConcept": "Standard Library Algorithms (bsearch)",
+        "estimatedTime": "30 sec",
+        "interviewTip": "Ensure the array is fully sorted according to the exact same comparison function before calling `bsearch`."
+      },
+      {
+        "id": "ai-tech-c-t11-q12-1789736294182",
+        "question": "What is the correct declaration for a function pointer `func_ptr` that accepts an integer and a pointer to a character, and returns a pointer to a function which takes no arguments and returns `void`?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "// What is the correct syntax signature?",
+        "language": "c",
+        "options": [
+          "void (*func_ptr(int, char *))(void);",
+          "void (*(*func_ptr)(int, char *))(void);",
+          "void *func_ptr(int, char *)();",
+          "void (*func_ptr)(int, char *)->void;"
+        ],
+        "correctAnswer": "void (*(*func_ptr)(int, char *))(void);",
+        "correctIdx": 1,
+        "explanation": "`func_ptr` is a pointer (`*func_ptr`) to a function taking `(int, char *)` and returning a pointer `void (*)(void)` to another function.",
+        "hint": "Use the 'spiral rule' or break it down inside out: a pointer to a function returning a function pointer.",
+        "relatedConcept": "Complex Function Pointers",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Use `typedef` for complex function pointers to greatly improve readability."
+      },
+      {
+        "id": "ai-tech-c-t11-q13-1789736294182",
+        "question": "What is the behavior of calling `realloc(ptr, 0)` when `ptr` is a valid pointer allocated previously on the heap?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "int *ptr = malloc(100);\nptr = realloc(ptr, 0);",
+        "language": "c",
+        "options": [
+          "It frees the memory pointed to by `ptr` and returns either `NULL` or a unique pointer that can be passed to `free`.",
+          "It leaves the memory untouched and returns `ptr`.",
+          "It causes undefined behavior because size cannot be zero.",
+          "It truncates the buffer size to 0 bytes without freeing the underlying block."
+        ],
+        "correctAnswer": "It frees the memory pointed to by `ptr` and returns either `NULL` or a unique pointer that can be passed to `free`.",
+        "correctIdx": 0,
+        "explanation": "According to the C standard, passing 0 as the new size to `realloc` is equivalent to calling `free(ptr)`. It may return `NULL` or a pointer that must be freed.",
+        "hint": "Check the C standard behavior for `realloc` when the size argument is zero.",
+        "relatedConcept": "Memory Management (`realloc` edge cases)",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Modern coding guidelines recommend avoiding `realloc(ptr, 0)` for clarity; use explicit `free()` instead."
+      },
+      {
+        "id": "ai-tech-c-t11-q14-1789736294182",
+        "question": "What does the `offsetof` macro from `<stddef.h>` calculate?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "size_t offset = offsetof(struct Data, member);",
+        "language": "c",
+        "options": [
+          "The offset in bytes from the beginning of a structure to a given member.",
+          "The total memory size including padding of the structure.",
+          "The alignment requirement of the specified structure member.",
+          "The index of the member if the structure is treated as an array."
+        ],
+        "correctAnswer": "The offset in bytes from the beginning of a structure to a given member.",
+        "correctIdx": 0,
+        "explanation": "`offsetof(type, member)` expands to an integer constant of type `size_t` that specifies the offset in bytes of the member from the beginning of the structure.",
+        "hint": "Think about low-level container-of macros and struct layouts.",
+        "relatedConcept": "Struct Layout and `offsetof`",
+        "estimatedTime": "35 sec",
+        "interviewTip": "`offsetof` is heavily used in Linux kernel programming to implement container-of macros."
+      },
+      {
+        "id": "ai-tech-c-t11-q15-1789736294182",
+        "question": "What is the output of the following program involving string literal concatenation and array sizing?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "char str[] = \"Hello\" \" \" \"World\";\nprintf(\"%zu\", sizeof(str));",
+        "language": "c",
+        "options": [
+          "12",
+          "11",
+          "6",
+          "13"
+        ],
+        "correctAnswer": "12",
+        "correctIdx": 0,
+        "explanation": "Adjacent string literals are automatically concatenated by the compiler into a single string: `\"Hello World\"`. Its length is 11 characters plus 1 null terminator, making `sizeof(str)` equal to 12.",
+        "hint": "Adjacent string literals in C are concatenated at translation phase 6.",
+        "relatedConcept": "String Literal Concatenation",
+        "estimatedTime": "40 sec",
+        "interviewTip": "Remember that `sizeof` on character arrays includes the implicit null terminator byte."
+      }
+    ]
+  },
+  {
+    "id": "test-tech-c-12",
+    "targetId": "tech-c",
+    "targetType": "technology",
+    "targetName": "C",
+    "testNumber": 12,
+    "title": "C - Test 12: Technical Assessment",
+    "description": "Dynamic Test 12 for C with 100% unique questions.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-09-18T12:59:52.809Z",
+    "questions": [
+      {
+        "id": "mcq-tech-c-t12-q1",
+        "question": "[C • Test 12 • Q1] What determines the memory alignment padding inserted by modern C compilers inside structs?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "struct S {\n  char a;\n  double b;\n  int c;\n};",
+        "language": "c",
+        "options": [
+          "Aligns member offsets to multiples of member size (e.g. 8-byte boundary for double), padding struct to a multiple of largest member.",
+          "Always strictly packs bytes with zero gaps.",
+          "Aligns all variables to 64-byte cache line boundaries.",
+          "Padding depends only on operating system file system block size."
+        ],
+        "correctAnswer": "Aligns member offsets to multiples of member size (e.g. 8-byte boundary for double), padding struct to a multiple of largest member.",
+        "correctIdx": 0,
+        "explanation": "CPUs read words faster when aligned to natural boundaries. The double member (8 bytes) requires 8-byte offset alignment.",
+        "hint": "Largest member alignment constraint dictates total struct sizing.",
+        "relatedConcept": "C - Struct Alignment & Padding",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Arrange struct members from largest to smallest to minimize padding waste."
+      },
+      {
+        "id": "mcq-tech-c-t12-q2",
+        "question": "[C • Test 12 • Q2] Why does executing '*ptr = 'Z';' on 'char *ptr = \"Data\";' crash with Segmentation Fault on Unix/Linux?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "char *ptr = \"Data\";\n*ptr = 'Z'; // Segfault",
+        "language": "c",
+        "options": [
+          "Heap memory was exhausted.",
+          "Pointer was null.",
+          "String literals are placed in read-only text (.rodata) memory segment by the linker.",
+          "Pointers to char can only hold ASCII 0-127."
+        ],
+        "correctAnswer": "String literals are placed in read-only text (.rodata) memory segment by the linker.",
+        "correctIdx": 2,
+        "explanation": "Modifying write-protected memory pages causes the CPU memory management unit (MMU) to trigger a segmentation violation.",
+        "hint": "String literals live in read-only text segments.",
+        "relatedConcept": "C - String Literal Immutability",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Use 'char str[] = \"Data\";' to allocate mutable stack storage."
+      },
+      {
+        "id": "mcq-tech-c-t12-q3",
+        "question": "[C • Test 12 • Q3] When evaluating pointer expression '*(arr + 3)' where 'int arr[5] = {10, 20, 30, 40, 50};', what value is retrieved?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "int arr[5] = {10, 20, 30, 40, 50};\nint val = *(arr + 3);",
+        "language": "c",
+        "options": [
+          "40 (dereferences index 3 directly).",
+          "30 (dereferences index 2).",
+          "Address of arr[3].",
+          "Garbage memory value."
+        ],
+        "correctAnswer": "40 (dereferences index 3 directly).",
+        "correctIdx": 0,
+        "explanation": "*(arr + i) is mathematically identical to arr[i]. With offset 3, it fetches the 4th element (40).",
+        "hint": "arr[i] is defined as *(arr + i) in standard C.",
+        "relatedConcept": "C - Pointer Arithmetic & Array Strides",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Pointer subscript symmetry means 3[arr] is also valid C syntax!"
+      },
+      {
+        "id": "mcq-tech-c-t12-q4",
+        "question": "[C • Test 12 • Q4] What occurs if a function returns a pointer to a local stack array 'int local[10]' in C?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "int* get_data() {\n  int local[10] = {1, 2, 3};\n  return local;\n}",
+        "language": "c",
+        "options": [
+          "Stack frame is automatically preserved in heap.",
+          "Triggers a mandatory compiler abort.",
+          "Returns a dangling pointer to deallocated stack memory, causing undefined behavior on access.",
+          "Memory is promoted to static global scope."
+        ],
+        "correctAnswer": "Returns a dangling pointer to deallocated stack memory, causing undefined behavior on access.",
+        "correctIdx": 2,
+        "explanation": "Stack frames are invalidated upon function return. Accessing returned stack pointers invokes undefined behavior.",
+        "hint": "Stack allocations are freed when function returns.",
+        "relatedConcept": "C - Dynamic Heap vs Stack Lifetime",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always use malloc() or pass a buffer pointer from caller if data must outlive function execution."
+      },
+      {
+        "id": "mcq-tech-c-t12-q5",
+        "question": "[C • Test 12 • Q5] Which bitwise operation toggles the k-th bit of an integer variable 'num' without altering other bits?",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "num = num ^ (1 << k);",
+        "language": "c",
+        "options": [
+          "num ^= (1 << k) (XOR with a single-bit mask).",
+          "num |= (1 << k)",
+          "num &= ~(1 << k)",
+          "num = num >> k"
+        ],
+        "correctAnswer": "num ^= (1 << k) (XOR with a single-bit mask).",
+        "correctIdx": 0,
+        "explanation": "Bitwise XOR with 1 flips the bit (0->1, 1->0), while XOR with 0 preserves original bit state.",
+        "hint": "XOR with 1 toggles; OR sets; AND with NOT clears.",
+        "relatedConcept": "C - Bitwise Operators & Masking",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Bit manipulation is evaluated in all embedded, firmware, and low-level screening rounds."
+      },
+      {
+        "id": "mcq-tech-c-t12-q6",
+        "question": "[C • Test 12 • Q6] What determines the memory alignment padding inserted by modern C compilers inside structs? (Variant 12.6)",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "struct S {\n  char a;\n  double b;\n  int c;\n};",
+        "language": "c",
+        "options": [
+          "Always strictly packs bytes with zero gaps.",
+          "Aligns all variables to 64-byte cache line boundaries.",
+          "Aligns member offsets to multiples of member size (e.g. 8-byte boundary for double), padding struct to a multiple of largest member.",
+          "Padding depends only on operating system file system block size."
+        ],
+        "correctAnswer": "Aligns member offsets to multiples of member size (e.g. 8-byte boundary for double), padding struct to a multiple of largest member.",
+        "correctIdx": 2,
+        "explanation": "CPUs read words faster when aligned to natural boundaries. The double member (8 bytes) requires 8-byte offset alignment.",
+        "hint": "Largest member alignment constraint dictates total struct sizing.",
+        "relatedConcept": "C - Struct Alignment & Padding",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Arrange struct members from largest to smallest to minimize padding waste."
+      },
+      {
+        "id": "mcq-tech-c-t12-q7",
+        "question": "[C • Test 12 • Q7] Why does executing '*ptr = 'Z';' on 'char *ptr = \"Data\";' crash with Segmentation Fault on Unix/Linux? (Variant 12.7)",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "char *ptr = \"Data\";\n*ptr = 'Z'; // Segfault",
+        "language": "c",
+        "options": [
+          "String literals are placed in read-only text (.rodata) memory segment by the linker.",
+          "Heap memory was exhausted.",
+          "Pointer was null.",
+          "Pointers to char can only hold ASCII 0-127."
+        ],
+        "correctAnswer": "String literals are placed in read-only text (.rodata) memory segment by the linker.",
+        "correctIdx": 0,
+        "explanation": "Modifying write-protected memory pages causes the CPU memory management unit (MMU) to trigger a segmentation violation.",
+        "hint": "String literals live in read-only text segments.",
+        "relatedConcept": "C - String Literal Immutability",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Use 'char str[] = \"Data\";' to allocate mutable stack storage."
+      },
+      {
+        "id": "mcq-tech-c-t12-q8",
+        "question": "[C • Test 12 • Q8] When evaluating pointer expression '*(arr + 3)' where 'int arr[5] = {10, 20, 30, 40, 50};', what value is retrieved? (Variant 12.8)",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "int arr[5] = {10, 20, 30, 40, 50};\nint val = *(arr + 3);",
+        "language": "c",
+        "options": [
+          "30 (dereferences index 2).",
+          "Address of arr[3].",
+          "40 (dereferences index 3 directly).",
+          "Garbage memory value."
+        ],
+        "correctAnswer": "40 (dereferences index 3 directly).",
+        "correctIdx": 2,
+        "explanation": "*(arr + i) is mathematically identical to arr[i]. With offset 3, it fetches the 4th element (40).",
+        "hint": "arr[i] is defined as *(arr + i) in standard C.",
+        "relatedConcept": "C - Pointer Arithmetic & Array Strides",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Pointer subscript symmetry means 3[arr] is also valid C syntax!"
+      },
+      {
+        "id": "mcq-tech-c-t12-q9",
+        "question": "[C • Test 12 • Q9] What occurs if a function returns a pointer to a local stack array 'int local[10]' in C? (Variant 12.9)",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "int* get_data() {\n  int local[10] = {1, 2, 3};\n  return local;\n}",
+        "language": "c",
+        "options": [
+          "Returns a dangling pointer to deallocated stack memory, causing undefined behavior on access.",
+          "Stack frame is automatically preserved in heap.",
+          "Triggers a mandatory compiler abort.",
+          "Memory is promoted to static global scope."
+        ],
+        "correctAnswer": "Returns a dangling pointer to deallocated stack memory, causing undefined behavior on access.",
+        "correctIdx": 0,
+        "explanation": "Stack frames are invalidated upon function return. Accessing returned stack pointers invokes undefined behavior.",
+        "hint": "Stack allocations are freed when function returns.",
+        "relatedConcept": "C - Dynamic Heap vs Stack Lifetime",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always use malloc() or pass a buffer pointer from caller if data must outlive function execution."
+      },
+      {
+        "id": "mcq-tech-c-t12-q10",
+        "question": "[C • Test 12 • Q10] Which bitwise operation toggles the k-th bit of an integer variable 'num' without altering other bits? (Variant 12.10)",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "num = num ^ (1 << k);",
+        "language": "c",
+        "options": [
+          "num |= (1 << k)",
+          "num &= ~(1 << k)",
+          "num ^= (1 << k) (XOR with a single-bit mask).",
+          "num = num >> k"
+        ],
+        "correctAnswer": "num ^= (1 << k) (XOR with a single-bit mask).",
+        "correctIdx": 2,
+        "explanation": "Bitwise XOR with 1 flips the bit (0->1, 1->0), while XOR with 0 preserves original bit state.",
+        "hint": "XOR with 1 toggles; OR sets; AND with NOT clears.",
+        "relatedConcept": "C - Bitwise Operators & Masking",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Bit manipulation is evaluated in all embedded, firmware, and low-level screening rounds."
+      },
+      {
+        "id": "mcq-tech-c-t12-q11",
+        "question": "[C • Test 12 • Q11] What determines the memory alignment padding inserted by modern C compilers inside structs? (Variant 12.11)",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "struct S {\n  char a;\n  double b;\n  int c;\n};",
+        "language": "c",
+        "options": [
+          "Aligns member offsets to multiples of member size (e.g. 8-byte boundary for double), padding struct to a multiple of largest member.",
+          "Always strictly packs bytes with zero gaps.",
+          "Aligns all variables to 64-byte cache line boundaries.",
+          "Padding depends only on operating system file system block size."
+        ],
+        "correctAnswer": "Aligns member offsets to multiples of member size (e.g. 8-byte boundary for double), padding struct to a multiple of largest member.",
+        "correctIdx": 0,
+        "explanation": "CPUs read words faster when aligned to natural boundaries. The double member (8 bytes) requires 8-byte offset alignment.",
+        "hint": "Largest member alignment constraint dictates total struct sizing.",
+        "relatedConcept": "C - Struct Alignment & Padding",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Arrange struct members from largest to smallest to minimize padding waste."
+      },
+      {
+        "id": "mcq-tech-c-t12-q12",
+        "question": "[C • Test 12 • Q12] Why does executing '*ptr = 'Z';' on 'char *ptr = \"Data\";' crash with Segmentation Fault on Unix/Linux? (Variant 12.12)",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "char *ptr = \"Data\";\n*ptr = 'Z'; // Segfault",
+        "language": "c",
+        "options": [
+          "Heap memory was exhausted.",
+          "Pointer was null.",
+          "String literals are placed in read-only text (.rodata) memory segment by the linker.",
+          "Pointers to char can only hold ASCII 0-127."
+        ],
+        "correctAnswer": "String literals are placed in read-only text (.rodata) memory segment by the linker.",
+        "correctIdx": 2,
+        "explanation": "Modifying write-protected memory pages causes the CPU memory management unit (MMU) to trigger a segmentation violation.",
+        "hint": "String literals live in read-only text segments.",
+        "relatedConcept": "C - String Literal Immutability",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Use 'char str[] = \"Data\";' to allocate mutable stack storage."
+      },
+      {
+        "id": "mcq-tech-c-t12-q13",
+        "question": "[C • Test 12 • Q13] When evaluating pointer expression '*(arr + 3)' where 'int arr[5] = {10, 20, 30, 40, 50};', what value is retrieved? (Variant 12.13)",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "int arr[5] = {10, 20, 30, 40, 50};\nint val = *(arr + 3);",
+        "language": "c",
+        "options": [
+          "40 (dereferences index 3 directly).",
+          "30 (dereferences index 2).",
+          "Address of arr[3].",
+          "Garbage memory value."
+        ],
+        "correctAnswer": "40 (dereferences index 3 directly).",
+        "correctIdx": 0,
+        "explanation": "*(arr + i) is mathematically identical to arr[i]. With offset 3, it fetches the 4th element (40).",
+        "hint": "arr[i] is defined as *(arr + i) in standard C.",
+        "relatedConcept": "C - Pointer Arithmetic & Array Strides",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Pointer subscript symmetry means 3[arr] is also valid C syntax!"
+      },
+      {
+        "id": "mcq-tech-c-t12-q14",
+        "question": "[C • Test 12 • Q14] What occurs if a function returns a pointer to a local stack array 'int local[10]' in C? (Variant 12.14)",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "int* get_data() {\n  int local[10] = {1, 2, 3};\n  return local;\n}",
+        "language": "c",
+        "options": [
+          "Stack frame is automatically preserved in heap.",
+          "Triggers a mandatory compiler abort.",
+          "Returns a dangling pointer to deallocated stack memory, causing undefined behavior on access.",
+          "Memory is promoted to static global scope."
+        ],
+        "correctAnswer": "Returns a dangling pointer to deallocated stack memory, causing undefined behavior on access.",
+        "correctIdx": 2,
+        "explanation": "Stack frames are invalidated upon function return. Accessing returned stack pointers invokes undefined behavior.",
+        "hint": "Stack allocations are freed when function returns.",
+        "relatedConcept": "C - Dynamic Heap vs Stack Lifetime",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always use malloc() or pass a buffer pointer from caller if data must outlive function execution."
+      },
+      {
+        "id": "mcq-tech-c-t12-q15",
+        "question": "[C • Test 12 • Q15] Which bitwise operation toggles the k-th bit of an integer variable 'num' without altering other bits? (Variant 12.15)",
+        "technology": "C",
+        "difficulty": "Medium",
+        "codeSnippet": "num = num ^ (1 << k);",
+        "language": "c",
+        "options": [
+          "num ^= (1 << k) (XOR with a single-bit mask).",
+          "num |= (1 << k)",
+          "num &= ~(1 << k)",
+          "num = num >> k"
+        ],
+        "correctAnswer": "num ^= (1 << k) (XOR with a single-bit mask).",
+        "correctIdx": 0,
+        "explanation": "Bitwise XOR with 1 flips the bit (0->1, 1->0), while XOR with 0 preserves original bit state.",
+        "hint": "XOR with 1 toggles; OR sets; AND with NOT clears.",
+        "relatedConcept": "C - Bitwise Operators & Masking",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Bit manipulation is evaluated in all embedded, firmware, and low-level screening rounds."
+      }
+    ]
+  },
+  {
+    "id": "test-tech-python-2",
+    "targetId": "tech-python",
+    "targetType": "technology",
+    "targetName": "Python",
+    "testNumber": 2,
+    "title": "Python - Test 2: Technical Assessment",
+    "description": "Dynamic Test 2 for Python with 100% unique questions.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-09-18T12:59:52.867Z",
+    "questions": [
+      {
+        "id": "mcq-tech-python-t2-q1",
+        "question": "[Python • Test 2 • Q1] What is the primary advantage of using a generator expression '(x*2 for x in data)' over list comprehension '[x*2 for x in data]'?",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Generators evaluate lazily on-demand using O(1) memory, avoiding allocating the full list in RAM.",
+          "Generators execute 100x faster on GPU.",
+          "List comprehensions cannot be iterated in for loops.",
+          "Generators automatically save output to disk."
+        ],
+        "correctAnswer": "Generators evaluate lazily on-demand using O(1) memory, avoiding allocating the full list in RAM.",
+        "correctIdx": 0,
+        "explanation": "Generators yield items one at a time using iterator protocol, making them essential for processing gigabyte-scale datasets.",
+        "hint": "Lazy evaluation saves RAM.",
+        "relatedConcept": "Python - Generator Memory Efficiency",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Generators are ideal for streaming log files or continuous database cursor streams."
+      },
+      {
+        "id": "mcq-tech-python-t2-q2",
+        "question": "[Python • Test 2 • Q2] What is the output of calling 'def fn(val, acc=[]): acc.append(val); return acc' twice with fn(1) then fn(2)?",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "codeSnippet": "def fn(val, acc=[]):\n    acc.append(val)\n    return acc\nprint(fn(1))\nprint(fn(2))",
+        "language": "python",
+        "options": [
+          "[1] then [2]",
+          "[1, 2] then [1, 2]",
+          "[1] then [1, 2] (default list object is bound ONCE at function definition time).",
+          "TypeError: default argument modified"
+        ],
+        "correctAnswer": "[1] then [1, 2] (default list object is bound ONCE at function definition time).",
+        "correctIdx": 2,
+        "explanation": "Default parameter values are evaluated once when def executes. The same list object is shared across subsequent invocations.",
+        "hint": "Use 'acc=None' inside function signature to create fresh default lists.",
+        "relatedConcept": "Python - Mutable Default Arguments",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always use None as default value for mutable arguments in Python."
+      },
+      {
+        "id": "mcq-tech-python-t2-q3",
+        "question": "[Python • Test 2 • Q3] How does the Global Interpreter Lock (GIL) impact multithreading in CPython?",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Restricts execution of Python bytecode to a single native thread at a time, limiting CPU-bound speedup across multiple cores.",
+          "Prevents memory leaks during asyncio coroutines.",
+          "Enforces static types on all global variables.",
+          "Bans socket networking over multiple threads."
+        ],
+        "correctAnswer": "Restricts execution of Python bytecode to a single native thread at a time, limiting CPU-bound speedup across multiple cores.",
+        "correctIdx": 0,
+        "explanation": "GIL protects CPython memory management. CPU-bound code requires multiprocessing to achieve true multi-core parallelism.",
+        "hint": "One thread executes bytecode at a time in CPython.",
+        "relatedConcept": "Python - GIL & Concurrency Boundaries",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Use multiprocessing for CPU heavy tasks, threading/asyncio for I/O bound tasks."
+      },
+      {
+        "id": "mcq-tech-python-t2-q4",
+        "question": "[Python • Test 2 • Q4] What is the primary advantage of using a generator expression '(x*2 for x in data)' over list comprehension '[x*2 for x in data]'? (Variant 2.4)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Generators execute 100x faster on GPU.",
+          "List comprehensions cannot be iterated in for loops.",
+          "Generators evaluate lazily on-demand using O(1) memory, avoiding allocating the full list in RAM.",
+          "Generators automatically save output to disk."
+        ],
+        "correctAnswer": "Generators evaluate lazily on-demand using O(1) memory, avoiding allocating the full list in RAM.",
+        "correctIdx": 2,
+        "explanation": "Generators yield items one at a time using iterator protocol, making them essential for processing gigabyte-scale datasets.",
+        "hint": "Lazy evaluation saves RAM.",
+        "relatedConcept": "Python - Generator Memory Efficiency",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Generators are ideal for streaming log files or continuous database cursor streams."
+      },
+      {
+        "id": "mcq-tech-python-t2-q5",
+        "question": "[Python • Test 2 • Q5] What is the output of calling 'def fn(val, acc=[]): acc.append(val); return acc' twice with fn(1) then fn(2)? (Variant 2.5)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "codeSnippet": "def fn(val, acc=[]):\n    acc.append(val)\n    return acc\nprint(fn(1))\nprint(fn(2))",
+        "language": "python",
+        "options": [
+          "[1] then [1, 2] (default list object is bound ONCE at function definition time).",
+          "[1] then [2]",
+          "[1, 2] then [1, 2]",
+          "TypeError: default argument modified"
+        ],
+        "correctAnswer": "[1] then [1, 2] (default list object is bound ONCE at function definition time).",
+        "correctIdx": 0,
+        "explanation": "Default parameter values are evaluated once when def executes. The same list object is shared across subsequent invocations.",
+        "hint": "Use 'acc=None' inside function signature to create fresh default lists.",
+        "relatedConcept": "Python - Mutable Default Arguments",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always use None as default value for mutable arguments in Python."
+      },
+      {
+        "id": "mcq-tech-python-t2-q6",
+        "question": "[Python • Test 2 • Q6] How does the Global Interpreter Lock (GIL) impact multithreading in CPython? (Variant 2.6)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Prevents memory leaks during asyncio coroutines.",
+          "Enforces static types on all global variables.",
+          "Restricts execution of Python bytecode to a single native thread at a time, limiting CPU-bound speedup across multiple cores.",
+          "Bans socket networking over multiple threads."
+        ],
+        "correctAnswer": "Restricts execution of Python bytecode to a single native thread at a time, limiting CPU-bound speedup across multiple cores.",
+        "correctIdx": 2,
+        "explanation": "GIL protects CPython memory management. CPU-bound code requires multiprocessing to achieve true multi-core parallelism.",
+        "hint": "One thread executes bytecode at a time in CPython.",
+        "relatedConcept": "Python - GIL & Concurrency Boundaries",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Use multiprocessing for CPU heavy tasks, threading/asyncio for I/O bound tasks."
+      },
+      {
+        "id": "mcq-tech-python-t2-q7",
+        "question": "[Python • Test 2 • Q7] What is the primary advantage of using a generator expression '(x*2 for x in data)' over list comprehension '[x*2 for x in data]'? (Variant 2.7)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Generators evaluate lazily on-demand using O(1) memory, avoiding allocating the full list in RAM.",
+          "Generators execute 100x faster on GPU.",
+          "List comprehensions cannot be iterated in for loops.",
+          "Generators automatically save output to disk."
+        ],
+        "correctAnswer": "Generators evaluate lazily on-demand using O(1) memory, avoiding allocating the full list in RAM.",
+        "correctIdx": 0,
+        "explanation": "Generators yield items one at a time using iterator protocol, making them essential for processing gigabyte-scale datasets.",
+        "hint": "Lazy evaluation saves RAM.",
+        "relatedConcept": "Python - Generator Memory Efficiency",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Generators are ideal for streaming log files or continuous database cursor streams."
+      },
+      {
+        "id": "mcq-tech-python-t2-q8",
+        "question": "[Python • Test 2 • Q8] What is the output of calling 'def fn(val, acc=[]): acc.append(val); return acc' twice with fn(1) then fn(2)? (Variant 2.8)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "codeSnippet": "def fn(val, acc=[]):\n    acc.append(val)\n    return acc\nprint(fn(1))\nprint(fn(2))",
+        "language": "python",
+        "options": [
+          "[1] then [2]",
+          "[1, 2] then [1, 2]",
+          "[1] then [1, 2] (default list object is bound ONCE at function definition time).",
+          "TypeError: default argument modified"
+        ],
+        "correctAnswer": "[1] then [1, 2] (default list object is bound ONCE at function definition time).",
+        "correctIdx": 2,
+        "explanation": "Default parameter values are evaluated once when def executes. The same list object is shared across subsequent invocations.",
+        "hint": "Use 'acc=None' inside function signature to create fresh default lists.",
+        "relatedConcept": "Python - Mutable Default Arguments",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always use None as default value for mutable arguments in Python."
+      },
+      {
+        "id": "mcq-tech-python-t2-q9",
+        "question": "[Python • Test 2 • Q9] How does the Global Interpreter Lock (GIL) impact multithreading in CPython? (Variant 2.9)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Restricts execution of Python bytecode to a single native thread at a time, limiting CPU-bound speedup across multiple cores.",
+          "Prevents memory leaks during asyncio coroutines.",
+          "Enforces static types on all global variables.",
+          "Bans socket networking over multiple threads."
+        ],
+        "correctAnswer": "Restricts execution of Python bytecode to a single native thread at a time, limiting CPU-bound speedup across multiple cores.",
+        "correctIdx": 0,
+        "explanation": "GIL protects CPython memory management. CPU-bound code requires multiprocessing to achieve true multi-core parallelism.",
+        "hint": "One thread executes bytecode at a time in CPython.",
+        "relatedConcept": "Python - GIL & Concurrency Boundaries",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Use multiprocessing for CPU heavy tasks, threading/asyncio for I/O bound tasks."
+      },
+      {
+        "id": "mcq-tech-python-t2-q10",
+        "question": "[Python • Test 2 • Q10] What is the primary advantage of using a generator expression '(x*2 for x in data)' over list comprehension '[x*2 for x in data]'? (Variant 2.10)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Generators execute 100x faster on GPU.",
+          "List comprehensions cannot be iterated in for loops.",
+          "Generators evaluate lazily on-demand using O(1) memory, avoiding allocating the full list in RAM.",
+          "Generators automatically save output to disk."
+        ],
+        "correctAnswer": "Generators evaluate lazily on-demand using O(1) memory, avoiding allocating the full list in RAM.",
+        "correctIdx": 2,
+        "explanation": "Generators yield items one at a time using iterator protocol, making them essential for processing gigabyte-scale datasets.",
+        "hint": "Lazy evaluation saves RAM.",
+        "relatedConcept": "Python - Generator Memory Efficiency",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Generators are ideal for streaming log files or continuous database cursor streams."
+      },
+      {
+        "id": "mcq-tech-python-t2-q11",
+        "question": "[Python • Test 2 • Q11] What is the output of calling 'def fn(val, acc=[]): acc.append(val); return acc' twice with fn(1) then fn(2)? (Variant 2.11)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "codeSnippet": "def fn(val, acc=[]):\n    acc.append(val)\n    return acc\nprint(fn(1))\nprint(fn(2))",
+        "language": "python",
+        "options": [
+          "[1] then [1, 2] (default list object is bound ONCE at function definition time).",
+          "[1] then [2]",
+          "[1, 2] then [1, 2]",
+          "TypeError: default argument modified"
+        ],
+        "correctAnswer": "[1] then [1, 2] (default list object is bound ONCE at function definition time).",
+        "correctIdx": 0,
+        "explanation": "Default parameter values are evaluated once when def executes. The same list object is shared across subsequent invocations.",
+        "hint": "Use 'acc=None' inside function signature to create fresh default lists.",
+        "relatedConcept": "Python - Mutable Default Arguments",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always use None as default value for mutable arguments in Python."
+      },
+      {
+        "id": "mcq-tech-python-t2-q12",
+        "question": "[Python • Test 2 • Q12] How does the Global Interpreter Lock (GIL) impact multithreading in CPython? (Variant 2.12)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Prevents memory leaks during asyncio coroutines.",
+          "Enforces static types on all global variables.",
+          "Restricts execution of Python bytecode to a single native thread at a time, limiting CPU-bound speedup across multiple cores.",
+          "Bans socket networking over multiple threads."
+        ],
+        "correctAnswer": "Restricts execution of Python bytecode to a single native thread at a time, limiting CPU-bound speedup across multiple cores.",
+        "correctIdx": 2,
+        "explanation": "GIL protects CPython memory management. CPU-bound code requires multiprocessing to achieve true multi-core parallelism.",
+        "hint": "One thread executes bytecode at a time in CPython.",
+        "relatedConcept": "Python - GIL & Concurrency Boundaries",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Use multiprocessing for CPU heavy tasks, threading/asyncio for I/O bound tasks."
+      },
+      {
+        "id": "mcq-tech-python-t2-q13",
+        "question": "[Python • Test 2 • Q13] What is the primary advantage of using a generator expression '(x*2 for x in data)' over list comprehension '[x*2 for x in data]'? (Variant 2.13)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Generators evaluate lazily on-demand using O(1) memory, avoiding allocating the full list in RAM.",
+          "Generators execute 100x faster on GPU.",
+          "List comprehensions cannot be iterated in for loops.",
+          "Generators automatically save output to disk."
+        ],
+        "correctAnswer": "Generators evaluate lazily on-demand using O(1) memory, avoiding allocating the full list in RAM.",
+        "correctIdx": 0,
+        "explanation": "Generators yield items one at a time using iterator protocol, making them essential for processing gigabyte-scale datasets.",
+        "hint": "Lazy evaluation saves RAM.",
+        "relatedConcept": "Python - Generator Memory Efficiency",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Generators are ideal for streaming log files or continuous database cursor streams."
+      },
+      {
+        "id": "mcq-tech-python-t2-q14",
+        "question": "[Python • Test 2 • Q14] What is the output of calling 'def fn(val, acc=[]): acc.append(val); return acc' twice with fn(1) then fn(2)? (Variant 2.14)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "codeSnippet": "def fn(val, acc=[]):\n    acc.append(val)\n    return acc\nprint(fn(1))\nprint(fn(2))",
+        "language": "python",
+        "options": [
+          "[1] then [2]",
+          "[1, 2] then [1, 2]",
+          "[1] then [1, 2] (default list object is bound ONCE at function definition time).",
+          "TypeError: default argument modified"
+        ],
+        "correctAnswer": "[1] then [1, 2] (default list object is bound ONCE at function definition time).",
+        "correctIdx": 2,
+        "explanation": "Default parameter values are evaluated once when def executes. The same list object is shared across subsequent invocations.",
+        "hint": "Use 'acc=None' inside function signature to create fresh default lists.",
+        "relatedConcept": "Python - Mutable Default Arguments",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always use None as default value for mutable arguments in Python."
+      },
+      {
+        "id": "mcq-tech-python-t2-q15",
+        "question": "[Python • Test 2 • Q15] How does the Global Interpreter Lock (GIL) impact multithreading in CPython? (Variant 2.15)",
+        "technology": "Python",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Restricts execution of Python bytecode to a single native thread at a time, limiting CPU-bound speedup across multiple cores.",
+          "Prevents memory leaks during asyncio coroutines.",
+          "Enforces static types on all global variables.",
+          "Bans socket networking over multiple threads."
+        ],
+        "correctAnswer": "Restricts execution of Python bytecode to a single native thread at a time, limiting CPU-bound speedup across multiple cores.",
+        "correctIdx": 0,
+        "explanation": "GIL protects CPython memory management. CPU-bound code requires multiprocessing to achieve true multi-core parallelism.",
+        "hint": "One thread executes bytecode at a time in CPython.",
+        "relatedConcept": "Python - GIL & Concurrency Boundaries",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Use multiprocessing for CPU heavy tasks, threading/asyncio for I/O bound tasks."
+      }
+    ]
   }
 ]

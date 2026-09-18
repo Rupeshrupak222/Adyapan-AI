@@ -378,6 +378,389 @@ const COMPANY_PRESETS: Record<string, CompanyPreset> = {
 // ============================================================================
 // AI QUESTION GENERATION
 // ============================================================================
+// TOPIC ARCHETYPES & DOMAINS FOR VARIETY IN QUESTION GENERATION
+// ============================================================================
+
+const TOPIC_ARCHETYPES: Record<string, string[]> = {
+  "Permutations & Combinations": [
+    "Word letter arrangements with conditions (vowels together, vowels at odd positions, no two vowels together)",
+    "Committee or team formation from pools with inclusion/exclusion criteria",
+    "Circular seating arrangements and necklace/bracelet permutations",
+    "Number formation using specified digits with divisibility or magnitude constraints",
+    "Geometric combinatorics (lines formed by points, diagonals of polygon, non-collinear triangles)",
+    "Distribution of distinct and identical items among people or boxes",
+  ],
+  "Time & Work": [
+    "Individual vs joint efficiency where one worker leaves or joins midway",
+    "Pipes and cisterns with filling pipes, emptying pipes, and leakage rates",
+    "Wages distribution proportional to work completed by individuals",
+    "Men, women, and children equivalence problems",
+    "Workers operating on alternate days",
+    "Negative work or destruction rates alongside building rates",
+  ],
+  "Probability": [
+    "Drawing cards from a standard deck with/without replacement and compound events",
+    "Rolling multiple dice and computing specific sum, product, or difference probabilities",
+    "Selecting colored balls/marbles from multiple urns or bags with conditional probabilities",
+    "Independent success probabilities in target shooting or exam passing",
+    "At least one event occurring using complementary probability 1 - P(none)",
+    "Probability involving leap years, calendar days, or random numbers",
+  ],
+  "Profit & Loss": [
+    "Cost price, marked price, trade discount, and net profit percentage",
+    "Dishonest shopkeeper using false weights or adulteration",
+    "Successive discounts and single equivalent discount percentage",
+    "Selling two items at the same selling price with one profit and one loss",
+    "Partnership profit division based on investment capital and active time",
+    "Break-even analysis and loss recovery by adjusting selling price",
+  ],
+  "Percentages": [
+    "Successive percentage increase and decrease",
+    "Price rise and percentage reduction in consumption to keep expenditure constant",
+    "Population growth or depreciation over successive years",
+    "Exam marks, passing threshold, and maximum possible score",
+    "Income, tax slabs, savings, and expenditure percentages",
+    "Voter turnout, valid votes, and winning candidate margins in elections",
+  ],
+  "Time Speed & Distance": [
+    "Trains crossing poles, platforms, bridges, or each other in opposite/same direction",
+    "Boats and streams with upstream speed, downstream speed, and still water speed",
+    "Average speed across journeys with equal distances or equal time intervals",
+    "Circular tracks, relative speeds, and first meeting points",
+    "Races and games of skill (head starts in meters or seconds)",
+    "Reaching late or early due to changes in normal travel speed",
+  ],
+  "Simple & Compound Interest": [
+    "Difference between Compound Interest and Simple Interest over 2 or 3 years",
+    "Principal doubling or multiplying in N years at compound interest",
+    "Compounding annually vs semi-annually vs quarterly",
+    "Equal annual installments / EMI loan repayment under compound interest",
+    "Investments at different interest rates for different tenures",
+  ],
+  "Ratio & Proportion": [
+    "Mixture replacement formula (drawing out liquid and replacing with water repeatedly)",
+    "Incomes and expenditures ratio with given savings",
+    "Coins in a bag of different denominations with total value given",
+    "Third proportional, fourth proportional, and mean proportional",
+    "Ages of family members in ratio past, present, and future",
+  ],
+  "Number System": [
+    "Finding unit digits of large exponent powers (cyclicity method)",
+    "Remainder theorem and divisibility rules (7, 11, 13, 19, 72, 88)",
+    "HCF and LCM word problems (bells tolling together, traffic lights, tiling)",
+    "Number of factors, prime factors, and sum of divisors",
+    "Highest power of a prime dividing N factorial (Legendre's formula)",
+  ],
+  "Blood Relations": [
+    "Coded blood relations deciphering (A + B means A is father of B)",
+    "Pointing to a photograph / person in conversation with indirect relations",
+    "Family tree puzzle with 3 generations, genders, and professions",
+    "Relationship deduction through maternal and paternal chains",
+  ],
+  "Direction Sense": [
+    "Travel path with multiple left/right turns, compass bearings, and final distance from origin",
+    "Shadows at sunrise and sunset determining face direction",
+    "Pythagorean displacement across multi-segment journeys",
+    "Clock hand directions at specific times (hour hand pointing North)",
+  ],
+  "Syllogisms": [
+    "Statements with 'Only a few', 'Few', 'All', 'Some' and testing definite conclusions",
+    "Possibility conclusions involving Venn diagram overlap verification",
+    "Complementary pairs (Either I or II follows with Some + No)",
+    "Negative statement evaluation ('No X is Y')",
+  ],
+  "Coding-Decoding": [
+    "Forward and reverse alphabetical shift ciphers with pattern progression",
+    "Letter-to-number value summation and reverse positional weighting",
+    "Sentence coding with common word comparison (substitution deciphering)",
+    "Matrix coding with row-column coordinate indices",
+  ],
+  "Seating Arrangement": [
+    "Circular seating with people facing inside and outside",
+    "Linear seating with people facing North and South",
+    "Parallel rows with people facing each other",
+    "Square/rectangular table arrangement with corner and side positions",
+  ],
+  "Reading Comprehension": [
+    "Main idea, tone analysis (skeptical, analytical, optimistic), and author's purpose",
+    "Direct factual retrieval and contextual vocabulary meaning",
+    "Inference and logical extrapolation based on passage arguments",
+  ],
+  "Sentence Correction": [
+    "Subject-verb agreement with intervening clauses",
+    "Modifier placement and dangling participles",
+    "Parallelism in coordinate structures and comparisons",
+    "Idiomatic prepositional usage and tense consistency",
+  ],
+  "Critical Reasoning": [
+    "Identifying the underlying unstated assumption of an argument",
+    "Strengthening or weakening the central conclusion with new evidence",
+    "Detecting logical fallacies (post hoc, false dilemma, straw man)",
+    "Evaluating the most useful additional fact to determine argument validity",
+  ],
+};
+
+export function generateTopicSpecificFallback(
+  topic: string,
+  category: AptitudeCategory,
+  count: number,
+  difficulty: Difficulty,
+  companyTags: string[],
+  testNumber?: number,
+  existingQuestionTexts?: Set<string>
+): GeneratedQuestion[] {
+  const companyName = companyTags[0] || "Campus Placement";
+  const normTopic = topic.toLowerCase();
+
+  return Array.from({ length: count }, (_, i) => {
+    const seed = Date.now() + i * 43 + (testNumber || 1) * 1019;
+    const correctIdx = (seed + i) % 4;
+
+    let text = "";
+    let options = ["", "", "", ""];
+    let explanation = "";
+    let shortcut = "";
+    let commonMistakes: string[] = [];
+
+    if (normTopic.includes("permutation") || normTopic.includes("combination")) {
+      const words = ["LEADING", "DETAIL", "TRIANGLE", "CORPORATION", "LOGARITHM", "EQUATION", "PENCIL"];
+      const word = words[(seed + i) % words.length];
+      const vowels = word.split("").filter(c => "AEIOU".includes(c));
+      const consonants = word.split("").filter(c => !"AEIOU".includes(c));
+      
+      const vCount = vowels.length;
+      const cCount = consonants.length;
+      const fact = (n: number): number => n <= 1 ? 1 : n * fact(n - 1);
+      const ans = fact(cCount + 1) * fact(vCount);
+
+      text = `In how many different ways can the letters of the word "${word}" be arranged such that all the vowels always come together?`;
+      const distractors = [ans * 2, Math.floor(ans / 2), fact(word.length), fact(cCount + 1)];
+      options[correctIdx] = `${ans}`;
+      let d = 0;
+      for (let k = 0; k < 4; k++) {
+        if (k !== correctIdx) {
+          options[k] = `${distractors[d % distractors.length]}`;
+          d++;
+        }
+      }
+      explanation = `Word "${word}" has ${vCount} vowels (${vowels.join(",")}) and ${cCount} consonants. Treating vowels as a single block gives (${cCount} + 1) = ${cCount + 1} entities. These can be arranged in ${cCount + 1}! ways. The ${vCount} vowels within the block can be arranged among themselves in ${vCount}! ways. Total ways = ${cCount + 1}! × ${vCount}! = ${fact(cCount + 1)} × ${fact(vCount)} = ${ans}.`;
+      shortcut = `Treat all vowels as 1 composite letter. Total ways = (consonants + 1)! × (vowels)!.`;
+      commonMistakes = ["Forgetting to arrange vowels internally", "Calculating simple n! without grouping"];
+    } else if (normTopic.includes("time") && normTopic.includes("work")) {
+      const daysA = 10 + ((seed + i) % 6) * 2; // e.g., 10, 12, 14, 16, 18, 20
+      const daysB = daysA + 5 + ((seed * 3 + i) % 5); // e.g., 15, 18, etc.
+      const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+      const lcm = (daysA * daysB) / gcd(daysA, daysB);
+      const effA = lcm / daysA;
+      const effB = lcm / daysB;
+      const totalEff = effA + effB;
+      const combinedDays = (lcm / totalEff).toFixed(1);
+
+      text = `A can complete a project in ${daysA} days, while B can complete the same project in ${daysB} days. If both work together, in how many days will the project be completed?`;
+      options[correctIdx] = `${combinedDays} days`;
+      const distractors = [
+        `${((daysA + daysB) / 2).toFixed(1)} days`,
+        `${(daysA * daysB / (daysA + daysB + 2)).toFixed(1)} days`,
+        `${((lcm / Math.abs(effA - effB))).toFixed(1)} days`
+      ];
+      let d = 0;
+      for (let k = 0; k < 4; k++) {
+        if (k !== correctIdx) {
+          options[k] = distractors[d % distractors.length];
+          d++;
+        }
+      }
+      explanation = `Work = LCM(${daysA}, ${daysB}) = ${lcm} units. A's daily efficiency = ${lcm}/${daysA} = ${effA} units/day. B's daily efficiency = ${lcm}/${daysB} = ${effB} units/day. Combined efficiency = ${effA} + ${effB} = ${totalEff} units/day. Required time = ${lcm} / ${totalEff} = ${combinedDays} days.`;
+      shortcut = `Direct formula: (A × B) / (A + B) = (${daysA} × ${daysB}) / (${daysA} + ${daysB}) = ${combinedDays} days.`;
+      commonMistakes = ["Averaging the days (A+B)/2", "Adding reciprocals incorrectly"];
+    } else if (normTopic.includes("profit") || normTopic.includes("loss")) {
+      const cp = 500 + ((seed + i * 23) % 15) * 50; // 500..1200
+      const markup = 20 + ((seed + i * 7) % 5) * 10; // 20%, 30%, 40%, 50%, 60%
+      const discount = 10 + ((seed + i * 3) % 3) * 5; // 10%, 15%, 20%
+      const mp = cp * (1 + markup / 100);
+      const sp = Math.round(mp * (1 - discount / 100));
+      const netProfit = sp - cp;
+      const netProfitPct = (((sp - cp) / cp) * 100).toFixed(1);
+
+      text = `A retailer marks an item ${markup}% above its cost price of ₹${cp} and allows a discount of ${discount}% on the marked price. What is the net profit percentage earned by the retailer?`;
+      options[correctIdx] = `${netProfitPct}%`;
+      const distractors = [
+        `${(markup - discount).toFixed(1)}%`,
+        `${((markup - discount) * 0.8).toFixed(1)}%`,
+        `${(markup * 0.5).toFixed(1)}%`
+      ];
+      let d = 0;
+      for (let k = 0; k < 4; k++) {
+        if (k !== correctIdx) {
+          options[k] = distractors[d % distractors.length];
+          d++;
+        }
+      }
+      explanation = `Cost Price = ₹${cp}. Marked Price = ₹${cp} × (1 + ${markup}/100) = ₹${mp}. Selling Price after ${discount}% discount = ₹${mp} × (1 - ${discount}/100) = ₹${sp}. Net Profit = ₹${sp} - ₹${cp} = ₹${netProfit}. Net Profit % = (₹${netProfit} / ₹${cp}) × 100 = ${netProfitPct}%.`;
+      shortcut = `Net % formula = Markup - Discount - (Markup × Discount / 100) = ${markup} - ${discount} - (${markup * discount} / 100) = ${netProfitPct}%.`;
+      commonMistakes = ["Simply subtracting discount from markup (Markup - Discount)", "Calculating discount on cost price instead of marked price"];
+    } else if (normTopic.includes("speed") || normTopic.includes("distance")) {
+      const trainLen = 150 + ((seed + i * 11) % 5) * 50; // 150, 200, 250, 300, 350
+      const speedKmph = 54 + ((seed + i * 7) % 4) * 18; // 54, 72, 90, 108 km/h
+      const speedMs = (speedKmph * 5) / 18; // 15, 20, 25, 30 m/s
+      const platformLen = 200 + ((seed + i * 13) % 4) * 50; // 200..350
+      const totalDist = trainLen + platformLen;
+      const timeSec = (totalDist / speedMs).toFixed(1);
+
+      text = `A train ${trainLen} meters long is running at a speed of ${speedKmph} km/h. How many seconds will it take to completely cross a platform ${platformLen} meters long?`;
+      options[correctIdx] = `${timeSec} seconds`;
+      const distractors = [
+        `${(trainLen / speedMs).toFixed(1)} seconds`,
+        `${(platformLen / speedMs).toFixed(1)} seconds`,
+        `${((totalDist / speedKmph)).toFixed(1)} seconds`
+      ];
+      let d = 0;
+      for (let k = 0; k < 4; k++) {
+        if (k !== correctIdx) {
+          options[k] = distractors[d % distractors.length];
+          d++;
+        }
+      }
+      explanation = `Convert speed to m/s: ${speedKmph} × (5/18) = ${speedMs} m/s. Total distance to cross platform = Train Length + Platform Length = ${trainLen} + ${platformLen} = ${totalDist} meters. Time = Distance / Speed = ${totalDist} / ${speedMs} = ${timeSec} seconds.`;
+      shortcut = `Distance = L1 + L2 = ${totalDist}m. Speed in m/s = ${speedKmph} × 5/18 = ${speedMs}. Time = ${totalDist} / ${speedMs} = ${timeSec}s.`;
+      commonMistakes = ["Forgetting to convert km/h to m/s", "Not adding platform length to train length"];
+    } else if (normTopic.includes("blood") || normTopic.includes("relation")) {
+      const scenarios = [
+        {
+          q: "Pointing to a photograph of a boy, Suresh said, 'He is the son of the only son of my mother.' How is Suresh related to that boy?",
+          ans: "Father",
+          opts: ["Father", "Uncle", "Brother", "Grandfather"],
+          exp: "Mother's only son is Suresh himself. The boy is the son of Suresh. Hence, Suresh is the father of the boy.",
+          trick: "Trace backwards: 'My mother' -> 'Only son of my mother' = Suresh -> 'Son of Suresh' = Suresh's son."
+        },
+        {
+          q: "If P + Q means P is the father of Q, P - Q means P is the sister of Q, and P * Q means P is the brother of Q, which of the following represents 'M is the aunt of N'?",
+          ans: "M - K + N",
+          opts: ["M - K + N", "M + K - N", "M * K + N", "N - K + M"],
+          exp: "M - K means M is the sister of K. K + N means K is the father of N. Sister of N's father is N's paternal aunt.",
+          trick: "Aunt requires female gender (M - K) followed by father relation to N (+ N)."
+        },
+        {
+          q: "Introducing a woman, a man said, 'Her mother is the only daughter of my mother-in-law.' How is the man related to the woman?",
+          ans: "Father",
+          opts: ["Father", "Brother", "Husband", "Uncle"],
+          exp: "Only daughter of man's mother-in-law is the man's wife. The woman's mother is the man's wife. Therefore, the man is her father.",
+          trick: "'Only daughter of my mother-in-law' = my wife. Her daughter = my daughter."
+        }
+      ];
+      const sc = scenarios[(seed + i) % scenarios.length];
+      text = sc.q;
+      options[correctIdx] = sc.ans;
+      let d = 0;
+      for (let k = 0; k < 4; k++) {
+        if (k !== correctIdx) {
+          const rem = sc.opts.filter(o => o !== sc.ans);
+          options[k] = rem[d % rem.length];
+          d++;
+        }
+      }
+      explanation = sc.exp;
+      shortcut = sc.trick;
+      commonMistakes = ["Confusing maternal and paternal sides", "Assuming gender without explicit cues"];
+    } else if (normTopic.includes("syllogism") || normTopic.includes("logic")) {
+      const syllogisms = [
+        {
+          q: "Statements:\nI. All laptops are devices.\nII. Some devices are gadgets.\nIII. No gadget is antique.\nConclusions:\n1. Some devices are laptops.\n2. No antique is a device.",
+          ans: "Only conclusion 1 follows",
+          opts: ["Only conclusion 1 follows", "Only conclusion 2 follows", "Both conclusions follow", "Neither conclusion follows"],
+          exp: "From statement I, 'All laptops are devices', the immediate converse 'Some devices are laptops' is definitively true. Antique has no direct negative relation with device, so conclusion 2 does not follow.",
+          trick: "'All A are B' always implies 'Some B are A'."
+        },
+        {
+          q: "Statements:\nI. Only a few engineers are managers.\nII. All managers are leaders.\nConclusions:\n1. Some engineers are leaders.\n2. All engineers can never be managers.",
+          ans: "Both conclusions follow",
+          opts: ["Both conclusions follow", "Only conclusion 1 follows", "Only conclusion 2 follows", "Neither follows"],
+          exp: "'Only a few engineers are managers' means: Some engineers are managers, and some engineers are NOT managers. Since managers are leaders, the overlap gives 'Some engineers are leaders'. 'Only a few' guarantees that all engineers can never be managers.",
+          trick: "'Only a few A are B' means Some A are B + Some A are NOT B."
+        }
+      ];
+      const sc = syllogisms[(seed + i) % syllogisms.length];
+      text = sc.q;
+      options[correctIdx] = sc.ans;
+      let d = 0;
+      for (let k = 0; k < 4; k++) {
+        if (k !== correctIdx) {
+          const rem = sc.opts.filter(o => o !== sc.ans);
+          options[k] = rem[d % rem.length];
+          d++;
+        }
+      }
+      explanation = sc.exp;
+      shortcut = sc.trick;
+      commonMistakes = ["Treating 'Only a few' as standard 'Some'", "Assuming negative relations without proof"];
+    } else if (normTopic.includes("probability")) {
+      const red = 4 + ((seed + i) % 4);
+      const blue = 5 + ((seed * 2 + i) % 4);
+      const green = 3 + ((seed * 3 + i) % 3);
+      const total = red + blue + green;
+      const waysTotal = (total * (total - 1)) / 2;
+      const waysRed = (red * (red - 1)) / 2;
+      const gcdVal = (a: number, b: number): number => b === 0 ? a : gcdVal(b, a % b);
+      const g = gcdVal(waysRed, waysTotal);
+      const ansFrac = `${waysRed / g}/${waysTotal / g}`;
+
+      text = `A bag contains ${red} red balls, ${blue} blue balls, and ${green} green balls. If two balls are drawn at random without replacement, what is the probability that both balls are red?`;
+      options[correctIdx] = ansFrac;
+      const distractors = [
+        `${(waysRed + 1) / g}/${waysTotal / g}`,
+        `${red}/${total}`,
+        `${(red * 2)}/${total * 2}`
+      ];
+      let d = 0;
+      for (let k = 0; k < 4; k++) {
+        if (k !== correctIdx) {
+          options[k] = distractors[d % distractors.length];
+          d++;
+        }
+      }
+      explanation = `Total balls = ${red} + ${blue} + ${green} = ${total}. Total ways to choose 2 balls = C(${total}, 2) = (${total} × ${total - 1}) / 2 = ${waysTotal}. Favorable ways to choose 2 red balls = C(${red}, 2) = (${red} × ${red - 1}) / 2 = ${waysRed}. Probability = ${waysRed}/${waysTotal} = ${ansFrac}.`;
+      shortcut = `P(1st Red) × P(2nd Red) = (${red}/${total}) × (${red - 1}/${total - 1}) = ${ansFrac}.`;
+      commonMistakes = ["Using with-replacement calculation", "Using total balls instead of combination formula"];
+    } else {
+      // Default diversified quantitative / logical reasoning problem
+      const p = 10000 + ((seed + i * 7) % 10) * 2000;
+      const r = 10;
+      const t = 2;
+      const si = (p * r * t) / 100;
+      const ci = Math.round(p * (Math.pow(1 + r / 100, t) - 1));
+      const diff = ci - si;
+
+      text = `What is the difference between the Compound Interest and Simple Interest on a principal sum of ₹${p.toLocaleString()} for ${t} years at an annual interest rate of ${r}%?`;
+      options[correctIdx] = `₹${diff}`;
+      const distractors = [`₹${diff + 50}`, `₹${diff * 2}`, `₹${Math.max(10, diff - 40)}`];
+      let d = 0;
+      for (let k = 0; k < 4; k++) {
+        if (k !== correctIdx) {
+          options[k] = distractors[d % distractors.length];
+          d++;
+        }
+      }
+      explanation = `SI for 2 years = (P × R × T) / 100 = (${p} × ${r} × ${t}) / 100 = ₹${si}. CI for 2 years = P[(1 + R/100)² - 1] = ₹${ci}. Difference = CI - SI = ₹${diff}.`;
+      shortcut = `For 2 years, Difference = P × (R / 100)² = ${p} × (${r}/100)² = ₹${diff}.`;
+      commonMistakes = ["Calculating CI for 3 years instead of 2", "Rounding errors in CI formula"];
+    }
+
+    return {
+      id: `ai-topic-${normTopic.replace(/[^a-z0-9]/g, "-")}-t${testNumber || 1}-${seed}-${i}`,
+      text: `[${companyName} • ${topic}] ${text}`,
+      options,
+      correctIdx,
+      explanation,
+      shortcut,
+      difficulty,
+      estimatedTimeSec: difficulty === "easy" ? 45 : difficulty === "hard" ? 110 : 75,
+      topic,
+      category,
+      companyTags: [companyName],
+      commonMistakes,
+    };
+  });
+}
 
 async function aiGenerateQuestions(
   topic: string,
@@ -389,9 +772,9 @@ async function aiGenerateQuestions(
   existingQuestionTexts?: Set<string>
 ): Promise<GeneratedQuestion[]> {
   const diffInstruction =
-    difficulty === "easy" ? "All questions should be easy — suitable for beginners. Focus on direct formula application."
-    : difficulty === "medium" ? "All questions should be medium — typical campus placement level. May require 2-step reasoning."
-    : "All questions should be hard — advanced level. Require multi-step reasoning, clever shortcuts, or tricky cases.";
+    difficulty === "easy" ? "All questions should be easy — suitable for beginners. Focus on direct formula application and speed."
+    : difficulty === "medium" ? "All questions should be medium — typical campus placement level. Require 2-3 step analytical reasoning."
+    : "All questions should be hard — advanced campus & off-campus placement level. Require multi-step reasoning, tricky edge cases, and clever shortcuts.";
 
   const paperContext = testNumber ? `EXAM PAPER SET: Test Paper #${testNumber}. You MUST generate brand-new, unique questions specifically for Test Paper #${testNumber}. Do NOT repeat questions or scenario patterns from earlier test papers.` : "";
 
@@ -399,7 +782,6 @@ async function aiGenerateQuestions(
     ? `CRITICAL COMPANY EXAM REQUIREMENT: You MUST generate REAL, ACTUAL PAST EXAM QUESTIONS and OFFICIAL EXAM PATTERNS used in official ${companyTags.join(", ")} placement papers (e.g. ${companyTags[0]} NQT / Campus Recruitment Assessment). Do NOT use generic placeholder text. Format the questions exactly as they appear in official ${companyTags.join(", ")} placement papers with real numbers, accurate options, detailed step-by-step solutions, and company-specific shortcuts! ${paperContext}`
     : `Design questions that are universally relevant for campus placements at major Indian IT and consulting companies. ${paperContext}`;
 
-  // Add anti-duplication context if we have existing questions
   const antiDuplicationContext = existingQuestionTexts && existingQuestionTexts.size > 0
     ? `\n\n⚠️ CRITICAL ANTI-DUPLICATION REQUIREMENT ⚠️\nThe following ${existingQuestionTexts.size} questions have ALREADY been used in previous tests for this topic. You MUST NOT generate any questions with similar wording, scenarios, or patterns:\n\n${Array.from(existingQuestionTexts).slice(0, 20).map((q, i) => `${i + 1}. ${q.substring(0, 100)}...`).join("\n")}\n\n${existingQuestionTexts.size > 20 ? `... and ${existingQuestionTexts.size - 20} more questions.\n\n` : ""}YOU MUST:\n- Use completely different scenarios, contexts, and numerical values\n- Vary the question structure and wording significantly\n- Create fresh, novel problems that test the same concepts differently\n- Think of creative new ways to assess ${topic} skills\n- Generate questions that feel entirely new and unique`
     : "";
@@ -417,8 +799,8 @@ ${diffInstruction}
 CRITICAL RULES:
 - CRITICAL ANTI-DUPLICATION MANDATE: Every question MUST be 100% unique with distinct scenario descriptions, company context, and unique numerical values. Do NOT generate repetitive or identical questions.
 - VARIATION REQUIREMENT: Use diverse question formats (word problems, data interpretation, pattern recognition, case studies, calculations, etc.)
-- SCENARIO DIVERSITY: Vary contexts (business, travel, sports, technology, science, finance, everyday life, etc.)
-- NUMERICAL VARIETY: Use different number ranges, scales, and units in each question
+- SCENARIO DIVERSITY: Vary contexts across technology, finance, e-commerce, travel, operations, logistics, sports, everyday life.
+- NUMERICAL VARIETY: Use varied, realistic numbers and units. Never repeat identical numerical values or template structures across questions.
 - Each question must be self-contained with all necessary information in the question text.
 - Exactly 4 options, with exactly ONE correct answer.
 - Options must be plausible — no obviously wrong distractors.
@@ -431,9 +813,62 @@ CRITICAL RULES:
   * Hard: 120-180 seconds
 - Questions should feel authentic — avoid artificial or contrived wording.`;
 
-  const userPrompt = `Generate exactly ${count} high-quality ${difficulty}-level ${topic} questions for ${category} placement preparation.
+  const fallback: GeneratedQuestion[] = generateTopicSpecificFallback(
+    topic,
+    category,
+    count,
+    difficulty,
+    companyTags,
+    testNumber,
+    existingQuestionTexts
+  );
 
-${existingQuestionTexts && existingQuestionTexts.size > 0 ? `⚠️ IMPORTANT: ${existingQuestionTexts.size} questions have already been used. Generate COMPLETELY DIFFERENT questions with:\n- Different scenarios and contexts\n- Different numerical values and ranges\n- Different question formats and structures\n- Fresh, creative approaches to testing ${topic} concepts\n\n` : ""}Return a JSON object with a "questions" key containing an array of questions with this exact structure:
+  try {
+    const BATCH_SIZE = 5;
+    const allGenerated: GeneratedQuestion[] = [];
+    let remaining = count;
+    let batchIndex = 0;
+
+    const archetypesForTopic = TOPIC_ARCHETYPES[topic] || [];
+
+    const scenarioDomains = [
+      "Fintech, algorithmic trading & banking systems",
+      "Cloud architecture, microservices, and server throughput",
+      "Electric vehicle manufacturing & battery charging networks",
+      "Aerospace navigation & satellite telecommunication",
+      "E-commerce logistics, delivery fleets & warehouse inventory",
+      "Sports tournament scheduling & athlete analytics",
+      "Hospital operations, clinical trials & pharmaceutical inventory",
+      "Renewable solar & wind microgrid power distribution",
+      "High-speed railway dispatch & passenger transit networks",
+      "Agri-tech automated irrigation & crop yield forecasting",
+    ];
+
+    while (remaining > 0) {
+      batchIndex++;
+      const batchSize = Math.min(remaining, BATCH_SIZE);
+
+      const chosenArchetype = archetypesForTopic.length > 0
+        ? archetypesForTopic[(batchIndex - 1) % archetypesForTopic.length]
+        : `Diverse real-world campus placement scenario for ${topic}`;
+
+      const scenarioTheme = scenarioDomains[(Date.now() + batchIndex * 13) % scenarioDomains.length];
+
+      // Provide explicitly generated questions so subsequent batches don't repeat them
+      const alreadyGeneratedSummary = allGenerated.map((q, idx) => `${idx + 1}. ${q.text.substring(0, 90)}...`).join("\n");
+      const crossBatchAvoidance = alreadyGeneratedSummary
+        ? `\n⚠️ ALREADY GENERATED IN PREVIOUS BATCHES OF THIS TEST (DO NOT REPEAT CONCEPTS, NAMES OR NUMBERS):\n${alreadyGeneratedSummary}\n`
+        : "";
+
+      const batchUserPrompt = `Generate exactly ${batchSize} high-quality, completely unique ${difficulty}-level questions on "${topic}" for ${category} placement preparation.
+
+Batch #${batchIndex} Generation Directives:
+- Core Concept Sub-Archetype: "${chosenArchetype}"
+- Scenario Setting / Narrative Domain: "${scenarioTheme}"
+- Random Entropy Token: ${Date.now()}_${batchIndex}_${Math.random().toString(36).substring(2, 7)}
+${crossBatchAvoidance}
+${existingQuestionTexts && existingQuestionTexts.size > 0 ? `⚠️ Avoid previously seen questions:\n${Array.from(existingQuestionTexts).slice(0, 15).map(t => `- ${t.substring(0, 80)}...`).join("\n")}\n` : ""}
+Return a JSON object with a "questions" key containing an array of ${batchSize} questions with this exact structure:
 {
   "questions": [
     {
@@ -452,78 +887,20 @@ ${existingQuestionTexts && existingQuestionTexts.size > 0 ? `⚠️ IMPORTANT: $
 
 Rules:
 - Return ONLY valid JSON matching the structure above.
-- Make questions exam-realistic and challenging.
-- correctIdx is 0-based index of the correct option.
-- Include realistic numerical values where needed.
-- Each question should test understanding, not just memorization.`;
+- Make every question test a distinct angle of "${topic}".
+- correctIdx is 0-based index of the unique correct option.
+- Include realistic numerical values and plausible distractors.`;
 
-  const fallback: GeneratedQuestion[] = Array.from({ length: count }, (_, i) => {
-    const companyName = companyTags[0] || "Placement";
-    // Use test number and timestamp to ensure uniqueness
-    const seedVal = Date.now() + i * 37 + (testNumber || 1) * 1000;
-    const correctIdx = (seedVal + i) % 4;
-    
-    // Generate varied numerical values using multiple seed sources
-    const valA = 12 + (i * 7) + (testNumber || 1) * 3 + (seedVal % 50);
-    const valB = 5 + (i * 3) + (testNumber || 1) * 2 + ((seedVal * 7) % 30);
-    const ans = valA * valB;
-    
-    // Create varied question scenarios
-    const scenarios = [
-      { context: "resource capacity", unit: "units", question: `If resource capacity A is ${valA} units/hr and operations run for ${valB} hours, what is the total system throughput required?` },
-      { context: "production efficiency", unit: "items", question: `A production line manufactures ${valA} items per batch. If ${valB} batches are completed, how many total items are produced?` },
-      { context: "data processing", unit: "records", question: `A system processes ${valA} records per second. How many records are processed in ${valB} seconds?` },
-      { context: "team productivity", unit: "tasks", question: `If a team completes ${valA} tasks per day and works for ${valB} days, what is the total tasks completed?` },
-      { context: "inventory management", unit: "units", question: `Each shipment contains ${valA} units. If ${valB} shipments arrive, what is the total inventory?` },
-      { context: "network bandwidth", unit: "MB", question: `A network transfers ${valA} MB per minute. What is the total data transferred in ${valB} minutes?` },
-      { context: "sales performance", unit: "sales", question: `A salesperson makes ${valA} sales per week. How many sales are made in ${valB} weeks?` },
-    ];
-    
-    const scenario = scenarios[(seedVal + i + (testNumber || 1)) % scenarios.length];
-    
-    const opts = ["", "", "", ""];
-    opts[correctIdx] = `${ans} ${scenario.unit}`;
-    let dIdx = 0;
-    // Generate more plausible distractors
-    const distractors = [
-      `${ans + (valA + valB)} ${scenario.unit}`, 
-      `${Math.floor(ans * 0.9)} ${scenario.unit}`, 
-      `${Math.floor(ans * 1.1)} ${scenario.unit}`
-    ];
-    for (let k = 0; k < 4; k++) {
-      if (k !== correctIdx) {
-        opts[k] = distractors[dIdx % distractors.length];
-        dIdx++;
-      }
-    }
-    
-    return {
-      id: `ai-fb-${companyName.toLowerCase().replace(/[^a-z0-9]/g, "-")}-t${testNumber || 1}-${Date.now()}-${i}`,
-      text: `[${companyName} ${topic} - Test ${testNumber || 1}, Q${i + 1}] ${scenario.question}`,
-      options: opts,
-      correctIdx,
-      explanation: `Total ${scenario.context} = ${valA} × ${valB} = ${ans} ${scenario.unit}. This is a direct multiplication of rate and time/quantity.`,
-      shortcut: `Quick formula: Simply multiply ${valA} × ${valB} = ${ans}.`,
-      difficulty,
-      estimatedTimeSec: difficulty === "easy" ? 45 : difficulty === "hard" ? 90 : 60,
-      topic,
-      category,
-      companyTags: [companyName],
-      commonMistakes: [`Adding instead of multiplying (${valA + valB})`, `Calculation error in multiplication`],
-    };
-  });
-
-  try {
-    const BATCH_SIZE = 5;
-    const allGenerated: GeneratedQuestion[] = [];
-    let remaining = count;
-
-    while (remaining > 0) {
-      const batchSize = Math.min(remaining, BATCH_SIZE);
       const raw = await generateJSON<any>(
         systemPrompt,
-        `Generate exactly ${batchSize} high-quality ${difficulty}-level ${topic} questions for ${category} placement preparation.\n\nReturn a JSON object with a "questions" key containing an array of questions with this exact structure:\n{\n  "questions": [\n    {\n      "text": "question text with all necessary data",\n      "options": ["option1", "option2", "option3", "option4"],\n      "correctIdx": 0,\n      "explanation": "detailed step-by-step explanation",\n      "shortcut": "clever shortcut or trick method to solve faster",\n      "difficulty": "${difficulty}",\n      "estimatedTimeSec": 90,\n      "commonMistakes": ["mistake1 students often make", "mistake2"],\n      "companyRelevance": "why this question pattern appears in placements"\n    }\n  ]\n}\n\nRules:\n- Return ONLY valid JSON matching the structure above.\n- Make questions exam-realistic and challenging.\n- correctIdx is 0-based index of the correct option.\n- Include realistic numerical values where needed.\n- Each question should test understanding, not just memorization.`,
-        { model: MODELS.BALANCED, maxTokens: 4000, responseFormat: { type: "json_object" } },
+        batchUserPrompt,
+        {
+          model: MODELS.BALANCED,
+          temperature: 0.85,
+          maxTokens: 4000,
+          responseFormat: { type: "json_object" },
+          skipCache: true, // Always skip cache to ensure brand-new questions
+        },
         []
       );
 
@@ -567,18 +944,15 @@ Rules:
     const existingSeen = seenRegistryFromTexts(existingQuestionTexts || []);
 
     // 1) Within this single response: drop only normalized-identical duplicates.
-    //    Numeric/scenario variants of the same template are distinct questions.
     let uniqueQuestions = dedupeQuestions(allGenerated);
 
     // 2) Cross-assessment: strictly avoid anything already used for this topic.
-    //    This never collapses the fresh batch against its own similarity.
     uniqueQuestions = filterQuestionsAgainstSeen(uniqueQuestions, existingSeen);
 
     const { valid: sanitized } = sanitizeGeneratedQuestions(uniqueQuestions);
     uniqueQuestions = sanitized;
 
-    // 3) Guarantee the requested volume: top up with fallback variants, blocking
-    //    only normalized-exact repeats of history and already-chosen questions.
+    // 3) Guarantee requested volume with topic-specific fallbacks (not generic multiplication)
     if (uniqueQuestions.length < count) {
       const exclude = new Set<string>(existingSeen.fingerprints);
       for (const q of uniqueQuestions) {

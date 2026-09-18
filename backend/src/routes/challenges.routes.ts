@@ -4,6 +4,9 @@ import { getUserPrismaFromRequest } from "../utils/prisma";
 import { handleRouteError } from "../utils/routeError";
 import { executeCode, runTestCases } from "../services/piston.service";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
+import { DsaProgressService } from "../services/dsa-progress.service";
+import { StreakService } from "../services/streak.service";
+import { getTimezone } from "../utils/request";
 
 const router = Router();
 router.use(requireAuth);
@@ -284,6 +287,16 @@ router.post("/submit", async (req: any, res) => {
         } else {
           await userPrisma.leaderboard.create({ data: { userId: req.user.userId, score } });
         }
+        StreakService.trackActivity(
+          req.user.userId,
+          "CODING_CHALLENGE",
+          "challenge_submission",
+          submission.id,
+          30,
+          getTimezone(req),
+          userPrisma
+        ).catch(() => {});
+        DsaProgressService.calculateAndSyncProgress(req.user.userId, userPrisma).catch(() => {});
       }
       res.json({
         submission,
@@ -313,6 +326,16 @@ router.post("/submit", async (req: any, res) => {
       } else {
         await userPrisma.leaderboard.create({ data: { userId: req.user.userId, score } });
       }
+      StreakService.trackActivity(
+        req.user.userId,
+        "CODING_CHALLENGE",
+        "challenge_submission",
+        record.id,
+        30,
+        getTimezone(req),
+        userPrisma
+      ).catch(() => {});
+      DsaProgressService.calculateAndSyncProgress(req.user.userId, userPrisma).catch(() => {});
     }
 
     res.json({

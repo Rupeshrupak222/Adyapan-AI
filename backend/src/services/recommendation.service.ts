@@ -146,7 +146,12 @@ export class RecommendationService {
     const currentStreak = streak?.currentStreak ?? 0;
     const totalQuizzes = quizAttempts.length;
     const averageQuizAccuracy = totalQuizzes > 0
-      ? Math.round(quizAttempts.reduce((sum, q) => sum + q.accuracy, 0) / totalQuizzes * 100)
+      ? Math.round(
+          quizAttempts.reduce((sum, q) => {
+            const acc = Number(q.accuracy ?? 0);
+            return sum + (acc > 1 ? acc : acc * 100);
+          }, 0) / totalQuizzes
+        )
       : 0;
 
     // Collect topics and calculate retention curves

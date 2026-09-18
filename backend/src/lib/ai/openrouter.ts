@@ -11,6 +11,7 @@ export interface OpenRouterOptions {
   temperature?: number;
   maxTokens?: number;
   responseFormat?: { type: "json_object" | "text" };
+  skipCache?: boolean;
 }
 
 // Gemini model fallback chain — active supported models
@@ -54,7 +55,7 @@ function resolveOpenRouterModel(requestedModel?: string): string {
   const lower = (requestedModel ?? "").toLowerCase();
   if (!lower) return FAST_OPENROUTER_DEFAULT;
   if (lower.includes("kimi")) return "moonshotai/kimi-k2";
-  if (lower.includes("gemini")) return "google/gemini-2.0-flash-001";
+  if (lower.includes("gemini")) return "google/gemini-2.5-flash";
   if (lower.includes("llama")) return "meta-llama/llama-3.3-70b-instruct";
   if (lower.includes("deepseek")) return "deepseek/deepseek-chat";
   if (lower.includes("mistral")) return "mistralai/mistral-small-24b-instruct-2501";
@@ -165,11 +166,13 @@ export async function callAIRobust(
 
   for (const provider of providersToRun) {
     try {
+      const isGroq = provider.name.toLowerCase().includes("groq");
+      const defaultMax = isGroq ? 2048 : 4096;
       const body: Record<string, unknown> = {
         model: provider.model,
         messages,
         temperature: options.temperature ?? 0.7,
-        max_tokens: options.maxTokens ? Math.max(options.maxTokens, 16384) : 16384,
+        max_tokens: options.maxTokens ? (isGroq ? Math.min(options.maxTokens, 2048) : options.maxTokens) : defaultMax,
       };
 
       if (options.responseFormat?.type === "json_object") {
@@ -276,8 +279,10 @@ export async function generateText(
   userPrompt: string,
   options: OpenRouterOptions
 ): Promise<string> {
-  const cached = getCachedAIResponse(systemPrompt, userPrompt, options);
-  if (cached) return cached;
+  if (!options.skipCache) {
+    const cached = getCachedAIResponse(systemPrompt, userPrompt, options);
+    if (cached) return cached;
+  }
 
   const start = Date.now();
   const messages: OpenRouterMessage[] = [
@@ -294,7 +299,9 @@ export async function generateText(
     // Ignore monitoring import errors in isolated contexts
   }
 
-  setCachedAIResponse(systemPrompt, userPrompt, options, response);
+  if (!options.skipCache) {
+    setCachedAIResponse(systemPrompt, userPrompt, options, response);
+  }
   return response;
 }
 
@@ -305,15 +312,17 @@ export async function generateJSON<T>(
   fallback: T
 ): Promise<T> {
   const modifiedSys = `${systemPrompt}\nYou MUST respond with valid JSON only, no other conversational introduction or explanation.`;
-  const cached = getCachedAIResponse(modifiedSys, userPrompt, options);
-  if (cached) {
-    try {
-      const repaired = tryRepairJSON(cached);
-      const parsed = JSON.parse(repaired);
-      const validated = enforceSchema(parsed, fallback);
-      return validated;
-    } catch (e) {
-      console.warn("[AI Engine] Cache hit but failed to validate, falling back to fresh API call:", (e as Error)?.message);
+  if (!options.skipCache) {
+    const cached = getCachedAIResponse(modifiedSys, userPrompt, options);
+    if (cached) {
+      try {
+        const repaired = tryRepairJSON(cached);
+        const parsed = JSON.parse(repaired);
+        const validated = enforceSchema(parsed, fallback);
+        return validated;
+      } catch (e) {
+        console.warn("[AI Engine] Cache hit but failed to validate, falling back to fresh API call:", (e as Error)?.message);
+      }
     }
   }
 
@@ -342,7 +351,9 @@ export async function generateJSON<T>(
     const parsed = JSON.parse(repaired);
     const validated = enforceSchema(parsed, fallback);
 
-    setCachedAIResponse(modifiedSys, userPrompt, options, text);
+    if (!options.skipCache) {
+      setCachedAIResponse(modifiedSys, userPrompt, options, text);
+    }
     return validated;
   } catch (error) {
     console.warn(`[AI Engine] Initial JSON parsing/validation failed (AI call succeeded):`, error);
@@ -356,7 +367,9 @@ export async function generateJSON<T>(
       const parsed = JSON.parse(repaired);
       const validated = enforceSchema(parsed, fallback);
 
-      setCachedAIResponse(modifiedSys, userPrompt, options, retryText);
+      if (!options.skipCache) {
+        setCachedAIResponse(modifiedSys, userPrompt, options, retryText);
+      }
       return validated;
     } catch (retryError) {
       console.error(`[AI Engine] Retry JSON generation failed too:`, retryError);

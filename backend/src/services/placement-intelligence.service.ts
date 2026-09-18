@@ -1,4 +1,5 @@
 import { getUserPrisma } from "../config/dynamicPrisma";
+import { DsaProgressService } from "./dsa-progress.service";
 
 interface SubScores {
   coding: number;
@@ -98,6 +99,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
 
   const [
     profile,
+    candidateProfile,
     resumes,
     atsReports,
     linkedinReports,
@@ -123,11 +125,12 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     flashcards,
   ] = await Promise.all([
     userPrisma.profile.findUnique({ where: { userId } }).catch(() => null),
+    userPrisma.candidateProfile.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } }).catch(() => null),
     userPrisma.resume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }).catch(() => []),
     userPrisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }).catch(() => []),
     userPrisma.linkedInReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }).catch(() => []),
     userPrisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []),
-    userPrisma.dSAProgress.findUnique({ where: { userId } }).catch(() => null),
+    DsaProgressService.calculateAndSyncProgress(userId, userPrisma).catch(() => null),
     userPrisma.weakTopic.findMany({ where: { userId }, orderBy: { strengthScore: "asc" }, take: 10 }).catch(() => []),
     userPrisma.codingSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []),
     userPrisma.submission.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []),
@@ -154,22 +157,26 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   );
   const dsaSolved = dsaProgress?.solved || 0;
   const dsaAccuracy = dsaProgress?.accuracy || 0;
+  const normalizedDsaAccuracy = dsaAccuracy > 1 ? dsaAccuracy / 100 : dsaAccuracy;
 
   const codingScore = clamp(Math.round(
     Math.min(dsaSolved / 100, 1) * 35 +
-    dsaAccuracy * 25 +
+    normalizedDsaAccuracy * 25 +
     Math.min(challengeSubmissions.length / 10, 1) * 20 +
     Math.min(codingSessions.length / 20, 1) * 10 +
     Math.min(solvedSubmissions.length / 30, 1) * 10
   ), 0, 100);
 
+  const avgAptitudeSessionAcc = aptitudeSessions.length > 0
+    ? aptitudeSessions.reduce((s: number, sess: any) => {
+        const raw = Number(sess.accuracy || 0);
+        return s + (raw > 1 ? raw : raw * 100);
+      }, 0) / aptitudeSessions.length
+    : 0;
+
   const aptitudeScore = clamp(Math.round(
     aptitudeAnalytics?.placementReadiness || 0
-  ) || Math.round(
-    aptitudeSessions.length > 0
-      ? (aptitudeSessions.reduce((s: number, sess: any) => s + (sess.accuracy || 0), 0) / aptitudeSessions.length) * 100
-      : 0
-  ), 0, 100);
+  ) || Math.round(avgAptitudeSessionAcc), 0, 100);
 
   const completedInterviews = interviewSessions.filter((s: any) =>
     s.status === "completed" || s.status === "completed_with_feedback"
@@ -177,7 +184,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   const avgInterviewScore = completedInterviews.length > 0
     ? Math.round(completedInterviews.reduce((s: number, sess: any) => {
         const eval_ = sess.evaluations?.[0];
-        return s + (eval_?.overallScore || 0);
+        return s + Number(eval_?.overallScore || sess.overallScore || 0);
       }, 0) / completedInterviews.length)
     : 0;
 
@@ -187,8 +194,8 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   ), 0, 100);
 
   const avgAtsScore = atsReports.length
-    ? Math.round(atsReports.reduce((s: number, r: any) => s + (r.overallScore || r.score || 0), 0) / atsReports.length)
-    : 0;
+    ? Math.round(atsReports.reduce((s: number, r: any) => s + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
+    : (candidateProfile?.strengthScore || 0);
 
   const resumeScore = clamp(Math.round(
     (resumes.length > 0 ? 25 : 0) +
@@ -207,7 +214,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     (learningAnalytics?.learningScore || 0) * 0.15
   ), 0, 100);
 
-  const latestLinkedinScore = linkedinReports.length > 0 ? linkedinReports[0].score : 0;
+  const latestLinkedinScore = linkedinReports.length > 0 ? Number(linkedinReports[0].score ?? linkedinReports[0].visibilityScore ?? 0) : 0;
   const softSkillsScore = clamp(Math.round(
     latestLinkedinScore * 0.3 +
     (coverLetters.length > 0 ? 20 : 0) +

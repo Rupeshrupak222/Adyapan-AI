@@ -550,7 +550,7 @@ export async function getLatestATSReport(req: Request, res: Response, next: Next
     const userId = requireUserId(req);
 
     const userPrisma = await getUserPrismaFromRequest(req);
-    const report = await userPrisma.aTSReport.findFirst({
+    let report = await userPrisma.aTSReport.findFirst({
       where: { userId },
       orderBy: { createdAt: "desc" },
       include: {
@@ -559,6 +559,39 @@ export async function getLatestATSReport(req: Request, res: Response, next: Next
         },
       },
     });
+
+    if (!report) {
+      const candidate = await userPrisma.candidateProfile.findFirst({
+        where: { userId },
+        orderBy: { updatedAt: "desc" },
+        include: {
+          resume: {
+            select: { fileName: true },
+          },
+        },
+      }).catch(() => null);
+
+      if (candidate && candidate.strengthScore > 0) {
+        report = {
+          id: candidate.id,
+          userId,
+          resumeId: candidate.resumeId,
+          score: candidate.strengthScore,
+          overallScore: candidate.strengthScore,
+          formattingScore: candidate.completenessScore || 80,
+          missingKeywords: candidate.missingSections || [],
+          recommendations: candidate.recommendations || [],
+          reportJson: {
+            strengths: Array.isArray(candidate.strengths) ? candidate.strengths : [],
+            missing: Array.isArray(candidate.missingSections) ? candidate.missingSections : [],
+          },
+          createdAt: candidate.createdAt,
+          resume: {
+            title: candidate.resume?.fileName || "Uploaded Resume",
+          },
+        } as any;
+      }
+    }
 
     res.json({ success: true, report });
   } catch (error) {

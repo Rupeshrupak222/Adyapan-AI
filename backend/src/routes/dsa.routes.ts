@@ -178,6 +178,8 @@ router.post("/review", async (req: any, res) => {
   }
 });
 
+import { DsaProgressService } from "../services/dsa-progress.service";
+
 router.post("/submit", async (req: any, res) => {
   try {
     const { problemId, code, language, problemContext } = req.body;
@@ -204,43 +206,37 @@ router.post("/submit", async (req: any, res) => {
       executionResult = await executeCode(language, code);
     } catch { }
 
+    const isAccepted = executionResult ? executionResult.success : true;
+
     const submission = await userPrisma.submission.create({
       data: {
         userId: req.user!.userId,
         problemId,
         code,
         language,
-        status: executionResult ? (executionResult.success ? "Accepted" : "Runtime Error") : "Pending Review",
+        status: isAccepted ? "Accepted" : "Runtime Error",
         timeMs: executionResult?.executionTime || null,
         memoryKb: executionResult?.memory || null,
         aiReview: review,
       }
     });
 
-    const progress = await userPrisma.dSAProgress.upsert({
-      where: { id: req.user!.userId },
-      create: {
-        userId: req.user!.userId,
-        solved: executionResult?.success ? 1 : 0,
-        accuracy: executionResult?.success ? 100 : 0,
-        streak: 1,
-      },
-      update: {
-        solved: executionResult?.success ? { increment: 1 } : undefined,
-      }
-    });
+    let progress: any = null;
+    if (isAccepted) {
+      progress = await DsaProgressService.recordSolved(
+        req.user!.userId,
+        problemId,
+        userPrisma,
+        req
+      );
+    } else {
+      progress = await DsaProgressService.calculateAndSyncProgress(
+        req.user!.userId,
+        userPrisma
+      );
+    }
 
-    StreakService.trackActivity(
-      req.user!.userId,
-      "PRACTICE_QUESTIONS",
-      "dsa_practice",
-      submission.id,
-      25,
-      getTimezone(req),
-      userPrisma
-    ).catch(err => console.error("Streak tracking error:", err));
-
-    res.json({ submission, review, progress });
+    res.json({ submission, review, progress, executionResult });
   } catch (error) {
     handleRouteError(res, error, "Dsa.submit", "Failed to submit code");
   }
@@ -249,15 +245,10 @@ router.post("/submit", async (req: any, res) => {
 router.get("/progress", async (req: any, res) => {
   try {
     const userPrisma = await getUserPrismaFromRequest(req);
-    let progress = await userPrisma.dSAProgress.findFirst({
-      where: { userId: req.user!.userId }
-    });
-
-    if (!progress) {
-      progress = await userPrisma.dSAProgress.create({
-        data: { userId: req.user!.userId }
-      });
-    }
+    const progress = await DsaProgressService.calculateAndSyncProgress(
+      req.user!.userId,
+      userPrisma
+    );
 
     res.json({ progress });
   } catch (error) {

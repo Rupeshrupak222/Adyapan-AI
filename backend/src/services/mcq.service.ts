@@ -549,11 +549,14 @@ export function generateTestQuestionsWithAntiRepetition(
       const qStatement = `[${targetName} • Test ${testNumber} • Q${i}] ${def.question.replace(/^\[.*?\]\s*/, "")}`;
       const keys = questionDedupKeys(qStatement, def.codeSnippet);
 
+      const passSeen = attempt >= 20 || !isSeenForTarget(targetId, keys, testNumber, cooldownTests);
+      const passTemplate = attempt >= 10 || !localTemplates.has(keys.template);
+
       if (
         keys.fingerprint &&
         !localSeen.has(keys.fingerprint) &&
-        !localTemplates.has(keys.template) &&
-        !isSeenForTarget(targetId, keys, testNumber, cooldownTests)
+        passTemplate &&
+        passSeen
       ) {
         localSeen.add(keys.fingerprint);
         localTemplates.add(keys.template);
@@ -584,13 +587,40 @@ export function generateTestQuestionsWithAntiRepetition(
       attempt++;
     }
 
-    if (questionObj) {
-      questions.push(questionObj);
+    if (!questionObj) {
+      const qSeed = baseSeed + i * 239 + (testNumber - 1) * 1109;
+      const correctIdx = (qSeed + i * 3) % 4;
+      const diffLabel: "Easy" | "Medium" | "Hard" =
+        difficulty !== "Mixed"
+          ? difficulty
+          : i % 3 === 1
+          ? "Easy"
+          : i % 3 === 2
+          ? "Medium"
+          : "Hard";
+      const def = getConceptPoolForDomain(targetName, testNumber, i + (testNumber - 1) * 5);
+      const qStatement = `[${targetName} • Test ${testNumber} • Q${i}] ${def.question.replace(/^\[.*?\]\s*/, "")} (Variant ${testNumber}.${i})`;
+      const opts = shuffleWithOptions(def.correct, def.distractors, correctIdx);
+      questionObj = {
+        id: `mcq-${targetId.toLowerCase().replace(/[^a-z0-9]/g, "-")}-t${testNumber}-q${i}`,
+        question: qStatement,
+        technology: targetType === "technology" ? targetName : "Computer Science",
+        company: targetType === "company" ? targetName : undefined,
+        difficulty: diffLabel,
+        codeSnippet: def.codeSnippet,
+        language: def.language,
+        options: opts,
+        correctAnswer: def.correct,
+        correctIdx,
+        explanation: def.exp,
+        hint: def.hint,
+        relatedConcept: `${targetName} - ${def.title}`,
+        estimatedTime: diffLabel === "Easy" ? "35 sec" : diffLabel === "Hard" ? "60 sec" : "45 sec",
+        interviewTip: def.tip,
+      };
     }
-  }
 
-  if (questions.length < count) {
-    console.warn(`[MCQ] Deterministic pool exhausted: ${questions.length}/${count} unique questions for ${targetName} Test ${testNumber}.`);
+    questions.push(questionObj);
   }
 
   return questions;

@@ -219,30 +219,47 @@ export async function readinessReport(req: Request, res: Response, next: NextFun
     const userId = requireUserId(req);
     const userPrisma = await getUserPrismaFromRequest(req);
 
-    const sessions = await userPrisma.placementSession.findMany({
-      where: { userId },
-      select: { topic: true, category: true, score: true, totalQuestions: true },
-    });
+    const [sessions, mockResults, aptitudeSessions] = await Promise.all([
+      userPrisma.placementSession.findMany({
+        where: { userId },
+        select: { topic: true, category: true, score: true, totalQuestions: true },
+      }).catch(() => []),
+      userPrisma.mockTestResult.findMany({
+        where: { userId },
+        select: { company: true, score: true, totalQuestions: true },
+      }).catch(() => []),
+      userPrisma.aptitudeSession.findMany({
+        where: { userId },
+        select: { topic: true, category: true, score: true, totalQuestions: true },
+      }).catch(() => []),
+    ]);
 
-    const mockResults = await userPrisma.mockTestResult.findMany({
-      where: { userId },
-      select: { company: true, score: true, totalQuestions: true },
-    });
-
-    const sessionData = sessions.map((s) => ({
+    const sessionData = sessions.map((s: any) => ({
       topic: s.topic,
       category: s.category,
       score: s.score,
-      total: s.totalQuestions,
+      total: s.totalQuestions || 1,
     }));
 
     // Include mock test results as additional sessions
-    mockResults.forEach((m) => {
+    mockResults.forEach((m: any) => {
       sessionData.push({
         topic: m.company + " Mock",
         category: "mcqs",
         score: m.score,
-        total: m.totalQuestions,
+        total: m.totalQuestions || 1,
+      });
+    });
+
+    // Include aptitude sessions
+    aptitudeSessions.forEach((a: any) => {
+      sessionData.push({
+        topic: a.topic || "Aptitude Practice",
+        category: (a.category && ["aptitude", "reasoning", "mcqs"].includes(String(a.category).toLowerCase()))
+          ? String(a.category).toLowerCase()
+          : "aptitude",
+        score: a.score || 0,
+        total: a.totalQuestions || 1,
       });
     });
 

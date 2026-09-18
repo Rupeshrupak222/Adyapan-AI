@@ -147,11 +147,35 @@ export function DsaPracticeView() {
     setLoading(true);
     setAiReview(null);
     try {
-      const res = await api.post("/dsa/review", { problemId: activeProblem?.id, code });
-      setAiReview(res.data);
-      toast.success("AI Review completed!");
+      const [submitRes, reviewRes] = await Promise.allSettled([
+        api.post("/dsa/submit", {
+          problemId: activeProblem?.id,
+          code,
+          language,
+          problemContext: `${activeProblem?.title || ""}\n${activeProblem?.description || ""}`
+        }),
+        api.post("/dsa/review", { problemId: activeProblem?.id, code })
+      ]);
+
+      if (reviewRes.status === "fulfilled") {
+        setAiReview(reviewRes.value.data);
+      }
+
+      if (submitRes.status === "fulfilled") {
+        const data = submitRes.value.data;
+        const isPassed = data.submission?.status === "Accepted" || (data.executionResult && data.executionResult.success);
+        if (isPassed) {
+          try { confetti(); } catch { }
+          setShowSuccess(true);
+          toast.success("Problem Solved! Points and streak recorded.");
+        } else {
+          toast.info("Code submitted and evaluated.");
+        }
+      } else {
+        toast.success("AI Review completed!");
+      }
     } catch {
-      toast.error("Failed to submit code for AI review. Please try again.");
+      toast.error("Failed to submit code. Please try again.");
     } finally {
       setLoading(false);
     }

@@ -386,11 +386,18 @@ function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resume
       <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
         <PanelCard title="Coding Hub Performance">
           <div style={{ marginBottom: "0.8rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem", color: "var(--text-secondary)", marginBottom: 4 }}>
-              <span>DSA Accuracy</span>
-              <span style={{ color: "var(--primary)", fontWeight: 700 }}>{Math.round(stats.dsaAccuracy * 100)}%</span>
-            </div>
-            <ProgressBar value={Math.round(stats.dsaAccuracy * 100)} color="var(--primary)" />
+            {(() => {
+              const dsaAccuracyPercent = Math.min(100, Math.max(0, Math.round(stats.dsaAccuracy > 1 ? stats.dsaAccuracy : stats.dsaAccuracy * 100)));
+              return (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem", color: "var(--text-secondary)", marginBottom: 4 }}>
+                    <span>DSA Accuracy</span>
+                    <span style={{ color: "var(--primary)", fontWeight: 700 }}>{dsaAccuracyPercent}%</span>
+                  </div>
+                  <ProgressBar value={dsaAccuracyPercent} color="var(--primary)" />
+                </>
+              );
+            })()}
           </div>
           <div style={{ marginTop: "0.9rem" }}>
             <CompactItem label="DSA Problems Solved" value={stats.dsaSolved} highlight />
@@ -450,11 +457,190 @@ function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resume
     </div>
   );
 }
-function CrossModuleAnalytics(_props: {
+function CrossModuleAnalytics({
+  aptitude, interview, streak, placement, weakTopics, onViewTool,
+}: {
   aptitude?: any; interview?: any; streak?: any; placement?: any; weakTopics?: any;
   onViewTool?: (v: string) => void;
 }) {
-  return null;
+  const router = useRouter();
+
+  // Check if any cross-module analytics have data
+  const hasAptitude = aptitude && (aptitude.totalSessions > 0 || aptitude.totalQuestions > 0 || aptitude.placementReadiness > 0);
+  const hasInterview = interview && (interview.totalInterviews > 0 || interview.averageScore > 0 || interview.bestScore > 0);
+  const hasPlacement = placement && (placement.placementScore > 0 || (placement.companyMatches && placement.companyMatches.length > 0));
+  const hasWeakTopics = weakTopics && ((weakTopics.weakTopics && weakTopics.weakTopics.length > 0) || (weakTopics.revisionQueue && weakTopics.revisionQueue.length > 0));
+  const hasStreak = streak && (streak.currentStreak > 0 || streak.bestStreak > 0);
+
+  const anyActivity = hasAptitude || hasInterview || hasPlacement || hasWeakTopics || hasStreak;
+
+  if (!anyActivity) {
+    return (
+      <div style={{ marginTop: "1.5rem", marginBottom: "1.5rem" }}>
+        <PremiumCard glow={false} className="p-6">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(99, 102, 241, 0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#6366f1" }}>
+                <Target size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: "0.95rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>
+                  Placement Readiness Intelligence
+                </h3>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", margin: "3px 0 0 0" }}>
+                  Practice aptitude tests and take AI mock interviews to generate your personalized placement forecast.
+                </p>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <PremiumButton variant="secondary" onClick={() => onViewTool ? onViewTool("aptitude-engine") : router.push("/dashboard/placement")}>
+                <Brain size={14} style={{ marginRight: 5 }} />
+                Practice Aptitude
+              </PremiumButton>
+              <PremiumButton variant="primary" onClick={() => onViewTool ? onViewTool("interview-hub") : router.push("/dashboard/interview")}>
+                <Mic size={14} style={{ marginRight: 5 }} />
+                Mock Interview
+              </PremiumButton>
+            </div>
+          </div>
+        </PremiumCard>
+      </div>
+    );
+  }
+
+  const placementScoreVal = Number(placement?.placementScore || 0);
+  const aptitudeAcc = Math.round(Number(aptitude?.overallAccuracy || aptitude?.placementReadiness || 0));
+  const interviewAvg = Math.round(Number(interview?.averageScore || 0));
+  const interviewBest = Math.round(Number(interview?.bestScore || 0));
+
+  return (
+    <div style={{ marginTop: "1.5rem", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.85rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <Sparkles size={16} style={{ color: "var(--primary)" }} />
+          <h3 style={{ fontSize: "0.92rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>
+            Career & Placement Readiness Intelligence
+          </h3>
+        </div>
+        <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>
+          Aggregated live across Aptitude, Interview, Coding & Resumes
+        </span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
+        {/* Card 1: Placement Score */}
+        <PremiumCard glow={placementScoreVal >= 75} className="p-4 flex flex-col justify-between">
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
+              <div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Placement Readiness
+                </span>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem", marginTop: 2 }}>
+                  <span style={{ fontSize: "1.6rem", fontWeight: 800, color: "#10b981" }}>
+                    {placementScoreVal > 0 ? `${placementScoreVal}%` : "Evaluating"}
+                  </span>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                    {placementScoreVal >= 80 ? "Top Tier" : placementScoreVal >= 60 ? "Placement Ready" : "Building Foundation"}
+                  </span>
+                </div>
+              </div>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(16, 185, 129, 0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#10b981" }}>
+                <Trophy size={18} />
+              </div>
+            </div>
+            <ProgressBar value={placementScoreVal} color="#10b981" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginTop: "0.8rem", fontSize: "0.73rem", color: "var(--text-secondary)" }}>
+              <span>Coding: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.coding ?? 0}%</strong></span>
+              <span>Interview: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.interview ?? 0}%</strong></span>
+              <span>Aptitude: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.aptitude ?? 0}%</strong></span>
+              <span>Resume: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.resume ?? 0}%</strong></span>
+            </div>
+          </div>
+          <div style={{ marginTop: "0.85rem", borderTop: "1px solid var(--border-color)", paddingTop: "0.6rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Company match forecast</span>
+            <button onClick={() => onViewTool ? onViewTool("placement-hub") : router.push("/dashboard/placement")} style={{ background: "none", border: "none", color: "var(--primary)", fontSize: "0.73rem", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
+              View Matches <ArrowUpRight size={13} />
+            </button>
+          </div>
+        </PremiumCard>
+
+        {/* Card 2: AI Aptitude & Reasoning */}
+        <PremiumCard glow={false} className="p-4 flex flex-col justify-between">
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
+              <div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Aptitude Engine
+                </span>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem", marginTop: 2 }}>
+                  <span style={{ fontSize: "1.6rem", fontWeight: 800, color: "#6366f1" }}>
+                    {aptitudeAcc > 0 ? `${aptitudeAcc}%` : "Not Started"}
+                  </span>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                    {aptitude?.totalQuestions ? `${aptitude.totalQuestions} Questions` : "No sessions"}
+                  </span>
+                </div>
+              </div>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(99, 102, 241, 0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#6366f1" }}>
+                <Brain size={18} />
+              </div>
+            </div>
+            <ProgressBar value={aptitudeAcc} color="#6366f1" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginTop: "0.8rem", fontSize: "0.73rem", color: "var(--text-secondary)" }}>
+              <span>Total Sessions: <strong style={{ color: "var(--text-primary)" }}>{aptitude?.totalSessions ?? 0}</strong></span>
+              <span>XP Earned: <strong style={{ color: "var(--text-primary)" }}>{aptitude?.xp ?? 0}</strong></span>
+              <span>Level: <strong style={{ color: "var(--text-primary)" }}>Lv {aptitude?.level ?? 1}</strong></span>
+              <span>Streak: <strong style={{ color: "var(--text-primary)" }}>{aptitude?.streak ?? 0}d</strong></span>
+            </div>
+          </div>
+          <div style={{ marginTop: "0.85rem", borderTop: "1px solid var(--border-color)", paddingTop: "0.6rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Speed & logical reasoning</span>
+            <button onClick={() => onViewTool ? onViewTool("aptitude-engine") : router.push("/dashboard/placement")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: "0.73rem", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
+              Practice Now <ArrowUpRight size={13} />
+            </button>
+          </div>
+        </PremiumCard>
+
+        {/* Card 3: AI Interview Score */}
+        <PremiumCard glow={false} className="p-4 flex flex-col justify-between">
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
+              <div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  AI Mock Interviews
+                </span>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem", marginTop: 2 }}>
+                  <span style={{ fontSize: "1.6rem", fontWeight: 800, color: "#f43f5e" }}>
+                    {interviewAvg > 0 ? `${interviewAvg}%` : "Not Started"}
+                  </span>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                    {interviewBest > 0 ? `Best: ${interviewBest}%` : "No interviews"}
+                  </span>
+                </div>
+              </div>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(244, 63, 94, 0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#f43f5e" }}>
+                <Mic size={18} />
+              </div>
+            </div>
+            <ProgressBar value={interviewAvg} color="#f43f5e" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginTop: "0.8rem", fontSize: "0.73rem", color: "var(--text-secondary)" }}>
+              <span>Completed: <strong style={{ color: "var(--text-primary)" }}>{interview?.totalInterviews ?? 0}</strong></span>
+              <span>Practice Time: <strong style={{ color: "var(--text-primary)" }}>{interview?.totalHours ?? 0}h</strong></span>
+              <span>Tech Skill: <strong style={{ color: "var(--text-primary)" }}>{interview?.skillAverages?.technical ? `${interview.skillAverages.technical}%` : "N/A"}</strong></span>
+              <span>Communication: <strong style={{ color: "var(--text-primary)" }}>{interview?.skillAverages?.communication ? `${interview.skillAverages.communication}%` : "N/A"}</strong></span>
+            </div>
+          </div>
+          <div style={{ marginTop: "0.85rem", borderTop: "1px solid var(--border-color)", paddingTop: "0.6rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Live AI verbal evaluation</span>
+            <button onClick={() => onViewTool ? onViewTool("interview-hub") : router.push("/dashboard/interview")} style={{ background: "none", border: "none", color: "#f43f5e", fontSize: "0.73rem", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
+              Start Mock <ArrowUpRight size={13} />
+            </button>
+          </div>
+        </PremiumCard>
+      </div>
+    </div>
+  );
 }
 // ΓöÇΓöÇΓöÇ Profile Types & Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 interface ProfileData {
@@ -1203,7 +1389,8 @@ function UserDashboardContent() {
         studyRes,
         codingRes,
         dsaRes,
-        challengesRes
+        challengesRes,
+        analyticsRes
       ] = await Promise.allSettled([
         api.get("/profile/me"),
         api.get("/resume/list"),
@@ -1217,7 +1404,8 @@ function UserDashboardContent() {
         api.get("/study/history"),
         api.get("/coding/history"),
         api.get("/dsa/progress"),
-        api.get("/challenges/")
+        api.get("/challenges/"),
+        api.get("/dashboard/analytics")
       ]);
 
       const profileData = profileRes.status === "fulfilled" ? profileRes.value.data.profile : null;
@@ -1239,12 +1427,21 @@ function UserDashboardContent() {
       const dsaProgress = dsaRes.status === "fulfilled" ? (dsaRes.value.data.progress || null) : null;
       const challenges = challengesRes.status === "fulfilled" ? (challengesRes.value.data?.challenges || challengesRes.value.data || []) : [];
 
+      if (analyticsRes.status === "fulfilled" && analyticsRes.value.data?.success) {
+        const aData = analyticsRes.value.data;
+        if (aData.aptitude) setAptitudeAnalytics(aData.aptitude);
+        if (aData.interview) setInterviewAnalytics(aData.interview);
+        if (aData.streak) setStreakData(aData.streak);
+        if (aData.placement) setPlacementScore(aData.placement);
+        if (aData.weakTopics) setWeakTopicsData(aData.weakTopics);
+      }
+
       const avgAtsScore = atsReports.length
-        ? Math.round(atsReports.reduce((sum: number, r: { score: number }) => sum + r.score, 0) / atsReports.length)
-        : 0;
+        ? Math.round(atsReports.reduce((sum: number, r: any) => sum + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
+        : Number(profileData?.strengthScore || 0);
 
       const avgLinkedinScore = linkedinReports.length
-        ? Math.round(linkedinReports.reduce((sum: number, r: { score: number }) => sum + r.score, 0) / linkedinReports.length)
+        ? Math.round(linkedinReports.reduce((sum: number, r: any) => sum + Number(r.score ?? r.visibilityScore ?? 0), 0) / linkedinReports.length)
         : 0;
 
       setDashboardStats({
@@ -1261,7 +1458,9 @@ function UserDashboardContent() {
         dsaSolved: dsaProgress?.solved || 0,
         dsaAccuracy: dsaProgress?.accuracy || 0,
         dsaStreak: dsaProgress?.streak || 0,
-        challengesCount: challenges.length,
+        challengesCount: (dsaProgress?.challengesSolved !== undefined && dsaProgress.challengesSolved > 0)
+          ? dsaProgress.challengesSolved
+          : (Array.isArray(challenges) ? challenges.length : 0),
         profileCompletion: completion,
         targetRole
       });

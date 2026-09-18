@@ -7,6 +7,7 @@ import { engineAnalyticsHandler } from "../routes/engine.routes";
 import { getDashboard as getStreakDashboard } from "./streak.controller";
 import { getPlacementScore } from "./placement-intelligence.controller";
 import { getDashboard as getWeakTopicsDashboard } from "./weak-topics.controller";
+import { DsaProgressService } from "../services/dsa-progress.service";
 
 /**
  * Runs an Express route handler with a mock response object that resolves the
@@ -48,11 +49,7 @@ function invokeHandler(handler: (req: Request, res: Response, next: NextFunction
 
 async function getUserDsaProgress(userPrisma: any, userId: string) {
   try {
-    let progress = await userPrisma.dSAProgress.findFirst({ where: { userId } });
-    if (!progress) {
-      progress = await userPrisma.dSAProgress.create({ data: { userId } });
-    }
-    return progress;
+    return await DsaProgressService.calculateAndSyncProgress(userId, userPrisma);
   } catch {
     return null;
   }
@@ -70,7 +67,9 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
 
     const [
       profile,
-      resumesCount,
+      candidateProfile,
+      resumesCreatedCount,
+      uploadedResumesCount,
       atsReports,
       linkedinReports,
       coverLettersCount,
@@ -83,12 +82,14 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
       uploadedDocsCount,
       codingSessionsCount,
       dsaProgress,
-      challengesCount,
+      totalChallenges,
     ] = await Promise.all([
       getProfile(userId).catch(() => null),
+      userPrisma.candidateProfile.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } }).catch(() => null),
       userPrisma.resume.count({ where: { userId } }).catch(() => 0),
-      userPrisma.aTSReport.findMany({ where: { userId }, select: { score: true } }).catch(() => []),
-      userPrisma.linkedInReport.findMany({ where: { userId }, select: { score: true }, take: 50 }).catch(() => []),
+      userPrisma.uploadedResume.count({ where: { userId } }).catch(() => 0),
+      userPrisma.aTSReport.findMany({ where: { userId }, select: { score: true, overallScore: true } }).catch(() => []),
+      userPrisma.linkedInReport.findMany({ where: { userId }, select: { score: true, visibilityScore: true }, take: 50 }).catch(() => []),
       userPrisma.coverLetter.count({ where: { userId } }).catch(() => 0),
       userPrisma.generatedNote.count({ where: { userId } }).catch(() => 0),
       userPrisma.quiz.count({ where: { userId } }).catch(() => 0),
@@ -102,15 +103,20 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
       userPrisma.challenge.count({ where: { category: { isActive: true } } }).catch(() => 0),
     ]);
 
+    const resumesCount = resumesCreatedCount + uploadedResumesCount;
     const studySessionsCount = Math.max(rawStudySessionsCount, uploadedDocsCount);
 
     const avgAtsScore = atsReports.length
-      ? Math.round(atsReports.reduce((sum: number, r: { score: number }) => sum + (r.score || 0), 0) / atsReports.length)
-      : 0;
+      ? Math.round(atsReports.reduce((sum: number, r: any) => sum + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
+      : (candidateProfile?.strengthScore || 0);
 
     const avgLinkedinScore = linkedinReports.length
-      ? Math.round(linkedinReports.reduce((sum: number, r: { score: number }) => sum + (r.score || 0), 0) / linkedinReports.length)
+      ? Math.round(linkedinReports.reduce((sum: number, r: any) => sum + Number(r.score ?? r.visibilityScore ?? 0), 0) / linkedinReports.length)
       : 0;
+
+    const challengesCount = (dsaProgress?.challengesSolved !== undefined && dsaProgress.challengesSolved > 0)
+      ? dsaProgress.challengesSolved
+      : totalChallenges;
 
     res.json({
       success: true,
@@ -131,6 +137,8 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
         dsaAccuracy: dsaProgress?.accuracy || 0,
         dsaStreak: dsaProgress?.streak || 0,
         challengesCount,
+        challengesSolved: dsaProgress?.challengesSolved || 0,
+        totalChallenges,
       },
     });
   } catch (error) {

@@ -257,7 +257,10 @@ ${JSON.stringify(profileData.resumeImprovements || [], null, 2)}
 
 === CODING ANALYTICS (from Coding Hub) ===
 DSA Problems Solved: ${profileData.codingAnalytics?.dsaSolved || 0}
-DSA Accuracy: ${Math.round((profileData.codingAnalytics?.dsaAccuracy || 0) * 100)}%
+DSA Accuracy: ${(() => {
+  const acc = Number(profileData.codingAnalytics?.dsaAccuracy || 0);
+  return Math.round(acc > 1 ? acc : acc * 100);
+})()}%
 DSA Streak: ${profileData.codingAnalytics?.dsaStreak || 0} days
 Total Submissions: ${profileData.codingAnalytics?.totalSubmissions || 0}
 Accepted Solutions: ${profileData.codingAnalytics?.solvedProblems || 0}

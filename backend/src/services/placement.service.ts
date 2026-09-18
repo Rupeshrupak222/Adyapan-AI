@@ -159,18 +159,21 @@ Each question must have exactly 4 options with exactly ONE correct answer.
 Include a clear explanation and an optional shortcut/trick where applicable.${antiDuplicationContext}`;
 
   const userPrompt = `Generate exactly ${count} ${categoryLabel} multiple-choice questions on "${topic}".
+Random Session Seed: ${Date.now()}_${Math.random().toString(36).substring(2, 7)}
 
-Return a JSON array with this exact structure:
-[
-  {
-    "text": "question text",
-    "options": ["A", "B", "C", "D"],
-    "correctIdx": 0,
-    "explanation": "detailed explanation",
-    "trick": "optional shortcut or strategy",
-    "difficulty": "easy" | "medium" | "hard"
-  }
-]
+Return a JSON object with a "questions" key containing an array of questions with this exact structure:
+{
+  "questions": [
+    {
+      "text": "question text",
+      "options": ["optionA", "optionB", "optionC", "optionD"],
+      "correctIdx": 0,
+      "explanation": "detailed explanation",
+      "trick": "optional shortcut or strategy",
+      "difficulty": "easy"
+    }
+  ]
+}
 
 Rules:
 - Questions must be realistic and exam-relevant
@@ -179,7 +182,7 @@ Rules:
 - Explanation must be educational and clear
 - trick is optional but recommended for aptitude questions
 - Vary difficulty across questions
-- Return ONLY the JSON array, nothing else`;
+- Return ONLY valid JSON object with the "questions" key`;
 
   const fallback: PlacementQuestion[] = Array.from({ length: count }, (_, i) => {
     const seedVal = Date.now() + i * 37;
@@ -214,7 +217,7 @@ Rules:
     const raw = await generateJSON<any>(
       systemPrompt,
       userPrompt,
-      { model: MODELS.FAST, maxTokens: 8000, responseFormat: { type: "json_object" } },
+      { model: MODELS.FAST, maxTokens: 8000, temperature: 0.85, responseFormat: { type: "json_object" }, skipCache: true },
       []
     );
 

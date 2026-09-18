@@ -57,6 +57,7 @@ import { subscriptionRouter } from "./subscription.routes";
 import { contactRouter } from "./contact.routes";
 import { legalRouter } from "./legal.routes";
 import { securityRouter } from "./security.routes";
+import { dashboardRouter } from "./dashboard.routes";
 import { enforceAiTokenLimit } from "../middleware/aiTokenLimit.middleware";
 import { requirePremiumEntitlement } from "../middleware/requirePremium";
 
@@ -73,6 +74,7 @@ const premiumGate = requirePremiumEntitlement;
 apiRouter.use("/health", healthRouter);
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/profile", profileRouter);
+apiRouter.use("/dashboard", dashboardRouter);
 apiRouter.use("/admin", adminRouter);
 apiRouter.use("/resume", resumeRouter);
 apiRouter.use("/resume-upload", resumeUploadRouter);

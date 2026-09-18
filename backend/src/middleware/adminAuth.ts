@@ -102,6 +102,14 @@ export async function requireAdminAuth(
       roleId: admin.roleId,
     };
 
+    (req as any).user = {
+      userId: admin.id,
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      role: "ADMIN",
+    };
+
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {

@@ -737,6 +737,41 @@ export async function getAnalytics(req: Request, res: Response, next: NextFuncti
     });
 
     if (!analytics) {
+      if (recentSessions.length > 0) {
+        const totalSessions = recentSessions.length;
+        const totalQuestions = recentSessions.reduce((s: number, r: any) => s + (r.totalQuestions || 0), 0);
+        const totalCorrect = recentSessions.reduce((s: number, r: any) => s + (r.score || 0), 0);
+        const overallAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+        const totalTime = recentSessions.reduce((s: number, r: any) => s + (r.totalTimeMs || 0), 0);
+        const avgTimePerQMs = totalQuestions > 0 ? Math.round(totalTime / totalQuestions) : 0;
+        const xp = totalCorrect * 10;
+        const level = Math.floor(xp / 200) + 1;
+        const placementReadiness = Math.min(100, Math.round(overallAccuracy * 0.7 + Math.min(totalSessions * 5, 30)));
+
+        return res.json({
+          success: true,
+          analytics: {
+            totalSessions,
+            totalQuestions,
+            totalCorrect,
+            overallAccuracy,
+            avgTimePerQMs,
+            xp,
+            level,
+            streak: 1,
+            bestStreak: 1,
+            topicMastery: [],
+            companyReadiness: [],
+            categoryScores: {},
+            weeklyProgress: [],
+            placementReadiness,
+            weakTopics: [],
+            strongTopics: [],
+          },
+          recentSessions,
+        });
+      }
+
       return res.json({
         success: true,
         analytics: {

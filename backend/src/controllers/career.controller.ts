@@ -4,6 +4,7 @@ import { requireUserId } from "../utils/request";
 import { generateCareerRoadmap } from "../lib/ai/career-ai";
 import { httpError } from "../utils/httpError";
 import { extractLegacyFromRecord } from "../utils/resume-converter";
+import { DsaProgressService } from "../services/dsa-progress.service";
 
 export async function generateRoadmap(req: Request, res: Response, next: NextFunction) {
   try {
@@ -29,7 +30,15 @@ export async function generateRoadmap(req: Request, res: Response, next: NextFun
     try { studySessions = await userPrisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }); } catch (e) { console.warn("[Career] studySessions query failed:", (e as Error)?.message); }
 
     let dsaProgress: any = null;
-    try { dsaProgress = await userPrisma.dSAProgress.findUnique({ where: { userId } }); } catch (e) { console.warn("[Career] dsaProgress query failed:", (e as Error)?.message); }
+    try {
+      dsaProgress = await DsaProgressService.calculateAndSyncProgress(userId, userPrisma);
+    } catch (e) {
+      console.warn("[Career] dsaProgress calculation failed:", (e as Error)?.message);
+      try { dsaProgress = await userPrisma.dSAProgress.findFirst({ where: { userId } }); } catch {}
+    }
+
+    let candidateProfile: any = null;
+    try { candidateProfile = await userPrisma.candidateProfile.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } }); } catch {}
 
     let weakTopics: any[] = [];
     try { weakTopics = await userPrisma.weakTopic.findMany({ where: { userId } }); } catch (e) { console.warn("[Career] weakTopics query failed:", (e as Error)?.message); }
@@ -58,11 +67,11 @@ export async function generateRoadmap(req: Request, res: Response, next: NextFun
     let resumeImprovements: any[] = [];
 
     const avgAtsScore = atsReports.length
-      ? Math.round(atsReports.reduce((s: number, r: any) => s + (r.score || 0), 0) / atsReports.length)
-      : 0;
+      ? Math.round(atsReports.reduce((s: number, r: any) => s + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
+      : (candidateProfile?.strengthScore || 0);
 
     const avgLinkedinScore = linkedinReports.length
-      ? Math.round(linkedinReports.reduce((s: number, r: any) => s + (r.score || 0), 0) / linkedinReports.length)
+      ? Math.round(linkedinReports.reduce((s: number, r: any) => s + Number(r.score ?? r.visibilityScore ?? 0), 0) / linkedinReports.length)
       : 0;
 
     const profileData = {
@@ -98,7 +107,10 @@ export async function generateRoadmap(req: Request, res: Response, next: NextFun
         documentsCount: learningAnalytics?.documentsCount || 0,
         overallProgress: progressTracking?.overallProgress || 0,
         quizAttempts: quizzes.length,
-        avgQuizScore: quizzes.length > 0 ? Math.round(quizzes.reduce((s: number, q: any) => s + (q.accuracy || 0) * 100, 0) / quizzes.length) : 0,
+        avgQuizScore: quizzes.length > 0 ? Math.round(quizzes.reduce((s: number, q: any) => {
+          const acc = Number(q.accuracy ?? q.score ?? 0);
+          return s + (acc > 1 ? acc : acc * 100);
+        }, 0) / quizzes.length) : 0,
       },
       atsReports: atsReports.map((r: any) => ({
         score: r.score,

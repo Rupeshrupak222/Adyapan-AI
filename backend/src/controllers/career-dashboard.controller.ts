@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { getUserPrismaFromRequest, masterPrisma } from "../utils/prisma";
 import { requireUserId } from "../utils/request";
 import { generateOrchestratedJSON } from "../lib/ai/openrouter";
+import { DsaProgressService } from "../services/dsa-progress.service";
 
 // Helper to compute the programmatic stats baseline (aggregating from ~30 tables)
 async function computeDashboardBaseline(userId: string, userPrisma: any) {
@@ -53,7 +54,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     q(() => userPrisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }), []),
     q(() => userPrisma.linkedInReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }), []),
     q(() => userPrisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }), []),
-    q(() => userPrisma.dSAProgress.findFirst({ where: { userId } }), null),
+    q(() => DsaProgressService.calculateAndSyncProgress(userId, userPrisma), null),
     q(() => userPrisma.userQuestionProgress.findMany({ where: { userId } }), []),
     q(() => userPrisma.streakActivity.findMany({ where: { userId } }), []),
     q(() => userPrisma.weakTopic.findMany({ where: { userId }, orderBy: { strengthScore: "asc" }, take: 10 }), []),
@@ -96,19 +97,19 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   const totalResumesCount = resumes.length + uploadedResumes.length;
 
   const avgAtsScore = atsReports.length
-    ? Math.round(atsReports.reduce((s: number, r: any) => s + (r.overallScore || r.score || 0), 0) / atsReports.length)
+    ? Math.round(atsReports.reduce((s: number, r: any) => s + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
     : candidateScore;
 
-  const latestAtsScore = atsReports.length > 0 ? (atsReports[0].overallScore || atsReports[0].score || 0) : candidateScore;
+  const latestAtsScore = atsReports.length > 0 ? Number(atsReports[0].overallScore ?? atsReports[0].score ?? 0) : candidateScore;
 
-  const prevAtsScore = atsReports.length > 1 ? (atsReports[1].overallScore || atsReports[1].score || 0) : latestAtsScore;
+  const prevAtsScore = atsReports.length > 1 ? Number(atsReports[1].overallScore ?? atsReports[1].score ?? 0) : latestAtsScore;
   const atsScoreDelta = latestAtsScore - prevAtsScore;
 
   const avgLinkedinScore = linkedinReports.length
-    ? Math.round(linkedinReports.reduce((s: number, r: any) => s + (r.score || 0), 0) / linkedinReports.length)
+    ? Math.round(linkedinReports.reduce((s: number, r: any) => s + Number(r.score ?? r.visibilityScore ?? 0), 0) / linkedinReports.length)
     : 0;
 
-  const latestLinkedinScore = linkedinReports.length > 0 ? linkedinReports[0].score : 0;
+  const latestLinkedinScore = linkedinReports.length > 0 ? Number(linkedinReports[0].score ?? linkedinReports[0].visibilityScore ?? 0) : 0;
 
   const resumeScore = Math.max(avgAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0);
 
@@ -140,6 +141,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     totalRoadmapSolved
   );
   const dsaAccuracy = dsaProgress?.accuracy || (submissions.length > 0 ? Math.round((solvedSubmissions.length / submissions.length) * 100) : 0);
+  const normalizedDsaAccuracy = dsaAccuracy > 1 ? dsaAccuracy / 100 : dsaAccuracy;
   const dsaStreak = dsaProgress?.streak || learningStreak?.currentStreak || 0;
 
   // Learning score & Study hours calculation
@@ -150,7 +152,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   // Coding readiness (0-100)
   const codingReadiness = Math.min(100, Math.round(
     Math.min(dsaSolved / 100, 1) * 40 +
-    dsaAccuracy * 30 +
+    normalizedDsaAccuracy * 30 +
     Math.min(challengeSubmissions.length / 10, 1) * 15 +
     Math.min(codingSessions.length / 20, 1) * 15
   ));

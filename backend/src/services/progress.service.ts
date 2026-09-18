@@ -194,7 +194,10 @@ export class ProgressService {
       topicMap[t].quizAttemptCount += attempts.length;
       if (attempts.length > 0) {
         topicMap[t].avgQuizAccuracy =
-          attempts.reduce((s, a) => s + a.accuracy, 0) / attempts.length;
+          attempts.reduce((s, a) => {
+            const acc = Number(a.accuracy ?? 0);
+            return s + (acc > 1 ? acc / 100 : acc);
+          }, 0) / attempts.length;
       }
     });
     flashcards.forEach((f) => {
