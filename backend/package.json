@@ -38,7 +38,7 @@
     "apify-client": "^2.23.4",
     "bcrypt": "^6.0.0",
     "cheerio": "^1.2.0",
-    "cloudinary": "^1.41.3",
+    "cloudinary": "^2.11.0",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
     "cron-parser": "^4.9.0",
