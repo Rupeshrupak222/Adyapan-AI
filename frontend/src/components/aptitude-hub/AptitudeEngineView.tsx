@@ -15,6 +15,7 @@ import {
   ArrowUpRight, X, Info
 } from "lucide-react";
 import { api } from "@/services/api";
+import { toast } from "sonner";
 import { useFeatureQuota } from "@/hooks/useFeatureQuota";
 import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 import { FeatureLimitBanner } from "@/components/shared/FeatureLimitBanner";
@@ -213,7 +214,20 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     count?: number,
     testId?: string
   ) => {
-    if (quota.exhausted) return;
+    if (quota.exhausted) {
+      toast.error(
+        quota.status?.plan === "free"
+          ? "You've used all 10 free AI Aptitude tests this month."
+          : "You've used all 30 Premium AI Aptitude tests this month.",
+        {
+          description: quota.status?.plan === "free"
+            ? "Upgrade to Premium for 30 tests per month."
+            : "Your allowance will reset on the 1st of next month.",
+          action: quota.status?.plan === "free" ? { label: "Upgrade", onClick: () => window.location.href = "/premium" } : undefined,
+        }
+      );
+      return;
+    }
     setAiLoading(true);
     setShowExplanation(false);
     try {
@@ -397,8 +411,9 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
       setReview(fallbackReview);
       setViewState("session_review");
     }
+    quota.refresh().catch(() => {});
     setSession(null);
-  }, [session, progress.answers, sessionStartTime]);
+  }, [session, progress.answers, sessionStartTime, quota]);
 
   const handleNextQuestion = useCallback(() => {
     if (!session) return;

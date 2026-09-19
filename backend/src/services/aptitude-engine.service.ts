@@ -1,11 +1,21 @@
 import { generateJSON, generateText, MODELS } from "../lib/ai/openrouter";
 import { dedupInfoFromQuestion, dedupeQuestions, filterQuestionsAgainstSeen, sanitizeGeneratedQuestions, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
+import { buildDiversifiedTopicTest } from "./aptitude-archetypes";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type AptitudeCategory = "quantitative" | "logical" | "verbal" | "data-interpretation" | "analytical";
+export type AptitudeCategory =
+  | "quantitative"
+  | "logical"
+  | "verbal"
+  | "data-interpretation"
+  | "data_interpretation"
+  | "analytical"
+  | "number_systems"
+  | "number-systems"
+  | "company";
 export type Difficulty = "easy" | "medium" | "hard";
 
 export interface AptitudeTopicDef {
@@ -509,257 +519,13 @@ export function generateTopicSpecificFallback(
   testNumber?: number,
   existingQuestionTexts?: Set<string>
 ): GeneratedQuestion[] {
-  const companyName = companyTags[0] || "Campus Placement";
-  const normTopic = topic.toLowerCase();
-
-  return Array.from({ length: count }, (_, i) => {
-    const seed = Date.now() + i * 43 + (testNumber || 1) * 1019;
-    const correctIdx = (seed + i) % 4;
-
-    let text = "";
-    let options = ["", "", "", ""];
-    let explanation = "";
-    let shortcut = "";
-    let commonMistakes: string[] = [];
-
-    if (normTopic.includes("permutation") || normTopic.includes("combination")) {
-      const words = ["LEADING", "DETAIL", "TRIANGLE", "CORPORATION", "LOGARITHM", "EQUATION", "PENCIL"];
-      const word = words[(seed + i) % words.length];
-      const vowels = word.split("").filter(c => "AEIOU".includes(c));
-      const consonants = word.split("").filter(c => !"AEIOU".includes(c));
-      
-      const vCount = vowels.length;
-      const cCount = consonants.length;
-      const fact = (n: number): number => n <= 1 ? 1 : n * fact(n - 1);
-      const ans = fact(cCount + 1) * fact(vCount);
-
-      text = `In how many different ways can the letters of the word "${word}" be arranged such that all the vowels always come together?`;
-      const distractors = [ans * 2, Math.floor(ans / 2), fact(word.length), fact(cCount + 1)];
-      options[correctIdx] = `${ans}`;
-      let d = 0;
-      for (let k = 0; k < 4; k++) {
-        if (k !== correctIdx) {
-          options[k] = `${distractors[d % distractors.length]}`;
-          d++;
-        }
-      }
-      explanation = `Word "${word}" has ${vCount} vowels (${vowels.join(",")}) and ${cCount} consonants. Treating vowels as a single block gives (${cCount} + 1) = ${cCount + 1} entities. These can be arranged in ${cCount + 1}! ways. The ${vCount} vowels within the block can be arranged among themselves in ${vCount}! ways. Total ways = ${cCount + 1}! × ${vCount}! = ${fact(cCount + 1)} × ${fact(vCount)} = ${ans}.`;
-      shortcut = `Treat all vowels as 1 composite letter. Total ways = (consonants + 1)! × (vowels)!.`;
-      commonMistakes = ["Forgetting to arrange vowels internally", "Calculating simple n! without grouping"];
-    } else if (normTopic.includes("time") && normTopic.includes("work")) {
-      const daysA = 10 + ((seed + i) % 6) * 2; // e.g., 10, 12, 14, 16, 18, 20
-      const daysB = daysA + 5 + ((seed * 3 + i) % 5); // e.g., 15, 18, etc.
-      const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
-      const lcm = (daysA * daysB) / gcd(daysA, daysB);
-      const effA = lcm / daysA;
-      const effB = lcm / daysB;
-      const totalEff = effA + effB;
-      const combinedDays = (lcm / totalEff).toFixed(1);
-
-      text = `A can complete a project in ${daysA} days, while B can complete the same project in ${daysB} days. If both work together, in how many days will the project be completed?`;
-      options[correctIdx] = `${combinedDays} days`;
-      const distractors = [
-        `${((daysA + daysB) / 2).toFixed(1)} days`,
-        `${(daysA * daysB / (daysA + daysB + 2)).toFixed(1)} days`,
-        `${((lcm / Math.abs(effA - effB))).toFixed(1)} days`
-      ];
-      let d = 0;
-      for (let k = 0; k < 4; k++) {
-        if (k !== correctIdx) {
-          options[k] = distractors[d % distractors.length];
-          d++;
-        }
-      }
-      explanation = `Work = LCM(${daysA}, ${daysB}) = ${lcm} units. A's daily efficiency = ${lcm}/${daysA} = ${effA} units/day. B's daily efficiency = ${lcm}/${daysB} = ${effB} units/day. Combined efficiency = ${effA} + ${effB} = ${totalEff} units/day. Required time = ${lcm} / ${totalEff} = ${combinedDays} days.`;
-      shortcut = `Direct formula: (A × B) / (A + B) = (${daysA} × ${daysB}) / (${daysA} + ${daysB}) = ${combinedDays} days.`;
-      commonMistakes = ["Averaging the days (A+B)/2", "Adding reciprocals incorrectly"];
-    } else if (normTopic.includes("profit") || normTopic.includes("loss")) {
-      const cp = 500 + ((seed + i * 23) % 15) * 50; // 500..1200
-      const markup = 20 + ((seed + i * 7) % 5) * 10; // 20%, 30%, 40%, 50%, 60%
-      const discount = 10 + ((seed + i * 3) % 3) * 5; // 10%, 15%, 20%
-      const mp = cp * (1 + markup / 100);
-      const sp = Math.round(mp * (1 - discount / 100));
-      const netProfit = sp - cp;
-      const netProfitPct = (((sp - cp) / cp) * 100).toFixed(1);
-
-      text = `A retailer marks an item ${markup}% above its cost price of ₹${cp} and allows a discount of ${discount}% on the marked price. What is the net profit percentage earned by the retailer?`;
-      options[correctIdx] = `${netProfitPct}%`;
-      const distractors = [
-        `${(markup - discount).toFixed(1)}%`,
-        `${((markup - discount) * 0.8).toFixed(1)}%`,
-        `${(markup * 0.5).toFixed(1)}%`
-      ];
-      let d = 0;
-      for (let k = 0; k < 4; k++) {
-        if (k !== correctIdx) {
-          options[k] = distractors[d % distractors.length];
-          d++;
-        }
-      }
-      explanation = `Cost Price = ₹${cp}. Marked Price = ₹${cp} × (1 + ${markup}/100) = ₹${mp}. Selling Price after ${discount}% discount = ₹${mp} × (1 - ${discount}/100) = ₹${sp}. Net Profit = ₹${sp} - ₹${cp} = ₹${netProfit}. Net Profit % = (₹${netProfit} / ₹${cp}) × 100 = ${netProfitPct}%.`;
-      shortcut = `Net % formula = Markup - Discount - (Markup × Discount / 100) = ${markup} - ${discount} - (${markup * discount} / 100) = ${netProfitPct}%.`;
-      commonMistakes = ["Simply subtracting discount from markup (Markup - Discount)", "Calculating discount on cost price instead of marked price"];
-    } else if (normTopic.includes("speed") || normTopic.includes("distance")) {
-      const trainLen = 150 + ((seed + i * 11) % 5) * 50; // 150, 200, 250, 300, 350
-      const speedKmph = 54 + ((seed + i * 7) % 4) * 18; // 54, 72, 90, 108 km/h
-      const speedMs = (speedKmph * 5) / 18; // 15, 20, 25, 30 m/s
-      const platformLen = 200 + ((seed + i * 13) % 4) * 50; // 200..350
-      const totalDist = trainLen + platformLen;
-      const timeSec = (totalDist / speedMs).toFixed(1);
-
-      text = `A train ${trainLen} meters long is running at a speed of ${speedKmph} km/h. How many seconds will it take to completely cross a platform ${platformLen} meters long?`;
-      options[correctIdx] = `${timeSec} seconds`;
-      const distractors = [
-        `${(trainLen / speedMs).toFixed(1)} seconds`,
-        `${(platformLen / speedMs).toFixed(1)} seconds`,
-        `${((totalDist / speedKmph)).toFixed(1)} seconds`
-      ];
-      let d = 0;
-      for (let k = 0; k < 4; k++) {
-        if (k !== correctIdx) {
-          options[k] = distractors[d % distractors.length];
-          d++;
-        }
-      }
-      explanation = `Convert speed to m/s: ${speedKmph} × (5/18) = ${speedMs} m/s. Total distance to cross platform = Train Length + Platform Length = ${trainLen} + ${platformLen} = ${totalDist} meters. Time = Distance / Speed = ${totalDist} / ${speedMs} = ${timeSec} seconds.`;
-      shortcut = `Distance = L1 + L2 = ${totalDist}m. Speed in m/s = ${speedKmph} × 5/18 = ${speedMs}. Time = ${totalDist} / ${speedMs} = ${timeSec}s.`;
-      commonMistakes = ["Forgetting to convert km/h to m/s", "Not adding platform length to train length"];
-    } else if (normTopic.includes("blood") || normTopic.includes("relation")) {
-      const scenarios = [
-        {
-          q: "Pointing to a photograph of a boy, Suresh said, 'He is the son of the only son of my mother.' How is Suresh related to that boy?",
-          ans: "Father",
-          opts: ["Father", "Uncle", "Brother", "Grandfather"],
-          exp: "Mother's only son is Suresh himself. The boy is the son of Suresh. Hence, Suresh is the father of the boy.",
-          trick: "Trace backwards: 'My mother' -> 'Only son of my mother' = Suresh -> 'Son of Suresh' = Suresh's son."
-        },
-        {
-          q: "If P + Q means P is the father of Q, P - Q means P is the sister of Q, and P * Q means P is the brother of Q, which of the following represents 'M is the aunt of N'?",
-          ans: "M - K + N",
-          opts: ["M - K + N", "M + K - N", "M * K + N", "N - K + M"],
-          exp: "M - K means M is the sister of K. K + N means K is the father of N. Sister of N's father is N's paternal aunt.",
-          trick: "Aunt requires female gender (M - K) followed by father relation to N (+ N)."
-        },
-        {
-          q: "Introducing a woman, a man said, 'Her mother is the only daughter of my mother-in-law.' How is the man related to the woman?",
-          ans: "Father",
-          opts: ["Father", "Brother", "Husband", "Uncle"],
-          exp: "Only daughter of man's mother-in-law is the man's wife. The woman's mother is the man's wife. Therefore, the man is her father.",
-          trick: "'Only daughter of my mother-in-law' = my wife. Her daughter = my daughter."
-        }
-      ];
-      const sc = scenarios[(seed + i) % scenarios.length];
-      text = sc.q;
-      options[correctIdx] = sc.ans;
-      let d = 0;
-      for (let k = 0; k < 4; k++) {
-        if (k !== correctIdx) {
-          const rem = sc.opts.filter(o => o !== sc.ans);
-          options[k] = rem[d % rem.length];
-          d++;
-        }
-      }
-      explanation = sc.exp;
-      shortcut = sc.trick;
-      commonMistakes = ["Confusing maternal and paternal sides", "Assuming gender without explicit cues"];
-    } else if (normTopic.includes("syllogism") || normTopic.includes("logic")) {
-      const syllogisms = [
-        {
-          q: "Statements:\nI. All laptops are devices.\nII. Some devices are gadgets.\nIII. No gadget is antique.\nConclusions:\n1. Some devices are laptops.\n2. No antique is a device.",
-          ans: "Only conclusion 1 follows",
-          opts: ["Only conclusion 1 follows", "Only conclusion 2 follows", "Both conclusions follow", "Neither conclusion follows"],
-          exp: "From statement I, 'All laptops are devices', the immediate converse 'Some devices are laptops' is definitively true. Antique has no direct negative relation with device, so conclusion 2 does not follow.",
-          trick: "'All A are B' always implies 'Some B are A'."
-        },
-        {
-          q: "Statements:\nI. Only a few engineers are managers.\nII. All managers are leaders.\nConclusions:\n1. Some engineers are leaders.\n2. All engineers can never be managers.",
-          ans: "Both conclusions follow",
-          opts: ["Both conclusions follow", "Only conclusion 1 follows", "Only conclusion 2 follows", "Neither follows"],
-          exp: "'Only a few engineers are managers' means: Some engineers are managers, and some engineers are NOT managers. Since managers are leaders, the overlap gives 'Some engineers are leaders'. 'Only a few' guarantees that all engineers can never be managers.",
-          trick: "'Only a few A are B' means Some A are B + Some A are NOT B."
-        }
-      ];
-      const sc = syllogisms[(seed + i) % syllogisms.length];
-      text = sc.q;
-      options[correctIdx] = sc.ans;
-      let d = 0;
-      for (let k = 0; k < 4; k++) {
-        if (k !== correctIdx) {
-          const rem = sc.opts.filter(o => o !== sc.ans);
-          options[k] = rem[d % rem.length];
-          d++;
-        }
-      }
-      explanation = sc.exp;
-      shortcut = sc.trick;
-      commonMistakes = ["Treating 'Only a few' as standard 'Some'", "Assuming negative relations without proof"];
-    } else if (normTopic.includes("probability")) {
-      const red = 4 + ((seed + i) % 4);
-      const blue = 5 + ((seed * 2 + i) % 4);
-      const green = 3 + ((seed * 3 + i) % 3);
-      const total = red + blue + green;
-      const waysTotal = (total * (total - 1)) / 2;
-      const waysRed = (red * (red - 1)) / 2;
-      const gcdVal = (a: number, b: number): number => b === 0 ? a : gcdVal(b, a % b);
-      const g = gcdVal(waysRed, waysTotal);
-      const ansFrac = `${waysRed / g}/${waysTotal / g}`;
-
-      text = `A bag contains ${red} red balls, ${blue} blue balls, and ${green} green balls. If two balls are drawn at random without replacement, what is the probability that both balls are red?`;
-      options[correctIdx] = ansFrac;
-      const distractors = [
-        `${(waysRed + 1) / g}/${waysTotal / g}`,
-        `${red}/${total}`,
-        `${(red * 2)}/${total * 2}`
-      ];
-      let d = 0;
-      for (let k = 0; k < 4; k++) {
-        if (k !== correctIdx) {
-          options[k] = distractors[d % distractors.length];
-          d++;
-        }
-      }
-      explanation = `Total balls = ${red} + ${blue} + ${green} = ${total}. Total ways to choose 2 balls = C(${total}, 2) = (${total} × ${total - 1}) / 2 = ${waysTotal}. Favorable ways to choose 2 red balls = C(${red}, 2) = (${red} × ${red - 1}) / 2 = ${waysRed}. Probability = ${waysRed}/${waysTotal} = ${ansFrac}.`;
-      shortcut = `P(1st Red) × P(2nd Red) = (${red}/${total}) × (${red - 1}/${total - 1}) = ${ansFrac}.`;
-      commonMistakes = ["Using with-replacement calculation", "Using total balls instead of combination formula"];
-    } else {
-      // Default diversified quantitative / logical reasoning problem
-      const p = 10000 + ((seed + i * 7) % 10) * 2000;
-      const r = 10;
-      const t = 2;
-      const si = (p * r * t) / 100;
-      const ci = Math.round(p * (Math.pow(1 + r / 100, t) - 1));
-      const diff = ci - si;
-
-      text = `What is the difference between the Compound Interest and Simple Interest on a principal sum of ₹${p.toLocaleString()} for ${t} years at an annual interest rate of ${r}%?`;
-      options[correctIdx] = `₹${diff}`;
-      const distractors = [`₹${diff + 50}`, `₹${diff * 2}`, `₹${Math.max(10, diff - 40)}`];
-      let d = 0;
-      for (let k = 0; k < 4; k++) {
-        if (k !== correctIdx) {
-          options[k] = distractors[d % distractors.length];
-          d++;
-        }
-      }
-      explanation = `SI for 2 years = (P × R × T) / 100 = (${p} × ${r} × ${t}) / 100 = ₹${si}. CI for 2 years = P[(1 + R/100)² - 1] = ₹${ci}. Difference = CI - SI = ₹${diff}.`;
-      shortcut = `For 2 years, Difference = P × (R / 100)² = ${p} × (${r}/100)² = ₹${diff}.`;
-      commonMistakes = ["Calculating CI for 3 years instead of 2", "Rounding errors in CI formula"];
-    }
-
-    return {
-      id: `ai-topic-${normTopic.replace(/[^a-z0-9]/g, "-")}-t${testNumber || 1}-${seed}-${i}`,
-      text: `[${companyName} • ${topic}] ${text}`,
-      options,
-      correctIdx,
-      explanation,
-      shortcut,
-      difficulty,
-      estimatedTimeSec: difficulty === "easy" ? 45 : difficulty === "hard" ? 110 : 75,
-      topic,
-      category,
-      companyTags: [companyName],
-      commonMistakes,
-    };
-  });
+  const testNum = testNumber || 1;
+  const pool = buildDiversifiedTopicTest(topic, category || "quantitative", testNum);
+  if (count <= pool.length) {
+    return pool.slice(0, count);
+  }
+  const extra = buildDiversifiedTopicTest(topic, category || "quantitative", testNum + 1);
+  return pool.concat(extra).slice(0, count);
 }
 
 async function aiGenerateQuestions(
@@ -963,10 +729,20 @@ Rules:
       uniqueQuestions = uniqueQuestions.concat(extra);
     }
 
-    return uniqueQuestions.length > 0 ? uniqueQuestions.slice(0, count) : fallback;
+    // 4) Guarantee full count even if dedupe dropped any
+    if (uniqueQuestions.length < count) {
+      for (const fq of fallback) {
+        if (!uniqueQuestions.some(uq => uq.text === fq.text)) {
+          uniqueQuestions.push(fq);
+          if (uniqueQuestions.length >= count) break;
+        }
+      }
+    }
+
+    return uniqueQuestions.length >= count ? uniqueQuestions.slice(0, count) : fallback.slice(0, count);
   } catch (error) {
     console.warn(`[AptitudeEngine] AI question generation failed for topic="${topic}":`, error);
-    return fallback;
+    return fallback.slice(0, count);
   }
 }
 
@@ -977,28 +753,32 @@ Rules:
 export async function getAptitudeCategories(): Promise<{
   categories: { name: AptitudeCategory; displayName: string; topics: AptitudeTopicDef[]; icon: string }[];
 }> {
-  const categoryMap: Record<AptitudeCategory, { displayName: string; icon: string }> = {
+  const categoryMap: Partial<Record<AptitudeCategory, { displayName: string; icon: string }>> = {
     "quantitative": { displayName: "Quantitative Aptitude", icon: "📐" },
     "logical": { displayName: "Logical Reasoning", icon: "🧠" },
     "verbal": { displayName: "Verbal Ability", icon: "📖" },
     "data-interpretation": { displayName: "Data Interpretation", icon: "📊" },
     "analytical": { displayName: "Analytical Reasoning", icon: "🔍" },
+    "number_systems": { displayName: "Number Systems", icon: "🔢" },
   };
 
-  const grouped: Record<AptitudeCategory, AptitudeTopicDef[]> = {
+  const grouped: Partial<Record<AptitudeCategory, AptitudeTopicDef[]>> = {
     "quantitative": [], "logical": [], "verbal": [],
     "data-interpretation": [], "analytical": [],
   };
 
   for (const topic of APTITUDE_TOPICS) {
-    grouped[topic.category].push(topic);
+    if (!grouped[topic.category]) {
+      grouped[topic.category] = [];
+    }
+    grouped[topic.category]!.push(topic);
   }
 
   const categories = (Object.keys(grouped) as AptitudeCategory[]).map((cat) => ({
     name: cat,
-    displayName: categoryMap[cat].displayName,
-    icon: categoryMap[cat].icon,
-    topics: grouped[cat],
+    displayName: categoryMap[cat]?.displayName || cat,
+    icon: categoryMap[cat]?.icon || "📚",
+    topics: grouped[cat] || [],
   }));
 
   return { categories };
@@ -1136,6 +916,16 @@ export async function generateAdaptiveQuestions(params: AdaptiveParams): Promise
       : APTITUDE_TOPICS[Math.floor(Math.random() * APTITUDE_TOPICS.length)].name;
     const challengeGenerated = await aiGenerateQuestions(challengeTopic, "quantitative", challengeCount, challengeDifficulty, [], undefined, existingQuestionTexts);
     allQuestions.push(...challengeGenerated);
+  }
+
+  if (allQuestions.length < count) {
+    const fallback = generateTopicSpecificFallback("Percentages", "quantitative", count, adjustedDifficulty, []);
+    for (const fq of fallback) {
+      if (!allQuestions.some(aq => aq.text === fq.text)) {
+        allQuestions.push(fq);
+        if (allQuestions.length >= count) break;
+      }
+    }
   }
 
   return allQuestions.slice(0, count);

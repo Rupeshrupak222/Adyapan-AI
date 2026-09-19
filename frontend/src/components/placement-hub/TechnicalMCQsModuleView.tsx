@@ -661,6 +661,8 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
   const handleCompleteSession = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     setViewState("session_review");
+    quota.refresh().catch(() => {});
+
 
     setProgress(curr => {
       const answeredList = curr.answers.filter(a => a.selectedIdx !== null);
@@ -800,14 +802,59 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
 
   // ── Start Direct Dynamic Test (15 Qs, 30 Mins) ──
   const startTestSession = useCallback(async (test: MCQTest) => {
+    if (quota.exhausted) {
+      toast.error(
+        quota.status?.plan === "free"
+          ? "You've used all 10 free Technical MCQ tests this month."
+          : "You've used all 30 Premium Technical MCQ tests this month.",
+        {
+          description: quota.status?.plan === "free"
+            ? "Upgrade to Premium for 30 tests per month."
+            : "Your allowance will reset on the 1st of next month.",
+          action: quota.status?.plan === "free" ? { label: "Upgrade", onClick: () => window.location.href = "/premium" } : undefined,
+        }
+      );
+      return;
+    }
+
     setAiLoading(true);
     setShowExplanation(false);
     setShowHint(false);
     setActiveTestTitle(test.title || `${test.targetName} • Test ${test.testNumber}`);
 
     try {
+      // 1. Meter attempt and consume 1 quota credit
+      const requestId = quota.newRequestId();
+      let startRes: any = null;
+      try {
+        startRes = await api.post("/mcq/session/start", {
+          testId: test.id,
+          targetId: test.targetId,
+          targetType: test.targetType,
+          targetName: test.targetName,
+          requestId,
+        });
+        if (startRes.data?.success) {
+          quota.onSuccess();
+        }
+      } catch (startErr: any) {
+        if (quota.handleQuotaError(startErr)) {
+          setAiLoading(false);
+          return;
+        }
+        if (startErr?.response?.status === 401) {
+          toast.error("Please log in to start a technical assessment test.");
+          setAiLoading(false);
+          return;
+        }
+        await quota.onFailure();
+        throw startErr;
+      }
+
       let finalQs: MCQQuestion[] = [];
-      if (test.questions && Array.isArray(test.questions) && test.questions.length >= 15) {
+      if (startRes?.data?.test?.questions && Array.isArray(startRes.data.test.questions) && startRes.data.test.questions.length >= 15) {
+        finalQs = startRes.data.test.questions;
+      } else if (test.questions && Array.isArray(test.questions) && test.questions.length >= 15) {
         finalQs = test.questions;
       } else {
         const res = await api.get(`/mcq/test/${test.id}`);
@@ -859,28 +906,12 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
       questionStartTimeRef.current = Date.now();
       setViewState("active_session");
       toast.success(`Starting ${test.title || `Test ${test.testNumber}`} (15 Questions · 30 Mins)`);
-    } catch {
-      const exactQuestions = generateLocalDomainQuestions(test.targetName, test.targetType, test.testNumber, 15);
-      setQuestions(exactQuestions);
-      setSessionConfig({
-        tech: test.targetType === "technology" ? test.targetName : "",
-        company: test.targetType === "company" ? test.targetName : "",
-        domain: test.difficulty || "Medium",
-      });
-      setProgress({
-        currentIdx: 0,
-        answers: [],
-        timeElapsed: 0,
-        timeRemainingSeconds: 1800,
-        bookmarkedCount: 0,
-        flaggedCount: 0
-      });
-      questionStartTimeRef.current = Date.now();
-      setViewState("active_session");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || "Failed to start test session");
     } finally {
       setAiLoading(false);
     }
-  }, []);
+  }, [quota]);
 
   // ── Submit Answer ──
   const submitAnswer = useCallback((selectedIdx: number | null) => {

@@ -633,6 +633,24 @@ export async function updateUserPlan(req: Request, res: Response, next: NextFunc
         storageLimitMb: 50,
       });
     }
+    if (action === "reset_usage" || action === "reset_usage_limit" || action === "reset_monthly_limit") {
+      const { count } = await prisma.userFeatureQuota.updateMany({
+        where: { userId },
+        data: { used: 0 },
+      });
+      await AdminAuditService.log({
+        adminId, adminName,
+        action: "Usage Limit Reset",
+        module: "User Management",
+        targetId: userId,
+        details: { ...auditDetails(), resetRows: count },
+        ipAddress: req.ip,
+      });
+      return res.json({
+        success: true,
+        message: `Monthly usage limit reset for ${user.name || user.email} (${count} feature row(s) cleared).`,
+      });
+    }
 
     throw httpError(400, "Invalid action");
   } catch (error) {

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Users, Shield, Crown, Star, X, ChevronLeft, ChevronRight,
   Lock, Trash2, ArrowUpDown, Loader2, CheckCircle, AlertTriangle,
-  UserPlus, UserMinus, MoreVertical, RefreshCw, Edit3
+  UserPlus, UserMinus, MoreVertical, RefreshCw, Edit3, Gauge
 } from "lucide-react";
 import { api } from "@/services/api";
 import { StatusBadge } from "@/components/admin/shared/StatusBadge";
@@ -215,6 +215,12 @@ export default function UserManagement() {
   const handleDelete = (user: AdminUser) => {
     if (window.confirm(`Are you sure you want to delete "${user.name}" (${user.email})? This action cannot be undone.`)) {
       handleAction(user.id, "delete_user");
+    }
+  };
+
+  const handleResetUsage = (user: AdminUser) => {
+    if (window.confirm(`Reset monthly usage limit for "${user.name}" (${user.email})? This clears their current month's usage count so they can use AI features again.`)) {
+      handleAction(user.id, "reset_usage");
     }
   };
 
@@ -590,6 +596,12 @@ export default function UserManagement() {
                                 onClick={() => handleAction(user.id, "downgrade_plan")}
                               />
                             )}
+                            <ActionBtn
+                              icon={<Gauge size={13} />}
+                              tooltip="Reset Monthly Usage Limit"
+                              loading={actionLoading === user.id}
+                              onClick={() => handleResetUsage(user)}
+                            />
                             <ActionBtn
                               icon={<Lock size={13} />}
                               tooltip="Reset Password"

@@ -1,11 +1,14 @@
 import { Router } from "express";
-import { optionalAuth } from "../middleware/auth";
+import { optionalAuth, requireAuth } from "../middleware/auth";
+import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
+import { FeatureKey } from "../services/feature-keys";
 import {
   handleGetTopics,
   handleGetCompanies,
   handleGetCompanyByName,
   handleGetTests,
   handleGetTestById,
+  handleStartMCQSession,
   handleGetQuestions,
   handleSubmitAttempt,
   handleToggleBookmark,
@@ -22,6 +25,11 @@ mcqRouter.get("/company/:name", optionalAuth, handleGetCompanyByName);
 // Dynamic Multi-Test Endpoints
 mcqRouter.get("/tests", optionalAuth, handleGetTests);
 mcqRouter.get("/test/:testId", optionalAuth, handleGetTestById);
+
+// Session Start & Quota Metering
+mcqRouter.post("/session/start", requireAuth, requireFeatureQuota(FeatureKey.TECHNICAL_MCQS), handleStartMCQSession);
+mcqRouter.post("/start", requireAuth, requireFeatureQuota(FeatureKey.TECHNICAL_MCQS), handleStartMCQSession);
+
 
 // Questions & Practice
 mcqRouter.get("/questions", optionalAuth, handleGetQuestions);

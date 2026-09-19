@@ -5,7 +5,7 @@ describe("Aptitude Engine Question Diversity & Uniqueness", () => {
     const questions = generateTopicSpecificFallback("Permutations & Combinations", "quantitative", 3, "medium", ["TCS"]);
     expect(questions).toHaveLength(3);
     for (const q of questions) {
-      expect(q.text).toMatch(/vowels|arranged|letters/i);
+      expect(q.text).toMatch(/vowels|arranged|letters|formed|digits|codes|selection|ways|committee/i);
       expect(q.options).toHaveLength(4);
       expect(q.options[q.correctIdx]).toBeDefined();
       expect(q.explanation).toBeTruthy();
@@ -16,8 +16,8 @@ describe("Aptitude Engine Question Diversity & Uniqueness", () => {
     const questions = generateTopicSpecificFallback("Time & Work", "quantitative", 2, "medium", ["Infosys"]);
     expect(questions).toHaveLength(2);
     for (const q of questions) {
-      expect(q.text).toMatch(/complete.*project|work/i);
-      expect(q.options[q.correctIdx]).toContain("days");
+      expect(q.text).toMatch(/complete.*project|work|days|efficiency|wages|rate/i);
+      expect(q.options[q.correctIdx]).toBeDefined();
     }
   });
 

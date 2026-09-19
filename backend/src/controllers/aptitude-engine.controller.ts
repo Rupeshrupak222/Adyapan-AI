@@ -21,6 +21,7 @@ import {
   getTopicTestsFromDb,
   getTopicTestByIdFromDb,
   generateWeeklyTopicTest,
+  generateDefaultTopicTestQuestions,
 } from "../services/aptitude-test-bank.service";
 import {
   APTITUDE_SOURCE,
@@ -133,24 +134,41 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
       throw httpError(400, `mode must be one of: ${validModes.join(", ")}`);
     }
 
-    const questionCount = Math.min(Math.max(Number(count) || 10, 1), 50);
+    const questionCount = Math.min(Math.max(Number(count) || 30, 1), 50);
     let questions;
     let sessionDifficulty = (difficulty as Difficulty) || "medium";
 
-    // If testId is provided or mode is topic_test with topic, fetch 30 questions from DB test bank!
+    // If testId is provided or mode is topic_test/practice with topic, fetch 30 questions from DB test bank!
     if (testId) {
       const dbTest = await getTopicTestByIdFromDb(testId, userPrisma);
       if (dbTest) {
         questions = dbTest.questions;
         sessionDifficulty = (dbTest.difficulty as Difficulty) || "medium";
       }
-    } else if (mode === "topic_test" && topic) {
-      const tests = await getTopicTestsFromDb(topic, category || "quantitative", userPrisma);
+    } else if ((mode === "topic_test" || mode === "practice") && topic) {
+      let tests = await getTopicTestsFromDb(topic, category || "quantitative", userPrisma);
+      if (tests.length === 0) {
+        const allCategories = [
+          "quantitative",
+          "logical",
+          "verbal",
+          "data-interpretation",
+          "data_interpretation",
+          "analytical",
+          "number_systems"
+        ];
+        for (const cat of allCategories) {
+          tests = await getTopicTestsFromDb(topic, cat, userPrisma);
+          if (tests.length > 0) break;
+        }
+      }
       if (tests.length > 0) {
-        const firstTest = await getTopicTestByIdFromDb(tests[0].id, userPrisma);
-        if (firstTest) {
-          questions = firstTest.questions;
-          sessionDifficulty = (firstTest.difficulty as Difficulty) || "medium";
+        const requestedTestNum = req.body.testNumber ? Number(req.body.testNumber) : undefined;
+        const testToUse = (requestedTestNum && tests.find(t => t.testNumber === requestedTestNum)) || tests[0];
+        const loadedTest = await getTopicTestByIdFromDb(testToUse.id, userPrisma);
+        if (loadedTest) {
+          questions = loadedTest.questions;
+          sessionDifficulty = (loadedTest.difficulty as Difficulty) || "medium";
         }
       }
     } else if (mode === "company_test" && company) {
@@ -171,10 +189,29 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
     // duplicates within this assessment, prefer unseen questions, and pull
     // least-recently-seen only to fill back to the full batch.
     if (questions && questions.length > 0) {
+      const targetCount = Math.min(Math.max(questionCount, 30), 50);
       const withinSession = dedupeQuestions(questions);
       const selection = withinSession.length > 0 ? withinSession : questions;
-      const { questions: ranked } = selectQuestionsForUser(selection, userSeenState, selection.length);
-      if (ranked.length > 0) questions = ranked;
+      const { questions: ranked } = selectQuestionsForUser(selection, userSeenState, targetCount);
+      let result = ranked.length > 0 ? ranked : questions;
+      if (result.length < targetCount && questions.length > result.length) {
+        for (const q of questions) {
+          if (!result.some((r: any) => r.id === q.id || r.text === q.text)) {
+            result.push(q);
+            if (result.length >= targetCount) break;
+          }
+        }
+      }
+      if (result.length < targetCount) {
+        const extraPool = generateDefaultTopicTestQuestions(topic || company || "Placement Aptitude", category || "quantitative", 2);
+        for (const eq of extraPool) {
+          if (!result.some((r: any) => r.id === eq.id || r.text === eq.text)) {
+            result.push(eq);
+            if (result.length >= targetCount) break;
+          }
+        }
+      }
+      questions = result.slice(0, targetCount);
     }
 
     if (!questions || questions.length === 0) {
@@ -256,6 +293,23 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
     if (isAllFallback && questions.length > 0) {
       throw httpError(503, "AI question generation service is temporarily unavailable. Please try again.");
     }
+
+    const targetSessionCount = Math.min(Math.max(questionCount, 30), 50);
+    if (questions && questions.length < targetSessionCount) {
+      const extraPool = generateDefaultTopicTestQuestions(topic || company || "Placement Aptitude", category || "quantitative", 3);
+      for (const eq of extraPool) {
+        if (!questions.some((q: any) => q.id === eq.id || q.text === eq.text)) {
+          questions.push(eq);
+          if (questions.length >= targetSessionCount) break;
+        }
+      }
+    }
+
+    // Ensure absolutely NO [Topic Test X • QY] or similar prefix appears in question text
+    questions = (questions || []).map((q: any) => ({
+      ...q,
+      text: (q?.text || "").replace(/^\[[^\]]*\]\s*/, "").trim(),
+    }));
 
     const session = await userPrisma.aptitudeSession.create({
       data: {

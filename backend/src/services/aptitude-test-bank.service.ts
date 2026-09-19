@@ -78,9 +78,9 @@ export async function getTopicTestsFromDb(
         orderBy: { testNumber: "asc" },
       });
 
-      // If no tests exist for this topic, seed default Test 1 with 30 questions
+      // If no tests exist for this topic, seed default Tests 1, 2, and 3 with 30 questions each
       if (tests.length === 0) {
-        const defaultTestCount = 1;
+        const defaultTestCount = 3;
         const seeded = [];
 
         for (let testNum = 1; testNum <= defaultTestCount; testNum++) {
@@ -121,7 +121,7 @@ export async function getTopicTestsFromDb(
 
   // Guaranteed in-memory fallback if database table is empty or inaccessible
   if (!tests || tests.length === 0) {
-    tests = [1].map(testNum => ({
+    tests = [1, 2, 3].map(testNum => ({
       id: `mem-${normalizedTopic.toLowerCase().replace(/\s+/g, "-")}-t${testNum}`,
       category: normalizedCategory,
       topic: normalizedTopic,
@@ -223,6 +223,10 @@ export async function getTopicTestByIdFromDb(testId: string, userPrisma?: any) {
             data: { questionsJson: questions as any },
           }).catch((err: any) => console.error("[Aptitude] Error caching upgraded test questions:", err));
         }
+        const cleanedQuestions = (questions || []).map((q: any) => ({
+          ...q,
+          text: (q?.text || "").replace(/^\[[^\]]*\]\s*/, "").trim(),
+        }));
         return {
           id: test.id,
           category: test.category,
@@ -231,7 +235,7 @@ export async function getTopicTestByIdFromDb(testId: string, userPrisma?: any) {
           title: test.title,
           difficulty: test.difficulty,
           totalQuestions: test.totalQuestions,
-          questions,
+          questions: cleanedQuestions,
         };
       }
     }
@@ -356,21 +360,25 @@ export const ALL_TOPICS_BY_CATEGORY: Record<string, string[]> = {
     'Permutations & Combinations', 'Averages', 'Mixture & Alligation'
   ],
   logical: [
-    'Puzzles & Seating Arrangement', 'Blood Relations', 'Coding-Decoding',
-    'Number & Letter Series', 'Syllogism', 'Direction Sense', 'Clocks & Calendars'
+    'Puzzles', 'Seating Arrangement', 'Blood Relations', 'Coding-Decoding',
+    'Direction Sense', 'Syllogisms', 'Number Series', 'Analogy',
+    'Statement & Conclusion', 'Logical Deduction'
   ],
   verbal: [
-    'Reading Comprehension', 'Sentence Correction & Grammar', 'Synonyms & Antonyms',
-    'Para Jumbles', 'Fill in the Blanks', 'Error Spotting'
+    'Reading Comprehension', 'Grammar', 'Vocabulary', 'Sentence Correction',
+    'Para Jumbles', 'Fill in the Blanks', 'Synonyms & Antonyms', 'Idioms & Phrases'
   ],
   data_interpretation: [
-    'Bar Graphs & Line Charts', 'Pie Charts', 'Tables & Data Matrices', 'Caselets & Mixed Charts'
+    'Bar Graphs', 'Pie Charts', 'Line Graphs', 'Tables',
+    'Caselets', 'Mixed Charts', 'Data Sufficiency'
   ],
   analytical: [
-    'Statement & Assumptions', 'Statement & Conclusions', 'Course of Action', 'Cause & Effect'
+    'Critical Reasoning', 'Statement Assumption', 'Statement Conclusion',
+    'Cause and Effect', 'Course of Action', 'Strengthen/Weaken Argument'
   ],
   number_systems: [
-    'HCF & LCM', 'Divisibility & Remainders', 'Simplification & Surds'
+    'HCF & LCM', 'Fractions & Decimals', 'Properties of Numbers',
+    'Divisibility Rules', 'Remainder Theorem', 'Cyclicity', 'Unit Digit'
   ]
 };
 

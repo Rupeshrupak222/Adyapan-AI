@@ -92,6 +92,34 @@ export async function handleGetTestById(req: Request, res: Response): Promise<vo
   }
 }
 
+export async function handleStartMCQSession(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.userId || "guest";
+    const { testId, targetId, targetName, targetType } = req.body || {};
+    const userPrisma = userId && userId !== "guest" ? await getUserPrismaFromRequest(req) : undefined;
+
+    let test = null;
+    if (testId) {
+      test = await getTestById(testId, userPrisma, userId);
+    }
+    if (!test && (targetId || targetName)) {
+      const tests = await getTestsForTarget(targetId || targetName || "");
+      if (tests && tests.length > 0) {
+        test = await getTestById(tests[0].id, userPrisma, userId);
+      }
+    }
+
+    res.json({
+      success: true,
+      test,
+      featureUsage: res.locals.featureUsage || req.featureUsageStatus,
+    });
+  } catch (error: any) {
+    handleRouteError(res, error, "Mcq.startSession", "Failed to start MCQ session");
+  }
+}
+
+
 export async function handleGetQuestions(req: Request, res: Response): Promise<void> {
   try {
     const userId = req.user?.userId || "guest";
