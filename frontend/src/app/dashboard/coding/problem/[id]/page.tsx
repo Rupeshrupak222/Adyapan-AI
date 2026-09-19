@@ -2342,7 +2342,7 @@ Answer the student's question based on the coding problem. Provide hints or feed
                       renderStructuredExplanation(problem.description)
                     ) : (
                       <div className="text-xs text-[var(--text-muted)] animate-pulse bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
-                        Loading exact Codeforces problem statement...
+                        Loading problem statement...
                       </div>
                     )}
                     
@@ -2373,12 +2373,16 @@ Answer the student's question based on the coding problem. Provide hints or feed
                       </div>
                     )}
                     
-                    {problem?.problemUrl && (
+                    {problem?.problemUrl ? (
                       <div className="pt-2 text-[11px] text-[var(--text-secondary)]">
                         <span>Original Platform: </span>
                         <a href={problem.problemUrl} target="_blank" rel="noreferrer" className="text-amber-400 font-semibold underline hover:text-amber-300">
-                          Codeforces Problem {problem.externalId}
+                          Problem Reference
                         </a>
+                      </div>
+                    ) : (
+                      <div className="pt-2 text-[11px] text-indigo-400/80 font-medium flex items-center gap-1.5">
+                        <Sparkles size={12} /> Curated DSA Question Bank • Problem {problem?.externalId || id}
                       </div>
                     )}
                   </div>

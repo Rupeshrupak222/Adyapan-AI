@@ -1,6 +1,5 @@
 import { prisma } from "../config/prisma";
 import { generateJSON, MODELS } from "../lib/ai/openrouter";
-import { scrapeCodeforcesProblem } from "./codeforces.service";
 
 export interface Example {
   input: string;
@@ -38,17 +37,7 @@ export class AICodingService {
       throw new Error(`Question with ID ${questionId} not found`);
     }
 
-    // Scrape exact problem statement directly from Codeforces for Codeforces questions
-    let scrapedData: any = null;
-    if (question.externalId && (question.source === "codeforces" || question.externalId.includes("-"))) {
-      try {
-        scrapedData = await scrapeCodeforcesProblem(question.externalId);
-      } catch (err) {
-        console.warn("[AICodingService] Codeforces scraping error:", err);
-      }
-    }
-
-    // Check cache (only if non-Codeforces or if cache contains real scraped data)
+    // Check cache
     const cached = await prisma.questionAIAnalysis.findFirst({
       where: { questionId }
     });
@@ -56,49 +45,39 @@ export class AICodingService {
     if (cached) {
       const data = cached.explanationJson as unknown as AIAnalysisSchema;
       if (data && data.examples && data.examples.length > 0 && data.problem_explanation && !data.problem_explanation.includes("A structured explanation of the problem")) {
-        if (!scrapedData || (data.inputSpecification && data.problem_explanation.length > 100)) {
-          return data;
-        }
-      }
-      try {
-        await prisma.questionAIAnalysis.delete({
-          where: { id: cached.id }
-        });
-      } catch (err) {
-        console.warn(`[AICodingService] Failed to delete stale cache:`, err);
+        return data;
       }
     }
 
+    const problemDescription = question.statement || `A structured explanation of the problem: "${question.title}" (${question.topic}). We need to solve it efficiently.`;
+    const problemExamples = Array.isArray(question.examples) && question.examples.length > 0
+      ? (question.examples as any)
+      : Array.isArray(question.visibleTestCases) && question.visibleTestCases.length > 0
+        ? (question.visibleTestCases as any).map((tc: any) => ({ input: tc.input, output: tc.expectedOutput, explanation: "Sample test case." }))
+        : [{ input: "5\n1 2 3 4 5", output: "5", explanation: "Sample example." }];
+
     const fallback: AIAnalysisSchema = {
-      problem_explanation: scrapedData?.description
-        ? scrapedData.description
-        : `A structured explanation of the problem: "${question.title}" (${question.topic}). We need to solve it efficiently.`,
-      hint_1: "Think about the naive brute-force method first.",
-      hint_2: "Can we use a hash map or sorting to optimize?",
-      hint_3: "Consider using two pointers or sliding window to achieve optimal time complexity.",
+      problem_explanation: problemDescription,
+      hint_1: "Analyze the problem requirements and think about the naive brute-force method first.",
+      hint_2: "Can you optimize time or space complexity using standard DSA patterns like two pointers, hash maps, or dynamic programming?",
+      hint_3: "Consider boundary constraints, empty inputs, single element edge cases, and overflow.",
       brute_force: "A naive approach that iterates through all possibilities.",
-      optimal_approach: "An optimized approach utilizing efficient data structures or greedy choice.",
-      time_complexity: "O(N^2) brute force, O(N) or O(N log N) optimal.",
-      space_complexity: "O(1) extra space or O(N) to store frequencies.",
-      interview_importance: "This is a core DSA problem testing your understanding of array manipulation and optimal search techniques.",
+      optimal_approach: "An optimized approach utilizing efficient data structures or algorithmic patterns.",
+      time_complexity: "O(N) or O(N log N) optimal.",
+      space_complexity: "O(1) extra space or O(N) auxiliary space.",
+      interview_importance: "This is a core DSA problem frequently asked in technical coding interviews at top tech companies.",
       common_mistakes: [
-        "Not handling corner cases like empty arrays or single element lists.",
-        "Using excessive space when an in-place modification is possible.",
-        "Integer overflow during sum calculations."
+        "Not handling corner cases like empty inputs or single element collections.",
+        "Off-by-one errors during iteration or pointer updates.",
+        "Integer overflow or improper return types."
       ],
-      examples: scrapedData?.examples && scrapedData.examples.length > 0 ? scrapedData.examples : [
-        {
-          input: "5\n1 2 3 4 5",
-          output: "15",
-          explanation: "Example input with sum 15."
-        }
-      ],
-      inputSpecification: scrapedData?.inputSpecification || "",
-      outputSpecification: scrapedData?.outputSpecification || "",
-      constraints: scrapedData?.constraints || "",
-      timeLimit: scrapedData?.timeLimit || "",
-      memoryLimit: scrapedData?.memoryLimit || "",
-      note: scrapedData?.note || ""
+      examples: problemExamples,
+      inputSpecification: question.inputFormat || "",
+      outputSpecification: question.outputFormat || "",
+      constraints: question.constraints || "",
+      timeLimit: question.timeLimit || "2.0s",
+      memoryLimit: question.memoryLimit || "256 MB",
+      note: ""
     };
 
     const systemPrompt = `You are a FAANG Interview Coach, Competitive Programming Mentor, and EdTech Platform Architect.
@@ -129,7 +108,11 @@ Topic: ${question.topic}
 Difficulty: ${question.difficulty}
 Rating: ${question.rating || "N/A"}
 Tags: ${JSON.stringify(question.tagsJson)}
-${scrapedData ? `\nExact Codeforces Problem Details:\nDescription:\n${scrapedData.description}\nInput Spec:\n${scrapedData.inputSpecification}\nOutput Spec:\n${scrapedData.outputSpecification}\nConstraints:\n${scrapedData.constraints}\nTime Limit:\n${scrapedData.timeLimit}\nMemory Limit:\n${scrapedData.memoryLimit}\nExamples:\n${JSON.stringify(scrapedData.examples)}\nNote:\n${scrapedData.note}` : ""}`;
+Problem Statement: ${question.statement || ""}
+Input Format: ${question.inputFormat || ""}
+Output Format: ${question.outputFormat || ""}
+Constraints: ${question.constraints || ""}
+Examples: ${JSON.stringify(question.examples || [])}`;
 
     try {
       const generated = await generateJSON<AIAnalysisSchema>(
@@ -139,31 +122,20 @@ ${scrapedData ? `\nExact Codeforces Problem Details:\nDescription:\n${scrapedDat
         fallback
       );
 
-      if (scrapedData) {
-        if (scrapedData.description) {
-          generated.problem_explanation = scrapedData.description;
-        }
-        if (scrapedData.inputSpecification) {
-          generated.inputSpecification = scrapedData.inputSpecification;
-        }
-        if (scrapedData.outputSpecification) {
-          generated.outputSpecification = scrapedData.outputSpecification;
-        }
-        if (scrapedData.constraints) {
-          generated.constraints = scrapedData.constraints;
-        }
-        if (scrapedData.timeLimit) {
-          generated.timeLimit = scrapedData.timeLimit;
-        }
-        if (scrapedData.memoryLimit) {
-          generated.memoryLimit = scrapedData.memoryLimit;
-        }
-        if (scrapedData.note) {
-          generated.note = scrapedData.note;
-        }
-        if (scrapedData.examples && scrapedData.examples.length > 0) {
-          generated.examples = scrapedData.examples;
-        }
+      if (question.statement) {
+        generated.problem_explanation = question.statement;
+      }
+      if (question.inputFormat) {
+        generated.inputSpecification = question.inputFormat;
+      }
+      if (question.outputFormat) {
+        generated.outputSpecification = question.outputFormat;
+      }
+      if (question.constraints) {
+        generated.constraints = question.constraints;
+      }
+      if (Array.isArray(question.examples) && question.examples.length > 0) {
+        generated.examples = question.examples as any;
       }
 
       await prisma.questionAIAnalysis.create({

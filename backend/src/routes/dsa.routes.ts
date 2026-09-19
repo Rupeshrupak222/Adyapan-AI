@@ -8,96 +8,43 @@ import { getTimezone } from "../utils/request";
 import { executeCode } from "../services/piston.service";
 import { prisma as masterPrisma } from "../config/prisma";
 
-import { CodeforcesService } from "../services/codeforces.service";
-
 const router = Router();
 router.use(requireAuth);
 
 router.get("/problems", async (req: any, res) => {
   try {
-    const { category, difficulty, company } = req.query;
-    const filter: any = {};
-    if (category) filter.category = category as string;
-    if (difficulty) filter.difficulty = difficulty as string;
-    if (company) filter.companies = { has: company as string };
-
-    let problems: any[] = [];
-    try {
-      const userPrisma = await getUserPrismaFromRequest(req);
-      problems = await userPrisma.problem.findMany({
-        where: filter,
-        orderBy: { createdAt: 'desc' }
-      });
-    } catch { }
-
-    if (!problems || problems.length === 0) {
-      try {
-        const cfProblems = await masterPrisma.codingQuestion.findMany({
-          orderBy: { rating: 'asc' }
-        });
-        if (cfProblems && cfProblems.length > 0) {
-          problems = cfProblems.map((p: any) => ({
-            id: p.id || p.externalId,
-            title: p.title,
-            category: p.topic || "Arrays",
-            difficulty: p.difficulty || "Medium",
-            rating: p.rating || 1200,
-            description: `Solve the problem: ${p.title}. Topic: ${p.topic || "Data Structures"}.`,
-            problemUrl: p.problemUrl || `https://codeforces.com/problemset`,
-            source: p.source || "Codeforces",
-            tags: p.tagsJson || ["Core DSA"],
-          }));
-        }
-      } catch { }
+    const { category, difficulty, search } = req.query;
+    const where: any = {};
+    if (category) where.topic = category as string;
+    if (difficulty) where.difficulty = difficulty as string;
+    if (search) {
+      where.OR = [
+        { title: { contains: search as string, mode: "insensitive" } },
+        { externalId: { contains: search as string, mode: "insensitive" } },
+      ];
     }
 
-    if (!problems || problems.length === 0) {
-      try {
-        // Trigger background sync to master DB
-        CodeforcesService.syncProblems().catch((err) => console.error("Codeforces bg sync failed:", err));
+    const dsaQuestions = await masterPrisma.codingQuestion.findMany({
+      where,
+      orderBy: { externalId: 'asc' }
+    });
 
-        // Fetch live programming problems directly from Codeforces API
-        const cfRes = await fetch("https://codeforces.com/api/problemset.problems");
-        if (cfRes.ok) {
-          const cfData: any = await cfRes.json();
-          if (cfData.status === "OK" && Array.isArray(cfData.result?.problems)) {
-            const rawList = cfData.result.problems.filter(
-              (p: any) => p.type === "PROGRAMMING" && p.rating && p.rating >= 800 && p.rating <= 2200
-            );
-
-            problems = rawList.map((p: any) => {
-              const tags = p.tags || [];
-              const cat = tags.includes("dp") ? "Dynamic Programming"
-                : (tags.includes("graphs") || tags.includes("trees")) ? "Graphs"
-                : tags.includes("data structures") ? "Data Structures"
-                : tags.includes("math") ? "Math"
-                : tags.includes("strings") ? "Strings"
-                : "Arrays";
-
-              const diff = p.rating <= 1100 ? "Easy" : p.rating <= 1600 ? "Medium" : "Hard";
-
-              return {
-                id: `cf-${p.contestId}-${p.index}`,
-                title: `${p.name} (Codeforces ${p.contestId}${p.index})`,
-                category: cat,
-                difficulty: diff,
-                rating: p.rating,
-                description: `Solve ${p.name} on Codeforces. Contest ${p.contestId}, Index ${p.index}.`,
-                problemUrl: `https://codeforces.com/problemset/problem/${p.contestId}/${p.index}`,
-                source: "Codeforces API",
-                tags,
-              };
-            });
-          }
-        }
-      } catch (cfErr: any) {
-        console.error("Live Codeforces fetch error:", cfErr?.message || cfErr);
-      }
-    }
-
-    if (!problems) {
-      problems = [];
-    }
+    const problems = dsaQuestions.map((p: any) => ({
+      id: p.id,
+      externalId: p.externalId,
+      title: p.title,
+      category: p.topic || "Arrays",
+      difficulty: p.difficulty || "Easy",
+      rating: p.rating || 1000,
+      description: p.statement || `Solve the problem: ${p.title}.`,
+      statement: p.statement,
+      constraints: p.constraints,
+      inputFormat: p.inputFormat,
+      outputFormat: p.outputFormat,
+      examples: p.examples || p.visibleTestCases || [],
+      source: "Curated DSA",
+      tags: p.tagsJson || ["Core DSA"],
+    }));
 
     res.json({ success: true, problems });
   } catch (error) {
