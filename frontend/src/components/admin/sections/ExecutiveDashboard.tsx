@@ -330,7 +330,7 @@ export default function ExecutiveDashboard() {
                         {formatNumber(mod.usage)} ({pct.toFixed(1)}%)
                       </span>
                     </div>
-                    <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                    <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--bar-track, rgba(255,255,255,0.06))" }}>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}

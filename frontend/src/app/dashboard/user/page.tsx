@@ -202,6 +202,7 @@ import {
 
 
 import { DashboardSidebar, DashboardTopNav } from "@/components/dashboard-shell";
+import { EligibilityChip } from "@/components/placement-hub/EligibilityChip";
 import type { AdyapanUser } from "@/components/dashboard-shell";
 // NOTE: Next.js App Router route files may only export a default component plus
 // reserved names (metadata, viewport, etc.). Re-exporting shared symbols from a
@@ -575,6 +576,8 @@ function CrossModuleAnalytics({
   }
 
   const placementScoreVal = Number(placement?.placementScore || 0);
+  const placementEligibilityVerdict: "eligible" | "not_eligible" | "insufficient_data" =
+    placement?.eligibility?.verdict || (placementScoreVal > 0 ? (placementScoreVal >= 70 ? "eligible" : "not_eligible") : "insufficient_data");
   const aptitudeAcc = Math.round(Number(aptitude?.overallAccuracy || aptitude?.placementReadiness || 0));
   const interviewAvg = Math.round(Number(interview?.averageScore || 0));
   const interviewBest = Math.round(Number(interview?.bestScore || 0));
@@ -602,6 +605,7 @@ function CrossModuleAnalytics({
                 <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Placement Readiness
                 </span>
+                <EligibilityChip verdict={placementEligibilityVerdict} score={placementScoreVal} size="sm" className="mt-1" />
                 <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem", marginTop: 2 }}>
                   <span style={{ fontSize: "1.6rem", fontWeight: 800, color: "#10b981" }}>
                     {placementScoreVal > 0 ? `${placementScoreVal}%` : "Evaluating"}

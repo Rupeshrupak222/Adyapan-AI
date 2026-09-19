@@ -65,6 +65,13 @@ select:disabled,
   --dash-sidebar-bg: rgba(255, 255, 255, 0.95);
   --background: #f9fafb;
   --foreground: #111827;
+  /* Admin dashboard specific */
+  --bar-track: rgba(0,0,0,0.08);
+  --admin-card-bg: #ffffff;
+  --admin-surface: rgba(0,0,0,0.03);
+  --admin-surface-hover: rgba(0,0,0,0.06);
+  --admin-input-bg: #ffffff;
+  --admin-border: rgba(0,0,0,0.10);
 }
 
 /* Apply dark bg to body when data-theme is set */
@@ -79,6 +86,7 @@ select:disabled,
 [data-theme="light"] body.landing {
   background-color: #f9fafb;
   color: #111827;
+  --bar-track: rgba(0,0,0,0.08);
 }
 
 /* ── Prevent Browser Autofill Light Background Override & Ensure High Contrast Input Text ── */
@@ -1295,4 +1303,292 @@ h1, h2, h3, h4, h5, h6 {
   .dash-brand-text {
     font-size: 0.85rem !important;
   }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   Admin Dashboard — Comprehensive Light Theme Override Layer
+   Covers all hardcoded dark-only Tailwind classes used inside
+   .dash-main admin section components.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Card backgrounds: hardcoded dark hex cards → white cards ── */
+[data-theme="light"] .dash-main .bg-\[#0d151c\],
+[data-theme="light"] .dash-main .bg-\[#0c131a\],
+[data-theme="light"] .dash-main .bg-\[#080c10\],
+[data-theme="light"] .dash-main .bg-\[#0a0f16\],
+[data-theme="light"] .dash-main .bg-\[#0b0f19\],
+[data-theme="light"] .dash-main .bg-\[#0f1923\],
+[data-theme="light"] .dash-main .bg-\[#111827\],
+[data-theme="light"] .dash-main .bg-\[#0d0d19\],
+[data-theme="light"] .dash-main .bg-\[#0a0a0f\],
+[data-theme="light"] .dash-main .bg-\[#070715\],
+[data-theme="light"] .dash-main .bg-\[#0d0d12\] {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+}
+
+/* ── Modal/overlay backdrops inside admin ── */
+[data-theme="light"] .dash-main .bg-black\/70,
+[data-theme="light"] .dash-main .bg-black\/75,
+[data-theme="light"] .dash-main .bg-black\/80,
+[data-theme="light"] .dash-main .bg-black\/85 {
+  background-color: rgba(0, 0, 0, 0.45) !important;
+}
+
+/* ── Subtle surface cards: bg-white/X → light grey ── */
+[data-theme="light"] .dash-main .bg-white\/5,
+[data-theme="light"] .dash-main .bg-white\/\[0\.05\] {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+[data-theme="light"] .dash-main .bg-white\/10,
+[data-theme="light"] .dash-main .bg-white\/\[0\.10\] {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .dash-main .bg-white\/15 {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .dash-main .bg-white\/20 {
+  background-color: rgba(0, 0, 0, 0.07) !important;
+}
+[data-theme="light"] .dash-main .bg-white\/3,
+[data-theme="light"] .dash-main .bg-white\/2 {
+  background-color: rgba(0, 0, 0, 0.025) !important;
+}
+
+/* ── Dark overlay surfaces → light equivalents ── */
+[data-theme="light"] .dash-main .bg-black\/5 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+[data-theme="light"] .dash-main .bg-black\/10 {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+[data-theme="light"] .dash-main .bg-black\/15 {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+}
+[data-theme="light"] .dash-main .bg-black\/20 {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+[data-theme="light"] .dash-main .bg-black\/25,
+[data-theme="light"] .dash-main .bg-black\/30 {
+  background-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+/* ── Text colors: white → dark in light mode ── */
+[data-theme="light"] .dash-main .text-white {
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] .dash-main .text-white\/90 {
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] .dash-main .text-white\/80,
+[data-theme="light"] .dash-main .text-white\/70 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="light"] .dash-main .text-white\/60,
+[data-theme="light"] .dash-main .text-white\/50 {
+  color: var(--text-muted) !important;
+}
+
+/* ── Text: slate/gray shades → properly adapted ── */
+[data-theme="light"] .dash-main .text-slate-400,
+[data-theme="light"] .dash-main .text-gray-400 {
+  color: #6b7280 !important;
+}
+[data-theme="light"] .dash-main .text-slate-500,
+[data-theme="light"] .dash-main .text-gray-500 {
+  color: #9ca3af !important;
+}
+[data-theme="light"] .dash-main .text-slate-300,
+[data-theme="light"] .dash-main .text-gray-300 {
+  color: #4b5563 !important;
+}
+[data-theme="light"] .dash-main .text-slate-200,
+[data-theme="light"] .dash-main .text-gray-200 {
+  color: #374151 !important;
+}
+[data-theme="light"] .dash-main .text-slate-100,
+[data-theme="light"] .dash-main .text-gray-100 {
+  color: #1f2937 !important;
+}
+
+/* ── Borders: white-based → subtle dark borders ── */
+[data-theme="light"] .dash-main .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.07) !important;
+}
+[data-theme="light"] .dash-main .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.10) !important;
+}
+[data-theme="light"] .dash-main .border-white\/15 {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+[data-theme="light"] .dash-main .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.14) !important;
+}
+[data-theme="light"] .dash-main .border-white\/25 {
+  border-color: rgba(0, 0, 0, 0.16) !important;
+}
+
+/* ── Divide lines: white-based ── */
+[data-theme="light"] .dash-main .divide-white\/5 > * + * {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .dash-main .divide-white\/10 > * + * {
+  border-color: rgba(0, 0, 0, 0.09) !important;
+}
+
+/* ── Inputs & textareas: dark → light ── */
+[data-theme="light"] .dash-main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+[data-theme="light"] .dash-main textarea {
+  background-color: #ffffff !important;
+  color: var(--text-primary) !important;
+  border-color: #d1d5db !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+}
+[data-theme="light"] .dash-main input::placeholder,
+[data-theme="light"] .dash-main textarea::placeholder {
+  color: #9ca3af !important;
+  -webkit-text-fill-color: #9ca3af !important;
+  opacity: 1 !important;
+}
+[data-theme="light"] .dash-main input:focus,
+[data-theme="light"] .dash-main textarea:focus {
+  border-color: #f59e0b !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(245,158,11,0.15) !important;
+}
+
+/* ── Specific input class patterns used in sections ── */
+[data-theme="light"] .dash-main .bg-white\/5.border,
+[data-theme="light"] .dash-main input.bg-white\/5 {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── Hover states: dark-mode hover → light equivalents ── */
+[data-theme="light"] .dash-main .hover\:bg-white\/5:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+[data-theme="light"] .dash-main .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .dash-main .hover\:text-white:hover {
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] .dash-main .hover\:border-white\/20:hover {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ── Placeholder text for dark-mode specific classes ── */
+[data-theme="light"] .dash-main .placeholder-slate-500::placeholder,
+[data-theme="light"] .dash-main .placeholder-slate-400::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+/* ── Dashed border empty states ── */
+[data-theme="light"] .dash-main .border-dashed.border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ── Section card glow / shadow ── */
+[data-theme="light"] .dash-main .shadow-lg,
+[data-theme="light"] .dash-main .shadow-xl,
+[data-theme="light"] .dash-main .shadow-2xl {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+}
+
+/* ── Tab bar inactive buttons (bg-white/5 text-slate-400) → light ── */
+[data-theme="light"] .dash-main button.bg-white\/5 {
+  background-color: rgba(0,0,0,0.04) !important;
+  color: #4b5563 !important;
+}
+[data-theme="light"] .dash-main button.bg-white\/5:hover {
+  background-color: rgba(0,0,0,0.07) !important;
+  color: #111827 !important;
+}
+
+/* ── Badge pills with white-based border ── */
+[data-theme="light"] .dash-main .border-white\/30 {
+  border-color: rgba(0,0,0,0.15) !important;
+}
+
+/* ── Backdrop blur overlay (modal backdrop) ── */
+[data-theme="light"] .dash-main [style*="rgba(0,0,0,0.6)"],
+[data-theme="light"] .dash-main [style*="rgba(0,0,0,0.65)"],
+[data-theme="light"] .dash-main [style*="rgba(0,0,0,0.7)"],
+[data-theme="light"] .dash-main [style*="rgba(0,0,0,0.75)"] {
+  /* These are overlay backdrops — keep them dark but slightly lighter */
+  background: rgba(30, 41, 59, 0.55) !important;
+}
+
+/* ── Progress bar tracks with white-alpha inline styles → use CSS var ── */
+[data-theme="light"] .dash-main [style*="rgba(255,255,255,0.06)"],
+[data-theme="light"] .dash-main [style*="rgba(255,255,255,0.05)"],
+[data-theme="light"] .dash-main [style*="rgba(255,255,255,0.04)"],
+[data-theme="light"] .dash-main [style*="rgba(255,255,255,0.03)"],
+[data-theme="light"] .dash-main [style*="rgba(255,255,255,0.02)"] {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ── Section panel surfaces using white-alpha 0.08+ ── */
+[data-theme="light"] .dash-main [style*="rgba(255,255,255,0.08)"],
+[data-theme="light"] .dash-main [style*="rgba(255, 255, 255, 0.08)"] {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ── Fix chart grid / axis tick text color in light mode ── */
+[data-theme="light"] .dash-main .recharts-cartesian-axis-tick text,
+[data-theme="light"] .dash-main .recharts-text {
+  fill: #6b7280 !important;
+}
+[data-theme="light"] .dash-main .recharts-cartesian-grid line {
+  stroke: rgba(0,0,0,0.08) !important;
+}
+[data-theme="light"] .dash-main .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #ffffff !important;
+  border-color: #e5e7eb !important;
+  color: #111827 !important;
+}
+
+/* ── StatusBadge and general badge text visibility ── */
+[data-theme="light"] .dash-main .text-emerald-400 { color: #059669 !important; }
+[data-theme="light"] .dash-main .text-emerald-300 { color: #10b981 !important; }
+[data-theme="light"] .dash-main .bg-emerald-500\/20 { background-color: rgba(16,185,129,0.12) !important; }
+[data-theme="light"] .dash-main .border-emerald-500\/30 { border-color: rgba(16,185,129,0.25) !important; }
+
+/* ── Ensure the service status cards have visible bg in light mode ── */
+[data-theme="light"] .dash-main [style*="rgba(255,255,255,0.02)"] {
+  background: rgba(0, 0, 0, 0.025) !important;
+}
+
+/* ── Ensure list/table rows don't disappear ── */
+[data-theme="light"] .dash-main .hover\:bg-white\/5:hover,
+[data-theme="light"] .dash-main .hover\:bg-white\/\[0\.05\]:hover {
+  background-color: rgba(0,0,0,0.04) !important;
+}
+
+/* ── General button text visibility (non-amber buttons) ── */
+[data-theme="light"] .dash-main button:not([class*="bg-amber"]):not([class*="bg-emerald"]):not([class*="bg-red"]):not([class*="bg-blue"]):not([class*="bg-purple"]):not([class*="bg-gradient"]) {
+  color: var(--text-primary);
+}
+
+/* ── Modal panels: fix bg-[#0c131a] used in fixed/absolute modals outside dash-main ── */
+[data-theme="light"] .bg-\[#0c131a\]:not(.dash-sidebar) {
+  background-color: #ffffff !important;
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] .bg-\[#0d151c\]:not(.dash-sidebar) {
+  background-color: #ffffff !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── Fix input fields in modals that are outside .dash-main ── */
+[data-theme="light"] .rounded-3xl input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="light"] .rounded-2xl input:not([type="checkbox"]):not([type="radio"]) {
+  background-color: #f9fafb !important;
+  color: var(--text-primary) !important;
+  border-color: #e5e7eb !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
 }

@@ -14,6 +14,8 @@ import {
 import { fadeUp } from "@/utils/animations";
 import { ScoreRing } from "@/components/ui/ScoreRing";
 import { useThemeColors } from "@/hooks/useThemeColors";
+import type { ThemeColors } from "@/utils/themeColors";
+import { EligibilityChip } from "./EligibilityChip";
 import {
   Target, TrendingUp, ArrowUpRight, ArrowDownRight,
   Zap, Clock, AlertTriangle, ChevronRight, RefreshCw,
@@ -22,6 +24,7 @@ import {
   Shield, Award, Lightbulb, Code2, FileText,
   Mic, Globe, GraduationCap, Briefcase,
   Building2, Star, AlertCircle,
+  ShieldCheck, ShieldAlert,
 } from "lucide-react";
 
 interface SubScores {
@@ -84,6 +87,27 @@ interface ReadinessTimelineEntry {
   description: string;
 }
 
+interface EligibilityGate {
+  value: number;
+  min: number;
+}
+
+interface EligibilityInfo {
+  verdict: "eligible" | "not_eligible" | "insufficient_data";
+  score: number;
+  threshold: number;
+  pointsToGo: number;
+  gates: {
+    coding: EligibilityGate;
+    aptitude: EligibilityGate;
+    interview: EligibilityGate;
+    resume: EligibilityGate;
+  };
+  blockers: string[];
+  nextAction: string;
+  title: string;
+}
+
 interface PlacementIntelligenceData {
   placementScore: number;
   subScores: SubScores;
@@ -96,7 +120,68 @@ interface PlacementIntelligenceData {
   salaryEstimate: SalaryEstimate;
   readinessTimeline: ReadinessTimelineEntry[];
   aiInsights: any;
+  eligibility?: EligibilityInfo;
   cached?: boolean;
+}
+
+function deriveEligibility(placementScore: number, subScores: SubScores): EligibilityInfo {
+  const gates: EligibilityInfo["gates"] = {
+    coding: { value: Math.round(subScores?.coding || 0), min: 50 },
+    aptitude: { value: Math.round(subScores?.aptitude || 0), min: 50 },
+    interview: { value: Math.round(subScores?.interview || 0), min: 40 },
+    resume: { value: Math.round(subScores?.resume || 0), min: 50 },
+  };
+  const round = Math.round(placementScore || 0);
+  const threshold = 70;
+  const pointsToGo = Math.max(0, threshold - round);
+  const hasData = round > 0 || Object.values(subScores || {}).some((v) => v > 0);
+
+  if (!hasData) {
+    return {
+      verdict: "insufficient_data",
+      score: round,
+      threshold,
+      pointsToGo,
+      gates,
+      blockers: [],
+      nextAction: "",
+      title: "Aapki eligibility data incomplete hai — pehle kuch practice sessions complete karo",
+    };
+  }
+
+  const gateFails = (Object.keys(gates) as (keyof typeof gates)[])
+    .filter((key) => gates[key].value < gates[key].min)
+    .map((key) => `${key[0].toUpperCase() + key.slice(1)}: ${gates[key].value}/${gates[key].min}`);
+
+  const overallMet = round >= threshold;
+
+  if (overallMet && gateFails.length === 0) {
+    return {
+      verdict: "eligible",
+      score: round,
+      threshold,
+      pointsToGo: 0,
+      gates,
+      blockers: [],
+      nextAction: "",
+      title: "Aap campus placements ke liye eligible ho — momentum banaaye rakho!",
+    };
+  }
+
+  const blockers: string[] = [];
+  if (!overallMet) blockers.push(`Overall score: ${round}/${threshold} (${pointsToGo} points to go)`);
+  blockers.push(...gateFails);
+
+  return {
+    verdict: "not_eligible",
+    score: round,
+    threshold,
+    pointsToGo,
+    gates,
+    blockers: blockers.slice(0, 4),
+    nextAction: "",
+    title: pointsToGo > 0 ? `${pointsToGo} points to eligible` : "Close — har gate ko apne minimum tak pahunchao",
+  };
 }
 
 const LOADING_STEPS = [
@@ -202,6 +287,92 @@ const iconMap: Record<string, any> = {
   globe: Globe, book: GraduationCap, send: Briefcase, alert: AlertTriangle,
 };
 
+function EligibilityBanner({
+  eligibility,
+  onImprove,
+  tc,
+}: {
+  eligibility: EligibilityInfo;
+  onImprove?: () => void;
+  tc: ThemeColors;
+}) {
+  const isEligible = eligibility.verdict === "eligible";
+  const isNoData = eligibility.verdict === "insufficient_data";
+  const accent = isEligible ? "#10b981" : isNoData ? "#94a3b8" : "#f43f5e";
+  const Icon = isEligible ? ShieldCheck : isNoData ? ShieldAlert : XCircle;
+  const gateRows = [
+    { key: "coding" as const, label: "Coding" },
+    { key: "aptitude" as const, label: "Aptitude" },
+    { key: "interview" as const, label: "Interview" },
+    { key: "resume" as const, label: "Resume" },
+  ];
+
+  return (
+    <motion.div variants={fadeUp} initial="hidden" animate="visible">
+      <PremiumCard glow className="p-5 relative overflow-hidden" aria-label="Placements eligibility verdict">
+        <div
+          className="absolute top-0 left-0 w-full h-1"
+          style={{ background: `linear-gradient(90deg, ${accent}, ${accent}55)` }}
+        />
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `${accent}18`, color: accent }}
+            >
+              <Icon size={22} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider mb-1" style={{ color: accent }}>
+                Placements Eligibility
+              </p>
+              <h2 className="text-lg font-black leading-tight" style={{ color: tc.text }}>{eligibility.title}</h2>
+              <p className="text-xs mt-1" style={{ color: tc.textMuted }}>
+                Overall {eligibility.score}% vs {eligibility.threshold}% required
+                {!isEligible && eligibility.pointsToGo > 0 ? ` · ${eligibility.pointsToGo} points to go` : ""}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col items-start lg:items-end gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              {gateRows.map(({ key, label }) => {
+                const gate = eligibility.gates?.[key];
+                const pass = !!gate && gate.value >= gate.min;
+                return (
+                  <span
+                    key={key}
+                    className="text-[10px] font-bold px-2 py-1 rounded-full border"
+                    style={{
+                      background: pass ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
+                      color: pass ? "#10b981" : "#ef4444",
+                      borderColor: pass ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)",
+                    }}
+                  >
+                    {pass ? "✓" : "✗"} {label} {gate ? `${gate.value}/${gate.min}` : "—"}
+                  </span>
+                );
+              })}
+            </div>
+            {!isEligible && eligibility.blockers.length > 0 && (
+              <div className="text-[10px] font-medium space-y-0.5 max-w-[260px]" style={{ color: tc.textMuted }}>
+                {eligibility.blockers.slice(0, 3).map((b) => (
+                  <div key={b}>• {b}</div>
+                ))}
+              </div>
+            )}
+            {!isNoData && onImprove && (
+              <PremiumButton variant="secondary" className="text-xs" onClick={onImprove}>
+                {isEligible ? "View Full Analysis" : "Improve Score"}
+                <ChevronRight size={13} />
+              </PremiumButton>
+            )}
+          </div>
+        </div>
+      </PremiumCard>
+    </motion.div>
+  );
+}
+
 export function PlacementIntelligenceWidget({
   compact = false,
   onViewChange,
@@ -290,6 +461,8 @@ export function PlacementIntelligenceWidget({
 
   if (!data) return null;
 
+  const eligibility = data.eligibility ?? deriveEligibility(data.placementScore, data.subScores);
+
   const radarData = {
     labels: ["Coding", "Aptitude", "Interview", "Resume", "Learning", "Soft Skills"],
     datasets: [{
@@ -371,7 +544,10 @@ export function PlacementIntelligenceWidget({
             </div>
 
             <div className="flex items-center gap-6 mb-4">
-              <ScoreRing score={data.placementScore} size={100} strokeWidth={7} label="Overall" />
+              <div className="flex flex-col items-center gap-2">
+                <ScoreRing score={data.placementScore} size={100} strokeWidth={7} label="Overall" />
+                <EligibilityChip verdict={eligibility.verdict} score={eligibility.score} size="sm" />
+              </div>
               <div className="flex-1 grid grid-cols-3 gap-3">
                 {[
                   { label: "Coding", score: data.subScores.coding, color: "#f59e0b" },
@@ -425,6 +601,12 @@ export function PlacementIntelligenceWidget({
           Refresh Intelligence
         </PremiumButton>
       </div>
+
+      <EligibilityBanner
+        eligibility={eligibility}
+        onImprove={() => navigateTo(eligibility.nextAction || "placement-hub")}
+        tc={tc}
+      />
 
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
         <PremiumCard glow className="p-6 md:p-8 relative overflow-hidden" aria-label="Placement readiness overview">

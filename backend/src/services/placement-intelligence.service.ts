@@ -61,6 +61,27 @@ interface ReadinessTimelineEntry {
   description: string;
 }
 
+interface EligibilityGate {
+  value: number;
+  min: number;
+}
+
+export interface EligibilityInfo {
+  verdict: "eligible" | "not_eligible" | "insufficient_data";
+  score: number;
+  threshold: number;
+  pointsToGo: number;
+  gates: {
+    coding: EligibilityGate;
+    aptitude: EligibilityGate;
+    interview: EligibilityGate;
+    resume: EligibilityGate;
+  };
+  blockers: string[];
+  nextAction: string;
+  title: string;
+}
+
 interface PlacementIntelligenceResult {
   placementScore: number;
   subScores: SubScores;
@@ -73,6 +94,73 @@ interface PlacementIntelligenceResult {
   salaryEstimate: SalaryEstimate;
   readinessTimeline: ReadinessTimelineEntry[];
   aiInsights: any;
+  eligibility: EligibilityInfo;
+}
+
+export const ELIGIBILITY_OVERALL_THRESHOLD = 70;
+const GATE_MINS = { coding: 50, aptitude: 50, interview: 40, resume: 50 };
+
+export function computeEligibility(
+  placementScore: number,
+  subScores: SubScores,
+  hasData: boolean,
+  nextAction: string = ""
+): EligibilityInfo {
+  const round = Math.round(placementScore || 0);
+  const gates: EligibilityInfo["gates"] = {
+    coding: { value: Math.round(subScores?.coding || 0), min: GATE_MINS.coding },
+    aptitude: { value: Math.round(subScores?.aptitude || 0), min: GATE_MINS.aptitude },
+    interview: { value: Math.round(subScores?.interview || 0), min: GATE_MINS.interview },
+    resume: { value: Math.round(subScores?.resume || 0), min: GATE_MINS.resume },
+  };
+  const pointsToGo = Math.max(0, ELIGIBILITY_OVERALL_THRESHOLD - round);
+
+  if (!hasData) {
+    return {
+      verdict: "insufficient_data",
+      score: round,
+      threshold: ELIGIBILITY_OVERALL_THRESHOLD,
+      pointsToGo,
+      gates,
+      blockers: [],
+      nextAction,
+      title: "Aapki eligibility data incomplete hai — pehle kuch practice sessions complete karo",
+    };
+  }
+
+  const gateFails = (Object.keys(gates) as (keyof typeof gates)[])
+    .filter((key) => gates[key].value < gates[key].min)
+    .map((key) => `${key[0].toUpperCase() + key.slice(1)}: ${gates[key].value}/${gates[key].min}`);
+
+  const overallMet = round >= ELIGIBILITY_OVERALL_THRESHOLD;
+
+  if (overallMet && gateFails.length === 0) {
+    return {
+      verdict: "eligible",
+      score: round,
+      threshold: ELIGIBILITY_OVERALL_THRESHOLD,
+      pointsToGo: 0,
+      gates,
+      blockers: [],
+      nextAction,
+      title: "Aap campus placements ke liye eligible ho — momentum banaaye rakho!",
+    };
+  }
+
+  const blockers: string[] = [];
+  if (!overallMet) blockers.push(`Overall score: ${round}/${ELIGIBILITY_OVERALL_THRESHOLD} (${pointsToGo} points to go)`);
+  blockers.push(...gateFails);
+
+  return {
+    verdict: "not_eligible",
+    score: round,
+    threshold: ELIGIBILITY_OVERALL_THRESHOLD,
+    pointsToGo,
+    gates,
+    blockers: blockers.slice(0, 4),
+    nextAction,
+    title: pointsToGo > 0 ? `${pointsToGo} points to eligible` : "Close — har gate ko apne minimum tak pahunchao",
+  };
 }
 
 const COMPANY_PRESETS: Record<string, { skills: string[]; difficulty: string; avgPackage: string }> = {
@@ -515,6 +603,18 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     targetCompanies: companyMatches.filter(c => c.matchPercent >= 50).slice(0, 5).map(c => c.company),
   };
 
+  const hasActivity =
+    aptitudeSessions.length > 0 ||
+    codingSessions.length > 0 ||
+    challengeSubmissions.length > 0 ||
+    submissions.length > 0 ||
+    dsaSolved > 0 ||
+    resumes.length > 0 ||
+    completedInterviews.length > 0 ||
+    placementSessions.length > 0 ||
+    mockTestResults.length > 0 ||
+    studySessions.length > 0;
+
   return {
     placementScore,
     subScores: {
@@ -525,6 +625,12 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
       learning: learningScore,
       softSkills: softSkillsScore,
     },
+    eligibility: computeEligibility(
+      placementScore,
+      { coding: codingScore, aptitude: aptitudeScore, interview: interviewScore, resume: resumeScore, learning: learningScore, softSkills: softSkillsScore },
+      hasActivity,
+      highestImpactTask?.action || recommendations[0]?.action || ""
+    ),
     companyMatches,
     skillWeights,
     strengths: strengths.slice(0, 8),
@@ -551,6 +657,12 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
       return {
         placementScore: existing.placementScore,
         subScores: existing.subScores as unknown as SubScores,
+        eligibility: computeEligibility(
+          existing.placementScore,
+          existing.subScores as unknown as SubScores,
+          existing.placementScore > 0,
+          (existing.highestImpactTask as unknown as HighestImpactTask | null)?.action || ""
+        ),
         companyMatches: existing.companyMatches as unknown as CompanyMatch[],
         skillWeights: existing.skillWeights as unknown as SkillWeight[],
         strengths: existing.strengths as unknown as string[],

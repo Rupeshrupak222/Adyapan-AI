@@ -54,6 +54,7 @@ export async function getPlacementScore(req: Request, res: Response, next: NextF
       success: true,
       placementScore: result.placementScore,
       subScores: result.subScores,
+      eligibility: result.eligibility,
       cached: result.cached,
     });
   } catch (error) {
