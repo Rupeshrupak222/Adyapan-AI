@@ -52,9 +52,9 @@ const DEFAULT_CODE = {
 
 export default function ProblemWorkspacePage() {
   useRequireAuth("USER");
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
-  const problemId = params.id as string;
+  const problemId = params?.id as string;
 
   // Shell Layout settings
   const [user, setUser] = useState<AdyapanUser | null>(null);
