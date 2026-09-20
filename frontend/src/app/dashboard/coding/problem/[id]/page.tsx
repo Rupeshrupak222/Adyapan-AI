@@ -2487,26 +2487,28 @@ Answer the student's question based on the coding problem. Provide hints or feed
                       renderStructuredExplanation(aiAnalysis.problem_explanation)
                     ) : problem?.description ? (
                       renderStructuredExplanation(problem.description)
+                    ) : problem?.statement ? (
+                      renderStructuredExplanation(problem.statement)
                     ) : (
                       <div className="text-xs text-[var(--text-muted)] animate-pulse bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
-                        Loading exact Codeforces problem statement...
+                        Loading problem statement...
                       </div>
                     )}
                     
-                    {scrapedProblem?.inputSpecification && (
+                    {(scrapedProblem?.inputSpecification || aiAnalysis?.inputSpecification || problem?.inputFormat) && (
                       <div className="flex flex-col gap-2">
                         <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider">Input</h4>
                         <div className="text-xs leading-relaxed text-[var(--text-primary)] bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
-                          {renderMarkdown(scrapedProblem.inputSpecification, theme === "dark")}
+                          {renderMarkdown(scrapedProblem?.inputSpecification || aiAnalysis?.inputSpecification || problem?.inputFormat, theme === "dark")}
                         </div>
                       </div>
                     )}
 
-                    {scrapedProblem?.outputSpecification && (
+                    {(scrapedProblem?.outputSpecification || aiAnalysis?.outputSpecification || problem?.outputFormat) && (
                       <div className="flex flex-col gap-2">
                         <h4 className="text-xs font-bold text-teal-400 uppercase tracking-wider">Output</h4>
                         <div className="text-xs leading-relaxed text-[var(--text-primary)] bg-black/20 p-4 rounded-xl border border-[var(--border-color)]">
-                          {renderMarkdown(scrapedProblem.outputSpecification, theme === "dark")}
+                          {renderMarkdown(scrapedProblem?.outputSpecification || aiAnalysis?.outputSpecification || problem?.outputFormat, theme === "dark")}
                         </div>
                       </div>
                     )}
@@ -2524,7 +2526,7 @@ Answer the student's question based on the coding problem. Provide hints or feed
                       <div className="pt-2 text-[11px] text-[var(--text-secondary)]">
                         <span>Original Platform: </span>
                         <a href={problem.problemUrl} target="_blank" rel="noreferrer" className="text-amber-400 font-semibold underline hover:text-amber-300">
-                          Codeforces Problem {problem.externalId}
+                          Problem {problem.externalId}
                         </a>
                       </div>
                     )}
@@ -2537,17 +2539,21 @@ Answer the student's question based on the coding problem. Provide hints or feed
                       <span>Constraints</span>
                     </h3>
                     <div className="bg-black/30 p-3 rounded-lg border border-[var(--border-color)] text-xs font-mono text-[var(--text-secondary)]">
-                      {(scrapedProblem?.timeLimit || scrapedProblem?.memoryLimit) ? (
+                      {(scrapedProblem?.timeLimit || scrapedProblem?.memoryLimit || problem?.timeLimit || problem?.memoryLimit) ? (
                         <div className="flex flex-col gap-1.5">
-                          {scrapedProblem.timeLimit && (
-                            <div><span className="text-amber-500 font-semibold">Time Limit:</span> {scrapedProblem.timeLimit}</div>
+                          {(scrapedProblem?.timeLimit || problem?.timeLimit) && (
+                            <div><span className="text-amber-500 font-semibold">Time Limit:</span> {scrapedProblem?.timeLimit || problem?.timeLimit}</div>
                           )}
-                          {scrapedProblem.memoryLimit && (
-                            <div><span className="text-amber-500 font-semibold">Memory Limit:</span> {scrapedProblem.memoryLimit}</div>
+                          {(scrapedProblem?.memoryLimit || problem?.memoryLimit) && (
+                            <div><span className="text-amber-500 font-semibold">Memory Limit:</span> {scrapedProblem?.memoryLimit || problem?.memoryLimit}</div>
                           )}
-                          {scrapedProblem.constraints && (
-                            <div className="mt-2 whitespace-pre-line text-[var(--text-primary)]">{renderMarkdown(scrapedProblem.constraints, theme === "dark")}</div>
+                          {(scrapedProblem?.constraints || aiAnalysis?.constraints || problem?.constraints) && (
+                            <div className="mt-2 whitespace-pre-line text-[var(--text-primary)] font-sans">{renderMarkdown(scrapedProblem?.constraints || aiAnalysis?.constraints || problem?.constraints, theme === "dark")}</div>
                           )}
+                        </div>
+                      ) : (scrapedProblem?.constraints || aiAnalysis?.constraints || problem?.constraints) ? (
+                        <div className="whitespace-pre-line text-[var(--text-primary)] font-sans">
+                          {renderMarkdown(scrapedProblem?.constraints || aiAnalysis?.constraints || problem?.constraints, theme === "dark")}
                         </div>
                       ) : (
                         "Standard execution constraints apply."

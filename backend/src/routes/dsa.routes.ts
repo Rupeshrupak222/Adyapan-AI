@@ -32,7 +32,12 @@ router.get("/problems", async (req: any, res) => {
 
     if (!problems || problems.length === 0) {
       try {
+        const cqWhere: any = {};
+        if (category) cqWhere.topic = category as string;
+        if (difficulty) cqWhere.difficulty = difficulty as string;
+
         const cfProblems = await masterPrisma.codingQuestion.findMany({
+          where: cqWhere,
           orderBy: { rating: 'asc' }
         });
         if (cfProblems && cfProblems.length > 0) {
@@ -40,11 +45,11 @@ router.get("/problems", async (req: any, res) => {
             id: p.id || p.externalId,
             title: p.title,
             category: p.topic || "Arrays",
-            difficulty: p.difficulty || "Medium",
-            rating: p.rating || 1200,
-            description: `Solve the problem: ${p.title}. Topic: ${p.topic || "Data Structures"}.`,
-            problemUrl: p.problemUrl || `https://codeforces.com/problemset`,
-            source: p.source || "Codeforces",
+            difficulty: p.difficulty || "Easy",
+            rating: p.rating || 1000,
+            description: p.statement || `Solve the problem: ${p.title}. Topic: ${p.topic || "Data Structures"}.`,
+            problemUrl: p.problemUrl || "",
+            source: p.source || "curated_dsa",
             tags: p.tagsJson || ["Core DSA"],
           }));
         }

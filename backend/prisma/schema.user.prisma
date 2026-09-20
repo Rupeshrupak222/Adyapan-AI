@@ -504,11 +504,20 @@ model CodingQuestion {
   externalId          String   @unique @map("external_id")
   source              String
   title               String
-  problemUrl          String   @map("problem_url")
+  problemUrl          String?  @map("problem_url")
   difficulty          String
   rating              Int?
   topic               String
   tagsJson            Json     @map("tags_json")
+  statement           String?
+  constraints         String?
+  inputFormat         String?  @map("input_format")
+  outputFormat        String?  @map("output_format")
+  examples            Json?
+  visibleTestCases    Json?    @map("visible_test_cases")
+  hiddenTestCases     Json?    @map("hidden_test_cases")
+  timeLimit           String?  @map("time_limit")
+  memoryLimit         String?  @map("memory_limit")
   placementImportance Boolean  @default(false) @map("placement_importance")
   interviewImportance Boolean  @default(false) @map("interview_importance")
   createdAt           DateTime @default(now()) @map("created_at")
