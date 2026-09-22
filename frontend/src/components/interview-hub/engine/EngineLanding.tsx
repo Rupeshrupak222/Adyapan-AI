@@ -15,7 +15,10 @@ import {
   Volume2, FileText, Clock, Flame, Target, Building2, Settings2,
   Loader2, Check, AlertTriangle, RotateCcw, Mic, MicOff, Zap,
   Brain, Code2, Server, Monitor, Layers, Cpu, FlaskConical,
-  Container, Bug, Shield, Package, Globe,
+  Container, Bug, Shield, Package, Globe, Smartphone, Bot,
+  Navigation, DollarSign, Megaphone, Truck,
+  Rocket, Compass, Car, HardHat, HeartPulse, Atom, FileSpreadsheet,
+  TestTube, Dna, Palette, PenTool, TrendingUp,
 } from "lucide-react";
 import CompanyLogo from "../CompanyLogo";
 import {
@@ -38,7 +41,10 @@ interface EngineLandingProps {
 
 const ROLE_ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   Code2, Server, Monitor, Layers, Brain, Cpu, FlaskConical,
-  Container, Bug, Shield, Package, BarChart3,
+  Container, Bug, Shield, Package, BarChart3, Smartphone, Bot,
+  Navigation, DollarSign, Megaphone, Users, Briefcase, Truck,
+  Rocket, Compass, Car, HardHat, HeartPulse, Atom, FileSpreadsheet,
+  TestTube, Dna, Palette, PenTool, TrendingUp, Zap,
 };
 
 const DIFFICULTY_OPTIONS: { value: DifficultyLevel; label: string; color: string; icon: string }[] = [
@@ -103,6 +109,7 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
   const [launching, setLaunching] = useState(false);
   const [companySearch, setCompanySearch] = useState("");
   const [roleSearch, setRoleSearch] = useState("");
+  const [selectedRoleCategory, setSelectedRoleCategory] = useState("All");
   const [customCompany, setCustomCompany] = useState("");
   const [customRole, setCustomRole] = useState("");
   const [showCustomCompany, setShowCustomCompany] = useState(false);
@@ -216,10 +223,19 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
     co.name.toLowerCase().includes(companySearch.toLowerCase())
   );
 
-  const filteredRoles = ROLE_PRESETS.filter(r =>
-    r.title.toLowerCase().includes(roleSearch.toLowerCase()) ||
-    r.category.toLowerCase().includes(roleSearch.toLowerCase())
-  );
+  const ROLE_CATEGORIES = [
+    "All", "Engineering", "Core Engineering", "Robotics & ECE",
+    "Management & Finance", "Healthcare & Pharma", "Design & Creative", "AI/ML", "Data"
+  ];
+
+  const filteredRoles = ROLE_PRESETS.filter(r => {
+    if (selectedRoleCategory !== "All" && r.category !== selectedRoleCategory) return false;
+    if (roleSearch.trim()) {
+      const q = roleSearch.toLowerCase();
+      return r.title.toLowerCase().includes(q) || r.category.toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   const selectedTypeConfig = INTERVIEW_TYPE_CONFIG[formValues.interviewType as InterviewType];
   const selectedCompany = COMPANY_PRESETS.find(co => co.id === formValues.targetCompany);
@@ -565,10 +581,28 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                     <input
                       value={roleSearch}
                       onChange={e => setRoleSearch(e.target.value)}
-                      placeholder="Search roles..."
+                      placeholder="Search roles by title or category..."
                       className="w-full pl-9 pr-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-amber-500/50 transition-colors"
                       style={{ background: c.inputBg, color: c.text, borderColor: c.border }}
                     />
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {ROLE_CATEGORIES.map(cat => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setSelectedRoleCategory(cat)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all"
+                        style={{
+                          background: selectedRoleCategory === cat ? "rgba(245,158,11,0.15)" : c.surface,
+                          color: selectedRoleCategory === cat ? "#f59e0b" : c.textSec,
+                          border: selectedRoleCategory === cat ? "1px solid rgba(245,158,11,0.3)" : `1px solid ${c.border}`,
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    ))}
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">

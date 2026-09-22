@@ -93,6 +93,14 @@ export default function TechnicalEngineManagement() {
   const [formPrompt, setFormPrompt] = useState("");
   const [isAiGenerating, setIsAiGenerating] = useState(false);
 
+  // Batch Add 1 Test in Each Modal State
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchScope, setBatchScope] = useState<"all" | "tab" | "filtered">("all");
+  const [batchDiff, setBatchDiff] = useState<"Easy" | "Medium" | "Hard" | "Mixed">("Medium");
+  const [batchCount, setBatchCount] = useState<number>(15);
+  const [batchDuration, setBatchDuration] = useState<number>(20);
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+
   // Question Form State (Inside Test Inspector)
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState("");
@@ -313,6 +321,59 @@ export default function TechnicalEngineManagement() {
     });
   }, [groupedTargets, activeTab, search]);
 
+  // Computed target list for batch creation
+  const batchTargetsToProcess = useMemo(() => {
+    if (batchScope === "all") {
+      return groupedTargets;
+    }
+    if (batchScope === "tab") {
+      if (activeTab === "all") return groupedTargets;
+      return groupedTargets.filter((t) => t.type === activeTab);
+    }
+    if (batchScope === "filtered") {
+      return filteredTargets;
+    }
+    return groupedTargets;
+  }, [batchScope, groupedTargets, activeTab, filteredTargets]);
+
+  const handleOpenBatchModal = (scope?: "all" | "tab" | "filtered") => {
+    if (scope) setBatchScope(scope);
+    setShowBatchModal(true);
+  };
+
+  const handleBatchAddTests = async () => {
+    if (batchTargetsToProcess.length === 0) {
+      toast.error("No entities selected for batch test generation");
+      return;
+    }
+
+    setIsBatchProcessing(true);
+    try {
+      const res = await api.post("/admin/mcq/tests/batch-add", {
+        targets: batchTargetsToProcess.map((t) => ({
+          id: t.id,
+          name: t.name,
+          type: t.type,
+        })),
+        questionCount: batchCount,
+        difficulty: batchDiff,
+        durationMinutes: batchDuration,
+      });
+
+      if (res.data?.success) {
+        toast.success(
+          `Generated +1 test in each for ${res.data.totalCreated} entities! (${res.data.totalCreated * batchCount} unique MCQs added)`
+        );
+        setShowBatchModal(false);
+        await fetchOverviewAndTests();
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Failed to batch add tests");
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-16">
       <SectionHeader
@@ -323,8 +384,23 @@ export default function TechnicalEngineManagement() {
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
+              onClick={() => handleOpenBatchModal("all")}
+              disabled={loading || isBatchProcessing}
+              className="px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md transition-all text-black"
+              style={{
+                background: "linear-gradient(135deg, #f59e0b, #d97706)",
+              }}
+              title="Batch Add 1 Test to each technology and company card"
+            >
+              {isBatchProcessing ? <Loader2 size={14} className="animate-spin text-black" /> : <Sparkles size={14} />}
+              <span>Batch Add 1 Test in Each</span>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
               onClick={fetchOverviewAndTests}
-              disabled={loading}
+              disabled={loading || isBatchProcessing}
               className="p-2 rounded-xl border transition-colors flex items-center gap-1.5 text-xs font-bold"
               style={{ background: "var(--card-bg)", borderColor: "var(--border-color)", color: "var(--text-secondary)" }}
             >
@@ -374,25 +450,60 @@ export default function TechnicalEngineManagement() {
 
       {/* Filter Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
-        <div className="flex items-center gap-1.5 p-1 rounded-xl border" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
-          {[
-            { id: "all", label: `All Entities (${groupedTargets.length})` },
-            { id: "technology", label: `Technologies (36)` },
-            { id: "company", label: `Company Wise (16)` },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
-              style={{
-                background: activeTab === tab.id ? "rgba(245,158,11,0.15)" : "transparent",
-                color: activeTab === tab.id ? "#f59e0b" : "var(--text-secondary)",
-                border: activeTab === tab.id ? "1px solid rgba(245,158,11,0.3)" : "1px solid transparent",
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          {(() => {
+            const techCount = groupedTargets.filter((t) => t.type === "technology").length;
+            const companyCount = groupedTargets.filter((t) => t.type === "company").length;
+            return (
+              <>
+                <div className="flex items-center gap-1.5 p-1 rounded-xl border" style={{ background: "var(--bg-card)", borderColor: "var(--border-color)" }}>
+                  {[
+                    { id: "all", label: `All Entities (${groupedTargets.length})` },
+                    { id: "technology", label: `Technologies (${techCount})` },
+                    { id: "company", label: `Company Wise (${companyCount})` },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+                      style={{
+                        background: activeTab === tab.id ? "rgba(245,158,11,0.15)" : "transparent",
+                        color: activeTab === tab.id ? "#f59e0b" : "var(--text-secondary)",
+                        border: activeTab === tab.id ? "1px solid rgba(245,158,11,0.3)" : "1px solid transparent",
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleOpenBatchModal(activeTab === "all" ? "all" : "tab")}
+                  disabled={loading || isBatchProcessing}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border"
+                  style={{
+                    background: "rgba(245,158,11,0.08)",
+                    borderColor: "rgba(245,158,11,0.25)",
+                    color: "#f59e0b",
+                  }}
+                  title="Batch Add 1 Test to each entity in current view"
+                >
+                  <Plus size={13} />
+                  <span>
+                    Batch +1 Test (
+                    {activeTab === "all"
+                      ? `${groupedTargets.length} Entities`
+                      : activeTab === "technology"
+                        ? `${techCount} Tech`
+                        : `${companyCount} Companies`}
+                    )
+                  </span>
+                </motion.button>
+              </>
+            );
+          })()}
         </div>
 
         <div className="relative w-full sm:w-64">
@@ -800,11 +911,10 @@ export default function TechnicalEngineManagement() {
                           {q.options.map((opt, optIdx) => (
                             <div
                               key={optIdx}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center justify-between ${
-                                optIdx === q.correctIdx
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center justify-between ${optIdx === q.correctIdx
                                   ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                                   : "text-slate-400 border-white/5 bg-black/20"
-                              }`}
+                                }`}
                             >
                               <span>{String.fromCharCode(65 + optIdx)}. {opt}</span>
                               {optIdx === q.correctIdx && <CheckCircle size={12} className="text-emerald-400 shrink-0" />}
@@ -821,6 +931,174 @@ export default function TechnicalEngineManagement() {
                     ))}
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── BATCH ADD 1 TEST IN EACH MODAL ─────────────────────────────────── */}
+      <AnimatePresence>
+        {showBatchModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+            onClick={() => !isBatchProcessing && setShowBatchModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 20 }}
+              className="w-full max-w-lg rounded-3xl border p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar"
+              style={{ background: "var(--bg-dark, #0b0f19)", borderColor: "var(--border-color)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: "var(--border-color)" }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-amber-500/10 border border-amber-500/20 text-amber-500">
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black" style={{ color: "var(--text-primary)" }}>Batch Add 1 Test in Each</h3>
+                    <p className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>Dynamically appends next test (Test N+1) with zero repetition</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowBatchModal(false)} disabled={isBatchProcessing} style={{ color: "var(--text-muted)" }}>
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {/* Target Scope Selection */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: "var(--text-muted)" }}>
+                    Target Entities Scope
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBatchScope("all")}
+                      className={`p-2.5 rounded-xl border text-left transition-all ${batchScope === "all"
+                          ? "border-amber-500 bg-amber-500/10 text-amber-400"
+                          : "border-white/10 bg-black/20 text-slate-400 hover:border-white/20"
+                        }`}
+                    >
+                      <div className="text-xs font-bold">All Entities</div>
+                      <div className="text-[10px] opacity-75">{groupedTargets.length} cards</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBatchScope("tab")}
+                      className={`p-2.5 rounded-xl border text-left transition-all ${batchScope === "tab"
+                          ? "border-amber-500 bg-amber-500/10 text-amber-400"
+                          : "border-white/10 bg-black/20 text-slate-400 hover:border-white/20"
+                        }`}
+                    >
+                      <div className="text-xs font-bold">
+                        {activeTab === "all" ? "All Tabs" : activeTab === "technology" ? "Technologies" : "Companies"}
+                      </div>
+                      <div className="text-[10px] opacity-75">
+                        {activeTab === "all"
+                          ? `${groupedTargets.length} cards`
+                          : activeTab === "technology"
+                            ? `${groupedTargets.filter((t) => t.type === "technology").length} cards`
+                            : `${groupedTargets.filter((t) => t.type === "company").length} cards`}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBatchScope("filtered")}
+                      className={`p-2.5 rounded-xl border text-left transition-all ${batchScope === "filtered"
+                          ? "border-amber-500 bg-amber-500/10 text-amber-400"
+                          : "border-white/10 bg-black/20 text-slate-400 hover:border-white/20"
+                        }`}
+                    >
+                      <div className="text-xs font-bold">Filtered View</div>
+                      <div className="text-[10px] opacity-75">{filteredTargets.length} cards</div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Test Parameters */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: "var(--text-muted)" }}>Difficulty</label>
+                    <select
+                      value={batchDiff}
+                      onChange={(e) => setBatchDiff(e.target.value as any)}
+                      className="w-full px-3 py-2 rounded-xl text-xs font-medium border outline-none"
+                      style={{ background: "var(--bg-card)", color: "var(--text-primary)", borderColor: "var(--border-color)" }}
+                    >
+                      {["Easy", "Medium", "Hard", "Mixed"].map((d) => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: "var(--text-muted)" }}>Questions / Test</label>
+                    <select
+                      value={batchCount}
+                      onChange={(e) => setBatchCount(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl text-xs font-medium border outline-none"
+                      style={{ background: "var(--bg-card)", color: "var(--text-primary)", borderColor: "var(--border-color)" }}
+                    >
+                      {[10, 15, 20, 25].map((n) => <option key={n} value={n}>{n} MCQs</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: "var(--text-muted)" }}>Duration / Test</label>
+                    <select
+                      value={batchDuration}
+                      onChange={(e) => setBatchDuration(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl text-xs font-medium border outline-none"
+                      style={{ background: "var(--bg-card)", color: "var(--text-primary)", borderColor: "var(--border-color)" }}
+                    >
+                      {[15, 20, 30, 45, 60].map((m) => <option key={m} value={m}>{m} Mins</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Summary Box */}
+                <div
+                  className="p-3 rounded-2xl border space-y-1.5"
+                  style={{ background: "rgba(245,158,11,0.05)", borderColor: "rgba(245,158,11,0.2)" }}
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                    <Sparkles size={13} />
+                    <span>Batch Execution Preview:</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Will generate exactly <strong>1 new test</strong> for each of the <strong>{batchTargetsToProcess.length}</strong> selected entities (
+                    <strong>{batchTargetsToProcess.length * batchCount}</strong> unique MCQs created).
+                  </p>
+                  <p className="text-[10px] text-amber-500/80">
+                    ✓ Anti-Repetition Engine guarantees no duplicate questions across existing tests.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBatchModal(false)}
+                  disabled={isBatchProcessing}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all"
+                  style={{ background: "transparent", color: "var(--text-secondary)", borderColor: "var(--border-color)" }}
+                >
+                  Cancel
+                </button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleBatchAddTests}
+                  disabled={isBatchProcessing || batchTargetsToProcess.length === 0}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}
+                >
+                  {isBatchProcessing ? <Loader2 size={14} className="animate-spin" /> : <Layers size={14} />}
+                  {isBatchProcessing ? "Generating Batch Tests..." : `Add 1 Test in Each (${batchTargetsToProcess.length})`}
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>

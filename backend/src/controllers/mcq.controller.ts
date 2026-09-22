@@ -14,6 +14,7 @@ import {
   getTestById,
   createNewTest,
   generateAITestWithAntiRepetition,
+  batchAddTestsToOneEach,
   updateTest,
   deleteTest,
   addQuestionToTest,
@@ -308,3 +309,27 @@ export async function handleAdminDeleteQuestion(req: Request, res: Response): Pr
     handleRouteError(res, error, "Mcq.deleteQuestion", "Failed to delete question from test");
   }
 }
+
+export async function handleAdminBatchAddTests(req: Request, res: Response): Promise<void> {
+  try {
+    const { targetType, targets, questionCount, difficulty, durationMinutes } = req.body || {};
+
+    const result = await batchAddTestsToOneEach({
+      targetType,
+      targets,
+      questionCount: Number(questionCount) || 15,
+      difficulty,
+      durationMinutes: Number(durationMinutes) || 20,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Successfully generated 1 new test for ${result.totalCreated} entities`,
+      totalCreated: result.totalCreated,
+      summary: result.summary,
+    });
+  } catch (error: any) {
+    handleRouteError(res, error, "Mcq.batchAddTests", "Failed to batch add tests");
+  }
+}
+

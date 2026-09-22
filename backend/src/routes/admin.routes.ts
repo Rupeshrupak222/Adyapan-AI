@@ -46,6 +46,7 @@ import {
   handleAdminGetMCQOverview,
   handleAdminCreateTest,
   handleAdminGenerateAITest,
+  handleAdminBatchAddTests,
   handleAdminUpdateTest,
   handleAdminDeleteTest,
   handleAdminAddQuestionToTest,
@@ -161,6 +162,7 @@ adminRouter.get("/mcq/tests", ...can("content", "read"), handleGetTests);
 adminRouter.get("/mcq/tests/:testId", ...can("content", "read"), handleGetTestById);
 adminRouter.post("/mcq/tests", ...can("content", "write"), handleAdminCreateTest);
 adminRouter.post("/mcq/tests/generate-ai", ...can("content", "write"), handleAdminGenerateAITest);
+adminRouter.post("/mcq/tests/batch-add", ...can("content", "write"), handleAdminBatchAddTests);
 adminRouter.put("/mcq/tests/:testId", ...can("content", "write"), handleAdminUpdateTest);
 adminRouter.delete("/mcq/tests/:testId", ...can("content", "write"), handleAdminDeleteTest);
 adminRouter.post("/mcq/tests/:testId/questions", ...can("content", "write"), handleAdminAddQuestionToTest);

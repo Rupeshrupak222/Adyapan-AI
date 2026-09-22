@@ -13,6 +13,9 @@ import {
   BarChart2, RotateCcw, Flag, Trophy,
   CircleDot, Grid3X3, SkipForward, Home, X, Play, BookOpen,
   Award, CheckSquare, Hourglass, HelpCircle,
+  Smartphone, Bot, Navigation, BarChart3, DollarSign, Megaphone, Users,
+  Briefcase, Truck, Rocket, Compass, Car, HardHat, HeartPulse, Atom,
+  FileSpreadsheet, TestTube, Dna, PenTool, Search,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
@@ -50,7 +53,17 @@ interface MCQTechnology {
   id: string;
   name: string;
   slug: string;
-  category: "Programming" | "Core CS" | "Web Development" | "Databases" | "Cloud" | "AI/ML";
+  category:
+    | "Programming"
+    | "Core CS"
+    | "Web Development"
+    | "Databases"
+    | "Cloud"
+    | "AI/ML"
+    | "Management"
+    | "Mechanical & Civil"
+    | "Healthcare & Pharma"
+    | "Design & Creative";
   iconName: string;
   description: string;
   questionCount: number;
@@ -163,7 +176,9 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Terminal, Network, Layers, Kanban, Binary, Layout, Palette, Component,
   ShieldAlert, Smile, Zap, Server, Globe, Table, HardDrive, Cloud, CloudRain,
   CloudLightning, AlertCircle, Box, Anchor, Brain, MessageSquare, Eye,
-  TrendingUp, Flame,
+  TrendingUp, Flame, Smartphone, Bot, Navigation, BarChart3, DollarSign,
+  Megaphone, Users, Briefcase, Truck, Rocket, Compass, Car, HardHat,
+  HeartPulse, Atom, FileSpreadsheet, TestTube, Dna, PenTool,
 };
 
 function getTechIcon(iconName: string): React.ReactElement {
@@ -181,11 +196,16 @@ const DOMAIN_CATEGORIES = [
   { id: "Databases", label: "Databases", icon: Database, color: "#ef4444" },
   { id: "Cloud", label: "Cloud", icon: Cloud, color: "#06b6d4" },
   { id: "AI/ML", label: "AI/ML", icon: Brain, color: "#ec4899" },
+  { id: "Management", label: "Management", icon: Briefcase, color: "#eab308" },
+  { id: "Mechanical & Civil", label: "Core Engg", icon: HardHat, color: "#f97316" },
+  { id: "Healthcare & Pharma", label: "Health & Pharma", icon: HeartPulse, color: "#14b8a6" },
+  { id: "Design & Creative", label: "Design", icon: Palette, color: "#a855f7" },
 ];
 
-// ─── Default Data ─────────────────────────────────────────────────────────
+// ─── Default Data (64 Domains across B.Tech, Management, Health, Design) ────
 
 const DEFAULT_TECHNOLOGIES: MCQTechnology[] = [
+  // Programming (8)
   { id: "tech-c", name: "C", slug: "c", category: "Programming", iconName: "Code", description: "Pointers, memory management, preprocessors, and struct syntax.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-cpp", name: "C++", slug: "cpp", category: "Programming", iconName: "Code2", description: "STL, templates, operator overloading, smart pointers, and RAII.", questionCount: 160, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-java", name: "Java", slug: "java", category: "Programming", iconName: "Coffee", description: "JVM, multithreading, garbage collection, collections framework.", questionCount: 220, difficulty: "Medium", progress: 0, solved: 0 },
@@ -194,6 +214,8 @@ const DEFAULT_TECHNOLOGIES: MCQTechnology[] = [
   { id: "tech-ts", name: "TypeScript", slug: "typescript", category: "Programming", iconName: "FileCode2", description: "Generics, type guards, interfaces, utility types, and strict mode.", questionCount: 130, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-go", name: "Go", slug: "go", category: "Programming", iconName: "Cpu", description: "Goroutines, channels, interfaces, pointers, and memory layout.", questionCount: 90, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-rust", name: "Rust", slug: "rust", category: "Programming", iconName: "Shield", description: "Ownership, borrowing, lifetimes, pattern matching, and traits.", questionCount: 85, difficulty: "Hard", progress: 0, solved: 0 },
+
+  // Core CS (7)
   { id: "tech-dbms", name: "DBMS", slug: "dbms", category: "Core CS", iconName: "Database", description: "Normalization, ACID properties, indexing, transactions, and ER diagrams.", questionCount: 210, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-os", name: "Operating Systems", slug: "os", category: "Core CS", iconName: "Terminal", description: "Process synchronization, deadlocks, virtual memory, and page replacement.", questionCount: 190, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-cn", name: "Computer Networks", slug: "cn", category: "Core CS", iconName: "Network", description: "OSI model, TCP/IP, subnetting, HTTP/HTTPS, and routing protocols.", questionCount: 180, difficulty: "Medium", progress: 0, solved: 0 },
@@ -201,6 +223,8 @@ const DEFAULT_TECHNOLOGIES: MCQTechnology[] = [
   { id: "tech-se", name: "Software Engineering", slug: "se", category: "Core CS", iconName: "Kanban", description: "Agile, SDLC, design patterns, software testing, and CI/CD basics.", questionCount: 110, difficulty: "Easy", progress: 0, solved: 0 },
   { id: "tech-cd", name: "Compiler Design", slug: "cd", category: "Core CS", iconName: "Binary", description: "Lexical analysis, parsing, syntax trees, optimization, and code generation.", questionCount: 75, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-coa", name: "COA", slug: "coa", category: "Core CS", iconName: "Cpu", description: "Instruction sets, pipelining, cache mapping, and ALU operations.", questionCount: 85, difficulty: "Hard", progress: 0, solved: 0 },
+
+  // Web Development (8)
   { id: "tech-html", name: "HTML", slug: "html", category: "Web Development", iconName: "Layout", description: "Semantic tags, forms, accessibility (a11y), and DOM elements.", questionCount: 120, difficulty: "Easy", progress: 0, solved: 0 },
   { id: "tech-css", name: "CSS", slug: "css", category: "Web Development", iconName: "Palette", description: "Flexbox, Grid, specificity, animations, transitions, and media queries.", questionCount: 135, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-react", name: "React", slug: "react", category: "Web Development", iconName: "Component", description: "Virtual DOM, hooks, reconciliation, context API, and performance optimization.", questionCount: 220, difficulty: "Medium", progress: 0, solved: 0 },
@@ -209,23 +233,72 @@ const DEFAULT_TECHNOLOGIES: MCQTechnology[] = [
   { id: "tech-next", name: "Next.js", slug: "nextjs", category: "Web Development", iconName: "Zap", description: "App router, SSR, SSG, ISR, server components, and API routes.", questionCount: 140, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-node", name: "Node.js", slug: "nodejs", category: "Web Development", iconName: "Server", description: "Event-driven architecture, streams, buffer, cluster, and event loop.", questionCount: 180, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-express", name: "Express", slug: "express", category: "Web Development", iconName: "Globe", description: "Middleware pipeline, routing, error handling, and security headers.", questionCount: 110, difficulty: "Easy", progress: 0, solved: 0 },
+
+  // Databases (5)
   { id: "tech-sql", name: "SQL", slug: "sql", category: "Databases", iconName: "Table", description: "Joins, subqueries, group by, window functions, and indexing strategies.", questionCount: 250, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-postgres", name: "PostgreSQL", slug: "postgresql", category: "Databases", iconName: "Database", description: "JSONB columns, CTEs, PL/pgSQL, MVCC, and full-text search.", questionCount: 140, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-mongo", name: "MongoDB", slug: "mongodb", category: "Databases", iconName: "HardDrive", description: "Aggregation framework, indexing, sharding, replication, and BSON.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-mysql", name: "MySQL", slug: "mysql", category: "Databases", iconName: "Server", description: "InnoDB storage engine, query optimizer, transaction isolation levels.", questionCount: 160, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-redis", name: "Redis", slug: "redis", category: "Databases", iconName: "Zap", description: "Data structures (hashes, sets, pub/sub), persistence (RDB/AOF), and caching.", questionCount: 110, difficulty: "Hard", progress: 0, solved: 0 },
+
+  // Cloud & DevOps (5)
   { id: "tech-aws", name: "AWS", slug: "aws", category: "Cloud", iconName: "Cloud", description: "EC2, S3, Lambda, IAM, VPC, DynamoDB, and CloudFront.", questionCount: 210, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-azure", name: "Azure", slug: "azure", category: "Cloud", iconName: "CloudRain", description: "Azure VMs, Blob storage, Azure Functions, Entra ID, and AKS.", questionCount: 130, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-gcp", name: "GCP", slug: "gcp", category: "Cloud", iconName: "CloudLightning", description: "BigQuery, GKE, Cloud Run, Pub/Sub, and IAM roles.", questionCount: 140, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-docker", name: "Docker", slug: "docker", category: "Cloud", iconName: "Box", description: "Dockerfile optimization, multi-stage builds, volumes, and networking.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-k8s", name: "Kubernetes", slug: "kubernetes", category: "Cloud", iconName: "Anchor", description: "Pods, Deployments, Services, Ingress, ConfigMaps, and Helm charts.", questionCount: 120, difficulty: "Hard", progress: 0, solved: 0 },
-  { id: "tech-ml", name: "Machine Learning", slug: "machine-learning", category: "AI/ML", iconName: "Brain", description: "Supervised/unsupervised learning, regression, decision trees, and metrics.", questionCount: 180, difficulty: "Hard", progress: 0, solved: 0 },
+
+  // AI/ML (7)
+  { id: "tech-ml", name: "Machine Learning", slug: "machine-learning", category: "AI/ML", iconName: "Brain", description: "Supervised/unsupervised learning, regression, decision trees, and evaluation metrics.", questionCount: 180, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-dl", name: "Deep Learning", slug: "deep-learning", category: "AI/ML", iconName: "Cpu", description: "CNNs, RNNs, backpropagation, activation functions, and gradient descent.", questionCount: 140, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-nlp", name: "NLP", slug: "nlp", category: "AI/ML", iconName: "MessageSquare", description: "Tokenization, TF-IDF, Word2Vec, Transformers, and attention mechanisms.", questionCount: 110, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-cv", name: "Computer Vision", slug: "computer-vision", category: "AI/ML", iconName: "Eye", description: "OpenCV, image transformations, object detection (YOLO), and segmentation.", questionCount: 95, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-ds", name: "Data Science", slug: "data-science", category: "AI/ML", iconName: "TrendingUp", description: "Pandas, NumPy, EDA, feature engineering, and statistical testing.", questionCount: 160, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-tf", name: "TensorFlow", slug: "tensorflow", category: "AI/ML", iconName: "Box", description: "Keras API, computational graphs, tensors, and model exporting.", questionCount: 100, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-torch", name: "PyTorch", slug: "pytorch", category: "AI/ML", iconName: "Flame", description: "Autograd, Tensors, nn.Module, DataLoader, and custom loss functions.", questionCount: 115, difficulty: "Hard", progress: 0, solved: 0 },
+
+  // Mobile & Apps (2)
+  { id: "tech-android", name: "Android App Development", slug: "android", category: "Programming", iconName: "Smartphone", description: "Jetpack Compose, Kotlin coroutines, Activities/Fragments, ViewModel, and Room DB.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-mobile-dev", name: "Mobile App Development", slug: "mobile-dev", category: "Programming", iconName: "Smartphone", description: "Flutter, React Native, cross-platform architecture, state management, and mobile UX.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+
+  // ECE & Robotics (6)
+  { id: "tech-cybersecurity", name: "Cybersecurity", slug: "cybersecurity", category: "Core CS", iconName: "Shield", description: "OWASP Top 10, ethical hacking, cryptography, network security & defense.", questionCount: 180, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-embedded-systems", name: "Embedded Systems", slug: "embedded-systems", category: "Core CS", iconName: "Cpu", description: "ARM Cortex, 8051, RTOS, firmware, timers, interrupts, I2C/SPI/UART.", questionCount: 160, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-vlsi", name: "VLSI & Digital Electronics", slug: "vlsi", category: "Core CS", iconName: "Layers", description: "Logic gates, flip-flops, Verilog HDL, CMOS inverter, timing analysis, FPGAs.", questionCount: 150, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-iot", name: "IoT & Sensor Networks", slug: "iot", category: "Core CS", iconName: "Network", description: "Microcontrollers, ESP32, MQTT/CoAP, sensor interfacing, wireless node networks.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-robotics", name: "Robotics", slug: "robotics", category: "Core CS", iconName: "Bot", description: "Forward & inverse kinematics, ROS, actuators, sensors, SLAM, and PID controllers.", questionCount: 130, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-drone-engineering", name: "Drone Engineering", slug: "drone-engineering", category: "Core CS", iconName: "Navigation", description: "Quadcopter flight dynamics, flight controllers (PX4), telemetry, ESCs, and BLDC motors.", questionCount: 120, difficulty: "Hard", progress: 0, solved: 0 },
+
+  // Analytics (1)
+  { id: "tech-business-analytics", name: "Business Analytics", slug: "business-analytics", category: "AI/ML", iconName: "BarChart3", description: "PowerBI, Tableau, KPI dashboards, business metrics, and data-driven decision modeling.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+
+  // Management & Business (8)
+  { id: "tech-finance", name: "Finance", slug: "finance", category: "Management", iconName: "DollarSign", description: "Financial statement analysis, working capital, DCF valuation, capital budgeting, and corporate finance.", questionCount: 160, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-digital-marketing", name: "Digital Marketing", slug: "digital-marketing", category: "Management", iconName: "Megaphone", description: "SEO, SEM, Google & Meta ads, conversion funnels, CAC/LTV, and analytics.", questionCount: 150, difficulty: "Easy", progress: 0, solved: 0 },
+  { id: "tech-hrm", name: "HRM – Human Resource Management", slug: "hrm", category: "Management", iconName: "Users", description: "Talent acquisition, performance appraisal (OKRs/KPIs), compensation, and labor compliance.", questionCount: 140, difficulty: "Easy", progress: 0, solved: 0 },
+  { id: "tech-stock-market", name: "Stock Market", slug: "stock-market", category: "Management", iconName: "TrendingUp", description: "Equity, derivatives (Futures & Options), candlestick patterns, technical indicators (RSI/MACD), and risk management.", questionCount: 160, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-investment-banking", name: "Investment Banking & Finance", slug: "investment-banking", category: "Management", iconName: "Briefcase", description: "M&A advisory, LBO modeling, pitch books, debt/equity underwriting, and company valuations.", questionCount: 150, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-product-mgmt", name: "Product & Project Management", slug: "product-management", category: "Management", iconName: "Kanban", description: "PRD writing, Agile/Scrum ceremonies, user personas, sprint planning, and product roadmaps.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-supply-chain", name: "Operations & Supply Chain", slug: "supply-chain", category: "Management", iconName: "Truck", description: "Inventory management (EOQ, JIT), bullwhip effect, logistics, procurement, and Six Sigma.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-startup", name: "Startup & Entrepreneurship", slug: "startup-entrepreneurship", category: "Management", iconName: "Rocket", description: "Venture funding rounds, pitch decks, cap tables, burn rate, runway, MVP validation, and product-market fit.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
+
+  // Mechanical & Civil (5)
+  { id: "tech-autocad", name: "AutoCAD", slug: "autocad", category: "Mechanical & Civil", iconName: "Compass", description: "2D drafting, 3D modeling, orthographic projections, isometric views, dimensioning, and GD&T.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-hev", name: "HEV - Hybrid Electric Vehicle", slug: "hev", category: "Mechanical & Civil", iconName: "Zap", description: "Electric powertrains, Battery Management Systems (BMS), regenerative braking, and motor controllers.", questionCount: 140, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-car-designing", name: "Car Designing", slug: "car-designing", category: "Mechanical & Civil", iconName: "Car", description: "Automotive aerodynamics, drag coefficients, chassis engineering, safety crumple zones, and NVH.", questionCount: 130, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-mech-product", name: "Product Management (Mechanical)", slug: "mech-product-management", category: "Mechanical & Civil", iconName: "Layers", description: "Design for Manufacturing (DFM), Design for Assembly (DFA), material selection, and CAD/FEA simulation.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-civil-project", name: "Project Management (Civil)", slug: "civil-project-management", category: "Mechanical & Civil", iconName: "HardHat", description: "BIM modeling, quantity surveying, structural estimation, bar bending schedules, and CPM/PERT construction planning.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+
+  // Pharma & Healthcare (5)
+  { id: "tech-psychology", name: "Psychology (Health Science)", slug: "psychology", category: "Healthcare & Pharma", iconName: "HeartPulse", description: "Cognitive psychology, clinical assessment, behavioral therapy, neuropsychology, and mental health sciences.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-nanotechnology", name: "Nanotechnology (Pharma/ECE)", slug: "nanotechnology", category: "Healthcare & Pharma", iconName: "Atom", description: "Nanoparticle synthesis, targeted drug delivery, quantum dots, carbon nanotubes, and SEM/TEM characterization.", questionCount: 130, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-medical-coding", name: "Medical Coding (Pharma)", slug: "medical-coding", category: "Healthcare & Pharma", iconName: "FileSpreadsheet", description: "ICD-10-CM, CPT, HCPCS Level II procedural coding, HIPAA compliance, and insurance claims billing.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-clinical-research", name: "Clinical Trial & Research (Pharma)", slug: "clinical-research", category: "Healthcare & Pharma", iconName: "TestTube", description: "Phases I-IV clinical trials, Good Clinical Practice (GCP), informed consent, regulatory audits, and pharmacovigilance.", questionCount: 140, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-genetic-engineering", name: "Genetic Engineering", slug: "genetic-engineering", category: "Healthcare & Pharma", iconName: "Dna", description: "CRISPR-Cas9 gene editing, recombinant DNA, PCR amplification, restriction enzymes, and plasmid vectors.", questionCount: 140, difficulty: "Hard", progress: 0, solved: 0 },
+
+  // Design & Creative (2)
+  { id: "tech-ui-ux", name: "UI/UX (Design)", slug: "ui-ux", category: "Design & Creative", iconName: "Layout", description: "Figma wireframing, design systems, heuristic evaluation, user journey mapping, and usability testing.", questionCount: 150, difficulty: "Easy", progress: 0, solved: 0 },
+  { id: "tech-graphic-design", name: "Graphic Design", slug: "graphic-design", category: "Design & Creative", iconName: "PenTool", description: "Color theory, typography, vector illustration, visual hierarchy, branding identity, and raster imaging.", questionCount: 140, difficulty: "Easy", progress: 0, solved: 0 },
 ];
 
 const DEFAULT_COMPANIES: MCQCompany[] = [
@@ -644,9 +717,12 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
   const filteredTechnologies = useMemo(() => {
     let filtered = selectedDomain === "All" ? technologies : technologies.filter(t => t.category === selectedDomain);
     if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(t =>
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.description.toLowerCase().includes(searchQuery.toLowerCase())
+        t.name.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q) ||
+        t.category.toLowerCase().includes(q) ||
+        t.slug.toLowerCase().includes(q)
       );
     }
     return filtered;
@@ -1167,114 +1243,184 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
 
               {/* ── Technology Domains Cards ── */}
               <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Technology Domains</h3>
-                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-                    {DOMAIN_CATEGORIES.map((cat) => {
-                      const Icon = cat.icon;
-                      return (
-                        <button key={cat.id} onClick={() => setSelectedDomain(cat.id)} className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-bold shrink-0 transition-all" style={{ background: selectedDomain === cat.id ? `${cat.color}20` : "transparent", borderColor: selectedDomain === cat.id ? `${cat.color}40` : c.border, color: selectedDomain === cat.id ? cat.color : c.textMuted }}>
-                          <Icon size={10} />{cat.label}
-                        </button>
-                      );
-                    })}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Technology Domains</h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                      {technologies.length}+ Domains
+                    </span>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative w-full md:w-80">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500/70" size={14} />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search 65+ domains (Python, AutoCAD, Civil, VLSI...)"
+                      className="w-full pl-9 pr-8 py-1.5 rounded-xl border text-xs font-medium focus:outline-none transition-all placeholder:text-slate-500"
+                      style={{
+                        background: c.inputBg,
+                        borderColor: searchQuery ? "#f59e0b" : c.border,
+                        color: c.text,
+                      }}
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {filteredTechnologies.slice(0, 12).map((t, i) => {
-                    const techTests = allDynamicTests.filter(
-                      (test) => test.targetId === t.id || test.targetName.toLowerCase() === t.name.toLowerCase()
-                    );
-                    const testCount = techTests.length || 1;
-                    const topicStat = userTopicMastery[t.name.toLowerCase()] || userTopicMastery[t.id] || userTopicMastery[t.slug];
-                    const realProgress = topicStat ? topicStat.accuracy : 0;
-
+                {/* Category Filter Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
+                  {DOMAIN_CATEGORIES.map((cat) => {
+                    const Icon = cat.icon;
                     return (
-                      <motion.div
-                        key={t.id}
-                        variants={scaleIn}
-                        initial="hidden"
-                        animate="visible"
-                        custom={i}
-                        whileHover={{ y: -4, scale: 1.02 }}
-                        className="p-5 border rounded-2xl cursor-pointer transition-all flex flex-col justify-between group hover:border-amber-500/40"
-                        style={{ background: c.cardBg, borderColor: c.border }}
-                        onClick={() => handleOpenEntityScreen({
-                          id: t.id,
-                          name: t.name,
-                          type: "technology",
-                          iconName: t.iconName,
-                          category: t.category,
-                          description: t.description,
-                          progress: realProgress,
-                        })}
+                      <button
+                        key={cat.id}
+                        onClick={() => setSelectedDomain(cat.id)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-bold shrink-0 transition-all"
+                        style={{
+                          background: selectedDomain === cat.id ? `${cat.color}20` : "transparent",
+                          borderColor: selectedDomain === cat.id ? `${cat.color}40` : c.border,
+                          color: selectedDomain === cat.id ? cat.color : c.textMuted
+                        }}
                       >
-                        <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                              {getTechIcon(t.iconName)}
-                            </div>
-                            <div className="relative w-9 h-9 flex items-center justify-center">
-                              <svg className="w-9 h-9 transform -rotate-90">
-                                <circle cx="18" cy="18" r="14" stroke={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"} strokeWidth="3" fill="none" />
-                                <circle
-                                  cx="18"
-                                  cy="18"
-                                  r="14"
-                                  stroke={realProgress > 0 ? "#F59E0B" : "transparent"}
-                                  strokeWidth="3"
-                                  fill="none"
-                                  strokeDasharray={88}
-                                  strokeDashoffset={88 - (88 * realProgress) / 100}
-                                  strokeLinecap="round"
-                                  className="transition-all duration-500"
-                                />
-                              </svg>
-                              <span className={`absolute text-[9px] font-black ${realProgress > 0 ? "text-amber-500" : (isDark ? "text-slate-500" : "text-slate-400")}`}>
-                                {realProgress}%
-                              </span>
-                            </div>
-                          </div>
-
-                          <p className="text-xs font-extrabold" style={{ color: c.text }}>{t.name}</p>
-                          <p className="text-[10px] mt-1 leading-relaxed line-clamp-2" style={{ color: c.textMuted }}>{t.description}</p>
-                        </div>
-
-                        {/* Test Navigation Bar on Card */}
-                        <div className="mt-3 pt-2.5 border-t space-y-2" style={{ borderColor: c.border }}>
-                          <div className="flex items-center justify-between text-[10px] font-bold">
-                            <span style={{ color: c.textMuted }}>{testCount} {testCount === 1 ? "Test" : "Tests"} Available</span>
-                            <span className="text-amber-500 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
-                              Explore <ChevronRight size={10} />
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-1">
-                            {Array.from({ length: Math.min(testCount, 3) }).map((_, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-0.5 rounded-md text-[9px] font-bold"
-                                style={{
-                                  background: "rgba(245,158,11,0.12)",
-                                  border: "1px solid rgba(245,158,11,0.3)",
-                                  color: "#f59e0b",
-                                }}
-                              >
-                                Test {idx + 1}
-                              </span>
-                            ))}
-                            {testCount > 3 && (
-                              <span className="text-[9px] font-bold" style={{ color: c.textMuted }}>+{testCount - 3}</span>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
+                        <Icon size={10} />{cat.label}
+                      </button>
                     );
                   })}
                 </div>
 
-                {filteredTechnologies.length > 12 && (
+                {/* Search Feedback */}
+                {searchQuery && (
+                  <div className="flex items-center justify-between text-[11px] px-1 text-slate-400">
+                    <span>
+                      Found <strong className="text-amber-500">{filteredTechnologies.length}</strong> domain{filteredTechnologies.length === 1 ? "" : "s"} matching &quot;{searchQuery}&quot;
+                    </span>
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="text-amber-500 hover:underline text-[10px] font-bold"
+                    >
+                      Clear Search
+                    </button>
+                  </div>
+                )}
+
+                {filteredTechnologies.length === 0 ? (
+                  <div className="p-8 text-center border rounded-2xl" style={{ background: c.cardBg, borderColor: c.border }}>
+                    <Search size={28} className="text-amber-500/40 mx-auto mb-2" />
+                    <p className="text-xs font-bold" style={{ color: c.text }}>No technology domains found</p>
+                    <p className="text-[10px] mt-1" style={{ color: c.textMuted }}>No results matching &quot;{searchQuery}&quot; in {selectedDomain} category.</p>
+                    <button
+                      onClick={() => { setSearchQuery(""); setSelectedDomain("All"); }}
+                      className="mt-3 px-3 py-1 text-[11px] font-bold rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-all"
+                    >
+                      Reset Filters
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {(searchQuery.trim() ? filteredTechnologies : filteredTechnologies.slice(0, 12)).map((t, i) => {
+                      const techTests = allDynamicTests.filter(
+                        (test) => test.targetId === t.id || test.targetName.toLowerCase() === t.name.toLowerCase()
+                      );
+                      const testCount = techTests.length || 1;
+                      const topicStat = userTopicMastery[t.name.toLowerCase()] || userTopicMastery[t.id] || userTopicMastery[t.slug];
+                      const realProgress = topicStat ? topicStat.accuracy : 0;
+
+                      return (
+                        <motion.div
+                          key={t.id}
+                          variants={scaleIn}
+                          initial="hidden"
+                          animate="visible"
+                          custom={i}
+                          whileHover={{ y: -4, scale: 1.02 }}
+                          className="p-5 border rounded-2xl cursor-pointer transition-all flex flex-col justify-between group hover:border-amber-500/40"
+                          style={{ background: c.cardBg, borderColor: c.border }}
+                          onClick={() => handleOpenEntityScreen({
+                            id: t.id,
+                            name: t.name,
+                            type: "technology",
+                            iconName: t.iconName,
+                            category: t.category,
+                            description: t.description,
+                            progress: realProgress,
+                          })}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                {getTechIcon(t.iconName)}
+                              </div>
+                              <div className="relative w-9 h-9 flex items-center justify-center">
+                                <svg className="w-9 h-9 transform -rotate-90">
+                                  <circle cx="18" cy="18" r="14" stroke={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"} strokeWidth="3" fill="none" />
+                                  <circle
+                                    cx="18"
+                                    cy="18"
+                                    r="14"
+                                    stroke={realProgress > 0 ? "#F59E0B" : "transparent"}
+                                    strokeWidth="3"
+                                    fill="none"
+                                    strokeDasharray={88}
+                                    strokeDashoffset={88 - (88 * realProgress) / 100}
+                                    strokeLinecap="round"
+                                    className="transition-all duration-500"
+                                  />
+                                </svg>
+                                <span className={`absolute text-[9px] font-black ${realProgress > 0 ? "text-amber-500" : (isDark ? "text-slate-500" : "text-slate-400")}`}>
+                                  {realProgress}%
+                                </span>
+                              </div>
+                            </div>
+
+                            <p className="text-xs font-extrabold" style={{ color: c.text }}>{t.name}</p>
+                            <p className="text-[10px] mt-1 leading-relaxed line-clamp-2" style={{ color: c.textMuted }}>{t.description}</p>
+                          </div>
+
+                          {/* Test Navigation Bar on Card */}
+                          <div className="mt-3 pt-2.5 border-t space-y-2" style={{ borderColor: c.border }}>
+                            <div className="flex items-center justify-between text-[10px] font-bold">
+                              <span style={{ color: c.textMuted }}>{testCount} {testCount === 1 ? "Test" : "Tests"} Available</span>
+                              <span className="text-amber-500 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                                Explore <ChevronRight size={10} />
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-1">
+                              {Array.from({ length: Math.min(testCount, 3) }).map((_, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded-md text-[9px] font-bold"
+                                  style={{
+                                    background: "rgba(245,158,11,0.12)",
+                                    border: "1px solid rgba(245,158,11,0.3)",
+                                    color: "#f59e0b",
+                                  }}
+                                >
+                                  Test {idx + 1}
+                                </span>
+                              ))}
+                              {testCount > 3 && (
+                                <span className="text-[9px] font-bold" style={{ color: c.textMuted }}>+{testCount - 3}</span>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {!searchQuery && filteredTechnologies.length > 12 && (
                   <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setViewState("topic_select")} className="w-full p-3 border rounded-2xl text-center text-xs font-bold transition-colors" style={{ borderColor: c.border, color: c.primary, background: `${c.primary}08` }}>
                     View All {filteredTechnologies.length} Technologies
                   </motion.button>
@@ -1613,11 +1759,38 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
           ════════════════════════════════════════════════════════════════ */}
           {view === "topic_select" && (
             <motion.div key="topic-select" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-5 overflow-y-auto max-h-[calc(100vh-160px)] pr-1 custom-scrollbar">
-              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(245,158,11,0.15)" }}><Code2 size={20} className="text-amber-500" /></div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>All Technologies</p>
-                  <h3 className="text-sm font-extrabold" style={{ color: c.text }}>{filteredTechnologies.length} Technologies in {selectedDomain === "All" ? "All Domains" : selectedDomain}</h3>
+              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(245,158,11,0.15)" }}><Code2 size={20} className="text-amber-500" /></div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: c.textMuted }}>All Technology Domains</p>
+                    <h3 className="text-sm font-extrabold" style={{ color: c.text }}>{filteredTechnologies.length} Technologies in {selectedDomain === "All" ? "All Domains" : selectedDomain}</h3>
+                  </div>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative w-full md:w-80">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500/70" size={14} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search 65+ domains..."
+                    className="w-full pl-9 pr-8 py-1.5 rounded-xl border text-xs font-medium focus:outline-none transition-all placeholder:text-slate-500"
+                    style={{
+                      background: c.inputBg,
+                      borderColor: searchQuery ? "#f59e0b" : c.border,
+                      color: c.text,
+                    }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
                 </div>
               </motion.div>
 

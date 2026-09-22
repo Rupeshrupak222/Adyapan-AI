@@ -10,7 +10,7 @@ export interface MCQTechnology {
   id: string;
   name: string;
   slug: string;
-  category: "Programming" | "Core CS" | "Web Development" | "Databases" | "Cloud" | "AI/ML";
+  category: "Programming" | "Core CS" | "Web Development" | "Databases" | "Cloud" | "AI/ML" | "Management" | "Mechanical & Civil" | "Healthcare & Pharma" | "Design & Creative" | string;
   iconName: string;
   description: string;
   questionCount: number;
@@ -121,6 +121,49 @@ export const DEFAULT_TECHNOLOGIES: MCQTechnology[] = [
   { id: "tech-ds", name: "Data Science", slug: "data-science", category: "AI/ML", iconName: "TrendingUp", description: "Pandas, NumPy, EDA, feature engineering, and statistical testing.", questionCount: 160, difficulty: "Medium", progress: 0, solved: 0 },
   { id: "tech-tf", name: "TensorFlow", slug: "tensorflow", category: "AI/ML", iconName: "Box", description: "Keras API, computational graphs, tensors, and model exporting.", questionCount: 100, difficulty: "Hard", progress: 0, solved: 0 },
   { id: "tech-torch", name: "PyTorch", slug: "pytorch", category: "AI/ML", iconName: "Flame", description: "Autograd, Tensors, nn.Module, DataLoader, and custom loss functions.", questionCount: 115, difficulty: "Hard", progress: 0, solved: 0 },
+
+  // Mobile & Apps (2)
+  { id: "tech-android", name: "Android App Development", slug: "android", category: "Programming", iconName: "Smartphone", description: "Jetpack Compose, Kotlin coroutines, Activities/Fragments, ViewModel, and Room DB.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-mobile-dev", name: "Mobile App Development", slug: "mobile-dev", category: "Programming", iconName: "Smartphone", description: "Flutter, React Native, cross-platform architecture, state management, and mobile UX.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+
+  // ECE & Robotics (6)
+  { id: "tech-cybersecurity", name: "Cybersecurity", slug: "cybersecurity", category: "Core CS", iconName: "Shield", description: "OWASP Top 10, ethical hacking, cryptography, network security & defense.", questionCount: 180, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-embedded-systems", name: "Embedded Systems", slug: "embedded-systems", category: "Core CS", iconName: "Cpu", description: "ARM Cortex, 8051, RTOS, firmware, timers, interrupts, I2C/SPI/UART.", questionCount: 160, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-vlsi", name: "VLSI & Digital Electronics", slug: "vlsi", category: "Core CS", iconName: "Layers", description: "Logic gates, flip-flops, Verilog HDL, CMOS inverter, timing analysis, FPGAs.", questionCount: 150, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-iot", name: "IoT & Sensor Networks", slug: "iot", category: "Core CS", iconName: "Network", description: "Microcontrollers, ESP32, MQTT/CoAP, sensor interfacing, wireless node networks.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-robotics", name: "Robotics", slug: "robotics", category: "Core CS", iconName: "Bot", description: "Forward & inverse kinematics, ROS, actuators, sensors, SLAM, and PID controllers.", questionCount: 130, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-drone-engineering", name: "Drone Engineering", slug: "drone-engineering", category: "Core CS", iconName: "Navigation", description: "Quadcopter flight dynamics, flight controllers (PX4), telemetry, ESCs, and BLDC motors.", questionCount: 120, difficulty: "Hard", progress: 0, solved: 0 },
+
+  // Analytics (1)
+  { id: "tech-business-analytics", name: "Business Analytics", slug: "business-analytics", category: "AI/ML", iconName: "BarChart3", description: "PowerBI, Tableau, KPI dashboards, business metrics, and data-driven decision modeling.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+
+  // Management & Business (8)
+  { id: "tech-finance", name: "Finance", slug: "finance", category: "Management", iconName: "DollarSign", description: "Financial statement analysis, working capital, DCF valuation, capital budgeting, and corporate finance.", questionCount: 160, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-digital-marketing", name: "Digital Marketing", slug: "digital-marketing", category: "Management", iconName: "Megaphone", description: "SEO, SEM, Google & Meta ads, conversion funnels, CAC/LTV, and analytics.", questionCount: 150, difficulty: "Easy", progress: 0, solved: 0 },
+  { id: "tech-hrm", name: "HRM – Human Resource Management", slug: "hrm", category: "Management", iconName: "Users", description: "Talent acquisition, performance appraisal (OKRs/KPIs), compensation, and labor compliance.", questionCount: 140, difficulty: "Easy", progress: 0, solved: 0 },
+  { id: "tech-stock-market", name: "Stock Market", slug: "stock-market", category: "Management", iconName: "TrendingUp", description: "Equity, derivatives (Futures & Options), candlestick patterns, technical indicators (RSI/MACD), and risk management.", questionCount: 160, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-investment-banking", name: "Investment Banking & Finance", slug: "investment-banking", category: "Management", iconName: "Briefcase", description: "M&A advisory, LBO modeling, pitch books, debt/equity underwriting, and company valuations.", questionCount: 150, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-product-mgmt", name: "Product & Project Management", slug: "product-management", category: "Management", iconName: "Kanban", description: "PRD writing, Agile/Scrum ceremonies, user personas, sprint planning, and product roadmaps.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-supply-chain", name: "Operations & Supply Chain", slug: "supply-chain", category: "Management", iconName: "Truck", description: "Inventory management (EOQ, JIT), bullwhip effect, logistics, procurement, and Six Sigma.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-startup", name: "Startup & Entrepreneurship", slug: "startup-entrepreneurship", category: "Management", iconName: "Rocket", description: "Venture funding rounds, pitch decks, cap tables, burn rate, runway, MVP validation, and product-market fit.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
+
+  // Mechanical & Civil (5)
+  { id: "tech-autocad", name: "AutoCAD", slug: "autocad", category: "Mechanical & Civil", iconName: "Compass", description: "2D drafting, 3D modeling, orthographic projections, isometric views, dimensioning, and GD&T.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-hev", name: "HEV - Hybrid Electric Vehicle", slug: "hev", category: "Mechanical & Civil", iconName: "Zap", description: "Electric powertrains, Battery Management Systems (BMS), regenerative braking, and motor controllers.", questionCount: 140, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-car-designing", name: "Car Designing", slug: "car-designing", category: "Mechanical & Civil", iconName: "Car", description: "Automotive aerodynamics, drag coefficients, chassis engineering, safety crumple zones, and NVH.", questionCount: 130, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-mech-product", name: "Product Management (Mechanical)", slug: "mech-product-management", category: "Mechanical & Civil", iconName: "Layers", description: "Design for Manufacturing (DFM), Design for Assembly (DFA), material selection, and CAD/FEA simulation.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-civil-project", name: "Project Management (Civil)", slug: "civil-project-management", category: "Mechanical & Civil", iconName: "HardHat", description: "BIM modeling, quantity surveying, structural estimation, bar bending schedules, and CPM/PERT construction planning.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+
+  // Pharma & Healthcare (5)
+  { id: "tech-psychology", name: "Psychology (Health Science)", slug: "psychology", category: "Healthcare & Pharma", iconName: "HeartPulse", description: "Cognitive psychology, clinical assessment, behavioral therapy, neuropsychology, and mental health sciences.", questionCount: 140, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-nanotechnology", name: "Nanotechnology (Pharma/ECE)", slug: "nanotechnology", category: "Healthcare & Pharma", iconName: "Atom", description: "Nanoparticle synthesis, targeted drug delivery, quantum dots, carbon nanotubes, and SEM/TEM characterization.", questionCount: 130, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-medical-coding", name: "Medical Coding (Pharma)", slug: "medical-coding", category: "Healthcare & Pharma", iconName: "FileSpreadsheet", description: "ICD-10-CM, CPT, HCPCS Level II procedural coding, HIPAA compliance, and insurance claims billing.", questionCount: 150, difficulty: "Medium", progress: 0, solved: 0 },
+  { id: "tech-clinical-research", name: "Clinical Trial & Research (Pharma)", slug: "clinical-research", category: "Healthcare & Pharma", iconName: "TestTube", description: "Phases I-IV clinical trials, Good Clinical Practice (GCP), informed consent, regulatory audits, and pharmacovigilance.", questionCount: 140, difficulty: "Hard", progress: 0, solved: 0 },
+  { id: "tech-genetic-engineering", name: "Genetic Engineering", slug: "genetic-engineering", category: "Healthcare & Pharma", iconName: "Dna", description: "CRISPR-Cas9 gene editing, recombinant DNA, PCR amplification, restriction enzymes, and plasmid vectors.", questionCount: 140, difficulty: "Hard", progress: 0, solved: 0 },
+
+  // Design & Creative (2)
+  { id: "tech-ui-ux", name: "UI/UX (Design)", slug: "ui-ux", category: "Design & Creative", iconName: "Layout", description: "Figma wireframing, design systems, heuristic evaluation, user journey mapping, and usability testing.", questionCount: 150, difficulty: "Easy", progress: 0, solved: 0 },
+  { id: "tech-graphic-design", name: "Graphic Design", slug: "graphic-design", category: "Design & Creative", iconName: "PenTool", description: "Color theory, typography, vector illustration, visual hierarchy, branding identity, and raster imaging.", questionCount: 140, difficulty: "Easy", progress: 0, solved: 0 },
 ];
 
 // ─── Default 16 Featured Companies ──────────────────────────────────────────
@@ -440,6 +483,396 @@ function getConceptPoolForDomain(targetName: string, testNumber: number, index: 
     return concepts[(index + testNumber) % concepts.length];
   }
 
+  // Cybersecurity
+  if (norm.includes("cybersecurity") || norm.includes("security")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "SQL Injection Mitigation",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] What is the primary defense against SQL Injection vulnerabilities in web applications?`,
+        correct: "Parameterized queries / Prepared statements that separate SQL commands from user input data.",
+        distractors: ["Client-side regex validation on input fields.", "Base64 encoding all query parameters.", "Replacing single quotes with double quotes."],
+        exp: "Prepared statements pre-compile SQL queries in the database engine, treating user input strictly as literal values rather than executable SQL.",
+        hint: "Pre-compiled query parameters prevent code injection.",
+        tip: "Never concatenate user input into raw SQL queries.",
+      },
+      {
+        title: "Cross-Site Request Forgery (CSRF)",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] How does an Anti-CSRF token protect authenticated state-changing POST requests?`,
+        correct: "Provides a unique, cryptographically random per-session secret that attacker domains cannot read due to Same-Origin Policy.",
+        distractors: ["Encrypts the entire HTTP body using AES-256.", "Forces user passwords to expire every 15 minutes.", "Stores session IDs in public query parameters."],
+        exp: "Browsers automatically send cookies with cross-site requests, but an unauthorized site cannot inject the unpredictable CSRF token required in the request payload.",
+        hint: "Unpredictable secret token validated on server.",
+        tip: "Combine Anti-CSRF tokens with SameSite=Lax/Strict cookie attributes.",
+      },
+      {
+        title: "Asymmetric vs Symmetric Encryption",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In TLS/SSL handshakes, why is asymmetric encryption (RSA/ECC) used initially rather than for bulk data transmission?`,
+        correct: "Asymmetric cryptography is computationally expensive; it is used only to securely exchange a symmetric session key for fast bulk encryption.",
+        distractors: ["Symmetric encryption keys cannot be stored in RAM.", "Asymmetric algorithms can only encrypt up to 64 bytes total.", "Symmetric encryption is vulnerable to packet loss."],
+        exp: "Asymmetric key exchange securely establishes identity and shared secrets, after which AES (symmetric) encrypts streams at gigabit line speeds.",
+        hint: "Asymmetric for key agreement; symmetric for line-rate data.",
+        tip: "Modern TLS 1.3 mandates Ephemeral Diffie-Hellman (ECDHE) for Perfect Forward Secrecy.",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // Embedded Systems & IoT
+  if (norm.includes("embedded") || norm.includes("iot") || norm.includes("sensor")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "Interrupt Service Routine (ISR) Constraints",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] Why must dynamic memory allocation ('malloc') and blocking delay loops be avoided inside an ISR?`,
+        correct: "ISRs execute in non-reentrant interrupt context where blocking stalls higher-priority events and malloc can cause non-deterministic latency or deadlock.",
+        distractors: ["Microcontrollers do not have physical RAM for ISRs.", "ISRs only run in low-power sleep modes.", "Interrupt controllers only accept assembly code."],
+        exp: "ISRs must be brief and deterministic. Long operations should be deferred to a background task or RTOS worker thread via flags or queues.",
+        hint: "Keep ISRs fast, non-blocking, and deterministic.",
+        tip: "Always qualify shared ISR variables with the 'volatile' keyword.",
+      },
+      {
+        title: "I2C vs SPI Bus Protocols",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] Which hardware characteristic distinguishes the I2C bus from the SPI bus?`,
+        correct: "I2C uses only 2 open-drain lines (SDA, SCL) with pull-up resistors and addressing; SPI uses 4 lines (MOSI, MISO, SCK, CS) with dedicated chip-selects.",
+        distractors: ["I2C is full-duplex while SPI is strictly simplex.", "SPI requires 8 pull-up resistors per peripheral.", "I2C can reach 100 MHz speeds while SPI is limited to 100 kHz."],
+        exp: "I2C conserves pin count via 7/10-bit software addressing on 2 wires, whereas SPI delivers higher throughput via dedicated Chip Select lines and full-duplex lines.",
+        hint: "2 wires (SDA/SCL) vs 4 wires (MOSI/MISO/SCK/CS).",
+        tip: "Use SPI for high-speed sensor data (displays, IMUs) and I2C for low-pin-count telemetry.",
+      },
+      {
+        title: "MQTT Protocol QoS Levels",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In IoT telemetry, what delivery guarantee is provided by MQTT Quality of Service Level 1 (QoS 1)?`,
+        correct: "Guarantees message is delivered at least once to the broker, but duplicates may occur if ACK is delayed.",
+        distractors: ["Guarantees exactly-once delivery with zero duplicates.", "Fire-and-forget with no delivery confirmation (QoS 0).", "Encrypts payload with end-to-end homomorphic encryption."],
+        exp: "QoS 0 is at most once, QoS 1 is at least once (requires PUBACK), and QoS 2 is exactly once (four-step handshake).",
+        hint: "QoS 1 = At least once delivery.",
+        tip: "Use QoS 0 for frequent temperature telemetry; use QoS 1/2 for critical actuator control.",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // VLSI & Digital Electronics
+  if (norm.includes("vlsi") || norm.includes("digital electronics") || norm.includes("verilog")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "Setup and Hold Time Violations",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] What causes a Setup Time (T_setup) violation in synchronous sequential flip-flops?`,
+        correct: "Data input fails to remain stable for the required duration before the active clock edge arrives.",
+        distractors: ["Clock frequency is too low for the CMOS gate.", "Data input changes immediately after clock edge.", "Supply voltage exceeds maximum breakdown."],
+        exp: "Setup time is the minimum time data must be stable before the clock edge. If combinational path delay is too long, a setup violation occurs.",
+        hint: "Data must be stable before the clock edge.",
+        tip: "Fix setup violations by reducing combinational logic depth or lowering clock frequency.",
+      },
+      {
+        title: "CMOS Inverter Static vs Dynamic Power",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] What is the primary contributor to dynamic power dissipation (P_dynamic) in digital CMOS circuits?`,
+        correct: "Capacitive charging and discharging of load capacitance during output logic transitions (P = C * V^2 * f).",
+        distractors: ["Subthreshold leakage current through turned-off transistors.", "Gate oxide tunneling breakdown.", "Thermal vibration of silicon crystal lattice."],
+        exp: "Dynamic power is quadratic with supply voltage (Vdd^2) and linear with switching frequency (f) and load capacitance (C).",
+        hint: "P = C * V^2 * f during gate switching.",
+        tip: "Lowering Vdd provides the greatest reduction in dynamic power due to the squared term.",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // Robotics & Drone Engineering
+  if (norm.includes("robotics") || norm.includes("drone")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "PID Controller Dynamics",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In closed-loop motor and drone attitude control, what is the role of the Derivative (D) term in a PID controller?`,
+        correct: "Predicts system error trajectory and introduces damping to counteract overshoot and oscillations.",
+        distractors: ["Eliminates steady-state error completely over time.", "Amplifies immediate proportional error to increase speed.", "Filters out high-frequency sensor noise."],
+        exp: "Proportional reacts to current error, Integral eliminates accumulated steady-state error, and Derivative dampens rate of error change to prevent overshoot.",
+        hint: "Derivative provides damping against overshoot.",
+        tip: "Excessive derivative gain amplifies sensor noise in flight controllers.",
+      },
+      {
+        title: "Forward vs Inverse Kinematics",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In robotic arms, how does Inverse Kinematics (IK) differ from Forward Kinematics (FK)?`,
+        correct: "FK calculates end-effector Cartesian coordinates from given joint angles; IK solves for required joint angles to reach a target position.",
+        distractors: ["FK has multiple solutions while IK is always uniquely linear.", "IK controls motor voltage directly without geometric calculations.", "FK is used only for mobile wheeled robots."],
+        exp: "FK is a deterministic direct matrix multiplication. IK is non-linear and may yield multiple, infinite, or zero reachable joint configurations.",
+        hint: "IK solves: desired position -> required joint angles.",
+        tip: "Jacobian matrices relate joint velocities to end-effector Cartesian velocities.",
+      },
+      {
+        title: "Quadcopter Flight Dynamics & Yaw Control",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] How does a standard quadcopter rotate about its Yaw (vertical) axis without translating?`,
+        correct: "By creating torque imbalance: speeding up clockwise (CW) motors while slowing counter-clockwise (CCW) motors equally, maintaining net thrust.",
+        distractors: ["By tilting physical mechanical rudders on each motor arm.", "By reversing polarity of all 4 brushless motors simultaneously.", "By increasing thrust on front motors and decreasing on rear."],
+        exp: "Opposing motor pairs cancel reactive torque. Changing the speed ratio between CW and CCW pairs produces net torque about the yaw axis.",
+        hint: "Reactive torque imbalance between CW and CCW rotor pairs.",
+        tip: "Pitch/roll tilt is achieved by differential thrust between opposite arms.",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // Mobile App Development (Android & Cross-Platform)
+  if (norm.includes("android") || norm.includes("mobile")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "Activity Lifecycle & Configuration Changes",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In Android, what happens to an Activity during a screen orientation change by default?`,
+        correct: "The Activity is destroyed and recreated (onDestroy -> onCreate), resetting unpersisted UI state.",
+        distractors: ["The View tree is scaled without touching Activity lifecycle.", "The Activity enters onPause and freezes in memory.", "Android OS crashes if orientation is unlocked."],
+        exp: "Orientation changes trigger configuration change restarts. Architecture Components (ViewModel) retain UI state across Activity recreation.",
+        hint: "Destroyed and recreated; ViewModel preserves data.",
+        tip: "Use ViewModel and SavedStateHandle to retain user input across configuration changes.",
+      },
+      {
+        title: "Jetpack Compose Declarative Recomposition",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In Jetpack Compose, what triggers Recomposition of a Composable function?`,
+        correct: "When a State object read by the composable changes its value.",
+        distractors: ["Every time an Android system timer ticks (60Hz).", "When the device battery percentage changes.", "Only when invalidate() is called manually on Canvas."],
+        exp: "Compose tracks read states. When a State<T> mutates, only the composables that observe that state are intelligently recomposed.",
+        hint: "State mutations trigger recomposition of observing composables.",
+        tip: "Use 'remember { mutableStateOf(...) }' to preserve state across recompositions.",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // Business Analytics
+  if (norm.includes("business-analytics") || norm.includes("analytics")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "Cohort Analysis & Retention",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In product business analytics, what is the core purpose of Cohort Analysis?`,
+        correct: "Tracks behavioral metrics (like retention or LTV) of groups of users who share a common starting date or characteristic over time.",
+        distractors: ["Computes real-time server CPU utilization.", "Calculates exact employee salary tax deductions.", "Replaces database indexing with machine learning."],
+        exp: "Cohorts group users by acquisition period (e.g. January cohort), revealing whether product updates improve retention over user lifetimes.",
+        hint: "Grouped by common characteristic/time to evaluate retention over life.",
+        tip: "Cohort retention curves that flatten indicate product-market fit.",
+      },
+      {
+        title: "Star Schema vs Snowflake Schema",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In data warehousing, what distinguishes a Star Schema from a Snowflake Schema?`,
+        correct: "Star schema denormalizes dimension tables directly around a central fact table; Snowflake normalizes dimensions into sub-dimension tables.",
+        distractors: ["Star schema cannot store numerical metrics.", "Snowflake schema does not use primary keys.", "Star schema requires NoSQL document storage."],
+        exp: "Star schemas optimize query performance with fewer table joins. Snowflake schemas minimize data redundancy by normalizing dimension hierarchies.",
+        hint: "Star = denormalized dimensions; Snowflake = normalized dimensions.",
+        tip: "Modern cloud warehouses (BigQuery/Snowflake) prefer denormalized star schemas for join efficiency.",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // Finance, Stock Market & Investment Banking
+  if (norm.includes("finance") || norm.includes("stock") || norm.includes("investment")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "Discounted Cash Flow (DCF) Valuation",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In DCF valuation, what discount rate is used to discount Free Cash Flow to Firm (FCFF)?`,
+        correct: "Weighted Average Cost of Capital (WACC), reflecting the blended cost of debt and equity financing.",
+        distractors: ["Federal Reserve risk-free rate only.", "Cost of Equity (CAPM) alone without debt weighting.", "Annual inflation rate (CPI)."],
+        exp: "FCFF represents cash available to all capital providers (debt and equity), so it must be discounted using the blended corporate WACC.",
+        hint: "Blended cost of debt and equity = WACC.",
+        tip: "Use Cost of Equity when discounting Free Cash Flow to Equity (FCFE).",
+      },
+      {
+        title: "Option Greeks & Delta",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In options trading and financial derivatives, what does the option 'Delta' represent?`,
+        correct: "The rate of change of the option price relative to a $1 change in the underlying asset's price.",
+        distractors: ["The rate of time decay per trading day (Theta).", "The sensitivity of option price to changes in volatility (Vega).", "The maximum potential financial loss."],
+        exp: "Delta ranges from 0 to 1 for call options and 0 to -1 for put options. It also approximates the probability of expiring in-the-money.",
+        hint: "Price change per $1 move in underlying asset.",
+        tip: "At-the-money options typically have a Delta close to 0.50.",
+      },
+      {
+        title: "Working Capital Ratio & Solvency",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] How is Net Working Capital calculated on a company's balance sheet?`,
+        correct: "Current Assets minus Current Liabilities.",
+        distractors: ["Total Assets minus Total Liabilities.", "Operating Revenue minus Cost of Goods Sold.", "Gross Profit minus Capital Expenditures."],
+        exp: "Net Working Capital measures short-term liquidity and operational operational solvency over a 12-month horizon.",
+        hint: "Current Assets - Current Liabilities.",
+        tip: "A current ratio (Current Assets / Current Liabilities) between 1.5 and 2.0 indicates healthy liquidity.",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // Marketing & HRM
+  if (norm.includes("marketing") || norm.includes("hrm")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "CAC to LTV Ratio Health",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In digital business models, what is considered an ideal Customer Lifetime Value (LTV) to Customer Acquisition Cost (CAC) ratio?`,
+        correct: "3:1 (LTV is 3x greater than CAC), indicating healthy profitability and capital efficiency.",
+        distractors: ["1:1 (break-even per acquisition).", "0.5:1 (spending 2x customer lifetime value).", "100:1 (no marketing expenditures)."],
+        exp: "A 3:1 ratio balances strong return on acquisition spend with adequate reinvestment in marketing growth channels.",
+        hint: "Ideal benchmark is 3:1.",
+        tip: "LTV:CAC below 1.0 means the business loses money on every acquired customer.",
+      },
+      {
+        title: "OKR Framework in Performance Management",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In Human Resource Management, what defines the OKR (Objectives and Key Results) methodology?`,
+        correct: "Qualitative, ambitious Objectives paired with 3-5 quantitative, measurable Key Results tracked across cycles.",
+        distractors: ["Annual subjective manager feedback rating from 1 to 5.", "Strict salary deduction penalties for missed tasks.", "Mandatory daily timesheet logging software."],
+        exp: "OKRs connect team goals to organizational strategy with transparent, measurable outcomes (e.g. 'Increase checkout conversion from 2% to 3.5%').",
+        hint: "Ambitious Objectives + Measurable Key Results.",
+        tip: "OKRs should be decoupled from direct compensation to encourage ambitious target setting.",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // Product Management & Supply Chain & Startup
+  if (norm.includes("product") || norm.includes("supply-chain") || norm.includes("startup")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "RICE Prioritization Framework",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In modern Product Management, how is the RICE score calculated to prioritize roadmap initiatives?`,
+        correct: "(Reach * Impact * Confidence) / Effort",
+        distractors: ["(Revenue * Innovation) / Cost", "Risk + Impact + Cost + Execution", "(Reach + Speed) * Profit"],
+        exp: "RICE standardizes feature evaluation by factoring user reach, business impact, estimation confidence, and developer effort.",
+        hint: "(Reach * Impact * Confidence) / Effort.",
+        tip: "Confidence score helps discount features backed by assumption rather than empirical data.",
+      },
+      {
+        title: "The Bullwhip Effect in Supply Chains",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] What causes the Bullwhip Effect in supply chain operations?`,
+        correct: "Small fluctuations in consumer retail demand cause progressively amplified order variability upstream to wholesalers and manufacturers.",
+        distractors: ["Physical conveyor belt breakdowns in shipping warehouses.", "Seasonal weather events stopping shipping vessels.", "Currency exchange rate fluctuations in global trade."],
+        exp: "Lack of visibility, order batching, and safety stock buffering at each supply chain layer create severe upstream demand distortion.",
+        hint: "Small retail demand shifts cause amplified upstream swings.",
+        tip: "Information sharing and Vendor-Managed Inventory (VMI) dampen the bullwhip effect.",
+      },
+      {
+        title: "Startup Runway & Burn Rate",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] If a startup has $1,200,000 in bank balance and net monthly burn rate of $75,000, what is its remaining runway?`,
+        correct: "16 months (Runway = Total Cash / Net Monthly Burn).",
+        distractors: ["8 months", "12 months", "24 months"],
+        exp: "Runway calculation ($1,200,000 / $75,000 = 16 months) dictates how long operations can sustain before needing additional funding or reaching cash-flow positivity.",
+        hint: "Cash / Net monthly burn rate.",
+        tip: "Start fundraising at least 6 months before runway expires.",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // Mechanical, Civil & Automotive (AutoCAD, HEV, Car Designing)
+  if (norm.includes("autocad") || norm.includes("hev") || norm.includes("car") || norm.includes("civil") || norm.includes("mech")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "Geometric Dimensioning & Tolerancing (GD&T)",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In mechanical manufacturing drawings, what does the True Position tolerance symbol specify?`,
+        correct: "Defines a theoretical exact zone within which the center, axis, or center plane of a feature is permitted to vary from its datum.",
+        distractors: ["The maximum allowable roughness of a machined surface.", "The hardness rating of the metal alloy.", "The tensile strength limit before plastic deformation."],
+        exp: "True position controls location and orientation relative to datums, providing cylindrical tolerance zones that maximize manufacturing acceptance rates.",
+        hint: "Exact theoretical location tolerance zone.",
+        tip: "GD&T avoids tight coordinate tolerances and facilitates interchangeable parts.",
+      },
+      {
+        title: "HEV Powertrain & Regenerative Braking",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] How does an electric vehicle (EV/HEV) capture kinetic energy during deceleration?`,
+        correct: "The electric traction motor operates as a generator, converting vehicle momentum into electrical energy that recharges the traction battery pack.",
+        distractors: ["Friction brake pads compress piezoelectric quartz crystals.", "Exhaust turbines harvest hot gas pressure during braking.", "The transmission shifts into high gear to accelerate the flywheel."],
+        exp: "Regenerative braking switches the inverter firing sequence so counter-electromotive force slows wheels while rectifying current into the high-voltage pack.",
+        hint: "Electric motor functions as a generator during braking.",
+        tip: "Regenerative braking reduces mechanical brake pad wear by over 70%.",
+      },
+      {
+        title: "Automotive Aerodynamics & Drag Force",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In automotive design, how does aerodynamic drag force (F_drag) scale with vehicle forward speed (v)?`,
+        correct: "Quadratic scaling: drag force is proportional to the square of vehicle velocity (v^2).",
+        distractors: ["Linear scaling: drag force doubles when speed doubles.", "Logarithmic scaling: drag plateaus above 60 mph.", "Independent of speed: depends only on vehicle weight."],
+        exp: "Drag equation F = 0.5 * rho * v^2 * Cd * A. Because speed is squared, doubling vehicle speed quadruples aerodynamic drag force and octuples power required.",
+        hint: "Drag force scales with v^2; power scales with v^3.",
+        tip: "Streamlined shapes (low Cd) significantly extend highway range for electric vehicles.",
+      },
+      {
+        title: "Reinforced Concrete & Bar Bending Schedule",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In civil structural engineering, why is steel reinforcement embedded in the bottom zone of a simply supported concrete beam?`,
+        correct: "Concrete has high compressive strength but very weak tensile strength; steel handles tensile stresses developed at the bottom fibers.",
+        distractors: ["Steel reduces the self-weight of the concrete beam.", "Steel prevents moisture from entering the aggregate.", "Concrete expands 10x more than steel under thermal loads."],
+        exp: "A simply supported beam experiences compression on top and tension on bottom. Rebar provides ductile tensile capacity to prevent brittle failure.",
+        hint: "Concrete resists compression; steel resists tension.",
+        tip: "Concrete and mild steel share nearly identical thermal expansion coefficients (~12 x 10^-6 / °C).",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // Healthcare, Pharma & BioSciences
+  if (norm.includes("psychology") || norm.includes("nano") || norm.includes("medical") || norm.includes("clinical") || norm.includes("genetic")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "CRISPR-Cas9 Mechanism & PAM Sequence",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In genetic engineering, what is the prerequisite for the Cas9 endonuclease to bind and cleave target double-stranded DNA?`,
+        correct: "Presence of a short Protospacer Adjacent Motif (PAM) sequence adjacent to the target guide RNA binding site.",
+        distractors: ["A reverse transcriptase enzyme bound to the ribosome.", "Complete absence of ATP in the nucleus.", "Target DNA must be fully methylated."],
+        exp: "Cas9 interrogates DNA by first recognizing the PAM sequence (typically 5'-NGG-3' for SpCas9) before unwinding DNA and pairing with the guide RNA.",
+        hint: "PAM sequence recognition is required for Cas9 cleavage.",
+        tip: "Engineered Cas variants target alternative PAM sequences to expand genome editing versatility.",
+      },
+      {
+        title: "Clinical Trial Phases & Objectives",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] What is the primary objective of Phase I human clinical drug trials?`,
+        correct: "Evaluate safety, tolerability, pharmacokinetics, and determine maximum tolerated dose (MTD) in a small group of healthy volunteers.",
+        distractors: ["Compare long-term efficacy against existing market-standard drugs in thousands of patients (Phase III).", "Post-marketing surveillance and rare adverse event reporting (Phase IV).", "Synthesize chemical compounds in laboratory test tubes."],
+        exp: "Phase I tests safety/dose (20-100 participants), Phase II evaluates preliminary efficacy and side effects, Phase III confirms therapeutic benefit at scale.",
+        hint: "Phase I = Safety, dosage, and pharmacokinetics.",
+        tip: "Adherence to ICH-GCP guidelines is mandatory across all clinical phases.",
+      },
+      {
+        title: "Nanoparticle Targeted Drug Delivery (EPR Effect)",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In nanomedicine and oncology, what is the Enhanced Permeability and Retention (EPR) effect?`,
+        correct: "Nanoparticles preferentially accumulate in tumor tissues due to leaky, hyperpermeable tumor vasculature and defective lymphatic drainage.",
+        distractors: ["Nanoparticles dissolve exclusively in stomach hydrochloric acid.", "Magnetic fields pull nanoparticles across healthy cell membranes.", "Nanoparticles enter cells by destroying lipid bilayers irreversibly."],
+        exp: "Rapid tumor angiogenesis creates fenestrated blood vessels allowing 20-200 nm nanocarriers to extravasate into tumor parenchyma passively.",
+        hint: "Leaky tumor blood vessels + poor lymphatic drainage = passive accumulation.",
+        tip: "Pegylation of nanoparticles extends blood circulation half-life by evading reticuloendothelial clearance.",
+      },
+      {
+        title: "Cognitive Distortions in Cognitive Behavioral Therapy",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In psychological assessment and CBT, what characterizes the cognitive distortion known as 'Catastrophizing'?`,
+        correct: "Anticipating the absolute worst-case scenario and viewing it as unbearable, despite objective evidence suggesting it is unlikely.",
+        distractors: ["Attributing success entirely to one's own innate talent.", "Remembering past events with selective positive nostalgia.", "Refusing to accept negative emotional states as valid."],
+        exp: "Catastrophizing exaggerates potential negative outcomes, fueling anxiety and depressive spirals. Cognitive restructuring reframes these automatic thoughts.",
+        hint: "Predicting worst-case scenarios without proportional evidence.",
+        tip: "Decatastrophizing exercises ask: 'What is the most likely realistic outcome?'",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
+  // Design & Creative (UI/UX & Graphic Design)
+  if (norm.includes("ui-ux") || norm.includes("ui/ux") || norm.includes("graphic")) {
+    const concepts: ConceptDef[] = [
+      {
+        title: "Fitts's Law in Interface Usability",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] What does Fitts's Law predict about user interaction with on-screen target elements?`,
+        correct: "The time required to rapidly move to a target is a function of the ratio between distance to the target and width of the target.",
+        distractors: ["Users can hold at most 7 items in short-term memory (Miller's Law).", "Decision time increases logarithmically with number of choices (Hick's Law).", "Users perceive objects close together as belonging to the same group."],
+        exp: "Fitts's law dictates that primary call-to-action buttons should be larger and closer to the user's cursor/thumb reach zone.",
+        hint: "Target size and distance dictate acquisition time.",
+        tip: "Screen corners and edges have infinite theoretical width because cursor cannot overshoot them.",
+      },
+      {
+        title: "WCAG Accessibility Color Contrast",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] According to Web Content Accessibility Guidelines (WCAG 2.1 AA), what is the minimum contrast ratio required for standard body text?`,
+        correct: "4.5:1 against its background (3:1 for large text >= 18pt or bold >= 14pt).",
+        distractors: ["2.0:1 for all text elements.", "7:1 for all text (this is AAA level).", "10:1 strictly across dark mode interfaces."],
+        exp: "WCAG AA compliance mandates at least 4.5:1 contrast for normal text to ensure readability for users with moderate visual impairments.",
+        hint: "4.5:1 for standard text; 3:1 for large text.",
+        tip: "Never rely on color alone to convey error states or interactive affordances.",
+      },
+      {
+        title: "Typographic Hierarchy & Visual Scanning",
+        question: `[${targetName} • Test ${testNumber} • Q${index}] In digital product design, what is the primary benefit of established typographic scales (Type Scale)?`,
+        correct: "Creates distinct visual hierarchy that guides scanning eyes from primary titles to metadata efficiently.",
+        distractors: ["Minimizes the download size of TTF font files.", "Prevents CSS layout reflows on mobile devices.", "Enforces monochromatic color palettes across all screens."],
+        exp: "A harmonic type scale (e.g., Major Third 1.25 or Golden Ratio 1.618) establishes intuitive relationships between headers, subheads, and body copy.",
+        hint: "Harmonic font scale guides scannability and visual flow.",
+        tip: "Maintain high line-height (1.5 - 1.6) on body text to maximize reading comfort.",
+      },
+    ];
+    return concepts[(index + testNumber) % concepts.length];
+  }
+
   // General & Company Assessment Topics
   const genericConcepts: ConceptDef[] = [
     {
@@ -538,10 +971,10 @@ export function generateTestQuestionsWithAntiRepetition(
         difficulty !== "Mixed"
           ? difficulty
           : i % 3 === 1
-          ? "Easy"
-          : i % 3 === 2
-          ? "Medium"
-          : "Hard";
+            ? "Easy"
+            : i % 3 === 2
+              ? "Medium"
+              : "Hard";
 
       const def = getConceptPoolForDomain(targetName, testNumber, i + attempt * 7);
 
@@ -594,10 +1027,10 @@ export function generateTestQuestionsWithAntiRepetition(
         difficulty !== "Mixed"
           ? difficulty
           : i % 3 === 1
-          ? "Easy"
-          : i % 3 === 2
-          ? "Medium"
-          : "Hard";
+            ? "Easy"
+            : i % 3 === 2
+              ? "Medium"
+              : "Hard";
       const def = getConceptPoolForDomain(targetName, testNumber, i + (testNumber - 1) * 5);
       const qStatement = `[${targetName} • Test ${testNumber} • Q${i}] ${def.question.replace(/^\[.*?\]\s*/, "")} (Variant ${testNumber}.${i})`;
       const opts = shuffleWithOptions(def.correct, def.distractors, correctIdx);
@@ -629,81 +1062,97 @@ export function generateTestQuestionsWithAntiRepetition(
 // ─── Initialize Default Tests (Test 1 for all Tech & Companies) ─────────────
 
 export function initializeTestStore(): void {
-  // Clear any partial data
+  // Clear any partial in-memory state
   testMap.clear();
   globalSeenPerTarget.clear();
 
-  if (loadTestsFromDisk() && testMap.size >= 52) {
-    console.log(`[MCQ] Loaded ${testMap.size} dynamic tests from disk.`);
-    return;
-  }
+  const loadedFromDisk = loadTestsFromDisk();
+  let newTestsAdded = false;
 
-  console.log("[MCQ] Initializing default Test 1 for all 36 Technologies and 16 Companies...");
+  console.log(`[MCQ] Syncing Test 1 across all ${DEFAULT_TECHNOLOGIES.length} Technologies and ${DEFAULT_COMPANIES.length} Companies (Current in-memory: ${testMap.size})...`);
 
-  // Seed Test 1 for all 36 Technologies
+  // Seed Test 1 for any missing Technology
   for (const tech of DEFAULT_TECHNOLOGIES) {
     const testId = `test-${tech.id}-1`;
-    const questions = generateTestQuestionsWithAntiRepetition(
-      tech.id,
-      "technology",
-      tech.name,
-      1,
-      15,
-      tech.difficulty === "Easy" ? "Easy" : tech.difficulty === "Hard" ? "Hard" : "Medium"
+    const existingForTech = Array.from(testMap.values()).some(
+      (t) => t.targetId.toLowerCase() === tech.id.toLowerCase() || t.targetName.toLowerCase() === tech.name.toLowerCase()
     );
 
-    const testObj: MCQTest = {
-      id: testId,
-      targetId: tech.id,
-      targetType: "technology",
-      targetName: tech.name,
-      testNumber: 1,
-      title: `${tech.name} - Test 1: Core Fundamentals & Patterns`,
-      description: `Comprehensive technical evaluation for ${tech.name} covering runtime mechanics, design principles, and problem solving.`,
-      difficulty: tech.difficulty,
-      questionCount: questions.length,
-      durationMinutes: 30,
-      isPublished: true,
-      createdAt: new Date().toISOString(),
-      questions,
-    };
+    if (!existingForTech || !testMap.has(testId)) {
+      const questions = generateTestQuestionsWithAntiRepetition(
+        tech.id,
+        "technology",
+        tech.name,
+        1,
+        15,
+        tech.difficulty === "Easy" ? "Easy" : tech.difficulty === "Hard" ? "Hard" : "Medium"
+      );
 
-    testMap.set(testId, testObj);
+      const testObj: MCQTest = {
+        id: testId,
+        targetId: tech.id,
+        targetType: "technology",
+        targetName: tech.name,
+        testNumber: 1,
+        title: `${tech.name} - Test 1: Core Fundamentals & Patterns`,
+        description: `Comprehensive technical evaluation for ${tech.name} covering runtime mechanics, design principles, and problem solving.`,
+        difficulty: tech.difficulty,
+        questionCount: questions.length,
+        durationMinutes: 30,
+        isPublished: true,
+        createdAt: new Date().toISOString(),
+        questions,
+      };
+
+      testMap.set(testId, testObj);
+      newTestsAdded = true;
+    }
   }
 
-  // Seed Test 1 for all 16 Companies
+  // Seed Test 1 for any missing Company
   for (const comp of DEFAULT_COMPANIES) {
     const testId = `test-company-${comp.id}-1`;
-    const questions = generateTestQuestionsWithAntiRepetition(
-      comp.id,
-      "company",
-      comp.name,
-      1,
-      15,
-      comp.difficulty
+    const existingForComp = Array.from(testMap.values()).some(
+      (t) => t.targetId.toLowerCase() === comp.id.toLowerCase() || t.targetName.toLowerCase() === comp.name.toLowerCase()
     );
 
-    const testObj: MCQTest = {
-      id: testId,
-      targetId: comp.id,
-      targetType: "company",
-      targetName: comp.name,
-      testNumber: 1,
-      title: `${comp.name} - Test 1: OA Screening Assessment`,
-      description: `Official technical screening test pattern for ${comp.name} campus and off-campus recruitment drives.`,
-      difficulty: comp.difficulty,
-      questionCount: questions.length,
-      durationMinutes: 30,
-      isPublished: true,
-      createdAt: new Date().toISOString(),
-      questions,
-    };
+    if (!existingForComp || !testMap.has(testId)) {
+      const questions = generateTestQuestionsWithAntiRepetition(
+        comp.id,
+        "company",
+        comp.name,
+        1,
+        15,
+        comp.difficulty
+      );
 
-    testMap.set(testId, testObj);
+      const testObj: MCQTest = {
+        id: testId,
+        targetId: comp.id,
+        targetType: "company",
+        targetName: comp.name,
+        testNumber: 1,
+        title: `${comp.name} - Test 1: OA Screening Assessment`,
+        description: `Official technical screening test pattern for ${comp.name} campus and off-campus recruitment drives.`,
+        difficulty: comp.difficulty,
+        questionCount: questions.length,
+        durationMinutes: 30,
+        isPublished: true,
+        createdAt: new Date().toISOString(),
+        questions,
+      };
+
+      testMap.set(testId, testObj);
+      newTestsAdded = true;
+    }
   }
 
-  saveTestsToDisk();
-  console.log(`[MCQ] Successfully seeded ${testMap.size} tests across all technologies & companies.`);
+  if (newTestsAdded || !loadedFromDisk) {
+    saveTestsToDisk();
+    console.log(`[MCQ] Saved updated test store with ${testMap.size} tests across all technologies & companies.`);
+  } else {
+    console.log(`[MCQ] All ${testMap.size} tests already in sync with persistent store.`);
+  }
 }
 
 // Auto-run initialization
@@ -942,7 +1391,7 @@ export async function generateAITestWithAntiRepetition(input: {
   // Collect ALL existing question texts for better deduplication
   const existingQuestionTexts = new Set<string>();
   const existingConceptSnippets: string[] = [];
-  
+
   for (const test of existingTests) {
     for (const q of test.questions) {
       // Store full question text for exact matching
@@ -1054,7 +1503,7 @@ Return ONLY a valid JSON array of question objects:
       console.log(`[MCQ] Dropped ${rejected.length} structurally invalid AI questions`);
     }
     uniqueParsed = sanitized;
-    
+
     questions = uniqueParsed.map((item, idx) => ({
       id: `ai-${input.targetId}-t${nextTestNum}-q${idx + 1}-${Date.now()}`,
       question: item.question || `Technical Question ${idx + 1}`,
@@ -1072,7 +1521,7 @@ Return ONLY a valid JSON array of question objects:
       estimatedTime: item.estimatedTime || "45 sec",
       interviewTip: item.interviewTip || "Focus on edge cases and standard library internals.",
     }));
-    
+
     // If we filtered too many duplicates, generate fallback questions to reach the count
     if (questions.length < count) {
       console.log(`[MCQ] Only ${questions.length}/${count} unique questions from AI. Generating ${count - questions.length} fallback questions.`);
@@ -1086,7 +1535,7 @@ Return ONLY a valid JSON array of question objects:
       );
       questions.push(...fallbackQuestions);
     }
-    
+
   } catch (err) {
     console.warn("[MCQ] AI generation fallback to algorithmic anti-repetition generator:", err);
     questions = generateTestQuestionsWithAntiRepetition(
@@ -1109,6 +1558,107 @@ Return ONLY a valid JSON array of question objects:
     questionCount: questions.length,
     questions,
   });
+}
+
+export async function batchAddTestsToOneEach(input: {
+  targetType?: "technology" | "company" | "all";
+  targets?: Array<{ id: string; name: string; type: "technology" | "company" }>;
+  questionCount?: number;
+  difficulty?: "Easy" | "Medium" | "Hard" | "Mixed";
+  durationMinutes?: number;
+}): Promise<{
+  createdTests: MCQTest[];
+  totalCreated: number;
+  summary: Array<{ targetId: string; targetName: string; testNumber: number; testId: string; questionCount: number }>;
+}> {
+  let targetList: Array<{ id: string; name: string; type: "technology" | "company" }> = [];
+
+  if (input.targets && Array.isArray(input.targets) && input.targets.length > 0) {
+    targetList = input.targets;
+  } else {
+    // Build list of unique targets from existing testMap, DEFAULT_TECHNOLOGIES, and DEFAULT_COMPANIES
+    const targetMapByKey = new Map<string, { id: string; name: string; type: "technology" | "company" }>();
+
+    if (!input.targetType || input.targetType === "all" || input.targetType === "technology") {
+      for (const t of DEFAULT_TECHNOLOGIES) {
+        targetMapByKey.set(`technology:${t.id}`, { id: t.id, name: t.name, type: "technology" });
+      }
+    }
+
+    if (!input.targetType || input.targetType === "all" || input.targetType === "company") {
+      for (const c of DEFAULT_COMPANIES) {
+        targetMapByKey.set(`company:${c.id}`, { id: c.id, name: c.name, type: "company" });
+      }
+    }
+
+    for (const test of testMap.values()) {
+      if (input.targetType && input.targetType !== "all" && test.targetType !== input.targetType) {
+        continue;
+      }
+      const key = `${test.targetType}:${test.targetId}`;
+      if (!targetMapByKey.has(key)) {
+        targetMapByKey.set(key, { id: test.targetId, name: test.targetName, type: test.targetType });
+      }
+    }
+
+    targetList = Array.from(targetMapByKey.values());
+  }
+
+  const count = input.questionCount || 15;
+  const diff = input.difficulty || "Medium";
+  const duration = input.durationMinutes || 20;
+
+  const createdTests: MCQTest[] = [];
+  const summary: Array<{ targetId: string; targetName: string; testNumber: number; testId: string; questionCount: number }> = [];
+
+  for (const target of targetList) {
+    const existingTests = await getTestsForTarget(target.id || target.name);
+    const nextTestNum = existingTests.length > 0 ? Math.max(...existingTests.map((t) => t.testNumber)) + 1 : 1;
+    const testId = `test-${target.id.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${nextTestNum}`;
+
+    const questions = generateTestQuestionsWithAntiRepetition(
+      target.id,
+      target.type,
+      target.name,
+      nextTestNum,
+      count,
+      diff
+    );
+
+    const newTest: MCQTest = {
+      id: testId,
+      targetId: target.id,
+      targetType: target.type,
+      targetName: target.name,
+      testNumber: nextTestNum,
+      title: `${target.name} - Test ${nextTestNum}: ${target.type === "company" ? "OA Screening Assessment" : "Advanced Assessment"}`,
+      description: `Dynamic Test ${nextTestNum} for ${target.name} with 100% unique questions.`,
+      difficulty: diff,
+      questionCount: questions.length,
+      durationMinutes: duration,
+      isPublished: true,
+      createdAt: new Date().toISOString(),
+      questions,
+    };
+
+    testMap.set(testId, newTest);
+    createdTests.push(newTest);
+    summary.push({
+      targetId: target.id,
+      targetName: target.name,
+      testNumber: nextTestNum,
+      testId: newTest.id,
+      questionCount: questions.length,
+    });
+  }
+
+  saveTestsToDisk();
+
+  return {
+    createdTests,
+    totalCreated: createdTests.length,
+    summary,
+  };
 }
 
 export async function updateTest(testId: string, updates: Partial<MCQTest>): Promise<MCQTest | null> {

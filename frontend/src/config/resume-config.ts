@@ -12,11 +12,30 @@ export const COMPANIES = [
 ];
 
 export const PROFESSIONS = [
-  "Software Engineer", "ML Engineer", "Data Scientist", "Full Stack Developer",
-  "Frontend Developer", "Backend Developer", "DevOps Engineer", "Cloud Engineer",
-  "AI Engineer", "Product Manager", "UI/UX Designer", "Data Analyst", "SDE",
-  "SRE", "Systems Engineer", "Research Scientist", "Mobile Developer",
-  "Cybersecurity Engineer", "QA Engineer", "Other",
+  // Tech & Software
+  "Software Engineer", "Full Stack Developer", "Frontend Developer", "Backend Developer",
+  "Mobile App Developer (Android/iOS)", "DevOps Engineer", "Cloud Engineer", "AI/ML Engineer",
+  "Data Scientist", "Data Analyst", "Business Analytics Specialist", "Cybersecurity Engineer",
+  "QA Engineer", "Systems Engineer", "Research Scientist", "Product Manager",
+
+  // Core Engineering & ECE
+  "Embedded Systems Engineer", "VLSI Design Engineer", "Robotics & Automation Engineer",
+  "Drone Systems Engineer", "IoT & Hardware Specialist", "Mechanical Design Engineer",
+  "CAD/CAM Engineer", "EV Powertrain Engineer", "Automotive Designer",
+  "Civil Project Engineer", "Structural BIM Engineer",
+
+  // Management & Finance
+  "Investment Banking Analyst", "Financial Analyst", "Equity Research & Stock Trader",
+  "Operations & Supply Chain Manager", "Digital Marketing Specialist",
+  "HR & Talent Acquisition Manager", "Startup Founder & Entrepreneur",
+
+  // Healthcare & Pharma
+  "Clinical Research Associate (CRA)", "Medical Coding Specialist (ICD-10)",
+  "Nanotechnology Researcher", "Genetic & Bio-Engineer", "Clinical Psychologist",
+
+  // Design & Creative
+  "UI/UX Designer", "Product Designer", "Graphic & Visual Brand Designer",
+  "Other",
 ];
 
 export const CAREER_LEVELS = [
@@ -25,7 +44,16 @@ export const CAREER_LEVELS = [
 ];
 
 export const RESUME_STYLES = [
-  "ATS Modern", "ATS Professional", "ATS Minimal", "ATS Developer", "ATS Student",
+  "ATS Modern",
+  "ATS Professional",
+  "ATS Minimal",
+  "ATS Developer",
+  "ATS Student",
+  "ATS Engineering & CAD",
+  "ATS Finance & Banking",
+  "ATS Healthcare & Clinical",
+  "ATS Creative & UI/UX",
+  "ATS Management & Executive",
 ];
 
 export const CHAT_SUGGESTIONS = [
@@ -37,7 +65,10 @@ export const COVER_LETTER_MODES = [
   "Software Engineer", "Machine Learning Engineer", "Data Scientist",
   "Frontend Developer", "Backend Developer", "Full Stack Developer",
   "DevOps Engineer", "Cloud Engineer", "AI Engineer", "Product Manager",
-  "Data Analyst", "UX Designer", "Mobile Developer", "Cybersecurity Analyst",
+  "Data Analyst", "UI/UX Designer", "Mobile Developer", "Cybersecurity Analyst",
+  "Mechanical Engineer", "Civil Project Engineer", "Robotics Engineer",
+  "Investment Banker", "Financial Analyst", "Digital Marketing Specialist",
+  "Clinical Research Associate", "Medical Coder", "Graphic Designer",
 ];
 
 export const COVER_LETTER_TONES = [
@@ -52,8 +83,24 @@ export const COVER_LETTER_TYPES = [
 ];
 
 export const ATS_ROLES = [
-  "General ATS", "Software Engineer", "Data Analyst", "Data Scientist",
-  "Backend Developer", "Frontend Developer", "Full Stack Developer", "AI Engineer",
+  "General ATS",
+  "Software Engineer",
+  "Data Analyst",
+  "Data Scientist",
+  "Backend Developer",
+  "Frontend Developer",
+  "Full Stack Developer",
+  "AI Engineer",
+  "Cybersecurity Analyst",
+  "Mechanical Engineer",
+  "Civil Project Engineer",
+  "Robotics Engineer",
+  "Investment Banking Analyst",
+  "Financial Analyst",
+  "Product Manager",
+  "UI/UX Designer",
+  "Clinical Research Associate",
+  "Medical Coder",
 ];
 
 export const ATS_ROLE_ICONS: Record<string, string> = {
@@ -65,13 +112,25 @@ export const ATS_ROLE_ICONS: Record<string, string> = {
   "Frontend Developer": "\u{1F3A8}",
   "Full Stack Developer": "\u{1F680}",
   "AI Engineer": "\u{1F916}",
+  "Cybersecurity Analyst": "\u{1F6E1}\u{FE0F}",
+  "Mechanical Engineer": "\u{1F527}",
+  "Civil Project Engineer": "\u{1F3D7}\u{FE0F}",
+  "Robotics Engineer": "\u{1F916}",
+  "Investment Banking Analyst": "\u{1F4BC}",
+  "Financial Analyst": "\u{1F4B0}",
+  "Product Manager": "\u{1F4E6}",
+  "UI/UX Designer": "\u{2728}",
+  "Clinical Research Associate": "\u{1F9EA}",
+  "Medical Coder": "\u{1FA7A}",
 };
 
 export const CAREER_TARGET_ROLES = [
   "Software Engineer", "Backend Developer", "Frontend Developer",
   "Full Stack Developer", "AI Engineer", "Machine Learning Engineer",
   "Data Scientist", "Data Analyst", "Cloud Engineer", "DevOps Engineer",
-  "QA Engineer", "Cybersecurity Engineer", "Custom Goal",
+  "QA Engineer", "Cybersecurity Engineer", "Mechanical Engineer",
+  "Civil Engineer", "Robotics Engineer", "Financial Analyst",
+  "Investment Banker", "Product Manager", "UI/UX Designer", "Custom Goal",
 ];
 
 export const CAREER_TIMELINES = [

@@ -1174,11 +1174,93 @@ function ResumePreviewTemplate({ personalInfo, summary, education, experience, p
   const isDeveloper = template.includes("Developer");
   const isStudent = template.includes("Student");
   const isProfessional = template.includes("Professional");
+  const isEngineering = template.includes("Engineering") || template.includes("CAD");
+  const isFinance = template.includes("Finance") || template.includes("Banking");
+  const isHealthcare = template.includes("Healthcare") || template.includes("Clinical");
+  const isCreative = template.includes("Creative") || template.includes("UI/UX");
+  const isExecutive = template.includes("Management") || template.includes("Executive");
 
-  const accentColor = isDeveloper ? "#d97706" : isStudent ? "#6366f1" : isProfessional ? "#1e40af" : "#1e293b";
-  const sectionTitleColor = isDeveloper ? "#92400e" : isStudent ? "#4338ca" : isProfessional ? "#1e3a8a" : "#111827";
-  const headerBg = isMinimal ? "transparent" : isDeveloper ? "rgba(245,158,11,0.04)" : isStudent ? "rgba(99,102,241,0.04)" : isProfessional ? "rgba(30,64,175,0.04)" : "transparent";
-  const dividerColor = isDeveloper ? "rgba(217,119,6,0.25)" : isStudent ? "rgba(99,102,241,0.25)" : isProfessional ? "rgba(30,64,175,0.2)" : "#e5e7eb";
+  const accentColor = isDeveloper
+    ? "#d97706"
+    : isStudent
+      ? "#6366f1"
+      : isProfessional
+        ? "#1e40af"
+        : isEngineering
+          ? "#0284c7"
+          : isFinance
+            ? "#0f766e"
+            : isHealthcare
+              ? "#059669"
+              : isCreative
+                ? "#7c3aed"
+                : isExecutive
+                  ? "#b45309"
+                  : "#1e293b";
+
+  const sectionTitleColor = isDeveloper
+    ? "#92400e"
+    : isStudent
+      ? "#4338ca"
+      : isProfessional
+        ? "#1e3a8a"
+        : isEngineering
+          ? "#0369a1"
+          : isFinance
+            ? "#115e59"
+            : isHealthcare
+              ? "#047857"
+              : isCreative
+                ? "#6d28d9"
+                : isExecutive
+                  ? "#92400e"
+                  : "#111827";
+
+  const headerBg = isMinimal
+    ? "transparent"
+    : isDeveloper
+      ? "rgba(245,158,11,0.04)"
+      : isStudent
+        ? "rgba(99,102,241,0.04)"
+        : isProfessional
+          ? "rgba(30,64,175,0.04)"
+          : isEngineering
+            ? "rgba(2,132,199,0.04)"
+            : isFinance
+              ? "rgba(15,118,110,0.04)"
+              : isHealthcare
+                ? "rgba(5,150,105,0.04)"
+                : isCreative
+                  ? "rgba(124,58,237,0.04)"
+                  : isExecutive
+                    ? "rgba(180,83,9,0.04)"
+                    : "transparent";
+
+  const dividerColor = isDeveloper
+    ? "rgba(217,119,6,0.25)"
+    : isStudent
+      ? "rgba(99,102,241,0.25)"
+      : isProfessional
+        ? "rgba(30,64,175,0.2)"
+        : isEngineering
+          ? "rgba(2,132,199,0.25)"
+          : isFinance
+            ? "rgba(15,118,110,0.25)"
+            : isHealthcare
+              ? "rgba(5,150,105,0.25)"
+              : isCreative
+                ? "rgba(124,58,237,0.25)"
+                : isExecutive
+                  ? "rgba(180,83,9,0.25)"
+                  : "#e5e7eb";
+
+  const fontFamily = isProfessional || isFinance
+    ? "Georgia, 'Times New Roman', serif"
+    : isEngineering
+      ? "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, sans-serif"
+      : isCreative
+        ? "'Inter', -apple-system, sans-serif"
+        : "system-ui, sans-serif";
 
   const SectionTitle = ({ children }: { children: React.ReactNode }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
@@ -1189,7 +1271,7 @@ function ResumePreviewTemplate({ personalInfo, summary, education, experience, p
   );
 
   return (
-    <div style={{ fontSize: 10, color: "#1f2937", lineHeight: 1.5, fontFamily: isProfessional ? "Georgia, serif" : "system-ui, sans-serif" }}>
+    <div style={{ fontSize: 10, color: "#1f2937", lineHeight: 1.5, fontFamily }}>
       <div style={{ textAlign: isMinimal ? "left" : "center", padding: isMinimal ? "0 0 8px" : "8px 0", marginBottom: 8, borderBottom: isMinimal ? `1px solid ${dividerColor}` : `2px solid ${accentColor}`, background: headerBg, borderRadius: isMinimal ? 0 : 4 }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: accentColor, letterSpacing: isMinimal ? "-0.01em" : "-0.02em" }}>{personalInfo.fullName || "Candidate Name"}</div>
         <div style={{ fontSize: 9, color: "#6b7280", marginTop: 2, display: "flex", flexWrap: "wrap", justifyContent: isMinimal ? "flex-start" : "center", gap: 4 }}>
