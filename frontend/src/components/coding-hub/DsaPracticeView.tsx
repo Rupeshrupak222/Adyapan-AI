@@ -36,17 +36,44 @@ const EXECUTION_STEPS = [
   "Complete"
 ];
 
+export interface DsaProblemExample {
+  input?: string;
+  output?: string;
+  explanation?: string;
+  expectedOutput?: string;
+  rawInput?: string;
+}
+
+export interface DsaProblem {
+  id: string;
+  externalId?: string;
+  title: string;
+  category: string;
+  difficulty: string;
+  rating?: number;
+  description?: string;
+  statement?: string;
+  constraints?: string;
+  inputFormat?: string;
+  outputFormat?: string;
+  examples?: DsaProblemExample[];
+  visibleTestCases?: Array<{ input?: string; expectedOutput?: string; rawInput?: string }>;
+  source?: string;
+  tags?: string[];
+  company?: string;
+}
+
 const CODE_TEMPLATES: Record<string, string> = {
-  javascript: `// Write your JavaScript solution here\n\nfunction solve(nums, target) {\n  // Your code here\n  \n}`,
-  python: `# Write your Python solution here\n\ndef solve(nums, target):\n    # Your code here\n    pass`,
-  cpp: `// Write your C++ solution here\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    vector<int> solve(vector<int>& nums, int target) {\n        // Your code here\n        \n    }\n};`,
-  java: `// Write your Java solution here\nimport java.util.*;\n\nclass Solution {\n    public int[] solve(int[] nums, int target) {\n        // Your code here\n        \n    }\n}`
+  javascript: `// Write your JavaScript solution here\n\nfunction solve() {\n  // Process input and solve problem\n  \n}\n\nsolve();\n`,
+  python: `# Write your Python solution here\n\ndef solve():\n    # Process input and solve problem\n    pass\n\nif __name__ == "__main__":\n    solve()\n`,
+  cpp: `// Write your C++ solution here\n#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nvoid solve() {\n    // Process input and solve problem\n    \n}\n\nint main() {\n    solve();\n    return 0;\n}\n`,
+  java: `// Write your Java solution here\nimport java.util.*;\n\npublic class Solution {\n    public static void solve() {\n        // Process input and solve problem\n        \n    }\n\n    public static void main(String[] args) {\n        solve();\n    }\n}\n`
 };
 
 export function DsaPracticeView() {
   const [view, setView] = useState<"dashboard" | "problem">("dashboard");
-  const [activeProblem, setActiveProblem] = useState<Record<string, string> | null>(null);
-  const [problems, setProblems] = useState<Record<string, string>[]>([]);
+  const [activeProblem, setActiveProblem] = useState<DsaProblem | null>(null);
+  const [problems, setProblems] = useState<DsaProblem[]>([]);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState<"javascript" | "python" | "cpp" | "java">("javascript");
   const [aiReview, setAiReview] = useState<{ timeComplexity: string; spaceComplexity: string; optimizationTips: string[] } | null>(null);
@@ -89,7 +116,7 @@ export function DsaPracticeView() {
     p.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleOpenProblem = (p: Record<string, string>) => {
+  const handleOpenProblem = (p: DsaProblem) => {
     setActiveProblem(p);
     setCode(CODE_TEMPLATES[language] || CODE_TEMPLATES.javascript);
     setAiReview(null);
@@ -127,7 +154,8 @@ export function DsaPracticeView() {
     }, 600);
 
     try {
-      const res = await api.post("/dsa/run", { problemId: activeProblem?.id, code, language });
+      const sampleStdin = activeProblem?.examples?.[0]?.input || "";
+      const res = await api.post("/dsa/run", { problemId: activeProblem?.id, code, language, stdin: sampleStdin });
       clearInterval(stepInterval);
       setExecutionStep(EXECUTION_STEPS.length - 1);
       setRunOutput(res.data.output || "Code executed successfully.");
@@ -146,15 +174,16 @@ export function DsaPracticeView() {
   const submitCode = async () => {
     setLoading(true);
     setAiReview(null);
+    const problemContext = `${activeProblem?.title || ""}\n${activeProblem?.statement || activeProblem?.description || ""}`;
     try {
       const [submitRes, reviewRes] = await Promise.allSettled([
         api.post("/dsa/submit", {
           problemId: activeProblem?.id,
           code,
           language,
-          problemContext: `${activeProblem?.title || ""}\n${activeProblem?.description || ""}`
+          problemContext
         }),
-        api.post("/dsa/review", { problemId: activeProblem?.id, code })
+        api.post("/dsa/review", { problemId: activeProblem?.id, code, problemContext })
       ]);
 
       if (reviewRes.status === "fulfilled") {
@@ -239,41 +268,122 @@ export function DsaPracticeView() {
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
+            {/* Dynamic Problem Description & Details */}
             <motion.div
               variants={codingFadeUp}
               initial="hidden"
               animate="visible"
               custom={0}
-              className="text-sm text-[var(--text-secondary)] leading-relaxed space-y-4"
+              className="text-sm leading-relaxed space-y-4"
             >
-              <p>Given an array of integers <code className="px-1.5 py-0.5 bg-amber-500/10 text-amber-400 rounded text-xs font-mono">nums</code> and an integer <code className="px-1.5 py-0.5 bg-amber-500/10 text-amber-400 rounded text-xs font-mono">target</code>, return indices of the two numbers such that they add up to <code className="px-1.5 py-0.5 bg-amber-500/10 text-amber-400 rounded text-xs font-mono">target</code>.</p>
-              <p>You may assume that each input would have exactly one solution, and you may not use the same element twice.</p>
-
-              <div className="mt-4">
-                <h4 className="text-[var(--text-primary)] mb-2 font-semibold flex items-center gap-2">
-                  <BookOpen size={14} className="text-amber-500" />
-                  Example 1:
-                </h4>
-                <pre className="bg-black/30 dark:bg-black/40 p-3 rounded-xl border border-[var(--border-color)] text-xs font-mono text-emerald-400">
-                  Input: nums = [2,7,11,15], target = 9{"\n"}
-                  Output: [0,1]{"\n"}
-                  Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
-                </pre>
+              {/* Problem Description */}
+              <div className="text-[var(--text-secondary)] leading-relaxed space-y-2">
+                {renderMarkdown(
+                  activeProblem.statement || activeProblem.description || `Solve the problem: ${activeProblem.title}`,
+                  isDark
+                )}
               </div>
 
-              <div className="mt-4">
-                <h4 className="text-[var(--text-primary)] mb-2 font-semibold">Constraints:</h4>
-                <ul className="list-none space-y-1.5 text-xs">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-amber-500" />
-                    <code className="px-1.5 py-0.5 bg-white/5 rounded font-mono">2 &lt;= nums.length &lt;= 10^4</code>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-amber-500" />
-                    <code className="px-1.5 py-0.5 bg-white/5 rounded font-mono">-10^9 &lt;= nums[i] &lt;= 10^9</code>
-                  </li>
-                </ul>
-              </div>
+              {/* Input Format */}
+              {activeProblem.inputFormat && (
+                <div className="mt-4 pt-3 border-t border-[var(--border-color)]">
+                  <h4 className="text-[var(--text-primary)] mb-1.5 font-bold text-xs flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    Input Format:
+                  </h4>
+                  <div className="text-xs text-[var(--text-secondary)] bg-black/20 dark:bg-white/[0.02] p-3 rounded-xl border border-[var(--border-color)] font-mono leading-relaxed">
+                    {renderMarkdown(activeProblem.inputFormat, isDark)}
+                  </div>
+                </div>
+              )}
+
+              {/* Output Format */}
+              {activeProblem.outputFormat && (
+                <div className="mt-3">
+                  <h4 className="text-[var(--text-primary)] mb-1.5 font-bold text-xs flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                    Output Format:
+                  </h4>
+                  <div className="text-xs text-[var(--text-secondary)] bg-black/20 dark:bg-white/[0.02] p-3 rounded-xl border border-[var(--border-color)] font-mono leading-relaxed">
+                    {renderMarkdown(activeProblem.outputFormat, isDark)}
+                  </div>
+                </div>
+              )}
+
+              {/* Examples */}
+              {(() => {
+                const examplesList = (() => {
+                  if (Array.isArray(activeProblem.examples) && activeProblem.examples.length > 0) {
+                    return activeProblem.examples;
+                  }
+                  if (typeof activeProblem.examples === "string") {
+                    try {
+                      const parsed = JSON.parse(activeProblem.examples);
+                      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                    } catch {}
+                  }
+                  if (Array.isArray(activeProblem.visibleTestCases) && activeProblem.visibleTestCases.length > 0) {
+                    return activeProblem.visibleTestCases.map((tc, idx) => ({
+                      input: tc.input || tc.rawInput || "",
+                      output: tc.expectedOutput || "",
+                      explanation: `Visible test case ${idx + 1}`
+                    }));
+                  }
+                  return [];
+                })();
+
+                if (examplesList.length === 0) return null;
+
+                return (
+                  <div className="mt-4 space-y-3">
+                    <h4 className="text-[var(--text-primary)] font-semibold text-xs flex items-center gap-2">
+                      <BookOpen size={14} className="text-amber-500" />
+                      Examples:
+                    </h4>
+                    {examplesList.map((ex: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="bg-black/25 dark:bg-black/40 p-3.5 rounded-xl border border-[var(--border-color)] text-xs space-y-2 font-mono"
+                      >
+                        <div className="flex items-center justify-between text-amber-500 font-sans font-bold text-[11px]">
+                          <span>Example {idx + 1}:</span>
+                        </div>
+                        {ex.input !== undefined && ex.input !== null && (
+                          <div>
+                            <span className="text-[10px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider block mb-0.5">Input:</span>
+                            <pre className="bg-black/30 p-2 rounded-lg text-emerald-400 overflow-x-auto whitespace-pre-wrap leading-relaxed">{ex.input || "(empty)"}</pre>
+                          </div>
+                        )}
+                        {(ex.output !== undefined || ex.expectedOutput !== undefined) && (
+                          <div>
+                            <span className="text-[10px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider block mb-0.5">Output:</span>
+                            <pre className="bg-black/30 p-2 rounded-lg text-amber-400 overflow-x-auto whitespace-pre-wrap leading-relaxed">{ex.output ?? ex.expectedOutput}</pre>
+                          </div>
+                        )}
+                        {ex.explanation && (
+                          <div className="text-[11px] font-sans text-[var(--text-secondary)] pt-0.5 leading-relaxed">
+                            <span className="text-amber-500/90 font-semibold">Explanation: </span>
+                            {ex.explanation}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Constraints */}
+              {activeProblem.constraints && (
+                <div className="mt-4">
+                  <h4 className="text-[var(--text-primary)] mb-2 font-semibold text-xs flex items-center gap-1.5">
+                    <AlertCircle size={14} className="text-amber-500" />
+                    Constraints:
+                  </h4>
+                  <div className="bg-black/20 dark:bg-black/30 p-3 rounded-xl border border-[var(--border-color)] text-xs font-mono text-[var(--text-secondary)] leading-relaxed">
+                    {renderMarkdown(activeProblem.constraints, isDark)}
+                  </div>
+                </div>
+              )}
             </motion.div>
 
             {/* AI Hint Section */}

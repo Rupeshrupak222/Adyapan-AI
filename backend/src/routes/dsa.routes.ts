@@ -29,22 +29,38 @@ router.get("/problems", async (req: any, res) => {
       orderBy: { externalId: 'asc' }
     });
 
-    const problems = dsaQuestions.map((p: any) => ({
-      id: p.id,
-      externalId: p.externalId,
-      title: p.title,
-      category: p.topic || "Arrays",
-      difficulty: p.difficulty || "Easy",
-      rating: p.rating || 1000,
-      description: p.statement || `Solve the problem: ${p.title}.`,
-      statement: p.statement,
-      constraints: p.constraints,
-      inputFormat: p.inputFormat,
-      outputFormat: p.outputFormat,
-      examples: p.examples || p.visibleTestCases || [],
-      source: "Curated DSA",
-      tags: p.tagsJson || ["Core DSA"],
-    }));
+    const problems = dsaQuestions.map((p: any) => {
+      let parsedExamples: any[] = [];
+      if (Array.isArray(p.examples)) {
+        parsedExamples = p.examples;
+      } else if (typeof p.examples === "string") {
+        try { parsedExamples = JSON.parse(p.examples); } catch { parsedExamples = []; }
+      } else if (Array.isArray(p.visibleTestCases)) {
+        parsedExamples = p.visibleTestCases.map((tc: any) => ({
+          input: tc.input || tc.rawInput || "",
+          output: tc.expectedOutput || tc.output || "",
+          explanation: tc.explanation || ""
+        }));
+      }
+
+      return {
+        id: p.id,
+        externalId: p.externalId,
+        title: p.title,
+        category: p.topic || "Arrays",
+        difficulty: p.difficulty || "Easy",
+        rating: p.rating || 1000,
+        description: p.statement || `Solve the problem: ${p.title}.`,
+        statement: p.statement,
+        constraints: p.constraints,
+        inputFormat: p.inputFormat,
+        outputFormat: p.outputFormat,
+        examples: parsedExamples,
+        visibleTestCases: p.visibleTestCases || [],
+        source: p.source || "Curated DSA",
+        tags: p.tagsJson || ["Core DSA"],
+      };
+    });
 
     res.json({ success: true, problems });
   } catch (error) {
