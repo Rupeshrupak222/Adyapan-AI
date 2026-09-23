@@ -1,0 +1,2814 @@
+[
+  {
+    "number": 526,
+    "externalId": "DSA-526",
+    "slug": "daily-temperatures",
+    "title": "526. Daily Temperatures",
+    "rawTitle": "Daily Temperatures",
+    "category": "Stacks / Arrays",
+    "topic": "Stacks / Arrays",
+    "difficulty": "Intermediate",
+    "rating": 1450,
+    "tags": [
+      "monotonic-stack",
+      "arrays"
+    ],
+    "statement": "Return, for each day, how many days must pass before a warmer temperature occurs; return 0 if none exists.",
+    "constraints": "1≤N≤2×10^5; temperatures are integers from -50 to 100.",
+    "inputFormat": "N; then N temperatures.",
+    "outputFormat": "N waiting times.",
+    "complexityTarget": "O(N)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "8\n73 74 75 71 69 72 76 73",
+        "expectedOutput": "1 1 4 2 1 1 0 0",
+        "rawInput": "8\n73 74 75 71 69 72 76 73"
+      },
+      {
+        "testNumber": 2,
+        "input": "4\n30 30 30 30",
+        "expectedOutput": "0 0 0 0",
+        "rawInput": "4\n30 30 30 30"
+      },
+      {
+        "testNumber": 3,
+        "input": "5\n90 80 70 60 100",
+        "expectedOutput": "4 3 2 1 0",
+        "rawInput": "5\n90 80 70 60 100"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "6\n60 62 61 65 64 70",
+        "expectedOutput": "1 3 1 2 1 0"
+      },
+      {
+        "testNumber": 2,
+        "input": "3\n100 99 98",
+        "expectedOutput": "0 0 0"
+      }
+    ],
+    "examples": [
+      {
+        "input": "8\n73 74 75 71 69 72 76 73",
+        "output": "1 1 4 2 1 1 0 0",
+        "explanation": "For input `8\n73 74 75 71 69 72 76 73`, the computed output is `1 1 4 2 1 1 0 0`."
+      },
+      {
+        "input": "4\n30 30 30 30",
+        "output": "0 0 0 0",
+        "explanation": "For input `4\n30 30 30 30`, the computed output is `0 0 0 0`."
+      },
+      {
+        "input": "5\n90 80 70 60 100",
+        "output": "4 3 2 1 0",
+        "explanation": "For input `5\n90 80 70 60 100`, the computed output is `4 3 2 1 0`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nReturn, for each day, how many days must pass before a warmer temperature occurs; return 0 if none exists.\n\n### Input Specification\nN; then N temperatures.\n\n### Output Specification\nN waiting times.\n\n### Constraints\n`1≤N≤2×10^5; temperatures are integers from -50 to 100.`\n\n### Complexity Target\n- Time Complexity: `O(N)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N; then N temperatures.",
+      "outputSpecification": "N waiting times.",
+      "constraints": "1≤N≤2×10^5; temperatures are integers from -50 to 100.",
+      "hint_1": "Use a monotonic stack to track unresolved indices while scanning left to right. For 'Daily Temperatures', ensure you understand the required output format.",
+      "hint_2": "Whenever a warmer value arrives, pop the stack and record the day distance. Consider how the constraints (1≤N≤2×10^5; temperatures are integers from -50 to 100.) guide the algorithm choice.",
+      "hint_3": "Each index is pushed and popped once, giving O(N) time and O(N) space. The target complexity is O(N).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Stacks / Arrays problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N) by applying standard Stacks / Arrays techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "8\n73 74 75 71 69 72 76 73",
+          "output": "1 1 4 2 1 1 0 0",
+          "explanation": "For input `8\n73 74 75 71 69 72 76 73`, the computed output is `1 1 4 2 1 1 0 0`."
+        },
+        {
+          "input": "4\n30 30 30 30",
+          "output": "0 0 0 0",
+          "explanation": "For input `4\n30 30 30 30`, the computed output is `0 0 0 0`."
+        },
+        {
+          "input": "5\n90 80 70 60 100",
+          "output": "4 3 2 1 0",
+          "explanation": "For input `5\n90 80 70 60 100`, the computed output is `4 3 2 1 0`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Microsoft",
+      "Google",
+      "Flipkart"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 527,
+    "externalId": "DSA-527",
+    "slug": "asteroid-collision",
+    "title": "527. Asteroid Collision",
+    "rawTitle": "Asteroid Collision",
+    "category": "Stacks / Simulation",
+    "topic": "Stacks / Simulation",
+    "difficulty": "Intermediate",
+    "rating": 1500,
+    "tags": [
+      "stack",
+      "simulation"
+    ],
+    "statement": "Positive asteroids move right and negative asteroids move left. Resolve collisions according to size and return the survivors.",
+    "constraints": "1≤N≤10^5; 1≤abs(A[i])≤10^4.",
+    "inputFormat": "N; then N asteroid values.",
+    "outputFormat": "Surviving asteroid values, or EMPTY.",
+    "complexityTarget": "O(N)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "5\n5 10 -5 8 -8",
+        "expectedOutput": "5 10",
+        "rawInput": "5\n5 10 -5 8 -8"
+      },
+      {
+        "testNumber": 2,
+        "input": "3\n8 -8 2",
+        "expectedOutput": "2",
+        "rawInput": "3\n8 -8 2"
+      },
+      {
+        "testNumber": 3,
+        "input": "3\n10 2 -5",
+        "expectedOutput": "10",
+        "rawInput": "3\n10 2 -5"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "4\n-2 -1 1 2",
+        "expectedOutput": "-2 -1 1 2"
+      },
+      {
+        "testNumber": 2,
+        "input": "6\n10 2 -5 -20 15 -15",
+        "expectedOutput": "-20"
+      }
+    ],
+    "examples": [
+      {
+        "input": "5\n5 10 -5 8 -8",
+        "output": "5 10",
+        "explanation": "For input `5\n5 10 -5 8 -8`, the computed output is `5 10`."
+      },
+      {
+        "input": "3\n8 -8 2",
+        "output": "2",
+        "explanation": "For input `3\n8 -8 2`, the computed output is `2`."
+      },
+      {
+        "input": "3\n10 2 -5",
+        "output": "10",
+        "explanation": "For input `3\n10 2 -5`, the computed output is `10`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nPositive asteroids move right and negative asteroids move left. Resolve collisions according to size and return the survivors.\n\n### Input Specification\nN; then N asteroid values.\n\n### Output Specification\nSurviving asteroid values, or EMPTY.\n\n### Constraints\n`1≤N≤10^5; 1≤abs(A[i])≤10^4.`\n\n### Complexity Target\n- Time Complexity: `O(N)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N; then N asteroid values.",
+      "outputSpecification": "Surviving asteroid values, or EMPTY.",
+      "constraints": "1≤N≤10^5; 1≤abs(A[i])≤10^4.",
+      "hint_1": "Simulate collisions with a stack where a collision happens only when a positive is followed by a negative. For 'Asteroid Collision', ensure you understand the required output format.",
+      "hint_2": "Pop while the top positive is smaller than the incoming negative; equal sizes cancel both. Consider how the constraints (1≤N≤10^5; 1≤abs(A[i])≤10^4.) guide the algorithm choice.",
+      "hint_3": "Amortized O(N): every asteroid is pushed at most once and popped at most once. The target complexity is O(N).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Stacks / Simulation problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N) by applying standard Stacks / Simulation techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "5\n5 10 -5 8 -8",
+          "output": "5 10",
+          "explanation": "For input `5\n5 10 -5 8 -8`, the computed output is `5 10`."
+        },
+        {
+          "input": "3\n8 -8 2",
+          "output": "2",
+          "explanation": "For input `3\n8 -8 2`, the computed output is `2`."
+        },
+        {
+          "input": "3\n10 2 -5",
+          "output": "10",
+          "explanation": "For input `3\n10 2 -5`, the computed output is `10`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Google",
+      "Flipkart",
+      "TCS"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 528,
+    "externalId": "DSA-528",
+    "slug": "product-except-self",
+    "title": "528. Product Except Self",
+    "rawTitle": "Product Except Self",
+    "category": "Arrays / Prefix Products",
+    "topic": "Arrays / Prefix Products",
+    "difficulty": "Intermediate",
+    "rating": 1400,
+    "tags": [
+      "prefix-product",
+      "arrays"
+    ],
+    "statement": "For every position, return the product of all array elements except the element at that position, without division.",
+    "constraints": "2≤N≤10^5; -30≤A[i]≤30.",
+    "inputFormat": "N; then N integers.",
+    "outputFormat": "N resulting integers.",
+    "complexityTarget": "O(N)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "4\n1 2 3 4",
+        "expectedOutput": "24 12 8 6",
+        "rawInput": "4\n1 2 3 4"
+      },
+      {
+        "testNumber": 2,
+        "input": "3\n-1 1 0",
+        "expectedOutput": "0 0 -1",
+        "rawInput": "3\n-1 1 0"
+      },
+      {
+        "testNumber": 3,
+        "input": "4\n2 3 4 5",
+        "expectedOutput": "60 40 30 24",
+        "rawInput": "4\n2 3 4 5"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "5\n0 1 2 0 4",
+        "expectedOutput": "0 0 0 0 0"
+      },
+      {
+        "testNumber": 2,
+        "input": "3\n-2 -3 -4",
+        "expectedOutput": "12 8 6"
+      }
+    ],
+    "examples": [
+      {
+        "input": "4\n1 2 3 4",
+        "output": "24 12 8 6",
+        "explanation": "For input `4\n1 2 3 4`, the computed output is `24 12 8 6`."
+      },
+      {
+        "input": "3\n-1 1 0",
+        "output": "0 0 -1",
+        "explanation": "For input `3\n-1 1 0`, the computed output is `0 0 -1`."
+      },
+      {
+        "input": "4\n2 3 4 5",
+        "output": "60 40 30 24",
+        "explanation": "For input `4\n2 3 4 5`, the computed output is `60 40 30 24`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nFor every position, return the product of all array elements except the element at that position, without division.\n\n### Input Specification\nN; then N integers.\n\n### Output Specification\nN resulting integers.\n\n### Constraints\n`2≤N≤10^5; -30≤A[i]≤30.`\n\n### Complexity Target\n- Time Complexity: `O(N)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N; then N integers.",
+      "outputSpecification": "N resulting integers.",
+      "constraints": "2≤N≤10^5; -30≤A[i]≤30.",
+      "hint_1": "Compute prefix products into the answer first, then sweep right multiplying suffix products. For 'Product Except Self', ensure you understand the required output format.",
+      "hint_2": "Handle zero carefully — avoid division entirely, per the problem rule. Consider how the constraints (2≤N≤10^5; -30≤A[i]≤30.) guide the algorithm choice.",
+      "hint_3": "Two passes over the array yield the answer in O(N) time and O(N) space. The target complexity is O(N).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Arrays / Prefix Products problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N) by applying standard Arrays / Prefix Products techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "4\n1 2 3 4",
+          "output": "24 12 8 6",
+          "explanation": "For input `4\n1 2 3 4`, the computed output is `24 12 8 6`."
+        },
+        {
+          "input": "3\n-1 1 0",
+          "output": "0 0 -1",
+          "explanation": "For input `3\n-1 1 0`, the computed output is `0 0 -1`."
+        },
+        {
+          "input": "4\n2 3 4 5",
+          "output": "60 40 30 24",
+          "explanation": "For input `4\n2 3 4 5`, the computed output is `60 40 30 24`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Flipkart",
+      "TCS",
+      "Infosys"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 529,
+    "externalId": "DSA-529",
+    "slug": "subarray-sum-equals-k",
+    "title": "529. Subarray Sum Equals K",
+    "rawTitle": "Subarray Sum Equals K",
+    "category": "Arrays / Prefix Sum",
+    "topic": "Arrays / Prefix Sum",
+    "difficulty": "Intermediate",
+    "rating": 1450,
+    "tags": [
+      "prefix-sum",
+      "hashmap"
+    ],
+    "statement": "Count contiguous subarrays whose sum equals K. Values may be negative or zero.",
+    "constraints": "1≤N≤2×10^5; -10^4≤A[i]≤10^4.",
+    "inputFormat": "N K; then N integers.",
+    "outputFormat": "Number of qualifying subarrays.",
+    "complexityTarget": "O(N)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "3 3\n1 2 1",
+        "expectedOutput": "2",
+        "rawInput": "3 3\n1 2 1"
+      },
+      {
+        "testNumber": 2,
+        "input": "3 0\n0 0 0",
+        "expectedOutput": "6",
+        "rawInput": "3 0\n0 0 0"
+      },
+      {
+        "testNumber": 3,
+        "input": "5 5\n1 2 3 2 5",
+        "expectedOutput": "2",
+        "rawInput": "5 5\n1 2 3 2 5"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "6 -2\n-1 -1 2 -2 3 -3",
+        "expectedOutput": "4"
+      },
+      {
+        "testNumber": 2,
+        "input": "4 10\n1 2 3 4",
+        "expectedOutput": "0"
+      }
+    ],
+    "examples": [
+      {
+        "input": "3 3\n1 2 1",
+        "output": "2",
+        "explanation": "For input `3 3\n1 2 1`, the computed output is `2`."
+      },
+      {
+        "input": "3 0\n0 0 0",
+        "output": "6",
+        "explanation": "For input `3 0\n0 0 0`, the computed output is `6`."
+      },
+      {
+        "input": "5 5\n1 2 3 2 5",
+        "output": "2",
+        "explanation": "For input `5 5\n1 2 3 2 5`, the computed output is `2`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nCount contiguous subarrays whose sum equals K. Values may be negative or zero.\n\n### Input Specification\nN K; then N integers.\n\n### Output Specification\nNumber of qualifying subarrays.\n\n### Constraints\n`1≤N≤2×10^5; -10^4≤A[i]≤10^4.`\n\n### Complexity Target\n- Time Complexity: `O(N)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N K; then N integers.",
+      "outputSpecification": "Number of qualifying subarrays.",
+      "constraints": "1≤N≤2×10^5; -10^4≤A[i]≤10^4.",
+      "hint_1": "Track how often each prefix sum has occurred in a hash map. For 'Subarray Sum Equals K', ensure you understand the required output format.",
+      "hint_2": "For the current prefix P, every prior prefix equal to P - K forms a valid subarray. Consider how the constraints (1≤N≤2×10^5; -10^4≤A[i]≤10^4.) guide the algorithm choice.",
+      "hint_3": "Single pass over the array with a hash map achieves O(N) time. The target complexity is O(N).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Arrays / Prefix Sum problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N) by applying standard Arrays / Prefix Sum techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "3 3\n1 2 1",
+          "output": "2",
+          "explanation": "For input `3 3\n1 2 1`, the computed output is `2`."
+        },
+        {
+          "input": "3 0\n0 0 0",
+          "output": "6",
+          "explanation": "For input `3 0\n0 0 0`, the computed output is `6`."
+        },
+        {
+          "input": "5 5\n1 2 3 2 5",
+          "output": "2",
+          "explanation": "For input `5 5\n1 2 3 2 5`, the computed output is `2`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "TCS",
+      "Infosys",
+      "Accenture"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 530,
+    "externalId": "DSA-530",
+    "slug": "three-sum-closest",
+    "title": "530. Three Sum Closest",
+    "rawTitle": "Three Sum Closest",
+    "category": "Arrays / Two Pointers",
+    "topic": "Arrays / Two Pointers",
+    "difficulty": "Intermediate",
+    "rating": 1500,
+    "tags": [
+      "sorting",
+      "two-pointers"
+    ],
+    "statement": "Find the sum of three distinct elements closest to target. If tied, return the smaller sum.",
+    "constraints": "3≤N≤2000; -10^4≤A[i]≤10^4.",
+    "inputFormat": "N target; then N integers.",
+    "outputFormat": "Closest sum.",
+    "complexityTarget": "O(N²)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "4 1\n-1 2 1 -4",
+        "expectedOutput": "2",
+        "rawInput": "4 1\n-1 2 1 -4"
+      },
+      {
+        "testNumber": 2,
+        "input": "3 5\n1 2 3",
+        "expectedOutput": "6",
+        "rawInput": "3 5\n1 2 3"
+      },
+      {
+        "testNumber": 3,
+        "input": "5 0\n-2 -1 1 4 5",
+        "expectedOutput": "0",
+        "rawInput": "5 0\n-2 -1 1 4 5"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "6 10\n1 2 4 8 16 32",
+        "expectedOutput": "14"
+      },
+      {
+        "testNumber": 2,
+        "input": "5 -7\n-10 -3 0 2 8",
+        "expectedOutput": "-8"
+      }
+    ],
+    "examples": [
+      {
+        "input": "4 1\n-1 2 1 -4",
+        "output": "2",
+        "explanation": "For input `4 1\n-1 2 1 -4`, the computed output is `2`."
+      },
+      {
+        "input": "3 5\n1 2 3",
+        "output": "6",
+        "explanation": "For input `3 5\n1 2 3`, the computed output is `6`."
+      },
+      {
+        "input": "5 0\n-2 -1 1 4 5",
+        "output": "0",
+        "explanation": "For input `5 0\n-2 -1 1 4 5`, the computed output is `0`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nFind the sum of three distinct elements closest to target. If tied, return the smaller sum.\n\n### Input Specification\nN target; then N integers.\n\n### Output Specification\nClosest sum.\n\n### Constraints\n`3≤N≤2000; -10^4≤A[i]≤10^4.`\n\n### Complexity Target\n- Time Complexity: `O(N²)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N target; then N integers.",
+      "outputSpecification": "Closest sum.",
+      "constraints": "3≤N≤2000; -10^4≤A[i]≤10^4.",
+      "hint_1": "Sort the array, fix one element, and run two pointers over the remaining range. For 'Three Sum Closest', ensure you understand the required output format.",
+      "hint_2": "Move pointers to drive the running sum toward the target while tracking the best difference. Consider how the constraints (3≤N≤2000; -10^4≤A[i]≤10^4.) guide the algorithm choice.",
+      "hint_3": "O(N²) from the two nested loops with a fixed element; sorting is O(N log N). The target complexity is O(N²).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Arrays / Two Pointers problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N²) by applying standard Arrays / Two Pointers techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N²)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "4 1\n-1 2 1 -4",
+          "output": "2",
+          "explanation": "For input `4 1\n-1 2 1 -4`, the computed output is `2`."
+        },
+        {
+          "input": "3 5\n1 2 3",
+          "output": "6",
+          "explanation": "For input `3 5\n1 2 3`, the computed output is `6`."
+        },
+        {
+          "input": "5 0\n-2 -1 1 4 5",
+          "output": "0",
+          "explanation": "For input `5 0\n-2 -1 1 4 5`, the computed output is `0`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Infosys",
+      "Accenture",
+      "Amazon"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 531,
+    "externalId": "DSA-531",
+    "slug": "search-rotated-sorted-array",
+    "title": "531. Search Rotated Sorted Array",
+    "rawTitle": "Search Rotated Sorted Array",
+    "category": "Binary Search",
+    "topic": "Binary Search",
+    "difficulty": "Intermediate",
+    "rating": 1400,
+    "tags": [
+      "binary-search",
+      "rotated-array"
+    ],
+    "statement": "Search for a target in a strictly increasing array rotated at an unknown pivot. Return its index or -1.",
+    "constraints": "1≤N≤2×10^5; all values are distinct.",
+    "inputFormat": "N target; then rotated array.",
+    "outputFormat": "Zero-based index or -1.",
+    "complexityTarget": "O(log N)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "7 0\n4 5 6 7 0 1 2",
+        "expectedOutput": "4",
+        "rawInput": "7 0\n4 5 6 7 0 1 2"
+      },
+      {
+        "testNumber": 2,
+        "input": "5 3\n5 1 2 3 4",
+        "expectedOutput": "3",
+        "rawInput": "5 3\n5 1 2 3 4"
+      },
+      {
+        "testNumber": 3,
+        "input": "4 9\n6 7 8 1",
+        "expectedOutput": "-1",
+        "rawInput": "4 9\n6 7 8 1"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "8 5\n6 7 8 9 1 2 3 5",
+        "expectedOutput": "7"
+      },
+      {
+        "testNumber": 2,
+        "input": "1 4\n4",
+        "expectedOutput": "0"
+      }
+    ],
+    "examples": [
+      {
+        "input": "7 0\n4 5 6 7 0 1 2",
+        "output": "4",
+        "explanation": "For input `7 0\n4 5 6 7 0 1 2`, the computed output is `4`."
+      },
+      {
+        "input": "5 3\n5 1 2 3 4",
+        "output": "3",
+        "explanation": "For input `5 3\n5 1 2 3 4`, the computed output is `3`."
+      },
+      {
+        "input": "4 9\n6 7 8 1",
+        "output": "-1",
+        "explanation": "For input `4 9\n6 7 8 1`, the computed output is `-1`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nSearch for a target in a strictly increasing array rotated at an unknown pivot. Return its index or -1.\n\n### Input Specification\nN target; then rotated array.\n\n### Output Specification\nZero-based index or -1.\n\n### Constraints\n`1≤N≤2×10^5; all values are distinct.`\n\n### Complexity Target\n- Time Complexity: `O(log N)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N target; then rotated array.",
+      "outputSpecification": "Zero-based index or -1.",
+      "constraints": "1≤N≤2×10^5; all values are distinct.",
+      "hint_1": "Halve the search space by comparing the midpoint against the two boundaries. For 'Search Rotated Sorted Array', ensure you understand the required output format.",
+      "hint_2": "For rotated arrays, first identify which half is sorted and whether the target lies inside it. Consider how the constraints (1≤N≤2×10^5; all values are distinct.) guide the algorithm choice.",
+      "hint_3": "Each comparison discards half the range, giving O(log N) time. The target complexity is O(log N).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Binary Search problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(log N) by applying standard Binary Search techniques without redundant scanning or allocations.",
+      "time_complexity": "O(log N)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "7 0\n4 5 6 7 0 1 2",
+          "output": "4",
+          "explanation": "For input `7 0\n4 5 6 7 0 1 2`, the computed output is `4`."
+        },
+        {
+          "input": "5 3\n5 1 2 3 4",
+          "output": "3",
+          "explanation": "For input `5 3\n5 1 2 3 4`, the computed output is `3`."
+        },
+        {
+          "input": "4 9\n6 7 8 1",
+          "output": "-1",
+          "explanation": "For input `4 9\n6 7 8 1`, the computed output is `-1`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Accenture",
+      "Amazon",
+      "Microsoft"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 532,
+    "externalId": "DSA-532",
+    "slug": "find-peak-element",
+    "title": "532. Find Peak Element",
+    "rawTitle": "Find Peak Element",
+    "category": "Binary Search",
+    "topic": "Binary Search",
+    "difficulty": "Intermediate",
+    "rating": 1450,
+    "tags": [
+      "binary-search",
+      "arrays"
+    ],
+    "statement": "Find any index whose value is greater than its existing neighbors. Treat outside boundaries as negative infinity.",
+    "constraints": "1≤N≤10^5; adjacent values are distinct.",
+    "inputFormat": "N; then N integers.",
+    "outputFormat": "Any valid peak index.",
+    "complexityTarget": "O(log N)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "4\n1 2 3 1",
+        "expectedOutput": "2",
+        "rawInput": "4\n1 2 3 1"
+      },
+      {
+        "testNumber": 2,
+        "input": "5\n1 2 1 3 5",
+        "expectedOutput": "4",
+        "rawInput": "5\n1 2 1 3 5"
+      },
+      {
+        "testNumber": 3,
+        "input": "1\n7",
+        "expectedOutput": "0",
+        "rawInput": "1\n7"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "6\n6 5 4 3 2 1",
+        "expectedOutput": "0"
+      },
+      {
+        "testNumber": 2,
+        "input": "5\n1 3 2 4 1",
+        "expectedOutput": "3"
+      }
+    ],
+    "examples": [
+      {
+        "input": "4\n1 2 3 1",
+        "output": "2",
+        "explanation": "For input `4\n1 2 3 1`, the computed output is `2`."
+      },
+      {
+        "input": "5\n1 2 1 3 5",
+        "output": "4",
+        "explanation": "For input `5\n1 2 1 3 5`, the computed output is `4`."
+      },
+      {
+        "input": "1\n7",
+        "output": "0",
+        "explanation": "For input `1\n7`, the computed output is `0`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nFind any index whose value is greater than its existing neighbors. Treat outside boundaries as negative infinity.\n\n### Input Specification\nN; then N integers.\n\n### Output Specification\nAny valid peak index.\n\n### Constraints\n`1≤N≤10^5; adjacent values are distinct.`\n\n### Complexity Target\n- Time Complexity: `O(log N)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N; then N integers.",
+      "outputSpecification": "Any valid peak index.",
+      "constraints": "1≤N≤10^5; adjacent values are distinct.",
+      "hint_1": "Halve the search space by comparing the midpoint against the two boundaries. For 'Find Peak Element', ensure you understand the required output format.",
+      "hint_2": "For rotated arrays, first identify which half is sorted and whether the target lies inside it. Consider how the constraints (1≤N≤10^5; adjacent values are distinct.) guide the algorithm choice.",
+      "hint_3": "Each comparison discards half the range, giving O(log N) time. The target complexity is O(log N).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Binary Search problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(log N) by applying standard Binary Search techniques without redundant scanning or allocations.",
+      "time_complexity": "O(log N)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "4\n1 2 3 1",
+          "output": "2",
+          "explanation": "For input `4\n1 2 3 1`, the computed output is `2`."
+        },
+        {
+          "input": "5\n1 2 1 3 5",
+          "output": "4",
+          "explanation": "For input `5\n1 2 1 3 5`, the computed output is `4`."
+        },
+        {
+          "input": "1\n7",
+          "output": "0",
+          "explanation": "For input `1\n7`, the computed output is `0`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 533,
+    "externalId": "DSA-533",
+    "slug": "allocate-books",
+    "title": "533. Allocate Books",
+    "rawTitle": "Allocate Books",
+    "category": "Binary Search / Greedy",
+    "topic": "Binary Search / Greedy",
+    "difficulty": "Intermediate",
+    "rating": 1500,
+    "tags": [
+      "binary-search",
+      "greedy",
+      "partition"
+    ],
+    "statement": "Partition books in fixed order among M students to minimize the maximum pages assigned to one student. Every student must receive a non-empty group.",
+    "constraints": "1≤N≤10^5; 1≤M≤N; pages≤10^9.",
+    "inputFormat": "N M; then N page counts.",
+    "outputFormat": "Minimum possible maximum pages.",
+    "complexityTarget": "O(N log(sum))",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "4 2\n12 34 67 90",
+        "expectedOutput": "113",
+        "rawInput": "4 2\n12 34 67 90"
+      },
+      {
+        "testNumber": 2,
+        "input": "5 3\n10 20 30 40 50",
+        "expectedOutput": "60",
+        "rawInput": "5 3\n10 20 30 40 50"
+      },
+      {
+        "testNumber": 3,
+        "input": "3 4\n1 2 3",
+        "expectedOutput": "-1",
+        "rawInput": "3 4\n1 2 3"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "5 2\n10 20 30 40 50",
+        "expectedOutput": "90"
+      },
+      {
+        "testNumber": 2,
+        "input": "6 3\n5 17 100 11 20 30",
+        "expectedOutput": "117"
+      }
+    ],
+    "examples": [
+      {
+        "input": "4 2\n12 34 67 90",
+        "output": "113",
+        "explanation": "For input `4 2\n12 34 67 90`, the computed output is `113`."
+      },
+      {
+        "input": "5 3\n10 20 30 40 50",
+        "output": "60",
+        "explanation": "For input `5 3\n10 20 30 40 50`, the computed output is `60`."
+      },
+      {
+        "input": "3 4\n1 2 3",
+        "output": "-1",
+        "explanation": "For input `3 4\n1 2 3`, the computed output is `-1`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nPartition books in fixed order among M students to minimize the maximum pages assigned to one student. Every student must receive a non-empty group.\n\n### Input Specification\nN M; then N page counts.\n\n### Output Specification\nMinimum possible maximum pages.\n\n### Constraints\n`1≤N≤10^5; 1≤M≤N; pages≤10^9.`\n\n### Complexity Target\n- Time Complexity: `O(N log(sum))`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N M; then N page counts.",
+      "outputSpecification": "Minimum possible maximum pages.",
+      "constraints": "1≤N≤10^5; 1≤M≤N; pages≤10^9.",
+      "hint_1": "Binary-search the answer value (a page limit or minimum distance). For 'Allocate Books', ensure you understand the required output format.",
+      "hint_2": "Greedily verify feasibility of a candidate with a single linear pass. Consider how the constraints (1≤N≤10^5; 1≤M≤N; pages≤10^9.) guide the algorithm choice.",
+      "hint_3": "O(N log(range)) time — the range is large but the check is cheap. The target complexity is O(N log(sum)).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Binary Search / Greedy problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N log(sum)) by applying standard Binary Search / Greedy techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N log(sum))",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "4 2\n12 34 67 90",
+          "output": "113",
+          "explanation": "For input `4 2\n12 34 67 90`, the computed output is `113`."
+        },
+        {
+          "input": "5 3\n10 20 30 40 50",
+          "output": "60",
+          "explanation": "For input `5 3\n10 20 30 40 50`, the computed output is `60`."
+        },
+        {
+          "input": "3 4\n1 2 3",
+          "output": "-1",
+          "explanation": "For input `3 4\n1 2 3`, the computed output is `-1`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Microsoft",
+      "Google",
+      "Flipkart"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 534,
+    "externalId": "DSA-534",
+    "slug": "aggressive-cows",
+    "title": "534. Aggressive Cows",
+    "rawTitle": "Aggressive Cows",
+    "category": "Binary Search / Greedy",
+    "topic": "Binary Search / Greedy",
+    "difficulty": "Intermediate",
+    "rating": 1400,
+    "tags": [
+      "binary-search",
+      "greedy"
+    ],
+    "statement": "Place C cows in given stalls so that the minimum distance between any two cows is as large as possible.",
+    "constraints": "2≤N≤10^5; positions are distinct and ≤10^9.",
+    "inputFormat": "N C; then stall positions.",
+    "outputFormat": "Largest achievable minimum distance.",
+    "complexityTarget": "O(N log(max pos))",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "5 3\n1 2 4 8 9",
+        "expectedOutput": "3",
+        "rawInput": "5 3\n1 2 4 8 9"
+      },
+      {
+        "testNumber": 2,
+        "input": "6 4\n0 3 4 7 10 12",
+        "expectedOutput": "3",
+        "rawInput": "6 4\n0 3 4 7 10 12"
+      },
+      {
+        "testNumber": 3,
+        "input": "3 2\n5 10 15",
+        "expectedOutput": "10",
+        "rawInput": "3 2\n5 10 15"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "5 2\n1 100 200 300 1000",
+        "expectedOutput": "999"
+      },
+      {
+        "testNumber": 2,
+        "input": "4 4\n1 2 3 10",
+        "expectedOutput": "1"
+      }
+    ],
+    "examples": [
+      {
+        "input": "5 3\n1 2 4 8 9",
+        "output": "3",
+        "explanation": "For input `5 3\n1 2 4 8 9`, the computed output is `3`."
+      },
+      {
+        "input": "6 4\n0 3 4 7 10 12",
+        "output": "3",
+        "explanation": "For input `6 4\n0 3 4 7 10 12`, the computed output is `3`."
+      },
+      {
+        "input": "3 2\n5 10 15",
+        "output": "10",
+        "explanation": "For input `3 2\n5 10 15`, the computed output is `10`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nPlace C cows in given stalls so that the minimum distance between any two cows is as large as possible.\n\n### Input Specification\nN C; then stall positions.\n\n### Output Specification\nLargest achievable minimum distance.\n\n### Constraints\n`2≤N≤10^5; positions are distinct and ≤10^9.`\n\n### Complexity Target\n- Time Complexity: `O(N log(max pos))`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N C; then stall positions.",
+      "outputSpecification": "Largest achievable minimum distance.",
+      "constraints": "2≤N≤10^5; positions are distinct and ≤10^9.",
+      "hint_1": "Binary-search the answer value (a page limit or minimum distance). For 'Aggressive Cows', ensure you understand the required output format.",
+      "hint_2": "Greedily verify feasibility of a candidate with a single linear pass. Consider how the constraints (2≤N≤10^5; positions are distinct and ≤10^9.) guide the algorithm choice.",
+      "hint_3": "O(N log(range)) time — the range is large but the check is cheap. The target complexity is O(N log(max pos)).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Binary Search / Greedy problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N log(max pos)) by applying standard Binary Search / Greedy techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N log(max pos))",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "5 3\n1 2 4 8 9",
+          "output": "3",
+          "explanation": "For input `5 3\n1 2 4 8 9`, the computed output is `3`."
+        },
+        {
+          "input": "6 4\n0 3 4 7 10 12",
+          "output": "3",
+          "explanation": "For input `6 4\n0 3 4 7 10 12`, the computed output is `3`."
+        },
+        {
+          "input": "3 2\n5 10 15",
+          "output": "10",
+          "explanation": "For input `3 2\n5 10 15`, the computed output is `10`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Google",
+      "Flipkart",
+      "TCS"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 535,
+    "externalId": "DSA-535",
+    "slug": "number-of-islands",
+    "title": "535. Number of Islands",
+    "rawTitle": "Number of Islands",
+    "category": "Graphs / Grid DFS",
+    "topic": "Graphs / Grid DFS",
+    "difficulty": "Intermediate",
+    "rating": 1450,
+    "tags": [
+      "grid",
+      "dfs",
+      "bfs"
+    ],
+    "statement": "Count connected components of land cells in a binary grid. Connections are vertical and horizontal only.",
+    "constraints": "Rows×columns≤10^6; grid values are 0 or 1.",
+    "inputFormat": "R C; then R binary rows.",
+    "outputFormat": "Island count.",
+    "complexityTarget": "O(R×C)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "4 5\n11000\n11000\n00100\n00011",
+        "expectedOutput": "3",
+        "rawInput": "4 5\n11000\n11000\n00100\n00011"
+      },
+      {
+        "testNumber": 2,
+        "input": "2 2\n11\n11",
+        "expectedOutput": "1",
+        "rawInput": "2 2\n11\n11"
+      },
+      {
+        "testNumber": 3,
+        "input": "3 3\n000\n000\n000",
+        "expectedOutput": "0",
+        "rawInput": "3 3\n000\n000\n000"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "5 6\n101010\n010101\n101010\n010101\n101010",
+        "expectedOutput": "15"
+      },
+      {
+        "testNumber": 2,
+        "input": "1 4\n1111",
+        "expectedOutput": "1"
+      }
+    ],
+    "examples": [
+      {
+        "input": "4 5\n11000\n11000\n00100\n00011",
+        "output": "3",
+        "explanation": "For input `4 5\n11000\n11000\n00100\n00011`, the computed output is `3`."
+      },
+      {
+        "input": "2 2\n11\n11",
+        "output": "1",
+        "explanation": "For input `2 2\n11\n11`, the computed output is `1`."
+      },
+      {
+        "input": "3 3\n000\n000\n000",
+        "output": "0",
+        "explanation": "For input `3 3\n000\n000\n000`, the computed output is `0`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nCount connected components of land cells in a binary grid. Connections are vertical and horizontal only.\n\n### Input Specification\nR C; then R binary rows.\n\n### Output Specification\nIsland count.\n\n### Constraints\n`Rows×columns≤10^6; grid values are 0 or 1.`\n\n### Complexity Target\n- Time Complexity: `O(R×C)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "R C; then R binary rows.",
+      "outputSpecification": "Island count.",
+      "constraints": "Rows×columns≤10^6; grid values are 0 or 1.",
+      "hint_1": "Treat each land cell as a node connected to its four orthogonal land neighbors. For 'Number of Islands', ensure you understand the required output format.",
+      "hint_2": "Run DFS or BFS from every unvisited land cell and count each traversed component once. Consider how the constraints (Rows×columns≤10^6; grid values are 0 or 1.) guide the algorithm choice.",
+      "hint_3": "Visiting each cell once gives O(R×C) time and O(R×C) worst-case space. The target complexity is O(R×C).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Graphs / Grid DFS problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(R×C) by applying standard Graphs / Grid DFS techniques without redundant scanning or allocations.",
+      "time_complexity": "O(R×C)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "4 5\n11000\n11000\n00100\n00011",
+          "output": "3",
+          "explanation": "For input `4 5\n11000\n11000\n00100\n00011`, the computed output is `3`."
+        },
+        {
+          "input": "2 2\n11\n11",
+          "output": "1",
+          "explanation": "For input `2 2\n11\n11`, the computed output is `1`."
+        },
+        {
+          "input": "3 3\n000\n000\n000",
+          "output": "0",
+          "explanation": "For input `3 3\n000\n000\n000`, the computed output is `0`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Flipkart",
+      "TCS",
+      "Infosys"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 536,
+    "externalId": "DSA-536",
+    "slug": "rotting-oranges",
+    "title": "536. Rotting Oranges",
+    "rawTitle": "Rotting Oranges",
+    "category": "Graphs / Multi-source BFS",
+    "topic": "Graphs / Multi-source BFS",
+    "difficulty": "Intermediate",
+    "rating": 1500,
+    "tags": [
+      "bfs",
+      "grid"
+    ],
+    "statement": "Each minute, rotten oranges infect adjacent fresh oranges. Return the time until all rot, or -1 if impossible.",
+    "constraints": "1≤R,C≤500.",
+    "inputFormat": "R C; then grid values 0,1,2.",
+    "outputFormat": "Minutes required or -1.",
+    "complexityTarget": "O(R×C)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "3 3\n2 1 1\n1 1 0\n0 1 1",
+        "expectedOutput": "4",
+        "rawInput": "3 3\n2 1 1\n1 1 0\n0 1 1"
+      },
+      {
+        "testNumber": 2,
+        "input": "3 3\n2 1 1\n0 1 1\n1 0 1",
+        "expectedOutput": "-1",
+        "rawInput": "3 3\n2 1 1\n0 1 1\n1 0 1"
+      },
+      {
+        "testNumber": 3,
+        "input": "1 2\n2 1",
+        "expectedOutput": "1",
+        "rawInput": "1 2\n2 1"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "2 2\n2 1\n1 1",
+        "expectedOutput": "2"
+      },
+      {
+        "testNumber": 2,
+        "input": "2 2\n0 0\n0 0",
+        "expectedOutput": "0"
+      }
+    ],
+    "examples": [
+      {
+        "input": "3 3\n2 1 1\n1 1 0\n0 1 1",
+        "output": "4",
+        "explanation": "For input `3 3\n2 1 1\n1 1 0\n0 1 1`, the computed output is `4`."
+      },
+      {
+        "input": "3 3\n2 1 1\n0 1 1\n1 0 1",
+        "output": "-1",
+        "explanation": "For input `3 3\n2 1 1\n0 1 1\n1 0 1`, the computed output is `-1`."
+      },
+      {
+        "input": "1 2\n2 1",
+        "output": "1",
+        "explanation": "For input `1 2\n2 1`, the computed output is `1`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nEach minute, rotten oranges infect adjacent fresh oranges. Return the time until all rot, or -1 if impossible.\n\n### Input Specification\nR C; then grid values 0,1,2.\n\n### Output Specification\nMinutes required or -1.\n\n### Constraints\n`1≤R,C≤500.`\n\n### Complexity Target\n- Time Complexity: `O(R×C)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "R C; then grid values 0,1,2.",
+      "outputSpecification": "Minutes required or -1.",
+      "constraints": "1≤R,C≤500.",
+      "hint_1": "Start BFS with every rotten orange at time zero. For 'Rotting Oranges', ensure you understand the required output format.",
+      "hint_2": "Process the grid level by level; each minute corresponds to one BFS layer. Consider how the constraints (1≤R,C≤500.) guide the algorithm choice.",
+      "hint_3": "Each cell is processed once, so the runtime is O(R×C). The target complexity is O(R×C).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Graphs / Multi-source BFS problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(R×C) by applying standard Graphs / Multi-source BFS techniques without redundant scanning or allocations.",
+      "time_complexity": "O(R×C)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "3 3\n2 1 1\n1 1 0\n0 1 1",
+          "output": "4",
+          "explanation": "For input `3 3\n2 1 1\n1 1 0\n0 1 1`, the computed output is `4`."
+        },
+        {
+          "input": "3 3\n2 1 1\n0 1 1\n1 0 1",
+          "output": "-1",
+          "explanation": "For input `3 3\n2 1 1\n0 1 1\n1 0 1`, the computed output is `-1`."
+        },
+        {
+          "input": "1 2\n2 1",
+          "output": "1",
+          "explanation": "For input `1 2\n2 1`, the computed output is `1`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "TCS",
+      "Infosys",
+      "Accenture"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 537,
+    "externalId": "DSA-537",
+    "slug": "bipartite-graph-check",
+    "title": "537. Bipartite Graph Check",
+    "rawTitle": "Bipartite Graph Check",
+    "category": "Graphs / Coloring",
+    "topic": "Graphs / Coloring",
+    "difficulty": "Intermediate",
+    "rating": 1400,
+    "tags": [
+      "graph",
+      "bfs",
+      "coloring"
+    ],
+    "statement": "Determine whether an undirected graph can be colored with two colors so that adjacent vertices have different colors.",
+    "constraints": "1≤N≤10^5; M≤2×10^5.",
+    "inputFormat": "N M; then M edges using 0-based vertices.",
+    "outputFormat": "YES or NO.",
+    "complexityTarget": "O(N + M)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "4 4\n0 1\n1 2\n2 3\n3 0",
+        "expectedOutput": "YES",
+        "rawInput": "4 4\n0 1\n1 2\n2 3\n3 0"
+      },
+      {
+        "testNumber": 2,
+        "input": "3 3\n0 1\n1 2\n2 0",
+        "expectedOutput": "NO",
+        "rawInput": "3 3\n0 1\n1 2\n2 0"
+      },
+      {
+        "testNumber": 3,
+        "input": "5 2\n0 1\n3 4",
+        "expectedOutput": "YES",
+        "rawInput": "5 2\n0 1\n3 4"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "6 6\n0 1\n1 2\n2 3\n3 4\n4 5\n5 0",
+        "expectedOutput": "YES"
+      },
+      {
+        "testNumber": 2,
+        "input": "1 0",
+        "expectedOutput": "YES"
+      }
+    ],
+    "examples": [
+      {
+        "input": "4 4\n0 1\n1 2\n2 3\n3 0",
+        "output": "YES",
+        "explanation": "For input `4 4\n0 1\n1 2\n2 3\n3 0`, the computed output is `YES`."
+      },
+      {
+        "input": "3 3\n0 1\n1 2\n2 0",
+        "output": "NO",
+        "explanation": "For input `3 3\n0 1\n1 2\n2 0`, the computed output is `NO`."
+      },
+      {
+        "input": "5 2\n0 1\n3 4",
+        "output": "YES",
+        "explanation": "For input `5 2\n0 1\n3 4`, the computed output is `YES`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nDetermine whether an undirected graph can be colored with two colors so that adjacent vertices have different colors.\n\n### Input Specification\nN M; then M edges using 0-based vertices.\n\n### Output Specification\nYES or NO.\n\n### Constraints\n`1≤N≤10^5; M≤2×10^5.`\n\n### Complexity Target\n- Time Complexity: `O(N + M)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N M; then M edges using 0-based vertices.",
+      "outputSpecification": "YES or NO.",
+      "constraints": "1≤N≤10^5; M≤2×10^5.",
+      "hint_1": "Assign each vertex a color and flip it on every traversal step. For 'Bipartite Graph Check', ensure you understand the required output format.",
+      "hint_2": "BFS both colors and bipartition each connected component; a same-color edge means NO. Consider how the constraints (1≤N≤10^5; M≤2×10^5.) guide the algorithm choice.",
+      "hint_3": "Every edge is examined a constant number of times, so total work is O(N + M). The target complexity is O(N + M).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Graphs / Coloring problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N + M) by applying standard Graphs / Coloring techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N + M)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "4 4\n0 1\n1 2\n2 3\n3 0",
+          "output": "YES",
+          "explanation": "For input `4 4\n0 1\n1 2\n2 3\n3 0`, the computed output is `YES`."
+        },
+        {
+          "input": "3 3\n0 1\n1 2\n2 0",
+          "output": "NO",
+          "explanation": "For input `3 3\n0 1\n1 2\n2 0`, the computed output is `NO`."
+        },
+        {
+          "input": "5 2\n0 1\n3 4",
+          "output": "YES",
+          "explanation": "For input `5 2\n0 1\n3 4`, the computed output is `YES`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Infosys",
+      "Accenture",
+      "Amazon"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 538,
+    "externalId": "DSA-538",
+    "slug": "kruskal-mst",
+    "title": "538. Kruskal MST",
+    "rawTitle": "Kruskal MST",
+    "category": "Graphs / Minimum Spanning Tree",
+    "topic": "Graphs / Minimum Spanning Tree",
+    "difficulty": "Intermediate",
+    "rating": 1450,
+    "tags": [
+      "mst",
+      "kruskal",
+      "dsu"
+    ],
+    "statement": "Find the total weight of a minimum spanning tree of a connected undirected weighted graph.",
+    "constraints": "1≤N≤2×10^5; M≤3×10^5.",
+    "inputFormat": "N M; then edges u v w.",
+    "outputFormat": "MST total weight.",
+    "complexityTarget": "O(M log M)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "4 5\n1 2 1\n2 3 2\n3 4 1\n4 1 4\n1 3 3",
+        "expectedOutput": "4",
+        "rawInput": "4 5\n1 2 1\n2 3 2\n3 4 1\n4 1 4\n1 3 3"
+      },
+      {
+        "testNumber": 2,
+        "input": "3 3\n1 2 5\n2 3 6\n1 3 2",
+        "expectedOutput": "7",
+        "rawInput": "3 3\n1 2 5\n2 3 6\n1 3 2"
+      },
+      {
+        "testNumber": 3,
+        "input": "2 1\n1 2 9",
+        "expectedOutput": "9",
+        "rawInput": "2 1\n1 2 9"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "5 7\n1 2 3\n1 3 1\n2 3 2\n2 4 4\n3 4 6\n4 5 2\n3 5 5",
+        "expectedOutput": "8"
+      },
+      {
+        "testNumber": 2,
+        "input": "4 3\n1 2 1\n2 3 2\n1 3 3",
+        "expectedOutput": "-1"
+      }
+    ],
+    "examples": [
+      {
+        "input": "4 5\n1 2 1\n2 3 2\n3 4 1\n4 1 4\n1 3 3",
+        "output": "4",
+        "explanation": "For input `4 5\n1 2 1\n2 3 2\n3 4 1\n4 1 4\n1 3 3`, the computed output is `4`."
+      },
+      {
+        "input": "3 3\n1 2 5\n2 3 6\n1 3 2",
+        "output": "7",
+        "explanation": "For input `3 3\n1 2 5\n2 3 6\n1 3 2`, the computed output is `7`."
+      },
+      {
+        "input": "2 1\n1 2 9",
+        "output": "9",
+        "explanation": "For input `2 1\n1 2 9`, the computed output is `9`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nFind the total weight of a minimum spanning tree of a connected undirected weighted graph.\n\n### Input Specification\nN M; then edges u v w.\n\n### Output Specification\nMST total weight.\n\n### Constraints\n`1≤N≤2×10^5; M≤3×10^5.`\n\n### Complexity Target\n- Time Complexity: `O(M log M)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N M; then edges u v w.",
+      "outputSpecification": "MST total weight.",
+      "constraints": "1≤N≤2×10^5; M≤3×10^5.",
+      "hint_1": "Sort edges by weight and add them using a Disjoint Set Union structure. For 'Kruskal MST', ensure you understand the required output format.",
+      "hint_2": "Only add an edge when its endpoints belong to different components. Consider how the constraints (1≤N≤2×10^5; M≤3×10^5.) guide the algorithm choice.",
+      "hint_3": "Kruskal runs in O(M log M) dominated by the sort plus near-O(M·α) union-find operations. The target complexity is O(M log M).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Graphs / Minimum Spanning Tree problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(M log M) by applying standard Graphs / Minimum Spanning Tree techniques without redundant scanning or allocations.",
+      "time_complexity": "O(M log M)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "4 5\n1 2 1\n2 3 2\n3 4 1\n4 1 4\n1 3 3",
+          "output": "4",
+          "explanation": "For input `4 5\n1 2 1\n2 3 2\n3 4 1\n4 1 4\n1 3 3`, the computed output is `4`."
+        },
+        {
+          "input": "3 3\n1 2 5\n2 3 6\n1 3 2",
+          "output": "7",
+          "explanation": "For input `3 3\n1 2 5\n2 3 6\n1 3 2`, the computed output is `7`."
+        },
+        {
+          "input": "2 1\n1 2 9",
+          "output": "9",
+          "explanation": "For input `2 1\n1 2 9`, the computed output is `9`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Accenture",
+      "Amazon",
+      "Microsoft"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 539,
+    "externalId": "DSA-539",
+    "slug": "evaluate-division",
+    "title": "539. Evaluate Division",
+    "rawTitle": "Evaluate Division",
+    "category": "Graphs / Weighted DFS",
+    "topic": "Graphs / Weighted DFS",
+    "difficulty": "Intermediate",
+    "rating": 1500,
+    "tags": [
+      "graph",
+      "dfs",
+      "ratios"
+    ],
+    "statement": "Given equations a/b=value, answer division queries. Return -1 if variables are disconnected.",
+    "constraints": "Equations≤10^4; values positive.",
+    "inputFormat": "E; equations; Q; queries.",
+    "outputFormat": "One result per query.",
+    "complexityTarget": "O(E + Q·E)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "2\na b 2\nb c 3\n3\na c\nb a\na e",
+        "expectedOutput": "6\n0.5\n-1",
+        "rawInput": "2\na b 2\nb c 3\n3\na c\nb a\na e"
+      },
+      {
+        "testNumber": 2,
+        "input": "1\nx y 4\n2\nx y\ny x",
+        "expectedOutput": "4\n0.25",
+        "rawInput": "1\nx y 4\n2\nx y\ny x"
+      },
+      {
+        "testNumber": 3,
+        "input": "1\na b 2\n1\na a",
+        "expectedOutput": "1",
+        "rawInput": "1\na b 2\n1\na a"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "3\na b 1.5\nb c 2\nc d 4\n2\na d\nd a",
+        "expectedOutput": "12\n0.083333"
+      }
+    ],
+    "examples": [
+      {
+        "input": "2\na b 2\nb c 3\n3\na c\nb a\na e",
+        "output": "6\n0.5\n-1",
+        "explanation": "For input `2\na b 2\nb c 3\n3\na c\nb a\na e`, the computed output is `6\n0.5\n-1`."
+      },
+      {
+        "input": "1\nx y 4\n2\nx y\ny x",
+        "output": "4\n0.25",
+        "explanation": "For input `1\nx y 4\n2\nx y\ny x`, the computed output is `4\n0.25`."
+      },
+      {
+        "input": "1\na b 2\n1\na a",
+        "output": "1",
+        "explanation": "For input `1\na b 2\n1\na a`, the computed output is `1`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nGiven equations a/b=value, answer division queries. Return -1 if variables are disconnected.\n\n### Input Specification\nE; equations; Q; queries.\n\n### Output Specification\nOne result per query.\n\n### Constraints\n`Equations≤10^4; values positive.`\n\n### Complexity Target\n- Time Complexity: `O(E + Q·E)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "E; equations; Q; queries.",
+      "outputSpecification": "One result per query.",
+      "constraints": "Equations≤10^4; values positive.",
+      "hint_1": "Build a weighted bidirectional graph where each equation edge stores its ratio and inverse. For 'Evaluate Division', ensure you understand the required output format.",
+      "hint_2": "DFS from the source to the target multiplying edge weights along the path. Consider how the constraints (Equations≤10^4; values positive.) guide the algorithm choice.",
+      "hint_3": "Each traversal explores reachable variables once; total work is O(E + Q·E) worst case. The target complexity is O(E + Q·E).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Graphs / Weighted DFS problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(E + Q·E) by applying standard Graphs / Weighted DFS techniques without redundant scanning or allocations.",
+      "time_complexity": "O(E + Q·E)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "2\na b 2\nb c 3\n3\na c\nb a\na e",
+          "output": "6\n0.5\n-1",
+          "explanation": "For input `2\na b 2\nb c 3\n3\na c\nb a\na e`, the computed output is `6\n0.5\n-1`."
+        },
+        {
+          "input": "1\nx y 4\n2\nx y\ny x",
+          "output": "4\n0.25",
+          "explanation": "For input `1\nx y 4\n2\nx y\ny x`, the computed output is `4\n0.25`."
+        },
+        {
+          "input": "1\na b 2\n1\na a",
+          "output": "1",
+          "explanation": "For input `1\na b 2\n1\na a`, the computed output is `1`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 540,
+    "externalId": "DSA-540",
+    "slug": "longest-common-subsequence",
+    "title": "540. Longest Common Subsequence",
+    "rawTitle": "Longest Common Subsequence",
+    "category": "Dynamic Programming / Strings",
+    "topic": "Dynamic Programming / Strings",
+    "difficulty": "Intermediate",
+    "rating": 1400,
+    "tags": [
+      "dp",
+      "strings"
+    ],
+    "statement": "Find the length of the longest common subsequence of two strings and print one valid subsequence.",
+    "constraints": "String lengths≤2000; lowercase English letters.",
+    "inputFormat": "Two strings on separate lines.",
+    "outputFormat": "Length and one valid LCS.",
+    "complexityTarget": "O(|A|·|B|)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "abcde\nace",
+        "expectedOutput": "3\nace",
+        "rawInput": "abcde\nace"
+      },
+      {
+        "testNumber": 2,
+        "input": "abc\nabc",
+        "expectedOutput": "3\nabc",
+        "rawInput": "abc\nabc"
+      },
+      {
+        "testNumber": 3,
+        "input": "abc\ndef",
+        "expectedOutput": "0",
+        "rawInput": "abc\ndef"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "AGGTAB\nGXTXAYB",
+        "expectedOutput": "4\nGTAB"
+      },
+      {
+        "testNumber": 2,
+        "input": "aaaa\naa",
+        "expectedOutput": "2\naa"
+      }
+    ],
+    "examples": [
+      {
+        "input": "abcde\nace",
+        "output": "3\nace",
+        "explanation": "For input `abcde\nace`, the computed output is `3\nace`."
+      },
+      {
+        "input": "abc\nabc",
+        "output": "3\nabc",
+        "explanation": "For input `abc\nabc`, the computed output is `3\nabc`."
+      },
+      {
+        "input": "abc\ndef",
+        "output": "0",
+        "explanation": "For input `abc\ndef`, the computed output is `0`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nFind the length of the longest common subsequence of two strings and print one valid subsequence.\n\n### Input Specification\nTwo strings on separate lines.\n\n### Output Specification\nLength and one valid LCS.\n\n### Constraints\n`String lengths≤2000; lowercase English letters.`\n\n### Complexity Target\n- Time Complexity: `O(|A|·|B|)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "Two strings on separate lines.",
+      "outputSpecification": "Length and one valid LCS.",
+      "constraints": "String lengths≤2000; lowercase English letters.",
+      "hint_1": "Define dp[i][j] over prefixes of the two strings. For 'Longest Common Subsequence', ensure you understand the required output format.",
+      "hint_2": "Match-and-skip transitions let you both compute the length and backtrack a valid subsequence. Consider how the constraints (String lengths≤2000; lowercase English letters.) guide the algorithm choice.",
+      "hint_3": "O(|A|·|B|) time and space; strings up to length 2000 fit comfortably. The target complexity is O(|A|·|B|).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Dynamic Programming / Strings problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(|A|·|B|) by applying standard Dynamic Programming / Strings techniques without redundant scanning or allocations.",
+      "time_complexity": "O(|A|·|B|)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "abcde\nace",
+          "output": "3\nace",
+          "explanation": "For input `abcde\nace`, the computed output is `3\nace`."
+        },
+        {
+          "input": "abc\nabc",
+          "output": "3\nabc",
+          "explanation": "For input `abc\nabc`, the computed output is `3\nabc`."
+        },
+        {
+          "input": "abc\ndef",
+          "output": "0",
+          "explanation": "For input `abc\ndef`, the computed output is `0`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Microsoft",
+      "Google",
+      "Flipkart"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 541,
+    "externalId": "DSA-541",
+    "slug": "zero-one-knapsack-selection",
+    "title": "541. 0/1 Knapsack Selection",
+    "rawTitle": "0/1 Knapsack Selection",
+    "category": "Dynamic Programming / Knapsack",
+    "topic": "Dynamic Programming / Knapsack",
+    "difficulty": "Intermediate",
+    "rating": 1450,
+    "tags": [
+      "dp",
+      "knapsack"
+    ],
+    "statement": "Choose each item at most once to maximize value under capacity W. Output maximum value and selected item indices.",
+    "constraints": "N≤200; W≤10^4.",
+    "inputFormat": "N W; then N lines weight value.",
+    "outputFormat": "Maximum value, count, and indices.",
+    "complexityTarget": "O(N·W)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "3 50\n10 60\n20 100\n30 120",
+        "expectedOutput": "220\n2\n2 3",
+        "rawInput": "3 50\n10 60\n20 100\n30 120"
+      },
+      {
+        "testNumber": 2,
+        "input": "2 3\n6 10\n7 20",
+        "expectedOutput": "0\n0",
+        "rawInput": "2 3\n6 10\n7 20"
+      },
+      {
+        "testNumber": 3,
+        "input": "4 7\n1 1\n3 4\n4 5\n5 7",
+        "expectedOutput": "9\n2\n2 3",
+        "rawInput": "4 7\n1 1\n3 4\n4 5\n5 7"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "5 10\n2 6\n2 10\n6 12\n5 8\n4 7",
+        "expectedOutput": "27\n3\n1 2 5"
+      },
+      {
+        "testNumber": 2,
+        "input": "1 3\n3 9",
+        "expectedOutput": "0\n0"
+      }
+    ],
+    "examples": [
+      {
+        "input": "3 50\n10 60\n20 100\n30 120",
+        "output": "220\n2\n2 3",
+        "explanation": "For input `3 50\n10 60\n20 100\n30 120`, the computed output is `220\n2\n2 3`."
+      },
+      {
+        "input": "2 3\n6 10\n7 20",
+        "output": "0\n0",
+        "explanation": "For input `2 3\n6 10\n7 20`, the computed output is `0\n0`."
+      },
+      {
+        "input": "4 7\n1 1\n3 4\n4 5\n5 7",
+        "output": "9\n2\n2 3",
+        "explanation": "For input `4 7\n1 1\n3 4\n4 5\n5 7`, the computed output is `9\n2\n2 3`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nChoose each item at most once to maximize value under capacity W. Output maximum value and selected item indices.\n\n### Input Specification\nN W; then N lines weight value.\n\n### Output Specification\nMaximum value, count, and indices.\n\n### Constraints\n`N≤200; W≤10^4.`\n\n### Complexity Target\n- Time Complexity: `O(N·W)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N W; then N lines weight value.",
+      "outputSpecification": "Maximum value, count, and indices.",
+      "constraints": "N≤200; W≤10^4.",
+      "hint_1": "Use dp[w] = the best value achievable with capacity exactly w using each item at most once. For '0/1 Knapsack Selection', ensure you understand the required output format.",
+      "hint_2": "Iterate items in the outer loop and weights in reverse to enforce 0/1 (no reuse). Consider how the constraints (N≤200; W≤10^4.) guide the algorithm choice.",
+      "hint_3": "O(N·W) time with a 1D table; backtrack decisions to recover the selected indices. The target complexity is O(N·W).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Dynamic Programming / Knapsack problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N·W) by applying standard Dynamic Programming / Knapsack techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N·W)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "3 50\n10 60\n20 100\n30 120",
+          "output": "220\n2\n2 3",
+          "explanation": "For input `3 50\n10 60\n20 100\n30 120`, the computed output is `220\n2\n2 3`."
+        },
+        {
+          "input": "2 3\n6 10\n7 20",
+          "output": "0\n0",
+          "explanation": "For input `2 3\n6 10\n7 20`, the computed output is `0\n0`."
+        },
+        {
+          "input": "4 7\n1 1\n3 4\n4 5\n5 7",
+          "output": "9\n2\n2 3",
+          "explanation": "For input `4 7\n1 1\n3 4\n4 5\n5 7`, the computed output is `9\n2\n2 3`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Google",
+      "Flipkart",
+      "TCS"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 542,
+    "externalId": "DSA-542",
+    "slug": "matrix-chain-multiplication",
+    "title": "542. Matrix Chain Multiplication",
+    "rawTitle": "Matrix Chain Multiplication",
+    "category": "Dynamic Programming / Intervals",
+    "topic": "Dynamic Programming / Intervals",
+    "difficulty": "Intermediate",
+    "rating": 1500,
+    "tags": [
+      "dp",
+      "matrix-chain"
+    ],
+    "statement": "Given dimensions of matrices multiplied in order, find the minimum scalar multiplication cost.",
+    "constraints": "2≤number of matrices≤200; dimensions≤10^4.",
+    "inputFormat": "N; then N+1 dimensions.",
+    "outputFormat": "Minimum multiplication cost.",
+    "complexityTarget": "O(N³)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "4\n10 30 5 60",
+        "expectedOutput": "4500",
+        "rawInput": "4\n10 30 5 60"
+      },
+      {
+        "testNumber": 2,
+        "input": "3\n10 20 30",
+        "expectedOutput": "6000",
+        "rawInput": "3\n10 20 30"
+      },
+      {
+        "testNumber": 3,
+        "input": "5\n40 20 30 10 30",
+        "expectedOutput": "26000",
+        "rawInput": "5\n40 20 30 10 30"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "6\n5 10 3 12 5 50",
+        "expectedOutput": "1655"
+      },
+      {
+        "testNumber": 2,
+        "input": "3\n1 1 1",
+        "expectedOutput": "1"
+      }
+    ],
+    "examples": [
+      {
+        "input": "4\n10 30 5 60",
+        "output": "4500",
+        "explanation": "For input `4\n10 30 5 60`, the computed output is `4500`."
+      },
+      {
+        "input": "3\n10 20 30",
+        "output": "6000",
+        "explanation": "For input `3\n10 20 30`, the computed output is `6000`."
+      },
+      {
+        "input": "5\n40 20 30 10 30",
+        "output": "26000",
+        "explanation": "For input `5\n40 20 30 10 30`, the computed output is `26000`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nGiven dimensions of matrices multiplied in order, find the minimum scalar multiplication cost.\n\n### Input Specification\nN; then N+1 dimensions.\n\n### Output Specification\nMinimum multiplication cost.\n\n### Constraints\n`2≤number of matrices≤200; dimensions≤10^4.`\n\n### Complexity Target\n- Time Complexity: `O(N³)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N; then N+1 dimensions.",
+      "outputSpecification": "Minimum multiplication cost.",
+      "constraints": "2≤number of matrices≤200; dimensions≤10^4.",
+      "hint_1": "Let dp[i][j] be the minimum multiplication cost for matrices i through j. For 'Matrix Chain Multiplication', ensure you understand the required output format.",
+      "hint_2": "Try every split point between i and j and combine the two sub-costs. Consider how the constraints (2≤number of matrices≤200; dimensions≤10^4.) guide the algorithm choice.",
+      "hint_3": "O(N³) with O(N²) space; base cases are single matrices with cost zero. The target complexity is O(N³).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Dynamic Programming / Intervals problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N³) by applying standard Dynamic Programming / Intervals techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N³)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "4\n10 30 5 60",
+          "output": "4500",
+          "explanation": "For input `4\n10 30 5 60`, the computed output is `4500`."
+        },
+        {
+          "input": "3\n10 20 30",
+          "output": "6000",
+          "explanation": "For input `3\n10 20 30`, the computed output is `6000`."
+        },
+        {
+          "input": "5\n40 20 30 10 30",
+          "output": "26000",
+          "explanation": "For input `5\n40 20 30 10 30`, the computed output is `26000`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Flipkart",
+      "TCS",
+      "Infosys"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 543,
+    "externalId": "DSA-543",
+    "slug": "decode-ways",
+    "title": "543. Decode Ways",
+    "rawTitle": "Decode Ways",
+    "category": "Dynamic Programming / Strings",
+    "topic": "Dynamic Programming / Strings",
+    "difficulty": "Intermediate",
+    "rating": 1400,
+    "tags": [
+      "dp",
+      "strings"
+    ],
+    "statement": "Count valid decodings where 1=A through 26=Z. A leading zero is invalid.",
+    "constraints": "1≤length≤10^5; digits only.",
+    "inputFormat": "One digit string.",
+    "outputFormat": "Count modulo 1,000,000,007.",
+    "complexityTarget": "O(length)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "12",
+        "expectedOutput": "2",
+        "rawInput": "12"
+      },
+      {
+        "testNumber": 2,
+        "input": "226",
+        "expectedOutput": "3",
+        "rawInput": "226"
+      },
+      {
+        "testNumber": 3,
+        "input": "06",
+        "expectedOutput": "0",
+        "rawInput": "06"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "11106",
+        "expectedOutput": "2"
+      },
+      {
+        "testNumber": 2,
+        "input": "10",
+        "expectedOutput": "1"
+      },
+      {
+        "testNumber": 3,
+        "input": "27",
+        "expectedOutput": "1"
+      }
+    ],
+    "examples": [
+      {
+        "input": "12",
+        "output": "2",
+        "explanation": "For input `12`, the computed output is `2`."
+      },
+      {
+        "input": "226",
+        "output": "3",
+        "explanation": "For input `226`, the computed output is `3`."
+      },
+      {
+        "input": "06",
+        "output": "0",
+        "explanation": "For input `06`, the computed output is `0`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nCount valid decodings where 1=A through 26=Z. A leading zero is invalid.\n\n### Input Specification\nOne digit string.\n\n### Output Specification\nCount modulo 1,000,000,007.\n\n### Constraints\n`1≤length≤10^5; digits only.`\n\n### Complexity Target\n- Time Complexity: `O(length)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "One digit string.",
+      "outputSpecification": "Count modulo 1,000,000,007.",
+      "constraints": "1≤length≤10^5; digits only.",
+      "hint_1": "Define dp[i][j] over prefixes of the two strings. For 'Decode Ways', ensure you understand the required output format.",
+      "hint_2": "Match-and-skip transitions let you both compute the length and backtrack a valid subsequence. Consider how the constraints (1≤length≤10^5; digits only.) guide the algorithm choice.",
+      "hint_3": "O(|A|·|B|) time and space; strings up to length 2000 fit comfortably. The target complexity is O(length).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Dynamic Programming / Strings problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(length) by applying standard Dynamic Programming / Strings techniques without redundant scanning or allocations.",
+      "time_complexity": "O(length)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "12",
+          "output": "2",
+          "explanation": "For input `12`, the computed output is `2`."
+        },
+        {
+          "input": "226",
+          "output": "3",
+          "explanation": "For input `226`, the computed output is `3`."
+        },
+        {
+          "input": "06",
+          "output": "0",
+          "explanation": "For input `06`, the computed output is `0`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "TCS",
+      "Infosys",
+      "Accenture"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 544,
+    "externalId": "DSA-544",
+    "slug": "palindromic-substrings",
+    "title": "544. Palindromic Substrings",
+    "rawTitle": "Palindromic Substrings",
+    "category": "Strings / Dynamic Programming",
+    "topic": "Strings / Dynamic Programming",
+    "difficulty": "Intermediate",
+    "rating": 1450,
+    "tags": [
+      "strings",
+      "palindrome",
+      "dp"
+    ],
+    "statement": "Count all palindromic substrings, counting equal substrings at different positions separately.",
+    "constraints": "1≤length≤3000; lowercase English letters.",
+    "inputFormat": "One string.",
+    "outputFormat": "Number of palindromic substrings.",
+    "complexityTarget": "O(length²)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "aaa",
+        "expectedOutput": "6",
+        "rawInput": "aaa"
+      },
+      {
+        "testNumber": 2,
+        "input": "abc",
+        "expectedOutput": "3",
+        "rawInput": "abc"
+      },
+      {
+        "testNumber": 3,
+        "input": "abba",
+        "expectedOutput": "6",
+        "rawInput": "abba"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "racecar",
+        "expectedOutput": "10"
+      },
+      {
+        "testNumber": 2,
+        "input": "aaaaa",
+        "expectedOutput": "15"
+      }
+    ],
+    "examples": [
+      {
+        "input": "aaa",
+        "output": "6",
+        "explanation": "For input `aaa`, the computed output is `6`."
+      },
+      {
+        "input": "abc",
+        "output": "3",
+        "explanation": "For input `abc`, the computed output is `3`."
+      },
+      {
+        "input": "abba",
+        "output": "6",
+        "explanation": "For input `abba`, the computed output is `6`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nCount all palindromic substrings, counting equal substrings at different positions separately.\n\n### Input Specification\nOne string.\n\n### Output Specification\nNumber of palindromic substrings.\n\n### Constraints\n`1≤length≤3000; lowercase English letters.`\n\n### Complexity Target\n- Time Complexity: `O(length²)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "One string.",
+      "outputSpecification": "Number of palindromic substrings.",
+      "constraints": "1≤length≤3000; lowercase English letters.",
+      "hint_1": "Count palindromic substrings by expanding around every center — both odd and even lengths. For 'Palindromic Substrings', ensure you understand the required output format.",
+      "hint_2": "Each successful expansion adds one palindromic substring. Consider how the constraints (1≤length≤3000; lowercase English letters.) guide the algorithm choice.",
+      "hint_3": "Two expansions per center and O(length) steps each give O(length²) overall. The target complexity is O(length²).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Strings / Dynamic Programming problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(length²) by applying standard Strings / Dynamic Programming techniques without redundant scanning or allocations.",
+      "time_complexity": "O(length²)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "aaa",
+          "output": "6",
+          "explanation": "For input `aaa`, the computed output is `6`."
+        },
+        {
+          "input": "abc",
+          "output": "3",
+          "explanation": "For input `abc`, the computed output is `3`."
+        },
+        {
+          "input": "abba",
+          "output": "6",
+          "explanation": "For input `abba`, the computed output is `6`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Infosys",
+      "Accenture",
+      "Amazon"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 545,
+    "externalId": "DSA-545",
+    "slug": "lru-cache-operations",
+    "title": "545. LRU Cache Operations",
+    "rawTitle": "LRU Cache Operations",
+    "category": "Design / HashMap / Linked List",
+    "topic": "Design / HashMap / Linked List",
+    "difficulty": "Intermediate",
+    "rating": 1500,
+    "tags": [
+      "lru-cache",
+      "hashmap",
+      "linked-list"
+    ],
+    "statement": "Implement an LRU cache. GET returns a value or -1; GET and PUT make a key most recently used.",
+    "constraints": "Capacity≤10^4; operations≤2×10^5.",
+    "inputFormat": "Capacity Q; then Q GET or PUT operations.",
+    "outputFormat": "Print GET results in order.",
+    "complexityTarget": "O(1) amortized per op",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "2 6\nPUT 1 10\nPUT 2 20\nGET 1\nPUT 3 30\nGET 2\nGET 3",
+        "expectedOutput": "10\n-1\n30",
+        "rawInput": "2 6\nPUT 1 10\nPUT 2 20\nGET 1\nPUT 3 30\nGET 2\nGET 3"
+      },
+      {
+        "testNumber": 2,
+        "input": "1 4\nPUT 1 5\nGET 1\nPUT 2 6\nGET 1",
+        "expectedOutput": "5\n-1",
+        "rawInput": "1 4\nPUT 1 5\nGET 1\nPUT 2 6\nGET 1"
+      },
+      {
+        "testNumber": 3,
+        "input": "2 3\nGET 7\nPUT 7 9\nGET 7",
+        "expectedOutput": "-1\n9",
+        "rawInput": "2 3\nGET 7\nPUT 7 9\nGET 7"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "2 7\nPUT 1 1\nPUT 2 2\nGET 1\nPUT 3 3\nGET 2\nGET 1\nGET 3",
+        "expectedOutput": "1\n-1\n1\n3"
+      }
+    ],
+    "examples": [
+      {
+        "input": "2 6\nPUT 1 10\nPUT 2 20\nGET 1\nPUT 3 30\nGET 2\nGET 3",
+        "output": "10\n-1\n30",
+        "explanation": "For input `2 6\nPUT 1 10\nPUT 2 20\nGET 1\nPUT 3 30\nGET 2\nGET 3`, the computed output is `10\n-1\n30`."
+      },
+      {
+        "input": "1 4\nPUT 1 5\nGET 1\nPUT 2 6\nGET 1",
+        "output": "5\n-1",
+        "explanation": "For input `1 4\nPUT 1 5\nGET 1\nPUT 2 6\nGET 1`, the computed output is `5\n-1`."
+      },
+      {
+        "input": "2 3\nGET 7\nPUT 7 9\nGET 7",
+        "output": "-1\n9",
+        "explanation": "For input `2 3\nGET 7\nPUT 7 9\nGET 7`, the computed output is `-1\n9`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nImplement an LRU cache. GET returns a value or -1; GET and PUT make a key most recently used.\n\n### Input Specification\nCapacity Q; then Q GET or PUT operations.\n\n### Output Specification\nPrint GET results in order.\n\n### Constraints\n`Capacity≤10^4; operations≤2×10^5.`\n\n### Complexity Target\n- Time Complexity: `O(1) amortized per op`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "Capacity Q; then Q GET or PUT operations.",
+      "outputSpecification": "Print GET results in order.",
+      "constraints": "Capacity≤10^4; operations≤2×10^5.",
+      "hint_1": "Keep a hashmap for O(1) key lookup plus a doubly linked list for recency order. For 'LRU Cache Operations', ensure you understand the required output format.",
+      "hint_2": "GET and PUT both move a freshly-accessed key to the head and evict the tail when over capacity. Consider how the constraints (Capacity≤10^4; operations≤2×10^5.) guide the algorithm choice.",
+      "hint_3": "Every operation is O(1) amortized with a capacity-limited structure. The target complexity is O(1) amortized per op.",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Design / HashMap / Linked List problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(1) amortized per op by applying standard Design / HashMap / Linked List techniques without redundant scanning or allocations.",
+      "time_complexity": "O(1) amortized per op",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "2 6\nPUT 1 10\nPUT 2 20\nGET 1\nPUT 3 30\nGET 2\nGET 3",
+          "output": "10\n-1\n30",
+          "explanation": "For input `2 6\nPUT 1 10\nPUT 2 20\nGET 1\nPUT 3 30\nGET 2\nGET 3`, the computed output is `10\n-1\n30`."
+        },
+        {
+          "input": "1 4\nPUT 1 5\nGET 1\nPUT 2 6\nGET 1",
+          "output": "5\n-1",
+          "explanation": "For input `1 4\nPUT 1 5\nGET 1\nPUT 2 6\nGET 1`, the computed output is `5\n-1`."
+        },
+        {
+          "input": "2 3\nGET 7\nPUT 7 9\nGET 7",
+          "output": "-1\n9",
+          "explanation": "For input `2 3\nGET 7\nPUT 7 9\nGET 7`, the computed output is `-1\n9`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Accenture",
+      "Amazon",
+      "Microsoft"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 546,
+    "externalId": "DSA-546",
+    "slug": "median-two-sorted-arrays",
+    "title": "546. Median of Two Sorted Arrays",
+    "rawTitle": "Median of Two Sorted Arrays",
+    "category": "Binary Search / Arrays",
+    "topic": "Binary Search / Arrays",
+    "difficulty": "Intermediate",
+    "rating": 1400,
+    "tags": [
+      "binary-search",
+      "median"
+    ],
+    "statement": "Find the median of the combined sorted sequence of two sorted arrays in logarithmic time relative to the smaller array.",
+    "constraints": "Array lengths≤10^5; at least one array is non-empty.",
+    "inputFormat": "N M; then arrays A and B.",
+    "outputFormat": "Median as a decimal number.",
+    "complexityTarget": "O(log(min(N, M)))",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "2 1\n1 3\n2",
+        "expectedOutput": "2.0",
+        "rawInput": "2 1\n1 3\n2"
+      },
+      {
+        "testNumber": 2,
+        "input": "2 2\n1 2\n3 4",
+        "expectedOutput": "2.5",
+        "rawInput": "2 2\n1 2\n3 4"
+      },
+      {
+        "testNumber": 3,
+        "input": "0 3\n1 2 3",
+        "expectedOutput": "2.0",
+        "rawInput": "0 3\n1 2 3"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "3 4\n-5 0 10\n-2 4 6 8",
+        "expectedOutput": "4.0"
+      },
+      {
+        "testNumber": 2,
+        "input": "1 0\n7",
+        "expectedOutput": "7.0"
+      }
+    ],
+    "examples": [
+      {
+        "input": "2 1\n1 3\n2",
+        "output": "2.0",
+        "explanation": "For input `2 1\n1 3\n2`, the computed output is `2.0`."
+      },
+      {
+        "input": "2 2\n1 2\n3 4",
+        "output": "2.5",
+        "explanation": "For input `2 2\n1 2\n3 4`, the computed output is `2.5`."
+      },
+      {
+        "input": "0 3\n1 2 3",
+        "output": "2.0",
+        "explanation": "For input `0 3\n1 2 3`, the computed output is `2.0`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nFind the median of the combined sorted sequence of two sorted arrays in logarithmic time relative to the smaller array.\n\n### Input Specification\nN M; then arrays A and B.\n\n### Output Specification\nMedian as a decimal number.\n\n### Constraints\n`Array lengths≤10^5; at least one array is non-empty.`\n\n### Complexity Target\n- Time Complexity: `O(log(min(N, M)))`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N M; then arrays A and B.",
+      "outputSpecification": "Median as a decimal number.",
+      "constraints": "Array lengths≤10^5; at least one array is non-empty.",
+      "hint_1": "Binary-search a partition of the smaller array so every left value is ≤ every right value. For 'Median of Two Sorted Arrays', ensure you understand the required output format.",
+      "hint_2": "The cut indices in both arrays are determined together; adjust based on the order of boundary values. Consider how the constraints (Array lengths≤10^5; at least one array is non-empty.) guide the algorithm choice.",
+      "hint_3": "O(log(min(N, M))) time with O(1) space; careful integer arithmetic avoids overflow. The target complexity is O(log(min(N, M))).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Binary Search / Arrays problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(log(min(N, M))) by applying standard Binary Search / Arrays techniques without redundant scanning or allocations.",
+      "time_complexity": "O(log(min(N, M)))",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "2 1\n1 3\n2",
+          "output": "2.0",
+          "explanation": "For input `2 1\n1 3\n2`, the computed output is `2.0`."
+        },
+        {
+          "input": "2 2\n1 2\n3 4",
+          "output": "2.5",
+          "explanation": "For input `2 2\n1 2\n3 4`, the computed output is `2.5`."
+        },
+        {
+          "input": "0 3\n1 2 3",
+          "output": "2.0",
+          "explanation": "For input `0 3\n1 2 3`, the computed output is `2.0`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 547,
+    "externalId": "DSA-547",
+    "slug": "minimum-meeting-rooms",
+    "title": "547. Minimum Meeting Rooms",
+    "rawTitle": "Minimum Meeting Rooms",
+    "category": "Intervals / Heap",
+    "topic": "Intervals / Heap",
+    "difficulty": "Intermediate",
+    "rating": 1450,
+    "tags": [
+      "intervals",
+      "heap",
+      "sorting"
+    ],
+    "statement": "Find the minimum rooms needed for meetings. A room is reusable when one meeting ends exactly as another begins.",
+    "constraints": "1≤N≤2×10^5; 0≤start<end≤10^9.",
+    "inputFormat": "N; then N start/end pairs.",
+    "outputFormat": "Minimum rooms.",
+    "complexityTarget": "O(N log N)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "3\n0 30\n5 10\n15 20",
+        "expectedOutput": "2",
+        "rawInput": "3\n0 30\n5 10\n15 20"
+      },
+      {
+        "testNumber": 2,
+        "input": "4\n1 5\n2 6\n3 7\n8 9",
+        "expectedOutput": "3",
+        "rawInput": "4\n1 5\n2 6\n3 7\n8 9"
+      },
+      {
+        "testNumber": 3,
+        "input": "2\n1 2\n2 3",
+        "expectedOutput": "1",
+        "rawInput": "2\n1 2\n2 3"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "5\n0 10\n1 2\n3 4\n5 6\n7 8",
+        "expectedOutput": "2"
+      },
+      {
+        "testNumber": 2,
+        "input": "4\n1 10\n2 3\n4 5\n6 7",
+        "expectedOutput": "2"
+      }
+    ],
+    "examples": [
+      {
+        "input": "3\n0 30\n5 10\n15 20",
+        "output": "2",
+        "explanation": "For input `3\n0 30\n5 10\n15 20`, the computed output is `2`."
+      },
+      {
+        "input": "4\n1 5\n2 6\n3 7\n8 9",
+        "output": "3",
+        "explanation": "For input `4\n1 5\n2 6\n3 7\n8 9`, the computed output is `3`."
+      },
+      {
+        "input": "2\n1 2\n2 3",
+        "output": "1",
+        "explanation": "For input `2\n1 2\n2 3`, the computed output is `1`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nFind the minimum rooms needed for meetings. A room is reusable when one meeting ends exactly as another begins.\n\n### Input Specification\nN; then N start/end pairs.\n\n### Output Specification\nMinimum rooms.\n\n### Constraints\n`1≤N≤2×10^5; 0≤start<end≤10^9.`\n\n### Complexity Target\n- Time Complexity: `O(N log N)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N; then N start/end pairs.",
+      "outputSpecification": "Minimum rooms.",
+      "constraints": "1≤N≤2×10^5; 0≤start<end≤10^9.",
+      "hint_1": "Sort meetings by start time and push each end time into a min-heap of active rooms. For 'Minimum Meeting Rooms', ensure you understand the required output format.",
+      "hint_2": "Pop the heap when its earliest end time is ≤ the current start so the room is reused. Consider how the constraints (1≤N≤2×10^5; 0≤start<end≤10^9.) guide the algorithm choice.",
+      "hint_3": "The heap size at any point is the active room count; tracking its peak gives O(N log N). The target complexity is O(N log N).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Intervals / Heap problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N log N) by applying standard Intervals / Heap techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N log N)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "3\n0 30\n5 10\n15 20",
+          "output": "2",
+          "explanation": "For input `3\n0 30\n5 10\n15 20`, the computed output is `2`."
+        },
+        {
+          "input": "4\n1 5\n2 6\n3 7\n8 9",
+          "output": "3",
+          "explanation": "For input `4\n1 5\n2 6\n3 7\n8 9`, the computed output is `3`."
+        },
+        {
+          "input": "2\n1 2\n2 3",
+          "output": "1",
+          "explanation": "For input `2\n1 2\n2 3`, the computed output is `1`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Microsoft",
+      "Google",
+      "Flipkart"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 548,
+    "externalId": "DSA-548",
+    "slug": "top-k-frequent-elements",
+    "title": "548. Top K Frequent Elements",
+    "rawTitle": "Top K Frequent Elements",
+    "category": "HashMap / Heap",
+    "topic": "HashMap / Heap",
+    "difficulty": "Intermediate",
+    "rating": 1500,
+    "tags": [
+      "hashmap",
+      "heap",
+      "frequency"
+    ],
+    "statement": "Return the K most frequent distinct elements. Break frequency ties by smaller numeric value.",
+    "constraints": "1≤N≤2×10^5; K≤number of distinct values.",
+    "inputFormat": "N K; then N integers.",
+    "outputFormat": "Elements ordered by frequency descending, then value ascending.",
+    "complexityTarget": "O(N log D)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "6 2\n1 1 1 2 2 3",
+        "expectedOutput": "1 2",
+        "rawInput": "6 2\n1 1 1 2 2 3"
+      },
+      {
+        "testNumber": 2,
+        "input": "5 2\n4 4 5 5 6",
+        "expectedOutput": "4 5",
+        "rawInput": "5 2\n4 4 5 5 6"
+      },
+      {
+        "testNumber": 3,
+        "input": "4 1\n-1 -1 2 3",
+        "expectedOutput": "-1",
+        "rawInput": "4 1\n-1 -1 2 3"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "8 3\n5 5 4 4 4 3 3 2",
+        "expectedOutput": "4 3 5"
+      },
+      {
+        "testNumber": 2,
+        "input": "7 2\n1 2 2 3 3 3 1",
+        "expectedOutput": "3 1"
+      }
+    ],
+    "examples": [
+      {
+        "input": "6 2\n1 1 1 2 2 3",
+        "output": "1 2",
+        "explanation": "For input `6 2\n1 1 1 2 2 3`, the computed output is `1 2`."
+      },
+      {
+        "input": "5 2\n4 4 5 5 6",
+        "output": "4 5",
+        "explanation": "For input `5 2\n4 4 5 5 6`, the computed output is `4 5`."
+      },
+      {
+        "input": "4 1\n-1 -1 2 3",
+        "output": "-1",
+        "explanation": "For input `4 1\n-1 -1 2 3`, the computed output is `-1`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nReturn the K most frequent distinct elements. Break frequency ties by smaller numeric value.\n\n### Input Specification\nN K; then N integers.\n\n### Output Specification\nElements ordered by frequency descending, then value ascending.\n\n### Constraints\n`1≤N≤2×10^5; K≤number of distinct values.`\n\n### Complexity Target\n- Time Complexity: `O(N log D)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N K; then N integers.",
+      "outputSpecification": "Elements ordered by frequency descending, then value ascending.",
+      "constraints": "1≤N≤2×10^5; K≤number of distinct values.",
+      "hint_1": "Count frequencies of every distinct value with a hash map. For 'Top K Frequent Elements', ensure you understand the required output format.",
+      "hint_2": "Order distinct values by frequency descending, then value ascending when frequencies tie. Consider how the constraints (1≤N≤2×10^5; K≤number of distinct values.) guide the algorithm choice.",
+      "hint_3": "Heap or sort-based selection on the distinct keys gives O(N log D) time. The target complexity is O(N log D).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For HashMap / Heap problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N log D) by applying standard HashMap / Heap techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N log D)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "6 2\n1 1 1 2 2 3",
+          "output": "1 2",
+          "explanation": "For input `6 2\n1 1 1 2 2 3`, the computed output is `1 2`."
+        },
+        {
+          "input": "5 2\n4 4 5 5 6",
+          "output": "4 5",
+          "explanation": "For input `5 2\n4 4 5 5 6`, the computed output is `4 5`."
+        },
+        {
+          "input": "4 1\n-1 -1 2 3",
+          "output": "-1",
+          "explanation": "For input `4 1\n-1 -1 2 3`, the computed output is `-1`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Google",
+      "Flipkart",
+      "TCS"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  },
+  {
+    "number": 549,
+    "externalId": "DSA-549",
+    "slug": "insert-and-merge-interval",
+    "title": "549. Insert and Merge Interval",
+    "rawTitle": "Insert and Merge Interval",
+    "category": "Intervals / Arrays",
+    "topic": "Intervals / Arrays",
+    "difficulty": "Intermediate",
+    "rating": 1400,
+    "tags": [
+      "intervals",
+      "merging"
+    ],
+    "statement": "Insert a new interval into sorted non-overlapping intervals and merge all overlaps.",
+    "constraints": "0≤N≤10^5; endpoints≤10^9.",
+    "inputFormat": "N; intervals; final new interval.",
+    "outputFormat": "Resulting intervals.",
+    "complexityTarget": "O(N)",
+    "visibleTestCases": [
+      {
+        "testNumber": 1,
+        "input": "3\n1 3\n6 9\n12 15\n2 7",
+        "expectedOutput": "2\n1 9\n12 15",
+        "rawInput": "3\n1 3\n6 9\n12 15\n2 7"
+      },
+      {
+        "testNumber": 2,
+        "input": "2\n1 2\n5 6\n3 4",
+        "expectedOutput": "3\n1 2\n3 4\n5 6",
+        "rawInput": "2\n1 2\n5 6\n3 4"
+      },
+      {
+        "testNumber": 3,
+        "input": "0\n4 8",
+        "expectedOutput": "1\n4 8",
+        "rawInput": "0\n4 8"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "testNumber": 1,
+        "input": "4\n1 5\n10 12\n15 18\n20 25\n0 30",
+        "expectedOutput": "1\n0 30"
+      },
+      {
+        "testNumber": 2,
+        "input": "3\n2 4\n6 8\n10 12\n8 11",
+        "expectedOutput": "3\n2 4\n6 12"
+      }
+    ],
+    "examples": [
+      {
+        "input": "3\n1 3\n6 9\n12 15\n2 7",
+        "output": "2\n1 9\n12 15",
+        "explanation": "For input `3\n1 3\n6 9\n12 15\n2 7`, the computed output is `2\n1 9\n12 15`."
+      },
+      {
+        "input": "2\n1 2\n5 6\n3 4",
+        "output": "3\n1 2\n3 4\n5 6",
+        "explanation": "For input `2\n1 2\n5 6\n3 4`, the computed output is `3\n1 2\n3 4\n5 6`."
+      },
+      {
+        "input": "0\n4 8",
+        "output": "1\n4 8",
+        "explanation": "For input `0\n4 8`, the computed output is `1\n4 8`."
+      }
+    ],
+    "aiAnalysis": {
+      "problem_explanation": "### Problem Overview\n\nInsert a new interval into sorted non-overlapping intervals and merge all overlaps.\n\n### Input Specification\nN; intervals; final new interval.\n\n### Output Specification\nResulting intervals.\n\n### Constraints\n`0≤N≤10^5; endpoints≤10^9.`\n\n### Complexity Target\n- Time Complexity: `O(N)`\n- Space Complexity: `O(1)` or `O(N)` based on implementation.",
+      "inputSpecification": "N; intervals; final new interval.",
+      "outputSpecification": "Resulting intervals.",
+      "constraints": "0≤N≤10^5; endpoints≤10^9.",
+      "hint_1": "Intervals before the new one are copied untouched, provided they end before its start. For 'Insert and Merge Interval', ensure you understand the required output format.",
+      "hint_2": "Merge every interval overlapping the inserted one, then append the remaining intervals. Consider how the constraints (0≤N≤10^5; endpoints≤10^9.) guide the algorithm choice.",
+      "hint_3": "A single linear pass over the sorted list gives O(N) time and O(N) output space. The target complexity is O(N).",
+      "brute_force": "A straightforward approach directly follows the problem definition: read the input and simulate step-by-step. For Intervals / Arrays problems of this type, a basic repeated scan or O(N²) simulation verifies correctness.",
+      "optimal_approach": "An optimal approach achieves the target complexity of O(N) by applying standard Intervals / Arrays techniques without redundant scanning or allocations.",
+      "time_complexity": "O(N)",
+      "space_complexity": "O(1) auxiliary space (or O(N) if building an auxiliary result).",
+      "interview_importance": "Intermediate Placement DSA - Frequently tested problem pattern in coding interviews and placement rounds.",
+      "common_mistakes": [
+        "Failing to handle boundary values (empty input, single element, negative integers)",
+        "Incorrect parsing of multiline standard input",
+        "Off-by-one errors in iteration bounds",
+        "Forgetting to reset/clear state between test cases"
+      ],
+      "examples": [
+        {
+          "input": "3\n1 3\n6 9\n12 15\n2 7",
+          "output": "2\n1 9\n12 15",
+          "explanation": "For input `3\n1 3\n6 9\n12 15\n2 7`, the computed output is `2\n1 9\n12 15`."
+        },
+        {
+          "input": "2\n1 2\n5 6\n3 4",
+          "output": "3\n1 2\n3 4\n5 6",
+          "explanation": "For input `2\n1 2\n5 6\n3 4`, the computed output is `3\n1 2\n3 4\n5 6`."
+        },
+        {
+          "input": "0\n4 8",
+          "output": "1\n4 8",
+          "explanation": "For input `0\n4 8`, the computed output is `1\n4 8`."
+        }
+      ],
+      "timeLimit": "2.0s",
+      "memoryLimit": "256 MB"
+    },
+    "companies": [
+      "Flipkart",
+      "TCS",
+      "Infosys"
+    ],
+    "timeLimit": "2.0s",
+    "memoryLimit": "256 MB",
+    "placementImportance": true,
+    "interviewImportance": true
+  }
+]
