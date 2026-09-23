@@ -2522,12 +2522,16 @@ Answer the student's question based on the coding problem. Provide hints or feed
                       </div>
                     )}
                     
-                    {problem?.problemUrl && (
+                    {problem?.problemUrl ? (
                       <div className="pt-2 text-[11px] text-[var(--text-secondary)]">
                         <span>Original Platform: </span>
                         <a href={problem.problemUrl} target="_blank" rel="noreferrer" className="text-amber-400 font-semibold underline hover:text-amber-300">
                           Problem {problem.externalId}
                         </a>
+                      </div>
+                    ) : (
+                      <div className="pt-2 text-[11px] text-indigo-400/80 font-medium flex items-center gap-1.5">
+                        <Sparkles size={12} /> Curated DSA Question Bank • Problem {problem?.externalId || id}
                       </div>
                     )}
                   </div>

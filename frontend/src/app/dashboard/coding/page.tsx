@@ -222,21 +222,21 @@ function CodingHubContent() {
     }
   }, [drawerOpen, selectedQuestion]);
 
-  // Trigger Codeforces Sync
+  // Refresh DSA Questions
   const handleSyncRepository = async () => {
     setSyncing(true);
-    toast.info("Syncing Codeforces repository...");
+    toast.info("Refreshing DSA questions...");
     try {
       const res = await api.post("/coding/sync-codeforces");
       if (res.data.success) {
-        toast.success(`Successfully synced ${res.data.syncedCount} questions!`);
+        toast.success(`Active question bank: ${res.data.syncedCount} DSA problems!`);
         fetchDashboardData();
         fetchQuestions();
       } else {
-        toast.error("Synchronization failed");
+        toast.error("Refresh failed");
       }
     } catch (err) {
-      toast.error("Failed to sync Codeforces problems");
+      toast.error("Failed to refresh problems");
     } finally {
       setSyncing(false);
     }
@@ -739,10 +739,10 @@ function CodingHubContent() {
                       <td colSpan={7} className="py-12 text-center text-[var(--text-secondary)]">
                         <div className="flex flex-col items-center justify-center">
                           <Code2 size={32} className="text-[var(--text-secondary)]/25 mb-2" />
-                          <p className="font-bold text-sm text-[var(--text-primary)]">No Questions Available Yet</p>
-                          <p className="text-xs text-[var(--text-secondary)] mt-1 mb-4">Sync Codeforces Repository to begin.</p>
+                          <p className="font-bold text-sm text-[var(--text-primary)]">No Questions Found</p>
+                          <p className="text-xs text-[var(--text-secondary)] mt-1 mb-4">Try clearing search/filters or refresh questions.</p>
                           <PremiumButton variant="primary" onClick={handleSyncRepository} icon={<RefreshCw size={12} />}>
-                            Sync Problems
+                            Refresh Questions
                           </PremiumButton>
                         </div>
                       </td>
@@ -855,12 +855,12 @@ function CodingHubContent() {
               <div>
                 <div className="flex justify-between items-center mb-6 border-b border-[var(--border-color)] pb-4">
                   <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-black font-extrabold">
-                      CF
+                    <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-extrabold text-xs">
+                      DSA
                     </span>
                     <div>
                       <h3 className="text-lg font-bold text-[var(--text-primary)] leading-tight">{selectedQuestion.title}</h3>
-                      <p className="text-[10px] text-[var(--text-secondary)] font-medium">Codeforces Problem</p>
+                      <p className="text-[10px] text-[var(--text-secondary)] font-medium">{selectedQuestion.topic} • {selectedQuestion.difficulty}</p>
                     </div>
                   </div>
                   
@@ -1054,14 +1054,20 @@ function CodingHubContent() {
                     <BookMarked size={16} />
                   </button>
 
-                  <a
-                    href={selectedQuestion.problemUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2.5 rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] transition-all flex items-center gap-1.5 text-xs font-bold"
-                  >
-                    Codeforces <ExternalLink size={12} />
-                  </a>
+                  {selectedQuestion.problemUrl ? (
+                    <a
+                      href={selectedQuestion.problemUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-2.5 rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] transition-all flex items-center gap-1.5 text-xs font-bold"
+                    >
+                      Reference <ExternalLink size={12} />
+                    </a>
+                  ) : (
+                    <span className="p-2.5 rounded-xl border border-indigo-500/20 text-indigo-400 bg-indigo-500/10 flex items-center gap-1.5 text-xs font-bold">
+                      <Sparkles size={12} /> Curated DSA
+                    </span>
+                  )}
                 </div>
 
                 {/* Right actions */}

@@ -165,13 +165,17 @@ router.get("/history", async (req: any, res) => {
 
 // ─── Day 11 DSA Question Bank Routes ──────────────────────────────────────────
 
-// Sync Codeforces Problems (manual or triggered)
+// Curated DSA Questions Status (formerly Codeforces sync)
 router.post("/sync-codeforces", async (req, res) => {
   try {
-    const syncResult = await CodeforcesService.syncProblems();
-    res.json(syncResult);
+    const count = await masterPrisma.codingQuestion.count({ where: { source: "curated_dsa" } });
+    res.json({
+      success: true,
+      syncedCount: count,
+      message: `Successfully verified ${count} Curated DSA Questions in database.`
+    });
   } catch (error) {
-    handleRouteError(res, error, "Coding.syncCodeforces", "Failed to sync Codeforces problems");
+    handleRouteError(res, error, "Coding.syncCodeforces", "Failed to verify DSA questions");
   }
 });
 
@@ -700,11 +704,34 @@ router.get("/workspace/:id", async (req: any, res) => {
       orderBy: { createdAt: 'asc' }
     });
 
-    // 7. Fetch or auto-generate AI Analysis for full problem explanation and examples
+    // 7. Problem statement, constraints, and test case data
     let aiAnalysisData: any = null;
     let scrapedProblemData: any = null;
 
-    if (question.externalId && (question.source === "codeforces" || question.externalId.includes("-"))) {
+    if (question.statement) {
+      aiAnalysisData = {
+        ...(question.aiAnalyses[0] ? (question.aiAnalyses[0].explanationJson as any) : {}),
+        problem_explanation: question.statement,
+        inputSpecification: question.inputFormat || "",
+        outputSpecification: question.outputFormat || "",
+        constraints: question.constraints || "",
+        timeLimit: question.timeLimit || "2.0s",
+        memoryLimit: question.memoryLimit || "256 MB",
+        examples: (question.examples as any) || (question.visibleTestCases as any) || [],
+        note: ""
+      };
+      scrapedProblemData = {
+        title: question.title,
+        description: question.statement,
+        inputSpecification: question.inputFormat || "",
+        outputSpecification: question.outputFormat || "",
+        constraints: question.constraints || "",
+        timeLimit: question.timeLimit || "2.0s",
+        memoryLimit: question.memoryLimit || "256 MB",
+        examples: (question.examples as any) || (question.visibleTestCases as any) || [],
+        note: ""
+      };
+    } else if (question.externalId && (question.source === "codeforces" || question.externalId.includes("-"))) {
       try {
         const scraped = await scrapeCodeforcesProblem(question.externalId);
         if (scraped && scraped.description) {
@@ -726,9 +753,9 @@ router.get("/workspace/:id", async (req: any, res) => {
       }
     }
 
-    if (!aiAnalysisData || !aiAnalysisData.examples || aiAnalysisData.examples.length === 0) {
+    if (!aiAnalysisData || !aiAnalysisData.problem_explanation || !aiAnalysisData.examples || !aiAnalysisData.examples.length) {
       aiAnalysisData = question.aiAnalyses[0] ? (question.aiAnalyses[0].explanationJson as any) : null;
-      if (!aiAnalysisData || !aiAnalysisData.problem_explanation || !aiAnalysisData.examples || aiAnalysisData.examples.length === 0 || aiAnalysisData.problem_explanation.includes("You are given an array of integers")) {
+      if (!aiAnalysisData || !aiAnalysisData.problem_explanation || !aiAnalysisData.examples || aiAnalysisData.examples.length === 0) {
         try {
           aiAnalysisData = await AICodingService.getAnalysis(questionId);
         } catch (err) {
@@ -1158,8 +1185,10 @@ router.post("/workspace/:id/run", async (req: any, res) => {
       return res.status(404).json({ error: "Question not found" });
     }
 
-    const analysis = await AICodingService.getAnalysis(questionId);
-    const examples = analysis.examples || [];
+    const rawVisible = (question.visibleTestCases as any) || [];
+    const examples = (Array.isArray(rawVisible) && rawVisible.length > 0)
+      ? rawVisible.map((tc: any) => ({ input: tc.input, output: tc.expectedOutput }))
+      : ((question.examples as any) || []);
 
     const result = await executeCode(language, code, stdin);
     const userPrisma = await getUserPrismaFromRequest(req);
@@ -1288,14 +1317,16 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
       return res.status(404).json({ error: "Question not found" });
     }
 
-    const analysis = await AICodingService.getAnalysis(questionId);
-    let examples = analysis.examples || [];
+    const rawVisible = (question.visibleTestCases as any) || [];
+    let examples = (Array.isArray(rawVisible) && rawVisible.length > 0)
+      ? rawVisible.map((tc: any) => ({ input: tc.input, output: tc.expectedOutput }))
+      : ((question.examples as any) || []);
 
     if (examples.length === 0) {
       examples = [
         {
           input: "5\n1 2 3 4 5",
-          output: "15",
+          output: "5",
           explanation: "Fallback test case."
         }
       ];
@@ -1327,39 +1358,59 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
     const sampleTestCases = examples.map(ex => ({ input: ex.input, expectedOutput: ex.output }));
     const sampleSubmission = await runTestCases(language, code, sampleTestCases, 10000);
 
-    // Step 3: Generate and run against hidden test cases (not visible to user)
+    // Step 3: Run against stored hidden test cases
     let hiddenResults = { allPassed: true, passedTests: 0, totalTests: 0, testResults: [] as any[] };
+    const rawHidden = (question.hiddenTestCases as any) || [];
 
-    try {
-      const hiddenTestCases = await generateHiddenTestCases(
-        questionId,
-        analysis.problem_explanation || question.title,
-        analysis.inputSpecification || "",
-        analysis.outputSpecification || "",
-        analysis.constraints || "",
-        examples.map(e => ({ input: e.input, output: e.output })),
-        question.difficulty
-      );
+    if (Array.isArray(rawHidden) && rawHidden.length > 0) {
+      const hiddenFormatted = rawHidden.map((tc: any) => ({ input: tc.input, expectedOutput: tc.expectedOutput }));
+      const hiddenSubmission = await runTestCases(language, code, hiddenFormatted, 12000);
+      hiddenResults = {
+        allPassed: hiddenSubmission.allPassed,
+        passedTests: hiddenSubmission.passedTests,
+        totalTests: hiddenSubmission.totalTests,
+        testResults: hiddenSubmission.testResults.map((tr, i) => ({
+          testCase: sampleSubmission.totalTests + i + 1,
+          input: "(hidden test case)",
+          expected: "(hidden)",
+          actual: tr.passed ? "(correct)" : tr.actualOutput.substring(0, 50) + (tr.actualOutput.length > 50 ? "..." : ""),
+          passed: tr.passed,
+          executionTime: tr.executionResult.executionTime,
+        })),
+      };
+    } else {
+      try {
+        const analysis = await AICodingService.getAnalysis(questionId);
+        const generatedHidden = await generateHiddenTestCases(
+          questionId,
+          question.statement || analysis.problem_explanation || question.title,
+          question.inputFormat || analysis.inputSpecification || "",
+          question.outputFormat || analysis.outputSpecification || "",
+          question.constraints || analysis.constraints || "",
+          examples.map(e => ({ input: e.input, output: e.output })),
+          question.difficulty
+        );
 
-      if (hiddenTestCases.length > 0) {
-        const hiddenFormatted = hiddenTestCases.map(tc => ({ input: tc.input, expectedOutput: tc.output }));
-        const hiddenSubmission = await runTestCases(language, code, hiddenFormatted, 12000);
-        hiddenResults = {
-          allPassed: hiddenSubmission.allPassed,
-          passedTests: hiddenSubmission.passedTests,
-          totalTests: hiddenSubmission.totalTests,
-          testResults: hiddenSubmission.testResults.map((tr, i) => ({
-            testCase: sampleSubmission.totalTests + i + 1,
-            input: "(hidden test case)",
-            expected: "(hidden)",
-            actual: tr.passed ? "(correct)" : tr.actualOutput.substring(0, 50) + (tr.actualOutput.length > 50 ? "..." : ""),
-            passed: tr.passed,
-            executionTime: tr.executionResult.executionTime,
-          })),
-        };
+        if (generatedHidden.length > 0) {
+          const hiddenFormatted = generatedHidden.map(tc => ({ input: tc.input, expectedOutput: tc.output }));
+          const hiddenSubmission = await runTestCases(language, code, hiddenFormatted, 12000);
+          hiddenResults = {
+            allPassed: hiddenSubmission.allPassed,
+            passedTests: hiddenSubmission.passedTests,
+            totalTests: hiddenSubmission.totalTests,
+            testResults: hiddenSubmission.testResults.map((tr, i) => ({
+              testCase: sampleSubmission.totalTests + i + 1,
+              input: "(hidden test case)",
+              expected: "(hidden)",
+              actual: tr.passed ? "(correct)" : tr.actualOutput.substring(0, 50) + (tr.actualOutput.length > 50 ? "..." : ""),
+              passed: tr.passed,
+              executionTime: tr.executionResult.executionTime,
+            })),
+          };
+        }
+      } catch (err) {
+        console.warn("[Submit] Hidden test case execution failed, using sample results only:", err);
       }
-    } catch (err) {
-      console.warn("[Submit] Hidden test case generation/execution failed, using sample results only:", err);
     }
 
     // Step 4: Combine results
