@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,7 +12,7 @@ import {
   Shield, Award, Eye, EyeOff, ChevronDown, ChevronUp,
   Copy, ExternalLink, Users, CalendarDays, Medal, Layers,
   Grid3X3, ListChecks, GraduationCap, CircleDot, Shuffle,
-  ArrowUpRight, X, Info
+  ArrowUpRight, X, Info, Search
 } from "lucide-react";
 import { api } from "@/services/api";
 import { toast } from "sonner";
@@ -116,6 +116,42 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
   const [testsLoading, setTestsLoading] = useState(false);
   const [companyTests, setCompanyTests] = useState<any[]>([]);
   const [companyTestsLoading, setCompanyTestsLoading] = useState(false);
+
+  // ── Search State ──
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryTopicSearch, setCategoryTopicSearch] = useState("");
+
+  const allAptitudeTopics = useMemo(() => {
+    const list: { topic: string; category: AptitudeCategory; categoryName: string; categoryColor: string }[] = [];
+    for (const cat of APTITUDE_CATEGORIES) {
+      const topics = (TOPICS_BY_CATEGORY as Record<string, string[]>)[cat.id] || [];
+      for (const t of topics) {
+        list.push({
+          topic: t,
+          category: cat.id,
+          categoryName: cat.name,
+          categoryColor: cat.color,
+        });
+      }
+    }
+    return list;
+  }, []);
+
+  const matchingTopics = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return allAptitudeTopics.filter(item =>
+      item.topic.toLowerCase().includes(q) || item.categoryName.toLowerCase().includes(q)
+    );
+  }, [searchQuery, allAptitudeTopics]);
+
+  const matchingCompanies = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return COMPANY_PRESETS.filter(comp =>
+      comp.name.toLowerCase().includes(q) || (comp.difficulty && comp.difficulty.toLowerCase().includes(q))
+    );
+  }, [searchQuery]);
 
   const loadTopicTests = async (topic: string, cat?: string) => {
     setTestsLoading(true);
@@ -791,106 +827,250 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   }} />
                 </div>
 
-                <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="space-y-3">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Categories</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {APTITUDE_CATEGORIES.map((cat, i) => {
-                      const IconComp = CATEGORY_ICON_MAP[cat.icon] || Brain;
-                      return (
-                        <motion.div
-                          key={cat.id}
-                          variants={scaleIn}
-                          initial="hidden"
-                          animate="visible"
-                          custom={i}
-                          whileHover={{ y: -4, scale: 1.02 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={() => { setSelectedCategory(cat.id); setViewState("topic_select"); }}
-                          className="p-5 border rounded-2xl cursor-pointer transition-all"
-                          style={{ background: c.cardBg, borderColor: c.border }}
-                        >
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: `${cat.color}15` }}>
-                            <IconComp size={20} style={{ color: cat.color }} />
-                          </div>
-                          <p className="text-xs font-extrabold" style={{ color: c.text }}>{cat.name}</p>
-                          <p className="text-[10px] mt-1 leading-relaxed" style={{ color: c.textMuted }}>{cat.description}</p>
-                          <div className="flex items-center gap-1 mt-2">
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${cat.color}15`, color: cat.color }}>
-                              {TOPICS_BY_CATEGORY[cat.id]?.length || 0} topics
-                            </span>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-
-
-                <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4} className="p-5 rounded-2xl border relative overflow-hidden cursor-pointer" style={{
-                  background: `linear-gradient(135deg, rgba(239,68,68,0.08), rgba(236,72,153,0.06))`,
-                  borderColor: "rgba(239,68,68,0.2)"
-                }} onClick={startDailyChallenge}>
-                  <div className="flex items-center gap-4">
-                    <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "rgba(239,68,68,0.15)" }}>
-                      <Flame size={26} className="text-red-500" />
-                    </motion.div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-extrabold" style={{ color: c.text }}>Daily Challenge</h3>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>Today</span>
-                      </div>
-                      <p className="text-[11px] mt-0.5" style={{ color: c.textSec }}>Mixed topics from all categories. Compete and earn bonus XP!</p>
-                    </div>
-                    <ArrowRight size={18} className="text-red-500 shrink-0" />
-                  </div>
-                </motion.div>
-
-                <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={5} className="space-y-3">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Company Tests</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {COMPANY_PRESETS.slice(0, 8).map((company, i) => (
-                      <motion.div
-                        key={company.id}
-                        variants={scaleIn}
-                        initial="hidden"
-                        animate="visible"
-                        custom={i}
-                        whileHover={{ y: -3, scale: 1.02 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => {
-                          setSelectedCompany(company.id);
-                          setSelectedMode("company_test");
-                          loadCompanyTests(company.id);
-                          setViewState("company_tests_list");
-                        }}
-                        className="p-4 border rounded-2xl cursor-pointer transition-all"
-                        style={{ background: c.cardBg, borderColor: c.border }}
+                {/* ── Search Bar ── */}
+                <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500/70" size={15} />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search aptitude topics or companies (e.g. Percentages, Blood Relations, Syllogisms, TCS, Infosys...)"
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border text-xs font-medium focus:outline-none transition-all placeholder:text-slate-500"
+                      style={{
+                        background: c.cardBg,
+                        borderColor: searchQuery ? "#f59e0b" : c.border,
+                        color: c.text,
+                      }}
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
                       >
-                        <CompanyLogo companyId={company.id} companyName={company.name} size={40} color={company.color} className="mb-2" theme={theme} />
-                        <p className="text-[11px] font-extrabold" style={{ color: c.text }}>{company.name}</p>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
-                            {company.difficulty}
-                          </span>
-                          <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>
-                            {company.questionCount}Q
-                          </span>
-                        </div>
-                      </motion.div>
-                    ))}
+                        <X size={14} />
+                      </button>
+                    )}
                   </div>
-                  {COMPANY_PRESETS.length > 8 && (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setViewState("company_select")}
-                      className="w-full p-3 border rounded-2xl text-center text-xs font-bold transition-colors"
-                      style={{ borderColor: c.border, color: c.primary, background: `${c.primary}08` }}
-                    >
-                      View All {COMPANY_PRESETS.length} Companies
-                    </motion.button>
+
+                  {searchQuery && (
+                    <div className="flex items-center justify-between text-[11px] px-1 text-slate-400">
+                      <span>
+                        Found <strong className="text-amber-500">{matchingTopics.length}</strong> topic{matchingTopics.length === 1 ? "" : "s"} and <strong className="text-amber-500">{matchingCompanies.length}</strong> compan{matchingCompanies.length === 1 ? "y" : "ies"} matching &quot;{searchQuery}&quot;
+                      </span>
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="text-amber-500 hover:underline text-[10px] font-bold"
+                      >
+                        Clear Search
+                      </button>
+                    </div>
                   )}
                 </motion.div>
+
+                {searchQuery ? (
+                  <div className="space-y-6">
+                    {/* Matching Topics */}
+                    {matchingTopics.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Matching Topics ({matchingTopics.length})</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {matchingTopics.map((item, i) => (
+                            <motion.div
+                              key={item.topic}
+                              variants={scaleIn}
+                              initial="hidden"
+                              animate="visible"
+                              custom={i}
+                              whileHover={{ y: -3, scale: 1.02 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => {
+                                setSelectedTopic(item.topic);
+                                setSelectedCategory(item.category);
+                                setViewState("topic_tests_list");
+                                loadTopicTests(item.topic, item.category);
+                              }}
+                              className="p-4 border rounded-2xl cursor-pointer transition-all flex flex-col justify-between group hover:border-amber-500/40"
+                              style={{ background: c.cardBg, borderColor: c.border }}
+                            >
+                              <div>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full inline-block mb-1.5" style={{ background: `${item.categoryColor}15`, color: item.categoryColor }}>
+                                  {item.categoryName}
+                                </span>
+                                <p className="text-xs font-extrabold" style={{ color: c.text }}>{item.topic}</p>
+                              </div>
+                              <div className="mt-3 pt-2 border-t flex items-center justify-between text-[10px] font-bold" style={{ borderColor: c.border }}>
+                                <span style={{ color: c.textMuted }}>Explore Tests (30 Qs)</span>
+                                <span className="text-amber-500 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                                  Practice <ChevronRight size={10} />
+                                </span>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Matching Companies */}
+                    {matchingCompanies.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Matching Companies ({matchingCompanies.length})</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {matchingCompanies.map((company, i) => (
+                            <motion.div
+                              key={company.id}
+                              variants={scaleIn}
+                              initial="hidden"
+                              animate="visible"
+                              custom={i}
+                              whileHover={{ y: -3, scale: 1.02 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => {
+                                setSelectedCompany(company.id);
+                                setSelectedMode("company_test");
+                                loadCompanyTests(company.id);
+                                setViewState("company_tests_list");
+                              }}
+                              className="p-4 border rounded-2xl cursor-pointer transition-all flex flex-col justify-between group hover:border-amber-500/40"
+                              style={{ background: c.cardBg, borderColor: c.border }}
+                            >
+                              <div>
+                                <CompanyLogo companyId={company.id} companyName={company.name} size={36} color={company.color} className="mb-2" theme={theme} />
+                                <p className="text-[11px] font-extrabold" style={{ color: c.text }}>{company.name}</p>
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full capitalize inline-block mt-1" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
+                                  {company.difficulty}
+                                </span>
+                              </div>
+                              <div className="mt-3 pt-2 border-t flex items-center justify-between text-[10px] font-bold" style={{ borderColor: c.border }}>
+                                <span style={{ color: c.textMuted }}>{company.questionCount}Q</span>
+                                <span className="text-amber-500 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                                  Tests <ChevronRight size={10} />
+                                </span>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No Results Empty State */}
+                    {matchingTopics.length === 0 && matchingCompanies.length === 0 && (
+                      <div className="p-8 text-center border rounded-2xl" style={{ background: c.cardBg, borderColor: c.border }}>
+                        <Search size={28} className="text-amber-500/40 mx-auto mb-2" />
+                        <p className="text-xs font-bold" style={{ color: c.text }}>No matching topics or companies</p>
+                        <p className="text-[10px] mt-1" style={{ color: c.textMuted }}>Try searching for concepts like &quot;Percentages&quot;, &quot;Blood Relations&quot;, or companies like &quot;TCS&quot;.</p>
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="mt-3 px-3 py-1 text-[11px] font-bold rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-all"
+                        >
+                          Clear Search
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="space-y-3">
+                      <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Categories</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {APTITUDE_CATEGORIES.map((cat, i) => {
+                          const IconComp = CATEGORY_ICON_MAP[cat.icon] || Brain;
+                          return (
+                            <motion.div
+                              key={cat.id}
+                              variants={scaleIn}
+                              initial="hidden"
+                              animate="visible"
+                              custom={i}
+                              whileHover={{ y: -4, scale: 1.02 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => { setSelectedCategory(cat.id); setViewState("topic_select"); }}
+                              className="p-5 border rounded-2xl cursor-pointer transition-all"
+                              style={{ background: c.cardBg, borderColor: c.border }}
+                            >
+                              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: `${cat.color}15` }}>
+                                <IconComp size={20} style={{ color: cat.color }} />
+                              </div>
+                              <p className="text-xs font-extrabold" style={{ color: c.text }}>{cat.name}</p>
+                              <p className="text-[10px] mt-1 leading-relaxed" style={{ color: c.textMuted }}>{cat.description}</p>
+                              <div className="flex items-center gap-1 mt-2">
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${cat.color}15`, color: cat.color }}>
+                                  {TOPICS_BY_CATEGORY[cat.id]?.length || 0} topics
+                                </span>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+
+                    <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4} className="p-5 rounded-2xl border relative overflow-hidden cursor-pointer" style={{
+                      background: `linear-gradient(135deg, rgba(239,68,68,0.08), rgba(236,72,153,0.06))`,
+                      borderColor: "rgba(239,68,68,0.2)"
+                    }} onClick={startDailyChallenge}>
+                      <div className="flex items-center gap-4">
+                        <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "rgba(239,68,68,0.15)" }}>
+                          <Flame size={26} className="text-red-500" />
+                        </motion.div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-extrabold" style={{ color: c.text }}>Daily Challenge</h3>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>Today</span>
+                          </div>
+                          <p className="text-[11px] mt-0.5" style={{ color: c.textSec }}>Mixed topics from all categories. Compete and earn bonus XP!</p>
+                        </div>
+                        <ArrowRight size={18} className="text-red-500 shrink-0" />
+                      </div>
+                    </motion.div>
+
+                    <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={5} className="space-y-3">
+                      <h3 className="text-xs font-black uppercase tracking-wider text-amber-500">Company Tests</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {COMPANY_PRESETS.slice(0, 8).map((company, i) => (
+                          <motion.div
+                            key={company.id}
+                            variants={scaleIn}
+                            initial="hidden"
+                            animate="visible"
+                            custom={i}
+                            whileHover={{ y: -3, scale: 1.02 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => {
+                              setSelectedCompany(company.id);
+                              setSelectedMode("company_test");
+                              loadCompanyTests(company.id);
+                              setViewState("company_tests_list");
+                            }}
+                            className="p-4 border rounded-2xl cursor-pointer transition-all"
+                            style={{ background: c.cardBg, borderColor: c.border }}
+                          >
+                            <CompanyLogo companyId={company.id} companyName={company.name} size={40} color={company.color} className="mb-2" theme={theme} />
+                            <p className="text-[11px] font-extrabold" style={{ color: c.text }}>{company.name}</p>
+                            <div className="flex items-center gap-1.5 mt-1.5">
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
+                                {company.difficulty}
+                              </span>
+                              <span className="text-[10px] font-bold" style={{ color: c.textMuted }}>
+                                {company.questionCount}Q
+                              </span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                      {COMPANY_PRESETS.length > 8 && (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setViewState("company_select")}
+                          className="w-full p-3 border rounded-2xl text-center text-xs font-bold transition-colors"
+                          style={{ borderColor: c.border, color: c.primary, background: `${c.primary}08` }}
+                        >
+                          View All {COMPANY_PRESETS.length} Companies
+                        </motion.button>
+                      )}
+                    </motion.div>
+                  </>
+                )}
 
                 {analytics && (analytics.weakTopics?.length || 0) > 0 && (
                   <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={6} className="p-5 rounded-2xl border space-y-3" style={{ background: c.cardBg, borderColor: c.border }}>
@@ -1201,8 +1381,34 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                       </motion.button>
                     </motion.div>
 
+                    <div className="relative">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500/70" size={14} />
+                      <input
+                        type="text"
+                        value={categoryTopicSearch}
+                        onChange={(e) => setCategoryTopicSearch(e.target.value)}
+                        placeholder={`Filter ${(TOPICS_BY_CATEGORY[selectedCategory] || []).length} topics in this category...`}
+                        className="w-full pl-9 pr-8 py-2 rounded-xl border text-xs font-medium focus:outline-none transition-all placeholder:text-slate-500"
+                        style={{
+                          background: c.cardBg,
+                          borderColor: categoryTopicSearch ? "#f59e0b" : c.border,
+                          color: c.text,
+                        }}
+                      />
+                      {categoryTopicSearch && (
+                        <button
+                          onClick={() => setCategoryTopicSearch("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                        >
+                          <X size={13} />
+                        </button>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {(TOPICS_BY_CATEGORY[selectedCategory] || []).map((topic, i) => {
+                      {(TOPICS_BY_CATEGORY[selectedCategory] || [])
+                        .filter(t => !categoryTopicSearch.trim() || t.toLowerCase().includes(categoryTopicSearch.toLowerCase().trim()))
+                        .map((topic, i) => {
                         const topicMastery = analytics?.topicMastery?.find(tm => tm.topic === topic);
                         return (
                           <motion.div
@@ -1243,6 +1449,17 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           </motion.div>
                         );
                       })}
+                      {categoryTopicSearch && (TOPICS_BY_CATEGORY[selectedCategory] || []).filter(t => t.toLowerCase().includes(categoryTopicSearch.toLowerCase().trim())).length === 0 && (
+                        <div className="col-span-full p-6 text-center border rounded-2xl" style={{ background: c.cardBg, borderColor: c.border }}>
+                          <p className="text-xs font-bold" style={{ color: c.text }}>No topics matching &quot;{categoryTopicSearch}&quot;</p>
+                          <button
+                            onClick={() => setCategoryTopicSearch("")}
+                            className="mt-2 text-amber-500 text-[11px] font-bold hover:underline"
+                          >
+                            Clear Filter
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}

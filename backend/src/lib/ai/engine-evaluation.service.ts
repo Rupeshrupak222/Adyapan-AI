@@ -324,10 +324,10 @@ export async function generatePlacementReadiness(
   const subScores = evaluation.subScores;
 
   let tier: PlacementReadiness["tier"];
-  if (overallScore >= 85) tier = "excellent";
-  else if (overallScore >= 72) tier = "strong";
-  else if (overallScore >= 58) tier = "moderate";
-  else if (overallScore >= 40) tier = "developing";
+  if (overallScore >= 90) tier = "excellent";
+  else if (overallScore >= 85) tier = "strong";  // Eligibility threshold: 85%
+  else if (overallScore >= 70) tier = "moderate";
+  else if (overallScore >= 55) tier = "developing";
   else tier = "needs-work";
 
   const readinessScore = Math.round(
@@ -339,7 +339,7 @@ export async function generatePlacementReadiness(
     subScores.confidence * 0.05
   );
 
-  const ready = readinessScore >= 65;
+  const ready = readinessScore >= 85; // Updated: Eligibility threshold 85%
 
   const gaps: string[] = [];
   if (subScores.communication < 60) gaps.push("Communication skills need significant improvement");

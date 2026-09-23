@@ -148,6 +148,47 @@ function getCompanyFocus(company: string): string {
   return "";
 }
 
+function getRoleDomainTechnicalFocus(role: string, technology: string): string {
+  const target = `${role || ""} ${technology || ""}`.toLowerCase();
+
+  if (target.includes("civil") || target.includes("structural") || target.includes("bim") || target.includes("cad")) {
+    return `Role Domain Expertise Focus — Civil & Structural Engineering:
+- Focus on: Bar bending schedules, concrete slump test, compressive strength, IS/ACI structural codes, load estimation, BIM LOD modeling, quantity surveying, and construction site safety protocols.`;
+  }
+
+  if (target.includes("mechanical") || target.includes("hev") || target.includes("car design") || target.includes("automotive") || target.includes("powertrain")) {
+    return `Role Domain Expertise Focus — Mechanical & Automotive Engineering:
+- Focus on: GD&T (Geometric Dimensioning & Tolerancing), FEA stress-strain analysis, DFM/DFA manufacturing principles, EV powertrain architectures, Battery Management Systems (BMS), regenerative braking, and automotive aerodynamics.`;
+  }
+
+  if (target.includes("embedded") || target.includes("vlsi") || target.includes("robotics") || target.includes("drone") || target.includes("iot") || target.includes("sensor")) {
+    return `Role Domain Expertise Focus — ECE, Embedded Systems & Robotics:
+- Focus on: ARM Cortex / 8051 architecture, RTOS task synchronization, non-blocking ISR constraints, I2C/SPI bus timing, Verilog HDL synthesis, setup/hold violations, ROS kinematics, PID controller tuning, quadcopter flight dynamics, and MQTT IoT telemetry.`;
+  }
+
+  if (target.includes("finance") || target.includes("banking") || target.includes("stock") || target.includes("trader") || target.includes("equity") || target.includes("investment")) {
+    return `Role Domain Expertise Focus — Finance & Investment Banking:
+- Focus on: 3-Statement financial modeling linkages, Discounted Cash Flow (DCF) & WACC calculation, LBO valuation frameworks, M&A pitch books, Options Greeks (Delta, Theta, Vega), capital budgeting, and working capital optimization.`;
+  }
+
+  if (target.includes("product manager") || target.includes("marketing") || target.includes("supply chain") || target.includes("hr") || target.includes("startup") || target.includes("entrepreneur")) {
+    return `Role Domain Expertise Focus — Business, Product & Operations Management:
+- Focus on: PRD drafting, RICE/MoSCoW roadmap prioritization, Bullwhip effect mitigation, EOQ & JIT inventory modeling, CAC to LTV unit economics, OKR performance alignment, and startup runway burn rate calculations.`;
+  }
+
+  if (target.includes("clinical") || target.includes("medical coding") || target.includes("pharma") || target.includes("genetic") || target.includes("psychology") || target.includes("nanotechnology")) {
+    return `Role Domain Expertise Focus — Healthcare, Pharma & Life Sciences:
+- Focus on: Clinical Trial Phases (I-IV), ICH-GCP regulatory guidelines, ICD-10-CM / CPT medical coding guidelines, CRISPR-Cas9 targeting and PAM sequence, EPR effect in nanoparticle drug delivery, and cognitive restructuring in CBT.`;
+  }
+
+  if (target.includes("ui") || target.includes("ux") || target.includes("design") || target.includes("graphic")) {
+    return `Role Domain Expertise Focus — UI/UX & Design:
+- Focus on: User-centered design methodology, Figma design systems & auto-layout tokens, Fitts's & Hick's usability laws, WCAG 2.1 AA color contrast compliance, heuristic evaluation, user journey maps, and usability testing metrics.`;
+  }
+
+  return "";
+}
+
 function getDifficultyInstructions(difficulty: string): string {
   switch (difficulty) {
     case "easy": return "Keep questions approachable and foundational. Focus on conceptual understanding. Use encouraging tone.";
@@ -191,6 +232,7 @@ export async function generateEngineQuestion(
   const totalQuestions = Math.ceil(durationMinutes / 5);
   const avgQuality = computeAnswerQualityScore(config.history);
   const typeFocus = getInterviewTypeFocus(config.type);
+  const roleFocus = getRoleDomainTechnicalFocus(config.role, config.technology);
   const companyFocus = getCompanyFocus(config.company);
   const difficultyInstructions = getDifficultyInstructions(config.difficulty);
 
@@ -231,6 +273,8 @@ INTERVIEW CONTEXT:
 
 QUESTION FOCUS:
 ${typeFocus}
+
+${roleFocus}
 
 ${companyFocus}
 
@@ -316,6 +360,7 @@ EVALUATION CONTEXT:
 - Difficulty Level: ${config.difficulty}
 - Experience Level: ${config.experienceLevel}
 - Technology: ${config.technology || "General"}
+${getRoleDomainTechnicalFocus(config.role, config.technology)}
 ${resumeSection}
 EVALUATION RULES:
 1. Score each dimension honestly — do not inflate scores to be polite

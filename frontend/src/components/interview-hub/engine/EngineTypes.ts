@@ -225,18 +225,59 @@ export const COMPANY_PRESETS: CompanyPreset[] = [
 ];
 
 export const ROLE_PRESETS: RolePreset[] = [
+  // Tech & Software
   { id: "software-engineer", title: "Software Engineer", icon: "Code2", category: "Engineering" },
   { id: "backend-developer", title: "Backend Developer", icon: "Server", category: "Engineering" },
   { id: "frontend-developer", title: "Frontend Developer", icon: "Monitor", category: "Engineering" },
   { id: "full-stack", title: "Full Stack Developer", icon: "Layers", category: "Engineering" },
+  { id: "mobile-developer", title: "Mobile App Developer", icon: "Smartphone", category: "Engineering" },
+
+  // AI & Data
   { id: "ai-engineer", title: "AI Engineer", icon: "Brain", category: "AI/ML" },
   { id: "ml-engineer", title: "ML Engineer", icon: "Cpu", category: "AI/ML" },
-  { id: "data-analyst", title: "Data Analyst", icon: "BarChart3", category: "Data" },
   { id: "data-scientist", title: "Data Scientist", icon: "FlaskConical", category: "Data" },
+  { id: "data-analyst", title: "Data Analyst", icon: "BarChart3", category: "Data" },
+  { id: "business-analytics", title: "Business Analytics Specialist", icon: "BarChart3", category: "Data" },
+
+  // Infrastructure & Security
   { id: "devops", title: "DevOps Engineer", icon: "Container", category: "Infrastructure" },
-  { id: "qa", title: "QA Engineer", icon: "Bug", category: "Quality" },
-  { id: "cybersecurity", title: "Cybersecurity", icon: "Shield", category: "Security" },
-  { id: "product-manager", title: "Product Manager", icon: "Package", category: "Product" },
+  { id: "qa", title: "QA Automation Engineer", icon: "Bug", category: "Quality" },
+  { id: "cybersecurity", title: "Cybersecurity Analyst", icon: "Shield", category: "Security" },
+
+  // Core Engineering & Automotive
+  { id: "mechanical-engineer", title: "Mechanical Design Engineer (CAD/FEA)", icon: "Compass", category: "Core Engineering" },
+  { id: "hev-engineer", title: "EV Powertrain Engineer", icon: "Zap", category: "Core Engineering" },
+  { id: "car-designer", title: "Automotive Designer", icon: "Car", category: "Core Engineering" },
+  { id: "civil-engineer", title: "Civil Site & Project Engineer", icon: "HardHat", category: "Core Engineering" },
+  { id: "structural-bim", title: "Structural BIM Engineer", icon: "Layers", category: "Core Engineering" },
+
+  // ECE & Robotics
+  { id: "embedded-engineer", title: "Embedded Systems Engineer", icon: "Cpu", category: "Robotics & ECE" },
+  { id: "vlsi-engineer", title: "VLSI Design Engineer", icon: "Layers", category: "Robotics & ECE" },
+  { id: "robotics-engineer", title: "Robotics & ROS Engineer", icon: "Bot", category: "Robotics & ECE" },
+  { id: "drone-engineer", title: "Drone Flight Systems Engineer", icon: "Navigation", category: "Robotics & ECE" },
+  { id: "iot-specialist", title: "IoT & Sensor Network Specialist", icon: "Cpu", category: "Robotics & ECE" },
+
+  // Management, Business & Finance
+  { id: "product-manager", title: "Product Manager", icon: "Package", category: "Management & Finance" },
+  { id: "investment-banker", title: "Investment Banking Analyst", icon: "Briefcase", category: "Management & Finance" },
+  { id: "financial-analyst", title: "Financial Analyst & Modeler", icon: "DollarSign", category: "Management & Finance" },
+  { id: "stock-trader", title: "Equity Research & Stock Trader", icon: "TrendingUp", category: "Management & Finance" },
+  { id: "digital-marketer", title: "Digital Marketing Specialist", icon: "Megaphone", category: "Management & Finance" },
+  { id: "hr-manager", title: "HR & Talent Acquisition Manager", icon: "Users", category: "Management & Finance" },
+  { id: "supply-chain", title: "Operations & Supply Chain Manager", icon: "Truck", category: "Management & Finance" },
+  { id: "startup-founder", title: "Startup Founder & Entrepreneur", icon: "Rocket", category: "Management & Finance" },
+
+  // Healthcare & Pharma
+  { id: "clinical-research", title: "Clinical Research Associate (CRA)", icon: "TestTube", category: "Healthcare & Pharma" },
+  { id: "medical-coder", title: "Medical Coding Specialist (ICD-10)", icon: "FileSpreadsheet", category: "Healthcare & Pharma" },
+  { id: "genetic-engineer", title: "Genetic Engineer & Biotechnologist", icon: "Dna", category: "Healthcare & Pharma" },
+  { id: "psychologist", title: "Clinical & Health Psychologist", icon: "HeartPulse", category: "Healthcare & Pharma" },
+  { id: "nanotechnology", title: "Nanotechnology Researcher", icon: "Atom", category: "Healthcare & Pharma" },
+
+  // Design & Creative
+  { id: "ui-ux-designer", title: "UI/UX Product Designer", icon: "Palette", category: "Design & Creative" },
+  { id: "graphic-designer", title: "Graphic & Brand Visual Designer", icon: "PenTool", category: "Design & Creative" },
 ];
 
 export const INTERVIEW_TYPE_CONFIG: Record<InterviewType, {
