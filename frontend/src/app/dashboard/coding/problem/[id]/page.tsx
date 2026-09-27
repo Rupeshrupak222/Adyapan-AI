@@ -2531,7 +2531,7 @@ Answer the student's question based on the coding problem. Provide hints or feed
                       </div>
                     ) : (
                       <div className="pt-2 text-[11px] text-indigo-400/80 font-medium flex items-center gap-1.5">
-                        <Sparkles size={12} /> Curated DSA Question Bank • Problem {problem?.externalId || id}
+                        <Sparkles size={12} /> Curated DSA Question Bank • Problem {problem?.externalId || problemId}
                       </div>
                     )}
                   </div>
@@ -2840,7 +2840,7 @@ Answer the student's question based on the coding problem. Provide hints or feed
                             : tab === "output" 
                               ? "Output" 
                               : tab === "testcases" 
-                                ? `Samples${testResults.length > 0 ? ` (${testResults.filter((t: any) => t.passed).length}/${testResults.length})` : ""}` 
+                                ? `Test Cases${testResults.length > 0 ? ` (${testResults.filter((t: any) => t.passed).length}/${testResults.length})` : ""}` 
                                 : "Run History"}
                         </button>
                       ))}

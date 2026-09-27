@@ -4,8 +4,7 @@ import { generateDsaHint, reviewDsaSolution } from "../lib/ai/dsa";
 import { getUserPrismaFromRequest } from "../utils/prisma";
 import { StreakService } from "../services/streak.service";
 import { handleRouteError } from "../utils/routeError";
-import { getTimezone } from "../utils/request";
-import { executeCode } from "../services/piston.service";
+import { executeCode, runTestCases } from "../services/piston.service";
 import { prisma as masterPrisma } from "../config/prisma";
 
 const router = Router();
@@ -29,22 +28,38 @@ router.get("/problems", async (req: any, res) => {
       orderBy: { externalId: 'asc' }
     });
 
-    const problems = dsaQuestions.map((p: any) => ({
-      id: p.id,
-      externalId: p.externalId,
-      title: p.title,
-      category: p.topic || "Arrays",
-      difficulty: p.difficulty || "Easy",
-      rating: p.rating || 1000,
-      description: p.statement || `Solve the problem: ${p.title}.`,
-      statement: p.statement,
-      constraints: p.constraints,
-      inputFormat: p.inputFormat,
-      outputFormat: p.outputFormat,
-      examples: p.examples || p.visibleTestCases || [],
-      source: "Curated DSA",
-      tags: p.tagsJson || ["Core DSA"],
-    }));
+    const problems = dsaQuestions.map((p: any) => {
+      let parsedExamples: any[] = [];
+      if (Array.isArray(p.examples)) {
+        parsedExamples = p.examples;
+      } else if (typeof p.examples === "string") {
+        try { parsedExamples = JSON.parse(p.examples); } catch { parsedExamples = []; }
+      } else if (Array.isArray(p.visibleTestCases)) {
+        parsedExamples = p.visibleTestCases.map((tc: any) => ({
+          input: tc.input || tc.rawInput || "",
+          output: tc.expectedOutput || tc.output || "",
+          explanation: tc.explanation || ""
+        }));
+      }
+
+      return {
+        id: p.id,
+        externalId: p.externalId,
+        title: p.title,
+        category: p.topic || "Arrays",
+        difficulty: p.difficulty || "Easy",
+        rating: p.rating || 1000,
+        description: p.statement || `Solve the problem: ${p.title}.`,
+        statement: p.statement,
+        constraints: p.constraints,
+        inputFormat: p.inputFormat,
+        outputFormat: p.outputFormat,
+        examples: parsedExamples,
+        visibleTestCases: p.visibleTestCases || [],
+        source: p.source || "Curated DSA",
+        tags: p.tagsJson || ["Core DSA"],
+      };
+    });
 
     res.json({ success: true, problems });
   } catch (error) {
@@ -148,12 +163,63 @@ router.post("/submit", async (req: any, res) => {
 
     const review = await reviewDsaSolution(context, code);
 
-    let executionResult: any = null;
-    try {
-      executionResult = await executeCode(language, code);
-    } catch { }
+    // Look up question to evaluate visible test cases (mentioned in the question)
+    let testCases: Array<{ input: string; expectedOutput: string }> = [];
+    if (problemId) {
+      try {
+        const question = await masterPrisma.codingQuestion.findUnique({ where: { id: problemId } });
+        if (question) {
+          const rawVisible = (question.visibleTestCases as any) || [];
+          if (Array.isArray(rawVisible) && rawVisible.length > 0) {
+            testCases = rawVisible.map((tc: any) => ({
+              input: tc.input || tc.rawInput || "",
+              expectedOutput: tc.expectedOutput || tc.output || "",
+            }));
+          } else if (question.examples) {
+            let examples: any[] = [];
+            if (Array.isArray(question.examples)) examples = question.examples;
+            else if (typeof question.examples === "string") {
+              try { examples = JSON.parse(question.examples); } catch {}
+            }
+            if (Array.isArray(examples) && examples.length > 0) {
+              testCases = examples.map((ex: any) => ({
+                input: ex.input || "",
+                expectedOutput: ex.output || ex.expectedOutput || "",
+              }));
+            }
+          }
+        }
+      } catch {}
+    }
 
-    const isAccepted = executionResult ? executionResult.success : true;
+    let executionResult: any = null;
+    let isAccepted = false;
+    let testResults: any[] = [];
+
+    if (testCases.length > 0) {
+      const submissionResult = await runTestCases(language, code, testCases, 10000);
+      isAccepted = submissionResult.allPassed;
+      testResults = submissionResult.testResults.map((tr, i) => ({
+        testCase: i + 1,
+        input: tr.input,
+        expected: tr.expectedOutput,
+        actual: tr.actualOutput,
+        passed: tr.passed,
+        executionTime: tr.executionResult.executionTime,
+      }));
+      executionResult = {
+        success: submissionResult.allPassed,
+        executionTime: submissionResult.executionTime,
+        memory: submissionResult.memory,
+        status: submissionResult.allPassed ? "Accepted" : "Failed",
+        stdout: `Passed ${submissionResult.passedTests}/${submissionResult.totalTests} test cases.`,
+      };
+    } else {
+      try {
+        executionResult = await executeCode(language, code);
+      } catch { }
+      isAccepted = executionResult ? executionResult.success : true;
+    }
 
     const submission = await userPrisma.submission.create({
       data: {
@@ -183,7 +249,7 @@ router.post("/submit", async (req: any, res) => {
       );
     }
 
-    res.json({ submission, review, progress, executionResult });
+    res.json({ submission, review, progress, executionResult, testResults });
   } catch (error) {
     handleRouteError(res, error, "Dsa.submit", "Failed to submit code");
   }
