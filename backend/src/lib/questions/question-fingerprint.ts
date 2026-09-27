@@ -2,6 +2,13 @@ import { createHash } from "node:crypto";
 
 export const SIMILARITY_THRESHOLD = 0.7;
 
+/**
+ * Cap on raw texts retained for Jaccard similarity checks in the PER-USER path.
+ * Admin/generation paths pass Infinity via SeenRegistryOptions.recentTextCap so
+ * similarity is judged against the whole bank.
+ */
+export const DEFAULT_RECENT_TEXT_CAP = 300;
+
 const LEADING_PREFIX_RE = /^\s*(?:\[[^\]]*\]\s*)+/;
 const HTML_TAG_RE = /<[^>]+>/g;
 const FENCE_RE = /```[\s\S]*?```/g;
@@ -22,6 +29,40 @@ const STOPWORDS = new Set([
   "used", "given", "per", "each", "between", "after", "before", "into",
   "about", "over", "under", "more", "most", "less", "least", "same", "other",
 ]);
+
+/**
+ * Units, currency and measure words carry no identifying information about a
+ * question's concept, so they are stripped when building a concept signature.
+ * This is what lets "Ravi buys 5 apples for Rs 40" and "Sita buys 8 mangoes for
+ * Rs 64" be recognised as the same underlying concept.
+ */
+const UNIT_TOKENS = [
+  "rupees", "rupee", "rs", "inr", "₹", "dollars", "dollar", "usd", "euros", "euro",
+  "paise", "cents", "percent", "percentage", "percentile", "pc", "rs.", "rs/",
+  "kg", "kgs", "kilogram", "kilograms", "gm", "grams", "gram", "mg",
+  "km", "kms", "kilometre", "kilometres", "kilometer", "kilometers", "kmph",
+  "m", "metre", "metres", "meter", "meters", "cm", "mm", "mile", "miles",
+  "sec", "secs", "second", "seconds", "min", "mins", "minute", "minutes",
+  "hour", "hours", "hr", "hrs", "day", "days", "week", "weeks", "month",
+  "months", "year", "years", "yr", "yrs", "litre", "litres", "liter", "liters",
+  "ml", "l", "tonne", "tonnes", "ton", "dozen", "times", "people", "students",
+  "items", "units", "apples", "mangoes", "books", "chairs",
+];
+
+/**
+ * Very common person/place names used in word problems. Stripped so that two
+ * problems differing only in the protagonist collapse to one concept.
+ */
+const ENTITY_TOKENS = [
+  "ravi", "sita", "geeta", "rama", "amit", "anita", "suresh", "priya",
+  "rahul", "neha", "amara", "vikram", "kavita", "arjun", "meena", "raj",
+  "mohan", "sohan", "john", "alice", "bob", "carol", "dave", "emma",
+  "maria", "ahmed", "sara", "luis", "elena", "shop", "shopkeeper", "vendor",
+  "seller", "buyer", "trainer", "coach", "student", "teacher",
+];
+
+const UNIT_RE = new RegExp(`\\b(${UNIT_TOKENS.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`, "g");
+const ENTITY_RE = new RegExp(`\\b(${ENTITY_TOKENS.join("|")})\\b`, "g");
 
 export function stripBracketedPrefix(text: string): string {
   return (text || "").replace(LEADING_PREFIX_RE, "").trim();
@@ -60,6 +101,30 @@ export function templateFingerprint(text: string, extra: string[] = []): string 
   const core = coreChars(normalizeQuestionText(text, extra), true);
   if (!core) return "";
   return "t" + createHash("sha256").update(core, "utf8").digest("hex").slice(0, 32);
+}
+
+/**
+ * Hardest normal form: digits masked, units/currency stripped, common word-problem
+ * entity names stripped, stopwords removed, remaining content words sorted.
+ *
+ * Two questions that differ ONLY in their numbers, units, or the name of the
+ * protagonist produce the same signature. This is intentionally NOT a database
+ * unique constraint (it can over-collapse legitimate variants) — it is used as a
+ * grouping signal for reporting and as an extra strict-mode rejection signal.
+ */
+export function conceptSignature(text: string, extra: string[] = []): string {
+  let t = normalizeQuestionText(text, extra);
+  t = t.replace(DIGITS_RE, " ");
+  t = t.replace(UNIT_RE, " ");
+  t = t.replace(ENTITY_RE, " ");
+  t = t.replace(/[%$]/g, " ");
+  const words = t
+    .split(NON_ALNUM_RE)
+    .filter((w) => w.length > 1 && !STOPWORDS.has(w) && !UNIT_TOKENS.includes(w));
+  const uniq = Array.from(new Set(words)).sort();
+  const core = uniq.join(" ");
+  if (!core) return "";
+  return "c" + createHash("sha256").update(core, "utf8").digest("hex").slice(0, 32);
 }
 
 export function tokenize(text: string, extra: string[] = []): Set<string> {
@@ -102,6 +167,7 @@ export interface QuestionDedupInfo {
   normalized: string;
   fingerprint: string;
   templateFingerprint: string;
+  conceptSignature: string;
   tokens: Set<string>;
 }
 
@@ -114,12 +180,14 @@ export function dedupInfoFromQuestion(
   const normalized = normalizeQuestionText(text, extra);
   const fingerprintHash = fingerprint(text, extra);
   const template = templateFingerprint(text, extra);
+  const signature = conceptSignature(text, extra);
   const tokens = tokenize(text, extra);
   return {
     text,
     normalized,
     fingerprint: fingerprintHash,
     templateFingerprint: template,
+    conceptSignature: signature,
     tokens,
   };
 }
@@ -127,17 +195,39 @@ export function dedupInfoFromQuestion(
 export interface SeenRegistry {
   fingerprints: Set<string>;
   templates: Set<string>;
+  conceptSignatures: Set<string>;
   recentTexts: string[];
 }
 
-export function seenRegistryFromTexts(texts: Iterable<string>, extra: string[] = []): SeenRegistry {
-  const seen: SeenRegistry = { fingerprints: new Set(), templates: new Set(), recentTexts: [] };
+export interface SeenRegistryOptions {
+  /**
+   * How many raw texts to retain for Jaccard similarity checks. The per-user
+   * path keeps a small cap for memory; the admin/generation path passes
+   * Infinity so similarity is evaluated against the ENTIRE bank rather than
+   * only the most recent N questions.
+   */
+  recentTextCap?: number;
+}
+
+export function seenRegistryFromTexts(
+  texts: Iterable<string>,
+  extra: string[] = [],
+  options: SeenRegistryOptions = {}
+): SeenRegistry {
+  const cap = options.recentTextCap ?? DEFAULT_RECENT_TEXT_CAP;
+  const seen: SeenRegistry = {
+    fingerprints: new Set(),
+    templates: new Set(),
+    conceptSignatures: new Set(),
+    recentTexts: [],
+  };
   for (const raw of texts) {
     const d = dedupInfoFromQuestion({ question: raw }, extra);
     if (d.fingerprint) seen.fingerprints.add(d.fingerprint);
     if (d.templateFingerprint) seen.templates.add(d.templateFingerprint);
+    if (d.conceptSignature) seen.conceptSignatures.add(d.conceptSignature);
     seen.recentTexts.push(stripBracketedPrefix(raw).toLowerCase());
-    if (seen.recentTexts.length > 300) seen.recentTexts.shift();
+    if (seen.recentTexts.length > cap) seen.recentTexts.shift();
   }
   return seen;
 }
@@ -152,6 +242,7 @@ export function isTextSeen(
   const d = dedupInfoFromQuestion({ question: text }, extra);
   if (d.fingerprint && seen.fingerprints.has(d.fingerprint)) return true;
   if (d.templateFingerprint && seen.templates.has(d.templateFingerprint)) return true;
+  if (d.conceptSignature && seen.conceptSignatures.has(d.conceptSignature)) return true;
   for (const s of seen.recentTexts) {
     if (areSimilar(text, s, threshold, extra)) return true;
   }
@@ -159,43 +250,95 @@ export function isTextSeen(
 }
 
 /**
- * Within-assessment deduplication: removes only byte-identical (normalized)
- * duplicates. Numeric/scenario variants of the same template are distinct
- * questions and are kept so a batch is never collapsed to a single variant.
- * An optional exclusion set of already-served/history fingerprints is respected.
+ * Within-assessment deduplication.
+ *
+ * NON-STRICT (default): drops only byte-identical (normalized) duplicates.
+ *   Numeric/scenario variants of the same template survive.
+ *
+ * STRICT: additionally drops any question whose digits-masked TEMPLATE matches
+ *   an already-kept question, i.e. the same concept with different numbers
+ *   ("train 60% for 3h" vs "train 75% for 5h"). This is the mode every admin
+ *   generation path must use — the old non-strict behaviour was the direct
+ *   cause of value-change duplicates in the bank.
+ *
+ * An optional exclusion set of already-banked fingerprints/templates is respected
+ * in both modes.
  */
-export function dedupeQuestions<T extends { question?: string; text?: string; codeSnippet?: string }>(
+export interface DedupeOptions {
+  strict?: boolean;
+  excludeTemplates?: Set<string>;
+  excludeConcepts?: Set<string>;
+}
+
+export interface DedupeOutcome<T> {
+  kept: T[];
+  /** Kept questions that were dropped, with the reason — surfaced to the retry loop. */
+  rejected: { question: T; reason: "exact" | "template" | "concept" }[];
+}
+
+export function dedupeQuestionsWithReasons<T extends { question?: string; text?: string; codeSnippet?: string }>(
   pool: T[],
-  excludeFingerprints: Set<string> = new Set()
-): T[] {
+  excludeFingerprints: Set<string> = new Set(),
+  options: DedupeOptions = {}
+): DedupeOutcome<T> {
+  const strict = options.strict ?? false;
   const seen = new Set<string>(excludeFingerprints);
+  const seenTemplates = new Set<string>(options.excludeTemplates ?? []);
+  const seenConcepts = new Set<string>(options.excludeConcepts ?? []);
   const kept: T[] = [];
+  const rejected: { question: T; reason: "exact" | "template" | "concept" }[] = [];
+
   for (const q of pool) {
     const d = dedupInfoFromQuestion(q);
-    if (!d.fingerprint || seen.has(d.fingerprint)) continue;
+    if (!d.fingerprint) continue;
+    if (seen.has(d.fingerprint)) {
+      rejected.push({ question: q, reason: "exact" });
+      continue;
+    }
+    if (strict && d.templateFingerprint && seenTemplates.has(d.templateFingerprint)) {
+      rejected.push({ question: q, reason: "template" });
+      continue;
+    }
+    if (strict && d.conceptSignature && seenConcepts.has(d.conceptSignature)) {
+      rejected.push({ question: q, reason: "concept" });
+      continue;
+    }
     seen.add(d.fingerprint);
+    if (d.templateFingerprint) seenTemplates.add(d.templateFingerprint);
+    if (d.conceptSignature) seenConcepts.add(d.conceptSignature);
     kept.push(q);
   }
-  return kept;
+  return { kept, rejected };
+}
+
+export function dedupeQuestions<T extends { question?: string; text?: string; codeSnippet?: string }>(
+  pool: T[],
+  excludeFingerprints: Set<string> = new Set(),
+  options: DedupeOptions = {}
+): T[] {
+  return dedupeQuestionsWithReasons(pool, excludeFingerprints, options).kept;
 }
 
 /**
- * Cross-assessment (history) filter: drops anything the user has ALREADY seen —
- * exact fingerprints, renumbered template variants, and similar rewrites.
- * It never collapses a fresh batch against itself (that is the job of
- * dedupeQuestions within an assessment).
+ * Cross-assessment (history/bank) filter: drops anything already present in the
+ * registry — exact fingerprints, digits-masked template variants, concept
+ * signatures, and similar rewrites. It never collapses a fresh batch against
+ * itself (that is dedupeQuestions' job).
  */
 export function filterQuestionsAgainstSeen<T extends { question?: string; text?: string; codeSnippet?: string }>(
   pool: T[],
   seen: SeenRegistry,
   threshold: number = SIMILARITY_THRESHOLD,
-  extra: string[] = []
+  extra: string[] = [],
+  options: DedupeOptions = {}
 ): T[] {
+  const strict = options.strict ?? false;
   const kept: T[] = [];
   for (const q of pool) {
     const d = dedupInfoFromQuestion(q, extra);
     if (!d.fingerprint) continue;
     if (seen.fingerprints.has(d.fingerprint) || seen.templates.has(d.templateFingerprint)) continue;
+    if (strict && d.conceptSignature && seen.conceptSignatures.has(d.conceptSignature)) continue;
     let similar = false;
     for (const s of seen.recentTexts) {
       if (areSimilar(d.text, s, threshold, extra)) {

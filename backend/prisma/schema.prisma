@@ -3269,25 +3269,92 @@ model FeatureUsageAttempt {
 
 // ─── Question Uniqueness & Anti-Repetition ───────────────────────────────────
 
-model QuestionFingerprint {
-  id                  String   @id @default(cuid())
-  fingerprint         String   @map("fingerprint")
-  templateFingerprint String   @map("template_fingerprint")
-  questionId          String?  @map("question_id")
-  source              String // "mcq" | "aptitude"
-  topic               String?
-  category            String?
-  company             String?
-  difficulty          String?
-  questionText        String   @map("question_text")
-  optionsJson         Json?    @map("options_json")
-  createdAt           DateTime @default(now()) @map("created_at")
+/// Global, append-only registry of every question concept that exists anywhere
+/// in the platform. Uniqueness is enforced by the DATABASE via the two UNIQUE
+/// constraints below, so no amount of application-layer bug can introduce a
+/// duplicate concept or a value-swapped variant of one.
+///
+/// `fingerprint`         exact normalized concept text
+/// `templateFingerprint` digits masked, so "train 60% for 3h" and
+///                       "train 75% for 5h" collapse to the same value
+///
+/// Both are GLOBAL (not scoped by source/topic/company) by design: a concept may
+/// appear exactly once in the entire database.
+model QuestionBankEntry {
+  id                 String   @id @default(cuid())
+  fingerprint        String   @unique @map("fingerprint")
+  templateFingerprint String  @unique @map("template_fingerprint")
+  conceptSignature   String?  @map("concept_signature")
+  source             String // "mcq" | "aptitude"
+  topic              String?
+  category           String?
+  company            String?
+  difficulty         String?
+  questionText       String   @map("question_text")
+  optionsJson        Json?    @map("options_json")
+  correctIdx         Int?     @map("correct_idx")
+  testId             String?  @map("test_id")
+  position           Int?
+  createdAt          DateTime @default(now()) @map("created_at")
 
-  @@unique([source, fingerprint], name: "sourceFingerprintUnique")
-  @@index([source, templateFingerprint])
   @@index([source, topic])
   @@index([source, company])
-  @@map("question_fingerprints")
+  @@index([source, category])
+  @@index([testId])
+  @@map("question_bank")
+}
+
+/// Durable replacement for the mcq-tests-store.json file. Questions live in
+/// McqQuestion so they can participate in the global uniqueness constraints;
+/// McqTest holds only the test-level metadata.
+model McqTest {
+  id              String   @id
+  targetId        String   @map("target_id")
+  targetType      String   @map("target_type")
+  targetName      String   @map("target_name")
+  testNumber      Int      @map("test_number")
+  title           String
+  description     String   @default("")
+  difficulty      String   @default("Medium")
+  questionCount   Int      @default(0) @map("question_count")
+  durationMinutes Int      @default(30) @map("duration_minutes")
+  isPublished     Boolean  @default(true) @map("is_published")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  questions McqQuestion[]
+
+  @@unique([targetId, testNumber], name: "targetTestNumberUnique")
+  @@index([targetId])
+  @@map("mcq_tests")
+}
+
+model McqQuestion {
+  id            String   @id
+  testId        String   @map("test_id")
+  test          McqTest  @relation(fields: [testId], references: [id], onDelete: Cascade)
+  position      Int
+  question      String
+  technology    String
+  company       String?
+  difficulty    String   @default("Medium")
+  codeSnippet   String?  @map("code_snippet")
+  language      String?
+  optionsJson   Json     @map("options_json")
+  correctAnswer String   @default("") @map("correct_answer")
+  correctIdx    Int      @default(0) @map("correct_idx")
+  explanation   String   @default("")
+  hint          String   @default("")
+  relatedConcept String  @default("") @map("related_concept")
+  estimatedTime String   @default("45 sec") @map("estimated_time")
+  interviewTip  String?  @map("interview_tip")
+  /// Per-option feedback shown in the review UI. Optional because older
+  /// questions predate it.
+  optionExplanations Json? @map("option_explanations")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([testId, position])
+  @@map("mcq_questions")
 }
 
 model UserQuestionHistory {
@@ -3296,6 +3363,7 @@ model UserQuestionHistory {
   source              String // "mcq" | "aptitude"
   fingerprint         String   @map("fingerprint")
   templateFingerprint String   @map("template_fingerprint")
+  conceptSignature    String?  @map("concept_signature")
   questionId          String?  @map("question_id")
   topic               String?
   category            String?

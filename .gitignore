@@ -17,6 +17,15 @@ logs/
 *.tsbuildinfo
 .next/
 
+# question-bank backfill runtime state & generated reports
+backend/data/*.pid
+backend/data/regeneration-report.json
+backend/data/question-backfill-shortfall.json
+backend/data/backfill-*.log
+backend/data/backfill*.log
+# pre-dedupe safety backups (large, local-only rollback artifacts)
+backend/data/*.pre-dedupe.*.json
+
 # Private, local-only security presentation artifacts (never commit/push)
 Adyapan-AI-Security-Features.pptx
 Adyapan-AI-Security-Features.pdf

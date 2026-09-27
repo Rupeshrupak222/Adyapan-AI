@@ -111,6 +111,60 @@ describe("generateJSON", () => {
     await expect(generateJSON("sys", "user", { model: "x" }, [])).resolves.toEqual([{ text: "Q1" }]);
   });
 
+  it("repairs literal newlines inside string values", async () => {
+    // A multi-line explanation is the single most common way a model emits
+    // invalid JSON. A raw newline inside a quoted value is a hard syntax
+    // error, so without a repair the whole batch is discarded.
+    process.env.OPENROUTER_API_KEY = "key";
+    const { generateJSON } = loadModule();
+    mockFetchSuccess(
+      '{\n  "options": ["A", "B"],\n  "explanation": "first line\nsecond line\nthird line"\n}'
+    );
+    await expect(
+      generateJSON("sys", "user", { model: "x" }, { options: [] as string[], explanation: "" })
+    ).resolves.toEqual({
+      options: ["A", "B"],
+      explanation: "first line\nsecond line\nthird line",
+    });
+  }, 30000);
+
+  it("repairs tabs and trailing commas together", async () => {
+    process.env.OPENROUTER_API_KEY = "key";
+    const { generateJSON } = loadModule();
+    mockFetchSuccess('{"hint": "use\tthe\ttable", "list": [1, 2,],}');
+    await expect(
+      generateJSON("sys", "user", { model: "x" }, { hint: "", list: [] as number[] })
+    ).resolves.toEqual({ hint: "use\tthe\ttable", list: [1, 2] });
+  }, 30000);
+
+  it("preserves escaped quotes and backslashes while repairing", async () => {
+    process.env.OPENROUTER_API_KEY = "key";
+    const { generateJSON } = loadModule();
+    mockFetchSuccess('{"note": "path C:\\\\temp\nvalue is \\"quoted\\""}');
+    await expect(
+      generateJSON("sys", "user", { model: "x" }, { note: "" })
+    ).resolves.toEqual({ note: 'path C:\\temp\nvalue is "quoted"' });
+  }, 30000);
+
+  it("neutralises backslashes that are not valid JSON escapes", async () => {
+    // Regex fragments and LaTeX in a maths explanation both produce this.
+    process.env.OPENROUTER_API_KEY = "key";
+    const { generateJSON } = loadModule();
+    mockFetchSuccess('{"note": "match \\d+ digits", "rule": "50\\% of 3\\cdot 4"}');
+    await expect(
+      generateJSON("sys", "user", { model: "x" }, { note: "", rule: "" })
+    ).resolves.toEqual({ note: "match \\d+ digits", rule: "50\\% of 3\\cdot 4" });
+  }, 30000);
+
+  it("keeps valid unicode escapes intact", async () => {
+    process.env.OPENROUTER_API_KEY = "key";
+    const { generateJSON } = loadModule();
+    mockFetchSuccess('{"sym": "\\u00b2 \\u221a done"}');
+    await expect(
+      generateJSON("sys", "user", { model: "x" }, { sym: "" })
+    ).resolves.toEqual({ sym: "\u00b2 \u221a done" });
+  }, 30000);
+
   it("throws when all providers fail with network error", async () => {
     process.env.OPENROUTER_API_KEY = "key";
     const { generateJSON } = loadModule();

@@ -1,6 +1,27 @@
 import { generateJSON, generateText, MODELS } from "../lib/ai/openrouter";
 import { dedupInfoFromQuestion, dedupeQuestions, filterQuestionsAgainstSeen, sanitizeGeneratedQuestions, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
 import { buildDiversifiedTopicTest } from "./aptitude-archetypes";
+import { QuestionPoolExhaustedError, buildAvoidanceBlock, loadBank, rejectAgainstBank } from "./question-bank.service";
+import { balanceCorrectOptionPositions } from "../lib/questions/option-balance";
+
+/**
+ * Shared instruction header for aptitude question generation. Keeping it in one
+ * place means the backfill/top-up generator and the normal test generator apply
+ * the same standard.
+ */
+const BASE_SYSTEM_PROMPT = `You are a world-class placement preparation question architect specializing in Indian campus placements and competitive exams.
+You have deep expertise in crafting questions that mirror the exact style, difficulty, and patterns found in actual placement tests at companies like TCS, Infosys, Wipro, Google, Amazon, Microsoft, and top consulting firms.
+
+CRITICAL RULES:
+- Every question must be genuinely new. Output is machine-verified against a global registry; anything resembling an existing question is discarded.
+- Each question must be self-contained with all necessary information in the text.
+- Exactly 4 options with exactly ONE correct answer, and no obviously wrong distractors.
+- The explanation must be educational, showing the complete reasoning process.
+- Always include a shortcut or trick method when applicable.
+- Always include 2-3 common mistakes students make on this type of question.
+- Vary contexts across technology, finance, e-commerce, travel, operations, logistics, sports and everyday life.
+- Use varied, realistic numbers and units. Never reuse a template structure.
+- Questions must feel authentic, not contrived.`;
 
 // ============================================================================
 // TYPES
@@ -709,7 +730,7 @@ Rules:
 
     const existingSeen = seenRegistryFromTexts(existingQuestionTexts || []);
 
-    // 1) Within this single response: drop only normalized-identical duplicates.
+    // 1) Within this single response: drop byte-identical duplicates.
     let uniqueQuestions = dedupeQuestions(allGenerated);
 
     // 2) Cross-assessment: strictly avoid anything already used for this topic.
@@ -718,29 +739,54 @@ Rules:
     const { valid: sanitized } = sanitizeGeneratedQuestions(uniqueQuestions);
     uniqueQuestions = sanitized;
 
-    // 3) Guarantee requested volume with topic-specific fallbacks (not generic multiplication)
-    if (uniqueQuestions.length < count) {
-      const exclude = new Set<string>(existingSeen.fingerprints);
-      for (const q of uniqueQuestions) {
-        const f = dedupInfoFromQuestion(q).fingerprint;
-        if (f) exclude.add(f);
+    // 3) Global bank gate. Topic-scoped history above cannot see questions that
+    //    were banked under a different topic, so this is the authoritative check.
+    const bank = await loadBank(undefined, { includeTexts: true });
+    const accepted: GeneratedQuestion[] = [];
+    const acceptedTexts: string[] = [];
+    let rejectedCount = 0;
+
+    for (const q of uniqueQuestions) {
+      if (accepted.length >= count) break;
+      const { kept, rejected } = rejectAgainstBank([q], bank, {
+        strict: true,
+        extraTexts: acceptedTexts,
+      });
+      if (rejected.length > 0) {
+        rejectedCount += rejected.length;
+        continue;
       }
-      const extra = dedupeQuestions(fallback, exclude).slice(0, count - uniqueQuestions.length);
-      uniqueQuestions = uniqueQuestions.concat(extra);
+      for (const k of kept) {
+        accepted.push(k);
+        acceptedTexts.push(k.text);
+      }
+    }
+    uniqueQuestions = accepted;
+
+    if (rejectedCount > 0) {
+      console.log(
+        `[AptitudeEngine] topic="${topic}": bank rejected ${rejectedCount} duplicate concept(s).`
+      );
     }
 
-    // 4) Guarantee full count even if dedupe dropped any
+    // 4) Guarantee requested volume. The previous implementation refilled from
+    //    generateTopicSpecificFallback with a shifted offsetSeed, which produced
+    //    numeric variants of concepts already in the bank. A shortfall now
+    //    surfaces as a typed exhaustion error instead of a duplicate.
     if (uniqueQuestions.length < count) {
-      for (const fq of fallback) {
-        if (!uniqueQuestions.some(uq => uq.text === fq.text)) {
-          uniqueQuestions.push(fq);
-          if (uniqueQuestions.length >= count) break;
-        }
-      }
+      throw new QuestionPoolExhaustedError(
+        `${topic} (${category})`,
+        count,
+        uniqueQuestions.length,
+        existingQuestionTexts
+          ? Array.from(existingQuestionTexts).slice(0, 10)
+          : []
+      );
     }
 
-    return uniqueQuestions.length >= count ? uniqueQuestions.slice(0, count) : fallback.slice(0, count);
+    return uniqueQuestions.slice(0, count);
   } catch (error) {
+    if (error instanceof QuestionPoolExhaustedError) throw error;
     console.warn(`[AptitudeEngine] AI question generation failed for topic="${topic}":`, error);
     return fallback.slice(0, count);
   }
@@ -749,6 +795,241 @@ Rules:
 // ============================================================================
 // EXPORTED SERVICE FUNCTIONS
 // ============================================================================
+
+export interface UniqueGenerationResult {
+  questions: GeneratedQuestion[];
+  /** Concepts the model proposed that the bank rejected, for diagnostics. */
+  rejectedConcepts: string[];
+  attempts: number;
+  /** True when fewer than `count` unique questions could be produced. */
+  exhausted: boolean;
+  /**
+   * Why it fell short. `validResponses === 0` means the model never returned
+   * anything parseable (quota/rate-limit/JSON), which is a retryable transport
+   * problem — not evidence that the topic is out of concepts.
+   */
+  diagnostics: {
+    parseFailures: number;
+    apiErrors: number;
+    bankRejections: number;
+    validResponses: number;
+  };
+}
+
+/**
+ * Generate `count` globally-unique questions for a topic, topping up a specific
+ * test that has fallen short.
+ *
+ * Unlike generateAptitudeQuestions (which either returns a full batch or throws),
+ * this returns whatever genuinely new questions it managed to produce. That is
+ * what a backfill needs: a shortfall of 30 should yield 12 real questions rather
+ * than either failing outright or padding with duplicates.
+ *
+ * Never returns a duplicate — the global bank gate is authoritative.
+ */
+export async function generateUniqueTopicQuestions(params: {
+  topic: string;
+  category: AptitudeCategory;
+  count: number;
+  difficulty: Difficulty;
+  company?: string;
+  /** Seed text describing the sub-topics already covered, to steer the model. */
+  coveredSummary?: string;
+  maxAttempts?: number;
+  batchSize?: number;
+  /** Milliseconds to wait between attempts; 0 for the live request path. */
+  throttleMs?: number;
+}): Promise<UniqueGenerationResult> {
+  const { topic, category, count, difficulty, company } = params;
+  const maxAttempts = Math.max(1, params.maxAttempts ?? 6);
+  // 3 questions per call, not 5: each carries an explanation, a shortcut and
+  // common mistakes, so 5 blew past maxTokens and returned truncated JSON that
+  // failed to parse. Three fits comfortably and costs a negligible extra call.
+  const batchSize = Math.max(1, params.batchSize ?? 3);
+  // Pace between attempts. 0 disables it (live request path); the bulk backfill
+  // sets a few seconds to stay under free-tier rate limits.
+  const throttleMs = Math.max(0, params.throttleMs ?? 0);
+  const companyTags = company && COMPANY_PRESETS[company] ? [company] : [];
+
+  const bank = await loadBank(undefined, { includeTexts: true });
+  const accepted: GeneratedQuestion[] = [];
+  const acceptedTexts: string[] = [];
+  const rejectedConcepts: string[] = [];
+  let attempts = 0;
+  let parseFailures = 0;
+  let apiErrors = 0;
+  let bankRejections = 0;
+  let validResponses = 0;
+
+  for (let attempt = 1; attempt <= maxAttempts && accepted.length < count; attempt++) {
+    attempts = attempt;
+    // Free-tier Gemini throttles hard under back-to-back calls (HTTP 429), and
+    // a throttled call silently returns the schema-safety fallback, which used
+    // to be misreported as "topic exhausted". Pace the calls instead.
+    if (attempt > 1 && throttleMs > 0) {
+      await new Promise((r) => setTimeout(r, throttleMs));
+    }
+    const needed = Math.min(batchSize, count - accepted.length);
+    const entropy = `${Date.now()}_${attempt}_${Math.random().toString(36).slice(2, 9)}`;
+
+    const subTopicHint = params.coveredSummary
+      ? `\nSub-topics already covered by existing questions (pick something else):\n${params.coveredSummary}\n`
+      : "";
+
+    const rejectFeedback =
+      rejectedConcepts.length > 0
+        ? `\nYou previously proposed concepts that already exist and were REJECTED. Do not reuse them:\n` +
+          rejectedConcepts.slice(-15).map((c) => `- ${c}`).join("\n") +
+          `\nChoose a materially different idea for every question.\n`
+        : "";
+
+    const userPrompt = `Generate exactly ${needed} completely new ${difficulty}-level ${category} aptitude questions on the topic "${topic}".
+
+Entropy token: ${entropy}
+Attempt ${attempt} of ${maxAttempts}.${buildAvoidanceBlock(bank, "the global question bank")}${subTopicHint}${rejectFeedback}
+Sub-topic rotation for this attempt: ${TOPIC_ARCHETYPES[topic]?.[(attempt - 1) % Math.max(1, TOPIC_ARCHETYPES[topic]?.length || 1)] || "a distinct angle of " + topic}
+
+Return ONLY a JSON object:
+{
+  "questions": [
+    {
+      "text": "self-contained question with all necessary data",
+      "options": ["option1", "option2", "option3", "option4"],
+      "correctIdx": 0,
+      "explanation": "detailed step-by-step explanation",
+      "shortcut": "clever shortcut or trick method",
+      "difficulty": "${difficulty}",
+      "estimatedTimeSec": ${difficulty === "easy" ? 45 : difficulty === "medium" ? 90 : 150},
+      "commonMistakes": ["mistake1", "mistake2"],
+      "companyRelevance": "why this pattern appears in placements"
+    }
+  ]
+}
+
+Rules:
+- valid JSON only, matching the structure above
+- each question must test a distinct, previously unused angle of "${topic}"
+- correctIdx is 0-based and points at the single correct option
+- changing only the numbers or the person's name does NOT make a question new`;
+
+    let raw: any;
+    try {
+      // fallback must be null: enforceSchema() keeps only the keys present in
+      // the fallback object, so passing {} silently discarded every parsed
+      // question. With null it returns the parsed payload untouched, and
+      // sanitizeGeneratedQuestions() below does the real validation.
+      raw = await generateJSON<any>(
+        BASE_SYSTEM_PROMPT,
+        userPrompt,
+        {
+          model: MODELS.CHEAP,
+          temperature: 0.95,
+          maxTokens: 8000,
+          responseFormat: { type: "json_object" },
+          skipCache: true,
+        },
+        null
+      );
+    } catch (err) {
+      apiErrors++;
+      console.warn(
+        `[AptitudeEngine] top-up attempt ${attempt} failed for "${topic}":`,
+        (err as Error)?.message || err
+      );
+      continue;
+    }
+
+    let arr: any[] = [];
+    if (Array.isArray(raw)) arr = raw;
+    else if (raw && typeof raw === "object") {
+      if (Array.isArray(raw.questions)) arr = raw.questions;
+      else {
+        const found = Object.values(raw).find((v) => Array.isArray(v));
+        if (Array.isArray(found)) arr = found;
+      }
+    }
+    if (arr.length === 0) {
+      // generateJSON's schema-safety fallback: the model returned unparseable
+      // JSON twice (often a rate-limited/truncated response) and we were handed
+      // null instead of an exception.
+      parseFailures++;
+      console.warn(
+        `[AptitudeEngine] top-up "${topic}" attempt ${attempt}: model returned no ` +
+          `usable questions (raw=${JSON.stringify(raw).slice(0, 120)}).`
+      );
+      continue;
+    }
+
+    const candidates = arr.slice(0, needed).map((q, i) => ({
+      id: `topup-${topic.replace(/\s/g, "-")}-${Date.now()}-${accepted.length + i}`,
+      text: q.text || "",
+      options: Array.isArray(q.options) && q.options.length === 4 ? q.options : [],
+      correctIdx: typeof q.correctIdx === "number" ? q.correctIdx : 0,
+      explanation: q.explanation || "No explanation available.",
+      shortcut: q.shortcut || undefined,
+      difficulty: (q.difficulty as Difficulty) || difficulty,
+      estimatedTimeSec:
+        typeof q.estimatedTimeSec === "number"
+          ? q.estimatedTimeSec
+          : difficulty === "easy"
+            ? 45
+            : difficulty === "medium"
+              ? 90
+              : 150,
+      topic,
+      category,
+      companyTags,
+      commonMistakes: Array.isArray(q.commonMistakes) ? q.commonMistakes : [],
+    }));
+
+    const { valid, rejected: invalid } = sanitizeGeneratedQuestions(candidates);
+    if (valid.length === 0) {
+      parseFailures++;
+      console.warn(
+        `[AptitudeEngine] top-up "${topic}" attempt ${attempt}: ` +
+          `${arr.length} question(s) returned but ${invalid.length} failed validation. ` +
+          `First problem: ${invalid[0]?.reasons?.join(", ") || "unknown"}`
+      );
+      continue;
+    }
+    validResponses++;
+
+    const { kept, rejected } = rejectAgainstBank(valid, bank, {
+      strict: true,
+      extraTexts: acceptedTexts,
+    });
+    bankRejections += rejected.length;
+    for (const r of rejected) {
+      rejectedConcepts.push(`${dedupInfoFromQuestion(r.question).text.slice(0, 90)} [${r.reason}]`);
+    }
+    if (rejected.length > 0) {
+      console.log(
+        `[AptitudeEngine] top-up "${topic}" attempt ${attempt}: ` +
+          `rejected ${rejected.length}/${valid.length} against the bank.`
+      );
+    }
+
+    for (const q of kept) {
+      if (accepted.length >= count) break;
+      accepted.push(q);
+      acceptedTexts.push(dedupInfoFromQuestion(q).text);
+    }
+  }
+
+  return {
+    // Balance the answer positions across the whole batch: the model has a
+    // strong bias toward option A (21/30 correct answers at index 0 in one
+    // regenerated test), which makes a test trivially gameable.
+    questions: balanceCorrectOptionPositions(accepted),
+    rejectedConcepts,
+    attempts,
+    exhausted: accepted.length < count,
+    // Distinguishes "the model never gave us anything usable" (a quota/rate-limit
+    // or JSON problem, worth retrying later) from "the model kept proposing
+    // concepts the bank already holds" (a genuine content ceiling).
+    diagnostics: { parseFailures, apiErrors, bankRejections, validResponses },
+  };
+}
 
 export async function getAptitudeCategories(): Promise<{
   categories: { name: AptitudeCategory; displayName: string; topics: AptitudeTopicDef[]; icon: string }[];

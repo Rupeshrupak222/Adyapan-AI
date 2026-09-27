@@ -30,9 +30,12 @@ export function errorHandler(error: HttpError, req: Request, res: Response, _nex
     statusCode >= 500
       ? isPrismaError
         ? "Database error. Please try again."
-        : env.nodeEnv === "production"
-          ? "Internal server error"
-          : error.message
+        : (error as any).expose === true
+          ? // Deliberately safe, user-actionable 5xx (e.g. a test being rebuilt).
+            error.message
+          : env.nodeEnv === "production"
+            ? "Internal server error"
+            : error.message
       : error.message;
 
   res.status(statusCode).json({
@@ -42,5 +45,10 @@ export function errorHandler(error: HttpError, req: Request, res: Response, _nex
     ...(error.code ? { code: error.code } : {}),
     ...((error as any).attemptsRemaining !== undefined ? { attemptsRemaining: (error as any).attemptsRemaining } : {}),
     ...((error as any).lockedFor !== undefined ? { lockedFor: (error as any).lockedFor } : {}),
+    // Structured errors (e.g. QuestionPoolExhaustedError) carry an actionable
+    // payload the admin panel needs to report exactly what ran out.
+    ...((error as any).details && typeof (error as any).details === "object"
+      ? { details: (error as any).details }
+      : {}),
   });
 }

@@ -1,6 +1,11 @@
 import { masterPrisma, getUserPrismaFromRequest } from "../utils/prisma";
 import { generateAptitudeQuestions, type AptitudeCategory, type Difficulty, type GeneratedQuestion } from "./aptitude-engine.service";
-import { dedupInfoFromQuestion, dedupeQuestions, isTextSeen, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
+import { dedupInfoFromQuestion, dedupeQuestions, filterQuestionsAgainstSeen, isTextSeen, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
+import {
+  QuestionPoolExhaustedError,
+  SOURCE_APTITUDE,
+  commitToBank,
+} from "./question-bank.service";
 
 /**
  * Interface for stored topic test summary
@@ -59,6 +64,59 @@ function getPrisma(userPrisma?: any) {
 /**
  * Fetch or auto-seed tests for a given topic from database
  */
+/**
+ * Thrown when a test exists in the catalogue but holds no usable questions.
+ *
+ * This is a temporary state created by the global duplicate prune: the test row
+ * survives but its duplicate questions were removed, and the shortfall is being
+ * refilled by scripts/regenerate-shortfall.ts. It is deliberately NOT a 404 --
+ * the test is real, it just has nothing to serve yet.
+ */
+export class AptitudeTestUnavailableError extends Error {
+  /** Both spellings: routeError reads `status`, errorHandler reads `statusCode`. */
+  readonly status = 503;
+  readonly statusCode = 503;
+  readonly code = "TEST_BEING_REBUILT";
+  /** 5xx messages are normally masked in production; this one is safe to show. */
+  readonly expose = true;
+  readonly details: Record<string, unknown>;
+
+  constructor(
+    readonly testId: string,
+    readonly topic: string,
+    readonly testNumber: number
+  ) {
+    super(
+      `${topic} - Test ${testNumber} is being rebuilt and has no questions available right now.`
+    );
+    this.name = "AptitudeTestUnavailableError";
+    this.details = {
+      code: this.code,
+      testId,
+      topic,
+      testNumber,
+      reason: "no_questions_yet",
+      hint: "This test is temporarily empty while its questions are regenerated. Please try another test or check back later.",
+    };
+  }
+}
+
+/**
+ * Questions actually present on a test row.
+ *
+ * questionsJson is the source of truth: totalQuestions is a denormalised
+ * intended size and still reads 30 on rows whose questions were pruned, so
+ * trusting it makes an empty test look complete.
+ */
+function countUsableQuestions(row: any): number {
+  // In-memory placeholders (mem-*) have no questionsJson; the single-test
+  // endpoint synthesises a full set for them on demand.
+  if (typeof row?.id === "string" && row.id.startsWith("mem-")) return 30;
+  const q = row?.questionsJson;
+  if (!Array.isArray(q)) return 0;
+  return q.filter((x: any) => x && typeof x.text === "string" && x.text.trim().length > 0).length;
+}
+
 export async function getTopicTestsFromDb(
   topic: string,
   category: string,
@@ -133,16 +191,25 @@ export async function getTopicTestsFromDb(
     }));
   }
 
-  return tests.map((t: any) => ({
-    id: t.id,
-    category: t.category,
-    topic: t.topic,
-    testNumber: t.testNumber,
-    title: t.title,
-    totalQuestions: t.totalQuestions || 30,
-    difficulty: t.difficulty || "medium",
-    createdAt: t.createdAt,
-  }));
+  return tests.map((t: any) => {
+    const available = countUsableQuestions(t);
+    return {
+      id: t.id,
+      category: t.category,
+      topic: t.topic,
+      testNumber: t.testNumber,
+      title: t.title,
+      // Real count, never the intended size: `t.totalQuestions || 30` reported 30
+      // for tests that had been emptied, sending users into a blank test.
+      totalQuestions: available,
+      /** The size the test is being restored to. */
+      targetQuestions: t.totalQuestions || 30,
+      isAvailable: available > 0,
+      status: available > 0 ? "available" : "rebuilding",
+      difficulty: t.difficulty || "medium",
+      createdAt: t.createdAt,
+    };
+  });
 }
 
 /**
@@ -179,8 +246,17 @@ export async function getTopicTestByIdFromDb(testId: string, userPrisma?: any) {
 
       if (test) {
         let questions = test.questionsJson as any as GeneratedQuestion[];
+
+        // An emptied test must never fall through to the legacy generator below.
+        // That path rewrites the row with 30 templated questions, which would
+        // resurrect the exact duplicates the global prune just removed and
+        // bypass the question bank entirely. Report the shortfall instead.
+        if (countUsableQuestions(test) === 0) {
+          throw new AptitudeTestUnavailableError(test.id, test.topic, test.testNumber);
+        }
+
         const isRepetitiveTest = (qs: GeneratedQuestion[]): boolean => {
-          if (!qs || qs.length === 0) return true;
+          if (!qs || qs.length === 0) return false;
           const hasLegacy = qs.some(q =>
             q.text?.includes("component A produces") ||
             q.text?.includes("units/hr") ||
@@ -234,12 +310,15 @@ export async function getTopicTestByIdFromDb(testId: string, userPrisma?: any) {
           testNumber: test.testNumber,
           title: test.title,
           difficulty: test.difficulty,
-          totalQuestions: test.totalQuestions,
+          totalQuestions: cleanedQuestions.length,
           questions: cleanedQuestions,
         };
       }
     }
   } catch (err) {
+    // A deliberate "no questions yet" signal must reach the client, not be
+    // converted into a generic 30-question Placement Aptitude test.
+    if (err instanceof AptitudeTestUnavailableError) throw err;
     console.error("Database query failed in getTopicTestByIdFromDb:", err);
   }
 
@@ -307,34 +386,29 @@ export async function generateWeeklyTopicTest(
         existingQuestionTexts,
       });
     }
-  } catch {
+  } catch (err) {
+    // A pool-exhausted error is a deliberate, reportable outcome. Propagate it so
+    // the admin learns the topic is out of unique concepts instead of silently
+    // receiving a short or duplicated test. Any other failure falls back.
+    if (err instanceof QuestionPoolExhaustedError) throw err;
     questions = generateDefaultTopicTestQuestions(normalizedTopic, normalizedCategory, nextTestNum);
   }
 
-  // Cross-assessment: strictly avoid anything already used in previous tests of
-  // this target. Within-assessment: keep numeric/scenario variants (distinct
-  // questions) and drop only normalized-identical duplicates.
+  // The engine has already applied the global bank gate, but re-check here
+  // because the fallback branch above bypasses it entirely.
   const existingSeen = seenRegistryFromTexts(existingQuestionTexts);
-  const exclude = new Set<string>(existingSeen.fingerprints);
-
-  let uniqueQuestions = dedupeQuestions(
+  const uniqueQuestions = filterQuestionsAgainstSeen(
     questions.filter((q) => !isTextSeen(q.text, existingSeen)),
-    exclude
-  );
+    existingSeen
+  ).slice(0, 30);
 
-  // Fill up to 30 with deterministic seeded questions (each offset varies the
-  // embedded numbers). Block only normalized-exact repeats of history and of
-  // already-chosen questions so numeric variants restore full volume.
-  let offsetSeed = nextTestNum + 100;
-  for (let guard = 0; uniqueQuestions.length < 30 && guard < 40; guard++) {
-    const fallbackQs = generateDefaultTopicTestQuestions(normalizedTopic, normalizedCategory, offsetSeed++);
-    for (const fq of fallbackQs) {
-      if (uniqueQuestions.length >= 30) break;
-      const d = dedupInfoFromQuestion(fq);
-      if (!d.fingerprint || exclude.has(d.fingerprint)) continue;
-      exclude.add(d.fingerprint);
-      uniqueQuestions.push(fq);
-    }
+  if (uniqueQuestions.length < 30) {
+    throw new QuestionPoolExhaustedError(
+      `${normalizedTopic} (${normalizedCategory})`,
+      30,
+      uniqueQuestions.length,
+      Array.from(existingQuestionTexts).slice(0, 10)
+    );
   }
 
   const newTest = await db.aptitudeTopicTest.create({
@@ -349,6 +423,35 @@ export async function generateWeeklyTopicTest(
       difficulty: nextTestNum % 3 === 1 ? "easy" : nextTestNum % 3 === 2 ? "medium" : "hard",
     },
   });
+
+  // Register in the global bank. The UNIQUE constraints are the authoritative
+  // gate: a concept claimed by a concurrent run is reported, not duplicated.
+  const commit = await commitToBank(
+    uniqueQuestions.map((q, idx) => ({
+      question: q.text,
+      options: q.options,
+      correctIdx: q.correctIdx,
+      source: SOURCE_APTITUDE,
+      topic: normalizedTopic,
+      category: normalizedCategory,
+      company: normalizedCategory === "company" ? normalizedTopic : null,
+      difficulty: q.difficulty,
+      testId: newTest.id,
+      position: idx,
+    })),
+    db
+  );
+
+  if (commit.rejectedAsDuplicate > 0) {
+    throw new QuestionPoolExhaustedError(
+      `${normalizedTopic} (${normalizedCategory})`,
+      30,
+      commit.inserted,
+      [
+        `${commit.rejectedAsDuplicate} concept(s) were claimed by a concurrent generation run.`,
+      ]
+    );
+  }
 
   return newTest;
 }
@@ -388,32 +491,57 @@ export const ALL_COMPANY_IDS = [
 ];
 
 /**
- * Admin action: Batch generate next sequential 30-question test for EVERY topic & company in DB
+ * Admin action: Batch generate next sequential 30-question test for EVERY topic &
+ * company in DB.
+ *
+ * Runs with bounded concurrency. Concurrent topics may briefly propose the same
+ * concept, but the question_bank UNIQUE constraints decide the winner, so a race
+ * surfaces as an exhausted-pool failure for one topic rather than a duplicate.
+ * Failures are collected rather than thrown so one exhausted topic cannot abort
+ * the whole run.
  */
 export async function generateAllTopicTestsForAdmin(userPrisma?: any) {
-  const generated = [];
-  // 1. Topic Tests
+  const jobs: Array<{ topic: string; category: string }> = [];
   for (const [cat, topics] of Object.entries(ALL_TOPICS_BY_CATEGORY)) {
-    for (const topic of topics) {
+    for (const topic of topics) jobs.push({ topic, category: cat });
+  }
+  for (const companyId of ALL_COMPANY_IDS) jobs.push({ topic: companyId, category: "company" });
+
+  const generated: any[] = [];
+  const failures: Array<{ topic: string; category: string; reason: string; details?: unknown }> = [];
+
+  const CONCURRENCY = 3;
+  const queue = [...jobs];
+
+  const worker = async (): Promise<void> => {
+    for (;;) {
+      const job = queue.shift();
+      if (!job) return;
       try {
-        const test = await generateWeeklyTopicTest(topic, cat, userPrisma);
-        generated.push(test);
-      } catch (err) {
-        console.error(`[Admin Batch Test Gen] Error generating test for ${topic}:`, err);
+        generated.push(await generateWeeklyTopicTest(job.topic, job.category, userPrisma));
+      } catch (err: any) {
+        const exhausted = err instanceof QuestionPoolExhaustedError;
+        const reason = exhausted
+          ? err.message
+          : (err as Error)?.message || String(err);
+        if (exhausted) {
+          console.warn(`[Admin Batch Test Gen] Pool exhausted for ${job.category}/${job.topic}`);
+        } else {
+          console.error(`[Admin Batch Test Gen] Error generating test for ${job.topic}:`, err);
+        }
+        failures.push({ topic: job.topic, category: job.category, reason, details: (err as any)?.details });
       }
     }
-  }
-  // 2. Company Tests
-  for (const companyId of ALL_COMPANY_IDS) {
-    try {
-      const test = await generateWeeklyTopicTest(companyId, "company", userPrisma);
-      generated.push(test);
-    } catch (err) {
-      console.error(`[Admin Batch Test Gen] Error generating company test for ${companyId}:`, err);
-    }
-  }
+  };
 
-  return { generatedCount: generated.length, tests: generated };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length || 1) }, () => worker()));
+
+  return {
+    generatedCount: generated.length,
+    tests: generated,
+    failedCount: failures.length,
+    failures,
+  };
 }
 
 export async function getAllAptitudeTestsForAdmin(userPrisma?: any) {

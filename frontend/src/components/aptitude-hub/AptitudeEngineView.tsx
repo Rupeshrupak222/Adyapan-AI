@@ -305,9 +305,29 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
       }
     } catch (err: any) {
       if (!quota.handleQuotaError(err)) {
-        await quota.onFailure();
+        const code = err?.response?.data?.code;
+        // A test that is merely being rebuilt consumed no AI allowance, so it
+        // must not count against the user's monthly test quota.
+        if (code !== "TEST_BEING_REBUILT") {
+          await quota.onFailure();
+        }
         const msg = err?.response?.data?.error || "Failed to start session";
-        alert(msg);
+        if (code === "TEST_BEING_REBUILT") {
+          // The test was emptied by the duplicate prune and is still being
+          // refilled. Explain it and re-fetch so the list shows current state.
+          toast.error("This test is being rebuilt", {
+            description:
+              err?.response?.data?.details?.hint ||
+              "Its questions are temporarily unavailable. Please pick another test.",
+          });
+          if (mode === "company_test" && selectedCompany) {
+            await loadCompanyTests(selectedCompany);
+          } else if (topic) {
+            await loadTopicTests(topic, category);
+          }
+        } else {
+          toast.error(msg);
+        }
       }
     } finally {
       setAiLoading(false);
@@ -1490,35 +1510,62 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {topicTests.map((t, idx) => (
+                    {topicTests.map((t, idx) => {
+                      const realCount = typeof t.totalQuestions === "number" ? t.totalQuestions : 0;
+                      const available = t.isAvailable !== false && realCount > 0;
+                      const countLabel = available ? realCount : t.targetQuestions || 30;
+                      return (
                       <motion.div
                         key={t.id || idx}
-                        whileHover={{ y: -3, scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={available ? { y: -3, scale: 1.02 } : undefined}
+                        whileTap={available ? { scale: 0.98 } : undefined}
                         className="p-5 border rounded-2xl flex flex-col justify-between space-y-4"
-                        style={{ background: c.cardBg, borderColor: c.border }}
+                        style={{
+                          background: c.cardBg,
+                          borderColor: available ? c.border : "rgba(148,163,184,0.25)",
+                          opacity: available ? 1 : 0.6,
+                        }}
                       >
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
                               {t.difficulty || "medium"}
                             </span>
-                            <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">30 Questions</span>
+                            {available ? (
+                              <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                {countLabel} Question{countLabel === 1 ? "" : "s"}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-black text-slate-400 bg-slate-500/10 px-2 py-0.5 rounded-full border border-slate-500/20">
+                                Being rebuilt
+                              </span>
+                            )}
                           </div>
                           <h4 className="text-sm font-extrabold" style={{ color: c.text }}>{t.title || `Test ${t.testNumber || idx + 1}`}</h4>
-                          <p className="text-[11px]" style={{ color: c.textMuted }}>30 placement questions</p>
+                          <p className="text-[11px]" style={{ color: c.textMuted }}>
+                            {available
+                              ? `${countLabel} unique placement question${countLabel === 1 ? "" : "s"}`
+                              : "Temporarily unavailable while its questions are regenerated. Please try another test."}
+                          </p>
                         </div>
 
-                        {t.completed ? (
+                        {!available ? (
+                          <button
+                            disabled
+                            className="w-full py-2.5 rounded-xl text-xs font-bold text-slate-500 border border-slate-500/30 bg-slate-500/10 cursor-not-allowed"
+                          >
+                            Unavailable
+                          </button>
+                        ) : t.completed ? (
                           <div className="space-y-2">
                             <div className="flex justify-between text-[11px] font-bold">
                               <span style={{ color: c.textSec }}>Last Score:</span>
-                              <span className="text-emerald-400 font-extrabold">{t.score}/30 ({Math.round((t.score / 30) * 100)}%)</span>
+                              <span className="text-emerald-400 font-extrabold">{t.score}/{countLabel} ({Math.round((t.score / countLabel) * 100)}%)</span>
                             </div>
                             <motion.button
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
-                              onClick={() => startSession("topic_test", selectedCategory || undefined, selectedTopic, undefined, t.difficulty, 30, t.id)}
+                              onClick={() => startSession("topic_test", selectedCategory || undefined, selectedTopic, undefined, t.difficulty, countLabel, t.id)}
                               className="w-full py-2.5 rounded-xl text-xs font-bold text-amber-500 border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20"
                             >
                               Retake {t.title || `Test ${idx + 1}`}
@@ -1528,14 +1575,15 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => startSession("topic_test", selectedCategory || undefined, selectedTopic, undefined, t.difficulty, 30, t.id)}
+                            onClick={() => startSession("topic_test", selectedCategory || undefined, selectedTopic, undefined, t.difficulty, countLabel, t.id)}
                             className="w-full py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md hover:from-amber-400 hover:to-amber-500"
                           >
                             Start {t.title || `Test ${idx + 1}`}
                           </motion.button>
                         )}
                       </motion.div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </motion.div>
@@ -1568,35 +1616,62 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {companyTests.map((t, idx) => (
+                    {companyTests.map((t, idx) => {
+                      const realCount = typeof t.totalQuestions === "number" ? t.totalQuestions : 0;
+                      const available = t.isAvailable !== false && realCount > 0;
+                      const countLabel = available ? realCount : t.targetQuestions || 30;
+                      return (
                       <motion.div
                         key={t.id || idx}
-                        whileHover={{ y: -3, scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={available ? { y: -3, scale: 1.02 } : undefined}
+                        whileTap={available ? { scale: 0.98 } : undefined}
                         className="p-5 border rounded-2xl flex flex-col justify-between space-y-4"
-                        style={{ background: c.cardBg, borderColor: c.border }}
+                        style={{
+                          background: c.cardBg,
+                          borderColor: available ? c.border : "rgba(148,163,184,0.25)",
+                          opacity: available ? 1 : 0.6,
+                        }}
                       >
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
                               {t.difficulty || "medium"}
                             </span>
-                            <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">30 Questions</span>
+                            {available ? (
+                              <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                {countLabel} Question{countLabel === 1 ? "" : "s"}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-black text-slate-400 bg-slate-500/10 px-2 py-0.5 rounded-full border border-slate-500/20">
+                                Being rebuilt
+                              </span>
+                            )}
                           </div>
                           <h4 className="text-sm font-extrabold" style={{ color: c.text }}>{selectedCompany} {t.title || `Test ${t.testNumber || idx + 1}`}</h4>
-                          <p className="text-[11px]" style={{ color: c.textMuted }}>30 placement questions for {selectedCompany}</p>
+                          <p className="text-[11px]" style={{ color: c.textMuted }}>
+                            {available
+                              ? `${countLabel} unique placement question${countLabel === 1 ? "" : "s"} for ${selectedCompany}`
+                              : "Temporarily unavailable while its questions are regenerated. Please try another test."}
+                          </p>
                         </div>
 
-                        {t.completed ? (
+                        {!available ? (
+                          <button
+                            disabled
+                            className="w-full py-2.5 rounded-xl text-xs font-bold text-slate-500 border border-slate-500/30 bg-slate-500/10 cursor-not-allowed"
+                          >
+                            Unavailable
+                          </button>
+                        ) : t.completed ? (
                           <div className="space-y-2">
                             <div className="flex justify-between text-[11px] font-bold">
                               <span style={{ color: c.textSec }}>Last Score:</span>
-                              <span className="text-emerald-400 font-extrabold">{t.score}/30 ({Math.round((t.score / 30) * 100)}%)</span>
+                              <span className="text-emerald-400 font-extrabold">{t.score}/{countLabel} ({Math.round((t.score / countLabel) * 100)}%)</span>
                             </div>
                             <motion.button
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
-                              onClick={() => startSession("company_test", undefined, undefined, selectedCompany, t.difficulty, 30, t.id)}
+                              onClick={() => startSession("company_test", undefined, undefined, selectedCompany, t.difficulty, countLabel, t.id)}
                               className="w-full py-2.5 rounded-xl text-xs font-bold text-amber-500 border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20"
                             >
                               Retake {t.title || `Test ${idx + 1}`}
@@ -1606,14 +1681,15 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => startSession("company_test", undefined, undefined, selectedCompany, t.difficulty, 30, t.id)}
+                            onClick={() => startSession("company_test", undefined, undefined, selectedCompany, t.difficulty, countLabel, t.id)}
                             className="w-full py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md hover:from-amber-400 hover:to-amber-500"
                           >
                             Start {t.title || `Test ${idx + 1}`}
                           </motion.button>
                         )}
                       </motion.div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </motion.div>

@@ -14,26 +14,33 @@ export interface OpenRouterOptions {
   skipCache?: boolean;
 }
 
-// Gemini model fallback chain — active supported models
+// Gemini model fallback chain.
+// Only models that are actually servable belong here: gemini-2.5-flash,
+// gemini-2.0-flash and gemini-1.5-flash are retired (HTTP 404 "no longer
+// available to new users"), so listing them just burned a 60s cooldown per hop
+// before failing anyway. gemini-3.5-flash-lite is the only member of the 3.x
+// line that is reliably available on free-tier keys.
 const GEMINI_MODEL_FALLBACKS = [
   "gemini-3.6-flash",
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
 ];
 
-// Groq model fallback chain — active official fast models on Groq
+// Groq model fallback chain.
+//
+// Only IDs that Groq's /models endpoint actually serves are listed. qwen3.6-27b,
+// groq/compound and groq/compound-mini all return HTTP 404 ("does not exist or
+// you do not have access"), so every request burned a 60s cooldown per dead hop
+// before it ever reached a working model. The guard/whisper models that the
+// endpoint also lists are unsuitable for text generation.
 const GROQ_MODEL_FALLBACKS_STRONG = [
   "openai/gpt-oss-120b",
   "qwen/qwen3.8-27b",
   "openai/gpt-oss-20b",
-  "qwen/qwen3.6-27b",
-  "groq/compound",
 ];
 const GROQ_MODEL_FALLBACKS_FAST = [
-  "qwen/qwen3.8-27b",
   "openai/gpt-oss-20b",
-  "groq/compound-mini",
+  "qwen/qwen3.8-27b",
 ];
 
 // NVIDIA NIM model fallback chain
@@ -166,13 +173,30 @@ export async function callAIRobust(
 
   for (const provider of providersToRun) {
     try {
-      const isGroq = provider.name.toLowerCase().includes("groq");
-      const defaultMax = isGroq ? 2048 : 4096;
+      const pName = provider.name.toLowerCase();
+      const isGroq = pName.includes("groq");
+      const isOpenRouter = pName.includes("openrouter");
+
+      // Per-provider output budgets. A provider rejects the whole request if the
+      // declared max_tokens exceeds what it will reserve, which is why asking for
+      // 8000 produced hard failures that looked like outages:
+      //   - Groq enforces a per-model output-tokens-per-minute cap. qwen3.8-27b
+      //     answers HTTP 429 "Requested 2048, Limit 1000"; the gpt-oss models
+      //     serve 2048 fine, so the cap is per-model rather than per-provider.
+      //   - OpenRouter reserves credit against max_tokens and answers HTTP 402
+      //     "can only afford 477" when the request is too large for the balance.
+      // Trimming to what each provider will actually serve keeps them usable as
+      // fallbacks instead of burning a 60s cooldown per request.
+      const isGptOss = pName.includes("groq") && provider.model.includes("gpt-oss");
+      const PROVIDER_MAX_TOKENS = isGroq ? (isGptOss ? 2048 : 1000) : isOpenRouter ? 1024 : 4096;
+      const requested = options.maxTokens ?? PROVIDER_MAX_TOKENS;
+      const maxTokens = Math.min(requested, PROVIDER_MAX_TOKENS);
+
       const body: Record<string, unknown> = {
         model: provider.model,
         messages,
         temperature: options.temperature ?? 0.7,
-        max_tokens: options.maxTokens ? (isGroq ? Math.min(options.maxTokens, 2048) : options.maxTokens) : defaultMax,
+        max_tokens: maxTokens,
       };
 
       if (options.responseFormat?.type === "json_object") {
@@ -384,6 +408,79 @@ export async function generateJSON<T>(
 }
 
 // Helper to repair common JSON malformations from LLMs
+/**
+ * Escape raw control characters inside JSON string literals, and neutralise
+ * escape sequences that JSON does not define.
+ *
+ * Two failure modes, both routine for an LLM emitting aptitude questions:
+ *
+ *  1. A literal newline or tab inside a quoted value (a multi-line explanation,
+ *     most often). That is a hard syntax error, and the trailing-comma and
+ *    bracket-balance repairs cannot see it, so the whole response was thrown
+ *     away.
+ *  2. A backslash that is not a valid JSON escape - regex fragments (`\d`), LaTeX
+ *     (`\times`), or a Windows-style path. JSON only permits \" \\ \/ \b \f
+ *     \n \r \t and \uXXXX, so `\d` is a syntax error ("Bad escaped character").
+ *
+ * Walks the text tracking string state, so only characters genuinely inside a
+ * string literal are touched and structural whitespace is left alone. Invalid
+ * escapes are doubled rather than dropped, which preserves the literal text the
+ * model intended.
+ */
+function escapeControlCharsInStrings(text: string): string {
+  const VALID_ESCAPES = new Set(['"', "\\", "/", "b", "f", "n", "r", "t"]);
+  let out = "";
+  let inString = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (ch === '"') {
+      inString = !inString;
+      out += ch;
+      continue;
+    }
+
+    if (inString && ch === "\\") {
+      const next = text[i + 1];
+      if (next === undefined) {
+        // Trailing backslash: keep it as a literal.
+        out += "\\\\";
+        continue;
+      }
+      if (VALID_ESCAPES.has(next)) {
+        out += ch + next;
+        i++;
+        continue;
+      }
+      if (next === "u" && /^[0-9a-fA-F]{4}$/.test(text.slice(i + 2, i + 6))) {
+        out += text.slice(i, i + 6);
+        i += 5;
+        continue;
+      }
+      // Not a JSON escape - emit a literal backslash instead of dropping it.
+      out += "\\\\" + next;
+      i++;
+      continue;
+    }
+
+    if (inString) {
+      const code = ch.charCodeAt(0);
+      if (code < 0x20) {
+        if (ch === "\n") out += "\\n";
+        else if (ch === "\r") out += "\\r";
+        else if (ch === "\t") out += "\\t";
+        else if (ch === "\b") out += "\\b";
+        else if (ch === "\f") out += "\\f";
+        else out += `\\u${code.toString(16).padStart(4, "0")}`;
+        continue;
+      }
+    }
+    out += ch;
+  }
+  return out;
+}
+
 function tryRepairJSON(text: string): string {
   let cleaned = text.trim();
   cleaned = stripMarkdownJson(cleaned);
@@ -396,6 +493,15 @@ function tryRepairJSON(text: string): string {
     return cleaned;
   } catch {}
 
+  // Escape literal newlines/tabs inside strings before anything else: a raw
+  // newline in a value breaks parsing and also corrupts the quote counting
+  // below, so it has to go first.
+  cleaned = escapeControlCharsInStrings(cleaned);
+  try {
+    JSON.parse(cleaned);
+    return cleaned;
+  } catch {}
+  
   // Repair unquoted or single quoted keys/values
   let repaired = cleaned
     .replace(/(['"])?(\w+)\1\s*:/g, '"$2":')

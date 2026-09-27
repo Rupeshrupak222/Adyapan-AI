@@ -164,7 +164,18 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
       }
       if (tests.length > 0) {
         const requestedTestNum = req.body.testNumber ? Number(req.body.testNumber) : undefined;
-        const testToUse = (requestedTestNum && tests.find(t => t.testNumber === requestedTestNum)) || tests[0];
+        // Never auto-pick an empty test: it would raise "being rebuilt" even
+        // when a sibling test for this topic is ready to play.
+        const playable = tests.filter((t: any) => t.isAvailable);
+        const requested =
+          requestedTestNum && playable.find((t: any) => t.testNumber === requestedTestNum);
+        const testToUse = requested || playable[0];
+        if (!testToUse) {
+          throw httpError(
+            503,
+            `All ${tests.length} test(s) for "${topic}" are being rebuilt. Please try again shortly.`
+          );
+        }
         const loadedTest = await getTopicTestByIdFromDb(testToUse.id, userPrisma);
         if (loadedTest) {
           questions = loadedTest.questions;
@@ -173,12 +184,18 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
       }
     } else if (mode === "company_test" && company) {
       const tests = await getTopicTestsFromDb(company, "company", userPrisma);
-      if (tests.length > 0) {
-        const firstTest = await getTopicTestByIdFromDb(tests[0].id, userPrisma);
+      const playable = tests.filter((t: any) => t.isAvailable);
+      if (playable.length > 0) {
+        const firstTest = await getTopicTestByIdFromDb(playable[0].id, userPrisma);
         if (firstTest) {
           questions = firstTest.questions;
           sessionDifficulty = (firstTest.difficulty as Difficulty) || "medium";
         }
+      } else if (tests.length > 0) {
+        throw httpError(
+          503,
+          `All ${tests.length} test(s) for "${company}" are being rebuilt. Please try again shortly.`
+        );
       }
     }
 
@@ -203,13 +220,15 @@ export async function startSession(req: Request, res: Response, next: NextFuncti
         }
       }
       if (result.length < targetCount) {
-        const extraPool = generateDefaultTopicTestQuestions(topic || company || "Placement Aptitude", category || "quantitative", 2);
-        for (const eq of extraPool) {
-          if (!result.some((r: any) => r.id === eq.id || r.text === eq.text)) {
-            result.push(eq);
-            if (result.length >= targetCount) break;
-          }
-        }
+        // Deliberately NOT padded with generateDefaultTopicTestQuestions() here.
+        // That pool is templated legacy content: using it to reach 30 re-inserts
+        // the number-swapped duplicates the global question bank exists to
+        // prevent. A short session of genuinely unique questions is correct; the
+        // shortfall is reported through the test's real totalQuestions.
+        console.log(
+          `[AptitudeEngine] session for "${topic || company || "placement"}" has ` +
+            `${result.length} unique question(s), ${targetCount - result.length} short of target.`
+        );
       }
       questions = result.slice(0, targetCount);
     }

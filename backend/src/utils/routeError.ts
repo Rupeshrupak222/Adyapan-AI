@@ -36,14 +36,23 @@ export function handleRouteError(
   }
 
   // For client errors, surface the real message so the caller can act on it.
-  // For unexpected server errors, keep the caller-facing message generic and
-  // rely on the server-side log above for the details.
+  // `expose` opts a 5xx into the same treatment when its message is deliberate
+  // and safe to show (e.g. a test that is temporarily being rebuilt).
+  // For other unexpected server errors, keep the caller-facing message generic
+  // and rely on the server-side log above for the details.
   const message =
-    statusCode < 500 && error instanceof Error ? error.message : fallbackMessage;
+    (statusCode < 500 || (httpErr as any)?.expose === true) && error instanceof Error
+      ? error.message
+      : fallbackMessage;
+
+  // Structured errors (e.g. QuestionPoolExhaustedError) carry an actionable
+  // payload the admin panel needs in order to report what ran out.
+  const details = (httpErr as any)?.details;
 
   res.status(statusCode).json({
     success: false,
     message,
     error: message,
+    ...(details && typeof details === "object" ? { details } : {}),
   });
 }
