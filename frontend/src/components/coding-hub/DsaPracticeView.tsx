@@ -193,12 +193,16 @@ export function DsaPracticeView() {
       if (submitRes.status === "fulfilled") {
         const data = submitRes.value.data;
         const isPassed = data.submission?.status === "Accepted" || (data.executionResult && data.executionResult.success);
+        if (data.executionResult?.stdout) {
+          setRunOutput(data.executionResult.stdout);
+          setRunSuccess(isPassed);
+        }
         if (isPassed) {
           try { confetti(); } catch { }
           setShowSuccess(true);
           toast.success("Problem Solved! Points and streak recorded.");
         } else {
-          toast.info("Code submitted and evaluated.");
+          toast.warning(data.executionResult?.stdout || "Some test cases failed.");
         }
       } else {
         toast.success("AI Review completed!");
@@ -326,7 +330,7 @@ export function DsaPracticeView() {
                     return activeProblem.visibleTestCases.map((tc, idx) => ({
                       input: tc.input || tc.rawInput || "",
                       output: tc.expectedOutput || "",
-                      explanation: `Visible test case ${idx + 1}`
+                      explanation: `Example ${idx + 1}`
                     }));
                   }
                   return [];

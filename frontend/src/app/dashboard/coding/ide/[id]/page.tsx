@@ -52,7 +52,7 @@ const RUN_STEPS = [
 const SUBMIT_STEPS = [
   "Preparing Package",
   "Sending to Evaluation Server",
-  "Running Hidden Test Cases",
+  "Running Test Cases",
   "Analyzing Performance",
   "Calculating Score",
   "Complete",

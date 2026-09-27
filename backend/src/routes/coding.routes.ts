@@ -12,7 +12,7 @@ import { ComplexityService } from "../services/complexity.service";
 import { CodingRoadmapService } from "../services/coding-roadmap.service";
 import { requireUserId } from "../utils/request";
 import { generateText, MODELS } from "../lib/ai/openrouter";
-import { generateHiddenTestCases, detectHardcodedOutput } from "../services/testcase-generator.service";
+import { detectHardcodedOutput } from "../services/testcase-generator.service";
 import { DsaProgressService } from "../services/dsa-progress.service";
 
 
@@ -1343,8 +1343,8 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
         memory: 0,
         testResults: [{
           testCase: 1,
-          input: "(hidden)",
-          expected: "(hidden)",
+          input: examples[0]?.input || "",
+          expected: examples[0]?.output || "",
           actual: "Hardcoded output detected",
           passed: false,
           executionTime: 0,
@@ -1354,71 +1354,15 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
       });
     }
 
-    // Step 2: Run against sample test cases (visible to user)
-    const sampleTestCases = examples.map(ex => ({ input: ex.input, expectedOutput: ex.output }));
-    const sampleSubmission = await runTestCases(language, code, sampleTestCases, 10000);
+    // Run against visible test cases (mentioned in question / examples)
+    const visibleTestCases = examples.map(ex => ({ input: ex.input, expectedOutput: ex.output }));
+    const submissionResult = await runTestCases(language, code, visibleTestCases, 10000);
 
-    // Step 3: Run against stored hidden test cases
-    let hiddenResults = { allPassed: true, passedTests: 0, totalTests: 0, testResults: [] as any[] };
-    const rawHidden = (question.hiddenTestCases as any) || [];
+    const totalTests = submissionResult.totalTests;
+    const totalPassed = submissionResult.passedTests;
+    const isAllPassed = submissionResult.allPassed;
 
-    if (Array.isArray(rawHidden) && rawHidden.length > 0) {
-      const hiddenFormatted = rawHidden.map((tc: any) => ({ input: tc.input, expectedOutput: tc.expectedOutput }));
-      const hiddenSubmission = await runTestCases(language, code, hiddenFormatted, 12000);
-      hiddenResults = {
-        allPassed: hiddenSubmission.allPassed,
-        passedTests: hiddenSubmission.passedTests,
-        totalTests: hiddenSubmission.totalTests,
-        testResults: hiddenSubmission.testResults.map((tr, i) => ({
-          testCase: sampleSubmission.totalTests + i + 1,
-          input: "(hidden test case)",
-          expected: "(hidden)",
-          actual: tr.passed ? "(correct)" : tr.actualOutput.substring(0, 50) + (tr.actualOutput.length > 50 ? "..." : ""),
-          passed: tr.passed,
-          executionTime: tr.executionResult.executionTime,
-        })),
-      };
-    } else {
-      try {
-        const analysis = await AICodingService.getAnalysis(questionId);
-        const generatedHidden = await generateHiddenTestCases(
-          questionId,
-          question.statement || analysis.problem_explanation || question.title,
-          question.inputFormat || analysis.inputSpecification || "",
-          question.outputFormat || analysis.outputSpecification || "",
-          question.constraints || analysis.constraints || "",
-          examples.map(e => ({ input: e.input, output: e.output })),
-          question.difficulty
-        );
-
-        if (generatedHidden.length > 0) {
-          const hiddenFormatted = generatedHidden.map(tc => ({ input: tc.input, expectedOutput: tc.output }));
-          const hiddenSubmission = await runTestCases(language, code, hiddenFormatted, 12000);
-          hiddenResults = {
-            allPassed: hiddenSubmission.allPassed,
-            passedTests: hiddenSubmission.passedTests,
-            totalTests: hiddenSubmission.totalTests,
-            testResults: hiddenSubmission.testResults.map((tr, i) => ({
-              testCase: sampleSubmission.totalTests + i + 1,
-              input: "(hidden test case)",
-              expected: "(hidden)",
-              actual: tr.passed ? "(correct)" : tr.actualOutput.substring(0, 50) + (tr.actualOutput.length > 50 ? "..." : ""),
-              passed: tr.passed,
-              executionTime: tr.executionResult.executionTime,
-            })),
-          };
-        }
-      } catch (err) {
-        console.warn("[Submit] Hidden test case execution failed, using sample results only:", err);
-      }
-    }
-
-    // Step 4: Combine results
-    const totalTests = sampleSubmission.totalTests + hiddenResults.totalTests;
-    const totalPassed = sampleSubmission.passedTests + hiddenResults.passedTests;
-    const isAllPassed = sampleSubmission.allPassed && hiddenResults.allPassed;
-
-    const sampleTestResults = sampleSubmission.testResults.map((tr, i) => ({
+    const testResults = submissionResult.testResults.map((tr, i) => ({
       testCase: i + 1,
       input: tr.input,
       expected: tr.expectedOutput,
@@ -1426,8 +1370,6 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
       passed: tr.passed,
       executionTime: tr.executionResult.executionTime,
     }));
-
-    const testResults = [...sampleTestResults, ...hiddenResults.testResults];
 
     const userPrisma = await getUserPrismaFromRequest(req);
     const status = isAllPassed ? "Accepted" : "Failed";
@@ -1440,10 +1382,10 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
         language,
         codeSnapshot: code,
         stdin: "all_test_cases",
-        stdout: `Passed ${totalPassed}/${totalTests} test cases (${sampleSubmission.passedTests}/${sampleSubmission.totalTests} sample + ${hiddenResults.passedTests}/${hiddenResults.totalTests} hidden).`,
+        stdout: `Passed ${totalPassed}/${totalTests} test cases.`,
         stderr: isAllPassed ? "" : "Some test cases failed.",
         status,
-        executionTime: sampleSubmission.executionTime + (hiddenResults.testResults.reduce((sum: number, t: any) => sum + (t.executionTime || 0), 0)),
+        executionTime: submissionResult.executionTime,
       }
     });
 
@@ -1535,8 +1477,8 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
       allPassed: isAllPassed,
       totalTests,
       passedTests: totalPassed,
-      executionTime: sampleSubmission.executionTime,
-      memory: sampleSubmission.memory,
+      executionTime: submissionResult.executionTime,
+      memory: submissionResult.memory,
       testResults,
     });
   } catch (error) {
