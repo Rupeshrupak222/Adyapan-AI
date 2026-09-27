@@ -90,7 +90,7 @@ export const env = {
   github: {
     clientId: process.env.GITHUB_CLIENT_ID ?? "",
     clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
-    callbackUrl: process.env.GITHUB_CALLBACK_URL ?? "http://localhost:5000/api/auth/github/callback",
+    callbackUrl: process.env.GITHUB_CALLBACK_URL ?? "https://ai.adyapan.com/api/auth/callback/github",
   },
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID ?? "",

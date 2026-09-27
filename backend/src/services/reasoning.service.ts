@@ -1,4 +1,10 @@
 import { generateText, MODELS } from "../lib/ai/openrouter";
+import {
+  SOURCE_APTITUDE,
+  commitToBank,
+  loadBank,
+  rejectAgainstBank,
+} from "./question-bank.service";
 
 export interface ReasoningTopic {
   id: string;
@@ -402,7 +408,13 @@ Output ONLY valid JSON in the exact array format below:
 ]`;
 
   try {
-    const rawAiText = await generateText("You are an expert AI Reasoning Coach for Adyapan AI.", systemPrompt, { model: MODELS.FAST });
+    // skipCache is mandatory here: the AI cache key is a hash of the prompt
+    // text, so a repeated prompt would replay a byte-identical answer and
+    // resurface questions the user has already seen.
+    const rawAiText = await generateText("You are an expert AI Reasoning Coach for Adyapan AI.", systemPrompt, {
+      model: MODELS.FAST,
+      skipCache: true,
+    });
     let cleaned = rawAiText.trim();
     if (cleaned.startsWith("```json")) {
       cleaned = cleaned.replace(/^```json/, "").replace(/```$/, "").trim();
@@ -435,13 +447,53 @@ Output ONLY valid JSON in the exact array format below:
       };
     });
 
-    // Filter out duplicates post-generation
-    const uniqueQuestions = generatedQuestions.filter(q => {
+    // Filter out duplicates post-generation. The in-memory topic/user histories
+    // above are a fast local pre-filter only — they are lost on restart. The
+    // global bank is the authoritative, durable check.
+    const bank = await loadBank(undefined, { includeTexts: true });
+    const localUnique = generatedQuestions.filter(q => {
       const normalized = normalizeQuestionText(q.question);
       return !allExistingTexts.has(normalized);
     });
 
-    console.log(`[Reasoning] Generated ${generatedQuestions.length} questions, ${uniqueQuestions.length} unique after filtering`);
+    const { kept: bankUnique } = rejectAgainstBank(
+      localUnique.map(q => ({ question: q.question })),
+      bank,
+      { strict: true }
+    );
+    const bankAccepted = new Set(
+      bankUnique.map((x) => normalizeQuestionText(x.question ?? ""))
+    );
+    const uniqueQuestions = localUnique.filter(q =>
+      bankAccepted.has(normalizeQuestionText(q.question))
+    );
+
+    console.log(
+      `[Reasoning] Generated ${generatedQuestions.length} questions, ` +
+        `${uniqueQuestions.length} unique after local + global bank filtering ` +
+        `(${localUnique.length - uniqueQuestions.length} rejected by the bank)`
+    );
+
+    // Register in the global bank so these concepts are never regenerated.
+    // A concurrent run claiming one first is reported, never duplicated.
+    const commit = await commitToBank(
+      uniqueQuestions.map((q, idx) => ({
+        question: q.question,
+        options: q.options,
+        correctIdx: q.correctIdx,
+        source: SOURCE_APTITUDE,
+        topic,
+        category: "logical",
+        company: company || null,
+        difficulty: options?.difficulty || null,
+        position: idx,
+      }))
+    );
+    if (commit.rejectedAsDuplicate > 0) {
+      console.warn(
+        `[Reasoning] ${commit.rejectedAsDuplicate} concept(s) already claimed by a concurrent run.`
+      );
+    }
 
     // Update topic history
     uniqueQuestions.forEach(q => {

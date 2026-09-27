@@ -331,7 +331,7 @@ function LoginPageContent() {
       setForgotLoading(true);
       try {
         const { data } = await api.post("/auth/forgot-password", { email: forgotEmail });
-        setForgotMsg(data.devOtp && process.env.NODE_ENV !== "production" ? `OTP sent. Development OTP: ${data.devOtp}` : "OTP sent. Check your email for the 6-digit code.");
+        setForgotMsg(data.devOtp ? `OTP sent to your email! (Dev OTP: ${data.devOtp})` : "OTP sent! Please check your email inbox for the 6-digit code.");
         setForgotStep("otp");
       }
       catch (err: unknown) { setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not send OTP."); }
@@ -339,7 +339,7 @@ function LoginPageContent() {
     } else if (forgotStep === "otp") {
       if (forgotNew !== forgotConfirm) { setForgotError("Passwords do not match."); return; }
       setForgotLoading(true);
-      try { await api.post("/auth/reset-password", { email: forgotEmail, otp: forgotOtp, newPassword: forgotNew }); setForgotMsg("Password reset!"); setForgotStep("done"); }
+      try { await api.post("/auth/reset-password", { email: forgotEmail, otp: forgotOtp, newPassword: forgotNew }); setForgotMsg("Password reset successfully! You can now log in."); setForgotStep("done"); }
       catch (err: unknown) { setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Invalid OTP."); }
       finally { setForgotLoading(false); }
     }
@@ -456,8 +456,14 @@ function LoginPageContent() {
                       <span className="relative px-3 text-xs" style={{ background: cardBg, color: mutedClr }}>OR LOGIN WITH</span>
                     </motion.div>
                     <motion.div className="flex gap-2" custom={5} variants={staggerItem} initial="hidden" animate="visible">
-                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/google`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
-                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
+                      <button type="button" onClick={() => {
+                        const origin = typeof window !== "undefined" ? encodeURIComponent(window.location.origin) : "";
+                        window.location.href = `${api.defaults.baseURL}/auth/google${origin ? `?origin=${origin}` : ""}`;
+                      }} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
+                      <button type="button" onClick={() => {
+                        const origin = typeof window !== "undefined" ? encodeURIComponent(window.location.origin) : "";
+                        window.location.href = `${api.defaults.baseURL}/auth/github${origin ? `?origin=${origin}` : ""}`;
+                      }} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
                     </motion.div>
                     <motion.p className="text-center text-xs" style={{ color: labelClr }} custom={6} variants={staggerItem} initial="hidden" animate="visible">
                       Don&apos;t have an account? <button type="button" onClick={() => switchTab("register")} className="font-bold text-amber-400 cursor-pointer">Register here</button>
@@ -623,8 +629,14 @@ function LoginPageContent() {
                       <span className="relative px-3 text-xs font-semibold tracking-widest uppercase" style={{ background: cardBg, color: mutedClr }}>OR SIGN UP WITH</span>
                     </motion.div>
                     <motion.div className="col-span-2 flex gap-2" custom={10} variants={staggerItem} initial="hidden" animate="visible">
-                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/google`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
-                      <button type="button" onClick={() => window.location.href = `${api.defaults.baseURL}/auth/github`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
+                      <button type="button" onClick={() => {
+                        const origin = typeof window !== "undefined" ? encodeURIComponent(window.location.origin) : "";
+                        window.location.href = `${api.defaults.baseURL}/auth/google${origin ? `?origin=${origin}` : ""}`;
+                      }} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GoogleIcon /> Google</button>
+                      <button type="button" onClick={() => {
+                        const origin = typeof window !== "undefined" ? encodeURIComponent(window.location.origin) : "";
+                        window.location.href = `${api.defaults.baseURL}/auth/github${origin ? `?origin=${origin}` : ""}`;
+                      }} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold hover:opacity-80 cursor-pointer" style={socialStyle}><GitHubIcon color={cardText} /> GitHub</button>
                     </motion.div>
                     <motion.p className="col-span-2 text-center text-xs" style={{ color: labelClr }} custom={11} variants={staggerItem} initial="hidden" animate="visible">
                       Already have an account? <button type="button" onClick={() => switchTab("login")} className="font-bold text-amber-400 cursor-pointer">Sign in</button>

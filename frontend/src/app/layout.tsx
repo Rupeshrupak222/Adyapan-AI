@@ -65,8 +65,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`h-full antialiased ${inter.variable} ${spaceGrotesk.variable}`}
     >
-      <body suppressHydrationWarning className="flex min-h-full flex-col font-sans">
+      <head>
         <ThemeScript />
+      </head>
+      <body suppressHydrationWarning className="flex min-h-full flex-col font-sans">
         <LenisProvider />
         <Toaster position="top-right" richColors closeButton />
         <QueryProvider>{children}</QueryProvider>

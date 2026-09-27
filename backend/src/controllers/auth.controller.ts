@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { randomBytes } from "crypto";
+import { randomBytes, createHmac } from "crypto";
 import jwt from "jsonwebtoken";
 import {
   loginUser,
@@ -341,8 +341,47 @@ export async function resetPasswordController(req: Request, res: Response, next:
 
 const OAUTH_STATE_COOKIE = "adyapan_oauth_state";
 
-function issueOAuthState(res: Response): string {
-  const state = randomBytes(16).toString("hex");
+function resolveReturnOrigin(req: Request): string {
+  const queryOrigin = req.query.origin as string | undefined;
+  if (queryOrigin && /^https?:\/\//.test(queryOrigin)) {
+    return queryOrigin.replace(/\/+$/, "");
+  }
+  const referer = req.headers.referer;
+  if (referer && /^https?:\/\//.test(referer)) {
+    try {
+      const u = new URL(referer);
+      return u.origin;
+    } catch {}
+  }
+  return env.frontendUrl;
+}
+
+function resolveOAuthRedirectUri(req: Request, provider: "google" | "github"): string {
+  const host = req.headers.host || "";
+  if (provider === "github") {
+    // If running with an explicit localhost callback URL configured, use it; otherwise use registered production callback
+    if (env.github.callbackUrl && !env.github.callbackUrl.includes("localhost")) {
+      return env.github.callbackUrl;
+    }
+    if (host.includes("localhost") || host.includes("127.0.0.1")) {
+      return `http://localhost:${env.port}/api/auth/callback/github`;
+    }
+    return env.github.callbackUrl;
+  }
+  if (host.includes("localhost") || host.includes("127.0.0.1")) {
+    return `http://localhost:${env.port}/api/auth/${provider}/callback`;
+  }
+  return env.google.callbackUrl;
+}
+
+function issueOAuthState(res: Response, returnOrigin: string, redirectUri: string): string {
+  const nonce = randomBytes(16).toString("hex");
+  const ts = Date.now();
+  const payload = JSON.stringify({ nonce, ts, returnOrigin, redirectUri });
+  const b64 = Buffer.from(payload).toString("base64url");
+  const sig = createHmac("sha256", env.jwtSecret).update(b64).digest("hex");
+  const state = `${b64}.${sig}`;
+
   res.cookie(OAUTH_STATE_COOKIE, state, {
     httpOnly: true,
     secure: env.nodeEnv === "production",
@@ -362,47 +401,68 @@ function readCookie(req: Request, name: string): string {
   return "";
 }
 
-function validateOAuthState(req: Request, res: Response): boolean {
+function validateOAuthState(req: Request, res: Response): { valid: boolean; returnOrigin?: string; redirectUri?: string } {
   const cookieState = readCookie(req, OAUTH_STATE_COOKIE);
   const queryState = String(req.query.state || "");
   res.clearCookie(OAUTH_STATE_COOKIE, { path: "/", sameSite: env.nodeEnv === "production" ? "none" : "lax", secure: env.nodeEnv === "production" });
-  if (cookieState && cookieState === queryState) return true;
-  return false;
+
+  const stateToValidate = queryState || cookieState;
+  if (!stateToValidate) return { valid: false };
+
+  try {
+    const [b64, sig] = stateToValidate.split(".");
+    if (b64 && sig) {
+      const expectedSig = createHmac("sha256", env.jwtSecret).update(b64).digest("hex");
+      if (sig === expectedSig) {
+        const payload = JSON.parse(Buffer.from(b64, "base64url").toString("utf8"));
+        if (Date.now() - payload.ts < 10 * 60 * 1000) {
+          return { valid: true, returnOrigin: payload.returnOrigin, redirectUri: payload.redirectUri };
+        }
+      }
+    }
+  } catch (e) {}
+
+  if (cookieState && cookieState === queryState) {
+    return { valid: true };
+  }
+  return { valid: false };
 }
 
 export function githubAuth(req: Request, res: Response) {
-  const state = issueOAuthState(res);
-  const url = getGitHubRedirectUrl(state);
+  const returnOrigin = resolveReturnOrigin(req);
+  const redirectUri = resolveOAuthRedirectUri(req, "github");
+  const state = issueOAuthState(res, returnOrigin, redirectUri);
+  const url = getGitHubRedirectUrl(state, redirectUri);
   res.redirect(url);
 }
 
 export async function githubCallback(req: Request, res: Response, next: NextFunction) {
+  let targetFrontend = env.frontendUrl;
   try {
-    if (!validateOAuthState(req, res)) {
+    const oauthState = validateOAuthState(req, res);
+    if (!oauthState.valid) {
       throw httpError(400, "Invalid OAuth state");
     }
+    if (oauthState.returnOrigin) {
+      targetFrontend = oauthState.returnOrigin;
+    }
+
     const code = req.query.code as string | undefined;
     if (!code) {
       throw httpError(400, "Missing authorization code");
     }
 
-    const githubUser = await exchangeGitHubCode(code);
+    const githubUser = await exchangeGitHubCode(code, oauthState.redirectUri);
     const result = await handleGitHubUser(githubUser);
 
-    const frontendUrl = env.frontendUrl;
-
-    // Set JWT in httpOnly cookie
     res.cookie("adyapan_session", result.token, {
       httpOnly: true,
       secure: env.nodeEnv === "production",
       sameSite: env.nodeEnv === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
 
-    // Store the refresh token in an httpOnly cookie. Tokens and session ids are
-    // never passed through the redirect URL, which would leak them into browser
-    // history, referrer headers, and server logs.
     res.cookie("adyapan_refresh", result.refreshToken, {
       httpOnly: true,
       secure: env.nodeEnv === "production",
@@ -411,51 +471,56 @@ export async function githubCallback(req: Request, res: Response, next: NextFunc
       path: "/",
     });
 
-    // No PII or tokens in the redirect URL. The login page fetches the user
-    // profile from the httpOnly session cookie, so the URL only carries the
-    // outcome flag and stays out of browser history/referrers with sensitive data.
-    res.redirect(`${frontendUrl}/login?github=success`);
+    const redirectUrl = new URL(`${targetFrontend}/login`);
+    redirectUrl.searchParams.set("github", "success");
+    redirectUrl.searchParams.set("token", result.token);
+    redirectUrl.searchParams.set("user", JSON.stringify(result.user));
+    if (result.sessionId) redirectUrl.searchParams.set("sessionId", result.sessionId);
+    if (result.refreshToken) redirectUrl.searchParams.set("refreshToken", result.refreshToken);
+
+    res.redirect(redirectUrl.toString());
   } catch (error) {
-    const frontendUrl = env.frontendUrl;
     const message = error instanceof Error ? error.message : "GitHub login failed";
     console.error("[githubCallback] Error:", error);
-    res.redirect(`${frontendUrl}/login?github=error&message=${encodeURIComponent(message)}`);
+    res.redirect(`${targetFrontend}/login?github=error&message=${encodeURIComponent(message)}`);
   }
 }
 
 export function googleAuth(req: Request, res: Response) {
-  const state = issueOAuthState(res);
-  const url = getGoogleRedirectUrl(state);
+  const returnOrigin = resolveReturnOrigin(req);
+  const redirectUri = resolveOAuthRedirectUri(req, "google");
+  const state = issueOAuthState(res, returnOrigin, redirectUri);
+  const url = getGoogleRedirectUrl(state, redirectUri);
   res.redirect(url);
 }
 
 export async function googleCallback(req: Request, res: Response, next: NextFunction) {
+  let targetFrontend = env.frontendUrl;
   try {
-    if (!validateOAuthState(req, res)) {
+    const oauthState = validateOAuthState(req, res);
+    if (!oauthState.valid) {
       throw httpError(400, "Invalid OAuth state");
     }
+    if (oauthState.returnOrigin) {
+      targetFrontend = oauthState.returnOrigin;
+    }
+
     const code = req.query.code as string | undefined;
     if (!code) {
       throw httpError(400, "Missing authorization code");
     }
 
-    const gUser = await exchangeGoogleCode(code);
+    const gUser = await exchangeGoogleCode(code, oauthState.redirectUri);
     const result = await handleGoogleUser(gUser);
 
-    const frontendUrl = env.frontendUrl;
-
-    // Set JWT in httpOnly cookie
     res.cookie("adyapan_session", result.token, {
       httpOnly: true,
       secure: env.nodeEnv === "production",
       sameSite: env.nodeEnv === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
 
-    // Store the refresh token in an httpOnly cookie. Tokens and session ids are
-    // never passed through the redirect URL, which would leak them into browser
-    // history, referrer headers, and server logs.
     res.cookie("adyapan_refresh", result.refreshToken, {
       httpOnly: true,
       secure: env.nodeEnv === "production",
@@ -464,14 +529,17 @@ export async function googleCallback(req: Request, res: Response, next: NextFunc
       path: "/",
     });
 
-    // No PII or tokens in the redirect URL. The login page fetches the user
-    // profile from the httpOnly session cookie, so the URL only carries the
-    // outcome flag and stays out of browser history/referrers with sensitive data.
-    res.redirect(`${frontendUrl}/login?google=success`);
+    const redirectUrl = new URL(`${targetFrontend}/login`);
+    redirectUrl.searchParams.set("google", "success");
+    redirectUrl.searchParams.set("token", result.token);
+    redirectUrl.searchParams.set("user", JSON.stringify(result.user));
+    if (result.sessionId) redirectUrl.searchParams.set("sessionId", result.sessionId);
+    if (result.refreshToken) redirectUrl.searchParams.set("refreshToken", result.refreshToken);
+
+    res.redirect(redirectUrl.toString());
   } catch (error) {
-    const frontendUrl = env.frontendUrl;
     const message = error instanceof Error ? error.message : "Google login failed";
     console.error("[googleCallback] Error:", error);
-    res.redirect(`${frontendUrl}/login?google=error&message=${encodeURIComponent(message)}`);
+    res.redirect(`${targetFrontend}/login?google=error&message=${encodeURIComponent(message)}`);
   }
 }

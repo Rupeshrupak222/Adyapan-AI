@@ -10,6 +10,7 @@ import { RateLimiterMemory } from "rate-limiter-flexible";
 import { databaseService } from "./database.service";
 import { calculateProfileCompletion } from "../utils/profileCompletion";
 import { hashRefreshToken, isSessionIdle, revokeAllSessions } from "./session.service";
+import { sendPasswordResetOtpEmail } from "../utils/mailer";
 
 type RegisterInput = {
   name: string;
@@ -948,17 +949,17 @@ export async function requestPasswordReset(email: string): Promise<{ devOtp?: st
     createdAt: new Date(),
   });
 
-  // No email provider is configured. Surface the OTP via the API response in
-  // local development only, and log it only when the operator explicitly opted
-  // in (ALLOW_OTP_LOG_DELIVERY=true). Default OFF so reset codes are never
-  // written to server logs.
+  // Dispatch OTP email via configured SMTP
+  try {
+    await sendPasswordResetOtpEmail(normalizedEmail, otp);
+    console.log(`[PasswordReset] OTP email dispatched successfully to ${normalizedEmail}`);
+  } catch (emailErr: any) {
+    console.error(`[PasswordReset] Failed to dispatch OTP email to ${normalizedEmail}:`, emailErr?.message || emailErr);
+  }
+
+  // In development, also return devOtp for fast testing
   if (env.nodeEnv === "development") {
     return { devOtp: otp };
-  }
-  if (env.allowOtpLogDelivery) {
-    console.log(`[PasswordReset] OTP for ${normalizedEmail}: ${otp}`);
-  } else {
-    console.log(`[PasswordReset] OTP generated for ${normalizedEmail} (not printed: log delivery disabled and no email provider is configured).`);
   }
   return {};
 }
@@ -1022,34 +1023,42 @@ type GitHubUser = {
   avatar_url: string;
 };
 
-export function getGitHubRedirectUrl(state: string): string {
+export function getGitHubRedirectUrl(state: string, redirectUri?: string): string {
   const params = new URLSearchParams({
     client_id: env.github.clientId,
-    redirect_uri: env.github.callbackUrl,
+    redirect_uri: redirectUri || env.github.callbackUrl,
     scope: "read:user user:email",
     state,
   });
   return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }
 
-export async function exchangeGitHubCode(code: string): Promise<GitHubUser> {
+export async function exchangeGitHubCode(code: string, redirectUri?: string): Promise<GitHubUser> {
+  const targetRedirect = redirectUri || env.github.callbackUrl;
+  const tokenPayload: Record<string, string> = {
+    client_id: env.github.clientId,
+    client_secret: env.github.clientSecret,
+    code,
+  };
+
+  // Only pass redirect_uri if it does NOT contain localhost/127.0.0.1 (as GitHub OAuth app is registered to production callback)
+  if (targetRedirect && !targetRedirect.includes("localhost") && !targetRedirect.includes("127.0.0.1")) {
+    tokenPayload.redirect_uri = targetRedirect;
+  }
+
   const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({
-      client_id: env.github.clientId,
-      client_secret: env.github.clientSecret,
-      code,
-      redirect_uri: env.github.callbackUrl,
-    }),
+    body: JSON.stringify(tokenPayload),
   });
 
-  const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string };
+  const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string; error_description?: string };
   if (!tokenData.access_token) {
-    throw httpError(401, "GitHub OAuth failed: " + (tokenData.error || "No access token"));
+    const errorMsg = tokenData.error_description || tokenData.error || "No access token";
+    throw httpError(401, `GitHub OAuth failed: ${errorMsg}`);
   }
 
   const userRes = await fetch("https://api.github.com/user", {
@@ -1199,10 +1208,10 @@ export type GoogleUser = {
   picture?: string;
 };
 
-export function getGoogleRedirectUrl(state: string): string {
+export function getGoogleRedirectUrl(state: string, redirectUri?: string): string {
   const params = new URLSearchParams({
     client_id: env.google.clientId,
-    redirect_uri: env.google.callbackUrl,
+    redirect_uri: redirectUri || env.google.callbackUrl,
     response_type: "code",
     scope: "openid profile email",
     access_type: "offline",
@@ -1212,7 +1221,8 @@ export function getGoogleRedirectUrl(state: string): string {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
 
-export async function exchangeGoogleCode(code: string): Promise<GoogleUser> {
+export async function exchangeGoogleCode(code: string, redirectUri?: string): Promise<GoogleUser> {
+  const targetRedirect = redirectUri || env.google.callbackUrl;
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: {
@@ -1222,7 +1232,7 @@ export async function exchangeGoogleCode(code: string): Promise<GoogleUser> {
       code,
       client_id: env.google.clientId,
       client_secret: env.google.clientSecret,
-      redirect_uri: env.google.callbackUrl,
+      redirect_uri: targetRedirect,
       grant_type: "authorization_code",
     }),
   });

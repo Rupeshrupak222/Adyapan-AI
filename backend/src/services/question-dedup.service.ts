@@ -25,6 +25,7 @@ function emptyUserSeen(): UserSeenState {
   return {
     fingerprints: new Set(),
     templates: new Set(),
+    conceptSignatures: new Set(),
     recentTexts: [],
     rowByFingerprint: new Map(),
   };
@@ -60,6 +61,7 @@ export async function getUserSeenState(
     for (const r of rows) {
       if (r.fingerprint) state.fingerprints.add(r.fingerprint);
       if (r.templateFingerprint) state.templates.add(r.templateFingerprint);
+      if (r.conceptSignature) state.conceptSignatures.add(r.conceptSignature);
       if (r.questionText) {
         state.recentTexts.push(stripBracketedPrefix(r.questionText).toLowerCase());
         if (state.recentTexts.length > 300) state.recentTexts.shift();
@@ -104,6 +106,7 @@ export async function recordSeenQuestions(userPrisma: any, input: RecordQuestion
       const base = {
         fingerprint: d.fingerprint,
         templateFingerprint: d.templateFingerprint,
+        conceptSignature: d.conceptSignature,
         questionId: q?.id ?? null,
         topic: q?.topic ?? input.topic ?? null,
         category: q?.category ?? input.category ?? null,

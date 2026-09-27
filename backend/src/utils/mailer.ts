@@ -296,6 +296,61 @@ export async function sendUserContactConfirmation(data: ContactFormData): Promis
   }
 }
 
+// ── 3. Password Reset OTP ─────────────────────────────────────────────────────
+
+export async function sendPasswordResetOtpEmail(email: string, otp: string): Promise<void> {
+  if (!isSmtpConfigured) {
+    console.warn("[Mailer] Cannot send OTP email - SMTP not configured.");
+    return;
+  }
+
+  const body = `
+    <h2 style="margin:0 0 8px;font-size:22px;color:#0f172a;font-weight:800;">
+      Reset Your Password 🔐
+    </h2>
+    <p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.6;">
+      We received a request to reset the password for your <strong>Adyapan AI</strong> account (<span style="color:#0f172a;font-weight:600;">${escapeHtml(email)}</span>).
+    </p>
+
+    <!-- OTP Code Card -->
+    <div style="margin:24px 0;padding:24px;background:#fffbeb;border:2px dashed ${BRAND_COLOR};border-radius:14px;text-align:center;">
+      <p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1px;">
+        Your One-Time Verification Code
+      </p>
+      <div style="font-family:ui-monospace,Menlo,Monaco,Consolas,monospace;font-size:36px;font-weight:900;letter-spacing:10px;color:#b45309;padding:8px 0;">
+        ${escapeHtml(otp)}
+      </div>
+      <p style="margin:10px 0 0;font-size:12px;color:#a16207;">
+        ⏱️ This code will expire in <strong>15 minutes</strong>.
+      </p>
+    </div>
+
+    <!-- Security Instructions -->
+    <div style="margin-bottom:24px;padding:14px 18px;background:#f8fafc;border-left:4px solid #94a3b8;border-radius:0 8px 8px 0;font-size:13px;color:#475569;line-height:1.6;">
+      <strong style="color:#0f172a;">Security Notice:</strong> If you did not request this password reset, please ignore this email or reach out to our security team immediately. Never share this code with anyone.
+    </div>
+
+    <p style="margin:0;font-size:13px;color:#64748b;">
+      Warm regards,<br/>
+      <strong style="color:#0f172a;">Team Adyapan AI</strong>
+    </p>
+  `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Adyapan AI" <${SMTP_USER}>`,
+      to: email,
+      subject: `[Adyapan AI] Your Password Reset OTP: ${otp}`,
+      html: baseTemplate(body),
+      attachments: logoAttachments(),
+    });
+    console.log(`[Mailer] Password reset OTP sent to ${email}. MessageId: ${info.messageId}`);
+  } catch (error: any) {
+    console.error("[Mailer] Failed to send password reset OTP email:", error.message);
+    throw error;
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function row(label: string, value: string): string {

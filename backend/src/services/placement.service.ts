@@ -1,4 +1,10 @@
 import { generateJSON, generateText, MODELS } from "../lib/ai/openrouter";
+import {
+  SOURCE_APTITUDE,
+  commitToBank,
+  loadBank,
+  rejectAgainstBank,
+} from "./question-bank.service";
 
 // ============================================================================
 // TYPES
@@ -249,13 +255,51 @@ Rules:
       difficulty: (q.difficulty as any) || "medium",
     }));
 
-    // Filter out duplicates post-generation
-    const uniqueQuestions = generatedQuestions.filter(q => {
+    // Filter out duplicates post-generation. The in-memory topic/user histories
+    // are a fast local pre-filter only and are lost on restart, so the durable
+    // global bank is the authoritative check.
+    const bank = await loadBank(undefined, { includeTexts: true });
+    const localUnique = generatedQuestions.filter(q => {
       const normalized = normalizeQuestionText(q.text);
       return !allExistingTexts.has(normalized);
     });
 
-    console.log(`[Placement] Generated ${generatedQuestions.length} questions, ${uniqueQuestions.length} unique after filtering`);
+    const { kept: bankUnique } = rejectAgainstBank(
+      localUnique.map(q => ({ question: q.text })),
+      bank,
+      { strict: true }
+    );
+    const bankAccepted = new Set(
+      bankUnique.map((x) => normalizeQuestionText(x.question ?? ""))
+    );
+    const uniqueQuestions = localUnique.filter(q =>
+      bankAccepted.has(normalizeQuestionText(q.text))
+    );
+
+    console.log(
+      `[Placement] Generated ${generatedQuestions.length} questions, ` +
+        `${uniqueQuestions.length} unique after local + global bank filtering`
+    );
+
+    // Register in the global bank so these concepts are never regenerated.
+    const commit = await commitToBank(
+      uniqueQuestions.map((q, idx) => ({
+        question: q.text,
+        options: q.options,
+        correctIdx: q.correctIdx,
+        source: SOURCE_APTITUDE,
+        topic,
+        category: category === "mcqs" ? "mcq" : category,
+        company: null,
+        difficulty: q.difficulty || null,
+        position: idx,
+      }))
+    );
+    if (commit.rejectedAsDuplicate > 0) {
+      console.warn(
+        `[Placement] ${commit.rejectedAsDuplicate} concept(s) already claimed by a concurrent run.`
+      );
+    }
 
     // Update topic history
     uniqueQuestions.forEach(q => {

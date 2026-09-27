@@ -3,6 +3,14 @@ import path from "path";
 import { generateText, MODELS } from "../lib/ai/openrouter";
 import { dedupInfoFromQuestion, dedupeQuestions, filterQuestionsAgainstSeen, seenRegistryFromTexts, sanitizeGeneratedQuestions } from "../lib/questions/question-fingerprint";
 import { getUserSeenState, recordSeenQuestions, selectQuestionsForUser, MCQ_SOURCE } from "./question-dedup.service";
+import {
+  QuestionPoolExhaustedError,
+  SOURCE_MCQ,
+  buildAvoidanceBlock,
+  commitToBank,
+  loadBank,
+  rejectAgainstBank,
+} from "./question-bank.service";
 
 // ─── Interfaces ─────────────────────────────────────────────────────────────
 
@@ -1382,79 +1390,73 @@ export async function generateAITestWithAntiRepetition(input: {
   difficulty?: "Easy" | "Medium" | "Hard" | "Mixed";
   prompt?: string;
   userSeenQuestions?: Set<string>;
+  /** Override the number of generate→reject→retry attempts. */
+  maxAttempts?: number;
 }): Promise<MCQTest> {
   const count = input.count || 15;
   const diff = input.difficulty || "Medium";
+  const maxAttempts = Math.max(1, input.maxAttempts ?? 4);
   const existingTests = await getTestsForTarget(input.targetId || input.targetName);
-  const nextTestNum = existingTests.length > 0 ? Math.max(...existingTests.map((t) => t.testNumber)) + 1 : 1;
+  const nextTestNum =
+    existingTests.length > 0 ? Math.max(...existingTests.map((t) => t.testNumber)) + 1 : 1;
 
-  // Collect ALL existing question texts for better deduplication
-  const existingQuestionTexts = new Set<string>();
-  const existingConceptSnippets: string[] = [];
+  // Load the ENTIRE global bank. Uniqueness is database-wide, so this is not
+  // scoped to the target — a concept already used by an aptitude test or a
+  // different technology is equally banned here.
+  const bank = await loadBank(undefined, { includeTexts: true });
+  console.log(
+    `[MCQ] Generating Test ${nextTestNum} for ${input.targetName}. ` +
+      `Global bank holds ${bank.totalEntries} banned concept(s).`
+  );
 
-  for (const test of existingTests) {
-    for (const q of test.questions) {
-      // Store full question text for exact matching
-      existingQuestionTexts.add(q.question.toLowerCase().trim());
-      // Store concept snippets for pattern matching
-      const snippet = q.question.slice(0, 80);
-      if (existingConceptSnippets.length < 30) {
-        existingConceptSnippets.push(snippet);
-      }
-    }
-  }
+  // Per-user history is an EXTRA exclusion layered on top of the global bank.
+  const userTexts = Array.from(input.userSeenQuestions || []);
+  const avoidUserConcepts = userTexts.length > 0;
 
-  // Merge with user's seen questions if provided
-  if (input.userSeenQuestions && input.userSeenQuestions.size > 0) {
-    for (const seenQ of input.userSeenQuestions) {
-      existingQuestionTexts.add(seenQ);
-    }
-    console.log(`[MCQ] Added ${input.userSeenQuestions.size} user-seen questions to duplicate check`);
-  }
+  const accepted: any[] = [];
+  const acceptedTexts: string[] = [];
+  const rejectedConcepts: string[] = [];
+  let lastStructuralFailures = 0;
 
-  console.log(`[MCQ] Generating Test ${nextTestNum} for ${input.targetName}. Found ${existingQuestionTexts.size} existing questions to avoid.`);
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const needed = count - accepted.length;
+    if (needed <= 0) break;
 
-  const antiDuplicationContext = existingQuestionTexts.size > 0
-    ? `\n\n⚠️ CRITICAL ANTI-DUPLICATION REQUIREMENT ⚠️
-${existingQuestionTexts.size} questions have ALREADY been used in previous ${input.targetName} tests.
+    const entropy = `${Date.now()}_${attempt}_${Math.random().toString(36).slice(2, 9)}`;
+    const rejectionFeedback =
+      rejectedConcepts.length > 0
+        ? `\n\nYOUR EARLIER ATTEMPTS WERE REJECTED. These concepts were already in use ` +
+          `and must NOT be regenerated in any disguised form:\n` +
+          rejectedConcepts.slice(-25).map((c, i) => `- ${c}`).join("\n") +
+          `\nPick a completely different idea for every replacement.\n`
+        : "";
 
-YOU MUST NOT generate questions that:
-- Use similar wording or phrasing
-- Test the same specific concepts or scenarios
-- Have similar code patterns or logic
-- Cover the same edge cases or examples
-
-Sample of existing questions to AVOID (first 30):
-${existingConceptSnippets.slice(0, 30).map((s, idx) => `${idx + 1}. ${s}...`).join("\n")}
-
-REQUIREMENTS FOR COMPLETELY UNIQUE QUESTIONS:
-- Use different code examples, algorithms, and scenarios
-- Test different aspects of ${input.targetName} concepts
-- Vary the question format (concept, debugging, code output, best practice, optimization, etc.)
-- Use different programming paradigms and patterns
-- Focus on different difficulty dimensions
-- Create fresh, novel technical scenarios`
-    : "";
-
-  const systemPrompt = `You are an expert technical interviewer and question architect.
-Generate exactly ${count} 100% UNIQUE, fresh Technical MCQs for Target: "${input.targetName}" (${input.targetType}).
+    const systemPrompt = `You are an expert technical interviewer and question architect.
+Generate exactly ${needed} 100% UNIQUE, fresh Technical MCQs for Target: "${input.targetName}" (${input.targetType}).
 Test Number: Test ${nextTestNum}, Difficulty: ${diff}.
-User Context Prompt: "${input.prompt || `Technical Assessment for ${input.targetName}`}".${antiDuplicationContext}
+Generation attempt ${attempt} of ${maxAttempts}. Session entropy token: ${entropy}.
+User Context Prompt: "${input.prompt || `Technical Assessment for ${input.targetName}`}".${buildAvoidanceBlock(bank, "the global question bank")}${rejectionFeedback}${
+      avoidUserConcepts
+        ? `\n\nADDITIONAL BANNED CONCEPTS (already served to this user):\n` +
+          userTexts.slice(0, 20).map((t) => `- ${t.slice(0, 90)}`).join("\n")
+        : ""
+    }
 
 CRITICAL RULES:
-- MANDATORY UNIQUENESS: Every question MUST be completely different from all previous tests
-- VARIATION REQUIRED: Use diverse question types:
+- MANDATORY UNIQUENESS: every question must test an idea that does not appear anywhere in the bank above. Output is machine-verified; near-duplicates are discarded.
+- VARIATION REQUIRED: use diverse question types:
   * Conceptual understanding questions
   * Code output prediction questions
   * Debugging/error detection questions
   * Best practice and design pattern questions
   * Performance and optimization questions
   * Real-world scenario questions
-- CODE DIVERSITY: If using code snippets, vary:
+- CODE DIVERSITY: if using code snippets, vary:
   * Programming constructs (loops, recursion, functions, classes, etc.)
   * Data structures (arrays, objects, maps, sets, trees, etc.)
   * Problem domains (math, string manipulation, data processing, algorithms, etc.)
-- SCENARIO DIVERSITY: Use varied contexts (web apps, APIs, databases, CLI tools, algorithms, system design)
+- SCENARIO DIVERSITY: use varied contexts (web apps, APIs, databases, CLI tools, algorithms, system design)
+- Renumbering an existing question does NOT make it new. Choose a new underlying idea.
 
 Return ONLY a valid JSON array of question objects:
 [
@@ -1477,74 +1479,134 @@ Return ONLY a valid JSON array of question objects:
   }
 ]`;
 
-  let questions: MCQQuestion[] = [];
-
-  try {
-    const rawAi = await generateText("You are an expert AI Technical MCQ Creator.", systemPrompt, { model: MODELS.FAST });
-    let cleaned = rawAi.trim();
-    if (cleaned.startsWith("```json")) {
-      cleaned = cleaned.replace(/^```json/, "").replace(/```$/, "").trim();
-    } else if (cleaned.startsWith("```")) {
-      cleaned = cleaned.replace(/^```/, "").replace(/```$/, "").trim();
+    let parsed: any[] = [];
+    try {
+      // skipCache is mandatory: the cache key is derived from the prompt text,
+      // so without it a repeated prompt replays a byte-identical answer.
+      const rawAi = await generateText("You are an expert AI Technical MCQ Creator.", systemPrompt, {
+        model: MODELS.FAST,
+        skipCache: true,
+      });
+      let cleaned = rawAi.trim();
+      if (cleaned.startsWith("```json")) {
+        cleaned = cleaned.replace(/^```json/, "").replace(/```$/, "").trim();
+      } else if (cleaned.startsWith("```")) {
+        cleaned = cleaned.replace(/^```/, "").replace(/```$/, "").trim();
+      }
+      const maybeArray = JSON.parse(cleaned);
+      parsed = Array.isArray(maybeArray)
+        ? maybeArray
+        : Array.isArray(maybeArray?.questions)
+          ? maybeArray.questions
+          : [];
+    } catch (err) {
+      console.warn(`[MCQ] Attempt ${attempt} generation/parse failed:`, (err as Error)?.message || err);
+      continue;
     }
-    const parsed: any[] = JSON.parse(cleaned);
 
-    // Drop only within-response normalized-identical duplicates, then strictly
-    // avoid anything already published for this target.
-    const aiSeen = seenRegistryFromTexts(existingQuestionTexts);
-    let uniqueParsed = filterQuestionsAgainstSeen(dedupeQuestions(parsed), aiSeen);
-
-    if (uniqueParsed.length < parsed.length) {
-      console.log(`[MCQ] Filtered out ${parsed.length - uniqueParsed.length} duplicate questions from AI response`);
+    if (parsed.length === 0) {
+      lastStructuralFailures++;
+      continue;
     }
 
-    const { valid: sanitized, rejected } = sanitizeGeneratedQuestions(uniqueParsed);
+    const { valid } = sanitizeGeneratedQuestions(parsed);
+    if (valid.length === 0) {
+      lastStructuralFailures++;
+      continue;
+    }
+
+    const { kept, rejected } = rejectAgainstBank(valid, bank, {
+      strict: true,
+      extraTexts: acceptedTexts,
+    });
+
     if (rejected.length > 0) {
-      console.log(`[MCQ] Dropped ${rejected.length} structurally invalid AI questions`);
-    }
-    uniqueParsed = sanitized;
-
-    questions = uniqueParsed.map((item, idx) => ({
-      id: `ai-${input.targetId}-t${nextTestNum}-q${idx + 1}-${Date.now()}`,
-      question: item.question || `Technical Question ${idx + 1}`,
-      technology: input.targetType === "technology" ? input.targetName : "Computer Science",
-      company: input.targetType === "company" ? input.targetName : undefined,
-      difficulty: (item.difficulty as any) || (diff === "Mixed" ? "Medium" : diff),
-      codeSnippet: item.codeSnippet || undefined,
-      language: item.language || undefined,
-      options: Array.isArray(item.options) && item.options.length === 4 ? item.options : ["A", "B", "C", "D"],
-      correctAnswer: item.correctAnswer || item.options?.[0] || "",
-      correctIdx: typeof item.correctIdx === "number" ? item.correctIdx : 0,
-      explanation: item.explanation || "Correct based on core technical specifications.",
-      hint: item.hint || "Analyze runtime memory and operator evaluation.",
-      relatedConcept: item.relatedConcept || `${input.targetName} Advanced Concepts`,
-      estimatedTime: item.estimatedTime || "45 sec",
-      interviewTip: item.interviewTip || "Focus on edge cases and standard library internals.",
-    }));
-
-    // If we filtered too many duplicates, generate fallback questions to reach the count
-    if (questions.length < count) {
-      console.log(`[MCQ] Only ${questions.length}/${count} unique questions from AI. Generating ${count - questions.length} fallback questions.`);
-      const fallbackQuestions = generateTestQuestionsWithAntiRepetition(
-        input.targetId,
-        input.targetType,
-        input.targetName,
-        nextTestNum,
-        count - questions.length,
-        diff
+      for (const r of rejected) {
+        rejectedConcepts.push(
+          `${dedupInfoFromQuestion(r.question).text.slice(0, 90)} [${r.reason}]`
+        );
+      }
+      console.log(
+        `[MCQ] Attempt ${attempt}: rejected ${rejected.length}/${valid.length} ` +
+          `as duplicates against the global bank.`
       );
-      questions.push(...fallbackQuestions);
     }
 
-  } catch (err) {
-    console.warn("[MCQ] AI generation fallback to algorithmic anti-repetition generator:", err);
-    questions = generateTestQuestionsWithAntiRepetition(
-      input.targetId,
-      input.targetType,
-      input.targetName,
-      nextTestNum,
+    for (const q of kept) {
+      if (accepted.length >= count) break;
+      accepted.push(q);
+      acceptedTexts.push(dedupInfoFromQuestion(q).text);
+    }
+  }
+
+  if (accepted.length < count) {
+    // Deliberate hard failure. The previous implementation refilled the gap from
+    // a small hardcoded concept pool, which is what produced the 83.6%
+    // duplication in the bank. Writing fewer questions is correct; writing
+    // duplicates is not.
+    throw new QuestionPoolExhaustedError(
+      `${input.targetName} (MCQ)`,
       count,
-      diff
+      accepted.length,
+      rejectedConcepts.slice(0, 10)
+    );
+  }
+
+  const questions: MCQQuestion[] = accepted.slice(0, count).map((item, idx) => ({
+    id: `ai-${input.targetId}-t${nextTestNum}-q${idx + 1}-${Date.now()}`,
+    question: item.question || `Technical Question ${idx + 1}`,
+    technology: input.targetType === "technology" ? input.targetName : "Computer Science",
+    company: input.targetType === "company" ? input.targetName : undefined,
+    difficulty: (item.difficulty as any) || (diff === "Mixed" ? "Medium" : diff),
+    codeSnippet: item.codeSnippet || undefined,
+    language: item.language || undefined,
+    options:
+      Array.isArray(item.options) && item.options.length === 4
+        ? item.options
+        : ["A", "B", "C", "D"],
+    correctAnswer: item.correctAnswer || item.options?.[0] || "",
+    correctIdx: typeof item.correctIdx === "number" ? item.correctIdx : 0,
+    explanation: item.explanation || "Correct based on core technical specifications.",
+    hint: item.hint || "Analyze runtime memory and operator evaluation.",
+    relatedConcept: item.relatedConcept || `${input.targetName} Advanced Concepts`,
+    estimatedTime: item.estimatedTime || "45 sec",
+    interviewTip: item.interviewTip || "Focus on edge cases and standard library internals.",
+  }));
+
+  // Commit to the global bank. The UNIQUE constraints here are the authoritative
+  // gate: if a concurrent run claimed one of these concepts first, it is
+  // reported rather than silently duplicated.
+  const testId = `test-${input.targetId.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${nextTestNum}`;
+  const commit = await commitToBank(
+    questions.map((q, idx) => ({
+      question: q.question,
+      codeSnippet: q.codeSnippet,
+      options: q.options,
+      correctIdx: q.correctIdx,
+      source: SOURCE_MCQ,
+      topic: input.targetName,
+      category: input.targetType,
+      company: input.targetType === "company" ? input.targetName : null,
+      difficulty: q.difficulty,
+      testId,
+      position: idx,
+    }))
+  );
+
+  if (commit.rejectedAsDuplicate > 0) {
+    throw new QuestionPoolExhaustedError(
+      `${input.targetName} (MCQ)`,
+      count,
+      commit.inserted,
+      [
+        `${commit.rejectedAsDuplicate} concept(s) were claimed by a concurrent generation run.`,
+      ]
+    );
+  }
+
+  if (lastStructuralFailures > 0) {
+    console.warn(
+      `[MCQ] ${lastStructuralFailures} attempt(s) returned structurally invalid output.`
     );
   }
 
@@ -1570,6 +1632,8 @@ export async function batchAddTestsToOneEach(input: {
   createdTests: MCQTest[];
   totalCreated: number;
   summary: Array<{ targetId: string; targetName: string; testNumber: number; testId: string; questionCount: number }>;
+  /** Targets that could not be generated. A non-empty list means no duplicates were written for them. */
+  failures: Array<{ targetId: string; targetName: string; reason: string; details?: unknown }>;
 }> {
   let targetList: Array<{ id: string; name: string; type: "technology" | "company" }> = [];
 
@@ -1606,51 +1670,57 @@ export async function batchAddTestsToOneEach(input: {
 
   const count = input.questionCount || 15;
   const diff = input.difficulty || "Medium";
-  const duration = input.durationMinutes || 20;
 
   const createdTests: MCQTest[] = [];
   const summary: Array<{ targetId: string; targetName: string; testNumber: number; testId: string; questionCount: number }> = [];
+  const failures: Array<{ targetId: string; targetName: string; reason: string; details?: unknown }> = [];
 
-  for (const target of targetList) {
-    const existingTests = await getTestsForTarget(target.id || target.name);
-    const nextTestNum = existingTests.length > 0 ? Math.max(...existingTests.map((t) => t.testNumber)) + 1 : 1;
-    const testId = `test-${target.id.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${nextTestNum}`;
+  // Targets are generated with bounded concurrency. The database UNIQUE
+  // constraints on question_bank make concurrent claims safe, but serialising
+  // 85 targets would make this admin action unusably slow.
+  const CONCURRENCY = 3;
+  const queue = [...targetList];
 
-    const questions = generateTestQuestionsWithAntiRepetition(
-      target.id,
-      target.type,
-      target.name,
-      nextTestNum,
-      count,
-      diff
-    );
+  const worker = async (): Promise<void> => {
+    for (;;) {
+      const target = queue.shift();
+      if (!target) return;
+      try {
+        // Route through the AI generator so every question passes the global
+        // bank gate. The old deterministic concept-pool generator was the
+        // direct source of the 83.6% duplication in the bank.
+        const newTest = await generateAITestWithAntiRepetition({
+          targetId: target.id,
+          targetType: target.type,
+          targetName: target.name,
+          count,
+          difficulty: diff,
+        });
+        createdTests.push(newTest);
+        summary.push({
+          targetId: target.id,
+          targetName: target.name,
+          testNumber: newTest.testNumber,
+          testId: newTest.id,
+          questionCount: newTest.questions.length,
+        });
+      } catch (err: any) {
+        const reason =
+          err instanceof QuestionPoolExhaustedError
+            ? err.message
+            : (err as Error)?.message || String(err);
+        console.warn(`[MCQ] batch generate failed for ${target.name}: ${reason}`);
+        failures.push({
+          targetId: target.id,
+          targetName: target.name,
+          reason,
+          details: (err as any)?.details,
+        });
+      }
+    }
+  };
 
-    const newTest: MCQTest = {
-      id: testId,
-      targetId: target.id,
-      targetType: target.type,
-      targetName: target.name,
-      testNumber: nextTestNum,
-      title: `${target.name} - Test ${nextTestNum}: ${target.type === "company" ? "OA Screening Assessment" : "Advanced Assessment"}`,
-      description: `Dynamic Test ${nextTestNum} for ${target.name} with 100% unique questions.`,
-      difficulty: diff,
-      questionCount: questions.length,
-      durationMinutes: duration,
-      isPublished: true,
-      createdAt: new Date().toISOString(),
-      questions,
-    };
-
-    testMap.set(testId, newTest);
-    createdTests.push(newTest);
-    summary.push({
-      targetId: target.id,
-      targetName: target.name,
-      testNumber: nextTestNum,
-      testId: newTest.id,
-      questionCount: questions.length,
-    });
-  }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length || 1) }, () => worker()));
 
   saveTestsToDisk();
 
@@ -1658,6 +1728,7 @@ export async function batchAddTestsToOneEach(input: {
     createdTests,
     totalCreated: createdTests.length,
     summary,
+    failures,
   };
 }
 

@@ -324,9 +324,15 @@ export async function handleAdminBatchAddTests(req: Request, res: Response): Pro
 
     res.status(201).json({
       success: true,
-      message: `Successfully generated 1 new test for ${result.totalCreated} entities`,
+      message:
+        result.failures.length > 0
+          ? `Generated 1 new test for ${result.totalCreated} entities. ` +
+            `${result.failures.length} could not be generated because their unique question pool is exhausted — no duplicates were written.`
+          : `Successfully generated 1 new test for ${result.totalCreated} entities`,
       totalCreated: result.totalCreated,
       summary: result.summary,
+      failed: result.failures.length,
+      failures: result.failures,
     });
   } catch (error: any) {
     handleRouteError(res, error, "Mcq.batchAddTests", "Failed to batch add tests");
