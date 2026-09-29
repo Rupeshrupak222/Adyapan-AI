@@ -330,8 +330,9 @@ function LoginPageContent() {
     if (forgotStep === "email") {
       setForgotLoading(true);
       try {
-        const { data } = await api.post("/auth/forgot-password", { email: forgotEmail });
-        setForgotMsg(data.devOtp ? `OTP sent to your email! (Dev OTP: ${data.devOtp})` : "OTP sent! Please check your email inbox for the 6-digit code.");
+        await api.post("/auth/forgot-password", { email: forgotEmail });
+        setForgotOtp("");
+        setForgotMsg("OTP sent! Please check your email inbox for the 6-digit code.");
         setForgotStep("otp");
       }
       catch (err: unknown) { setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not send OTP."); }

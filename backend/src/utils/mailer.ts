@@ -1,48 +1,43 @@
-import nodemailer from "nodemailer";
+import "dotenv/config";
+import nodemailer, { Transporter } from "nodemailer";
 import fs from "fs";
 import path from "path";
 
 // ── Transporter ──────────────────────────────────────────────────────────────
 
-// Validate SMTP configuration
-const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || "465");
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASS = process.env.SMTP_PASS;
-
-// Check if SMTP is properly configured
-const isSmtpConfigured = Boolean(
-  SMTP_HOST && 
-  SMTP_PORT && 
-  SMTP_USER && 
-  SMTP_PASS && 
-  SMTP_PASS !== "your_gmail_app_password_here"
-);
-
-if (!isSmtpConfigured) {
-  console.warn("⚠️  [Mailer] SMTP not configured properly. Email sending will fail.");
-  console.warn("    Required: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS");
-  console.warn("    Current:", { 
-    SMTP_HOST, 
-    SMTP_PORT, 
-    SMTP_USER: SMTP_USER || "NOT SET",
-    SMTP_PASS: SMTP_PASS ? (SMTP_PASS === "your_gmail_app_password_here" ? "PLACEHOLDER" : "SET") : "NOT SET"
-  });
+function getSmtpConfig() {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = parseInt(process.env.SMTP_PORT || "465");
+  const user = process.env.SMTP_USER || "support@adyapan.com";
+  const pass = process.env.SMTP_PASS || "";
+  const isConfigured = Boolean(user && pass && pass !== "your_gmail_app_password_here");
+  return { host, port, user, pass, isConfigured };
 }
 
-const transporter = nodemailer.createTransport({
-  host: SMTP_HOST,
-  port: SMTP_PORT,
-  secure: true, // SSL on port 465
-  auth: {
-    user: SMTP_USER,
-    pass: SMTP_PASS,
-  },
-  // Add timeout and connection settings for better error handling
-  connectionTimeout: 10000, // 10 seconds
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-});
+let cachedTransporter: Transporter | null = null;
+
+function getTransporter(): Transporter | null {
+  const config = getSmtpConfig();
+  if (!config.isConfigured) {
+    console.warn("⚠️  [Mailer] SMTP credentials not set. Email delivery unavailable.");
+    return null;
+  }
+  if (!cachedTransporter) {
+    cachedTransporter = nodemailer.createTransport({
+      host: config.host,
+      port: config.port,
+      secure: config.port === 465,
+      auth: {
+        user: config.user,
+        pass: config.pass,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
+    });
+  }
+  return cachedTransporter;
+}
 
 // ── Logo (attached inline via CID so Gmail & other clients render it) ─────────
 // Gmail blocks base64 `data:` URIs inside <img>, so we attach the file as an
@@ -172,7 +167,9 @@ function baseTemplate(bodyHtml: string): string {
 
 export async function sendAdminContactAlert(data: ContactFormData): Promise<void> {
   // Check if SMTP is configured
-  if (!isSmtpConfigured) {
+  const transporter = getTransporter();
+  const config = getSmtpConfig();
+  if (!transporter) {
     console.error("[Mailer] Cannot send admin alert - SMTP not configured");
     throw new Error("Email service not configured. Please contact system administrator.");
   }
@@ -214,8 +211,8 @@ export async function sendAdminContactAlert(data: ContactFormData): Promise<void
 
   try {
     const info = await transporter.sendMail({
-      from: `"Adyapan AI" <${SMTP_USER}>`,
-      to: process.env.ADMIN_EMAIL || "support@adyapan.com",
+      from: `"Adyapan AI" <${config.user}>`,
+      to: process.env.ADMIN_EMAIL || config.user,
       subject: `[Contact] ${subjectLabel} — ${data.fullName}`,
       html: baseTemplate(body),
       attachments: logoAttachments(),
@@ -231,8 +228,8 @@ export async function sendAdminContactAlert(data: ContactFormData): Promise<void
 // ── 2. User confirmation ──────────────────────────────────────────────────────
 
 export async function sendUserContactConfirmation(data: ContactFormData): Promise<void> {
-  // Check if SMTP is configured
-  if (!isSmtpConfigured) {
+  const transporter = getTransporter();
+  if (!transporter) {
     console.error("[Mailer] Cannot send user confirmation - SMTP not configured");
     throw new Error("Email service not configured. Please contact system administrator.");
   }
@@ -280,9 +277,11 @@ export async function sendUserContactConfirmation(data: ContactFormData): Promis
     </p>
   `;
 
+  const config = getSmtpConfig();
+
   try {
     const info = await transporter.sendMail({
-      from: `"Adyapan AI" <${SMTP_USER}>`,
+      from: `"Adyapan AI" <${config.user}>`,
       to: data.email,
       subject: `We received your message, ${firstName}! — Adyapan AI`,
       html: baseTemplate(body),
@@ -299,7 +298,9 @@ export async function sendUserContactConfirmation(data: ContactFormData): Promis
 // ── 3. Password Reset OTP ─────────────────────────────────────────────────────
 
 export async function sendPasswordResetOtpEmail(email: string, otp: string): Promise<void> {
-  if (!isSmtpConfigured) {
+  const transporter = getTransporter();
+  const config = getSmtpConfig();
+  if (!transporter) {
     console.warn("[Mailer] Cannot send OTP email - SMTP not configured.");
     return;
   }
@@ -338,9 +339,11 @@ export async function sendPasswordResetOtpEmail(email: string, otp: string): Pro
 
   try {
     const info = await transporter.sendMail({
-      from: `"Adyapan AI" <${SMTP_USER}>`,
+      from: `"Adyapan AI" <${config.user}>`,
+      replyTo: config.user,
       to: email,
       subject: `[Adyapan AI] Your Password Reset OTP: ${otp}`,
+      text: `Your Adyapan AI password reset OTP is: ${otp}\n\nThis verification code expires in 15 minutes.\n\nIf you did not request this password reset, please ignore this email.\n\nTeam Adyapan AI`,
       html: baseTemplate(body),
       attachments: logoAttachments(),
     });

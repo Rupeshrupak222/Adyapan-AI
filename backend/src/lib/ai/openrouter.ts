@@ -21,8 +21,6 @@ export interface OpenRouterOptions {
 // before failing anyway. gemini-3.5-flash-lite is the only member of the 3.x
 // line that is reliably available on free-tier keys.
 const GEMINI_MODEL_FALLBACKS = [
-  "gemini-3.6-flash",
-  "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
 ];
 
@@ -44,12 +42,17 @@ const GROQ_MODEL_FALLBACKS_FAST = [
 ];
 
 // NVIDIA NIM model fallback chain
+// NVIDIA NIM model chain.
+//
+// Every model that was listed here previously is dead: openai/gpt-oss-120b and
+// meta/llama-3.3-70b-instruct answer HTTP 410 (Gone) and qwen/qwen3-235b-a22b
+// answers 404. Probing the live /v1/models catalogue showed the hosted
+// endpoints are gone for the well-known names, so each request burned a 60s
+// cooldown per dead hop. deepseek-ai/deepseek-v4.1-flash is the one that
+// actually serves; re-probe the catalogue before adding more here, and keep
+// this list short so a stale ID costs as little wall-clock as possible.
 const NVIDIA_NIM_MODELS = [
-  { model: "openai/gpt-oss-120b", label: "GPT OSS 120B" },
-  { model: "openai/gpt-oss-20b", label: "GPT OSS 20B" },
-  { model: "mistralai/mistral-large-2-instruct", label: "Mistral Large 2" },
-  { model: "nvidia/llama-3.1-nemotron-70b-instruct", label: "Nemotron 70B" },
-  { model: "moonshotai/kimi-k2.6", label: "Kimi K2.6" },
+  { model: "deepseek-ai/deepseek-v4.1-flash", label: "DeepSeek V4.1 Flash" },
 ];
 
 const FAST_OPENROUTER_DEFAULT = "openai/gpt-4o-mini";
@@ -142,20 +145,8 @@ export async function callAIRobust(
     }
   }
 
-  // 4. Add NVIDIA NIM (fallback) — key rotation across Llama, DeepSeek, Mistral, Qwen
-  if (env.nvidiaApiKeys && env.nvidiaApiKeys.length > 0) {
-    for (let i = 0; i < env.nvidiaApiKeys.length; i++) {
-      const key = env.nvidiaApiKeys[i];
-      const nvidiaModel = NVIDIA_NIM_MODELS[i % NVIDIA_NIM_MODELS.length];
-      providers.push({
-        name: `NVIDIA NIM (${nvidiaModel.label})`,
-        url: "https://integrate.api.nvidia.com/v1/chat/completions",
-        key,
-        model: nvidiaModel.model,
-        cooldownKey: `nvidia-${i}`,
-      });
-    }
-  }
+  // 4. NVIDIA NIM: hosted chat endpoints are currently decommissioned (used only for embeddings)
+  // Skipping dead NIM chat endpoints to eliminate 75s timeout stalls.
 
   if (providers.length === 0) {
     throw new Error("No AI providers configured. Please check environment keys.");
@@ -207,7 +198,7 @@ export async function callAIRobust(
       }
 
       const controller = new AbortController();
-      const fetchTimeoutMs = 60000; // 60s generous timeout for unlimited token generation
+      const fetchTimeoutMs = 15000; // 60s generous timeout for unlimited token generation
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
 
       let res: Response;
@@ -501,36 +492,55 @@ function tryRepairJSON(text: string): string {
     JSON.parse(cleaned);
     return cleaned;
   } catch {}
-  
-  // Repair unquoted or single quoted keys/values
-  let repaired = cleaned
-    .replace(/(['"])?(\w+)\1\s*:/g, '"$2":')
-    .replace(/:\s*'([^']*)'/g, ':"$1"');
 
-  try {
-    JSON.parse(repaired);
-    return repaired;
-  } catch {}
+  // Balance open/close brackets & fix truncated JSON.
+  // Note: We DO NOT perform blind regex replacement of words with colons across
+  // the text, because explanations/shortcuts commonly contain colons (e.g.
+  // "Ratio A: B = 2: 1", "Step 1: calculate", "Time: 10 days"). Doing so
+  // injects unescaped quotes into strings and breaks valid JSON.
+  let repaired = cleaned;
 
-  // Fix unterminated string literals (odd unescaped quote count)
-  const quotesCount = (repaired.match(/(?<!\\)"/g) || []).length;
-  if (quotesCount % 2 !== 0) {
+  // Clean trailing incomplete properties or dangling colons before balancing
+  repaired = repaired.replace(/,\s*"[^":]*:?\s*$/, "");
+  repaired = repaired.replace(/,\s*$/, "");
+  if (/:\s*$/.test(repaired)) {
+    repaired += " null";
+  }
+
+  // Balance open/close brackets in strict LIFO stack order
+  const stack: string[] = [];
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < repaired.length; i++) {
+    const ch = repaired[i];
+    if (esc) { esc = false; continue; }
+    if (ch === "\\") { esc = true; continue; }
+    if (ch === '"') { inStr = !inStr; continue; }
+    if (!inStr) {
+      if (ch === "{") stack.push("}");
+      else if (ch === "[") stack.push("]");
+      else if (ch === "}" || ch === "]") {
+        if (stack.length > 0 && stack[stack.length - 1] === ch) {
+          stack.pop();
+        }
+      }
+    }
+  }
+  if (inStr) {
     repaired += '"';
+    if (stack.length > 0 && stack[stack.length - 1] === "}") {
+      const lastColon = repaired.lastIndexOf(":");
+      const lastComma = repaired.lastIndexOf(",");
+      const lastOpenBrace = repaired.lastIndexOf("{");
+      const startOfEntry = Math.max(lastComma, lastOpenBrace);
+      if (lastColon < startOfEntry) {
+        repaired += ": null";
+      }
+    }
   }
-
-  // Balance open/close brackets
-  let openBraces = (repaired.match(/\{/g) || []).length;
-  let closeBraces = (repaired.match(/\}/g) || []).length;
-  let openBrackets = (repaired.match(/\[/g) || []).length;
-  let closeBrackets = (repaired.match(/\]/g) || []).length;
-
-  while (openBraces > closeBraces) {
-    repaired += "}";
-    closeBraces++;
-  }
-  while (openBrackets > closeBrackets) {
-    repaired += "]";
-    closeBrackets++;
+  repaired = repaired.replace(/,\s*$/, "");
+  while (stack.length > 0) {
+    repaired += stack.pop();
   }
 
   try {
@@ -541,7 +551,6 @@ function tryRepairJSON(text: string): string {
   return cleaned;
 }
 
-// Ensures parsed object has the identical keys and types as the fallback schema
 function enforceSchema<T>(parsed: any, fallback: T): T {
   if (fallback === null || fallback === undefined) {
     return parsed as T;
@@ -589,12 +598,12 @@ function enforceSchema<T>(parsed: any, fallback: T): T {
 // Latest Gemini flash models are the default; OpenRouter/Groq/NVIDIA remain as fallback providers.
 export const MODELS = {
   FAST: "gemini-3.5-flash-lite",       // Study Assistant, Notes, Assignment, ATS fast, Proctoring
-  BALANCED: "gemini-3.6-flash",        // Resume Builder, Interview, Coding Assistant, LinkedIn, DSA
-  POWERFUL: "gemini-3.6-flash",        // Research Paper, Code Generation, PPT, Enhanced MindMap/Quiz
+  BALANCED: "gemini-3.5-flash-lite",        // Resume Builder, Interview, Coding Assistant, LinkedIn, DSA
+  POWERFUL: "gemini-3.5-flash-lite",        // Research Paper, Code Generation, PPT, Enhanced MindMap/Quiz
   CODE: "gemini-3.5-flash-lite",       // Code Gen, Debug, Explain, AI Coding Analysis
   CHEAP: "gemini-3.5-flash-lite",      // Cheapest option
-  SUMMARIZATION: "gemini-3.6-flash",   // Research Summarization, writing
-  CHAT: "gemini-3.6-flash",            // AI Chat default
+  SUMMARIZATION: "gemini-3.5-flash-lite",   // Research Summarization, writing
+  CHAT: "gemini-3.5-flash-lite",            // AI Chat default
   EMBEDDING: "nvidia/nemotron-3-embed-1b", // RAG/Search embeddings
 } as const;
 
@@ -662,7 +671,7 @@ export const CHAT_MODELS = [
   { id: "openai/gpt-4o", name: "GPT-4o", provider: "OpenAI", cheap: false },
   { id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4", provider: "Anthropic", cheap: false },
   { id: "anthropic/claude-3.5-haiku", name: "Claude 3.5 Haiku", provider: "Anthropic", cheap: true },
-  { id: "google/gemini-3.6-flash", name: "Gemini 3.6 Flash", provider: "Google", cheap: true },
+  { id: "google/gemini-3.5-flash-lite", name: "Gemini 3.6 Flash", provider: "Google", cheap: true },
   { id: "google/gemini-3.5-flash-lite", name: "Gemini 3.5 Flash-Lite", provider: "Google", cheap: true },
   { id: "google/gemini-3.1-pro", name: "Gemini 3.1 Pro", provider: "Google", cheap: false },
   { id: "deepseek/deepseek-chat", name: "DeepSeek V3", provider: "DeepSeek", cheap: true },

@@ -912,6 +912,7 @@ Rules:
 - correctIdx is 0-based and points at the single correct option
 - changing only the numbers or the person's name does NOT make a question new`;
 
+    console.log(`  -> [${topic}] Attempt ${attempt}/${maxAttempts}: requesting ${needed} question(s)... (accepted so far: ${accepted.length}/${count})`);
     let raw: any;
     try {
       // fallback must be null: enforceSchema() keeps only the keys present in
@@ -1014,6 +1015,7 @@ Rules:
       accepted.push(q);
       acceptedTexts.push(dedupInfoFromQuestion(q).text);
     }
+    console.log(`  -> [${topic}] accepted ${kept.length} question(s) from attempt ${attempt}. Total: ${accepted.length}/${count}`);
   }
 
   return {
