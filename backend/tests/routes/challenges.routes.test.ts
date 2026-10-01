@@ -53,6 +53,9 @@ function createMockPrisma(overrides: Record<string, any> = {}) {
     challenge: {
       findMany: jest.fn().mockResolvedValue([]),
       findUnique: jest.fn().mockResolvedValue(null),
+      // GET /:slug matches on slug OR id (IDE deep-links by cuid), so the
+      // detail route resolves through findFirst, not findUnique.
+      findFirst: jest.fn().mockResolvedValue(null),
     },
     userQuestionProgress: {
       findMany: jest.fn().mockResolvedValue([]),
@@ -253,6 +256,7 @@ describe("Challenges Routes", () => {
   describe("GET /api/challenges/:slug", () => {
     it("returns 404 for non-existent challenge", async () => {
       const mockPrisma = createMockPrisma();
+      mockPrisma.challenge.findFirst.mockResolvedValue(null);
       mockPrisma.challenge.findUnique.mockResolvedValue(null);
       mockGetUserPrismaFromRequest.mockResolvedValue(mockPrisma);
 
@@ -264,7 +268,7 @@ describe("Challenges Routes", () => {
 
     it("returns challenge detail with category info", async () => {
       const mockPrisma = createMockPrisma();
-      mockPrisma.challenge.findUnique.mockResolvedValue({
+      mockPrisma.challenge.findFirst.mockResolvedValue({
         id: "ch-1",
         slug: "two-sum",
         title: "Two Sum",
@@ -292,6 +296,34 @@ describe("Challenges Routes", () => {
       expect(res.body.challenge.categorySlug).toBe("dsa");
       expect(res.body.challenge.categoryName).toBe("DSA");
       expect(res.body.userProgress.solved).toBe(true);
+    });
+
+    it("resolves by cuid as well as slug (IDE deep links use the id)", async () => {
+      const mockPrisma = createMockPrisma();
+      mockPrisma.challenge.findFirst.mockResolvedValue({
+        id: "ch-1",
+        slug: "two-sum",
+        title: "Two Sum",
+        difficulty: "Easy",
+        points: 100,
+        description: "Given an array...",
+        topics: ["Arrays"],
+        testCases: [],
+        category: { slug: "dsa", name: "DSA" },
+      });
+      mockPrisma.userQuestionProgress.findUnique.mockResolvedValue(null);
+      mockPrisma.challengeSubmission.findMany.mockResolvedValue([]);
+      mockGetUserPrismaFromRequest.mockResolvedValue(mockPrisma);
+
+      const res = await request(app).get("/api/challenges/ch-1");
+
+      expect(res.status).toBe(200);
+      expect(res.body.challenge.title).toBe("Two Sum");
+      expect(mockPrisma.challenge.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { OR: [{ slug: "ch-1" }, { id: "ch-1" }] },
+        })
+      );
     });
   });
 

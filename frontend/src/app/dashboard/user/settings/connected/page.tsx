@@ -7,10 +7,10 @@ import { ConnectedAccountsSection } from "@/components/account-hub/ManageAccount
 import { SettingsShell, useSettingsColors, useSettingsData, useScheduleSave } from "@/components/account-hub/settings/shell";
 
 const DEFAULT_ACCOUNTS = [
-  { name: "Google",    icon: "google",    color: "#4285f4", connected: false, authUrl: "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Faccounts.google.com%2F&service=mail&flowName=GlifWebSignIn&flowEntry=ServiceLogin" },
-  { name: "GitHub",   icon: "github",    color: "#ffffff", connected: false, authUrl: "https://github.com/login" },
-  { name: "Microsoft", icon: "microsoft", color: "#00a4ef", connected: false, authUrl: "https://login.microsoftonline.com/" },
-  { name: "LinkedIn",  icon: "linkedin",  color: "#0077b5", connected: false, authUrl: "https://www.linkedin.com/login" },
+  { name: "Google",    icon: "google",    color: "#4285f4", connected: false },
+  { name: "GitHub",   icon: "github",    color: "#ffffff", connected: false },
+  { name: "Microsoft", icon: "microsoft", color: "#00a4ef", connected: false },
+  { name: "LinkedIn",  icon: "linkedin",  color: "#0077b5", connected: false },
 ];
 
 export default function SettingsConnectedPage() {
@@ -21,18 +21,16 @@ export default function SettingsConnectedPage() {
   const scheduleSave = useScheduleSave();
 
   const [accounts, setAccounts] = useState(DEFAULT_ACCOUNTS);
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (hydrated || loading) return;
-    if (settings.connectedAccounts) {
+    if (loading) return;
+    if (settings?.connectedAccounts) {
       setAccounts(prev => prev.map(a => {
         const slug = a.name.toLowerCase() as keyof typeof settings.connectedAccounts;
         return { ...a, connected: !!settings.connectedAccounts[slug] };
       }));
     }
-    setHydrated(true);
-  }, [hydrated, loading, settings]);
+  }, [loading, settings]);
 
   return (
     <SettingsShell

@@ -52,7 +52,9 @@ const EXCLUDE_PATHS: RegExp[] = [
   // Core coding workspace operations (running code, submitting test cases, auto-saving, notes, bookmarks)
   /^\/workspace\/[^/]+\/(run|submit|save|notes|bookmark|discussion|executions|execution)(\/|$)/i,
   /^\/workspace(\/|$)/i,
-  /^\/(run|submit|problems|categories)(\/|$)/i,
+  // Challenges: read-only ops (listing, categories, detail) are already allowed
+  // by the GET guard above; only code execution endpoints are excluded.
+  /^\/(run|execute|solutions?)(\/|$)/i,
 ];
 
 /**

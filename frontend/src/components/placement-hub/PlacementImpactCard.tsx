@@ -87,7 +87,7 @@ export function PlacementImpactCard({
       onClick={() => onNavigate?.("placement-intelligence")}
       role="button"
       tabIndex={0}
-      aria-label={`Placement intelligence score: ${score}%. ${score >= 70 ? "Placement Ready" : score >= 40 ? "Making Progress" : "Building Foundations"}`}
+      aria-label={`Placement intelligence score: ${score}%. ${score >= 85 ? "Placement Ready" : score >= 50 ? "Making Progress" : "Building Foundations"}`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNavigate?.("placement-intelligence"); } }}
     >
       <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] pointer-events-none"
@@ -121,7 +121,7 @@ export function PlacementImpactCard({
             </span>
           </div>
           <p className="text-xs font-bold" style={{ color: tc.text }}>
-            {score >= 70 ? "Placement Ready" : score >= 40 ? "Making Progress" : "Building Foundations"}
+            {score >= 85 ? "Placement Ready" : score >= 50 ? "Making Progress" : "Building Foundations"}
           </p>
           {data.highestImpactTask && (
             <div className="flex items-center gap-1 mt-1.5">

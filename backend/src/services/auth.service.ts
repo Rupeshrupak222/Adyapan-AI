@@ -10,7 +10,7 @@ import { RateLimiterMemory } from "rate-limiter-flexible";
 import { databaseService } from "./database.service";
 import { calculateProfileCompletion } from "../utils/profileCompletion";
 import { hashRefreshToken, isSessionIdle, revokeAllSessions } from "./session.service";
-import { sendPasswordResetOtpEmail } from "../utils/mailer";
+import { sendPasswordResetOtpEmail, sendEmailVerificationOtpEmail } from "../utils/mailer";
 
 type RegisterInput = {
   name: string;
@@ -65,6 +65,7 @@ function publicUser(user: User) {
     email: user.email,
     role: user.role,
     plan: (user as any).plan || "free",
+    emailVerified: (user as any).emailVerified ?? false,
     createdAt: user.createdAt,
   };
 }
@@ -1013,6 +1014,204 @@ export async function resetPassword(email: string, otp: string, newPassword: str
   tokenRecord.used = true;
 
   return { message: "Password reset successful. Please sign in with your new password." };
+}
+
+// ── Email Verification OTP ────────────────────────────────────────────────────
+
+const EMAIL_OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const EMAIL_OTP_RESEND_COOLDOWN_MS = 60 * 1000; // 60 seconds
+const EMAIL_OTP_MAX_ATTEMPTS = 5;
+const EMAIL_OTP_LOCK_MS = 10 * 60 * 1000;
+
+const memoryEmailVerificationTokens: Array<{
+  id: string;
+  email: string;
+  otpHash: string;
+  expiresAt: Date;
+  used: boolean;
+  createdAt: Date;
+}> = [];
+
+const emailOtpFailedAttempts = new Map<string, { count: number; lockedAt: number }>();
+const emailOtpLastSent = new Map<string, number>();
+
+export async function requestEmailVerificationOtp(
+  email: string,
+  userId?: string
+): Promise<{ devOtp?: string; message: string }> {
+  const normalizedEmail = email.toLowerCase().trim();
+  validateEmailFormat(normalizedEmail);
+
+  // Check cooldown between requests
+  const lastSent = emailOtpLastSent.get(normalizedEmail);
+  if (lastSent && Date.now() - lastSent < EMAIL_OTP_RESEND_COOLDOWN_MS) {
+    const remainingSec = Math.ceil((EMAIL_OTP_RESEND_COOLDOWN_MS - (Date.now() - lastSent)) / 1000);
+    throw httpError(429, `Please wait ${remainingSec} seconds before requesting a new code.`);
+  }
+
+  const user = userId
+    ? await prisma.user.findUnique({ where: { id: userId } })
+    : await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+  if (!user) {
+    throw httpError(404, "User account not found.");
+  }
+
+  if ((user as any).emailVerified) {
+    throw httpError(400, "This email address is already verified.");
+  }
+
+  // Cleanup expired/consumed memory tokens
+  const now = new Date();
+  for (let i = memoryEmailVerificationTokens.length - 1; i >= 0; i--) {
+    if (memoryEmailVerificationTokens[i].expiresAt <= now || memoryEmailVerificationTokens[i].used) {
+      memoryEmailVerificationTokens.splice(i, 1);
+    }
+  }
+
+  const otp = generateOtp();
+  const otpHash = await bcrypt.hash(otp, 10);
+  const expiresAt = new Date(Date.now() + EMAIL_OTP_TTL_MS);
+  const tokenId = Math.random().toString(36).substring(2, 9);
+
+  memoryEmailVerificationTokens.push({
+    id: tokenId,
+    email: normalizedEmail,
+    otpHash,
+    expiresAt,
+    used: false,
+    createdAt: now,
+  });
+
+  // Also persist in DB if model is accessible
+  try {
+    if ((prisma as any).emailVerificationToken) {
+      await (prisma as any).emailVerificationToken.create({
+        data: {
+          id: tokenId,
+          email: normalizedEmail,
+          otpHash,
+          expiresAt,
+          used: false,
+        },
+      });
+    }
+  } catch (dbErr) {
+    console.warn("[EmailVerification] Failed to write token to DB, using memory fallback:", dbErr);
+  }
+
+  emailOtpLastSent.set(normalizedEmail, Date.now());
+
+  // Dispatch OTP email via configured SMTP
+  try {
+    await sendEmailVerificationOtpEmail(normalizedEmail, otp);
+    console.log(`[EmailVerification] OTP email sent successfully to ${normalizedEmail}`);
+  } catch (emailErr: any) {
+    console.error(`[EmailVerification] Failed to send email to ${normalizedEmail}:`, emailErr?.message || emailErr);
+  }
+
+  if (env.nodeEnv === "development") {
+    return { devOtp: otp, message: `Verification code sent to ${normalizedEmail}.` };
+  }
+  return { message: `Verification code sent to ${normalizedEmail}.` };
+}
+
+export async function verifyEmailVerificationOtp(
+  email: string,
+  otp: string,
+  userId?: string
+) {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  if (!otp || !/^\d{6}$/.test(otp)) {
+    throw httpError(400, "Invalid verification code. Please enter the 6-digit OTP.");
+  }
+
+  const failure = emailOtpFailedAttempts.get(normalizedEmail);
+  if (failure && failure.count >= EMAIL_OTP_MAX_ATTEMPTS && Date.now() - failure.lockedAt < EMAIL_OTP_LOCK_MS) {
+    throw httpError(429, "Too many incorrect attempts. Please wait 10 minutes and request a new code.");
+  }
+
+  // Look up token in DB or memory
+  let tokenRecord: { id: string; otpHash: string; expiresAt: Date; used: boolean } | null = null;
+  try {
+    if ((prisma as any).emailVerificationToken) {
+      const dbToken = await (prisma as any).emailVerificationToken.findFirst({
+        where: {
+          email: normalizedEmail,
+          used: false,
+          expiresAt: { gt: new Date() },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      if (dbToken) tokenRecord = dbToken;
+    }
+  } catch (e) {}
+
+  if (!tokenRecord) {
+    tokenRecord = memoryEmailVerificationTokens
+      .filter((t) => t.email === normalizedEmail && !t.used && t.expiresAt > new Date())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] || null;
+  }
+
+  if (!tokenRecord) {
+    throw httpError(400, "Invalid or expired verification code. Please request a new one.");
+  }
+
+  const isValidOtp = await bcrypt.compare(otp, tokenRecord.otpHash);
+  if (!isValidOtp) {
+    const attempt = emailOtpFailedAttempts.get(normalizedEmail) || { count: 0, lockedAt: 0 };
+    attempt.count += 1;
+    attempt.lockedAt = Date.now();
+    emailOtpFailedAttempts.set(normalizedEmail, attempt);
+    if (attempt.count >= EMAIL_OTP_MAX_ATTEMPTS) {
+      tokenRecord.used = true;
+      throw httpError(429, "Too many incorrect attempts. Please request a new code.");
+    }
+    throw httpError(400, "Incorrect verification code. Please try again.");
+  }
+
+  // Clear attempts counter
+  emailOtpFailedAttempts.delete(normalizedEmail);
+  tokenRecord.used = true;
+
+  try {
+    if ((prisma as any).emailVerificationToken) {
+      await (prisma as any).emailVerificationToken.updateMany({
+        where: { email: normalizedEmail, id: tokenRecord.id },
+        data: { used: true },
+      });
+    }
+  } catch (e) {}
+
+  // Update user in DB
+  const updatedUser = userId
+    ? await prisma.user.update({
+        where: { id: userId },
+        data: { emailVerified: true } as any,
+      })
+    : await prisma.user.update({
+        where: { email: normalizedEmail },
+        data: { emailVerified: true } as any,
+      });
+
+  return {
+    success: true,
+    message: "Email address verified successfully!",
+    user: publicUser(updatedUser),
+  };
+}
+
+export async function getEmailVerificationStatus(email: string, userId?: string) {
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = userId
+    ? await prisma.user.findUnique({ where: { id: userId }, select: { email: true, emailVerified: true } })
+    : await prisma.user.findUnique({ where: { email: normalizedEmail }, select: { email: true, emailVerified: true } });
+
+  return {
+    email: user?.email || normalizedEmail,
+    emailVerified: Boolean((user as any)?.emailVerified),
+  };
 }
 
 type GitHubUser = {

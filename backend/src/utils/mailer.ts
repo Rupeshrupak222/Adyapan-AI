@@ -354,6 +354,65 @@ export async function sendPasswordResetOtpEmail(email: string, otp: string): Pro
   }
 }
 
+// ── 4. Email Verification OTP ──────────────────────────────────────────────────
+
+export async function sendEmailVerificationOtpEmail(email: string, otp: string): Promise<void> {
+  const transporter = getTransporter();
+  const config = getSmtpConfig();
+  if (!transporter) {
+    console.warn("[Mailer] Cannot send Email Verification OTP - SMTP not configured.");
+    return;
+  }
+
+  const body = `
+    <h2 style="margin:0 0 8px;font-size:22px;color:#0f172a;font-weight:800;">
+      Verify Your Email Address ✉️
+    </h2>
+    <p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.6;">
+      Thank you for choosing <strong>Adyapan AI</strong>. Please verify your registered email address (<span style="color:#0f172a;font-weight:600;">${escapeHtml(email)}</span>) by entering the verification code below.
+    </p>
+
+    <!-- OTP Code Card -->
+    <div style="margin:24px 0;padding:24px;background:#fffbeb;border:2px dashed ${BRAND_COLOR};border-radius:14px;text-align:center;">
+      <p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1px;">
+        Your Email Verification OTP
+      </p>
+      <div style="font-family:ui-monospace,Menlo,Monaco,Consolas,monospace;font-size:38px;font-weight:900;letter-spacing:10px;color:#b45309;padding:8px 0;">
+        ${escapeHtml(otp)}
+      </div>
+      <p style="margin:10px 0 0;font-size:12px;color:#a16207;">
+        ⏱️ This code will expire in <strong>10 minutes</strong>.
+      </p>
+    </div>
+
+    <!-- Security Instructions -->
+    <div style="margin-bottom:24px;padding:14px 18px;background:#f8fafc;border-left:4px solid #94a3b8;border-radius:0 8px 8px 0;font-size:13px;color:#475569;line-height:1.6;">
+      <strong style="color:#0f172a;">Security Notice:</strong> Never share this verification code with anyone. If you did not request this verification, please ignore this email.
+    </div>
+
+    <p style="margin:0;font-size:13px;color:#64748b;">
+      Warm regards,<br/>
+      <strong style="color:#0f172a;">Team Adyapan AI</strong>
+    </p>
+  `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Adyapan AI" <${config.user}>`,
+      replyTo: config.user,
+      to: email,
+      subject: `[Adyapan AI] Your Email Verification Code: ${otp}`,
+      text: `Your Adyapan AI email verification code is: ${otp}\n\nThis verification code expires in 10 minutes.\n\nIf you did not request this verification, please ignore this email.\n\nTeam Adyapan AI`,
+      html: baseTemplate(body),
+      attachments: logoAttachments(),
+    });
+    console.log(`[Mailer] Email verification OTP sent to ${email}. MessageId: ${info.messageId}`);
+  } catch (error: any) {
+    console.error("[Mailer] Failed to send email verification OTP:", error.message);
+    throw error;
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function row(label: string, value: string): string {

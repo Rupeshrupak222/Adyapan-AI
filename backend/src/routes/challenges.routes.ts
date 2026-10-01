@@ -560,12 +560,11 @@ router.get("/:slug", async (req: any, res) => {
     const userId = req.user?.userId || req.user?.id;
     const userPrisma = await getUserPrismaFromRequest(req);
 
+    // Callers pass either the slug (listing/category links) or the cuid
+    // (coding IDE deep links /dashboard/coding/ide/[id]), so match on both.
     const challenge = await userPrisma.challenge.findFirst({
       where: {
-        OR: [
-          { slug },
-          { id: slug },
-        ],
+        OR: [{ slug }, { id: slug }],
       },
       include: { category: true },
     });

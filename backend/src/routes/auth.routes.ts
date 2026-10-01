@@ -1,6 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { forgotPassword, resetPasswordController, githubAuth, githubCallback, googleAuth, googleCallback, login, adminLogin, logout, me, register, registerAdmin, sessionCheck, refresh, getSessionFromCookie } from "../controllers/auth.controller";
+import { forgotPassword, resetPasswordController, githubAuth, githubCallback, googleAuth, googleCallback, login, adminLogin, logout, me, register, registerAdmin, sessionCheck, refresh, getSessionFromCookie, sendEmailVerification, verifyEmailVerification, getEmailStatus } from "../controllers/auth.controller";
 import { requireAuth } from "../middleware/auth";
 
 const authLimiter = rateLimit({
@@ -31,12 +31,26 @@ const refreshLimiter = rateLimit({
 
 export const authRouter = Router();
 
+// Middleware to attach user if authorization token is provided (optional auth)
+const optionalAuth = (req: any, res: any, next: any) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    return requireAuth(req, res, next);
+  }
+  next();
+};
+
 authRouter.post("/register", loginLimiter, register);
 authRouter.post("/register-admin", authLimiter, registerAdmin);
 authRouter.post("/login", loginLimiter, login);
 authRouter.post("/admin-login", authLimiter, adminLogin);
 authRouter.post("/forgot-password", authLimiter, forgotPassword);
 authRouter.post("/reset-password", authLimiter, resetPasswordController);
+authRouter.post("/send-verification-otp", authLimiter, optionalAuth, sendEmailVerification);
+authRouter.post("/send-email-otp", authLimiter, optionalAuth, sendEmailVerification);
+authRouter.post("/verify-email-otp", authLimiter, optionalAuth, verifyEmailVerification);
+authRouter.post("/verify-email", authLimiter, optionalAuth, verifyEmailVerification);
+authRouter.get("/email-verification-status", optionalAuth, getEmailStatus);
 authRouter.post("/refresh", refreshLimiter, refresh);
 authRouter.post("/logout", requireAuth, logout);
 authRouter.get("/session", getSessionFromCookie);

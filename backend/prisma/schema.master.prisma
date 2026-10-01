@@ -15,6 +15,7 @@ model User {
   googleId   String?  @unique @map("google_id")
   avatarUrl  String?  @map("avatar_url")
   role       Role     @default(USER)
+  emailVerified Boolean @default(false) @map("email_verified")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
   profile    Profile?
@@ -99,6 +100,19 @@ model PasswordResetToken {
   @@index([email])
   @@index([expiresAt])
   @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  otpHash   String   @map("otp_hash")
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
 }
 
 enum Role {

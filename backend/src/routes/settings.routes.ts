@@ -114,7 +114,7 @@ settingsRouter.get("/", async (req: any, res) => {
       getOrCreateSettings(prisma, userId),
       prisma.user.findUnique({
         where: { id: userId },
-        select: { name: true, email: true, createdAt: true, plan: true },
+        select: { name: true, email: true, createdAt: true, plan: true, emailVerified: true, googleId: true, githubId: true },
       }).catch(() => null),
       prisma.notification.count({
         where: { userId },
@@ -185,10 +185,10 @@ settingsRouter.get("/", async (req: any, res) => {
 
         // Connected Accounts
         connectedAccounts: {
-          google: settings.googleConnected ?? false,
-          github: settings.githubConnected ?? false,
-          microsoft: settings.microsoftConnected ?? false,
-          linkedin: settings.linkedinConnected ?? false,
+          google: Boolean(user?.googleId || settings.googleConnected),
+          github: Boolean(user?.githubId || settings.githubConnected),
+          microsoft: Boolean(settings.microsoftConnected),
+          linkedin: Boolean(settings.linkedinConnected),
         },
       },
       profile: {
@@ -205,6 +205,7 @@ settingsRouter.get("/", async (req: any, res) => {
         github: profile.github || "",
         linkedin: profile.linkedin || "",
         plan: user?.plan || "free",
+        emailVerified: Boolean(user?.emailVerified),
         memberSince: user?.createdAt || new Date(),
         photoUrl: profile.photoUrl || "",
       },
@@ -562,6 +563,63 @@ settingsRouter.put("/api-keys", async (req: any, res) => {
     await auditSettingsAction(req, "API Keys Updated", { providers: affected });
   } catch (error) {
     handleRouteError(res, error, "Settings.apiKeys", "Failed to save API keys");
+  }
+});
+
+// ─── POST /settings/disconnect-account ── Disconnect OAuth provider ─────────
+settingsRouter.post("/disconnect-account", async (req: any, res) => {
+  try {
+    const prisma = await getUserPrismaFromRequest(req);
+    const userId = req.user?.userId || req.user?.id;
+    const provider = String(req.body?.provider || "").toLowerCase();
+
+    if (!["google", "github", "microsoft", "linkedin"].includes(provider)) {
+      return res.status(400).json({ success: false, error: "Invalid provider" });
+    }
+
+    if (provider === "google") {
+      await prisma.user.update({ where: { id: userId }, data: { googleId: null } as any });
+      await prisma.userSettings.updateMany({ where: { userId }, data: { googleConnected: false } });
+    } else if (provider === "github") {
+      await prisma.user.update({ where: { id: userId }, data: { githubId: null } as any });
+      await prisma.userSettings.updateMany({ where: { userId }, data: { githubConnected: false } });
+    } else if (provider === "microsoft") {
+      await prisma.userSettings.updateMany({ where: { userId }, data: { microsoftConnected: false } });
+    } else if (provider === "linkedin") {
+      await prisma.userSettings.updateMany({ where: { userId }, data: { linkedinConnected: false } });
+    }
+
+    await logActivity(prisma, userId, `Disconnected ${provider}`, "connected-accounts", { provider });
+    await auditSettingsAction(req, "Account Disconnected", { provider });
+
+    res.json({ success: true, message: `${provider} disconnected successfully` });
+  } catch (error) {
+    handleRouteError(res, error, "Settings.disconnectAccount", "Failed to disconnect account");
+  }
+});
+
+// ─── PUT /settings/connected-accounts ── Update connected accounts ───────────
+settingsRouter.put("/connected-accounts", async (req: any, res) => {
+  try {
+    const prisma = await getUserPrismaFromRequest(req);
+    const userId = req.user?.userId || req.user?.id;
+    const { settings } = await getOrCreateSettings(prisma, userId);
+
+    const { googleConnected, githubConnected, microsoftConnected, linkedinConnected } = req.body;
+
+    const updated = await prisma.userSettings.update({
+      where: { id: settings.id },
+      data: {
+        ...(googleConnected !== undefined && { googleConnected }),
+        ...(githubConnected !== undefined && { githubConnected }),
+        ...(microsoftConnected !== undefined && { microsoftConnected }),
+        ...(linkedinConnected !== undefined && { linkedinConnected }),
+      },
+    });
+
+    res.json({ success: true, message: "Connected accounts updated", settings: updated });
+  } catch (error) {
+    handleRouteError(res, error, "Settings.connectedAccounts", "Failed to update connected accounts");
   }
 });
 

@@ -48,15 +48,24 @@ export interface LimitCheckResult {
 const MONTHLY_MULTIPLIER = 30;
 const HOUR = 60 * 60 * 1000;
 
-// Effective ceilings for the unlimited (enterprise) tier. Kept finite so usage
-// snapshots, percentage gauges and admin dashboards keep a denominator.
-export const ENTERPRISE_DAILY_TOKENS = 2_000_000_000;
-export const ENTERPRISE_DAILY_REQUESTS = 1_000_000;
+// Quota constants live in ../config/plan-quota-constants so feature-access.service
+// can share them without importing this module (which pulls in admin.controller
+// and breaks module-load order elsewhere). Re-exported for existing importers.
+export {
+  ENTERPRISE_DAILY_TOKENS,
+  ENTERPRISE_DAILY_REQUESTS,
+  FREE_TIER_TOKEN_LIMIT,
+  FREE_TIER_DAILY_REQUESTS,
+} from "../config/plan-quota-constants";
 
-// Free-tier fallbacks must match DEFAULT_SYSTEM_SETTINGS in admin.controller.ts,
-// otherwise a missing/zero admin_setting silently halves the free allowance.
-export const FREE_TIER_TOKEN_LIMIT = 500_000;
-export const FREE_TIER_DAILY_REQUESTS = 50;
+import {
+  ENTERPRISE_DAILY_TOKENS,
+  ENTERPRISE_DAILY_REQUESTS,
+  FREE_TIER_TOKEN_LIMIT,
+  FREE_TIER_DAILY_REQUESTS,
+  PREMIUM_TIER_TOKEN_LIMIT,
+  PREMIUM_TIER_DAILY_REQUESTS,
+} from "../config/plan-quota-constants";
 
 // ─── Plan resolution ──────────────────────────────────────────────
 
@@ -90,8 +99,8 @@ export function resolveQuota(plan: string): PlanQuota {
   }
 
   if (kind === "premium") {
-    const dailyTokens = Number(s.premiumTierTokenLimit) || 5000000;
-    const dailyRequests = Number(s.premiumTierDailyRequests) || 200;
+    const dailyTokens = Number(s.premiumTierTokenLimit) || PREMIUM_TIER_TOKEN_LIMIT;
+    const dailyRequests = Number(s.premiumTierDailyRequests) || PREMIUM_TIER_DAILY_REQUESTS;
     return {
       plan,
       kind,

@@ -20955,7 +20955,7 @@
     "title": "Data Science - Test 1: Core Fundamentals & Patterns",
     "description": "Comprehensive technical evaluation for Data Science covering runtime mechanics, design principles, and problem solving.",
     "difficulty": "Medium",
-    "questionCount": 14,
+    "questionCount": 12,
     "durationMinutes": 20,
     "isPublished": true,
     "createdAt": "2026-08-29T06:01:47.901Z",
@@ -21196,44 +21196,6 @@
         "relatedConcept": "scikit‑learn train_test_split size calculation with float arguments",
         "estimatedTime": "45 sec",
         "interviewTip": "Tests knowledge of subtle library behaviour that can affect reproducibility and data leakage."
-      },
-      {
-        "id": "mcq-tech-ds-t1-q13",
-        "question": "[Data Science • Test 1 • Q13] In a standard Python data science stack (NumPy/Pandas), which of the following operations results in a 'Broadcasting' error due to incompatible array shapes, assuming standard NumPy broadcasting rules apply?",
-        "technology": "Data Science",
-        "difficulty": "Medium",
-        "options": [
-          "Adding a 1D array of shape (3,) to a 2D array of shape (2, 3).",
-          "Subtracting a 1D array of shape (2,) from a 2D array of shape (2, 3).",
-          "Multiplying a 1D array of shape (3,) by a 2D array of shape (3, 3).",
-          "In-place addition of a scalar value to a 1D array of shape (5,)."
-        ],
-        "correctAnswer": "Subtracting a 1D array of shape (2,) from a 2D array of shape (2, 3).",
-        "correctIdx": 1,
-        "explanation": "NumPy broadcasting rules state that dimensions are compared from the trailing end forward. A shape (2, 3) and a shape (2,) are aligned as (1, 2, 3) and (1, 1, 2) effectively. The last dimension 3 and 2 are not equal, and neither is 1, causing a ValueError. Option A is valid (3 matches 3). Option B is valid (3 matches 3). Option D is valid (scalar broadcasts to any shape).",
-        "hint": "Compare the trailing dimensions from right to left; they must be either equal or one of them must be 1.",
-        "relatedConcept": "NumPy Broadcasting Incompatibility Semantics",
-        "estimatedTime": "45 sec",
-        "interviewTip": "Tests if the candidate understands the strict shape alignment rules required for vectorized operations, a common source of runtime errors in data preprocessing."
-      },
-      {
-        "id": "mcq-tech-ds-t1-q14",
-        "question": "[Data Science • Test 1 • Q14] When using Python's `csv.DictReader` class to read a CSV file, what is the default behavior regarding rows that contain more fields than the header line defined by the reader?",
-        "technology": "Data Science",
-        "difficulty": "Medium",
-        "options": [
-          "The extra fields are ignored and discarded.",
-          "The extra fields are stored in a list under a key defined by the `restval` parameter (default None).",
-          "A `csv.Error` is raised immediately, halting iteration.",
-          "The row is silently skipped."
-        ],
-        "correctAnswer": "A `csv.Error` is raised immediately, halting iteration.",
-        "correctIdx": 2,
-        "explanation": "According to Python's `csv` module documentation, if a row has more fields than headers, the `DictReader` raises a `csv.Error`. The `restval` parameter handles missing fields (when a row has fewer fields), not extra ones. The `extrasaction` parameter controls extra fields: 'raise' (default), 'ignore', or 'log'. Since the default is 'raise', an error is thrown. Wait, let me double check. Docs say: 'If a row has more fields than fieldnames, the remaining data is put in a list under the fieldname specified by the restkey parameter... If restkey is not provided, a Error is raised.' Actually, the default for `restkey` is None, which triggers an error. Let's verify the options. Option 2 mentions `restval` which is for *missing* values. Option 3 says Error is raised. This is correct for default settings. Option 1 is false. Option 4 is false.",
-        "hint": "Check the `extrasaction` and `restkey` parameters of `DictReader`.",
-        "relatedConcept": "Python CSV Reader Edge Case Handling",
-        "estimatedTime": "45 sec",
-        "interviewTip": "Assesses knowledge of standard library edge cases, which is critical for robust data ingestion pipelines where dirty data is common."
       }
     ]
   },
@@ -21246,7 +21208,7 @@
     "title": "TensorFlow - Test 1: Core Fundamentals & Patterns",
     "description": "Comprehensive technical evaluation for TensorFlow covering runtime mechanics, design principles, and problem solving.",
     "difficulty": "Hard",
-    "questionCount": 14,
+    "questionCount": 10,
     "durationMinutes": 20,
     "isPublished": true,
     "createdAt": "2026-08-29T06:01:47.901Z",
@@ -21454,90 +21416,6 @@
         "relatedConcept": "TensorFlow Model Serialization and SavedModel vs H5",
         "estimatedTime": "60 sec",
         "interviewTip": "Tests if the engineer understands the difference between the legacy H5 format and the industry-standard SavedModel directory, a critical distinction for MLOps and portability."
-      },
-      {
-        "id": "mcq-tech-tf-t1-q11",
-        "question": "[TensorFlow • Test 1 • Q11] A TensorFlow graph includes a call to `tf.py_function` to wrap a Python utility that parses a user‑provided string. Which statement best describes the security implication of using `tf.py_function` in this context?",
-        "technology": "TensorFlow",
-        "difficulty": "Hard",
-        "codeSnippet": "def parse_input(s):\n    # Potentially unsafe operation on user data\n    exec(s)  # <-- malicious payload could be executed\n    return []\n\n@tf.function\ndef model_step(x, user_str):\n    tf.py_function(func=parse_input, inp=[user_str], Tout=tf.string)\n    return tf.identity(x)",
-        "language": "python",
-        "options": [
-          "The call is sandboxed by TensorFlow and cannot affect the host Python interpreter.",
-          "`tf.py_function` executes the provided Python callable in the same process, so malicious code supplied via the input string can be executed with the same privileges as the TensorFlow program.",
-          "TensorFlow automatically validates and sanitizes the string before passing it to the Python function.",
-          "`tf.py_function` runs the Python code in a separate thread that has no access to the file system."
-        ],
-        "correctAnswer": "`tf.py_function` executes the provided Python callable in the same process, so malicious code supplied via the input string can be executed with the same privileges as the TensorFlow program.",
-        "correctIdx": 1,
-        "explanation": "`tf.py_function` bridges TensorFlow graphs to arbitrary Python code, executing that code in the same Python process. If the input originates from an untrusted source, the wrapped function can run malicious code (e.g., via `exec`), leading to arbitrary code execution. The other options incorrectly claim sandboxing, automatic sanitization, or isolation that does not exist.",
-        "hint": "Consider where the Python callable runs when invoked from a TensorFlow graph.",
-        "relatedConcept": "Security risks of tf.py_function and untrusted data handling",
-        "estimatedTime": "45 sec",
-        "interviewTip": "Interviewers ask this to see if candidates understand the boundary between graph execution and host Python code and can spot potential injection vectors."
-      },
-      {
-        "id": "mcq-tech-tf-t1-q12",
-        "question": "[TensorFlow • Test 1 • Q12] When loading a Keras model saved in H5 format from an untrusted source using `tf.keras.models.load_model`, what is the primary security concern?",
-        "technology": "TensorFlow",
-        "difficulty": "Hard",
-        "codeSnippet": "model = tf.keras.models.load_model('untrusted_model.h5')",
-        "language": "python",
-        "options": [
-          "The model's weights may be corrupted, causing numerical instability during inference.",
-          "TensorFlow will refuse to load any model that contains custom layers, raising an exception.",
-          "The H5 file can embed malicious custom objects (e.g., custom layers or loss functions) that execute arbitrary Python code during deserialization.",
-          "The loading routine automatically encrypts the model weights, preventing any security breach."
-        ],
-        "correctAnswer": "The H5 file can embed malicious custom objects (e.g., custom layers or loss functions) that execute arbitrary Python code during deserialization.",
-        "correctIdx": 2,
-        "explanation": "H5 files used by Keras can store custom objects that are instantiated via `pickle`‑like mechanisms when the model is deserialized. An attacker can craft a model file containing a custom object whose `__init__` or `__call__` executes harmful code. The other options describe side effects that are either benign or incorrect.",
-        "hint": "Think about what happens internally when a model file contains user‑defined Python classes.",
-        "relatedConcept": "Deserialization vulnerabilities in tf.keras model loading",
-        "estimatedTime": "45 sec",
-        "interviewTip": "This question checks whether candidates are aware of supply‑chain risks and the need for safe model loading practices."
-      },
-      {
-        "id": "mcq-tech-tf-t1-q13",
-        "question": "[TensorFlow • Test 1 • Q13] In a TensorFlow 2.x model using 'tf.data.Dataset', what is the specific performance bottleneck introduced by calling '.map(lambda x, y: (x + 1, y))' without specifying 'num_parallel_calls=auto', when the pipeline is fed to a GPU?",
-        "technology": "TensorFlow",
-        "difficulty": "Hard",
-        "codeSnippet": "dataset = tf.data.Dataset.from_tensor_slices((x, y))\ndataset = dataset.map(lambda a, b: (a + 1, b))\n# num_parallel_calls not specified",
-        "language": "python",
-        "options": [
-          "The TensorFlow runtime automatically spins up a thread pool equal to the number of CPU cores, so there is no bottleneck unless the function is I/O bound.",
-          "The operation moves the entire dataset to GPU memory, causing OOM errors for large datasets because '.map()' implicitly triggers a device placement check.",
-          "The gradient computation is skipped for the mapped elements, leading to silent training errors instead of a performance issue.",
-          "The GPU waits for the CPU to finish processing each scalar element sequentially, causing underutilization due to the default single-threaded execution of the map function."
-        ],
-        "correctAnswer": "The GPU waits for the CPU to finish processing each scalar element sequentially, causing underutilization due to the default single-threaded execution of the map function.",
-        "correctIdx": 3,
-        "explanation": "By default, 'tf.data.Dataset.map' executes with 'num_parallel_calls=1', meaning each element is processed sequentially on a single CPU thread. For complex preprocessing or even simple arithmetic on large batches, this creates a serial bottleneck that starves the GPU, which is capable of processing thousands of operations in parallel. Setting 'num_parallel_calls=auto' allows the runtime to use multiple CPU cores to prefetch and process data concurrently.",
-        "hint": "Consider the default setting of 'num_parallel_calls' and how single-threaded CPU processing interacts with asynchronous GPU transfers.",
-        "relatedConcept": "tf.data performance tuning and thread parallelism",
-        "estimatedTime": "60 sec",
-        "interviewTip": "This tests if the candidate understands the CPU-GPU boundary and how specific API defaults can silently degrade throughput in mixed-hardware pipelines."
-      },
-      {
-        "id": "mcq-tech-tf-t1-q14",
-        "question": "[TensorFlow • Test 1 • Q14] When using 'tf.keras' model saving with 'tf.saved_model.Save', what is the primary computational cost difference between saving a model that includes 'tf.Variable' objects initialized with 'tf.random.normal' versus one initialized with 'tf.zeros', specifically regarding the graph tracing phase?",
-        "technology": "TensorFlow",
-        "difficulty": "Hard",
-        "codeSnippet": "# Model A\nlayer_weights = tf.Variable(tf.random.normal([100, 100]))\n# Model B\nlayer_weights = tf.Variable(tf.zeros([100, 100]))",
-        "language": "python",
-        "options": [
-          "There is no computational difference in the save phase; the cost is identical because the save operation only serializes the tensor values and graph structure, not the initialization history or strategy.",
-          "Saving Model A is significantly slower because the random number state must be serialized, requiring an additional cryptographic hash computation to ensure reproducibility across platforms.",
-          "Saving Model B is faster because zero-initialized tensors use sparse storage encoding by default, reducing the I/O bandwidth required for serialization compared to dense random tensors.",
-          "Saving Model A fails if the random seed is not explicitly set globally, whereas Model B saves successfully without any configuration, leading to potential data loss in Model A."
-        ],
-        "correctAnswer": "There is no computational difference in the save phase; the cost is identical because the save operation only serializes the tensor values and graph structure, not the initialization history or strategy.",
-        "correctIdx": 0,
-        "explanation": "The 'tf.saved_model.Save' operation serializes the current state of the variables (their values) and the graph structure. It does not store the initialization code or the random state generator object in a way that introduces significant computational overhead during the save trace. Whether the initial values were random or zero is irrelevant to the serialization cost; the cost is determined by the size of the tensors and the complexity of the graph operations being traced, not the provenance of the values.",
-        "hint": "Focus on what data is actually written to disk during a save operation: current memory state vs. code history.",
-        "relatedConcept": "Model serialization mechanics and graph structure",
-        "estimatedTime": "45 sec",
-        "interviewTip": "This distinguishes candidates who understand serialization as a memory-to-disk operation of current state from those who confuse it with stateful execution tracking or reproducibility mechanisms."
       }
     ]
   },
@@ -21686,7 +21564,7 @@
     "title": "Google - Test 1: OA Screening Assessment",
     "description": "Official technical screening test pattern for Google campus and off-campus recruitment drives.",
     "difficulty": "Hard",
-    "questionCount": 7,
+    "questionCount": 6,
     "durationMinutes": 20,
     "isPublished": true,
     "createdAt": "2026-08-29T06:01:47.901Z",
@@ -21816,26 +21694,6 @@
         "relatedConcept": "Floating‑point NaN comparison semantics in Java",
         "estimatedTime": "45 sec",
         "interviewTip": "Tests the candidate's awareness of floating‑point edge cases that can silently break validation logic."
-      },
-      {
-        "id": "mcq-google-t1-q7",
-        "question": "[Google • Test 1 • Q7] In a high-throughput C++ web server, a developer allocates a 64-byte request context struct on the heap using `new` and immediately passes a pointer to it across a thread boundary. Later, during object destruction, the `delete` operator is called from a different thread. Although `new` and `delete` are thread-safe with respect to the allocation itself, what is the primary hidden memory management cost incurred at the C++ runtime level compared to allocating this small object on the stack?",
-        "technology": "Google",
-        "company": "Google",
-        "difficulty": "Hard",
-        "options": [
-          "Translation of the pointer into a virtual address page table entry.",
-          "Lookup and update of the heap's free-list blocks and potential cache-line bouncing for the allocator's internal lock.",
-          "Immediate triggering of a page fault to zero-initialize the memory block.",
-          "Validation of the pointer against the Application Binary Interface (ABI) boundaries."
-        ],
-        "correctAnswer": "Lookup and update of the heap's free-list blocks and potential cache-line bouncing for the allocator's internal lock.",
-        "correctIdx": 1,
-        "explanation": "Heap allocation of small objects typically requires acquiring a lock on the allocator's free-list (like tcmalloc or ptmalloc). This involves atomic operations that can cause cache-line bouncing (false sharing of the lock's state) across cores, and the subsequent management of the free-list. Stack allocation is simply a pointer adjustment (SP) and requires no shared state or locking.",
-        "hint": "Think about what happens inside `malloc`/`new` for small objects versus just moving the stack pointer.",
-        "relatedConcept": "Heap allocator internals and lock contention vs stack allocation cost",
-        "estimatedTime": "45 sec",
-        "interviewTip": "Tests understanding that 'thread-safe' memory allocation implies synchronization overhead (locking/cache coherence) that stack allocation completely avoids."
       }
     ]
   },
@@ -21848,7 +21706,7 @@
     "title": "Microsoft - Test 1: OA Screening Assessment",
     "description": "Official technical screening test pattern for Microsoft campus and off-campus recruitment drives.",
     "difficulty": "Hard",
-    "questionCount": 12,
+    "questionCount": 10,
     "durationMinutes": 20,
     "isPublished": true,
     "createdAt": "2026-08-29T06:01:47.901Z",
@@ -22062,50 +21920,6 @@
         "relatedConcept": "Unobserved task exceptions in .NET async/await",
         "estimatedTime": "45 sec",
         "interviewTip": "Interviewers use this to see if candidates understand the separation between exception throwing and observation in asynchronous APIs."
-      },
-      {
-        "id": "mcq-microsoft-t1-q11",
-        "question": "[Microsoft • Test 1 • Q11] In a C# code review, a colleague submits a `HttpClient` instantiation inside a `for` loop that executes on a high-frequency background thread. Which specific resource exhaustion issue is the reviewer most likely to flag as the primary reason to refactor this pattern?",
-        "technology": "Microsoft",
-        "company": "Microsoft",
-        "difficulty": "Hard",
-        "codeSnippet": "for (int i = 0; i < count; i++)\n{\n    using var client = new HttpClient();\n    var response = await client.GetAsync(url);\n}",
-        "language": "C#",
-        "options": [
-          "Memory leak due to the GC being unable to collect object headers in high-frequency loops",
-          "Socket exhaustion (TIME_WAIT state) leading to 'No more ports available' errors",
-          "Deadlock caused by the synchronous `GetAsync` call blocking the thread pool",
-          "Certificate validation overhead slowing down the TLS handshake for each request"
-        ],
-        "correctAnswer": "Socket exhaustion (TIME_WAIT state) leading to 'No more ports available' errors",
-        "correctIdx": 1,
-        "explanation": "Instantiating `HttpClient` in a tight loop creates a new ServicePointManager internal handler for each instance, rapidly exhausting the local TCP port pool as connections enter the TIME_WAIT state. The other options are incorrect: GC handles object headers efficiently; `GetAsync` is asynchronous and non-blocking; and while TLS has overhead, it is not the primary resource exhaustion risk compared to sockets.",
-        "hint": "Think about how many local port addresses a single IP address can support simultaneously.",
-        "relatedConcept": "HttpClient instance management and Socket exhaustion in C#",
-        "estimatedTime": "60 sec",
-        "interviewTip": "This tests practical knowledge of .NET runtime behavior and network resource limits in production environments, a common pitfall in high-throughput services."
-      },
-      {
-        "id": "mcq-microsoft-t1-q12",
-        "question": "[Microsoft • Test 1 • Q12] A Java developer uses `StringBuffer` instead of `StringBuilder` for a local variable that is manipulated only within a single-threaded method. A code reviewer flags this as an efficiency anti-pattern. What is the primary technical justification for this feedback?",
-        "technology": "Microsoft",
-        "company": "Microsoft",
-        "difficulty": "Hard",
-        "codeSnippet": "public String buildLog() {\n    StringBuffer sb = new StringBuffer();\n    for (int i = 0; i < 1000; i++) {\n        sb.append(i).append(\"\\n\");\n    }\n    return sb.toString();\n}",
-        "language": "Java",
-        "options": [
-          "`StringBuffer` allocates memory on the heap while `StringBuilder` uses stack memory, increasing garbage collection frequency",
-          "`StringBuffer` does not support the `toString()` method efficiently, requiring a full deep copy",
-          "`StringBuffer` methods are synchronized, introducing unnecessary mutual exclusion overhead on a single thread",
-          "`StringBuilder` is immutable, which ensures thread safety without the cost of synchronization"
-        ],
-        "correctAnswer": "`StringBuffer` methods are synchronized, introducing unnecessary mutual exclusion overhead on a single thread",
-        "correctIdx": 2,
-        "explanation": "`StringBuffer` is synchronized by design for thread safety, but when used in a single-threaded context where the reference doesn't escape, the `synchronized` blocks on every append and insert operation add CPU overhead without providing any concurrency benefit. `StringBuilder` is unsynchronized and therefore faster in this scenario. The other options are incorrect: both use heap memory; both work with `toString()`; and `StringBuilder` is mutable, not immutable.",
-        "hint": "Consider what the `synchronized` keyword does inside the methods of `StringBuffer` and why it's irrelevant here.",
-        "relatedConcept": "Concurrent vs. Unconcurrent String Manipulation in Java",
-        "estimatedTime": "45 sec",
-        "interviewTip": "This question assesses the ability to identify performance anti-patterns that arise from misunderstanding the cost of synchronization primitives in safe contexts."
       }
     ]
   },

@@ -12,6 +12,9 @@ import {
   handleGoogleUser,
   requestPasswordReset,
   resetPassword,
+  requestEmailVerificationOtp,
+  verifyEmailVerificationOtp,
+  getEmailVerificationStatus,
   activateNewSession,
   logout as blacklistToken,
   refreshToken as refreshTokenService,
@@ -207,7 +210,7 @@ export async function me(req: Request, res: Response, next: NextFunction) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user?.userId },
-      select: { id: true, name: true, email: true, role: true, plan: true, createdAt: true },
+      select: { id: true, name: true, email: true, role: true, plan: true, emailVerified: true, createdAt: true },
     });
     res.json({ success: true, user });
   } catch (error) {
@@ -339,6 +342,52 @@ export async function resetPasswordController(req: Request, res: Response, next:
   }
 }
 
+export async function sendEmailVerification(req: Request, res: Response, next: NextFunction) {
+  try {
+    const email = req.body?.email ? String(req.body.email).trim() : (req.user?.email || "");
+    if (!email) {
+      throw httpError(400, "Email address is required.");
+    }
+    const userId = req.user?.userId;
+    const result = await requestEmailVerificationOtp(email, userId);
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function verifyEmailVerification(req: Request, res: Response, next: NextFunction) {
+  try {
+    const email = req.body?.email ? String(req.body.email).trim() : (req.user?.email || "");
+    const otp = requireString(req.body?.otp, "otp");
+    if (!email) {
+      throw httpError(400, "Email address is required.");
+    }
+    const userId = req.user?.userId;
+    const result = await verifyEmailVerificationOtp(email, otp, userId);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getEmailStatus(req: Request, res: Response, next: NextFunction) {
+  try {
+    const email = req.query?.email ? String(req.query.email).trim() : (req.user?.email || "");
+    const userId = req.user?.userId;
+    if (!email && !userId) {
+      throw httpError(400, "Email or authentication required.");
+    }
+    const result = await getEmailVerificationStatus(email, userId);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
+
 const OAUTH_STATE_COOKIE = "adyapan_oauth_state";
 
 function resolveReturnOrigin(req: Request): string {
@@ -374,10 +423,15 @@ function resolveOAuthRedirectUri(req: Request, provider: "google" | "github"): s
   return env.google.callbackUrl;
 }
 
-function issueOAuthState(res: Response, returnOrigin: string, redirectUri: string): string {
+function issueOAuthState(
+  res: Response,
+  returnOrigin: string,
+  redirectUri: string,
+  extra?: Record<string, any>
+): string {
   const nonce = randomBytes(16).toString("hex");
   const ts = Date.now();
-  const payload = JSON.stringify({ nonce, ts, returnOrigin, redirectUri });
+  const payload = JSON.stringify({ nonce, ts, returnOrigin, redirectUri, ...extra });
   const b64 = Buffer.from(payload).toString("base64url");
   const sig = createHmac("sha256", env.jwtSecret).update(b64).digest("hex");
   const state = `${b64}.${sig}`;
@@ -401,7 +455,17 @@ function readCookie(req: Request, name: string): string {
   return "";
 }
 
-function validateOAuthState(req: Request, res: Response): { valid: boolean; returnOrigin?: string; redirectUri?: string } {
+function validateOAuthState(
+  req: Request,
+  res: Response
+): {
+  valid: boolean;
+  returnOrigin?: string;
+  redirectUri?: string;
+  mode?: string;
+  returnTo?: string;
+  connectUserId?: string;
+} {
   const cookieState = readCookie(req, OAUTH_STATE_COOKIE);
   const queryState = String(req.query.state || "");
   res.clearCookie(OAUTH_STATE_COOKIE, { path: "/", sameSite: env.nodeEnv === "production" ? "none" : "lax", secure: env.nodeEnv === "production" });
@@ -416,7 +480,14 @@ function validateOAuthState(req: Request, res: Response): { valid: boolean; retu
       if (sig === expectedSig) {
         const payload = JSON.parse(Buffer.from(b64, "base64url").toString("utf8"));
         if (Date.now() - payload.ts < 10 * 60 * 1000) {
-          return { valid: true, returnOrigin: payload.returnOrigin, redirectUri: payload.redirectUri };
+          return {
+            valid: true,
+            returnOrigin: payload.returnOrigin,
+            redirectUri: payload.redirectUri,
+            mode: payload.mode,
+            returnTo: payload.returnTo,
+            connectUserId: payload.connectUserId,
+          };
         }
       }
     }
@@ -428,10 +499,30 @@ function validateOAuthState(req: Request, res: Response): { valid: boolean; retu
   return { valid: false };
 }
 
+function extractConnectContext(req: Request) {
+  const mode = String(req.query.mode || "");
+  const returnTo = String(req.query.returnTo || "");
+  let connectUserId: string | undefined;
+
+  const rawToken =
+    (req.query.token as string) ||
+    (req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.slice(7) : "") ||
+    readCookie(req, "adyapan_session");
+
+  if (rawToken) {
+    try {
+      const decoded = jwt.verify(rawToken, env.jwtSecret) as { userId?: string };
+      if (decoded?.userId) connectUserId = decoded.userId;
+    } catch {}
+  }
+  return { mode, returnTo, connectUserId };
+}
+
 export function githubAuth(req: Request, res: Response) {
   const returnOrigin = resolveReturnOrigin(req);
   const redirectUri = resolveOAuthRedirectUri(req, "github");
-  const state = issueOAuthState(res, returnOrigin, redirectUri);
+  const ctx = extractConnectContext(req);
+  const state = issueOAuthState(res, returnOrigin, redirectUri, ctx);
   const url = getGitHubRedirectUrl(state, redirectUri);
   res.redirect(url);
 }
@@ -453,6 +544,54 @@ export async function githubCallback(req: Request, res: Response, next: NextFunc
     }
 
     const githubUser = await exchangeGitHubCode(code, oauthState.redirectUri);
+
+    // If this is a connect request from an authenticated user:
+    let connectUserId = oauthState.connectUserId;
+    if (!connectUserId && oauthState.mode === "connect") {
+      const sessionCookie = readCookie(req, "adyapan_session");
+      if (sessionCookie) {
+        try {
+          const dec = jwt.verify(sessionCookie, env.jwtSecret) as { userId?: string };
+          if (dec?.userId) connectUserId = dec.userId;
+        } catch {}
+      }
+    }
+
+    if (oauthState.mode === "connect" && connectUserId) {
+      const ghId = String(githubUser.id);
+      const existing = await prisma.user.findFirst({
+        where: { githubId: ghId, id: { not: connectUserId } },
+      });
+      if (existing) {
+        const dest = new URL(`${targetFrontend}${oauthState.returnTo || "/dashboard/user/settings/connected"}`);
+        dest.searchParams.set("error", "This GitHub account is already connected to another user.");
+        return res.redirect(dest.toString());
+      }
+
+      await prisma.user.update({
+        where: { id: connectUserId },
+        data: { githubId: ghId } as any,
+      });
+
+      await prisma.userSettings.updateMany({
+        where: { userId: connectUserId },
+        data: { githubConnected: true },
+      });
+
+      if (githubUser.login) {
+        await prisma.profile.updateMany({
+          where: { userId: connectUserId },
+          data: { github: githubUser.login },
+        });
+      }
+
+      const dest = new URL(`${targetFrontend}${oauthState.returnTo || "/dashboard/user/settings/connected"}`);
+      dest.searchParams.set("connected", "github");
+      dest.searchParams.set("status", "success");
+      return res.redirect(dest.toString());
+    }
+
+    // Normal login flow
     const result = await handleGitHubUser(githubUser);
 
     res.cookie("adyapan_session", result.token, {
@@ -489,7 +628,8 @@ export async function githubCallback(req: Request, res: Response, next: NextFunc
 export function googleAuth(req: Request, res: Response) {
   const returnOrigin = resolveReturnOrigin(req);
   const redirectUri = resolveOAuthRedirectUri(req, "google");
-  const state = issueOAuthState(res, returnOrigin, redirectUri);
+  const ctx = extractConnectContext(req);
+  const state = issueOAuthState(res, returnOrigin, redirectUri, ctx);
   const url = getGoogleRedirectUrl(state, redirectUri);
   res.redirect(url);
 }
@@ -511,6 +651,47 @@ export async function googleCallback(req: Request, res: Response, next: NextFunc
     }
 
     const gUser = await exchangeGoogleCode(code, oauthState.redirectUri);
+
+    // If this is a connect request from an authenticated user:
+    let connectUserId = oauthState.connectUserId;
+    if (!connectUserId && oauthState.mode === "connect") {
+      const sessionCookie = readCookie(req, "adyapan_session");
+      if (sessionCookie) {
+        try {
+          const dec = jwt.verify(sessionCookie, env.jwtSecret) as { userId?: string };
+          if (dec?.userId) connectUserId = dec.userId;
+        } catch {}
+      }
+    }
+
+    if (oauthState.mode === "connect" && connectUserId) {
+      const gId = gUser.id;
+      const existing = await prisma.user.findFirst({
+        where: { googleId: gId, id: { not: connectUserId } },
+      });
+      if (existing) {
+        const dest = new URL(`${targetFrontend}${oauthState.returnTo || "/dashboard/user/settings/connected"}`);
+        dest.searchParams.set("error", "This Google account is already connected to another user.");
+        return res.redirect(dest.toString());
+      }
+
+      await prisma.user.update({
+        where: { id: connectUserId },
+        data: { googleId: gId } as any,
+      });
+
+      await prisma.userSettings.updateMany({
+        where: { userId: connectUserId },
+        data: { googleConnected: true },
+      });
+
+      const dest = new URL(`${targetFrontend}${oauthState.returnTo || "/dashboard/user/settings/connected"}`);
+      dest.searchParams.set("connected", "google");
+      dest.searchParams.set("status", "success");
+      return res.redirect(dest.toString());
+    }
+
+    // Normal login flow
     const result = await handleGoogleUser(gUser);
 
     res.cookie("adyapan_session", result.token, {

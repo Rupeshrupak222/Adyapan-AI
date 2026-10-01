@@ -3,7 +3,8 @@ import {
   ENTERPRISE_DAILY_TOKENS,
   FREE_TIER_DAILY_REQUESTS,
   FREE_TIER_TOKEN_LIMIT,
-} from "./token-tracking.service";
+  PREMIUM_TIER_TOKEN_LIMIT,
+} from "../config/plan-quota-constants";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -203,7 +204,7 @@ export async function getFeatureLimits(
         ? Number(s.freeTierTokenLimit) || FREE_TIER_TOKEN_LIMIT
         : kind === "enterprise"
           ? Number(s.enterpriseTierDailyTokens) || ENTERPRISE_DAILY_TOKENS
-          : Number(s.premiumTierTokenLimit) || 5000000;
+          : Number(s.premiumTierTokenLimit) || PREMIUM_TIER_TOKEN_LIMIT;
     return {
       featureKey,
       planCode,

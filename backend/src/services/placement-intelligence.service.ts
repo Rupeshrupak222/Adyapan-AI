@@ -97,7 +97,7 @@ interface PlacementIntelligenceResult {
   eligibility: EligibilityInfo;
 }
 
-export const ELIGIBILITY_OVERALL_THRESHOLD = 70;
+export const ELIGIBILITY_OVERALL_THRESHOLD = 85;
 const GATE_MINS = { coding: 50, aptitude: 50, interview: 40, resume: 50 };
 
 export function computeEligibility(

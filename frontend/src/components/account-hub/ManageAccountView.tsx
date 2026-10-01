@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/PremiumComponents";
 import { getDiceBearUrl } from "@/lib/avatar";
 import { useTheme } from "@/hooks/useTheme";
-import { api } from "@/services/api";
+import { api, API_BASE_URL } from "@/services/api";
+import { VerifyEmailModal } from "./settings/modals";
 
 
 // ─── Navigation Config ───────────────────────────────────────────────────
@@ -64,6 +65,18 @@ export function ManageAccountView() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionId>("profile");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const sec = params.get("section") as SectionId | null;
+    const conn = params.get("connected");
+    if (sec && NAV_ITEMS.some((item) => item.id === sec)) {
+      setActiveSection(sec);
+    } else if (conn) {
+      setActiveSection("connected");
+    }
+  }, []);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -71,6 +84,7 @@ export function ManageAccountView() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -80,6 +94,7 @@ export function ManageAccountView() {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
   const [phone, setPhone] = useState("");
   const [college, setCollege] = useState("");
   const [degree, setDegree] = useState("");
@@ -191,6 +206,17 @@ export function ManageAccountView() {
         // Profile
         if (p.fullName) setFullName(p.fullName);
         if (p.email) setEmail(p.email);
+        if (p.emailVerified !== undefined) {
+          setEmailVerified(Boolean(p.emailVerified));
+        } else {
+          try {
+            const rawUser = localStorage.getItem("user") || localStorage.getItem("adyapan_user");
+            if (rawUser) {
+              const parsed = JSON.parse(rawUser);
+              if (parsed.emailVerified !== undefined) setEmailVerified(Boolean(parsed.emailVerified));
+            }
+          } catch {}
+        }
         if (p.phone) setPhone(p.phone);
         if (p.college) setCollege(p.college);
         if (p.degree) setDegree(p.degree);
@@ -742,7 +768,7 @@ export function ManageAccountView() {
         <div className="flex-1 min-w-0">
             <div key={activeSection}>
               {activeSection === "profile" && <ProfileSection c={c} fullName={fullName} setFullName={setFullName} username={username} setUsername={setUsername} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} college={college} setCollege={setCollege} degree={degree} setDegree={setDegree} branch={branch} setBranch={setBranch} gradYear={gradYear} setGradYear={setGradYear} bio={bio} setBio={setBio} photoUrl={photoUrl} photoInputRef={photoInputRef} uploadingPhoto={uploadingPhoto} onPhotoUpload={handlePhotoUpload} onPhotoRemove={handlePhotoRemove} markChanged={markChanged} onSave={handleSaveProfile} saving={saving} />}
-              {activeSection === "account" && <AccountSection c={c} email={email} plan={plan} memberSince={memberSince} markChanged={markChanged} onDeleteAccount={() => setShowDeleteModal(true)} onChangePassword={() => setShowChangePassword(true)} />}
+              {activeSection === "account" && <AccountSection c={c} email={email} plan={plan} memberSince={memberSince} emailVerified={emailVerified} markChanged={markChanged} onDeleteAccount={() => setShowDeleteModal(true)} onChangePassword={() => setShowChangePassword(true)} onVerifyEmail={() => setShowVerifyEmailModal(true)} />}
               {activeSection === "appearance" && <AppearanceSection c={c} isDark={isDark} themeMode={themeMode} setThemeMode={setThemeMode} accentColor={accentColor} setAccentColor={setAccentColor} compactMode={compactMode} setCompactMode={setCompactMode} glassEffect={glassEffect} setGlassEffect={setGlassEffect} animationsEnabled={animationsEnabled} setAnimationsEnabled={setAnimationsEnabled} sidebarCollapse={sidebarCollapse} setSidebarCollapse={setSidebarCollapse} fontSize={fontSize} setFontSize={setFontSize} markChanged={markChanged} onAutoSave={scheduleAppearanceSave} onApplyTheme={applyTheme} onApplyAccent={applyAccentColor} onSave={handleSaveAppearance} saving={saving} />}
               {activeSection === "notifications" && <NotificationsSection c={c} notifEmail={notifEmail} setNotifEmail={setNotifEmail} notifPush={notifPush} setNotifPush={setNotifPush} notifAssignment={notifAssignment} setNotifAssignment={setNotifAssignment} notifInterview={notifInterview} setNotifInterview={setNotifInterview} notifCoding={notifCoding} setNotifCoding={setNotifCoding} notifResearch={notifResearch} setNotifResearch={setNotifResearch} notifWeekly={notifWeekly} setNotifWeekly={setNotifWeekly} notifDaily={notifDaily} setNotifDaily={setNotifDaily} markChanged={markChanged} scheduleSave={scheduleSave} />}
               {activeSection === "ai-preferences" && <AIPreferencesSection c={c} aiModel={aiModel} setAiModel={setAiModel} responseLength={responseLength} setResponseLength={setResponseLength} creativity={creativity} setCreativity={setCreativity} aiMemory={aiMemory} setAiMemory={setAiMemory} markdownOutput={markdownOutput} setMarkdownOutput={setMarkdownOutput} codeHighlighting={codeHighlighting} setCodeHighlighting={setCodeHighlighting} autoCitation={autoCitation} setAutoCitation={setAutoCitation} autoSaveConversations={autoSaveConversations} setAutoSaveConversations={setAutoSaveConversations} markChanged={markChanged} onSave={handleSaveAI} saving={saving} />}
@@ -1035,6 +1061,16 @@ export function ManageAccountView() {
             </div>
           </div>
         )}
+
+      {/* ── Verify Email Modal ── */}
+      <VerifyEmailModal
+        open={showVerifyEmailModal}
+        onClose={() => setShowVerifyEmailModal(false)}
+        email={email}
+        c={c}
+        isDark={isDark}
+        onSuccess={() => setEmailVerified(true)}
+      />
     </div>
   );
 }
@@ -1224,7 +1260,7 @@ function ProfileSection({
 
 // ─── Account Section ─────────────────────────────────────────────────────
 export function AccountSection({
-  c, email, plan, memberSince, markChanged, onDeleteAccount, onChangePassword,
+  c, email, plan, memberSince, markChanged, onDeleteAccount, onChangePassword, emailVerified, onVerifyEmail,
 }: {
   c: Record<string, string>;
   email: string;
@@ -1233,6 +1269,8 @@ export function AccountSection({
   markChanged: () => void;
   onDeleteAccount: () => void;
   onChangePassword: () => void;
+  emailVerified?: boolean;
+  onVerifyEmail?: () => void;
 }) {
   return (
     <div className="space-y-5">
@@ -1249,7 +1287,21 @@ export function AccountSection({
               <span className="text-xs font-bold block">Email Address</span>
               <span className="text-[10px]" style={{ color: c.textMuted }}>{email}</span>
             </div>
-            <PremiumBadge variant="green">Verified</PremiumBadge>
+            {emailVerified ? (
+              <PremiumBadge variant="green">Verified</PremiumBadge>
+            ) : (
+              <div className="flex items-center gap-2">
+                <PremiumBadge variant="amber">Unverified</PremiumBadge>
+                {onVerifyEmail && (
+                  <button
+                    onClick={onVerifyEmail}
+                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-all flex items-center gap-1.5 border border-amber-500/30"
+                  >
+                    <Mail size={12} /> Verify Email
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-between py-2.5 border-b" style={{ borderColor: c.border }}>
             <div>
@@ -2051,24 +2103,73 @@ export function ConnectedAccountsSection({
   markChanged: () => void;
   scheduleSave: (section: string, data: Record<string, unknown>) => void;
 }) {
-  const toggleAccount = (index: number) => {
-    const acct = accounts[index];
-    const isConnecting = !acct.connected;
-    const updated = [...accounts];
-    updated[index] = { ...acct, connected: isConnecting };
-    setAccounts(updated);
-    markChanged();
-    const key = `${acct.name.toLowerCase()}Connected`;
-    scheduleSave("connected-accounts", { [key]: isConnecting });
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
-    if (isConnecting) {
-      toast.info(`Redirecting to ${acct.name} login page...`);
-      const targetUrl = acct.authUrl || PROVIDER_AUTH_URLS[acct.name] || "https://google.com";
-      setTimeout(() => {
-        window.open(targetUrl, "_blank");
-      }, 400);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("connected");
+    const status = params.get("status");
+    const error = params.get("error");
+
+    if (status === "success" && connected) {
+      const providerName = connected === "github" ? "GitHub" : connected.charAt(0).toUpperCase() + connected.slice(1);
+      toast.success(`${providerName} account connected successfully!`);
+      setAccounts((prev: any[]) =>
+        prev.map((a: any) => (a.name.toLowerCase() === connected.toLowerCase() ? { ...a, connected: true } : a))
+      );
+      markChanged();
+      const url = new URL(window.location.href);
+      url.searchParams.delete("connected");
+      url.searchParams.delete("status");
+      window.history.replaceState({}, document.title, url.pathname + (url.search ? url.search : ""));
+    } else if (error) {
+      toast.error(error);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("error");
+      window.history.replaceState({}, document.title, url.pathname + (url.search ? url.search : ""));
+    }
+  }, [markChanged, setAccounts]);
+
+  const toggleAccount = async (index: number) => {
+    const acct = accounts[index];
+    const provider = acct.name.toLowerCase();
+
+    if (acct.connected) {
+      setLoadingProvider(provider);
+      try {
+        await api.post("/settings/disconnect-account", { provider });
+        const updated = [...accounts];
+        updated[index] = { ...acct, connected: false };
+        setAccounts(updated);
+        markChanged();
+        const key = `${provider}Connected`;
+        scheduleSave("connected-accounts", { [key]: false });
+        toast.success(`Disconnected from ${acct.name}`);
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || `Failed to disconnect ${acct.name}`);
+      } finally {
+        setLoadingProvider(null);
+      }
+      return;
+    }
+
+    if (provider === "google" || provider === "github") {
+      setLoadingProvider(provider);
+      const token = typeof window !== "undefined"
+        ? (sessionStorage.getItem("adyapan-token") || localStorage.getItem("adyapan-token") || "")
+        : "";
+      const origin = window.location.origin;
+      const returnTo = window.location.pathname.includes("/settings/connected")
+        ? "/dashboard/user/settings/connected"
+        : `${window.location.pathname}?section=connected`;
+
+      const connectUrl = `${API_BASE_URL}/auth/${provider}?origin=${encodeURIComponent(origin)}&mode=connect&returnTo=${encodeURIComponent(returnTo)}&token=${encodeURIComponent(token)}`;
+
+      toast.info(`Redirecting to connect ${acct.name}...`);
+      window.location.href = connectUrl;
     } else {
-      toast.success(`Disconnected from ${acct.name}`);
+      toast.info(`${acct.name} connection will be supported soon.`);
     }
   };
 
@@ -2099,15 +2200,22 @@ export function ConnectedAccountsSection({
               </div>
               <button
                 onClick={() => toggleAccount(i)}
-                className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                disabled={loadingProvider === acct.name.toLowerCase()}
+                className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
                 style={{
                   background: acct.connected ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)",
                   color: acct.connected ? "#ef4444" : "#f59e0b",
                   border: `1px solid ${acct.connected ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.2)"}`,
                 }}
               >
-                {!acct.connected && <ExternalLink size={10} />}
-                {acct.connected ? "Disconnect" : "Connect"}
+                {loadingProvider === acct.name.toLowerCase() ? (
+                  <Loader2 size={10} className="animate-spin" />
+                ) : (
+                  !acct.connected && <ExternalLink size={10} />
+                )}
+                {loadingProvider === acct.name.toLowerCase()
+                  ? acct.connected ? "Disconnecting..." : "Connecting..."
+                  : acct.connected ? "Disconnect" : "Connect"}
               </button>
             </div>
           ))}

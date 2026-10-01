@@ -132,7 +132,7 @@ function deriveEligibility(placementScore: number, subScores: SubScores): Eligib
     resume: { value: Math.round(subScores?.resume || 0), min: 50 },
   };
   const round = Math.round(placementScore || 0);
-  const threshold = 70;
+  const threshold = 85;
   const pointsToGo = Math.max(0, threshold - round);
   const hasData = round > 0 || Object.values(subScores || {}).some((v) => v > 0);
 
@@ -373,6 +373,61 @@ function EligibilityBanner({
   );
 }
 
+function normalizeEligibility(data: PlacementIntelligenceData): EligibilityInfo {
+  const raw = data.eligibility ?? deriveEligibility(data.placementScore, data.subScores);
+  const targetThreshold = 85;
+  const score = Math.round(data.placementScore || raw?.score || 0);
+  const pointsToGo = Math.max(0, targetThreshold - score);
+  const gates = raw?.gates || {
+    coding: { value: Math.round(data.subScores?.coding || 0), min: 50 },
+    aptitude: { value: Math.round(data.subScores?.aptitude || 0), min: 50 },
+    interview: { value: Math.round(data.subScores?.interview || 0), min: 40 },
+    resume: { value: Math.round(data.subScores?.resume || 0), min: 50 },
+  };
+
+  const hasData = score > 0 || Object.values(data.subScores || {}).some((v) => v > 0);
+  if (!hasData) {
+    return {
+      verdict: "insufficient_data",
+      score,
+      threshold: targetThreshold,
+      pointsToGo,
+      gates,
+      blockers: [],
+      nextAction: raw?.nextAction || "",
+      title: "Aapki eligibility data incomplete hai — pehle kuch practice sessions complete karo",
+    };
+  }
+
+  const gateFails = (Object.keys(gates) as (keyof typeof gates)[])
+    .filter((key) => gates[key].value < gates[key].min)
+    .map((key) => `${key[0].toUpperCase() + key.slice(1)}: ${gates[key].value}/${gates[key].min}`);
+
+  const overallMet = score >= targetThreshold;
+  const isEligible = overallMet && gateFails.length === 0;
+
+  const blockers: string[] = [];
+  if (!overallMet) {
+    blockers.push(`Overall score: ${score}/${targetThreshold} (${pointsToGo} points to go)`);
+  }
+  blockers.push(...gateFails);
+
+  return {
+    verdict: isEligible ? "eligible" : "not_eligible",
+    score,
+    threshold: targetThreshold,
+    pointsToGo,
+    gates,
+    blockers: blockers.slice(0, 4),
+    nextAction: raw?.nextAction || "",
+    title: isEligible 
+      ? "Aap campus placements ke liye eligible ho — momentum banaaye rakho!" 
+      : pointsToGo > 0 
+        ? `${pointsToGo} points to eligible` 
+        : "Close — har gate ko apne minimum tak pahunchao",
+  };
+}
+
 export function PlacementIntelligenceWidget({
   compact = false,
   onViewChange,
@@ -461,7 +516,7 @@ export function PlacementIntelligenceWidget({
 
   if (!data) return null;
 
-  const eligibility = data.eligibility ?? deriveEligibility(data.placementScore, data.subScores);
+  const eligibility = normalizeEligibility(data);
 
   const radarData = {
     labels: ["Coding", "Aptitude", "Interview", "Resume", "Learning", "Soft Skills"],
@@ -622,11 +677,11 @@ export function PlacementIntelligenceWidget({
                 <ScoreRing score={data.placementScore} size={160} strokeWidth={10} label="Overall" />
                 <div className="mt-3 text-center">
                   <span className={cn("text-xs font-bold px-3 py-1 rounded-full",
-                    data.placementScore >= 70 ? "bg-emerald-500/15 text-emerald-400" :
-                    data.placementScore >= 40 ? "bg-amber-500/15 text-amber-400" :
+                    data.placementScore >= 85 ? "bg-emerald-500/15 text-emerald-400" :
+                    data.placementScore >= 50 ? "bg-amber-500/15 text-amber-400" :
                     "bg-rose-500/15 text-rose-400"
                   )}>
-                    {data.placementScore >= 70 ? "Placement Ready" : data.placementScore >= 40 ? "Making Progress" : "Building Foundations"}
+                    {data.placementScore >= 85 ? "Placement Ready" : data.placementScore >= 50 ? "Making Progress" : "Building Foundations"}
                   </span>
                 </div>
               </div>

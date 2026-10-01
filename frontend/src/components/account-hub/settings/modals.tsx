@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Key, X, AlertTriangle, Trash2, LogOut, Loader2, Eye, EyeOff } from "lucide-react";
+import { Key, X, AlertTriangle, Trash2, LogOut, Loader2, Eye, EyeOff, Mail, CheckCircle2, ShieldCheck, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
 
@@ -308,6 +308,260 @@ export function LogoutDevicesModal({
           Logout All
         </motion.button>
       </div>
+    </ModalFrame>
+  );
+}
+
+// ─── Verify Email OTP Modal ────────────────────────────────────────────────
+export function VerifyEmailModal({
+  open,
+  onClose,
+  email,
+  c,
+  isDark,
+  onSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  email: string;
+  c: Record<string, string>;
+  isDark: boolean;
+  onSuccess?: () => void;
+}) {
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [error, setError] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (open) {
+      setOtp(["", "", "", "", "", ""]);
+      setError("");
+      setIsSuccess(false);
+      handleSendOtp();
+    }
+  }, [open]);
+
+  const handleSendOtp = async () => {
+    if (sending || cooldown > 0 || !email) return;
+    setSending(true);
+    setError("");
+    try {
+      const res = await api.post("/auth/send-verification-otp", { email });
+      setCooldown(60);
+      toast.success(res.data?.message || `Verification code sent to ${email}`);
+      setTimeout(() => inputsRef.current[0]?.focus(), 150);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.response?.data?.error || "Failed to send verification code.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleOtpChange = (index: number, val: string) => {
+    // Check for paste of entire OTP
+    if (val.length > 1) {
+      const digits = val.replace(/\D/g, "").slice(0, 6).split("");
+      if (digits.length > 0) {
+        const next = [...otp];
+        digits.forEach((d, i) => {
+          if (index + i < 6) next[index + i] = d;
+        });
+        setOtp(next);
+        const focusIdx = Math.min(index + digits.length, 5);
+        inputsRef.current[focusIdx]?.focus();
+        if (next.every((d) => d !== "")) {
+          handleVerify(next.join(""));
+        }
+        return;
+      }
+    }
+
+    const digit = val.replace(/\D/g, "").slice(-1);
+    const next = [...otp];
+    next[index] = digit;
+    setOtp(next);
+    setError("");
+
+    if (digit && index < 5) {
+      inputsRef.current[index + 1]?.focus();
+    }
+
+    if (next.every((d) => d !== "")) {
+      handleVerify(next.join(""));
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    }
+  };
+
+  const handleVerify = async (codeToVerify?: string) => {
+    const fullOtp = codeToVerify || otp.join("");
+    if (fullOtp.length !== 6) {
+      setError("Please enter the complete 6-digit code.");
+      return;
+    }
+
+    setVerifying(true);
+    setError("");
+    try {
+      const res = await api.post("/auth/verify-email-otp", { email, otp: fullOtp });
+      if (res.data?.success) {
+        setIsSuccess(true);
+        toast.success("Email verified successfully!");
+
+        try {
+          const storedUser = localStorage.getItem("user");
+          if (storedUser) {
+            const parsed = JSON.parse(storedUser);
+            parsed.emailVerified = true;
+            localStorage.setItem("user", JSON.stringify(parsed));
+          }
+          const storedAdyapanUser = localStorage.getItem("adyapan_user");
+          if (storedAdyapanUser) {
+            const parsed = JSON.parse(storedAdyapanUser);
+            parsed.emailVerified = true;
+            localStorage.setItem("adyapan_user", JSON.stringify(parsed));
+          }
+        } catch {}
+
+        if (onSuccess) onSuccess();
+
+        setTimeout(() => {
+          onClose();
+        }, 1200);
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.response?.data?.error || "Invalid verification code.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  return (
+    <ModalFrame open={open} onClose={onClose} c={c} isDark={isDark} borderColor="rgba(245,158,11,0.3)">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: c.text }}>
+          <Mail size={16} className="text-amber-500" /> Verify Email Address
+        </h3>
+        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5">
+          <X size={16} style={{ color: c.textSec }} />
+        </button>
+      </div>
+
+      {isSuccess ? (
+        <div className="py-6 flex flex-col items-center text-center space-y-3">
+          <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-500 animate-bounce">
+            <CheckCircle2 size={32} />
+          </div>
+          <h4 className="text-base font-bold text-emerald-500">Email Verified!</h4>
+          <p className="text-xs" style={{ color: c.textMuted }}>
+            Your email address <span className="font-semibold text-white">{email}</span> has been confirmed.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <p className="text-xs leading-relaxed" style={{ color: c.textSec }}>
+            We&apos;ve sent a 6-digit one-time verification code to:
+            <br />
+            <strong className="text-amber-500 text-xs font-semibold">{email}</strong>
+          </p>
+
+          {/* 6 Digit Input Group */}
+          <div className="flex justify-center gap-2 py-2">
+            {otp.map((digit, idx) => (
+              <input
+                key={idx}
+                ref={(el) => {
+                  inputsRef.current[idx] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={digit}
+                onChange={(e) => handleOtpChange(idx, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(idx, e)}
+                disabled={verifying}
+                className="w-11 h-12 text-center text-lg font-bold rounded-xl border outline-none transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                style={{
+                  background: c.inputBg,
+                  borderColor: digit ? "#f59e0b" : c.border,
+                  color: c.text,
+                }}
+              />
+            ))}
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-1.5 text-xs text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl">
+              <AlertTriangle size={13} className="shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Resend Cooldown */}
+          <div className="flex items-center justify-between text-xs pt-1">
+            <span style={{ color: c.textMuted }}>Didn&apos;t get the code?</span>
+            <button
+              onClick={handleSendOtp}
+              disabled={sending || cooldown > 0}
+              className="font-bold flex items-center gap-1 transition-all disabled:opacity-50"
+              style={{ color: cooldown > 0 ? c.textMuted : "#f59e0b" }}
+            >
+              {sending ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" /> Sending...
+                </>
+              ) : cooldown > 0 ? (
+                <>Resend in {cooldown}s</>
+              ) : (
+                <>
+                  <RefreshCw size={12} /> Resend OTP
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2.5 pt-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all"
+              style={{ borderColor: c.border, color: c.textSec }}
+            >
+              Cancel
+            </button>
+            <motion.button
+              onClick={() => handleVerify()}
+              disabled={verifying || otp.some((d) => !d)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-amber-500/20"
+            >
+              {verifying ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={14} />}
+              Verify Email
+            </motion.button>
+          </div>
+        </div>
+      )}
     </ModalFrame>
   );
 }
