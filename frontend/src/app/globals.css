@@ -30,6 +30,32 @@ select:disabled,
   cursor: not-allowed;
 }
 
+/* ── Curved Corners for Dropdown Boxes & Select Controls ── */
+select {
+  border-radius: 12px;
+}
+
+select,
+::picker(select) {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+option {
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdown-menu,
+.select-menu,
+.select-dropdown,
+[role="listbox"],
+[role="menu"] {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
 /* ── CSS Variables ── */
 :root {
   --bg-dark: #070913;

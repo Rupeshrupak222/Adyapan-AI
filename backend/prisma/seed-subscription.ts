@@ -194,22 +194,51 @@ interface UsageLimitEntry {
   tokenLimit?: number | null;
 }
 
+// Feature keys here MUST be the kebab-case form of the registry keys in
+// src/services/feature-keys.ts (toAdminLimitKey). FeatureUsageService looks up
+// overrides under that spelling — arbitrary route-style keys such as
+// "resume-generate" or "mock-interview" never match a registry feature and are
+// therefore dead rows.
 const USAGE_LIMITS: UsageLimitEntry[] = [
-  // Free plan — spec limits
+  // Global AI request/token budget. Read by AiUsageService + FeatureAccessService,
+  // not by the per-feature credit counter.
   { featureKey: "ai-requests", planCode: "free", dailyLimit: 50, monthlyLimit: 1500, tokenLimit: 500000 },
-  { featureKey: "resume-generate", planCode: "free", dailyLimit: 5, monthlyLimit: 150, tokenLimit: null },
-  { featureKey: "mock-interview", planCode: "free", dailyLimit: 3, monthlyLimit: 90, tokenLimit: null },
-  { featureKey: "ppt-generate", planCode: "free", dailyLimit: 5, monthlyLimit: 150, tokenLimit: null },
-  { featureKey: "notes-generate", planCode: "free", dailyLimit: 10, monthlyLimit: 300, tokenLimit: null },
-  { featureKey: "research", planCode: "free", dailyLimit: 10, monthlyLimit: 300, tokenLimit: null },
-  { featureKey: "ady-chat", planCode: "free", dailyLimit: 50, monthlyLimit: 1500, tokenLimit: null },
-
-  // Premium plan — effectively unlimited (null = no cap)
   { featureKey: "ai-requests", planCode: "pro_monthly", dailyLimit: null, monthlyLimit: null, tokenLimit: 5000000 },
   { featureKey: "ai-requests", planCode: "pro_yearly", dailyLimit: null, monthlyLimit: null, tokenLimit: 5000000 },
+  { featureKey: "ai-requests", planCode: "enterprise", dailyLimit: null, monthlyLimit: null, tokenLimit: 2000000000 },
 
-  // Enterprise plan — extended quotas
-  { featureKey: "ai-requests", planCode: "enterprise", dailyLimit: 1000, monthlyLimit: null, tokenLimit: 20000000 },
+  // Per-feature monthly credits, mirroring DEFAULT_FREE_LIMITS so an admin can
+  // tune these rows without editing code. Monthly limit = free-tier allowance.
+  { featureKey: "notes-generator", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "quiz-generator", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "assignment-generator", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "mind-maps", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "flashcards", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "research-paper-ai", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "plagiarism-checker", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "ai-aptitude-engine", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "technical-mcqs", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "ai-chat-assistant", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "study-assistant", planCode: "free", monthlyLimit: 10 },
+  { featureKey: "study-planner", planCode: "free", monthlyLimit: 3 },
+  { featureKey: "coding-roadmap", planCode: "free", monthlyLimit: 3 },
+  { featureKey: "github-portfolio-builder", planCode: "free", monthlyLimit: 3 },
+  { featureKey: "resume-upload", planCode: "free", monthlyLimit: 3 },
+  { featureKey: "resume-builder", planCode: "free", monthlyLimit: 3 },
+  { featureKey: "ats-checker", planCode: "free", monthlyLimit: 3 },
+  { featureKey: "cover-letter-generator", planCode: "free", monthlyLimit: 3 },
+  { featureKey: "linkedin-optimizer", planCode: "free", monthlyLimit: 3 },
+  // Interview features are premium-only: free is intentionally 0.
+  { featureKey: "interview-engine", planCode: "free", monthlyLimit: 0 },
+  { featureKey: "technical-interview", planCode: "free", monthlyLimit: 0 },
+  { featureKey: "hr-interview", planCode: "free", monthlyLimit: 0 },
+
+  // Premium overrides = monthly credits from DEFAULT_PREMIUM_LIMITS.
+  { featureKey: "notes-generator", planCode: "premium", monthlyLimit: 30 },
+  { featureKey: "resume-builder", planCode: "premium", monthlyLimit: 9 },
+  { featureKey: "interview-engine", planCode: "premium", monthlyLimit: 5 },
+  { featureKey: "technical-interview", planCode: "premium", monthlyLimit: 5 },
+  { featureKey: "hr-interview", planCode: "premium", monthlyLimit: 5 },
 ];
 
 async function main() {
@@ -292,6 +321,27 @@ async function main() {
     });
   }
   console.log(`  Usage limit rows: ${USAGE_LIMITS.length}`);
+
+  // 4. Retire legacy usage_limits rows written by older seeds. Their feature keys
+  //    never matched the registry, so they were inert — leaving them in place
+  //    makes admin tooling show limits that nothing enforces.
+  const keepKeys = new Set(USAGE_LIMITS.map((l) => `${l.featureKey}:${l.planCode}`));
+  const existing = await prisma.usageLimit.findMany({
+    select: { featureKey: true, planCode: true },
+  });
+  const stale = existing.filter(
+    (row) => !keepKeys.has(`${row.featureKey}:${row.planCode}`) && row.featureKey !== "ai-requests"
+  );
+  if (stale.length > 0) {
+    await prisma.usageLimit.deleteMany({
+      where: {
+        OR: stale.map((row) => ({
+          featureKey_planCode: { featureKey: row.featureKey, planCode: row.planCode },
+        })),
+      },
+    });
+    console.log(`  Retired ${stale.length} unreachable usage-limit row(s)`);
+  }
 
   console.log("Done! Subscription system seeded.");
 }

@@ -41,8 +41,32 @@ function deleteCookie(name: string) {
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
 }
 
+if (typeof window !== "undefined") {
+  try {
+    const sToken = sessionStorage.getItem(TOKEN_KEY);
+    const lToken = localStorage.getItem(TOKEN_KEY);
+    if (sToken && !lToken) {
+      localStorage.setItem(TOKEN_KEY, sToken);
+      const sUser = sessionStorage.getItem(USER_KEY);
+      if (sUser) localStorage.setItem(USER_KEY, sUser);
+      const sId = sessionStorage.getItem(SESSION_ID_KEY);
+      if (sId) localStorage.setItem(SESSION_ID_KEY, sId);
+      const sRef = sessionStorage.getItem(REFRESH_TOKEN_KEY);
+      if (sRef) localStorage.setItem(REFRESH_TOKEN_KEY, sRef);
+    } else if (lToken && !sToken) {
+      sessionStorage.setItem(TOKEN_KEY, lToken);
+      const lUser = localStorage.getItem(USER_KEY);
+      if (lUser) sessionStorage.setItem(USER_KEY, lUser);
+      const lId = localStorage.getItem(SESSION_ID_KEY);
+      if (lId) sessionStorage.setItem(SESSION_ID_KEY, lId);
+      const lRef = localStorage.getItem(REFRESH_TOKEN_KEY);
+      if (lRef) sessionStorage.setItem(REFRESH_TOKEN_KEY, lRef);
+    }
+  } catch { /* ignore */ }
+}
+
 /**
- * Save auth session. Always uses sessionStorage — session ends when tab/browser closes.
+ * Save auth session across sessionStorage and localStorage so all tabs share auth.
  */
 export function saveAuthSession(token: string, user: PlatformUser, _rememberMe = true, sessionId?: string, refreshToken?: string) {
   const prevUser = getAuthUser();
@@ -53,17 +77,19 @@ export function saveAuthSession(token: string, user: PlatformUser, _rememberMe =
     clearAuthSession();
     broadcastLogout("account-switch");
   }
-  // sessionStorage ONLY for tokens/session — cleared when the tab/browser
-  // closes and never persisted to localStorage. This shrinks the XSS blast
-  // radius (no long-lived token sitting in localStorage) and matches the
-  // "tab close = logout" intent.
+
   sessionStorage.setItem(TOKEN_KEY, token);
   sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+
   if (sessionId) {
     sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+    localStorage.setItem(SESSION_ID_KEY, sessionId);
   }
   if (refreshToken) {
     sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
   }
 
   // Set cookies so Next.js middleware.ts server-side checks succeed
@@ -74,14 +100,9 @@ export function saveAuthSession(token: string, user: PlatformUser, _rememberMe =
 export function saveSessionId(sessionId: string) {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+  localStorage.setItem(SESSION_ID_KEY, sessionId);
 }
 
-// NOTE ON THE localStorage FALLBACK (getSessionId/getRefreshToken/getAuthToken):
-// New logins write to sessionStorage ONLY. The localStorage read is a
-// migration-safety fallback so users who logged in BEFORE this change (whose
-// tokens are still in localStorage) keep their session until it expires,
-// instead of being force-logged-out on deploy. clearAuthSession() wipes
-// localStorage too, so nothing sensitive is left behind after logout.
 export function getSessionId(): string | null {
   if (typeof window === "undefined") return null;
   return sessionStorage.getItem(SESSION_ID_KEY) || localStorage.getItem(SESSION_ID_KEY);
@@ -94,10 +115,10 @@ export function getRefreshToken(): string | null {
 
 export function updateStoredTokens(newToken: string, newRefreshToken: string): void {
   if (typeof window === "undefined") return;
-  // sessionStorage only — consistent with saveAuthSession. api.ts reads
-  // sessionStorage for the token/refresh token.
   sessionStorage.setItem(TOKEN_KEY, newToken);
   sessionStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
+  localStorage.setItem(TOKEN_KEY, newToken);
+  localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
   // Keep the Next.js middleware.ts cookie on the fresh token too, or the
   // server-side route check would keep using the pre-refresh access token.
   setCookie(TOKEN_KEY, newToken, 7);

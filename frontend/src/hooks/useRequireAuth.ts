@@ -19,9 +19,16 @@ export function useRequireAuth(requiredRole?: "USER" | "ADMIN") {
     if (requiredRole) {
       try {
         const user = JSON.parse(raw) as { role?: string };
-        if (user.role !== requiredRole) {
-          const dest = user.role === "ADMIN" ? "/dashboard/admin" : "/dashboard/user";
-          router.replace(dest);
+        // If the page specifically requires ADMIN, normal users cannot enter
+        if (requiredRole === "ADMIN" && user.role !== "ADMIN") {
+          router.replace("/dashboard/user");
+          return;
+        }
+        // If the page requires USER, both USER and ADMIN are permitted.
+        // Admins have full supervisory access to user platform features.
+        if (requiredRole === "USER" && user.role !== "USER" && user.role !== "ADMIN") {
+          router.replace("/admin-login");
+          return;
         }
       } catch {
         const fallbackUrl = requiredRole === "ADMIN" ? "/admin-login" : "/login";

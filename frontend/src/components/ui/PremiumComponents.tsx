@@ -6,6 +6,7 @@ import { Sparkles, Check, AlertTriangle, X, Info, Trophy, Zap, RefreshCw, Volume
 import CountUp from "react-countup";
 import confetti from "canvas-confetti";
 import { cn } from "@/lib/cn";
+import { CurvedSelect } from "./CurvedSelect";
 
 // ─── Play Hover Sound Readiness Hook ──────────────────────────────────────
 export function useHoverSound() {
@@ -735,28 +736,13 @@ export function SettingsSelect({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-[10px] font-bold uppercase tracking-wider dark:text-gray-400 flex items-center gap-1.5 pl-1">
-        {icon}
-        {label}
-      </label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full text-xs rounded-xl px-4 py-2.5 bg-black/35 dark:bg-black/35 border border-white/5 dark:border-white/5 text-gray-100 dark:text-gray-100 outline-none focus:border-amber-500/40 transition-all cursor-pointer appearance-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "right 12px center",
-        }}
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <CurvedSelect
+      label={label}
+      value={value}
+      options={options}
+      onChange={onChange}
+      icon={icon}
+    />
   );
 }
 

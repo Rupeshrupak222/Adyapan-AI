@@ -1,4 +1,9 @@
 import { prisma } from "../config/prisma";
+import {
+  ENTERPRISE_DAILY_TOKENS,
+  FREE_TIER_DAILY_REQUESTS,
+  FREE_TIER_TOKEN_LIMIT,
+} from "./token-tracking.service";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -188,13 +193,22 @@ export async function getFeatureLimits(
   const s = require("../controllers/admin.controller").getSystemSettingsMemory() as any;
 
   if (featureKey === "ai-requests") {
-    const daily = kind === "free" ? Number(s.freeTierDailyRequests) || 50 : kind === "enterprise" ? Number(s.enterpriseTierDailyRequests) || 1000 : null;
-    const tokens = kind === "free" ? Number(s.freeTierTokenLimit) || 500000 : kind === "enterprise" ? Number(s.enterpriseTierDailyTokens) || 20000000 : Number(s.premiumTierTokenLimit) || 5000000;
+    // null = uncapped. Premium and enterprise are both sold as uncapped AI
+    // requests; enterprise keeps a token ceiling only as an admin-tunable
+    // safety valve rather than a customer-visible limit.
+    const daily =
+      kind === "free" ? Number(s.freeTierDailyRequests) || FREE_TIER_DAILY_REQUESTS : null;
+    const tokens =
+      kind === "free"
+        ? Number(s.freeTierTokenLimit) || FREE_TIER_TOKEN_LIMIT
+        : kind === "enterprise"
+          ? Number(s.enterpriseTierDailyTokens) || ENTERPRISE_DAILY_TOKENS
+          : Number(s.premiumTierTokenLimit) || 5000000;
     return {
       featureKey,
       planCode,
-      dailyLimit: kind === "premium" ? null : daily,
-      monthlyLimit: kind === "premium" ? null : (daily ?? 0) * MONTHLY_MULTIPLIER,
+      dailyLimit: daily,
+      monthlyLimit: daily != null ? daily * MONTHLY_MULTIPLIER : null,
       tokenLimit: tokens,
       storageMb: null,
       enabled: true,

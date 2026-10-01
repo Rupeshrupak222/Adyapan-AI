@@ -20,6 +20,7 @@ import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 import { FeatureLimitBanner } from "@/components/shared/FeatureLimitBanner";
 import { mkColors as centralizedMkColors } from "@/utils/themeColors";
 import { fadeUp, scaleIn, pageTransition, buttonHover } from "@/utils/animations";
+import { CurvedSelect } from "@/components/ui/CurvedSelect";
 
 interface ResumeBuilderViewProps {
   setView: (v: ResumeHubViewType) => void;
@@ -1062,19 +1063,22 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
 
               <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
                 {[
-                  { label: "Target Company", value: setup.company, onChange: (v: string) => setSetup({ ...setup, company: v }), options: COMPANIES, icon: <Briefcase size={13} /> },
-                  { label: "Target Profession", value: setup.profession, onChange: (v: string) => setSetup({ ...setup, profession: v }), options: PROFESSIONS, icon: <Code2 size={13} /> },
-                  { label: "Career Level", value: setup.careerLevel, onChange: (v: string) => setSetup({ ...setup, careerLevel: v }), options: CAREER_LEVELS, icon: <Target size={13} /> },
-                  { label: "Resume Style", value: setup.resumeStyle, onChange: (v: string) => setSetup({ ...setup, resumeStyle: v }), options: RESUME_STYLES, icon: <FileText size={13} /> },
+                  { label: "Target Company", value: setup.company, onChange: (v: string) => setSetup({ ...setup, company: v }), options: COMPANIES, icon: <Briefcase size={13} />, dropUp: false },
+                  { label: "Target Profession", value: setup.profession, onChange: (v: string) => setSetup({ ...setup, profession: v }), options: PROFESSIONS, icon: <Code2 size={13} />, dropUp: false },
+                  { label: "Career Level", value: setup.careerLevel, onChange: (v: string) => setSetup({ ...setup, careerLevel: v }), options: CAREER_LEVELS, icon: <Target size={13} />, dropUp: false },
+                  { label: "Resume Style", value: setup.resumeStyle, onChange: (v: string) => setSetup({ ...setup, resumeStyle: v }), options: RESUME_STYLES, icon: <FileText size={13} />, dropUp: true },
                 ].map((field) => (
-                  <div key={field.label} style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, padding: "0.5rem 0.75rem" }}>
-                    <label style={{ fontSize: "0.62rem", fontWeight: 700, color: c.textSecondary, textTransform: "uppercase", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
-                      <span style={{ color: col }}>{field.icon}</span> {field.label}
-                    </label>
-                    <select value={field.value} onChange={(e) => field.onChange(e.target.value)}
-                      style={{ ...inputSx, cursor: "pointer", padding: "0.45rem 0.75rem", fontSize: "0.78rem", appearance: "none" as const, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f59e0b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.75rem center", paddingRight: "2rem" }}>
-                      {field.options.map((o) => <option key={o} value={o}>{o}</option>)}
-                    </select>
+                  <div key={field.label} style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, padding: "0.5rem 0.75rem" }}>
+                    <CurvedSelect
+                      label={field.label}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={field.options}
+                      icon={field.icon}
+                      isDark={c.isDark}
+                      accentColor={col}
+                      dropUp={field.dropUp}
+                    />
                   </div>
                 ))}
               </div>

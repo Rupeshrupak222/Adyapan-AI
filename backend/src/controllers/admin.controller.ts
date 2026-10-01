@@ -38,8 +38,11 @@ const DEFAULT_SYSTEM_SETTINGS = {
   premiumTierTokenLimit: 5000000,
   freeTierDailyRequests: 50,
   premiumTierDailyRequests: 200,
-  enterpriseTierDailyTokens: 20000000,
-  enterpriseTierDailyRequests: 1000,
+  // Enterprise is sold as unlimited. These two numbers are reporting
+  // denominators, not customer-facing caps — set them lower to hard-cap an
+  // individual enterprise account, raise them to add headroom.
+  enterpriseTierDailyTokens: 2000000000,
+  enterpriseTierDailyRequests: 1000000,
   logoUrl: "/assets/logo.png",
   primaryBrandColor: "#f59e0b",
   faviconUrl: "/favicon.ico",

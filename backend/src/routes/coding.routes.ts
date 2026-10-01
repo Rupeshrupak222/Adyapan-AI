@@ -20,6 +20,19 @@ import { DsaProgressService } from "../services/dsa-progress.service";
 const router = Router();
 router.use(requireAuth);
 
+async function findCodingQuestionByIdOrExternalId(identifier: string) {
+  if (!identifier) return null;
+  return await masterPrisma.codingQuestion.findFirst({
+    where: {
+      OR: [
+        { id: identifier },
+        { externalId: identifier }
+      ]
+    },
+    include: { aiAnalyses: { take: 1, orderBy: { generatedAt: 'desc' } } }
+  });
+}
+
 
 
 // ─── Multi-Language Code Generation (Standalone) ──────────────────────────────
@@ -464,18 +477,16 @@ router.get("/questions", async (req: any, res) => {
 // Get Single Question Details + User Progress + AI Explanation
 router.get("/question/:id", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
     const userId = req.user.userId;
 
-    const question = await masterPrisma.codingQuestion.findUnique({
-      where: { id: questionId },
-      include: { aiAnalyses: { take: 1, orderBy: { generatedAt: 'desc' } } }
-    });
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
 
     if (!question) {
       return res.status(404).json({ error: "Question not found" });
     }
 
+    const questionId = question.id;
     const userPrisma = await getUserPrismaFromRequest(req);
     
     // Mark viewed as true when fetched
@@ -505,7 +516,9 @@ router.get("/question/:id", async (req: any, res) => {
 // Bookmark/Unbookmark Question
 router.post("/question/:id/bookmark", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const userId = req.user.userId;
     const { bookmarked } = req.body;
 
@@ -525,7 +538,9 @@ router.post("/question/:id/bookmark", async (req: any, res) => {
 // Mark Question as Attempted
 router.post("/question/:id/attempt", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const userId = req.user.userId;
     const { timeSpent = 0 } = req.body;
 
@@ -563,7 +578,9 @@ router.post("/question/:id/attempt", async (req: any, res) => {
 // Mark Question as Solved
 router.post("/question/:id/solve", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const userId = req.user.userId;
     const { timeSpent = 0 } = req.body;
 
@@ -585,7 +602,9 @@ router.post("/question/:id/solve", async (req: any, res) => {
 // Generate or Fetch AI Analysis
 router.post("/question/:id/analyze", async (req, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const analysis = await AICodingService.getAnalysis(questionId);
     res.json({ success: true, analysis });
   } catch (error) {
@@ -657,18 +676,17 @@ router.get("/daily-challenge", async (req: any, res) => {
 // Get Workspace: returns problem details, progress tracking stats, notes, bookmarks, active code session, and discussion logs.
 router.get("/workspace/:id", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
     const userId = req.user.userId;
 
-    // 1. Fetch coding question from master DB
-    const question = await masterPrisma.codingQuestion.findUnique({
-      where: { id: questionId },
-      include: { aiAnalyses: { take: 1, orderBy: { generatedAt: 'desc' } } }
-    });
+    // 1. Fetch coding question from master DB (by cuid or externalId)
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
 
     if (!question) {
       return res.status(404).json({ error: "Question not found" });
     }
+
+    const questionId = question.id;
 
     const userPrisma = await getUserPrismaFromRequest(req);
 
@@ -807,7 +825,9 @@ router.get("/workspace/:id", async (req: any, res) => {
 // Save Code: auto-save session state (code_content, language, status, time_spent).
 router.post("/workspace/:id/save", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const userId = req.user.userId;
     const { codeContent, language, status = "In Progress", timeSpent = 0 } = req.body;
 
@@ -873,7 +893,9 @@ router.post("/workspace/:id/save", async (req: any, res) => {
 // Save Note: Create, Update, Pin, or Delete note.
 router.post("/workspace/:id/notes", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const userId = req.user.userId;
     const { id, noteContent, pinned = false, action = "save" } = req.body;
 
@@ -930,7 +952,9 @@ router.post("/workspace/:id/notes", async (req: any, res) => {
 // Get Notes: Fetch notes for this question
 router.get("/workspace/:id/notes", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const userId = req.user.userId;
 
     const userPrisma = await getUserPrismaFromRequest(req);
@@ -952,7 +976,9 @@ router.get("/workspace/:id/notes", async (req: any, res) => {
 // Toggle Bookmark: Bookmarks/unbookmarks a problem in the bookmarks table and progress
 router.post("/workspace/:id/bookmark", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const userId = req.user.userId;
     const { bookmarked } = req.body; // true = bookmark, false = unbookmark
 
@@ -989,7 +1015,9 @@ router.post("/workspace/:id/bookmark", async (req: any, res) => {
 // Post comment/discussion message
 router.post("/workspace/:id/discussion", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const userId = req.user.userId;
     const { message } = req.body;
 
@@ -1016,16 +1044,16 @@ router.post("/workspace/:id/discussion", async (req: any, res) => {
 // Explain Action: Explain constraints, example, edge cases, complexity, interview perspective
 router.post("/workspace/:id/explain", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
     const { type, codeSnippet = "" } = req.body; // type: "constraints" | "example" | "edge_cases" | "complexity" | "interview" | "placement" | "problem"
 
-    const question = await masterPrisma.codingQuestion.findUnique({
-      where: { id: questionId }
-    });
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
 
     if (!question) {
       return res.status(404).json({ error: "Question not found" });
     }
+
+    const questionId = question.id;
 
     const systemPrompt = `You are an expert FAANG Interview Coach, Competitive Programming Mentor, and EdTech Platform Architect.
 Help the student learn. Provide helpful explanations in clear markdown. Maintain an instructional, supportive, and extremely clear tone.`;
@@ -1114,12 +1142,15 @@ Difficulty: ${question.difficulty}`;
 // Hint Action: Progressive Hints
 router.post("/workspace/:id/hint", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
     const { hintIndex } = req.body; // 1, 2, or 3
 
     if (!hintIndex || hintIndex < 1 || hintIndex > 3) {
       return res.status(400).json({ error: "hintIndex must be 1, 2, or 3" });
     }
+
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
 
     // Retrieve AI analysis Cache
     const analysis = await AICodingService.getAnalysis(questionId);
@@ -1170,7 +1201,7 @@ router.get("/piston/health", async (_req, res) => {
 
 router.post("/workspace/:id/run", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
     const userId = req.user.userId;
     const { code, language, stdin = "" } = req.body;
 
@@ -1178,12 +1209,12 @@ router.post("/workspace/:id/run", async (req: any, res) => {
       return res.status(400).json({ error: "code and language are required" });
     }
 
-    const question = await masterPrisma.codingQuestion.findUnique({
-      where: { id: questionId }
-    });
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
     if (!question) {
       return res.status(404).json({ error: "Question not found" });
     }
+
+    const questionId = question.id;
 
     const rawVisible = (question.visibleTestCases as any) || [];
     const examples = (Array.isArray(rawVisible) && rawVisible.length > 0)
@@ -1302,7 +1333,7 @@ router.post("/workspace/:id/run", async (req: any, res) => {
 
 router.post("/workspace/:id/submit", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
     const userId = req.user.userId;
     const { code, language } = req.body;
 
@@ -1310,12 +1341,12 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
       return res.status(400).json({ error: "code and language are required" });
     }
 
-    const question = await masterPrisma.codingQuestion.findUnique({
-      where: { id: questionId }
-    });
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
     if (!question) {
       return res.status(404).json({ error: "Question not found" });
     }
+
+    const questionId = question.id;
 
     const rawVisible = (question.visibleTestCases as any) || [];
     let examples = (Array.isArray(rawVisible) && rawVisible.length > 0)
@@ -1488,7 +1519,9 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
 
 router.get("/workspace/:id/executions", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const userId = req.user.userId;
     const userPrisma = await getUserPrismaFromRequest(req);
 
@@ -1531,7 +1564,9 @@ router.get("/workspace/:id/execution/:executionId", async (req: any, res) => {
 
 router.post("/workspace/:id/execution/restore", async (req: any, res) => {
   try {
-    const questionId = req.params.id;
+    const rawId = req.params.id;
+    const question = await findCodingQuestionByIdOrExternalId(rawId);
+    const questionId = question ? question.id : rawId;
     const userId = req.user.userId;
     const { executionId } = req.body;
 
@@ -1544,7 +1579,7 @@ router.post("/workspace/:id/execution/restore", async (req: any, res) => {
       where: { id: executionId }
     });
 
-    if (!execution || execution.questionId !== questionId || execution.userId !== userId) {
+    if (!execution || (execution.questionId !== questionId && execution.questionId !== rawId) || execution.userId !== userId) {
       return res.status(404).json({ error: "Execution history snapshot not found" });
     }
 

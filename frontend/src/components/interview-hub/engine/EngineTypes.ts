@@ -275,6 +275,18 @@ export const ROLE_PRESETS: RolePreset[] = [
   { id: "psychologist", title: "Clinical & Health Psychologist", icon: "HeartPulse", category: "Healthcare & Pharma" },
   { id: "nanotechnology", title: "Nanotechnology Researcher", icon: "Atom", category: "Healthcare & Pharma" },
 
+  // Sales, Marketing & Retail
+  { id: "sales-manager", title: "Sales Manager", icon: "TrendingUp", category: "Sales & Retail" },
+  { id: "key-account-executive", title: "Key Account Executive", icon: "Handshake", category: "Sales & Retail" },
+  { id: "key-account-manager", title: "Key Account Manager", icon: "Users", category: "Sales & Retail" },
+  { id: "bde", title: "Business Development Executive (BDE)", icon: "Rocket", category: "Sales & Retail" },
+  { id: "inside-sales", title: "Inside Sales Representative", icon: "Headphones", category: "Sales & Retail" },
+  { id: "marketing-manager", title: "Marketing Manager", icon: "Megaphone", category: "Sales & Retail" },
+  { id: "brand-manager", title: "Brand & Advertising Manager", icon: "Palette", category: "Sales & Retail" },
+  { id: "retail-manager", title: "Retail Manager", icon: "Store", category: "Sales & Retail" },
+  { id: "store-manager", title: "Store Manager", icon: "ShoppingCart", category: "Sales & Retail" },
+  { id: "category-manager", title: "Category & Merchandising Manager", icon: "LayoutGrid", category: "Sales & Retail" },
+
   // Design & Creative
   { id: "ui-ux-designer", title: "UI/UX Product Designer", icon: "Palette", category: "Design & Creative" },
   { id: "graphic-designer", title: "Graphic & Brand Visual Designer", icon: "PenTool", category: "Design & Creative" },

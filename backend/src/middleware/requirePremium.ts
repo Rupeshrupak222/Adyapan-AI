@@ -45,10 +45,14 @@ const PREMIUM_MOUNT_PREFIXES: { prefix: string; featureKey: string }[] = [
   { prefix: "/ady-chat", featureKey: "ady-chat" },
 ];
 
-// Non-AI read-only paths that should never be blocked even if they fall under
-// a premium mount prefix (e.g., GET /sessions to list past interviews).
+// Non-AI paths that should never be blocked even if they fall under
+// a premium mount prefix (e.g., GET /sessions, core code execution/testing, workspace saving/notes).
 const EXCLUDE_PATHS: RegExp[] = [
   /^\/(sessions|list|status|health|config|voices|profile)(\/|$)/i,
+  // Core coding workspace operations (running code, submitting test cases, auto-saving, notes, bookmarks)
+  /^\/workspace\/[^/]+\/(run|submit|save|notes|bookmark|discussion|executions|execution)(\/|$)/i,
+  /^\/workspace(\/|$)/i,
+  /^\/(run|submit|problems|categories)(\/|$)/i,
 ];
 
 /**

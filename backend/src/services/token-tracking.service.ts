@@ -12,6 +12,8 @@ export interface PlanQuota {
   monthlyTokens: number;
   dailyRequests: number;
   monthlyRequests: number;
+  /** Enterprise is sold as uncapped; the numeric fields remain for reporting. */
+  unlimited?: boolean;
 }
 
 export interface UsageSnapshot {
@@ -46,6 +48,16 @@ export interface LimitCheckResult {
 const MONTHLY_MULTIPLIER = 30;
 const HOUR = 60 * 60 * 1000;
 
+// Effective ceilings for the unlimited (enterprise) tier. Kept finite so usage
+// snapshots, percentage gauges and admin dashboards keep a denominator.
+export const ENTERPRISE_DAILY_TOKENS = 2_000_000_000;
+export const ENTERPRISE_DAILY_REQUESTS = 1_000_000;
+
+// Free-tier fallbacks must match DEFAULT_SYSTEM_SETTINGS in admin.controller.ts,
+// otherwise a missing/zero admin_setting silently halves the free allowance.
+export const FREE_TIER_TOKEN_LIMIT = 500_000;
+export const FREE_TIER_DAILY_REQUESTS = 50;
+
 // ─── Plan resolution ──────────────────────────────────────────────
 
 export function resolvePlanKind(plan: string): PlanKind {
@@ -60,8 +72,12 @@ export function resolveQuota(plan: string): PlanQuota {
   const s = getSystemSettingsMemory() as any;
 
   if (kind === "enterprise") {
-    const dailyTokens = Number(s.enterpriseTierDailyTokens) || 20000000;
-    const dailyRequests = Number(s.enterpriseTierDailyRequests) || 1000;
+    // Enterprise is sold as unlimited. The numeric ceiling stays finite so
+    // counters, dashboards and snapshots keep working, but it is set far above
+    // any realistic volume and `enterpriseTierDailyTokens` /
+    // `enterpriseTierDailyRequests` remain admin-tunable escape hatches.
+    const dailyTokens = Number(s.enterpriseTierDailyTokens) || ENTERPRISE_DAILY_TOKENS;
+    const dailyRequests = Number(s.enterpriseTierDailyRequests) || ENTERPRISE_DAILY_REQUESTS;
     return {
       plan,
       kind,
@@ -69,6 +85,7 @@ export function resolveQuota(plan: string): PlanQuota {
       monthlyTokens: dailyTokens * MONTHLY_MULTIPLIER,
       dailyRequests,
       monthlyRequests: dailyRequests * MONTHLY_MULTIPLIER,
+      unlimited: true,
     };
   }
 
@@ -85,8 +102,8 @@ export function resolveQuota(plan: string): PlanQuota {
     };
   }
 
-  const dailyTokens = Number(s.freeTierTokenLimit) || 500000;
-  const dailyRequests = Number(s.freeTierDailyRequests) || 20;
+  const dailyTokens = Number(s.freeTierTokenLimit) || FREE_TIER_TOKEN_LIMIT;
+  const dailyRequests = Number(s.freeTierDailyRequests) || FREE_TIER_DAILY_REQUESTS;
   return {
     plan,
     kind,
@@ -265,18 +282,20 @@ export class AiUsageService {
 
     let blocked = false;
     let reason: string | undefined;
-    if (row.dailyTokensUsed + tokens > quota.dailyTokens) {
-      blocked = true;
-      reason = "daily_token";
-    } else if (row.monthlyTokensUsed + tokens > quota.monthlyTokens) {
-      blocked = true;
-      reason = "monthly_token";
-    } else if (row.dailyRequests + 1 > quota.dailyRequests) {
-      blocked = true;
-      reason = "daily_request";
-    } else if (row.monthlyRequests + 1 > quota.monthlyRequests) {
-      blocked = true;
-      reason = "monthly_request";
+    if (!quota.unlimited) {
+      if (row.dailyTokensUsed + tokens > quota.dailyTokens) {
+        blocked = true;
+        reason = "daily_token";
+      } else if (row.monthlyTokensUsed + tokens > quota.monthlyTokens) {
+        blocked = true;
+        reason = "monthly_token";
+      } else if (row.dailyRequests + 1 > quota.dailyRequests) {
+        blocked = true;
+        reason = "daily_request";
+      } else if (row.monthlyRequests + 1 > quota.monthlyRequests) {
+        blocked = true;
+        reason = "monthly_request";
+      }
     }
 
     const route = meta?.route || "";

@@ -66,6 +66,7 @@ export default function ProblemWorkspacePage() {
   // Loading settings
   const [loading, setLoading] = useState(true);
   const [loadingIndex, setLoadingIndex] = useState(0);
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
 
   // Workspace Data
   const [problem, setProblem] = useState<any>(null);
@@ -238,11 +239,13 @@ export default function ProblemWorkspacePage() {
   };
 
   const fetchWorkspaceData = async () => {
+    if (!problemId) return;
     try {
+      setWorkspaceError(null);
       const res = await api.get(`/coding/workspace/${problemId}`);
       const data = res.data;
       setProblem(data.question);
-      setProgress(data.progress);
+      setProgress(data.progress || { status: "not_started", timeSpent: 0, bookmarked: false });
       setNotes(data.notes || []);
       setDiscussions(data.discussions || []);
       setAiAnalysis(data.aiAnalysis || null);
@@ -260,10 +263,12 @@ export default function ProblemWorkspacePage() {
 
       setLoading(false);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("Workspace load error:", err);
-      toast.error("Failed to load problem workspace data");
-      router.push("/dashboard/coding");
+      const errMsg = err?.response?.data?.error || err?.message || "Failed to load problem workspace data";
+      setWorkspaceError(errMsg);
+      toast.error(errMsg);
+      setLoading(false);
     }
   };
 
@@ -282,17 +287,22 @@ export default function ProblemWorkspacePage() {
     }
   };
 
+  // Start fetching workspace data on mount / problemId change
+  useEffect(() => {
+    if (problemId) {
+      fetchWorkspaceData();
+    }
+  }, [problemId]);
+
   // Loading timer check-list simulation
   useEffect(() => {
     if (loadingIndex < loadingSteps.length) {
       const timer = setTimeout(() => {
         setLoadingIndex(prev => prev + 1);
-      }, 350);
+      }, 300);
       return () => clearTimeout(timer);
-    } else if (problemId && loading) {
-      fetchWorkspaceData();
     }
-  }, [loadingIndex, problemId, loading]);
+  }, [loadingIndex]);
 
   // Auto-Save code every 5 seconds
   useEffect(() => {
@@ -329,11 +339,7 @@ export default function ProblemWorkspacePage() {
       }
 
       setTimeout(() => {
-        if (window.history.length > 1 && window.opener) {
-          window.close();
-        } else {
-          router.push("/dashboard/coding");
-        }
+        router.push("/dashboard/coding");
       }, 400);
     } catch (err) {
       toast.error("Failed to save and end session");
@@ -2289,7 +2295,36 @@ Answer the student's question based on the coding problem. Provide hints or feed
       
       {/* Fullscreen Three panel workspace container */}
       <main className="relative z-10 flex flex-col font-sans w-full h-full overflow-hidden" style={{ padding: 0 }}>
-        {loading ? (
+        {workspaceError ? (
+          <div className="flex flex-col items-center justify-center h-full min-h-[70vh] p-6">
+            <div className="relative w-full max-w-md p-8 bg-[var(--bg-card)] border border-rose-500/20 rounded-2xl backdrop-blur-xl shadow-2xl flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4">
+                <AlertCircle size={32} className="text-rose-500" />
+              </div>
+              <h2 className="text-lg font-bold text-[var(--text-primary)] mb-2">Workspace Loading Error</h2>
+              <p className="text-xs text-[var(--text-secondary)] mb-6 leading-relaxed">{workspaceError}</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => router.push("/dashboard/coding")}
+                  className="px-4 py-2 rounded-xl border border-[var(--border-color)] text-xs font-bold text-[var(--text-primary)] hover:bg-white/5 transition cursor-pointer"
+                >
+                  Return to Coding Hub
+                </button>
+                <button
+                  onClick={() => {
+                    setWorkspaceError(null);
+                    setLoading(true);
+                    setLoadingIndex(0);
+                    fetchWorkspaceData();
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold hover:brightness-110 transition shadow-lg shadow-amber-500/20 cursor-pointer"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : loading ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[70vh]">
             <div className="relative w-full max-w-md p-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl backdrop-blur-xl shadow-2xl flex flex-col items-center">
               <motion.div
@@ -2338,11 +2373,7 @@ Answer the student's question based on the coding problem. Provide hints or feed
           <div className="flex items-center gap-4">
             <button 
               onClick={() => {
-                if (window.history.length > 1 && window.opener) {
-                  window.close();
-                } else {
-                  router.push("/dashboard/coding");
-                }
+                router.push("/dashboard/coding");
               }}
               className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-white/5 transition cursor-pointer"
             >

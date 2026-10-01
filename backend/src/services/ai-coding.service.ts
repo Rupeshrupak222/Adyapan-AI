@@ -29,17 +29,24 @@ export interface AIAnalysisSchema {
 
 export class AICodingService {
   static async getAnalysis(questionId: string): Promise<AIAnalysisSchema> {
-    const question = await prisma.codingQuestion.findUnique({
-      where: { id: questionId }
+    const question = await prisma.codingQuestion.findFirst({
+      where: {
+        OR: [
+          { id: questionId },
+          { externalId: questionId }
+        ]
+      }
     });
 
     if (!question) {
       throw new Error(`Question with ID ${questionId} not found`);
     }
 
+    const realQuestionId = question.id;
+
     // Check cache
     const cached = await prisma.questionAIAnalysis.findFirst({
-      where: { questionId }
+      where: { questionId: realQuestionId }
     });
 
     if (cached) {
@@ -140,7 +147,7 @@ Examples: ${JSON.stringify(question.examples || [])}`;
 
       await prisma.questionAIAnalysis.create({
         data: {
-          questionId,
+          questionId: realQuestionId,
           explanationJson: generated as any,
           generatedByModel: MODELS.CODE
         }

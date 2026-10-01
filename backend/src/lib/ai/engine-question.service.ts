@@ -171,9 +171,18 @@ function getRoleDomainTechnicalFocus(role: string, technology: string): string {
 - Focus on: 3-Statement financial modeling linkages, Discounted Cash Flow (DCF) & WACC calculation, LBO valuation frameworks, M&A pitch books, Options Greeks (Delta, Theta, Vega), capital budgeting, and working capital optimization.`;
   }
 
+  if (
+    target.includes("sales") || target.includes("key account") || target.includes("account manager") ||
+    target.includes("business development") || target.includes("bde") || target.includes("retail") ||
+    target.includes("store manager") || target.includes("merchandising") || target.includes("category manager")
+  ) {
+    return `Role Domain Expertise Focus — Sales, Retail & Business Development:
+- Focus on: SPIN and consultative selling frameworks, pipeline and weighted forecast management, quota attainment and territory planning, MEDDICC/Challenger sale qualification, key account business planning and multi-threading, distributor and channel negotiation, unit economics (CAC, LTV, gross margin), price realization and trade promotion, SKU assortment and planogram optimization, store P&L ownership, shrink and inventory turnover control, GMROI and space productivity, and MRAID retail productivity metrics.`;
+  }
+
   if (target.includes("product manager") || target.includes("marketing") || target.includes("supply chain") || target.includes("hr") || target.includes("startup") || target.includes("entrepreneur")) {
     return `Role Domain Expertise Focus — Business, Product & Operations Management:
-- Focus on: PRD drafting, RICE/MoSCoW roadmap prioritization, Bullwhip effect mitigation, EOQ & JIT inventory modeling, CAC to LTV unit economics, OKR performance alignment, and startup runway burn rate calculations.`;
+- Focus on: PRD drafting, RICE/MoSCoW roadmap prioritization, Bullwhip effect mitigation, EOQ & JIT inventory modeling, CAC to LTV unit economics, integrated marketing communication planning, SEO/SEM and paid media campaign metrics, marketing funnel and MQL/SQL conversion, brand positioning and campaign ROI attribution, OKR performance alignment, and startup runway burn rate calculations.`;
   }
 
   if (target.includes("clinical") || target.includes("medical coding") || target.includes("pharma") || target.includes("genetic") || target.includes("psychology") || target.includes("nanotechnology")) {

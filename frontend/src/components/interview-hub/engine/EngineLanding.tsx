@@ -19,6 +19,7 @@ import {
   Navigation, DollarSign, Megaphone, Truck,
   Rocket, Compass, Car, HardHat, HeartPulse, Atom, FileSpreadsheet,
   TestTube, Dna, Palette, PenTool, TrendingUp,
+  Handshake, Headphones, Store, ShoppingCart,
 } from "lucide-react";
 import CompanyLogo from "../CompanyLogo";
 import {
@@ -45,6 +46,7 @@ const ROLE_ICON_MAP: Record<string, React.ComponentType<{ size?: number; classNa
   Navigation, DollarSign, Megaphone, Users, Briefcase, Truck,
   Rocket, Compass, Car, HardHat, HeartPulse, Atom, FileSpreadsheet,
   TestTube, Dna, Palette, PenTool, TrendingUp, Zap,
+  Handshake, Headphones, Store, ShoppingCart, LayoutGrid,
 };
 
 const DIFFICULTY_OPTIONS: { value: DifficultyLevel; label: string; color: string; icon: string }[] = [
@@ -225,7 +227,8 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
 
   const ROLE_CATEGORIES = [
     "All", "Engineering", "Core Engineering", "Robotics & ECE",
-    "Management & Finance", "Healthcare & Pharma", "Design & Creative", "AI/ML", "Data"
+    "Management & Finance", "Healthcare & Pharma", "Design & Creative",
+    "Sales & Retail", "AI/ML", "Data"
   ];
 
   const filteredRoles = ROLE_PRESETS.filter(r => {

@@ -279,8 +279,10 @@ function CodingHubContent() {
   };
 
   const handleSolveQuestion = (q: any) => {
-    if (!q || !q.id) return;
-    window.open(`/dashboard/coding/problem/${q.id}`, "_blank");
+    if (!q) return;
+    const targetId = q.id || q.externalId;
+    if (!targetId) return;
+    router.push(`/dashboard/coding/problem/${targetId}`);
   };
 
   const handleBookmarkToggle = async () => {

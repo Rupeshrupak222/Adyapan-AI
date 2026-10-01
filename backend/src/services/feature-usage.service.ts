@@ -5,6 +5,7 @@ import {
   DEFAULT_PREMIUM_LIMITS,
   DEFAULT_PLAN_LIMITS,
   FEATURE_DISPLAY_NAMES,
+  UNLIMITED,
   isKnownFeatureKey,
 } from "./feature-keys";
 import { normalizePlanKind } from "./feature-access.service";
@@ -127,6 +128,13 @@ export class FeatureUsageService {
     featureKey: string,
     planInfo: PlanInfo
   ): Promise<{ limit: number; unlimited: boolean }> {
+    // Unlimited tiers are resolved before the admin-override lookup: a cap the
+    // platform no longer sells must not be re-imposed by a stale usage_limits
+    // row. Admin can still cap an enterprise account by editing its planCode.
+    if (planInfo.planKind === "enterprise") {
+      return { limit: UNLIMITED, unlimited: true };
+    }
+
     const overrides = await this.loadLimitOverrides();
     const snake = featureKey.toUpperCase();
     const kebab = snake.toLowerCase().replace(/_/g, "-");

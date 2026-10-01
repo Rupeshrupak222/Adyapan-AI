@@ -99,10 +99,26 @@ export const DEFAULT_PREMIUM_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.HR_INTERVIEW]: 5,
 };
 
+/**
+ * Sentinel used by every feature on unlimited tiers. FeatureUsageService treats
+ * this value as "no monthly cap" (see resolveMonthlyLimit → `unlimited`), so the
+ * per-feature counters keep incrementing for analytics but never block a request.
+ */
+export const UNLIMITED = -1;
+
+/** Every feature entry for unlimited tiers, derived from the registry so a new
+ *  feature key cannot be forgotten here. */
+function unlimitedLimits(): Record<FeatureKeyValue, number> {
+  return Object.fromEntries(
+    Object.keys(DEFAULT_FREE_LIMITS).map((key) => [key, UNLIMITED])
+  ) as Record<FeatureKeyValue, number>;
+}
+
 /** Centralized plan entitlement matrix for standard platform tiers. */
 export const DEFAULT_PLAN_LIMITS: Record<string, Record<FeatureKeyValue, number>> = {
   free: DEFAULT_FREE_LIMITS,
   premium: DEFAULT_PREMIUM_LIMITS,
+  enterprise: unlimitedLimits(),
   pro: {
     ...DEFAULT_PREMIUM_LIMITS,
     [FeatureKey.STUDY_ASSISTANT]: 100,

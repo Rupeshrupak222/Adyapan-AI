@@ -10,7 +10,7 @@ import { PremiumProgressBar } from "@/components/ui/PremiumComponents";
 const REASON_COPY: Record<string, { title: string; body: string }> = {
   daily_token: {
     title: "Daily AI token limit reached",
-    body: "You've used all of today's AI tokens on the free plan. Upgrade to Premium for 10x more tokens every day and higher monthly feature limits.",
+    body: "You've used all of today's AI tokens on the free plan. Upgrade to Premium for 10x more tokens every day and 3x higher monthly feature limits.",
   },
   monthly_token: {
     title: "Monthly AI token limit reached",
@@ -18,17 +18,17 @@ const REASON_COPY: Record<string, { title: string; body: string }> = {
   },
   daily_request: {
     title: "Daily request limit reached",
-    body: "You've hit today's free limit of AI requests. Upgrade to Premium to unlock 10x more requests every single day.",
+    body: "You've hit today's free limit of AI requests. Upgrade to Premium to unlock 4x more requests every single day.",
   },
   monthly_request: {
     title: "Monthly request limit reached",
-    body: "Your free monthly request allowance is exhausted. Upgrade to Premium for 10x more requests every month.",
+    body: "Your free monthly request allowance is exhausted. Upgrade to Premium for 4x more requests every month.",
   },
 };
 
 const PERKS = [
   "3x higher monthly AI feature limits (30/9 per feature)",
-  "10x daily AI tokens & requests",
+  "10x daily AI tokens, 4x more daily AI requests",
   "Priority access to new AI models (GPT-4o, Claude)",
   "Cancel anytime, keep your work",
 ];

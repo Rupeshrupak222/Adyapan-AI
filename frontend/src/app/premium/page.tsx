@@ -234,6 +234,7 @@ export default function PremiumPage() {
   }
 
   const freePlanFeatures = [
+    "50 AI requests / day",
     "10 uses / mo on standard AI tools",
     "3 uses / mo on advanced AI tools",
     "Standard AI model access",
@@ -243,14 +244,17 @@ export default function PremiumPage() {
   const proPlanFeatures = proMonthly?.features?.length
     ? proMonthly.features
     : [
+        "Unlimited AI requests",
         "30 uses / mo on standard AI tools (3x Free)",
         "9 uses / mo on advanced AI tools (3x Free)",
+        "10x daily AI tokens",
         "All Premium AI Models (GPT-4o, Claude, Gemini)",
         "Full Interview & Coding Hub Access",
         "Ady Chat with file uploads",
         "Priority Support",
       ];
   const enterpriseFeatures = [
+    "Unlimited AI requests & feature usage",
     "University / Institute License",
     "Custom AI Model Access",
     "SSO / SAML Login",
@@ -295,7 +299,7 @@ export default function PremiumPage() {
             Unlock <span style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Premium</span>
           </h1>
           <p className="text-sm max-w-lg mx-auto transition-colors duration-300" style={{ color: colors.subtext }}>
-            Get 3x higher monthly AI allowances, premium models, and advanced career tools to accelerate your learning.
+            Get unlimited AI requests, 3x higher monthly feature allowances, premium models, and advanced career tools to accelerate your learning.
           </p>
         </motion.div>
       </div>
@@ -367,7 +371,7 @@ export default function PremiumPage() {
                   <span style={{ color: colors.featureText }}>{f}</span>
                 </div>
               ))}
-              {["30 Standard AI Uses / mo", "9 Advanced AI Uses / mo", "Premium AI Models", "Priority Support"].map((f, j) => (
+              {["Unlimited AI Requests", "30 Standard AI Uses / mo", "9 Advanced AI Uses / mo", "Premium AI Models", "Priority Support"].map((f, j) => (
                 <div key={j} className="flex items-start gap-2 text-xs" style={{ color: colors.missingFeatureText }}>
                   <X className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                   <span>{f}</span>

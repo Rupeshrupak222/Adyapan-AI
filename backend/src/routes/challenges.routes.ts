@@ -560,8 +560,13 @@ router.get("/:slug", async (req: any, res) => {
     const userId = req.user?.userId || req.user?.id;
     const userPrisma = await getUserPrismaFromRequest(req);
 
-    const challenge = await userPrisma.challenge.findUnique({
-      where: { slug },
+    const challenge = await userPrisma.challenge.findFirst({
+      where: {
+        OR: [
+          { slug },
+          { id: slug },
+        ],
+      },
       include: { category: true },
     });
     if (!challenge) {

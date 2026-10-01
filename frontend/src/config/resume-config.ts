@@ -17,6 +17,13 @@ export const PROFESSIONS = [
   "Mobile App Developer (Android/iOS)", "DevOps Engineer", "Cloud Engineer", "AI/ML Engineer",
   "Data Scientist", "Data Analyst", "Business Analytics Specialist", "Cybersecurity Engineer",
   "QA Engineer", "Systems Engineer", "Research Scientist", "Product Manager",
+  "SDE", "SRE",
+
+  // Sales, Marketing & Retail
+  "Sales Manager", "Key Account Executive", "Key Account Manager",
+  "Business Development Executive (BDE)", "Marketing Manager",
+  "Brand & Advertising Manager", "Retail Manager", "Store Manager",
+  "Category & Merchandising Manager", "Inside Sales Representative",
 
   // Core Engineering & ECE
   "Embedded Systems Engineer", "VLSI Design Engineer", "Robotics & Automation Engineer",
@@ -69,6 +76,7 @@ export const COVER_LETTER_MODES = [
   "Mechanical Engineer", "Civil Project Engineer", "Robotics Engineer",
   "Investment Banker", "Financial Analyst", "Digital Marketing Specialist",
   "Clinical Research Associate", "Medical Coder", "Graphic Designer",
+  "Sales Manager", "Key Account Manager", "Marketing Manager", "Retail Manager",
 ];
 
 export const COVER_LETTER_TONES = [
@@ -101,6 +109,10 @@ export const ATS_ROLES = [
   "UI/UX Designer",
   "Clinical Research Associate",
   "Medical Coder",
+  "Sales Manager",
+  "Key Account Manager",
+  "Marketing Manager",
+  "Retail Manager",
 ];
 
 export const ATS_ROLE_ICONS: Record<string, string> = {
@@ -122,6 +134,10 @@ export const ATS_ROLE_ICONS: Record<string, string> = {
   "UI/UX Designer": "\u{2728}",
   "Clinical Research Associate": "\u{1F9EA}",
   "Medical Coder": "\u{1FA7A}",
+  "Sales Manager": "\u{1F4E3}",
+  "Key Account Manager": "\u{1F91D}",
+  "Marketing Manager": "\u{1F4E2}",
+  "Retail Manager": "\u{1F6D2}",
 };
 
 export const CAREER_TARGET_ROLES = [
@@ -131,6 +147,7 @@ export const CAREER_TARGET_ROLES = [
   "QA Engineer", "Cybersecurity Engineer", "Mechanical Engineer",
   "Civil Engineer", "Robotics Engineer", "Financial Analyst",
   "Investment Banker", "Product Manager", "UI/UX Designer", "Custom Goal",
+  "Sales Manager", "Key Account Manager", "Marketing Manager", "Retail Manager",
 ];
 
 export const CAREER_TIMELINES = [
