@@ -41,21 +41,42 @@ const GROQ_MODEL_FALLBACKS_FAST = [
   "qwen/qwen3.8-27b",
 ];
 
-// NVIDIA NIM model fallback chain
-// NVIDIA NIM model chain.
+// NVIDIA NIM model fallback chain.
 //
-// Every model that was listed here previously is dead: openai/gpt-oss-120b and
-// meta/llama-3.3-70b-instruct answer HTTP 410 (Gone) and qwen/qwen3-235b-a22b
-// answers 404. Probing the live /v1/models catalogue showed the hosted
-// endpoints are gone for the well-known names, so each request burned a 60s
-// cooldown per dead hop. deepseek-ai/deepseek-v4.1-flash is the one that
-// actually serves; re-probe the catalogue before adding more here, and keep
-// this list short so a stale ID costs as little wall-clock as possible.
+// Re-probed against the live /v1/models catalogue. The previous list held
+// deepseek-ai/deepseek-v4.1-flash; meta/llama-3.3-70b-instruct now answers 410
+// (end-of-life 2026-08) and mistral-large-2 / nemotron-70b answer 404 "Function
+// not found for account", so those were burning a cooldown per dead hop.
+//
+// Live + verified to emit parseable JSON for MCQ payloads (see the probe in
+// scripts/): z-ai/glm-5.3-flash and moonshotai/kimi-k3 both returned valid
+// `{"questions":[...]}` objects. nemotron-3-super-120b and
+// nemotron-3.5-lightning answer 200 but ramble past max_tokens, so they are kept
+// last as a genuine last resort rather than leading the chain.
+//
+// Keep this list short — every stale ID costs a full request timeout.
 const NVIDIA_NIM_MODELS = [
-  { model: "deepseek-ai/deepseek-v4.1-flash", label: "DeepSeek V4.1 Flash" },
+  { model: "z-ai/glm-5.3-flash", label: "GLM 5.3 Flash", timeoutMs: 120000 },
+  { model: "moonshotai/kimi-k3", label: "Kimi K3", timeoutMs: 200000 },
+  { model: "nvidia/nemotron-3-super-120b-a12b", label: "Nemotron 3 Super 120B", timeoutMs: 150000 },
 ];
 
 const FAST_OPENROUTER_DEFAULT = "openai/gpt-4o-mini";
+
+// OpenRouter ":free" models — these serve with a zero-credit balance, unlike the
+// paid ids above which answer HTTP 402 outright. Probed on the live catalogue:
+//   nvidia/nemotron-3-super-120b-a12b:free -> 200 in ~14s, valid JSON
+//   nvidia/nemotron-3-ultra-550b-a55b:free -> 200 in ~62s, valid JSON
+//   liquid/lfm-2.5-2.6b:free               -> 200 in ~3s  but too small to
+//                                             emit a full question object
+// The free tier is heavily rate-limited (429s are normal and transient), so
+// each id carries its own cooldown and the chain falls through on failure.
+const OPENROUTER_FREE_MODELS = [
+  { model: "nvidia/nemotron-3-super-120b-a12b:free", label: "Nemotron 3 Super 120B (free)" },
+  { model: "nvidia/nemotron-3-ultra-550b-a55b:free", label: "Nemotron 3 Ultra 550B (free)" },
+  { model: "google/gemma-4-31b-it:free", label: "Gemma 4 31B (free)" },
+  { model: "qwen/qwen3.8-27b:free", label: "Qwen 3.8 27B (free)" },
+];
 
 // In-memory circuit breaker to prevent hammering dead/rate-limited providers
 const providerCooldownUntil = new Map<string, number>();
@@ -78,7 +99,14 @@ export async function callAIRobust(
   messages: OpenRouterMessage[],
   options: OpenRouterOptions
 ): Promise<string> {
-  const providers: { name: string; url: string; key: string; model: string; cooldownKey: string }[] = [];
+  const providers: {
+    name: string;
+    url: string;
+    key: string;
+    model: string;
+    cooldownKey: string;
+    timeoutMs?: number;
+  }[] = [];
 
   // 0. Moonshot / Kimi 2.6 API (Direct Kimi Provider if requested or key present)
   const kimiKey = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
@@ -115,8 +143,21 @@ export async function callAIRobust(
     }
   }
 
-  // 2. Add OpenRouter if key exists (secondary) — fast models, high reliability
+  // 2. Add OpenRouter if key exists (secondary).
+  //    The free ids are tried before the paid resolved model: with a zero
+  //    balance the paid id can only answer HTTP 402, so leading with it just
+  //    burns a round trip and a cooldown on every single request.
   if (env.openrouterApiKey) {
+    for (const m of OPENROUTER_FREE_MODELS) {
+      providers.push({
+        name: `OpenRouter (${m.label})`,
+        url: "https://openrouter.ai/api/v1/chat/completions",
+        key: env.openrouterApiKey,
+        model: m.model,
+        cooldownKey: `openrouter-free-${m.model}`,
+        timeoutMs: 90000,
+      });
+    }
     providers.push({
       name: "OpenRouter",
       url: "https://openrouter.ai/api/v1/chat/completions",
@@ -145,8 +186,29 @@ export async function callAIRobust(
     }
   }
 
-  // 4. NVIDIA NIM: hosted chat endpoints are currently decommissioned (used only for embeddings)
-  // Skipping dead NIM chat endpoints to eliminate 75s timeout stalls.
+  // 4. NVIDIA NIM (quaternary) — restores the 5 keys in NVIDIA_API_KEY[_2..5].
+  //
+  // This used to be skipped entirely with a comment claiming the hosted chat
+  // endpoints were "decommissioned" and caused 75s timeout stalls. Both halves
+  // of that were wrong: the endpoints serve fine, and the stall came from the
+  // shared 15s timeout below being too short for NIM rather than NIM being
+  // slow-broken. Each key gets its own cooldown entry so exhausting one key's
+  // rate limit does not disable the other four.
+  const nvidiaKeys = env.nvidiaApiKeys?.filter(Boolean) ?? [];
+  if (nvidiaKeys.length > 0) {
+    for (let ki = 0; ki < nvidiaKeys.length; ki++) {
+      for (const m of NVIDIA_NIM_MODELS) {
+        providers.push({
+          name: `NVIDIA (${m.label} #${ki + 1})`,
+          url: "https://integrate.api.nvidia.com/v1/chat/completions",
+          key: nvidiaKeys[ki],
+          model: m.model,
+          cooldownKey: `nvidia-${m.model}-${ki}`,
+          timeoutMs: m.timeoutMs,
+        });
+      }
+    }
+  }
 
   if (providers.length === 0) {
     throw new Error("No AI providers configured. Please check environment keys.");
@@ -179,7 +241,16 @@ export async function callAIRobust(
       // Trimming to what each provider will actually serve keeps them usable as
       // fallbacks instead of burning a 60s cooldown per request.
       const isGptOss = pName.includes("groq") && provider.model.includes("gpt-oss");
-      const PROVIDER_MAX_TOKENS = isGroq ? (isGptOss ? 2048 : 1000) : isOpenRouter ? 1024 : 4096;
+      // Free OpenRouter ids serve happily above 1024 tokens. Capping them at the
+      // paid OpenRouter budget truncated multi-question batches mid-object and
+      // surfaced as "Unterminated string in JSON" parse failures, so the batch
+      // was thrown away and retried rather than actually being a model problem.
+      const isOpenRouterFree = pName.includes("openrouter") && provider.model.endsWith(":free");
+      const PROVIDER_MAX_TOKENS = isGroq
+        ? (isGptOss ? 2048 : 1000)
+        : isOpenRouter
+          ? (isOpenRouterFree ? 4096 : 1024)
+          : 4096;
       const requested = options.maxTokens ?? PROVIDER_MAX_TOKENS;
       const maxTokens = Math.min(requested, PROVIDER_MAX_TOKENS);
 
@@ -198,7 +269,12 @@ export async function callAIRobust(
       }
 
       const controller = new AbortController();
-      const fetchTimeoutMs = 15000; // 60s generous timeout for unlimited token generation
+      // Default is deliberately short — it only has to cover Groq/Gemini, which
+      // answer in a couple of seconds, and a dead hop should not stall the chain.
+      // NVIDIA NIM legitimately needs 60-200s for a full 4k-token JSON payload,
+      // so it carries its own budget; without that it was aborted mid-generation
+      // and was misread as the endpoint being dead.
+      const fetchTimeoutMs = provider.timeoutMs ?? 45000;
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
 
       let res: Response;
