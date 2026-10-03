@@ -490,7 +490,7 @@ export function PlacementIntelligenceWidget({
         <AIThinkingScreen
           steps={LOADING_STEPS}
           currentStep={loadingStep}
-          title="Analyzing Placement Intelligence..."
+          title="Analyzing Placement Score..."
           subtitle="Aggregating data from all hubs"
         />
       </div>
@@ -588,7 +588,7 @@ export function PlacementIntelligenceWidget({
                   <Target size={16} className="text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-extrabold text-amber-500 uppercase tracking-wider">Placement Intelligence</h3>
+                  <h3 className="text-xs font-extrabold text-amber-500 uppercase tracking-wider">Placement Score</h3>
                   <p className="text-[10px]" style={{ color: tc.textMuted }}>Cross-hub analysis</p>
                 </div>
               </div>
@@ -648,12 +648,12 @@ export function PlacementIntelligenceWidget({
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-[0.2em] mb-1">PLACEMENT INTELLIGENCE</p>
-          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: tc.text }}>Placement Readiness Engine</h1>
+          <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-[0.2em] mb-1">PLACEMENT SCORE</p>
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: tc.text }}>Placement Score Engine</h1>
         </div>
         <PremiumButton variant="secondary" onClick={handleRefresh}
           icon={<RefreshCw size={12} className={cn(refreshing && "animate-spin")} />}>
-          Refresh Intelligence
+          Refresh Placement Score
         </PremiumButton>
       </div>
 

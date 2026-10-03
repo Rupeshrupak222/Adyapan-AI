@@ -228,52 +228,58 @@ export async function endInterviewSession(
   }
 
   let savedEvaluation: any = null;
-  try {
-    const evaluation = await generateInterviewFeedback(
-      session.role,
-      session.company,
-      session.type,
-      session.messages.map((m) => ({ role: m.role, content: m.content }))
-    );
+  const candidateMessages = (session.messages || []).filter((m: any) => m.role === "candidate" || m.role === "user");
+  const interviewerMessages = (session.messages || []).filter((m: any) => m.role === "interviewer");
+  const hasAnswers = candidateMessages.length > 0;
 
+  try {
+    let evaluation: any = null;
     let comprehensiveEvaluation: any = null;
-    try {
-      comprehensiveEvaluation = await generateComprehensiveEvaluation(
+
+    if (hasAnswers) {
+      evaluation = await generateInterviewFeedback(
         session.role,
         session.company,
         session.type,
-        session.difficulty,
-        session.messages.map((m) => ({ role: m.role, content: m.content })),
-        evaluation
+        session.messages.map((m) => ({ role: m.role, content: m.content }))
       );
-    } catch (error) {
-      console.error("[InterviewSession] Comprehensive evaluation failed, using basic:", error);
+
+      try {
+        comprehensiveEvaluation = await generateComprehensiveEvaluation(
+          session.role,
+          session.company,
+          session.type,
+          session.difficulty,
+          session.messages.map((m) => ({ role: m.role, content: m.content })),
+          evaluation
+        );
+      } catch (error) {
+        console.error("[InterviewSession] Comprehensive evaluation failed, using basic:", error);
+      }
     }
 
-    const strengths = comprehensiveEvaluation?.strengths || evaluation.strengths;
-    const weaknesses = comprehensiveEvaluation?.weaknesses || evaluation.weaknesses;
+    const strengths = comprehensiveEvaluation?.strengths || evaluation?.strengths;
+    const weaknesses = comprehensiveEvaluation?.weaknesses || evaluation?.weaknesses;
     const improvements =
-      comprehensiveEvaluation?.improvements || evaluation.areasForImprovement;
+      comprehensiveEvaluation?.improvements || evaluation?.areasForImprovement;
 
-    const candidateMessages = (session.messages || []).filter((m: any) => m.role === "candidate" || m.role === "user");
-    const interviewerMessages = (session.messages || []).filter((m: any) => m.role === "interviewer");
-    const hasAnswers = candidateMessages.length > 0;
-    
     let fallbackScore = 0;
     if (hasAnswers) {
       let total = 0;
       for (const a of candidateMessages) {
         const len = String(a.content || "").trim().length;
-        if (len < 20) total += 20;
-        else if (len < 60) total += 40;
-        else if (len < 150) total += 55;
-        else if (len < 400) total += 70;
-        else total += 80;
+        if (len < 20) total += 35;
+        else if (len < 60) total += 55;
+        else if (len < 150) total += 70;
+        else if (len < 400) total += 80;
+        else total += 88;
       }
-      fallbackScore = Math.round(total / Math.max(1, interviewerMessages.length));
+      fallbackScore = Math.round(total / Math.max(1, candidateMessages.length));
     }
 
-    const calculatedOverallScore = comprehensiveEvaluation?.overallScore ?? evaluation?.overallScore ?? fallbackScore;
+    const calculatedOverallScore = hasAnswers
+      ? (comprehensiveEvaluation?.overallScore ?? evaluation?.overallScore ?? fallbackScore)
+      : 0;
     const calculatedCommScore = comprehensiveEvaluation?.communicationScore ?? (hasAnswers ? Math.min(100, calculatedOverallScore + 5) : 0);
 
     savedEvaluation = await (prisma as any).interviewEvaluation.create({
@@ -299,21 +305,18 @@ export async function endInterviewSession(
   } catch (error) {
     console.error("[InterviewSession] Evaluation generation failed, saving data-driven fallback evaluation:", error);
     try {
-      const candidateMessages = (session.messages || []).filter((m: any) => m.role === "candidate" || m.role === "user");
-      const interviewerMessages = (session.messages || []).filter((m: any) => m.role === "interviewer");
-      const hasAnswers = candidateMessages.length > 0;
       let fallbackScore = 0;
       if (hasAnswers) {
         let total = 0;
         for (const a of candidateMessages) {
           const len = String(a.content || "").trim().length;
-          if (len < 20) total += 20;
-          else if (len < 60) total += 40;
-          else if (len < 150) total += 55;
-          else if (len < 400) total += 70;
-          else total += 80;
+          if (len < 20) total += 35;
+          else if (len < 60) total += 55;
+          else if (len < 150) total += 70;
+          else if (len < 400) total += 80;
+          else total += 88;
         }
-        fallbackScore = Math.round(total / Math.max(1, interviewerMessages.length));
+        fallbackScore = Math.round(total / Math.max(1, candidateMessages.length));
       }
 
       savedEvaluation = await (prisma as any).interviewEvaluation.create({

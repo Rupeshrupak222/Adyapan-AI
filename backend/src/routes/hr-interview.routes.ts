@@ -489,60 +489,85 @@ hrInterviewRouter.post("/:sessionId/end", async (req, res) => {
       data: { status: "completed", endedAt: new Date() },
     });
 
+    const existingEvaluation = await p.interviewEvaluation.findFirst({
+      where: { sessionId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (existingEvaluation) {
+      res.json({ success: true, evaluation: existingEvaluation });
+      return;
+    }
+
     const messages = await p.interviewMessage.findMany({
       where: { sessionId },
       orderBy: { createdAt: "asc" },
       select: { role: true, content: true },
     });
 
-    let evaluation = null;
-    if (messages.length >= 3) {
-      const config = session.configuration || {};
-      let resumeContext = null;
-      if (config.resumeAware) {
-        const resume = await p.resume.findFirst({
-          where: { userId: req.user!.userId },
-        });
-        if (resume) resumeContext = resume.summary || resume.content || null;
-      }
-
-      const history = messages.map((m: any) => ({ role: m.role, content: m.content }));
-      evaluation = await generateHREvaluation(
-        {
-          interviewType: config.interviewType || "hr",
-          targetRole: session.role,
-          targetCompany: session.company || "",
-          difficulty: session.difficulty || "medium",
-          experienceLevel: config.experienceLevel || "mid",
-          durationMinutes: session.durationMinutes || 30,
-          language: session.language || "english",
-          resumeContext: resumeContext || "",
-          customInstructions: config.customInstructions || "",
-        },
-        history
-      );
-
-      await p.interviewEvaluation.create({
-        data: {
-          sessionId,
-          overallScore: evaluation.overallScore || 0,
-          communicationScore: evaluation.communicationScore || 0,
-          technicalScore: null,
-          hrScore: evaluation.overallScore || 0,
-          confidenceScore: evaluation.confidenceScore || 0,
-          fluencyScore: evaluation.starScore || 0,
-          bodyLanguageScore: null,
-          strengths: evaluation.strengths || [],
-          weaknesses: evaluation.weaknesses || [],
-          improvements: evaluation.improvements || [],
-          summary: evaluation.summary || "Interview terminated early.",
-          hiringRecommendation: evaluation.hiringRecommendation || "maybe",
-          detailedAnalysis: evaluation,
-        },
+    const config = session.configuration || {};
+    let resumeContext = null;
+    if (config.resumeAware) {
+      const resume = await p.resume.findFirst({
+        where: { userId: req.user!.userId },
       });
+      if (resume) resumeContext = resume.summary || resume.content || null;
     }
 
-    res.json({ success: true, evaluation });
+    const history = messages.map((m: any) => ({ role: m.role, content: m.content }));
+    const evaluation = await generateHREvaluation(
+      {
+        interviewType: config.interviewType || "hr",
+        targetRole: session.role,
+        targetCompany: session.company || "",
+        difficulty: session.difficulty || "medium",
+        experienceLevel: config.experienceLevel || "mid",
+        durationMinutes: session.durationMinutes || 30,
+        language: session.language || "english",
+        resumeContext: resumeContext || "",
+        customInstructions: config.customInstructions || "",
+      },
+      history
+    );
+
+    const savedEvaluation = await p.interviewEvaluation.create({
+      data: {
+        sessionId,
+        overallScore: evaluation.overallScore || 0,
+        communicationScore: evaluation.communicationScore || 0,
+        technicalScore: null,
+        hrScore: evaluation.overallScore || 0,
+        confidenceScore: evaluation.confidenceScore || 0,
+        fluencyScore: evaluation.starScore || 0,
+        bodyLanguageScore: null,
+        strengths: evaluation.strengths || [],
+        weaknesses: evaluation.weaknesses || [],
+        improvements: evaluation.improvements || [],
+        summary: evaluation.summary || "Interview session concluded.",
+        hiringRecommendation: evaluation.hiringRecommendation || "maybe",
+        detailedAnalysis: {
+          ...evaluation,
+          leadershipScore: evaluation.leadershipScore,
+          teamworkScore: evaluation.teamworkScore,
+          ownershipScore: evaluation.ownershipScore,
+          adaptabilityScore: evaluation.adaptabilityScore,
+          emotionalIntelligence: evaluation.emotionalIntelligence,
+          professionalism: evaluation.professionalism,
+          culturalFit: evaluation.culturalFit,
+          motivation: evaluation.motivation,
+          competencyMatrix: evaluation.competencyMatrix,
+          nextPracticeTopics: evaluation.nextPracticeTopics,
+          recruiterPerspective: evaluation.recruiterPerspective,
+        },
+      },
+    });
+
+    await p.interviewSession.update({
+      where: { id: sessionId },
+      data: { feedback: evaluation.summary || "" },
+    });
+
+    res.json({ success: true, evaluation: savedEvaluation });
   } catch (error) {
     handleRouteError(res, error, "HR.end", "Failed to end HR interview");
   }

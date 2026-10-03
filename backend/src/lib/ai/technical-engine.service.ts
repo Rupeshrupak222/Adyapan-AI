@@ -8,7 +8,11 @@ export type TechnicalTopic =
   | "react" | "node" | "sql" | "database-design"
   | "rest-apis" | "system-design-basics" | "oop"
   | "operating-systems" | "dbms" | "computer-networks"
-  | "machine-learning" | "ai-engineering" | "custom";
+  | "machine-learning" | "ai-engineering" | "custom"
+  | "data-science" | "ml-python" | "ai-ml" | "python-programming"
+  | "web-dev" | "cybersecurity" | "cloud-computing" | "java-programming"
+  | "ai" | "android-dev" | "data-analytics" | "business-analytics"
+  | "dsa-python" | "devops" | "aws" | "gen-agentic-ai" | "mobile-dev";
 
 export type CodingLanguage = "javascript" | "python" | "java" | "cpp" | "typescript";
 
@@ -104,6 +108,24 @@ const TOPIC_FOCUS: Record<TechnicalTopic, string> = {
   "machine-learning": "Focus on ML: supervised/unsupervised learning, model evaluation, feature engineering, neural networks, NLP basics, and MLOps concepts.",
   "ai-engineering": "Focus on AI engineering: LLMs, RAG, vector databases, prompt engineering, fine-tuning, AI agents, and responsible AI practices.",
   custom: "Adapt questions based on the candidate's background and the specific role requirements.",
+  // ── Adyapan 18 CSE Domains ──
+  "data-science": "Focus on Data Science: exploratory data analysis (EDA), statistical inference, probability distributions, pandas, NumPy, feature selection, data cleaning, model evaluation (ROC-AUC, RMSE, F1-score), and storytelling with data.",
+  "ml-python": "Focus on Machine Learning with Python: scikit-learn pipelines, model selection, hyperparameter tuning, regression, classification, clustering, handling imbalanced datasets, and ML productionization in Python.",
+  "ai-ml": "Focus on AI with ML: deep learning architectures, CNNs, RNNs, LSTMs, Transformers, backpropagation, PyTorch/TensorFlow implementations, regularization techniques, and computer vision / NLP tasks.",
+  "python-programming": "Focus on Programming in Python: core Python concepts, memory management, GIL, generators, decorators, iterators, magic/dunder methods, async/await, typing, packaging, and standard library best practices.",
+  "web-dev": "Focus on Web Development: modern semantic HTML5, CSS3 layouts (Flexbox, CSS Grid), responsive design, Vanilla JavaScript (ES6+), DOM manipulation, browser storage, RESTful APIs, and web performance.",
+  cybersecurity: "Focus on Cybersecurity: OWASP Top 10 vulnerabilities, web security (XSS, CSRF, SQL Injection), cryptography (symmetric/asymmetric encryption, hashing), authentication (OAuth2, JWT), network security, and secure coding practices.",
+  "cloud-computing": "Focus on Cloud Computing: cloud service models (IaaS, PaaS, SaaS), cloud design patterns, high availability, fault tolerance, virtualization, containerization, VPC networking, storage types, and cloud security.",
+  "java-programming": "Focus on Programming in Java: core Java, object-oriented design principles, Java Memory Model (JVM architecture, GC algorithms), Collections framework, Java 8+ features (Streams, Lambdas), multithreading, and concurrency utilities.",
+  ai: "Focus on Artificial Intelligence foundations: search algorithms (BFS, DFS, A*, minimax with alpha-beta pruning), heuristic functions, knowledge representation, expert systems, reinforcement learning fundamentals, and intelligent agent designs.",
+  "android-dev": "Focus on Android App Development: Kotlin & Java for Android, Android SDK, Activity & Fragment lifecycle, Jetpack Compose, MVVM/Clean Architecture, Room database, Retrofit networking, coroutines, background workers, and performance tuning.",
+  "data-analytics": "Focus on Data Analytics: SQL for complex aggregations and window functions, data extraction & transformation (ETL/ELT), metric definition, KPI tracking, cohort analysis, data visualization principles, and dashboard design.",
+  "business-analytics": "Focus on Business Analytics: translation of business problems into quantitative analytics, unit economics, customer lifetime value (LTV), CAC, churn prediction, A/B testing design, decision trees, and stakeholder reporting.",
+  "dsa-python": "Focus on Data Structures and Algorithms with Python: time and space complexity (Big-O notation), lists, hash tables, binary trees, heaps, graphs, dynamic programming, recursion, two-pointer techniques, and Pythonic algorithmic implementations.",
+  devops: "Focus on DevOps engineering: CI/CD automation pipelines (GitHub Actions, Jenkins), Docker containerization, Kubernetes cluster orchestration, Infrastructure as Code (Terraform), Linux system administration, and observability.",
+  aws: "Focus on AWS (Amazon Web Services): core services including EC2, S3, RDS, DynamoDB, Lambda, VPC networking, Route 53, IAM security policies, CloudWatch monitoring, and designing cost-efficient, scalable AWS architectures.",
+  "gen-agentic-ai": "Focus on Generative and Agentic AI: Large Language Model (LLM) architectures, prompt engineering, Retrieval-Augmented Generation (RAG), vector embeddings, vector databases (Pinecone, Chroma), LangChain, LlamaIndex, autonomous multi-agent frameworks, tool use, and safety alignment.",
+  "mobile-dev": "Focus on Mobile App Development: cross-platform mobile architecture (Flutter, React Native), state management, native bridge communication, responsive mobile UI, offline-first caching, push notifications, and release pipelines for iOS & Android.",
 };
 
 const COMPANY_FOCUS: Record<string, string> = {
@@ -130,11 +152,11 @@ function computeAnswerQuality(history: Message[]): number {
   let total = 0;
   for (const a of answers) {
     const len = a.content.trim().length;
-    if (len < 20) total += 25;
-    else if (len < 60) total += 45;
-    else if (len < 150) total += 60;
-    else if (len < 400) total += 72;
-    else total += 80;
+    if (len < 20) total += 35;
+    else if (len < 60) total += 55;
+    else if (len < 150) total += 70;
+    else if (len < 400) total += 80;
+    else total += 88;
   }
   return Math.round(total / answers.length);
 }
@@ -557,10 +579,16 @@ Return as JSON:
     answerBreakdowns: fallbackBreakdowns,
   };
 
+  // If candidate gave zero answers, return 0 score immediately without calling LLM
+  if (candidateMessages.length === 0) {
+    console.log(`[TechnicalEngine] No candidate responses recorded; returning 0-score evaluation without LLM call.`);
+    return fallback;
+  }
+
   try {
     const result = await generateJSON<TechnicalEvaluation>(
       systemPrompt,
-      `Evaluate this technical interview.\n\nTRANSCRIPT:\n${conversationHistory}\n\n${totalQuestions} QUESTIONS ASKED.`,
+      `Evaluate this technical interview.\n\nTRANSCRIPT:\n${conversationHistory}\n\nINTERVIEW SUMMARY:\n- Questions asked by interviewer: ${totalQuestions}\n- Answers submitted by candidate: ${candidateMessages.length}\n\nProvide an objective evaluation of the candidate's actual answers. If the interview concluded early, score them fairly on the questions they actually answered.`,
       { model: MODELS.BALANCED, temperature: 0.4, maxTokens: 12000 },
       fallback
     );

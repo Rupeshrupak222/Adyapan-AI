@@ -295,8 +295,8 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
         try {
           if (sessionId) {
             toast.loading("Finalizing HR interview & generating AI report...", { id: "end-hr-session" });
-            await api.post(`/interview/${sessionId}/end`).catch(async () => {
-              await api.post(`/interview/hr/${sessionId}/end`).catch(() => {});
+            await api.post(`/interview/hr/${sessionId}/end`).catch(async () => {
+              await api.post(`/interview/hr/${sessionId}/evaluate`).catch(() => {});
             });
             toast.success("Interview completed!", { id: "end-hr-session" });
           }

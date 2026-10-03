@@ -7,10 +7,18 @@
  *   - cross-test duplicates (same fingerprint appearing in another test)
  *   - near-duplicate "variations" (Jaccard token overlap above the threshold)
  *
+ * Sources matter here. MCQ questions are served from the JSON store
+ * (see mcq.service.ts) — the `mcq_tests`/`mcq_questions` tables are a stale seed
+ * mirror that no read path touches, so auditing them reports numbers that no
+ * longer reflect what users get. Aptitude genuinely lives in Postgres
+ * (`AptitudeTopicTest.questionsJson`) and is read from there.
+ *
  * Writes nothing. Run `npm run db:audit` then act on the report; adding
  * questions is a separate, explicit step because it calls the AI providers.
  */
 import "dotenv/config";
+import fs from "fs";
+import path from "path";
 import { prisma } from "../config/prisma";
 import {
   fingerprint,
@@ -21,6 +29,24 @@ import {
 } from "../lib/questions/question-fingerprint";
 
 const TARGET_PER_TEST = 30;
+const MCQ_STORE = path.join(__dirname, "../../data/mcq-tests-store.json");
+
+/** The canonical, live MCQ question list. */
+function loadMcqTests(): any[] {
+  const raw = JSON.parse(fs.readFileSync(MCQ_STORE, "utf-8"));
+  const tests = Array.isArray(raw) ? raw : raw.tests;
+  if (!Array.isArray(tests)) {
+    throw new Error(`Unexpected shape in ${MCQ_STORE} — expected an array or { tests: [] }`);
+  }
+  return tests.map((t: any) => ({
+    targetName: t.targetName ?? t.target ?? "Unknown",
+    targetType: t.targetType ?? "technology",
+    testNumber: t.testNumber ?? 1,
+    title: t.title ?? "",
+    isPublished: t.isPublished !== false,
+    questions: Array.isArray(t.questions) ? t.questions : [],
+  }));
+}
 
 type Finding = {
   kind: "EMPTY" | "UNDERFILLED" | "DUP_WITHIN" | "DUP_CROSS" | "VARIATION";
@@ -73,28 +99,26 @@ function truncate(s: string, n = 70) {
 }
 
 async function auditMcq() {
-  const tests = await prisma.mcqTest.findMany({
-    include: { questions: { orderBy: { position: "asc" } } },
-    orderBy: [{ targetName: "asc" }, { testNumber: "asc" }],
-  });
+  const tests = loadMcqTests();
 
   const findings: Finding[] = [];
   const globalSeen = new Map<string, string>(); // fingerprint -> first test label
   let totalQuestions = 0;
 
   for (const t of tests) {
-    totalQuestions += t.questions.length;
+    const questions = t.questions as any[];
+    totalQuestions += questions.length;
     const label = `${t.targetName} / ${t.title}`;
 
-    if (t.questions.length === 0) {
+    if (questions.length === 0) {
       findings.push({ kind: "EMPTY", test: label, detail: "0 questions" });
       continue;
     }
-    if (t.questions.length < TARGET_PER_TEST) {
+    if (questions.length < TARGET_PER_TEST) {
       findings.push({
         kind: "UNDERFILLED",
         test: label,
-        detail: `${t.questions.length}/${TARGET_PER_TEST} (declared questionCount=${t.questionCount})`,
+        detail: `${questions.length}/${TARGET_PER_TEST}`,
       });
     }
 
@@ -104,7 +128,6 @@ async function auditMcq() {
     for (const q of t.questions) {
       const text = textOf(q);
       const fp = fingerprint(text, [q.technology || "", q.relatedConcept || ""]);
-
       if (withinSeen.has(fp)) {
         findings.push({
           kind: "DUP_WITHIN",
@@ -200,22 +223,15 @@ async function main() {
   // Visibility summary — an empty but unpublished test is far less urgent than
   // an empty published one, because only the latter is reachable by a user.
   try {
-    const tests = await prisma.mcqTest.findMany({
-      select: {
-        isPublished: true,
-        questionCount: true,
-        _count: { select: { questions: true } },
-      },
-    });
-    const empty = tests.filter((t) => t._count.questions === 0);
-    const under = tests.filter((t) => t._count.questions > 0 && t._count.questions < TARGET_PER_TEST);
-    console.log("MCQ VISIBILITY");
-    console.log(`  empty: ${empty.length} (published ${empty.filter((t) => t.isPublished).length})`);
-    console.log(`  underfilled: ${under.length} (published ${under.filter((t) => t.isPublished).length})`);
-    console.log(`  questionCount field disagrees with actual rows: ${tests.filter((t) => t.questionCount !== t._count.questions).length}`);
+    const tests = loadMcqTests();
+    const empty = tests.filter((t) => t.questions.length === 0);
+    const under = tests.filter((t) => t.questions.length > 0 && t.questions.length < TARGET_PER_TEST);
     const needed = tests
       .filter((t) => t.isPublished)
-      .reduce((sum, t) => sum + Math.max(0, TARGET_PER_TEST - t._count.questions), 0);
+      .reduce((sum, t) => sum + Math.max(0, TARGET_PER_TEST - t.questions.length), 0);
+    console.log("MCQ VISIBILITY (source: data/mcq-tests-store.json)");
+    console.log(`  empty: ${empty.length} (published ${empty.filter((t) => t.isPublished).length})`);
+    console.log(`  underfilled: ${under.length} (published ${under.filter((t) => t.isPublished).length})`);
     console.log(`  questions needed to reach ${TARGET_PER_TEST} on published tests: ${needed}`);
   } catch (e: any) {
     console.error("[audit] MCQ visibility stats failed:", e?.message || e);

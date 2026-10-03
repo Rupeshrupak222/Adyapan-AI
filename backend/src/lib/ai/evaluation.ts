@@ -35,6 +35,31 @@ export async function generateComprehensiveEvaluation(
     areasForImprovement: string[];
   }
 ): Promise<ComprehensiveEvaluation> {
+  const candidateMessages = messages.filter((m) => m.role === "candidate" || m.role === "user");
+  if (candidateMessages.length === 0) {
+    return {
+      overallScore: 0,
+      communicationScore: 0,
+      technicalScore: 0,
+      hrScore: 0,
+      confidenceScore: 0,
+      fluencyScore: 0,
+      bodyLanguageScore: 0,
+      strengths: ["Session initialized"],
+      weaknesses: ["No candidate responses recorded in transcript"],
+      improvements: ["Provide verbal or written responses to interview questions"],
+      summary: "Interview concluded with no candidate responses recorded.",
+      hiringRecommendation: "do_not_recommend",
+      detailedAnalysis: {
+        answerQuality: 0,
+        technicalDepth: 0,
+        communicationClarity: 0,
+        problemSolving: 0,
+        culturalFit: 0,
+      },
+    };
+  }
+
   const conversation = messages
     .filter((m) => m.role !== "feedback")
     .map((m) => `[${m.role === "interviewer" ? "Interviewer" : "Candidate"}]: ${m.content}`)

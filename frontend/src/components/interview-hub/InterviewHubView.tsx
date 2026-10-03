@@ -40,6 +40,27 @@ type AppScreen =
   | "feedback"
   | "terminated";
 
+const CSE_DOMAIN_PRESETS = [
+  { name: "Data Science", role: "Data Scientist", tech: "Python, Pandas, NumPy, Scikit-learn" },
+  { name: "ML with Python", role: "Machine Learning Engineer", tech: "Python, Scikit-learn, TensorFlow, PyTorch" },
+  { name: "AI with ML", role: "AI / ML Engineer", tech: "Deep Learning, Neural Networks, Computer Vision, NLP" },
+  { name: "Programming in Python", role: "Python Developer", tech: "Python, OOP, AsyncIO, FastAPI" },
+  { name: "Full Stack Web Development", role: "Full Stack Developer", tech: "React, Next.js, Node.js, Express, PostgreSQL" },
+  { name: "Web Development", role: "Web Developer", tech: "HTML5, CSS3, JavaScript, Tailwind, DOM" },
+  { name: "Cybersecurity", role: "Cybersecurity Analyst", tech: "Network Security, OWASP, Penetration Testing, Cryptography" },
+  { name: "Cloud Computing", role: "Cloud Engineer", tech: "Cloud Architecture, Docker, Kubernetes, Virtualization" },
+  { name: "Programming in Java", role: "Java Developer", tech: "Core Java, JVM, Multithreading, Spring Boot" },
+  { name: "AI", role: "AI Specialist", tech: "Search Algorithms, Expert Systems, Reinforcement Learning" },
+  { name: "Android App Development", role: "Android Developer", tech: "Kotlin, Android SDK, Jetpack Compose, MVVM" },
+  { name: "Data Analytics", role: "Data Analyst", tech: "SQL, Power BI, Tableau, Excel, Data Warehousing" },
+  { name: "Business Analytics", role: "Business Analyst", tech: "KPI Metrics, Unit Economics, Forecasting, A/B Testing" },
+  { name: "DSA with Python", role: "Software Development Engineer", tech: "Data Structures & Algorithms, LeetCode, Python" },
+  { name: "DevOps", role: "DevOps Engineer", tech: "Docker, Kubernetes, CI/CD, Terraform, Linux" },
+  { name: "AWS", role: "AWS Cloud Architect", tech: "AWS EC2, S3, Lambda, VPC, DynamoDB, IAM" },
+  { name: "AI (Generative & Agentic)", role: "Generative AI Engineer", tech: "LLMs, LangChain, RAG, LlamaIndex, AI Agents" },
+  { name: "Mobile App Development", role: "Mobile App Engineer", tech: "Flutter, React Native, iOS, Android, Dart" },
+];
+
 export function InterviewHubView({ setView, activeModule = "interview-hub", theme = "dark" }: InterviewHubViewProps) {
   const isDark = theme === "dark";
   const router = useRouter();
@@ -774,6 +795,35 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
             </div>
 
             <div className="p-6 rounded-2xl border space-y-5" style={{ background: c.cardBg, borderColor: c.border }}>
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 mb-2" style={{ color: c.textSec }}>
+                  <Sparkles size={13} className="text-amber-500" />
+                  Quick Presets: 18 Adyapan CSE Domains
+                </label>
+                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+                  {CSE_DOMAIN_PRESETS.map((d) => {
+                    const isSelected =
+                      config.role.toLowerCase() === d.role.toLowerCase() ||
+                      config.role.toLowerCase() === d.name.toLowerCase();
+                    return (
+                      <button
+                        key={d.name}
+                        type="button"
+                        onClick={() => setConfig(p => ({ ...p, role: d.role, technology: d.tech }))}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer"
+                        style={{
+                          background: isSelected ? "rgba(245, 158, 11, 0.15)" : c.inputBg,
+                          borderColor: isSelected ? "#f59e0b" : c.border,
+                          color: isSelected ? "#f59e0b" : c.text,
+                        }}
+                      >
+                        {d.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textSec }}>Job Role</label>

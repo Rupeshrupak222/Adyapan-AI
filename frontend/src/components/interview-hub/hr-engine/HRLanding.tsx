@@ -48,6 +48,27 @@ const EXPERIENCE_OPTIONS: { value: HRExperienceLevel; label: string; description
 
 const DURATION_OPTIONS = [15, 20, 25, 30, 45, 60];
 
+const HR_ROLE_PRESETS = [
+  "Data Scientist",
+  "Machine Learning Engineer",
+  "AI / ML Engineer",
+  "Python Developer",
+  "Full Stack Developer",
+  "Web Developer",
+  "Cybersecurity Analyst",
+  "Cloud Engineer",
+  "Java Developer",
+  "AI Specialist",
+  "Android Developer",
+  "Data Analyst",
+  "Business Analyst",
+  "Software Development Engineer",
+  "DevOps Engineer",
+  "AWS Cloud Architect",
+  "Generative & Agentic AI Engineer",
+  "Mobile App Engineer",
+];
+
 const pageVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? 60 : -60, opacity: 0 }),
   center: { x: 0, opacity: 1 },
@@ -347,14 +368,37 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
               </div>
 
               {/* Role */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="space-y-1">
                   <h2 className="text-xl font-extrabold flex items-center gap-2"><Briefcase size={20} className="text-amber-500" /> Target Role</h2>
+                  <p className="text-xs" style={{ color: c.textMuted }}>Type or pick any of the 18 Adyapan CSE domains:</p>
                 </div>
                 <input value={config.targetRole} onChange={(e) => updateConfig({ targetRole: e.target.value })}
                   placeholder="Enter your target role..."
                   className="w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-amber-500/50 transition-colors"
                   style={{ background: c.inputBg, color: c.text, borderColor: c.border }} />
+
+                <div className="flex flex-wrap gap-1.5 pt-1 max-h-32 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+                  {HR_ROLE_PRESETS.map((r) => {
+                    const isSelected = config.targetRole.toLowerCase() === r.toLowerCase();
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => updateConfig({ targetRole: r })}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-amber-500 text-black border-amber-400 shadow-sm"
+                            : isDark
+                            ? "bg-white/5 text-slate-300 border-white/10 hover:border-amber-500/40 hover:bg-white/10"
+                            : "bg-slate-100 text-slate-700 border-slate-200 hover:border-amber-400 hover:bg-amber-50"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="flex justify-between">

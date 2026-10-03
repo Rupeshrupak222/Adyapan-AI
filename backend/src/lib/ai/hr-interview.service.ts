@@ -568,17 +568,25 @@ Return as JSON:
     competency: "communication",
   });
 
-  const avgAnswerLength = candidateMessages.length > 0
-    ? candidateMessages.reduce((s, m) => s + m.content.length, 0) / candidateMessages.length
-    : 0;
+  const candidateAnswerCount = candidateMessages.length;
+  const hasResponses = candidateAnswerCount > 0;
+
+  let totalScore = 0;
+  if (hasResponses) {
+    for (const m of candidateMessages) {
+      const len = m.content.trim().length;
+      if (len < 25) totalScore += 35;
+      else if (len < 75) totalScore += 55;
+      else if (len < 200) totalScore += 70;
+      else if (len < 500) totalScore += 80;
+      else totalScore += 88;
+    }
+  }
+  const baseScore = hasResponses ? Math.round(totalScore / candidateAnswerCount) : 0;
 
   const fallbackBreakdowns: HRAnswerBreakdown[] = interviewerMessages.map((q, i) =>
-    buildDefaultBreakdown(q, candidateMessages[i] || { role: "candidate", content: "No answer" }, i)
+    buildDefaultBreakdown(q, candidateMessages[i] || { role: "candidate", content: "No answer provided" }, i)
   );
-
-  // If no candidate responses, score should be 0
-  const hasResponses = candidateMessages.length > 0 && avgAnswerLength > 0;
-  const baseScore = hasResponses ? Math.min(100, Math.max(20, Math.round(avgAnswerLength / 5))) : 0;
 
   const fallback: HREvaluation = {
     overallScore: baseScore,
@@ -597,7 +605,7 @@ Return as JSON:
       "No candidate responses were provided in the transcript.",
       "Unable to evaluate behavioral competencies without answers."
     ] : [
-      `Completed ${totalQuestions} questions`,
+      `Answered ${candidateAnswerCount} question${candidateAnswerCount > 1 ? "s" : ""}`,
       baseScore >= 60 ? "Demonstrated adequate response depth" : "Showed willingness to engage",
     ],
     weaknesses: baseScore === 0 ? [
@@ -619,7 +627,7 @@ Return as JSON:
     ],
     summary: baseScore === 0 
       ? `The transcript contains only the interviewer's opening question with no candidate responses provided. As a result, no evaluation of communication, behavioral alignment, or professional experience could be performed. A complete interview record is required for a hiring assessment.`
-      : `Candidate completed a ${config.interviewType} interview for a ${config.targetRole} role${config.targetCompany ? ` at ${config.targetCompany}` : ""} with an overall score of ${baseScore}/100.`,
+      : `Candidate completed a ${config.interviewType} interview for a ${config.targetRole} role${config.targetCompany ? ` at ${config.targetCompany}` : ""} answering ${candidateAnswerCount} question(s) with an overall score of ${baseScore}/100.`,
     hiringRecommendation: baseScore === 0 ? "do_not_recommend" :
       baseScore >= 80 ? "strong_recommend" :
       baseScore >= 60 ? "recommend" :
@@ -648,9 +656,15 @@ Return as JSON:
     ],
     recruiterPerspective: baseScore === 0 
       ? `Without a response, I cannot assess communication skills, candidate technical trajectory, or motivation for the role.`
-      : `Based on this ${totalQuestions}-question interview, the candidate ${baseScore >= 70 ? "shows solid potential" : "needs improvement"} for the ${config.targetRole} role.`,
+      : `Based on this interview, the candidate ${baseScore >= 70 ? "shows solid potential" : "needs improvement"} for the ${config.targetRole} role.`,
     suggestedBetterAnswers: fallbackBreakdowns.map((b) => b.suggestedBetterAnswer),
   };
+
+  // If candidate gave zero answers, return 0 score immediately without calling LLM
+  if (!hasResponses) {
+    console.log(`[HR Interview] No candidate responses recorded; returning 0-score evaluation without LLM call.`);
+    return fallback;
+  }
 
   try {
     const result = await generateJSON<HREvaluation>(
@@ -660,9 +674,11 @@ Return as JSON:
 INTERVIEW TRANSCRIPT:
 ${conversationHistory}
 
-CANDIDATE ANSWERED ${totalQuestions} QUESTIONS.
+INTERVIEW SUMMARY:
+- Questions asked by interviewer: ${totalQuestions}
+- Answers provided by candidate: ${candidateAnswerCount}
 
-Provide a comprehensive HR evaluation with STAR analysis, communication analysis, and competency scoring for ALL ${totalQuestions} question-answer pairs.`,
+Provide a comprehensive HR evaluation with STAR analysis, communication analysis, and competency scoring. Focus on evaluating the candidate's actual answers. If the candidate answered fewer questions because the session ended early, score them fairly on the quality of their answered questions.`,
       { model: MODELS.BALANCED, temperature: 0.4, maxTokens: 16000 },
       fallback
     );

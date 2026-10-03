@@ -23,29 +23,55 @@ export default function ThemeScript() {
             return null;
           }
           return origSetAttrNode.apply(this, arguments);
-        };
+        try {
+          Object.defineProperty(Element.prototype, 'bis_skin_checked', {
+            get: function() { return undefined; },
+            set: function() { /* ignore extension injection */ },
+            configurable: true,
+          });
+        } catch (e) {}
       } catch (e) {}
 
       /* Filter Next.js / React hydration error overlay for extension-injected bis_skin_checked */
       try {
         var origError = console.error;
         console.error = function() {
+          var fullMsg = '';
           for (var i = 0; i < arguments.length; i++) {
             var arg = arguments[i];
-            if (typeof arg === 'string' && (arg.indexOf('bis_skin_checked') !== -1 || arg.indexOf('bis_register') !== -1)) {
-              return;
+            try {
+              fullMsg += ' ' + (typeof arg === 'object' && arg !== null ? (arg.message || arg.stack || JSON.stringify(arg)) : String(arg));
+            } catch (err) {
+              fullMsg += ' ' + String(arg);
             }
+          }
+          if (
+            fullMsg.indexOf('bis_skin_checked') !== -1 ||
+            fullMsg.indexOf('bis_register') !== -1 ||
+            fullMsg.indexOf('bis_') !== -1
+          ) {
+            return;
           }
           return origError.apply(console, arguments);
         };
 
         var origWarn = console.warn;
         console.warn = function() {
+          var fullMsg = '';
           for (var i = 0; i < arguments.length; i++) {
             var arg = arguments[i];
-            if (typeof arg === 'string' && (arg.indexOf('bis_skin_checked') !== -1 || arg.indexOf('bis_register') !== -1)) {
-              return;
+            try {
+              fullMsg += ' ' + (typeof arg === 'object' && arg !== null ? (arg.message || arg.stack || JSON.stringify(arg)) : String(arg));
+            } catch (err) {
+              fullMsg += ' ' + String(arg);
             }
+          }
+          if (
+            fullMsg.indexOf('bis_skin_checked') !== -1 ||
+            fullMsg.indexOf('bis_register') !== -1 ||
+            fullMsg.indexOf('bis_') !== -1
+          ) {
+            return;
           }
           return origWarn.apply(console, arguments);
         };

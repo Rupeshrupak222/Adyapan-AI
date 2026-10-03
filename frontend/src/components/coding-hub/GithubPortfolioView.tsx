@@ -171,6 +171,38 @@ export function GithubPortfolioView() {
   const [socialLeetcode, setSocialLeetcode] = useState("");
   const [socialCodeforces, setSocialCodeforces] = useState("");
 
+  // Load existing profile to prefill GitHub handle/links if user has them saved
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await api.get("/profile/me");
+        const p = res?.data?.profile;
+        if (!mounted || !p) return;
+        if (p.github) {
+          const cleanGh = p.github.replace(/https?:\/\/(www\.)?github\.com\//i, "").replace(/\/$/, "");
+          setUsername(prev => prev || cleanGh);
+          setSocialGithub(prev => prev || (p.github.startsWith("http") ? p.github : `https://github.com/${cleanGh}`));
+        }
+        if (p.name) {
+          setName(prev => prev || p.name);
+        }
+        if (p.targetRole) {
+          setSubtitle(prev => prev || p.targetRole);
+        }
+        if (p.linkedin) {
+          setSocialLinkedin(prev => prev || p.linkedin);
+        }
+        if (p.portfolio) {
+          setSocialPortfolio(prev => prev || p.portfolio);
+        }
+      } catch {
+        // Non-blocking
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   const toggleSkill = (skillId: string) => {
     setSelectedSkills(prev =>
       prev.includes(skillId) ? prev.filter(s => s !== skillId) : [...prev, skillId]
@@ -326,11 +358,27 @@ export function GithubPortfolioView() {
     return true;
   };
 
+  const syncToProfile = async () => {
+    try {
+      const updates: Record<string, string> = {};
+      const cleanGh = username.trim().replace(/https?:\/\/(www\.)?github\.com\//i, "").replace(/\/$/, "");
+      if (cleanGh) updates.github = cleanGh;
+      if (socialPortfolio.trim()) updates.portfolio = socialPortfolio.trim();
+      if (socialLinkedin.trim()) updates.linkedin = socialLinkedin.trim();
+      if (Object.keys(updates).length > 0) {
+        await api.put("/profile/me", updates);
+      }
+    } catch {
+      // Non-blocking sync
+    }
+  };
+
   const handleCopyCode = async () => {
     if (!(await ensureQuotaForCurrentVersion())) return;
     navigator.clipboard.writeText(generatedMarkdown);
     setCopied(true);
     toast.success("README.md copied to clipboard!");
+    syncToProfile();
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -344,6 +392,7 @@ export function GithubPortfolioView() {
     a.click();
     URL.revokeObjectURL(url);
     toast.success("README.md downloaded successfully!");
+    syncToProfile();
   };
 
   return (

@@ -214,11 +214,11 @@ function computeAnswerQualityScore(history: Message[]): number {
   let total = 0;
   for (const a of answers) {
     const len = a.content.trim().length;
-    if (len < 20) total += 25;
-    else if (len < 60) total += 45;
-    else if (len < 150) total += 60;
-    else if (len < 400) total += 72;
-    else total += 80;
+    if (len < 20) total += 35;
+    else if (len < 60) total += 55;
+    else if (len < 150) total += 70;
+    else if (len < 400) total += 80;
+    else total += 88;
   }
   return Math.round(total / answers.length);
 }
@@ -543,6 +543,12 @@ Be specific and reference actual responses from the candidate. Avoid generic fee
     answerBreakdowns: fallbackBreakdowns,
   };
 
+  // If candidate gave zero answers, return 0 score immediately without calling LLM
+  if (candidateMessages.length === 0) {
+    console.log(`[Engine] No candidate responses recorded; returning 0-score evaluation without LLM call.`);
+    return fallback;
+  }
+
   try {
     const result = await generateJSON<EngineEvaluation>(
       systemPrompt,
@@ -551,9 +557,11 @@ Be specific and reference actual responses from the candidate. Avoid generic fee
 INTERVIEW TRANSCRIPT:
 ${conversationHistory}
 
-CANDIDATE ANSWERED ${totalQuestions} QUESTIONS.
+INTERVIEW SUMMARY:
+- Questions asked by interviewer: ${totalQuestions}
+- Answers provided by candidate: ${candidateMessages.length}
 
-Provide a comprehensive evaluation with breakdowns for ALL ${totalQuestions} question-answer pairs.`,
+Provide an objective evaluation. Focus on evaluating the candidate's actual answers. If the candidate answered fewer questions because the session ended early, score them fairly on the quality of their answered questions.`,
       { model: MODELS.BALANCED, temperature: 0.4, maxTokens: 16000 },
       fallback
     );

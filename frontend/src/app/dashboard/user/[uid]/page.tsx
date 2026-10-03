@@ -123,7 +123,7 @@ const PlacementHubView = dynamic(() => import("@/components/placement-hub/Placem
   ssr: false,
 });
 const PlacementIntelligenceView = dynamic(() => import("@/components/placement-hub/PlacementIntelligenceWidget").then(m => m.PlacementIntelligenceWidget), {
-  loading: () => <DashboardWidgetSkeleton title="Placement Intelligence" />,
+  loading: () => <DashboardWidgetSkeleton title="Placement Score" />,
   ssr: false,
 });
 const AptitudeEngineView = dynamic(() => import("@/components/aptitude-hub/AptitudeEngineView").then(m => m.AptitudeEngineView), {

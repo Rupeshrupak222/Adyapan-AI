@@ -477,13 +477,13 @@ engineRouter.post("/:sessionId/evaluate", async (req, res) => {
         let total = 0;
         for (const a of candidateMsgs) {
           const len = String(a.content || "").trim().length;
-          if (len < 20) total += 20;
-          else if (len < 60) total += 40;
-          else if (len < 150) total += 55;
-          else if (len < 400) total += 70;
-          else total += 80;
+          if (len < 20) total += 35;
+          else if (len < 60) total += 55;
+          else if (len < 150) total += 70;
+          else if (len < 400) total += 80;
+          else total += 88;
         }
-        computedScore = Math.round(total / Math.max(1, interviewerMsgs.length));
+        computedScore = Math.round(total / Math.max(1, candidateMsgs.length));
       }
 
       evaluation = {
