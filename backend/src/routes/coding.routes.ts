@@ -17,8 +17,45 @@ import { DsaProgressService } from "../services/dsa-progress.service";
 
 
 
+import fs from "fs";
+import path from "path";
+
 const router = Router();
 router.use(requireAuth);
+
+let curatedQuestionsMap: Map<string, any> | null = null;
+function getCuratedQuestionMeta(identifier: string) {
+  if (!identifier) return null;
+  if (!curatedQuestionsMap) {
+    curatedQuestionsMap = new Map();
+    try {
+      const candidatePaths = [
+        path.resolve(__dirname, "../../data/curated-dsa-questions.json"),
+        path.resolve(process.cwd(), "data/curated-dsa-questions.json"),
+        path.resolve(process.cwd(), "backend/data/curated-dsa-questions.json")
+      ];
+      let jsonPath = candidatePaths.find(p => fs.existsSync(p));
+      if (jsonPath) {
+        const raw = fs.readFileSync(jsonPath, "utf-8");
+        const list = JSON.parse(raw);
+        for (const item of list) {
+          if (item.id) curatedQuestionsMap.set(item.id, item);
+          if (item.externalId) curatedQuestionsMap.set(item.externalId.toLowerCase().trim(), item);
+          if (item.externalId) curatedQuestionsMap.set(item.externalId, item);
+          if (item.title) curatedQuestionsMap.set(item.title.toLowerCase().trim(), item);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load curated-dsa-questions.json cache:", e);
+    }
+  }
+  const cleanId = String(identifier).trim();
+  return (
+    curatedQuestionsMap.get(cleanId) ||
+    curatedQuestionsMap.get(cleanId.toLowerCase()) ||
+    null
+  );
+}
 
 async function findCodingQuestionByIdOrExternalId(identifier: string) {
   if (!identifier) return null;
@@ -222,45 +259,75 @@ router.get("/dashboard", async (req: any, res) => {
     const bookmarkedCount = userProgress.filter((p: any) => p.bookmarked).length;
 
     // 3. Topic Explorer metrics
+    // 3. Topic Explorer metrics & Accurate Solved Check
     // Fetch all global questions
     const globalQuestions = await masterPrisma.codingQuestion.findMany({
-      select: { id: true, topic: true, difficulty: true }
+      select: { id: true, externalId: true, topic: true, difficulty: true }
     });
 
-    const topics = [
-      "Arrays", "Strings", "Hashing", "Linked Lists", "Stacks", "Queues",
-      "Trees", "Binary Trees", "BST", "Heaps", "Recursion", "Backtracking",
-      "Greedy", "Dynamic Programming", "Graphs", "Tries", "Sliding Window",
-      "Two Pointers", "Bit Manipulation"
+    const isQuestionSolved = (q: any) => {
+      const p: any = progressMap.get(q.id) || (q.externalId ? progressMap.get(q.externalId) : null);
+      if (!p) return false;
+      return p.solved === true || p.status?.toLowerCase() === "solved";
+    };
+
+    const REAL_DSA_TOPICS = [
+      "Arrays & Hashing",
+      "Two Pointers",
+      "Sliding Window",
+      "Stack",
+      "Binary Search",
+      "Linked List",
+      "Trees",
+      "Heap / Priority Queue",
+      "Backtracking",
+      "Tries",
+      "Graphs",
+      "Advanced Graphs",
+      "1-D Dynamic Programming",
+      "2-D Dynamic Programming",
+      "Greedy",
+      "Intervals",
+      "Math & Geometry",
+      "Bit Manipulation"
     ];
 
-    // Compute metrics per topic
-    const topicExplorer = topics.map(topicName => {
-      const topicQuestions = globalQuestions.filter(q => q.topic === topicName);
-      const totalQ = topicQuestions.length;
-      
-      const solvedQ = topicQuestions.filter(q => (progressMap.get(q.id) as any)?.status === "solved").length;
-      const completionPercentage = totalQ > 0 ? Math.round((solvedQ / totalQ) * 100) : 0;
+    const dbTopics = Array.from(new Set(globalQuestions.map(q => q.topic).filter(Boolean)));
+    const topicsToDisplay = [
+      ...REAL_DSA_TOPICS,
+      ...dbTopics.filter(t => !REAL_DSA_TOPICS.includes(t))
+    ];
 
-      // Difficulty distribution
-      const difficultyDist = { Easy: 0, Medium: 0, Hard: 0, Expert: 0 };
-      topicQuestions.forEach(q => {
-        const diff = q.difficulty as keyof typeof difficultyDist;
-        if (diff in difficultyDist) {
-          difficultyDist[diff]++;
-        } else {
-          difficultyDist["Easy"]++;
-        }
-      });
+    // Compute metrics per topic (only for topics that have questions in DB)
+    const topicExplorer: any[] = topicsToDisplay
+      .map(topicName => {
+        const topicQuestions = globalQuestions.filter(q => q.topic === topicName);
+        const totalQ = topicQuestions.length;
+        if (totalQ === 0) return null;
+        
+        const solvedQ = topicQuestions.filter(q => isQuestionSolved(q)).length;
+        const completionPercentage = totalQ > 0 ? Math.round((solvedQ / totalQ) * 100) : 0;
 
-      return {
-        topicName,
-        questionCount: totalQ,
-        solvedCount: solvedQ,
-        completionPercentage,
-        difficultyDistribution: difficultyDist
-      };
-    });
+        // Difficulty distribution
+        const difficultyDist = { Easy: 0, Medium: 0, Hard: 0, Expert: 0 };
+        topicQuestions.forEach(q => {
+          const diff = q.difficulty as keyof typeof difficultyDist;
+          if (diff in difficultyDist) {
+            difficultyDist[diff]++;
+          } else {
+            difficultyDist["Easy"]++;
+          }
+        });
+
+        return {
+          topicName,
+          questionCount: totalQ,
+          solvedCount: solvedQ,
+          completionPercentage,
+          difficultyDistribution: difficultyDist
+        };
+      })
+      .filter((t: any): t is NonNullable<typeof t> => Boolean(t));
 
     // 4. Daily Challenge (get or resolve)
     const today = new Date();
@@ -325,19 +392,21 @@ router.get("/dashboard", async (req: any, res) => {
 
     // 6. AI Recommendations
     let recommendedQuestions: any[] = [];
-    const startedTopics = topicExplorer.filter(t => t.solvedCount > 0 && t.completionPercentage < 100);
+    const startedTopics = topicExplorer.filter((t: any) => t && t.solvedCount > 0 && t.completionPercentage < 100);
     
     let targetTopic = "Arrays";
     let targetDifficulty = "Easy";
     let message = "Let's build your foundation in Arrays.";
 
     if (startedTopics.length > 0) {
-      const lowest = startedTopics.sort((a, b) => a.completionPercentage - b.completionPercentage)[0];
-      targetTopic = lowest.topicName;
-      targetDifficulty = lowest.completionPercentage >= 50 ? "Medium" : "Easy";
-      message = `You solved ${lowest.solvedCount} problems in ${lowest.topicName}. Next recommendation in this topic:`;
+      const lowest: any = startedTopics.sort((a: any, b: any) => (a?.completionPercentage || 0) - (b?.completionPercentage || 0))[0];
+      if (lowest) {
+        targetTopic = lowest.topicName;
+        targetDifficulty = lowest.completionPercentage >= 50 ? "Medium" : "Easy";
+        message = `You solved ${lowest.solvedCount} problems in ${lowest.topicName}. Next recommendation in this topic:`;
+      }
     } else {
-      const unstarted = topicExplorer.find(t => t.questionCount > 0 && t.solvedCount === 0);
+      const unstarted: any = topicExplorer.find((t: any) => t && t.questionCount > 0 && t.solvedCount === 0);
       if (unstarted) {
         targetTopic = unstarted.topicName;
         targetDifficulty = "Easy";
@@ -432,16 +501,18 @@ router.get("/questions", async (req: any, res) => {
     });
 
     let mappedQuestions = questions.map((q: any) => {
-      const p: any = progressMap.get(q.id);
-      // Hide internal IDs from user display, but keep id for internal operations
-      const { externalId, ...questionData } = q;
+      const p: any = progressMap.get(q.id) || (q.externalId ? progressMap.get(q.externalId) : null);
+      const isSolved = p && (p.solved === true || p.status?.toLowerCase() === "solved");
+      const isAttempted = p && (isSolved || p.attempted === true || p.status?.toLowerCase() === "attempted" || (p.runCount && p.runCount > 0));
       return {
-        ...questionData,
+        ...q,
+        externalId: q.externalId,
+        tagsJson: Array.isArray(q.tagsJson) ? q.tagsJson : [],
         progress: {
-          status: p ? p.status : "unsolved",
+          status: isSolved ? "solved" : isAttempted ? "attempted" : "unsolved",
           viewed: p ? p.viewed : false,
-          attempted: p ? p.attempted : false,
-          solved: p ? p.solved : false,
+          attempted: !!isAttempted,
+          solved: !!isSolved,
           bookmarked: p ? p.bookmarked : false,
           timeSpent: p ? p.timeSpent : 0
         }
@@ -489,15 +560,43 @@ router.get("/question/:id", async (req: any, res) => {
     const questionId = question.id;
     const userPrisma = await getUserPrismaFromRequest(req);
     
-    // Mark viewed as true when fetched
-    const progress = await userPrisma.userQuestionProgress.upsert({
-      where: { userId_questionId: { userId, questionId } },
-      update: { viewed: true },
-      create: { userId, questionId, viewed: true }
-    });
+    const progress = (await userPrisma.userQuestionProgress.findUnique({
+      where: { userId_questionId: { userId, questionId } }
+    })) || { status: "not_started", viewed: false, attempted: false, solved: false, bookmarked: false, timeSpent: 0 };
+
+    const explanationJson = question.aiAnalyses[0] ? (question.aiAnalyses[0].explanationJson as any) : {};
+    const problemRecord = await masterPrisma.problem.findUnique({
+      where: { id: questionId }
+    }).catch(() => null);
+
+    const curatedMeta = getCuratedQuestionMeta(question.id) || getCuratedQuestionMeta(question.externalId) || getCuratedQuestionMeta(question.title);
+
+    const companiesList = (explanationJson?.companies && Array.isArray(explanationJson.companies) && explanationJson.companies.length > 0)
+      ? explanationJson.companies
+      : ((problemRecord?.companies && problemRecord.companies.length > 0)
+        ? problemRecord.companies
+        : (curatedMeta?.companies || []));
+
+    const hintsList = (explanationJson?.hints && Array.isArray(explanationJson.hints) && explanationJson.hints.length > 0)
+      ? explanationJson.hints
+      : ((problemRecord?.hints && problemRecord.hints.length > 0)
+        ? problemRecord.hints
+        : (curatedMeta?.hints || []));
+
+    const tagsList = (Array.isArray(question.tagsJson) && question.tagsJson.length > 0)
+      ? question.tagsJson
+      : (curatedMeta?.tags || []);
+
+    const { hiddenTestCases, ...safeQuestion } = question as any;
+    const enrichedQuestion = {
+      ...safeQuestion,
+      tags: tagsList,
+      companies: companiesList,
+      hints: hintsList,
+    };
 
     res.json({
-      question,
+      question: enrichedQuestion,
       progress: {
         status: progress.status,
         viewed: progress.viewed,
@@ -506,7 +605,7 @@ router.get("/question/:id", async (req: any, res) => {
         bookmarked: progress.bookmarked,
         timeSpent: progress.timeSpent
       },
-      aiAnalysis: question.aiAnalyses[0] ? question.aiAnalyses[0].explanationJson : null
+      aiAnalysis: explanationJson
     });
   } catch (error) {
     handleRouteError(res, error, "Coding.questionDetails", "Failed to get question details");
@@ -799,8 +898,38 @@ router.get("/workspace/:id", async (req: any, res) => {
       scrapedProblemData.examples = expanded;
     }
 
+    const problemRecord = await masterPrisma.problem.findUnique({
+      where: { id: questionId }
+    }).catch(() => null);
+
+    const curatedMeta = getCuratedQuestionMeta(question.id) || getCuratedQuestionMeta(question.externalId) || getCuratedQuestionMeta(question.title);
+
+    const companiesList = (aiAnalysisData?.companies && Array.isArray(aiAnalysisData.companies) && aiAnalysisData.companies.length > 0)
+      ? aiAnalysisData.companies
+      : ((problemRecord?.companies && problemRecord.companies.length > 0)
+        ? problemRecord.companies
+        : (curatedMeta?.companies || []));
+
+    const hintsList = (aiAnalysisData?.hints && Array.isArray(aiAnalysisData.hints) && aiAnalysisData.hints.length > 0)
+      ? aiAnalysisData.hints
+      : ((problemRecord?.hints && problemRecord.hints.length > 0)
+        ? problemRecord.hints
+        : (curatedMeta?.hints || []));
+
+    const tagsList = (Array.isArray(question.tagsJson) && question.tagsJson.length > 0)
+      ? question.tagsJson
+      : (curatedMeta?.tags || []);
+
+    const { hiddenTestCases, ...safeQuestion } = question as any;
+    const enrichedQuestion = {
+      ...safeQuestion,
+      tags: tagsList,
+      companies: companiesList,
+      hints: hintsList,
+    };
+
     res.json({
-      question,
+      question: enrichedQuestion,
       progress: {
         status: progress.status,
         viewed: progress.viewed,
@@ -864,13 +993,15 @@ router.post("/workspace/:id/save", async (req: any, res) => {
     });
 
     // Keep "solved" status if already solved, otherwise update status
-    const nextStatus = currentProgress?.status === "solved" ? "solved" : status.toLowerCase() === "solved" ? "solved" : "attempted";
+    const isMarkedSolved = currentProgress?.status === "solved" || currentProgress?.solved === true || status.toLowerCase() === "solved";
+    const nextStatus = isMarkedSolved ? "solved" : "attempted";
 
     const progress = await userPrisma.userQuestionProgress.upsert({
       where: { userId_questionId: { userId, questionId } },
       update: {
         timeSpent: { increment: timeSpent },
         status: nextStatus,
+        solved: isMarkedSolved ? true : undefined,
         attempted: true
       },
       create: {
@@ -878,10 +1009,15 @@ router.post("/workspace/:id/save", async (req: any, res) => {
         questionId,
         timeSpent,
         status: nextStatus,
+        solved: isMarkedSolved,
         attempted: true,
         viewed: true
       }
     });
+
+    if (isMarkedSolved) {
+      await DsaProgressService.recordSolved(userId, questionId, userPrisma, req, timeSpent).catch(() => {});
+    }
 
     res.json({ success: true, session, progress });
   } catch (error) {
@@ -1296,17 +1432,17 @@ router.post("/workspace/:id/run", async (req: any, res) => {
     let sampleResults: Array<{ input: string; expected: string; actual: string; passed: boolean }> = [];
     if (examples.length > 0) {
       // Anti-cheat: detect hardcoded outputs
-      const cheatCheck = detectHardcodedOutput(code, examples.map(e => ({ input: e.input, output: e.output })));
+      const cheatCheck = detectHardcodedOutput(code, examples.map((e: any) => ({ input: e.input, output: e.output })));
       
       if (cheatCheck.isHardcoded && cheatCheck.confidence >= 0.85) {
-        sampleResults = examples.map((ex, i) => ({
+        sampleResults = examples.map((ex: any, _i: number) => ({
           input: ex.input,
           expected: ex.output,
           actual: "Hardcoded output detected — your code must read and process the input.",
           passed: false,
         }));
       } else {
-        const testCases = examples.map(ex => ({ input: ex.input, expectedOutput: ex.output }));
+        const testCases = examples.map((ex: any) => ({ input: ex.input, expectedOutput: ex.output }));
         const submission = await runTestCases(language, code, testCases, 10000);
         sampleResults = submission.testResults.map(tr => ({
           input: tr.input,
@@ -1349,58 +1485,77 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
     const questionId = question.id;
 
     const rawVisible = (question.visibleTestCases as any) || [];
-    let examples = (Array.isArray(rawVisible) && rawVisible.length > 0)
-      ? rawVisible.map((tc: any) => ({ input: tc.input, output: tc.expectedOutput }))
-      : ((question.examples as any) || []);
+    const rawHidden = (question.hiddenTestCases as any) || [];
 
-    if (examples.length === 0) {
-      examples = [
-        {
-          input: "5\n1 2 3 4 5",
-          output: "5",
-          explanation: "Fallback test case."
-        }
-      ];
+    const visibleTestCases: Array<{ input: string; expectedOutput: string; isHidden: boolean; testNumber?: number }> = 
+      (Array.isArray(rawVisible) && rawVisible.length > 0)
+        ? rawVisible.map((tc: any, i: number) => ({ input: tc.input, expectedOutput: tc.expectedOutput, isHidden: false, testNumber: i + 1 }))
+        : ((question.examples as any) || []).map((ex: any, i: number) => ({ input: ex.input, expectedOutput: ex.output, isHidden: false, testNumber: i + 1 }));
+
+    if (visibleTestCases.length === 0) {
+      visibleTestCases.push({
+        input: "5\n1 2 3 4 5",
+        expectedOutput: "5",
+        isHidden: false,
+        testNumber: 1
+      });
     }
 
+    const hiddenTestCases: Array<{ input: string; expectedOutput: string; isHidden: boolean; testNumber?: number }> =
+      (Array.isArray(rawHidden) && rawHidden.length > 0)
+        ? rawHidden.map((tc: any, i: number) => ({ input: tc.input, expectedOutput: tc.expectedOutput, isHidden: true, testNumber: visibleTestCases.length + i + 1 }))
+        : [];
+
+    const allTestCases = [...visibleTestCases, ...hiddenTestCases];
+
     // Step 1: Anti-cheat detection
-    const cheatCheck = detectHardcodedOutput(code, examples.map(e => ({ input: e.input, output: e.output })));
+    const cheatCheck = detectHardcodedOutput(code, visibleTestCases.map(e => ({ input: e.input, output: e.expectedOutput })));
     if (cheatCheck.isHardcoded && cheatCheck.confidence >= 0.85) {
       return res.json({
         allPassed: false,
-        totalTests: examples.length,
+        totalTests: allTestCases.length,
         passedTests: 0,
         executionTime: 0,
         memory: 0,
         testResults: [{
           testCase: 1,
-          input: examples[0]?.input || "",
-          expected: examples[0]?.output || "",
+          input: visibleTestCases[0]?.input || "",
+          expected: visibleTestCases[0]?.expectedOutput || "",
           actual: "Hardcoded output detected",
           passed: false,
           executionTime: 0,
+          isHidden: false
         }],
         cheatingDetected: true,
         cheatingReason: cheatCheck.reason,
       });
     }
 
-    // Run against visible test cases (mentioned in question / examples)
-    const visibleTestCases = examples.map(ex => ({ input: ex.input, expectedOutput: ex.output }));
-    const submissionResult = await runTestCases(language, code, visibleTestCases, 10000);
+    // Run against BOTH visible and hidden test cases
+    const submissionResult = await runTestCases(
+      language,
+      code,
+      allTestCases.map(tc => ({ input: tc.input, expectedOutput: tc.expectedOutput })),
+      15000
+    );
 
     const totalTests = submissionResult.totalTests;
     const totalPassed = submissionResult.passedTests;
     const isAllPassed = submissionResult.allPassed;
 
-    const testResults = submissionResult.testResults.map((tr, i) => ({
-      testCase: i + 1,
-      input: tr.input,
-      expected: tr.expectedOutput,
-      actual: tr.actualOutput,
-      passed: tr.passed,
-      executionTime: tr.executionResult.executionTime,
-    }));
+    const testResults = submissionResult.testResults.map((tr, i) => {
+      const tcMeta = allTestCases[i] || { isHidden: false };
+      const isHidden = !!tcMeta.isHidden;
+      return {
+        testCase: i + 1,
+        isHidden,
+        input: isHidden ? "[Hidden Test Case Input]" : tr.input,
+        expected: isHidden ? "[Hidden Expected Output]" : tr.expectedOutput,
+        actual: isHidden ? (tr.passed ? "[Passed Hidden Case]" : "[Hidden Case Failed]") : tr.actualOutput,
+        passed: tr.passed,
+        executionTime: tr.executionResult?.executionTime || 0,
+      };
+    });
 
     const userPrisma = await getUserPrismaFromRequest(req);
     const status = isAllPassed ? "Accepted" : "Failed";
@@ -1412,8 +1567,8 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
         questionId,
         language,
         codeSnapshot: code,
-        stdin: "all_test_cases",
-        stdout: `Passed ${totalPassed}/${totalTests} test cases.`,
+        stdin: `all_${totalTests}_test_cases`,
+        stdout: `Passed ${totalPassed}/${totalTests} test cases (${visibleTestCases.length} visible, ${hiddenTestCases.length} hidden).`,
         stderr: isAllPassed ? "" : "Some test cases failed.",
         status,
         executionTime: submissionResult.executionTime,
@@ -1449,7 +1604,8 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
     }
     langUsage[language] = (langUsage[language] || 0) + 1;
 
-    const finalStatus = (isAllPassed || progressRecord?.status === "solved") ? "solved" : "attempted";
+    const isSolvedNow = isAllPassed || progressRecord?.status === "solved" || progressRecord?.solved === true;
+    const finalStatus = isSolvedNow ? "solved" : "attempted";
 
     await userPrisma.userQuestionProgress.upsert({
       where: { userId_questionId: { userId, questionId } },
@@ -1459,7 +1615,7 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
         failedRuns: !isAllPassed ? { increment: 1 } : undefined,
         languageUsage: langUsage,
         status: finalStatus,
-        solved: isAllPassed ? true : undefined,
+        solved: isSolvedNow,
         attempted: true,
       },
       create: {
@@ -1470,7 +1626,7 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
         failedRuns: !isAllPassed ? 1 : 0,
         languageUsage: langUsage,
         status: finalStatus,
-        solved: isAllPassed,
+        solved: isSolvedNow,
         attempted: true,
         viewed: true,
       }
@@ -1495,7 +1651,7 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
 
     // Synchronize DSA progress and streak
     try {
-      if (isAllPassed) {
+      if (isSolvedNow) {
         await DsaProgressService.recordSolved(userId, questionId, userPrisma, req);
       } else {
         await DsaProgressService.calculateAndSyncProgress(userId, userPrisma);

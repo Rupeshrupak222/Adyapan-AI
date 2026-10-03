@@ -7403,5 +7403,4764 @@
       "Maintain a visited set to avoid processing the same word multiple times and track the BFS level (start with 1 for beginWord). When endWord is popped or reached, return the current step count."
     ],
     "id": "cmuqztjw10000gkfg77pblwx1"
+  },
+  {
+    "number": 93,
+    "externalId": "DSA-093",
+    "title": "Network Delay Time",
+    "topic": "Advanced Graphs",
+    "difficulty": "Medium",
+    "rating": 1450,
+    "tags": [
+      "Dijkstra",
+      "Shortest Path",
+      "Heap / Priority Queue",
+      "Breadth-First Search",
+      "Graph"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Facebook",
+      "Uber",
+      "Oracle",
+      "Bloomberg"
+    ],
+    "statement": "You are given a network of `n` directed nodes, labeled from `1` to `n`. You are also given `times`, a list of directed edges where `times[i] = (u_i, v_i, t_i)`:\n- `u_i` is the source node (an integer from 1 to n)\n- `v_i` is the target node (an integer from 1 to n)\n- `t_i` is the time it takes for a signal to travel from the source to the target node (a non-negative integer).\n\nYou are also given an integer `k`, representing the node from which we will send a signal.\n\nReturn the minimum time it takes for all of the `n` nodes to receive the signal. If it is impossible for all the nodes to receive the signal, return `-1` instead.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(E log V) using Dijkstra's algorithm with a min-heap, where E is the number of edges and V is the number of nodes (n).\n- **Space Complexity:** O(V + E) auxiliary space for the adjacency list and min-heap.",
+    "constraints": "1 <= k <= n <= 100\n1 <= times.length <= 6000\ntimes[i].length == 3\n1 <= u_i, v_i <= n\nu_i != v_i\n0 <= t_i <= 100\nAll directed edges (u_i, v_i) are unique.",
+    "inputFormat": "Line 1 contains three integers: n (number of nodes), E (number of directed edges), and k (source node).\nThe next E lines each contain three integers: u, v, and w representing a directed edge from u to v with travel time w.",
+    "outputFormat": "Print the minimum time it takes for all nodes to receive the signal, or -1 if unreachable.",
+    "examples": [
+      {
+        "input": "4 4 1\n1 2 1\n2 3 1\n1 4 4\n3 4 1",
+        "output": "3",
+        "explanation": "Distances from node 1: node 1 = 0, node 2 = 1, node 3 = 2, node 4 = 3 (via 1->2->3->4). The maximum time for all nodes to receive the signal is 3."
+      },
+      {
+        "input": "3 2 2\n1 2 1\n2 3 1",
+        "output": "-1",
+        "explanation": "Node 1 cannot be reached when starting from node 2."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "4 4 1\n1 2 1\n2 3 1\n1 4 4\n3 4 1",
+        "expectedOutput": "3",
+        "explanation": "Max distance from source 1 is 3."
+      },
+      {
+        "input": "3 2 2\n1 2 1\n2 3 1",
+        "expectedOutput": "-1",
+        "explanation": "Node 1 is unreachable from node 2."
+      },
+      {
+        "input": "2 1 1\n1 2 1",
+        "expectedOutput": "1",
+        "explanation": "Direct single edge."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2 1 2\n1 2 1",
+        "expectedOutput": "-1"
+      },
+      {
+        "input": "3 3 1\n1 2 5\n2 3 10\n1 3 20",
+        "expectedOutput": "15"
+      },
+      {
+        "input": "5 4 1\n1 2 3\n1 3 7\n1 4 2\n1 5 8",
+        "expectedOutput": "8"
+      },
+      {
+        "input": "4 3 1\n1 2 2\n2 3 3\n3 1 1",
+        "expectedOutput": "-1"
+      }
+    ],
+    "hints": [
+      "This problem asks for the maximum of the shortest path distances from node k to all other nodes in a directed, weighted graph with non-negative edge weights.",
+      "Use Dijkstra's algorithm with a min-priority queue to find the shortest distance from node k to every other node.",
+      "Initialize a distance array with infinity, set dist[k] = 0, and push (0, k) into the min-heap. Pop the node with the smallest distance, relax its outgoing edges, and push updated distances into the heap.",
+      "After Dijkstra terminates, find the maximum value in dist. If any node has distance infinity (unreachable), return -1; otherwise, return the maximum distance."
+    ],
+    "id": "cmury4cct0000b8fgbm5bveze"
+  },
+  {
+    "number": 94,
+    "externalId": "DSA-094",
+    "title": "Reconstruct Flight Path",
+    "topic": "Advanced Graphs",
+    "difficulty": "Hard",
+    "rating": 1800,
+    "tags": [
+      "Depth-First Search",
+      "Graph",
+      "Eulerian Circuit",
+      "Hierholzer's Algorithm"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Facebook",
+      "Microsoft",
+      "Uber",
+      "Twitter",
+      "Bloomberg"
+    ],
+    "statement": "You are given a list of flight tickets `tickets` where `tickets[i] = [from_i, to_i]` represent the source airport and the destination airport.\n\nEach `from_i` and `to_i` consists of three uppercase English letters.\n\nReconstruct the itinerary in order and return it.\n\nAll of the tickets belong to someone who originally departed from `\"JFK\"`. Your objective is to reconstruct the flight path that this person took, assuming each ticket was used exactly once.\n\nIf there are multiple valid flight paths, return the lexicographically smallest one.\n\nFor example, the itinerary `[\"JFK\", \"SEA\"]` has a smaller lexical order than `[\"JFK\", \"SFO\"]`.\n\nYou may assume all the tickets form at least one valid flight path.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(E log E), where E is the number of tickets (edges).\n- **Space Complexity:** O(E) auxiliary space for the adjacency list and recursion stack.",
+    "constraints": "1 <= tickets.length <= 300\ntickets[i].length == 2\nfrom_i.length == 3, to_i.length == 3\nfrom_i and to_i consist of uppercase English letters.\nfrom_i != to_i\nAll tickets form at least one valid itinerary.",
+    "inputFormat": "Line 1 contains an integer E representing the number of tickets.\nThe next E lines each contain two 3-letter strings: from and to representing a flight ticket.",
+    "outputFormat": "Print the airports in the reconstructed itinerary separated by spaces on a single line.",
+    "examples": [
+      {
+        "input": "3\nBUF HOU\nHOU SEA\nJFK BUF",
+        "output": "JFK BUF HOU SEA",
+        "explanation": "The only valid flight path using every ticket once is JFK -> BUF -> HOU -> SEA."
+      },
+      {
+        "input": "4\nHOU JFK\nSEA JFK\nJFK SEA\nJFK HOU",
+        "output": "JFK HOU JFK SEA JFK",
+        "explanation": "Another possible reconstruction is JFK -> SEA -> JFK -> HOU -> JFK, but JFK -> HOU -> ... is lexicographically smaller."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3\nBUF HOU\nHOU SEA\nJFK BUF",
+        "expectedOutput": "JFK BUF HOU SEA",
+        "explanation": "Linear itinerary."
+      },
+      {
+        "input": "4\nHOU JFK\nSEA JFK\nJFK SEA\nJFK HOU",
+        "expectedOutput": "JFK HOU JFK SEA JFK",
+        "explanation": "Lexicographically smallest choice at JFK is HOU."
+      },
+      {
+        "input": "4\nJFK KUL\nJFK NRT\nNRT JFK\nKUL DXB",
+        "expectedOutput": "JFK NRT JFK KUL DXB",
+        "explanation": "Visiting KUL first leads to a premature dead-end at DXB."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1\nJFK SFO",
+        "expectedOutput": "JFK SFO"
+      },
+      {
+        "input": "2\nJFK SFO\nSFO JFK",
+        "expectedOutput": "JFK SFO JFK"
+      },
+      {
+        "input": "5\nJFK SFO\nJFK ATL\nSFO ATL\nATL JFK\nATL SFO",
+        "expectedOutput": "JFK ATL JFK SFO ATL SFO"
+      },
+      {
+        "input": "5\nJFK AAA\nAAA JFK\nJFK BBB\nBBB JFK\nJFK CCC",
+        "expectedOutput": "JFK AAA JFK BBB JFK CCC"
+      }
+    ],
+    "hints": [
+      "This problem requires finding an Eulerian Path in a directed graph starting from 'JFK' that visits every directed edge (ticket) exactly once.",
+      "Sort the destination airports for each departure airport in alphabetical order so that you always explore lexicographically smaller paths first.",
+      "Hierholzer's algorithm (post-order DFS): From the current airport, continually follow and remove outgoing flights to the smallest neighbor. When an airport has no more outgoing flights, prepend/push it to the itinerary result list. Reversing the post-order sequence gives the valid Eulerian path."
+    ],
+    "id": "cmury76eb0000lgfgmbsmkzym"
+  },
+  {
+    "number": 95,
+    "externalId": "DSA-095",
+    "title": "Min Cost to Connect Points",
+    "topic": "Advanced Graphs",
+    "difficulty": "Medium",
+    "rating": 1500,
+    "tags": [
+      "Minimum Spanning Tree",
+      "Prim's Algorithm",
+      "Kruskal's Algorithm",
+      "Union Find",
+      "Graph"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google",
+      "Facebook",
+      "Apple",
+      "Uber"
+    ],
+    "statement": "You are given a 2-D integer array `points`, where `points[i] = [x_i, y_i]`. Each `points[i]` represents a distinct point on a 2-D plane.\n\nThe cost of connecting two points `[x_i, y_i]` and `[x_j, y_j]` is the Manhattan distance between the two points, i.e., `|x_i - x_j| + |y_i - y_j|`.\n\nReturn the minimum cost to connect all points together, such that there exists exactly one path between each pair of points (forming a Minimum Spanning Tree).\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(N^2) using Prim's algorithm or O(N^2 log N) using Kruskal's algorithm with Disjoint Set Union (Union-Find), where N is the number of points.\n- **Space Complexity:** O(N) or O(N^2) auxiliary space.",
+    "constraints": "1 <= points.length <= 1000\n-1,000,000 <= x_i, y_i <= 1,000,000\nAll pairs (x_i, y_i) are distinct.",
+    "inputFormat": "Line 1 contains an integer n (number of points).\nThe next n lines each contain two integers: x and y representing the coordinates of a point.",
+    "outputFormat": "Print the minimum cost to connect all points.",
+    "examples": [
+      {
+        "input": "5\n0 0\n2 2\n3 3\n2 4\n4 2",
+        "output": "10",
+        "explanation": "Connecting (0,0) to (2,2) costs 4, and (2,2) to (3,3), (2,4), (4,2) costs 2 each. Total cost = 4 + 2 + 2 + 2 = 10."
+      },
+      {
+        "input": "3\n3 12\n-2 5\n-4 1",
+        "output": "18",
+        "explanation": "Connect (-4,1) to (-2,5) with cost 6, and (-2,5) to (3,12) with cost 12. Total cost = 18."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "5\n0 0\n2 2\n3 3\n2 4\n4 2",
+        "expectedOutput": "10",
+        "explanation": "MST has total weight 10."
+      },
+      {
+        "input": "3\n3 12\n-2 5\n-4 1",
+        "expectedOutput": "18",
+        "explanation": "Minimum connections cost 18."
+      },
+      {
+        "input": "1\n0 0",
+        "expectedOutput": "0",
+        "explanation": "A single point is already connected with cost 0."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2\n0 0\n1 1",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "4\n0 0\n1 0\n2 0\n3 0",
+        "expectedOutput": "3"
+      },
+      {
+        "input": "4\n0 0\n0 2\n2 0\n2 2",
+        "expectedOutput": "6"
+      },
+      {
+        "input": "4\n-1000000 -1000000\n1000000 1000000\n-1000000 1000000\n1000000 -1000000",
+        "expectedOutput": "6000000"
+      }
+    ],
+    "hints": [
+      "Connecting all points such that there is exactly one path between every pair is the definition of a Minimum Spanning Tree (MST).",
+      "Because the graph is complete (every pair can have an edge), Prim's algorithm running in O(N^2) time without a heap (by keeping an array of min costs to each unvisited node) is very efficient.",
+      "Alternatively, compute all N*(N-1)/2 edge weights and use Kruskal's algorithm with Disjoint Set Union (DSU)."
+    ],
+    "id": "cmury921l00007gfgdsnv93mc"
+  },
+  {
+    "number": 96,
+    "externalId": "DSA-096",
+    "title": "Swim in Rising Water",
+    "topic": "Advanced Graphs",
+    "difficulty": "Hard",
+    "rating": 1750,
+    "tags": [
+      "Breadth-First Search",
+      "Depth-First Search",
+      "Dijkstra",
+      "Binary Search",
+      "Union Find",
+      "Heap / Priority Queue",
+      "Matrix"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Facebook",
+      "Microsoft",
+      "Uber"
+    ],
+    "statement": "You are given an `n x n` square 2-D matrix of distinct integers `grid` where each integer `grid[i][j]` represents the elevation at position `(i, j)`.\n\nRain starts to fall at `time = 0`, causing the water level across the entire grid to rise at rate 1 per unit of time (at time `t`, the water level is `t`).\n\nYou may swim horizontally or vertically between adjacent squares if and only if the original elevation of both squares is less than or equal to the water level `t`.\n\nStarting from the top-left square `(0, 0)`, return the minimum amount of time `t` it takes until it is possible to reach the bottom-right square `(n - 1, n - 1)`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(N^2 log N) using Dijkstra's algorithm (minimax path) or Binary Search + BFS/DFS, where N is the grid dimension.\n- **Space Complexity:** O(N^2) auxiliary space for the min-heap / visited matrix.",
+    "constraints": "n == grid.length == grid[i].length\n1 <= n <= 50\n0 <= grid[i][j] < n^2\nAll values in grid are unique.",
+    "inputFormat": "Line 1 contains an integer n (dimension of grid).\nThe next n lines each contain n space-separated integers representing the elevations in each row.",
+    "outputFormat": "Print the minimum time required to reach the bottom-right cell.",
+    "examples": [
+      {
+        "input": "2\n0 1\n2 3",
+        "output": "3",
+        "explanation": "To reach (1, 1), the water elevation must be at least 3. At time t = 3, water level reaches 3 and the path (0,0)->(0,1)->(1,1) is swim-able."
+      },
+      {
+        "input": "4\n0 1 2 10\n9 14 4 13\n12 3 8 15\n11 5 7 6",
+        "output": "8",
+        "explanation": "The optimal path is [0, 1, 2, 4, 8, 7, 6] with maximum elevation 8."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "2\n0 1\n2 3",
+        "expectedOutput": "3",
+        "explanation": "Must wait until t = 3 to enter destination cell."
+      },
+      {
+        "input": "4\n0 1 2 10\n9 14 4 13\n12 3 8 15\n11 5 7 6",
+        "expectedOutput": "8",
+        "explanation": "Minimax path has max elevation 8."
+      },
+      {
+        "input": "1\n0",
+        "expectedOutput": "0",
+        "explanation": "Start is destination at elevation 0."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "3\n0 1 2\n5 6 3\n8 7 4",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "2\n3 2\n0 1",
+        "expectedOutput": "3"
+      },
+      {
+        "input": "3\n0 10 10\n1 10 10\n2 3 4",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "3\n10 20 30\n5 15 25\n0 1 2",
+        "expectedOutput": "10"
+      }
+    ],
+    "hints": [
+      "The time required along any path is determined solely by the maximum cell elevation on that path.",
+      "This is a minimax path problem: find a path from (0, 0) to (n - 1, n - 1) that minimizes the maximum elevation encountered.",
+      "Dijkstra's algorithm works naturally: use a min-priority queue storing (max_elevation_so_far, r, c). When extracting (d, r, c), for each adjacent cell (nr, nc), the new cost is max(d, grid[nr][nc]). When (n - 1, n - 1) is extracted, return its cost.",
+      "Alternatively, binary search on t between 0 and n^2 - 1, running a standard BFS or DFS to check if destination is reachable using cells with elevation <= t."
+    ],
+    "id": "cmurycrjd0000o8fgn6sed134"
+  },
+  {
+    "number": 97,
+    "externalId": "DSA-097",
+    "title": "Alien Dictionary",
+    "topic": "Advanced Graphs",
+    "difficulty": "Hard",
+    "rating": 1850,
+    "tags": [
+      "Array",
+      "String",
+      "Depth-First Search",
+      "Breadth-First Search",
+      "Graph",
+      "Topological Sort"
+    ],
+    "companies": [
+      "Facebook",
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Twitter",
+      "Uber",
+      "Airbnb",
+      "Bloomberg"
+    ],
+    "statement": "There is a new alien language that uses the English alphabet, but the order of the letters is unknown.\n\nYou are given a list of strings `words` from the alien language's dictionary. It is claimed that the strings in `words` are sorted lexicographically by the rules of this new language.\n\nIf this claim is incorrect, and the given arrangement of strings in `words` cannot correspond to any order of letters, return `\"\"`.\n\nOtherwise, return a string of the unique letters in the new alien language sorted in lexicographically increasing order by the new language's rules. If there are multiple valid solutions, return the one with smaller characters prioritized (lexicographically smallest topological ordering).\n\nA string `a` is lexicographically smaller than a string `b` if either of the following is true:\n- The first letter where they differ is smaller in `a` than in `b`.\n- `a` is a prefix of `b` and `a.length < b.length`. Note that if `b` is a prefix of `a` and `a.length > b.length`, this arrangement is invalid.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(C), where C is the total length of all words in `words`.\n- **Space Complexity:** O(1) auxiliary space (since the alphabet has at most 26 lowercase English letters).",
+    "constraints": "1 <= words.length <= 100\n1 <= words[i].length <= 100\nwords[i] consists of only lowercase English letters.",
+    "inputFormat": "Line 1 contains an integer n (the number of words in the dictionary).\nLine 2 contains n space-separated strings representing the alien words.",
+    "outputFormat": "Print the alien alphabet order as a single string. If invalid, print nothing.",
+    "examples": [
+      {
+        "input": "2\nz o",
+        "output": "zo",
+        "explanation": "From 'z' and 'o', we know 'z' < 'o', so return 'zo'."
+      },
+      {
+        "input": "5\nhrn hrf er enn rfnn",
+        "output": "hernf",
+        "explanation": "'n' < 'f', 'h' < 'e', 'r' < 'n', 'e' < 'r' establishes the total order 'hernf'."
+      },
+      {
+        "input": "2\nabc ab",
+        "output": "",
+        "explanation": "The second word 'ab' is a prefix of the first word 'abc', which violates prefix ordering rules. Return empty string."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "2\nz o",
+        "expectedOutput": "zo",
+        "explanation": "Simple pair order: z before o."
+      },
+      {
+        "input": "5\nhrn hrf er enn rfnn",
+        "expectedOutput": "hernf",
+        "explanation": "Full topological sort."
+      },
+      {
+        "input": "2\nabc ab",
+        "expectedOutput": "",
+        "explanation": "Prefix violation."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "3\nz x z",
+        "expectedOutput": ""
+      },
+      {
+        "input": "1\nxyz",
+        "expectedOutput": "xyz"
+      },
+      {
+        "input": "5\nwrt wrf er ett rftt",
+        "expectedOutput": "wertf"
+      },
+      {
+        "input": "2\nz x",
+        "expectedOutput": "zx"
+      }
+    ],
+    "hints": [
+      "Compare adjacent words word[i] and word[i+1]. The first position where they differ gives a directed edge: word[i][k] -> word[i+1][k].",
+      "Watch out for prefix violations: if word[i+1] is a prefix of word[i] and len(word[i]) > len(word[i+1]), it is invalid; return \"\" immediately.",
+      "Perform Topological Sort (Kahn's algorithm using in-degrees and a min-heap, or DFS with 3-state cycle detection) on all unique characters found in the dictionary.",
+      "If a cycle is detected or not all unique characters can be placed in the topological order, return \"\"."
+    ],
+    "id": "cmuryf43s0000mcfgowu27kzj"
+  },
+  {
+    "number": 98,
+    "externalId": "DSA-098",
+    "title": "Cheapest Flights Within K Stops",
+    "topic": "Advanced Graphs",
+    "difficulty": "Medium",
+    "rating": 1550,
+    "tags": [
+      "Dynamic Programming",
+      "Depth-First Search",
+      "Breadth-First Search",
+      "Graph",
+      "Heap / Priority Queue",
+      "Shortest Path"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook",
+      "Microsoft",
+      "Uber",
+      "Apple",
+      "Airbnb",
+      "Bloomberg"
+    ],
+    "statement": "There are `n` airports, labeled from `0` to `n - 1`, which are connected by some flights. You are given an array `flights` where `flights[i] = [from_i, to_i, price_i]` represents a one-way flight from airport `from_i` to airport `to_i` with cost `price_i`. You may assume there are no duplicate flights and no flights from an airport to itself.\n\nYou are also given three integers `src`, `dst`, and `k` where:\n- `src` is the starting airport\n- `dst` is the destination airport (`src != dst`)\n- `k` is the maximum number of intermediate stops you can make (not including `src` and `dst`)\n\nReturn the cheapest price from `src` to `dst` with at most `k` stops, or return `-1` if it is impossible.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(K * E) using Bellman-Ford or level-order BFS, where E is the number of flights and K = k + 1.\n- **Space Complexity:** O(N) auxiliary space for the price array.",
+    "constraints": "1 <= n <= 100\n0 <= flights.length <= (n * (n - 1) / 2)\nflights[i].length == 3\n0 <= from_i, to_i < n\nfrom_i != to_i\n1 <= price_i <= 10000\n0 <= src, dst, k < n\nsrc != dst",
+    "inputFormat": "Line 1 contains five integers: n (airports), E (flights), src (start), dst (destination), and k (max stops).\nThe next E lines each contain three integers: from, to, and price.",
+    "outputFormat": "Print the cheapest price to reach dst with at most k stops, or -1 if unreachable.",
+    "examples": [
+      {
+        "input": "4 4 0 3 1\n0 1 200\n1 2 100\n1 3 300\n2 3 100",
+        "output": "500",
+        "explanation": "Path 0 -> 1 -> 3 has 1 stop with cost 200 + 300 = 500. Path 0 -> 1 -> 2 -> 3 costs 400 but has 2 stops, exceeding k = 1."
+      },
+      {
+        "input": "3 3 1 2 1\n1 0 100\n1 2 200\n0 2 100",
+        "output": "200",
+        "explanation": "The direct flight 1 -> 2 has 0 stops and cost 200."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "4 4 0 3 1\n0 1 200\n1 2 100\n1 3 300\n2 3 100",
+        "expectedOutput": "500",
+        "explanation": "Cost 500 with 1 stop."
+      },
+      {
+        "input": "3 3 1 2 1\n1 0 100\n1 2 200\n0 2 100",
+        "expectedOutput": "200",
+        "explanation": "Direct flight costs 200."
+      },
+      {
+        "input": "3 2 0 2 0\n0 1 100\n1 2 100",
+        "expectedOutput": "-1",
+        "explanation": "Cannot reach destination with 0 intermediate stops."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "3 3 0 2 1\n0 1 50\n1 2 50\n0 2 200",
+        "expectedOutput": "100"
+      },
+      {
+        "input": "4 2 0 3 2\n0 1 100\n1 2 100",
+        "expectedOutput": "-1"
+      },
+      {
+        "input": "5 5 0 4 2\n0 1 10\n1 2 10\n2 3 10\n3 4 10\n0 4 100",
+        "expectedOutput": "100"
+      },
+      {
+        "input": "5 5 0 4 3\n0 1 10\n1 2 10\n2 3 10\n3 4 10\n0 4 100",
+        "expectedOutput": "40"
+      }
+    ],
+    "hints": [
+      "At most k stops means you can take at most k + 1 flights (edges).",
+      "Use the Bellman-Ford algorithm: initialize prices[src] = 0 and all other nodes to infinity. Run k + 1 iterations.",
+      "In each iteration, create a copy of prices to avoid using updated prices from the current round (which would effectively traverse more than 1 flight per iteration).",
+      "After k + 1 rounds, return prices[dst] if it is finite, otherwise return -1."
+    ],
+    "id": "cmuryiwjf0000esfg14f9q62e"
+  },
+  {
+    "number": 99,
+    "externalId": "DSA-099",
+    "title": "Climbing Stairs",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Easy",
+    "rating": 800,
+    "tags": [
+      "Math",
+      "Dynamic Programming",
+      "Memoization"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Apple",
+      "Microsoft",
+      "Facebook",
+      "Adobe",
+      "Uber",
+      "Goldman Sachs"
+    ],
+    "statement": "You are given an integer `n` representing the number of steps to reach the top of a staircase. You can climb with either `1` or `2` steps at a time.\n\nReturn the number of distinct ways to climb to the top of the staircase.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n)\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= n <= 45",
+    "inputFormat": "A single line containing an integer n.",
+    "outputFormat": "Print the number of distinct ways to climb to the top.",
+    "examples": [
+      {
+        "input": "2",
+        "output": "2",
+        "explanation": "There are two ways to climb to the top: 1 step + 1 step, or 2 steps."
+      },
+      {
+        "input": "3",
+        "output": "3",
+        "explanation": "There are three ways: 1+1+1, 1+2, or 2+1."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "2",
+        "expectedOutput": "2",
+        "explanation": "Two ways: [1, 1] and [2]."
+      },
+      {
+        "input": "3",
+        "expectedOutput": "3",
+        "explanation": "Three ways: [1, 1, 1], [1, 2], [2, 1]."
+      },
+      {
+        "input": "1",
+        "expectedOutput": "1",
+        "explanation": "Only one way: [1]."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "4",
+        "expectedOutput": "5"
+      },
+      {
+        "input": "5",
+        "expectedOutput": "8"
+      },
+      {
+        "input": "10",
+        "expectedOutput": "89"
+      },
+      {
+        "input": "45",
+        "expectedOutput": "1836311903"
+      }
+    ],
+    "hints": [
+      "To reach step n, you could only arrive from either step n - 1 (with a 1-step leap) or step n - 2 (with a 2-step leap).",
+      "Hence, ways(n) = ways(n - 1) + ways(n - 2). Notice that this follows the Fibonacci sequence.",
+      "Base cases: ways(1) = 1, ways(2) = 2.",
+      "Rather than storing the entire DP table in an array, track only the last two values using two variables to achieve O(1) extra space."
+    ],
+    "id": "cmurykrzo0000igfgsxxj9su6"
+  },
+  {
+    "number": 100,
+    "externalId": "DSA-100",
+    "title": "Min Cost Climbing Stairs",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Easy",
+    "rating": 850,
+    "tags": [
+      "Array",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Apple",
+      "Microsoft",
+      "Facebook",
+      "Bloomberg",
+      "Uber"
+    ],
+    "statement": "You are given an integer array `cost` where `cost[i]` is the cost of taking a step from the `i`th floor of a staircase. After paying the cost, you can step to either the `(i + 1)`th floor or the `(i + 2)`th floor.\n\nYou may choose to start at index `0` or index `1`.\n\nReturn the minimum cost to reach the top of the staircase (just past the last index in `cost`, i.e., index `n`).\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n)\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "2 <= cost.length <= 1000\n0 <= cost[i] <= 999",
+    "inputFormat": "The first line contains an integer n (number of steps).\nThe second line contains n space-separated integers representing cost.",
+    "outputFormat": "Print the minimum cost to reach the top of the staircase.",
+    "examples": [
+      {
+        "input": "3\n1 2 3",
+        "output": "2",
+        "explanation": "Start at index 1 and pay cost 2 to take two steps to reach the top. Total cost is 2."
+      },
+      {
+        "input": "7\n1 2 1 2 1 1 1",
+        "output": "4",
+        "explanation": "Start at index 0 (cost 1), step to index 2 (cost 1), step to index 4 (cost 1), step to index 6 (cost 1), then step to the top. Total cost is 4."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3\n1 2 3",
+        "expectedOutput": "2",
+        "explanation": "Start at index 1: pay 2 and jump to top."
+      },
+      {
+        "input": "7\n1 2 1 2 1 1 1",
+        "expectedOutput": "4",
+        "explanation": "Jump across index 0, 2, 4, 6 totaling 4."
+      },
+      {
+        "input": "2\n10 15",
+        "expectedOutput": "10",
+        "explanation": "Start at index 0, pay 10 and take 2 steps to top."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "10\n1 100 1 1 1 100 1 1 100 1",
+        "expectedOutput": "6"
+      },
+      {
+        "input": "4\n0 0 0 0",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "5\n10 15 20 5 1",
+        "expectedOutput": "20"
+      },
+      {
+        "input": "6\n1 10 2 10 3 10",
+        "expectedOutput": "6"
+      }
+    ],
+    "hints": [
+      "Let dp[i] be the minimum cost to reach step i. To get to step i, you can arrive from step i - 1 (paying cost[i - 1]) or from step i - 2 (paying cost[i - 2]).",
+      "Recurrence relation: dp[i] = min(dp[i - 1] + cost[i - 1], dp[i - 2] + cost[i - 2]).",
+      "Base cases: dp[0] = 0 and dp[1] = 0, because you can begin at floor 0 or floor 1 without prior cost.",
+      "Optimize space to O(1) by maintaining only the previous two dp values in two variables."
+    ],
+    "id": "cmurymxgc0000k4fgjmqytbmp"
+  },
+  {
+    "number": 101,
+    "externalId": "DSA-101",
+    "title": "House Robber",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1300,
+    "tags": [
+      "Array",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Apple",
+      "Facebook",
+      "Bloomberg",
+      "Uber",
+      "Cisco"
+    ],
+    "statement": "You are given an integer array `nums` where `nums[i]` represents the amount of money the `i`th house has. The houses are arranged in a straight line, i.e., the `i`th house is the neighbor of the `(i - 1)`th and `(i + 1)`th house.\n\nYou are planning to rob money from the houses, but you cannot rob two adjacent houses because the security system will automatically alert the police if two adjacent houses were both broken into on the same night.\n\nReturn the maximum amount of money you can rob without alerting the police.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the number of houses.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= nums.length <= 100\n0 <= nums[i] <= 400",
+    "inputFormat": "The first line contains an integer n (number of houses).\nThe second line contains n space-separated integers representing nums.",
+    "outputFormat": "Print the maximum amount of money that can be robbed.",
+    "examples": [
+      {
+        "input": "4\n1 1 3 3",
+        "output": "4",
+        "explanation": "Rob house 0 (money 1) and house 2 (money 3). Total loot = 1 + 3 = 4."
+      },
+      {
+        "input": "5\n2 9 8 3 6",
+        "output": "16",
+        "explanation": "Rob house 0 (money 2), house 2 (money 8), and house 4 (money 6). Total loot = 2 + 8 + 6 = 16."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "4\n1 1 3 3",
+        "expectedOutput": "4",
+        "explanation": "Rob houses at indices 0 and 2."
+      },
+      {
+        "input": "5\n2 9 8 3 6",
+        "expectedOutput": "16",
+        "explanation": "Rob houses at indices 0, 2, and 4."
+      },
+      {
+        "input": "1\n100",
+        "expectedOutput": "100",
+        "explanation": "Single house available."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2\n10 20",
+        "expectedOutput": "20"
+      },
+      {
+        "input": "4\n1 2 3 1",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "5\n2 7 9 3 1",
+        "expectedOutput": "12"
+      },
+      {
+        "input": "4\n0 0 0 0",
+        "expectedOutput": "0"
+      }
+    ],
+    "hints": [
+      "At each house i, you either rob it (earning nums[i] + max profit from houses 0..i-2) or skip it (retaining max profit from houses 0..i-1).",
+      "Recurrence relation: dp[i] = max(dp[i - 1], dp[i - 2] + nums[i]).",
+      "Base cases: for 1 house, answer is nums[0]; for 2 houses, answer is max(nums[0], nums[1]).",
+      "You can optimize space to O(1) by only tracking the best loot from the previous two steps (rob1 and rob2)."
+    ],
+    "id": "cmuryox1h0000ykfgrxau91qh"
+  },
+  {
+    "number": 102,
+    "externalId": "DSA-102",
+    "title": "House Robber II",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Apple",
+      "Facebook",
+      "Bloomberg",
+      "Uber"
+    ],
+    "statement": "You are given an integer array `nums` where `nums[i]` represents the amount of money the `i`th house has. The houses are arranged in a circle, i.e., the first house and the last house are neighbors.\n\nYou are planning to rob money from the houses, but you cannot rob two adjacent houses because the security system will automatically alert the police if two adjacent houses were both broken into on the same night.\n\nReturn the maximum amount of money you can rob without alerting the police.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the number of houses.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= nums.length <= 100\n0 <= nums[i] <= 1000",
+    "inputFormat": "The first line contains an integer n (number of houses).\nThe second line contains n space-separated integers representing nums.",
+    "outputFormat": "Print the maximum amount of money that can be robbed.",
+    "examples": [
+      {
+        "input": "3\n3 4 3",
+        "output": "4",
+        "explanation": "You cannot rob house 0 and house 2 because they are adjacent in a circle. The maximum you can rob is house 1 with money 4."
+      },
+      {
+        "input": "5\n2 9 8 3 6",
+        "output": "15",
+        "explanation": "Rob house 1 (money 9) and house 4 (money 6) for a total of 15. House 0 and house 4 cannot both be robbed as they are adjacent."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3\n3 4 3",
+        "expectedOutput": "4",
+        "explanation": "Max single house 4."
+      },
+      {
+        "input": "5\n2 9 8 3 6",
+        "expectedOutput": "15",
+        "explanation": "Rob houses 1 and 4."
+      },
+      {
+        "input": "1\n100",
+        "expectedOutput": "100",
+        "explanation": "Only one house."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2\n1 2",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "4\n1 2 3 1",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "5\n5 5 5 5 5",
+        "expectedOutput": "10"
+      },
+      {
+        "input": "6\n200 3 140 20 10 200",
+        "expectedOutput": "350"
+      }
+    ],
+    "hints": [
+      "Because the houses form a circle, the first and last houses cannot both be robbed.",
+      "This reduces the problem to two linear House Robber subproblems: (1) robber only considers houses from 0 to n - 2, or (2) robber only considers houses from 1 to n - 1.",
+      "Special case: if n == 1, simply return nums[0].",
+      "Return the maximum of the results from the two linear subproblems. Each subproblem runs in O(n) time and O(1) space."
+    ],
+    "id": "cmuryrhwb00003kfgy0vh8o1s"
+  },
+  {
+    "number": 103,
+    "externalId": "DSA-103",
+    "title": "Longest Palindromic Substring",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Two Pointers",
+      "String",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google",
+      "Facebook",
+      "Apple",
+      "Adobe",
+      "Bloomberg",
+      "Uber",
+      "Cisco"
+    ],
+    "statement": "Given a string `s`, return the longest substring of `s` that is a palindrome.\n\nA palindrome is a string that reads the same forward and backward.\n\nIf there are multiple palindromic substrings that have the same maximum length, return the one that appears earliest in `s` (smallest starting index).\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n^2), where n is the length of string s.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= s.length <= 1000\ns contains only digits and English letters.",
+    "inputFormat": "A single line containing the string s.",
+    "outputFormat": "Print the longest palindromic substring.",
+    "examples": [
+      {
+        "input": "ababd",
+        "output": "aba",
+        "explanation": "Both \"aba\" and \"bab\" are palindromes of length 3. By earliest occurrence priority, \"aba\" is returned."
+      },
+      {
+        "input": "abbc",
+        "output": "bb",
+        "explanation": "The longest palindromic substring is \"bb\"."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "ababd",
+        "expectedOutput": "aba",
+        "explanation": "Longest palindrome appearing earliest is 'aba'."
+      },
+      {
+        "input": "abbc",
+        "expectedOutput": "bb",
+        "explanation": "Even-length palindrome 'bb'."
+      },
+      {
+        "input": "a",
+        "expectedOutput": "a",
+        "explanation": "Single character string."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "cbbd",
+        "expectedOutput": "bb"
+      },
+      {
+        "input": "racecar",
+        "expectedOutput": "racecar"
+      },
+      {
+        "input": "aacabdkkaa",
+        "expectedOutput": "aca"
+      },
+      {
+        "input": "forgeeksskeegfor",
+        "expectedOutput": "geeksskeeg"
+      }
+    ],
+    "hints": [
+      "A palindrome mirrors around its center. A string of length n has 2n - 1 possible centers: n single-character centers (odd length) and n - 1 between-character centers (even length).",
+      "For each possible center, expand outward with two pointers left and right while s[left] == s[right] and left >= 0 and right < n.",
+      "Record the maximum length and starting index. Update only when a strictly longer palindrome is found to preserve the earliest occurrence.",
+      "This expand-from-center approach solves the problem in O(n^2) time and O(1) auxiliary space."
+    ],
+    "id": "cmuryt9k30000qgfg9ntytgre"
+  },
+  {
+    "number": 104,
+    "externalId": "DSA-104",
+    "title": "Palindromic Substrings",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1350,
+    "tags": [
+      "Two Pointers",
+      "String",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Twitter",
+      "Bloomberg",
+      "Uber"
+    ],
+    "statement": "Given a string `s`, return the number of substrings within `s` that are palindromes.\n\nA palindrome is a string that reads the same forward and backward. Substrings with different start or end indices are counted as different even if they consist of the exact same characters.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n^2), where n is the length of string s.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= s.length <= 1000\ns consists of lowercase English letters.",
+    "inputFormat": "A single line containing the string s.",
+    "outputFormat": "Print the number of palindromic substrings.",
+    "examples": [
+      {
+        "input": "abc",
+        "output": "3",
+        "explanation": "Three palindromic substrings: \"a\", \"b\", \"c\"."
+      },
+      {
+        "input": "aaa",
+        "output": "6",
+        "explanation": "Six palindromic substrings: \"a\", \"a\", \"a\", \"aa\", \"aa\", \"aaa\"."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "abc",
+        "expectedOutput": "3",
+        "explanation": "Distinct single character palindromes."
+      },
+      {
+        "input": "aaa",
+        "expectedOutput": "6",
+        "explanation": "Multiple identical palindromic substrings at different indices."
+      },
+      {
+        "input": "a",
+        "expectedOutput": "1",
+        "explanation": "Single character string has exactly 1 palindrome."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "abccba",
+        "expectedOutput": "9"
+      },
+      {
+        "input": "racecar",
+        "expectedOutput": "10"
+      },
+      {
+        "input": "aaaaa",
+        "expectedOutput": "15"
+      },
+      {
+        "input": "leetcode",
+        "expectedOutput": "9"
+      }
+    ],
+    "hints": [
+      "Every palindromic substring expands symmetrically around a center. A string of length n has 2n - 1 potential centers.",
+      "For each possible center, expand outward with left and right pointers while characters match and bounds are respected.",
+      "Whenever characters match, increment the palindrome counter by 1.",
+      "Check both odd-length centers (left = i, right = i) and even-length centers (left = i, right = i + 1). Space complexity is O(1)."
+    ],
+    "id": "cmuryz3te0000f8fgary2384n"
+  },
+  {
+    "number": 105,
+    "externalId": "DSA-105",
+    "title": "Decode Ways",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "String",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Facebook",
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Uber",
+      "Apple",
+      "Bloomberg"
+    ],
+    "statement": "A string consisting of uppercase English characters can be encoded to a number using the following mapping:\n\n'A' -> \"1\"\n'B' -> \"2\"\n...\n'Z' -> \"26\"\n\nTo decode a message, digits must be grouped and then mapped back into letters using the reverse mapping. There may be multiple ways to decode a message. For example, `\"1012\"` can be mapped into:\n- `\"JAB\"` with the grouping `(10, 1, 2)`\n- `\"JL\"` with the grouping `(10, 12)`\n\nThe grouping `(1, 01, 2)` is invalid because `\"01\"` contains a leading zero and cannot map to any letter.\n\nGiven a string `s` containing only digits, return the number of ways to decode it.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the length of string s.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= s.length <= 100\ns consists of digits.",
+    "inputFormat": "A single line containing the digit string s.",
+    "outputFormat": "Print the number of ways to decode the string.",
+    "examples": [
+      {
+        "input": "12",
+        "output": "2",
+        "explanation": "\"12\" could be decoded as \"AB\" (1 2) or \"L\" (12)."
+      },
+      {
+        "input": "01",
+        "output": "0",
+        "explanation": "\"01\" cannot be decoded because it starts with a leading zero."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "12",
+        "expectedOutput": "2",
+        "explanation": "Decodes as (1, 2) or (12)."
+      },
+      {
+        "input": "01",
+        "expectedOutput": "0",
+        "explanation": "Leading zero is invalid."
+      },
+      {
+        "input": "226",
+        "expectedOutput": "3",
+        "explanation": "Decodes as (2, 2, 6), (22, 6), or (2, 26)."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "0",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "10",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "30",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "11106",
+        "expectedOutput": "2"
+      }
+    ],
+    "hints": [
+      "At any index i, if s[i] == '0', it cannot be decoded alone (yields 0 paths).",
+      "If s[i] is between '1' and '9', single-digit decoding contributes dp[i + 1] ways.",
+      "If the two-character substring s[i..i+1] is between '10' and '26', two-digit decoding additionally contributes dp[i + 2] ways.",
+      "Recurrence: dp[i] = (s[i] != '0' ? dp[i+1] : 0) + (10 <= val(s[i..i+1]) <= 26 ? dp[i+2] : 0). Track only the last two states for O(1) space."
+    ],
+    "id": "cmurz177n000088fgez8xx9kk"
+  },
+  {
+    "number": 106,
+    "externalId": "DSA-106",
+    "title": "Coin Change",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Dynamic Programming",
+      "Breadth-First Search"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google",
+      "Facebook",
+      "Apple",
+      "Uber",
+      "Bloomberg",
+      "Goldman Sachs"
+    ],
+    "statement": "You are given an integer array `coins` representing coins of different denominations and an integer `amount` representing a target amount of money.\n\nReturn the fewest number of coins that you need to make up that exact amount. If that amount of money cannot be made up by any combination of the coins, return `-1`.\n\nYou may assume that you have an infinite number of each kind of coin.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(N * amount), where N is the number of coin denominations.\n- **Space Complexity:** O(amount) auxiliary space for the DP array.",
+    "constraints": "1 <= coins.length <= 12\n1 <= coins[i] <= 2^31 - 1\n0 <= amount <= 10000",
+    "inputFormat": "Line 1 contains two integers: n (number of coin types) and amount.\nLine 2 contains n space-separated integers representing the coins array.",
+    "outputFormat": "Print the minimum number of coins needed, or -1 if impossible.",
+    "examples": [
+      {
+        "input": "3 12\n1 5 10",
+        "output": "3",
+        "explanation": "12 = 10 + 1 + 1 (3 coins)."
+      },
+      {
+        "input": "1 3\n2",
+        "output": "-1",
+        "explanation": "Amount 3 cannot be formed using only coins of denomination 2."
+      },
+      {
+        "input": "1 0\n1",
+        "output": "0",
+        "explanation": "Zero coins are needed to make amount 0."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3 12\n1 5 10",
+        "expectedOutput": "3",
+        "explanation": "10 + 1 + 1 = 12."
+      },
+      {
+        "input": "1 3\n2",
+        "expectedOutput": "-1",
+        "explanation": "Impossible with given denomination."
+      },
+      {
+        "input": "1 0\n1",
+        "expectedOutput": "0",
+        "explanation": "0 coins for amount 0."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "3 6\n1 3 4",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "2 7\n2 5",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "3 100\n1 5 25",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "2 3\n2 4",
+        "expectedOutput": "-1"
+      }
+    ],
+    "hints": [
+      "Define dp[a] as the minimum number of coins to produce amount a.",
+      "Initialize dp array of size amount + 1 with infinity (amount + 1), and set dp[0] = 0.",
+      "For each target amount from 1 to amount, and each coin c, if amount >= c, dp[a] = min(dp[a], 1 + dp[a - c]).",
+      "Return dp[amount] if it was updated, otherwise return -1."
+    ],
+    "id": "cmurz6eai0000vsfgnnoe9txy"
+  },
+  {
+    "number": 107,
+    "externalId": "DSA-107",
+    "title": "Maximum Product Subarray",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "LinkedIn",
+      "Facebook",
+      "Apple",
+      "Uber"
+    ],
+    "statement": "Given an integer array `nums`, find a contiguous non-empty subarray within the array that has the largest product, and return the product.\n\nA subarray is a contiguous sequence of elements within an array.\n\nYou can assume the output will fit into a 32-bit signed integer.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the size of the input array.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= nums.length <= 20000\n-10 <= nums[i] <= 10\nThe product of any subarray fits in a 32-bit integer.",
+    "inputFormat": "The first line contains an integer n (number of elements).\nThe second line contains n space-separated integers representing nums.",
+    "outputFormat": "Print the maximum product of a contiguous subarray.",
+    "examples": [
+      {
+        "input": "4\n2 4 -3 5",
+        "output": "8",
+        "explanation": "[2, 4] has the largest product 8."
+      },
+      {
+        "input": "3\n-3 0 -2",
+        "output": "0",
+        "explanation": "The maximum product is 0. [-3, -2] is not a contiguous subarray."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "4\n2 4 -3 5",
+        "expectedOutput": "8",
+        "explanation": "Contiguous subarray [2, 4] has product 8."
+      },
+      {
+        "input": "3\n-3 0 -2",
+        "expectedOutput": "0",
+        "explanation": "Separated by 0, max product is 0."
+      },
+      {
+        "input": "4\n2 3 -2 4",
+        "expectedOutput": "6",
+        "explanation": "[2, 3] gives product 6."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "4\n-2 3 -4 -1",
+        "expectedOutput": "24"
+      },
+      {
+        "input": "1\n-5",
+        "expectedOutput": "-5"
+      },
+      {
+        "input": "3\n-2 -3 -4",
+        "expectedOutput": "12"
+      },
+      {
+        "input": "5\n-1 -2 -3 0 5",
+        "expectedOutput": "6"
+      }
+    ],
+    "hints": [
+      "Because multiplying by a negative number flips signs, a minimum product can suddenly become a maximum product.",
+      "Track both the current maximum product (curMax) and current minimum product (curMin) ending at index i.",
+      "When nums[i] is negative, curMax and curMin swap roles.",
+      "For each element, update: curMax = max(nums[i], prevMax * nums[i], prevMin * nums[i]), curMin = min(nums[i], prevMax * nums[i], prevMin * nums[i]). Update the overall maximum at each step."
+    ],
+    "id": "cmurz9u500000xkfg8oxkrdey"
+  },
+  {
+    "number": 108,
+    "externalId": "DSA-108",
+    "title": "Word Break",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Hash Table",
+      "String",
+      "Dynamic Programming",
+      "Trie",
+      "Memoization"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Apple",
+      "Bloomberg",
+      "Uber"
+    ],
+    "statement": "Given a string `s` and a dictionary of strings `wordDict`, return `true` if `s` can be segmented into a space-separated sequence of one or more dictionary words.\n\nYou are allowed to reuse words in the dictionary an unlimited number of times. You may assume all dictionary words are unique.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(N * M * L), where N is the length of s, M is the number of words in wordDict, and L is the maximum word length.\n- **Space Complexity:** O(N) auxiliary space for the DP array.",
+    "constraints": "1 <= s.length <= 300\n1 <= wordDict.length <= 1000\n1 <= wordDict[i].length <= 20\ns and wordDict[i] consist of only lowercase English letters.\nAll words in wordDict are unique.",
+    "inputFormat": "Line 1 contains the string s.\nLine 2 contains an integer m (number of words in wordDict).\nLine 3 contains m space-separated strings representing wordDict.",
+    "outputFormat": "Print true if s can be segmented into dictionary words, otherwise false.",
+    "examples": [
+      {
+        "input": "neetcode\n2\nneet code",
+        "output": "true",
+        "explanation": "\"neetcode\" can be split into \"neet\" and \"code\"."
+      },
+      {
+        "input": "applepenapple\n3\napple pen ape",
+        "output": "true",
+        "explanation": "\"applepenapple\" can be split into \"apple\", \"pen\", and \"apple\"."
+      },
+      {
+        "input": "catsincars\n5\ncats cat sin in car",
+        "output": "false",
+        "explanation": "\"catsincars\" cannot be fully segmented using the given words."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "neetcode\n2\nneet code",
+        "expectedOutput": "true",
+        "explanation": "Valid split: neet + code."
+      },
+      {
+        "input": "applepenapple\n3\napple pen ape",
+        "expectedOutput": "true",
+        "explanation": "Word reuse: apple + pen + apple."
+      },
+      {
+        "input": "catsincars\n5\ncats cat sin in car",
+        "expectedOutput": "false",
+        "explanation": "Leaves trailing s unable to match."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "aaaaaaa\n2\naaaa aaa",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "leetcode\n1\nleetcode",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "cars\n2\ncar ca",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "bb\n3\na b bbb",
+        "expectedOutput": "true"
+      }
+    ],
+    "hints": [
+      "Define a boolean array dp of size len(s) + 1 where dp[i] is true if s[0..i-1] can be segmented.",
+      "Base case: dp[0] = true representing an empty prefix.",
+      "For each position i from 1 to len(s), check every word w in wordDict: if i >= len(w) and dp[i - len(w)] is true and s[i - len(w)..i] == w, then set dp[i] = true and break.",
+      "Return dp[len(s)]."
+    ],
+    "id": "cmurzcoqu0000q4fgk4hb8kdb"
+  },
+  {
+    "number": 109,
+    "externalId": "DSA-109",
+    "title": "Longest Increasing Subsequence",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1450,
+    "tags": [
+      "Array",
+      "Binary Search",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Facebook",
+      "Apple",
+      "Bloomberg",
+      "Uber"
+    ],
+    "statement": "Given an integer array `nums`, return the length of the longest strictly increasing subsequence.\n\nA subsequence is a sequence that can be derived from the given array by deleting some or no elements without changing the relative order of the remaining elements.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n log n) using patience sorting / binary search, or O(n^2) using standard dynamic programming.\n- **Space Complexity:** O(n) auxiliary space.",
+    "constraints": "1 <= nums.length <= 2500\n-10000 <= nums[i] <= 10000",
+    "inputFormat": "The first line contains an integer n (number of elements).\nThe second line contains n space-separated integers representing nums.",
+    "outputFormat": "Print the length of the longest strictly increasing subsequence.",
+    "examples": [
+      {
+        "input": "7\n9 1 4 2 3 3 7",
+        "output": "4",
+        "explanation": "The longest increasing subsequence is [1, 2, 3, 7] with length 4."
+      },
+      {
+        "input": "6\n0 3 1 3 2 3",
+        "output": "4",
+        "explanation": "The longest increasing subsequence is [0, 1, 2, 3] with length 4."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "7\n9 1 4 2 3 3 7",
+        "expectedOutput": "4",
+        "explanation": "Subsequence [1, 2, 3, 7]."
+      },
+      {
+        "input": "6\n0 3 1 3 2 3",
+        "expectedOutput": "4",
+        "explanation": "Subsequence [0, 1, 2, 3]."
+      },
+      {
+        "input": "1\n10",
+        "expectedOutput": "1",
+        "explanation": "Single element."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "5\n7 6 5 4 3",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "5\n1 2 3 4 5",
+        "expectedOutput": "5"
+      },
+      {
+        "input": "4\n7 7 7 7",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "8\n10 9 2 5 3 7 101 18",
+        "expectedOutput": "4"
+      }
+    ],
+    "hints": [
+      "Standard DP: let dp[i] be the length of the longest increasing subsequence ending at index i.",
+      "For each index i, dp[i] = 1 + max({dp[j] for j < i where nums[j] < nums[i]} U {0}). This runs in O(n^2) time.",
+      "Optimization to O(n log n): maintain a list `tails` where `tails[k]` stores the smallest tail of an increasing subsequence of length k + 1. For each number x, binary search the first element >= x in `tails` and replace it (or append if none found).",
+      "The final length of `tails` is the answer."
+    ],
+    "id": "cmurzeo850000ikfgq6buhpsl"
+  },
+  {
+    "number": 110,
+    "externalId": "DSA-110",
+    "title": "Partition Equal Subset Sum",
+    "topic": "1-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Amazon",
+      "Facebook",
+      "Microsoft",
+      "Google",
+      "Apple",
+      "Uber",
+      "Bloomberg"
+    ],
+    "statement": "You are given an array of positive integers `nums`.\n\nReturn `true` if you can partition the array into two subsets, `subset1` and `subset2`, where `sum(subset1) == sum(subset2)`. Otherwise, return `false`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n * target), where n is the size of nums and target = sum(nums) / 2.\n- **Space Complexity:** O(target) auxiliary space using a 1-D DP array.",
+    "constraints": "1 <= nums.length <= 200\n1 <= nums[i] <= 100",
+    "inputFormat": "The first line contains an integer n (number of elements).\nThe second line contains n space-separated integers representing nums.",
+    "outputFormat": "Print true if the array can be partitioned into two subsets with equal sum, otherwise false.",
+    "examples": [
+      {
+        "input": "4\n1 2 3 4",
+        "output": "true",
+        "explanation": "Total sum = 10. The array can be partitioned as [1, 4] and [2, 3] with sum 5 each."
+      },
+      {
+        "input": "5\n1 2 3 4 5",
+        "output": "false",
+        "explanation": "Total sum = 15 (odd), which cannot be partitioned into two equal integer sums."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "4\n1 2 3 4",
+        "expectedOutput": "true",
+        "explanation": "[1, 4] and [2, 3] each sum to 5."
+      },
+      {
+        "input": "5\n1 2 3 4 5",
+        "expectedOutput": "false",
+        "explanation": "Sum is odd."
+      },
+      {
+        "input": "4\n1 5 11 5",
+        "expectedOutput": "true",
+        "explanation": "[1, 5, 5] and [11] both sum to 11."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1\n10",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "2\n7 7",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "2\n3 5",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "6\n1 2 5 10 11 7",
+        "expectedOutput": "true"
+      }
+    ],
+    "hints": [
+      "If the sum of all elements is odd, it is impossible to partition into two equal subsets; return false immediately.",
+      "Calculate target = sum(nums) / 2. We only need to check if there is a subset summing to target (classic 0/1 Knapsack problem).",
+      "Use a boolean array dp of size target + 1, where dp[s] is true if a subset sum s is achievable. Set dp[0] = true.",
+      "Iterate through each number num, and iterate s backwards from target down to num: dp[s] = dp[s] || dp[s - num]. Finally, return dp[target]."
+    ],
+    "id": "cmurzgkuo0000kgfgrr46t25p"
+  },
+  {
+    "number": 111,
+    "externalId": "DSA-111",
+    "title": "Unique Paths",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1300,
+    "tags": [
+      "Math",
+      "Dynamic Programming",
+      "Combinatorics"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Facebook",
+      "Apple",
+      "Bloomberg",
+      "Uber"
+    ],
+    "statement": "There is an `m x n` grid where you are allowed to move either down or to the right at any point in time.\n\nGiven the two integers `m` and `n`, return the number of possible unique paths that can be taken from the top-left corner of the grid (`grid[0][0]`) to the bottom-right corner (`grid[m - 1][n - 1]`).\n\nYou may assume the output will fit in a 32-bit signed integer.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(m * n) with DP, or O(min(m, n)) using combinatorics.\n- **Space Complexity:** O(n) auxiliary space using a 1-D row for DP, or O(1) with combinatorics.",
+    "constraints": "1 <= m, n <= 100",
+    "inputFormat": "A single line containing two space-separated integers: m (rows) and n (columns).",
+    "outputFormat": "Print the number of unique paths from the top-left to the bottom-right corner.",
+    "examples": [
+      {
+        "input": "3 6",
+        "output": "21",
+        "explanation": "There are 21 unique paths from top-left to bottom-right in a 3x6 grid."
+      },
+      {
+        "input": "3 3",
+        "output": "6",
+        "explanation": "There are 6 unique paths in a 3x3 grid."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3 6",
+        "expectedOutput": "21",
+        "explanation": "3x6 grid has 21 paths."
+      },
+      {
+        "input": "3 3",
+        "expectedOutput": "6",
+        "explanation": "3x3 grid has 6 paths."
+      },
+      {
+        "input": "3 2",
+        "expectedOutput": "3",
+        "explanation": "3 paths: RDD, DRD, DDR."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1 1",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "1 10",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "10 1",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "7 3",
+        "expectedOutput": "28"
+      }
+    ],
+    "hints": [
+      "To reach cell (r, c), you can only arrive from cell (r - 1, c) immediately above, or cell (r, c - 1) immediately to the left.",
+      "Recurrence relation: dp[r][c] = dp[r - 1][c] + dp[r][c - 1].",
+      "Base conditions: any cell in the first row dp[0][c] has 1 path (only moving right), and any cell in the first column dp[r][0] has 1 path (only moving down).",
+      "Space can be optimized to O(n) by using a single 1D array representing the values of the previous row."
+    ],
+    "id": "cmurzitfm00007sfghra9h708"
+  },
+  {
+    "number": 112,
+    "externalId": "DSA-112",
+    "title": "Longest Common Subsequence",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "String",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Facebook",
+      "Apple",
+      "Uber",
+      "Bloomberg"
+    ],
+    "statement": "Given two strings `text1` and `text2`, return the length of their longest common subsequence. If there is no common subsequence, return `0`.\n\nA subsequence of a string is a new string generated from the original string with some characters (can be none) deleted without changing the relative order of the remaining characters.\n\nA common subsequence of two strings is a subsequence that is common to both strings.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(M * N), where M = text1.length and N = text2.length.\n- **Space Complexity:** O(min(M, N)) auxiliary space using space-optimized DP.",
+    "constraints": "1 <= text1.length, text2.length <= 1000\ntext1 and text2 consist of only lowercase English characters.",
+    "inputFormat": "Line 1 contains the string text1.\nLine 2 contains the string text2.",
+    "outputFormat": "Print the length of the longest common subsequence.",
+    "examples": [
+      {
+        "input": "cat\ncrabt",
+        "output": "3",
+        "explanation": "The longest common subsequence is \"cat\" with length 3."
+      },
+      {
+        "input": "abcd\nabcd",
+        "output": "4",
+        "explanation": "The longest common subsequence is \"abcd\"."
+      },
+      {
+        "input": "abcd\nefgh",
+        "output": "0",
+        "explanation": "There are no common characters, so the result is 0."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "cat\ncrabt",
+        "expectedOutput": "3",
+        "explanation": "Common subsequence 'cat'."
+      },
+      {
+        "input": "abcd\nabcd",
+        "expectedOutput": "4",
+        "explanation": "Identical strings."
+      },
+      {
+        "input": "abcd\nefgh",
+        "expectedOutput": "0",
+        "explanation": "No common characters."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "abcde\nace",
+        "expectedOutput": "3"
+      },
+      {
+        "input": "ezupkr\nubmrapg",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "a\na",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "oxcp\nlovylps",
+        "expectedOutput": "2"
+      }
+    ],
+    "hints": [
+      "Define dp[i][j] as the length of the longest common subsequence of text1[0..i-1] and text2[0..j-1].",
+      "If text1[i-1] == text2[j-1], both characters can be matched: dp[i][j] = 1 + dp[i-1][j-1].",
+      "Otherwise, take the maximum of either omitting text1's character or text2's character: dp[i][j] = max(dp[i-1][j], dp[i][j-1]).",
+      "Space can be optimized to O(min(M, N)) since each row only depends on the previous row."
+    ],
+    "id": "cmurzlw5x0000zcfgugxhrycp"
+  },
+  {
+    "number": 113,
+    "externalId": "DSA-113",
+    "title": "Best Time to Buy and Sell Stock with Cooldown",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1450,
+    "tags": [
+      "Array",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Facebook",
+      "Microsoft",
+      "Uber",
+      "Adobe"
+    ],
+    "statement": "You are given an integer array `prices` where `prices[i]` is the price of a given stock on the `i`th day.\n\nFind the maximum profit you can achieve. You may complete as many transactions as you like (i.e., buy one and sell one share of the stock multiple times) with the following restrictions:\n- After you sell your stock, you cannot buy stock on the next day (i.e., cooldown of 1 day).\n- You may not engage in multiple transactions simultaneously (i.e., you must sell the stock before you buy again).\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the number of days.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= prices.length <= 5000\n0 <= prices[i] <= 1000",
+    "inputFormat": "The first line contains an integer n (number of days).\nThe second line contains n space-separated integers representing prices.",
+    "outputFormat": "Print the maximum profit.",
+    "examples": [
+      {
+        "input": "5\n1 3 4 0 4",
+        "output": "6",
+        "explanation": "Buy on day 0 (price = 1) and sell on day 1 (price = 3), profit = 2. Cooldown on day 2. Buy on day 3 (price = 0) and sell on day 4 (price = 4), profit = 4. Total profit = 2 + 4 = 6."
+      },
+      {
+        "input": "1\n1",
+        "output": "0",
+        "explanation": "Cannot complete a buy and sell transaction on a single day."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "5\n1 3 4 0 4",
+        "expectedOutput": "6",
+        "explanation": "Transactions: 1->3 (2) and 0->4 (4) = 6."
+      },
+      {
+        "input": "1\n1",
+        "expectedOutput": "0",
+        "explanation": "No transaction possible."
+      },
+      {
+        "input": "5\n1 2 3 0 2",
+        "expectedOutput": "3",
+        "explanation": "Transactions: [1, 2], cooldown, [0, 2] = 1 + 2 = 3."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "5\n5 4 3 2 1",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "5\n1 2 3 4 5",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "6\n6 1 3 2 4 7",
+        "expectedOutput": "6"
+      },
+      {
+        "input": "4\n1 4 2 7",
+        "expectedOutput": "6"
+      }
+    ],
+    "hints": [
+      "Track three distinct states for each day: 'held' (currently holding a share), 'sold' (just sold today, in cooldown next day), and 'reset' (idle / no share held and not in cooldown).",
+      "Transitions: held = max(held, reset - price), sold = held + price, reset = max(reset, prev_sold).",
+      "Base cases: held = -prices[0], sold = 0, reset = 0.",
+      "The maximum profit at the end is max(sold, reset)."
+    ],
+    "id": "cmurzp0bx00007ofg565oplkg"
+  },
+  {
+    "number": 114,
+    "externalId": "DSA-114",
+    "title": "Coin Change II",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Bloomberg",
+      "Facebook",
+      "Apple"
+    ],
+    "statement": "You are given an integer array `coins` representing coins of different denominations and an integer `amount` representing a target amount of money.\n\nReturn the number of distinct combinations that make up that amount. If that amount of money cannot be made up by any combination of the coins, return `0`.\n\nYou may assume that you have an infinite number of each kind of coin. All coin values are unique.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(N * amount), where N is the number of coins.\n- **Space Complexity:** O(amount) auxiliary space using a 1-D DP array.",
+    "constraints": "1 <= coins.length <= 100\n1 <= coins[i] <= 5000\nAll values of coins are unique.\n0 <= amount <= 5000",
+    "inputFormat": "Line 1 contains two integers: n (number of coin denominations) and amount.\nLine 2 contains n space-separated integers representing coins.",
+    "outputFormat": "Print the number of distinct combinations that make up the amount.",
+    "examples": [
+      {
+        "input": "3 4\n1 2 3",
+        "output": "4",
+        "explanation": "Four distinct combinations: 1+1+1+1=4, 1+1+2=4, 2+2=4, and 1+3=4."
+      },
+      {
+        "input": "2 7\n2 4",
+        "output": "0",
+        "explanation": "Amount 7 cannot be made with only even coin denominations."
+      },
+      {
+        "input": "1 0\n1",
+        "output": "1",
+        "explanation": "There is exactly 1 combination to make 0: choosing zero coins."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3 4\n1 2 3",
+        "expectedOutput": "4",
+        "explanation": "Four combinations totaling 4."
+      },
+      {
+        "input": "2 7\n2 4",
+        "expectedOutput": "0",
+        "explanation": "Impossible amount."
+      },
+      {
+        "input": "1 0\n1",
+        "expectedOutput": "1",
+        "explanation": "Base case amount 0."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "3 5\n1 2 5",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "1 10\n10",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "1 10\n2",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "3 10\n2 5 3",
+        "expectedOutput": "4"
+      }
+    ],
+    "hints": [
+      "This is an Unbounded Knapsack problem counting combinations rather than permutations.",
+      "Define a 1D array dp of size amount + 1, where dp[a] is the number of combinations to make amount a. Initialize dp[0] = 1.",
+      "Loop over coins as the outer loop and amounts as the inner loop: for coin in coins: for a in range(coin, amount + 1): dp[a] += dp[a - coin].",
+      "Putting coins in the outer loop guarantees we only consider combinations (order of coins does not matter)."
+    ],
+    "id": "cmurzqq2q0000b0fgyqur72f7"
+  },
+  {
+    "number": 115,
+    "externalId": "DSA-115",
+    "title": "Target Sum",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Dynamic Programming",
+      "Backtracking"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Uber",
+      "Bloomberg"
+    ],
+    "statement": "You are given an integer array `nums` and an integer `target`.\n\nYou want to build an expression out of `nums` by adding one of the symbols `'+'` and `'-'` before each integer in `nums` and then concatenate all the integers.\n\nFor example, if `nums = [2, 1]`, you can add a `'+'` before `2` and a `'-'` before `1` to build the expression `\"+2-1\"`.\n\nReturn the number of different expressions that you can build, which evaluate to `target`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n * total_sum), where n is the size of nums.\n- **Space Complexity:** O(total_sum) auxiliary space using a 1-D DP array.",
+    "constraints": "1 <= nums.length <= 20\n0 <= nums[i] <= 1000\n0 <= sum(nums[i]) <= 1000\n-1000 <= target <= 1000",
+    "inputFormat": "Line 1 contains two integers: n (number of elements) and target.\nLine 2 contains n space-separated integers representing nums.",
+    "outputFormat": "Print the number of different expressions that evaluate to target.",
+    "examples": [
+      {
+        "input": "3 2\n2 2 2",
+        "output": "3",
+        "explanation": "Three different ways:\n+2 +2 -2 = 2\n+2 -2 +2 = 2\n-2 +2 +2 = 2"
+      },
+      {
+        "input": "5 3\n1 1 1 1 1",
+        "output": "5",
+        "explanation": "There are 5 ways to assign symbols such that the expression equals 3."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3 2\n2 2 2",
+        "expectedOutput": "3",
+        "explanation": "3 ways to achieve sum 2."
+      },
+      {
+        "input": "5 3\n1 1 1 1 1",
+        "expectedOutput": "5",
+        "explanation": "5 ways to choose four 1s and one -1."
+      },
+      {
+        "input": "1 1\n1",
+        "expectedOutput": "1",
+        "explanation": "+1 = 1."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2 5\n1 2",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "2 0\n0 0",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "3 -2\n2 2 2",
+        "expectedOutput": "3"
+      },
+      {
+        "input": "2 2\n1 2",
+        "expectedOutput": "0"
+      }
+    ],
+    "hints": [
+      "Partition nums into two subsets: P (positive signs) and N (negative signs).",
+      "We have: sum(P) - sum(N) = target, and sum(P) + sum(N) = total_sum.",
+      "Adding the equations gives: 2 * sum(P) = total_sum + target, meaning sum(P) = (total_sum + target) / 2.",
+      "If (total_sum + target) is negative or odd, return 0. Otherwise, count how many subsets have sum equal to sum(P) using 0/1 Knapsack DP."
+    ],
+    "id": "cmurzsp6q0000f0fg2b2uai3s"
+  },
+  {
+    "number": 116,
+    "externalId": "DSA-116",
+    "title": "Interleaving String",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1450,
+    "tags": [
+      "String",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Facebook",
+      "Microsoft",
+      "Uber",
+      "Apple",
+      "Bloomberg"
+    ],
+    "statement": "You are given three strings `s1`, `s2`, and `s3`. Return `true` if `s3` is formed by an interleaving of `s1` and `s2`, or `false` otherwise.\n\nAn interleaving of two strings `s` and `t` is a configuration where `s` and `t` are divided into `n` and `m` substrings respectively, such that:\n- `|n - m| <= 1`\n- `s = s1 + s2 + ... + sn`\n- `t = t1 + t2 + ... + tm`\n- The interleaving is `s1 + t1 + s2 + t2 + ...` or `t1 + s1 + t2 + s2 + ...`\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(m * n), where m = s1.length and n = s2.length.\n- **Space Complexity:** O(n) auxiliary space using a 1-D DP row.",
+    "constraints": "0 <= s1.length, s2.length <= 100\n0 <= s3.length <= 200\ns1, s2, and s3 consist of lowercase English letters.",
+    "inputFormat": "Line 1 contains string s1.\nLine 2 contains string s2.\nLine 3 contains string s3.",
+    "outputFormat": "Print true if s3 is formed by interleaving s1 and s2, otherwise false.",
+    "examples": [
+      {
+        "input": "aaaa\nbbbb\naabbbbaa",
+        "output": "true",
+        "explanation": "s1 = \"aa\" + \"aa\", s2 = \"bbbb\". Interleaving: \"aa\" + \"bbbb\" + \"aa\" = \"aabbbbaa\"."
+      },
+      {
+        "input": "abc\nxyz\nabxzcy",
+        "output": "false",
+        "explanation": "Relative order of characters from original strings must be preserved."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "aaaa\nbbbb\naabbbbaa",
+        "expectedOutput": "true",
+        "explanation": "Interleaving preserving relative order."
+      },
+      {
+        "input": "abc\nxyz\nabxzcy",
+        "expectedOutput": "false",
+        "explanation": "Order of characters in s1 and s2 violated."
+      },
+      {
+        "input": "aabcc\ndbbca\naadbbcbcac",
+        "expectedOutput": "true",
+        "explanation": "Classic interleaving."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "a\nb\nabc",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "aabcc\ndbbca\naadbbbaccc",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "a\nb\nab",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "aa\nab\naaba",
+        "expectedOutput": "true"
+      }
+    ],
+    "hints": [
+      "Check lengths first: if len(s1) + len(s2) != len(s3), return false immediately.",
+      "Define boolean dp[i][j] as true if s3[0..i+j-1] is formed by interleaving s1[0..i-1] and s2[0..j-1].",
+      "dp[i][j] is true if: (i > 0 and s1[i-1] == s3[i+j-1] and dp[i-1][j]) OR (j > 0 and s2[j-1] == s3[i+j-1] and dp[i][j-1]).",
+      "Space can be optimized to O(len(s2)) using a single 1D array representing the previous row."
+    ],
+    "id": "cmurzvqxd00009cfgtwgxqraw"
+  },
+  {
+    "number": 117,
+    "externalId": "DSA-117",
+    "title": "Longest Increasing Path in a Matrix",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Hard",
+    "rating": 1750,
+    "tags": [
+      "Depth-First Search",
+      "Breadth-First Search",
+      "Graph",
+      "Topological Sort",
+      "Memoization",
+      "Dynamic Programming",
+      "Matrix"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Facebook",
+      "Microsoft",
+      "Uber",
+      "Apple",
+      "ByteDance"
+    ],
+    "statement": "You are given an `m x n` 2-D integer grid `matrix`, where each integer is non-negative.\n\nReturn the length of the longest strictly increasing path within `matrix`.\n\nFrom each cell, you can move in four directions: up, down, left, or right. You may not move diagonally or outside of the boundary.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(m * n), where m is the number of rows and n is the number of columns.\n- **Space Complexity:** O(m * n) auxiliary space for the memoization table and recursion stack.",
+    "constraints": "1 <= m, n <= 200\n0 <= matrix[i][j] <= 2^31 - 1",
+    "inputFormat": "Line 1 contains two integers: m (rows) and n (columns).\nThe next m lines each contain n space-separated integers representing the matrix rows.",
+    "outputFormat": "Print the length of the longest strictly increasing path.",
+    "examples": [
+      {
+        "input": "3 3\n5 5 3\n2 3 6\n1 1 1",
+        "output": "4",
+        "explanation": "The longest increasing path is [1, 2, 3, 6] or [1, 2, 3, 5] with length 4."
+      },
+      {
+        "input": "3 3\n1 2 3\n2 1 4\n7 6 5",
+        "output": "7",
+        "explanation": "The longest increasing path is [1, 2, 3, 4, 5, 6, 7] with length 7."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3 3\n5 5 3\n2 3 6\n1 1 1",
+        "expectedOutput": "4",
+        "explanation": "Longest increasing path of length 4."
+      },
+      {
+        "input": "3 3\n1 2 3\n2 1 4\n7 6 5",
+        "expectedOutput": "7",
+        "explanation": "Spiral-like path of length 7."
+      },
+      {
+        "input": "1 1\n1",
+        "expectedOutput": "1",
+        "explanation": "Single cell."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "3 3\n3 3 3\n3 3 3\n3 3 3",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "1 5\n1 2 3 4 5",
+        "expectedOutput": "5"
+      },
+      {
+        "input": "5 1\n5\n4\n3\n2\n1",
+        "expectedOutput": "5"
+      },
+      {
+        "input": "3 3\n9 9 4\n6 6 8\n2 1 1",
+        "expectedOutput": "4"
+      }
+    ],
+    "hints": [
+      "Because paths must be strictly increasing, there can be no cycles. This turns the grid into a Directed Acyclic Graph (DAG).",
+      "Use Depth-First Search (DFS) with memoization: let memo[r][c] store the length of the longest increasing path starting from cell (r, c).",
+      "For cell (r, c), check all 4 neighbors (nr, nc). If matrix[nr][nc] > matrix[r][c], memo[r][c] = max(memo[r][c], 1 + dfs(nr, nc)).",
+      "Iterate over all cells and take the maximum memo value. Each cell is computed only once, giving an O(m * n) time complexity."
+    ],
+    "id": "cmus05mlp00005wfgzl1og9u1"
+  },
+  {
+    "number": 118,
+    "externalId": "DSA-118",
+    "title": "Distinct Subsequences",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Hard",
+    "rating": 1800,
+    "tags": [
+      "String",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook",
+      "Microsoft",
+      "Uber",
+      "Apple",
+      "Bloomberg"
+    ],
+    "statement": "You are given two strings `s` and `t`, both consisting of English letters.\n\nReturn the number of distinct subsequences of `s` which are equal to `t`.\n\nThe test cases are generated so that the answer fits in a 32-bit signed integer.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(m * n), where m is s.length and n is t.length.\n- **Space Complexity:** O(n) auxiliary space using a 1-D DP array.",
+    "constraints": "1 <= s.length, t.length <= 1000\ns and t consist of English letters.",
+    "inputFormat": "Line 1 contains string s.\nLine 2 contains string t.",
+    "outputFormat": "Print the number of distinct subsequences of s equal to t.",
+    "examples": [
+      {
+        "input": "caaat\ncat",
+        "output": "3",
+        "explanation": "There are 3 ways to generate \"cat\" from \"caaat\":\n- (c)aa(at)\n- (c)a(a)a(t)\n- (ca)aa(t)"
+      },
+      {
+        "input": "xxyxy\nxy",
+        "output": "5",
+        "explanation": "There are 5 ways to pick an 'x' followed by a 'y'."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "caaat\ncat",
+        "expectedOutput": "3",
+        "explanation": "3 ways to match 'cat'."
+      },
+      {
+        "input": "xxyxy\nxy",
+        "expectedOutput": "5",
+        "explanation": "5 distinct subsequences equal to 'xy'."
+      },
+      {
+        "input": "rabbbit\nrabbit",
+        "expectedOutput": "3",
+        "explanation": "3 ways by choosing two of the three 'b's."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "abc\nd",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "cat\ncats",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "hello\nhello",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "babgbag\nbag",
+        "expectedOutput": "5"
+      }
+    ],
+    "hints": [
+      "Define dp[i][j] as the number of distinct subsequences of s[i..] matching t[j..].",
+      "Base cases: dp[i][len(t)] = 1 (empty string is matched by exactly 1 subsequence), and dp[len(s)][j] = 0 for j < len(t).",
+      "At state (i, j): you can always skip s[i], yielding dp[i+1][j]. If s[i] == t[j], you can also take the match, yielding dp[i+1][j+1].",
+      "Recurrence: dp[i][j] = dp[i+1][j] + (s[i] == t[j] ? dp[i+1][j+1] : 0). Can be optimized to O(len(t)) space."
+    ],
+    "id": "cmus0841c0000qsfg3xx86xjh"
+  },
+  {
+    "number": 119,
+    "externalId": "DSA-119",
+    "title": "Edit Distance",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Medium",
+    "rating": 1450,
+    "tags": [
+      "String",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Facebook",
+      "Apple",
+      "Uber",
+      "Bloomberg"
+    ],
+    "statement": "You are given two strings `word1` and `word2`, each consisting of lowercase English letters.\n\nYou are allowed to perform three operations on `word1` an unlimited number of times:\n- **Insert** a character at any position\n- **Delete** a character at any position\n- **Replace** a character at any position\n\nReturn the minimum number of operations to make `word1` equal to `word2`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(m * n), where m = word1.length and n = word2.length.\n- **Space Complexity:** O(n) auxiliary space using a 1-D DP row.",
+    "constraints": "0 <= word1.length, word2.length <= 500\nword1 and word2 consist of lowercase English letters.",
+    "inputFormat": "Line 1 contains string word1.\nLine 2 contains string word2.",
+    "outputFormat": "Print the minimum number of edit operations required.",
+    "examples": [
+      {
+        "input": "monkeys\nmoney",
+        "output": "2",
+        "explanation": "monkeys -> monkey (remove 's') -> money (remove 'k'). 2 operations."
+      },
+      {
+        "input": "neatcdee\nneetcode",
+        "output": "3",
+        "explanation": "neatcdee -> neetcdee (replace 'a' with 'e') -> neetcde (remove last 'e') -> neetcode (insert 'o'). 3 operations."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "monkeys\nmoney",
+        "expectedOutput": "2",
+        "explanation": "2 deletions."
+      },
+      {
+        "input": "neatcdee\nneetcode",
+        "expectedOutput": "3",
+        "explanation": "3 operations: replace, delete, insert."
+      },
+      {
+        "input": "horse\nros",
+        "expectedOutput": "3",
+        "explanation": "Classic LeetCode example."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "intention\nexecution",
+        "expectedOutput": "5"
+      },
+      {
+        "input": "abc\nabc",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "a\nb",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "abc\nxyz",
+        "expectedOutput": "3"
+      }
+    ],
+    "hints": [
+      "Define dp[i][j] as the minimum edit distance to transform word1[0..i-1] into word2[0..j-1].",
+      "Base cases: dp[i][0] = i (deleting i characters) and dp[0][j] = j (inserting j characters).",
+      "If word1[i-1] == word2[j-1], characters match: dp[i][j] = dp[i-1][j-1].",
+      "Otherwise, take 1 + min(dp[i][j-1] (insert), dp[i-1][j] (delete), dp[i-1][j-1] (replace)). Space can be optimized to O(len(word2))."
+    ],
+    "id": "cmus0a8qk00008gfgzos4wsln"
+  },
+  {
+    "number": 120,
+    "externalId": "DSA-120",
+    "title": "Burst Balloons",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Hard",
+    "rating": 1850,
+    "tags": [
+      "Array",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook",
+      "Microsoft",
+      "Uber",
+      "Apple",
+      "ByteDance"
+    ],
+    "statement": "You are given an array of integers `nums` of size `n`. The `i`th element represents a balloon with an integer value of `nums[i]`. You must burst all the balloons.\n\nIf you burst the `i`th balloon, you will receive `nums[i - 1] * nums[i] * nums[i + 1]` coins. If `i - 1` or `i + 1` goes out of bounds of the array, then treat the out-of-bounds value as `1`.\n\nReturn the maximum number of coins you can receive by bursting all the balloons wisely.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n^3), where n is the size of nums.\n- **Space Complexity:** O(n^2) auxiliary space for the DP table.",
+    "constraints": "n == nums.length\n1 <= n <= 300\n0 <= nums[i] <= 100",
+    "inputFormat": "The first line contains an integer n (number of balloons).\nThe second line contains n space-separated integers representing nums.",
+    "outputFormat": "Print the maximum number of coins that can be received.",
+    "examples": [
+      {
+        "input": "4\n4 2 3 7",
+        "output": "143",
+        "explanation": "nums = [4,2,3,7] -> [4,3,7] -> [4,7] -> [7] -> []\ncoins = 4*2*3 + 4*3*7 + 1*4*7 + 1*7*1 = 24 + 84 + 28 + 7 = 143."
+      },
+      {
+        "input": "4\n3 1 5 8",
+        "output": "167",
+        "explanation": "Burst 1 first (3*1*5=15), then 5 (3*5*8=120), then 3 (1*3*8=24), then 8 (1*8*1=8). Total = 167."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "4\n4 2 3 7",
+        "expectedOutput": "143",
+        "explanation": "Optimal popping order yields 143."
+      },
+      {
+        "input": "4\n3 1 5 8",
+        "expectedOutput": "167",
+        "explanation": "Classic example."
+      },
+      {
+        "input": "2\n1 5",
+        "expectedOutput": "10",
+        "explanation": "Burst 1 (1*1*5=5) then 5 (1*5*1=5) = 10."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1\n9",
+        "expectedOutput": "9"
+      },
+      {
+        "input": "3\n0 3 0",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "3\n7 9 8",
+        "expectedOutput": "568"
+      },
+      {
+        "input": "3\n1 2 3",
+        "expectedOutput": "12"
+      }
+    ],
+    "hints": [
+      "Think in reverse: instead of choosing which balloon to burst first (which alters adjacent neighbors and couples subproblems), choose which balloon to burst LAST in range [l, r].",
+      "Pad nums with 1 on both sides: A = [1] + nums + [1].",
+      "If balloon i is the last to burst in range [l, r], its adjacent neighbors at that moment are guaranteed to be A[l - 1] and A[r + 1].",
+      "Recurrence: dp[l][r] = max(A[l - 1] * A[i] * A[r + 1] + dp[l][i - 1] + dp[i + 1][r]) for all l <= i <= r. Iterate by increasing window length."
+    ],
+    "id": "cmus0c2210000dwfg4l6tkvpw"
+  },
+  {
+    "number": 121,
+    "externalId": "DSA-121",
+    "title": "Regular Expression Matching",
+    "topic": "2-D Dynamic Programming",
+    "difficulty": "Hard",
+    "rating": 1850,
+    "tags": [
+      "String",
+      "Dynamic Programming",
+      "Recursion"
+    ],
+    "companies": [
+      "Facebook",
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Uber",
+      "Apple",
+      "Twitter",
+      "Bloomberg"
+    ],
+    "statement": "You are given an input string `s` consisting of lowercase English letters, and a pattern `p` consisting of lowercase English letters, as well as `'.'` and `'*'` characters.\n\nReturn `true` if the pattern matches the entire input string, otherwise return `false`.\n- `'.'` Matches any single character.\n- `'*'` Matches zero or more of the preceding element.\n\nThe matching must cover the entire input string (not partial).\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(m * n), where m is the length of s and n is the length of p.\n- **Space Complexity:** O(m * n) auxiliary space for the memoization table.",
+    "constraints": "1 <= s.length <= 20\n1 <= p.length <= 20\ns contains only lowercase English letters.\np contains only lowercase English letters, '.', and '*'.\nEach appearance of '*' is preceded by a valid character or '.'.",
+    "inputFormat": "Line 1 contains the string s.\nLine 2 contains the string p.",
+    "outputFormat": "Print true if pattern p matches string s, otherwise false.",
+    "examples": [
+      {
+        "input": "aa\n.b",
+        "output": "false",
+        "explanation": "No choice for '.' can match 'a' while also matching 'b' to the second character 'a'."
+      },
+      {
+        "input": "nnn\nn*",
+        "output": "true",
+        "explanation": "'*' repeats 'n' 3 times to match \"nnn\"."
+      },
+      {
+        "input": "xyz\n.*z",
+        "output": "true",
+        "explanation": "'.*' matches \"xy\", and 'z' matches 'z'."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "aa\n.b",
+        "expectedOutput": "false",
+        "explanation": "Pattern cannot match."
+      },
+      {
+        "input": "nnn\nn*",
+        "expectedOutput": "true",
+        "explanation": "'n*' repeats 3 times."
+      },
+      {
+        "input": "xyz\n.*z",
+        "expectedOutput": "true",
+        "explanation": "Wildcard match."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "aab\nc*a*b",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "ab\n.*",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "mississippi\nmis*is*p*.",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "ab\n.*c",
+        "expectedOutput": "false"
+      }
+    ],
+    "hints": [
+      "Define boolean dp[i][j] as whether s[i..] matches p[j..].",
+      "Check first_match = (i < len(s)) and (p[j] == s[i] or p[j] == '.').",
+      "If j + 1 < len(p) and p[j + 1] == '*', you have two branches: ignore the '*' token (dp[i][j + 2]) or use it once if first_match (dp[i + 1][j]).",
+      "Otherwise, if no '*' follows, proceed normally: first_match and dp[i + 1][j + 1]."
+    ],
+    "id": "cmus0eatl00006kfgcrrbtoyt"
+  },
+  {
+    "number": 122,
+    "externalId": "DSA-122",
+    "title": "Maximum Subarray",
+    "topic": "Greedy",
+    "difficulty": "Medium",
+    "rating": 1100,
+    "tags": [
+      "Array",
+      "Divide and Conquer",
+      "Dynamic Programming",
+      "Greedy"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Apple",
+      "Google",
+      "Facebook",
+      "Bloomberg",
+      "Uber",
+      "Cisco"
+    ],
+    "statement": "Given an integer array `nums`, find the contiguous subarray (containing at least one number) which has the largest sum and return its sum.\n\nA subarray is a contiguous sequence of elements within an array.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the size of the array.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= nums.length <= 100,000\n-10,000 <= nums[i] <= 10,000",
+    "inputFormat": "The first line contains an integer n (number of elements).\nThe second line contains n space-separated integers representing nums.",
+    "outputFormat": "Print the maximum subarray sum.",
+    "examples": [
+      {
+        "input": "8\n2 -3 4 -2 2 1 -1 4",
+        "output": "8",
+        "explanation": "The subarray [4, -2, 2, 1, -1, 4] has the largest sum 8."
+      },
+      {
+        "input": "1\n-1",
+        "output": "-1",
+        "explanation": "The single element [-1] gives sum -1."
+      },
+      {
+        "input": "5\n5 4 -1 7 8",
+        "output": "23",
+        "explanation": "The entire array [5, 4, -1, 7, 8] gives the maximum sum 23."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "8\n2 -3 4 -2 2 1 -1 4",
+        "expectedOutput": "8",
+        "explanation": "Subarray [4, -2, 2, 1, -1, 4]."
+      },
+      {
+        "input": "1\n-1",
+        "expectedOutput": "-1",
+        "explanation": "Single negative element."
+      },
+      {
+        "input": "5\n5 4 -1 7 8",
+        "expectedOutput": "23",
+        "explanation": "All positive contributions."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "4\n-4 -3 -2 -1",
+        "expectedOutput": "-1"
+      },
+      {
+        "input": "9\n-2 1 -3 4 -1 2 1 -5 4",
+        "expectedOutput": "6"
+      },
+      {
+        "input": "1\n100",
+        "expectedOutput": "100"
+      },
+      {
+        "input": "3\n-100 -20 -300",
+        "expectedOutput": "-20"
+      }
+    ],
+    "hints": [
+      "Kadane's algorithm maintains a running current sum `curSum` and a `maxSum`.",
+      "If the current running sum drops below 0, discard it and start fresh with 0, since a negative prefix never helps subsequent sums.",
+      "Add each element x to curSum: curSum += x, then update maxSum = max(maxSum, curSum).",
+      "Initialize maxSum to nums[0] so that all-negative arrays are handled correctly."
+    ],
+    "id": "cmus0gscp0000b4fgcb4r58dg"
+  },
+  {
+    "number": 123,
+    "externalId": "DSA-123",
+    "title": "Jump Game",
+    "topic": "Greedy",
+    "difficulty": "Medium",
+    "rating": 1300,
+    "tags": [
+      "Array",
+      "Dynamic Programming",
+      "Greedy"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google",
+      "Facebook",
+      "Apple",
+      "Uber",
+      "Bloomberg"
+    ],
+    "statement": "You are given an integer array `nums` where each element `nums[i]` represents your maximum jump length at that position.\n\nReturn `true` if you can reach the last index starting from index `0`, or `false` otherwise.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the size of the array.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= nums.length <= 10000\n0 <= nums[i] <= 100000",
+    "inputFormat": "The first line contains an integer n (length of array).\nThe second line contains n space-separated integers representing nums.",
+    "outputFormat": "Print true if you can reach the last index, otherwise false.",
+    "examples": [
+      {
+        "input": "5\n1 2 0 1 0",
+        "output": "true",
+        "explanation": "Jump from index 0 to 1, then from index 1 to 3, and lastly from index 3 to 4."
+      },
+      {
+        "input": "5\n1 2 1 0 1",
+        "output": "false",
+        "explanation": "You will inevitably arrive at index 3 where the maximum jump length is 0, making it impossible to reach the last index."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "5\n1 2 0 1 0",
+        "expectedOutput": "true",
+        "explanation": "Reachable via 0 -> 1 -> 3 -> 4."
+      },
+      {
+        "input": "5\n1 2 1 0 1",
+        "expectedOutput": "false",
+        "explanation": "Stuck at index 3 with 0 jump length."
+      },
+      {
+        "input": "1\n0",
+        "expectedOutput": "true",
+        "explanation": "Already at the destination index 0."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "5\n4 0 0 0 0",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "5\n3 2 1 0 4",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "4\n1 1 1 1",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "5\n2 0 0 0 1",
+        "expectedOutput": "false"
+      }
+    ],
+    "hints": [
+      "Work backwards greedily: set `goal = n - 1`.",
+      "Iterate from `n - 2` down to 0: if `i + nums[i] >= goal`, then index `i` can reach the goal, so update `goal = i`.",
+      "Alternatively, forward scan: maintain `maxReach = 0`. For each index `i`, if `i > maxReach`, return false. Update `maxReach = max(maxReach, i + nums[i])`.",
+      "Return true if `goal == 0` (or if `maxReach >= n - 1`). Runs in O(n) time and O(1) space."
+    ],
+    "id": "cmus0jjwc000020fgdqgrib6l"
+  },
+  {
+    "number": 124,
+    "externalId": "DSA-124",
+    "title": "Jump Game II",
+    "topic": "Greedy",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Dynamic Programming",
+      "Greedy"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Apple",
+      "Facebook",
+      "Uber",
+      "Bloomberg"
+    ],
+    "statement": "You are given a 0-indexed array of integers `nums` of length `n`, where `nums[i]` represents the maximum length of a forward jump from index `i`.\n\nYou are initially positioned at `nums[0]`.\n\nReturn the minimum number of jumps to reach index `n - 1`. You may assume that you can always reach `nums[n - 1]`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the size of the array.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= nums.length <= 10000\n0 <= nums[i] <= 1000\nIt is guaranteed that you can reach nums[n - 1].",
+    "inputFormat": "The first line contains an integer n (length of array).\nThe second line contains n space-separated integers representing nums.",
+    "outputFormat": "Print the minimum number of jumps to reach the last index.",
+    "examples": [
+      {
+        "input": "6\n2 4 1 1 1 1",
+        "output": "2",
+        "explanation": "Jump from index 0 to index 1, then jump from index 1 to the last index (index 5)."
+      },
+      {
+        "input": "5\n2 1 2 1 0",
+        "output": "2",
+        "explanation": "Jump from index 0 to index 2, then from index 2 to index 4."
+      },
+      {
+        "input": "5\n2 3 1 1 4",
+        "output": "2",
+        "explanation": "Jump 1 step from index 0 to 1, then 3 steps to the last index."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "6\n2 4 1 1 1 1",
+        "expectedOutput": "2",
+        "explanation": "2 jumps: 0->1->5."
+      },
+      {
+        "input": "5\n2 1 2 1 0",
+        "expectedOutput": "2",
+        "explanation": "2 jumps: 0->2->4."
+      },
+      {
+        "input": "5\n2 3 1 1 4",
+        "expectedOutput": "2",
+        "explanation": "2 jumps: 0->1->4."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1\n0",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "4\n1 1 1 1",
+        "expectedOutput": "3"
+      },
+      {
+        "input": "5\n10 1 1 1 1",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "5\n2 3 0 1 4",
+        "expectedOutput": "2"
+      }
+    ],
+    "hints": [
+      "View this as a BFS on the array where each BFS level corresponds to one jump.",
+      "Maintain a window [l, r] of reachable indices with the current number of jumps. Initially l = 0, r = 0, and jumps = 0.",
+      "Find the farthest index reachable from any element in [l, r]: farthest = max(i + nums[i]) for i in [l..r].",
+      "Update the window: l = r + 1, r = farthest, and increment jumps by 1. Stop when r >= n - 1."
+    ],
+    "id": "cmus0lkzd0000wkfgcf87p0gi"
+  },
+  {
+    "number": 125,
+    "externalId": "DSA-125",
+    "title": "Gas Station",
+    "topic": "Greedy",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Greedy"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Bloomberg",
+      "Uber",
+      "Apple",
+      "Facebook"
+    ],
+    "statement": "There are `n` gas stations along a circular route, where the amount of gas at the `i`th station is `gas[i]`.\n\nYou have a car with an unlimited gas tank and it costs `cost[i]` of gas to travel from the `i`th station to its next `(i + 1)`th station. You begin the journey with an empty tank at one of the gas stations.\n\nGiven two integer arrays `gas` and `cost`, return the starting gas station's index if you can travel around the circuit once in the clockwise direction, otherwise return `-1`. If there exists a solution, it is guaranteed to be unique.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the number of gas stations.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "n == gas.length == cost.length\n1 <= n <= 100,000\n0 <= gas[i], cost[i] <= 1,000",
+    "inputFormat": "Line 1 contains an integer n (number of gas stations).\nLine 2 contains n space-separated integers representing gas.\nLine 3 contains n space-separated integers representing cost.",
+    "outputFormat": "Print the 0-based starting gas station index, or -1 if impossible.",
+    "examples": [
+      {
+        "input": "4\n1 2 3 4\n2 2 4 1",
+        "output": "3",
+        "explanation": "Start at station 3. Tank accumulates 4 - 1 + 1 - 2 + 2 - 2 + 3 - 4 = 1 >= 0. The circuit can be completed."
+      },
+      {
+        "input": "3\n1 2 3\n2 3 2",
+        "output": "-1",
+        "explanation": "Sum of gas is 6 but sum of cost is 7. You can never complete the circuit with negative net gas."
+      },
+      {
+        "input": "5\n1 2 3 4 5\n3 4 5 1 2",
+        "output": "3",
+        "explanation": "Starting at station 3 guarantees completing the full circuit."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "4\n1 2 3 4\n2 2 4 1",
+        "expectedOutput": "3",
+        "explanation": "Station 3 is the only valid start."
+      },
+      {
+        "input": "3\n1 2 3\n2 3 2",
+        "expectedOutput": "-1",
+        "explanation": "Total gas < total cost."
+      },
+      {
+        "input": "5\n1 2 3 4 5\n3 4 5 1 2",
+        "expectedOutput": "3",
+        "explanation": "Classic gas station test."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1\n2\n2",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "1\n2\n3",
+        "expectedOutput": "-1"
+      },
+      {
+        "input": "3\n5 1 2\n4 4 0",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "4\n3 1 1 5\n2 2 4 1",
+        "expectedOutput": "3"
+      }
+    ],
+    "hints": [
+      "If sum(gas) < sum(cost), it is mathematically impossible to complete the loop, so return -1 immediately.",
+      "If sum(gas) >= sum(cost), a unique valid solution is guaranteed to exist.",
+      "Iterate through all stations from index 0 to n - 1, keeping a running tank `cur_tank += gas[i] - cost[i]`.",
+      "If `cur_tank < 0`, no station up to index i could have been the starting point. Reset `cur_tank = 0` and set candidate `start = i + 1`."
+    ],
+    "id": "cmus0nxkz00009ofg2srru4i5"
+  },
+  {
+    "number": 126,
+    "externalId": "DSA-126",
+    "title": "Hand of Straights",
+    "topic": "Greedy",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Hash Table",
+      "Greedy",
+      "Sorting"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Uber",
+      "Bloomberg"
+    ],
+    "statement": "You are given an integer array `hand` where `hand[i]` is the value written on the `i`th card and an integer `groupSize`.\n\nYou want to rearrange the cards into groups so that each group is of size `groupSize`, and card values are consecutively increasing by 1.\n\nReturn `true` if it is possible to rearrange the cards in this way, otherwise return `false`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n log n), where n is the size of the array.\n- **Space Complexity:** O(n) auxiliary space for the frequency map.",
+    "constraints": "1 <= hand.length <= 10000\n0 <= hand[i] <= 10^9\n1 <= groupSize <= hand.length",
+    "inputFormat": "Line 1 contains two integers: n (number of cards) and groupSize.\nLine 2 contains n space-separated integers representing the cards in hand.",
+    "outputFormat": "Print true if the hand can be rearranged into consecutive groups of groupSize, otherwise false.",
+    "examples": [
+      {
+        "input": "8 4\n1 2 4 2 3 5 3 4",
+        "output": "true",
+        "explanation": "The cards can be rearranged into two valid groups: [1, 2, 3, 4] and [2, 3, 4, 5]."
+      },
+      {
+        "input": "8 4\n1 2 3 3 4 5 6 7",
+        "output": "false",
+        "explanation": "Cannot form all consecutive groups of size 4."
+      },
+      {
+        "input": "9 3\n1 2 3 6 2 3 4 7 8",
+        "output": "true",
+        "explanation": "Rearranges into [1, 2, 3], [2, 3, 4], and [6, 7, 8]."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "8 4\n1 2 4 2 3 5 3 4",
+        "expectedOutput": "true",
+        "explanation": "Valid groups: [1, 2, 3, 4] and [2, 3, 4, 5]."
+      },
+      {
+        "input": "8 4\n1 2 3 3 4 5 6 7",
+        "expectedOutput": "false",
+        "explanation": "Cannot form consecutive groups."
+      },
+      {
+        "input": "9 3\n1 2 3 6 2 3 4 7 8",
+        "expectedOutput": "true",
+        "explanation": "Valid groups of size 3."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "5 4\n1 2 3 4 5",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "4 1\n5 2 8 1",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "3 3\n1 2 3",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "6 3\n1 2 4 5 6 7",
+        "expectedOutput": "false"
+      }
+    ],
+    "hints": [
+      "If hand.length % groupSize != 0, return false immediately.",
+      "Build a frequency map of all cards.",
+      "Sort the unique cards. The minimum available card must always be the start of a consecutive sequence of length groupSize.",
+      "For each card x in sorted order with count > 0, decrement the count of x, x + 1, ..., x + groupSize - 1 by count. If any consecutive card has insufficient frequency, return false."
+    ],
+    "id": "cmus0rxxl0000iofgt8vl1fak"
+  },
+  {
+    "number": 127,
+    "externalId": "DSA-127",
+    "title": "Merge Triplets to Form Target",
+    "topic": "Greedy",
+    "difficulty": "Medium",
+    "rating": 1350,
+    "tags": [
+      "Array",
+      "Greedy"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook",
+      "Microsoft"
+    ],
+    "statement": "You are given a 2D integer array `triplets`, where `triplets[i] = [a_i, b_i, c_i]` represents the `i`th triplet. You are also given an integer array `target = [x, y, z]` which is the triplet you want to obtain.\n\nTo obtain `target`, you may apply the following operation on `triplets` zero or more times:\n- Choose two different indices `i` and `j` and update `triplets[j]` to `[max(a_i, a_j), max(b_i, b_j), max(c_i, c_j)]`.\n\nReturn `true` if it is possible to obtain `target` as an element of `triplets`, or `false` otherwise.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the number of triplets.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= triplets.length <= 100,000\ntriplets[i].length == 3\ntarget.length == 3\n1 <= a_i, b_i, c_i, x, y, z <= 1000",
+    "inputFormat": "Line 1 contains an integer n (number of triplets).\nThe next n lines each contain three integers: a, b, and c.\nThe last line contains three integers: x, y, and z representing target.",
+    "outputFormat": "Print true if target can be formed, otherwise false.",
+    "examples": [
+      {
+        "input": "2\n1 2 3\n7 1 1\n7 2 3",
+        "output": "true",
+        "explanation": "Update the second triplet to be [max(1, 7), max(2, 1), max(3, 1)] = [7, 2, 3]."
+      },
+      {
+        "input": "3\n2 5 6\n1 4 4\n5 7 5\n5 4 6",
+        "output": "false",
+        "explanation": "Any triplet with 5 or 6 contains another value exceeding target [5, 4, 6]."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "2\n1 2 3\n7 1 1\n7 2 3",
+        "expectedOutput": "true",
+        "explanation": "Form target [7, 2, 3]."
+      },
+      {
+        "input": "3\n2 5 6\n1 4 4\n5 7 5\n5 4 6",
+        "expectedOutput": "false",
+        "explanation": "Impossible due to element overshoots."
+      },
+      {
+        "input": "3\n3 4 5\n4 5 6\n2 5 6\n5 5 5",
+        "expectedOutput": "false",
+        "explanation": "Cannot form target [5, 5, 5]."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1\n1 2 3\n1 2 3",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "3\n2 1 1\n1 3 1\n1 1 4\n2 3 4",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "4\n2 5 3\n1 8 4\n1 7 5\n2 7 5\n2 7 5",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "2\n3 1 1\n1 1 5\n3 2 5",
+        "expectedOutput": "false"
+      }
+    ],
+    "hints": [
+      "Any triplet with an element strictly greater than the corresponding element in target must be ignored, because max operations will always overshoot target.",
+      "Among the valid triplets (where t[0] <= target[0] and t[1] <= target[1] and t[2] <= target[2]), we just need to see if target[0], target[1], and target[2] are each matched by at least one triplet.",
+      "Keep track of three flags: hasX, hasY, hasZ. When all three are true, return true."
+    ],
+    "id": "cmus0uij40000y0fg8l453011"
+  },
+  {
+    "number": 128,
+    "externalId": "DSA-128",
+    "title": "Partition Labels",
+    "topic": "Greedy",
+    "difficulty": "Medium",
+    "rating": 1350,
+    "tags": [
+      "Hash Table",
+      "Two Pointers",
+      "String",
+      "Greedy"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook",
+      "Microsoft",
+      "Uber",
+      "Apple"
+    ],
+    "statement": "You are given a string `s` consisting of lowercase English letters.\n\nWe want to partition the string into as many parts as possible so that each letter appears in at most one part.\n\nNote that the partition is done so that after concatenating all the parts in order, the resultant string is `s`.\n\nReturn a list of integers representing the size of these parts.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the length of string s.\n- **Space Complexity:** O(1) auxiliary space (at most 26 lowercase English letters).",
+    "constraints": "1 <= s.length <= 500\ns consists of lowercase English letters.",
+    "inputFormat": "A single line containing the string s.",
+    "outputFormat": "Print the space-separated partition lengths on a single line.",
+    "examples": [
+      {
+        "input": "xyxxyzbzbbisl",
+        "output": "5 5 1 1 1",
+        "explanation": "The string can be split into [\"xyxxy\", \"zbzbb\", \"i\", \"s\", \"l\"]."
+      },
+      {
+        "input": "abcabc",
+        "output": "6",
+        "explanation": "Every letter appears across the string, so it cannot be divided into smaller valid parts."
+      },
+      {
+        "input": "ababcbacadefegdehijhklij",
+        "output": "9 7 8",
+        "explanation": "The partitions are \"ababcbaca\" (length 9), \"defegde\" (length 7), and \"hijhklij\" (length 8)."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "xyxxyzbzbbisl",
+        "expectedOutput": "5 5 1 1 1",
+        "explanation": "5 partitions."
+      },
+      {
+        "input": "abcabc",
+        "expectedOutput": "6",
+        "explanation": "Single full partition."
+      },
+      {
+        "input": "ababcbacadefegdehijhklij",
+        "expectedOutput": "9 7 8",
+        "explanation": "3 partitions of sizes 9, 7, and 8."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "abcdef",
+        "expectedOutput": "1 1 1 1 1 1"
+      },
+      {
+        "input": "a",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "aaaa",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "caedbdedda",
+        "expectedOutput": "1 9"
+      }
+    ],
+    "hints": [
+      "First, record the last occurrence index of each character in an array/map of size 26.",
+      "Traverse the string with two pointers: start = 0 and end = 0.",
+      "For each index i, extend end = max(end, last_index[s[i]]).",
+      "When i reaches end, the current partition is complete. Add i - start + 1 to the result list and update start = i + 1."
+    ],
+    "id": "cmus0w8qp00002ofgnubsen2n"
+  },
+  {
+    "number": 129,
+    "externalId": "DSA-129",
+    "title": "Valid Parenthesis String",
+    "topic": "Greedy",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "String",
+      "Dynamic Programming",
+      "Stack",
+      "Greedy"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google",
+      "Bloomberg",
+      "Microsoft"
+    ],
+    "statement": "You are given a string `s` which contains only three types of characters: `'('`, `')'`, and `'*'`.\n\nReturn `true` if `s` is valid, otherwise return `false`.\n\nA string is valid if it follows all of the following rules:\n- Any left parenthesis `'('` must have a corresponding right parenthesis `')'`.\n- Any right parenthesis `')'` must have a corresponding left parenthesis `'('`.\n- Left parenthesis `'('` must go before the corresponding right parenthesis `')'`.\n- `'*'` could be treated as a single right parenthesis `')'` or a single left parenthesis `'('` or an empty string `\"\"`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the length of string s.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= s.length <= 100\ns consists of '(', ')', and '*'.",
+    "inputFormat": "A single line containing the string s.",
+    "outputFormat": "Print true if the string is valid, otherwise false.",
+    "examples": [
+      {
+        "input": "((**)",
+        "output": "true",
+        "explanation": "One '*' can act as ')' and the other as an empty string \"\"."
+      },
+      {
+        "input": "(((*)",
+        "output": "false",
+        "explanation": "There are three '(' and only one '*' and one ')', leaving at least one unmatched '('."
+      },
+      {
+        "input": "(*)",
+        "output": "true",
+        "explanation": "The '*' can act as ')' to make \"()\", which is valid."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "((**)",
+        "expectedOutput": "true",
+        "explanation": "Valid with wildcards."
+      },
+      {
+        "input": "(((*)",
+        "expectedOutput": "false",
+        "explanation": "Unmatched open parentheses."
+      },
+      {
+        "input": "(*)",
+        "expectedOutput": "true",
+        "explanation": "Matches as '()'."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": ")*",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "*(",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "***",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "(*))",
+        "expectedOutput": "true"
+      }
+    ],
+    "hints": [
+      "Track the range [cmin, cmax] of possible unmatched open left parentheses.",
+      "For '(': cmin++, cmax++.",
+      "For ')': cmin--, cmax--.",
+      "For '*': cmin-- (treating as ')'), cmax++ (treating as '(').",
+      "If cmax < 0 at any point, too many ')' have appeared, so return false.",
+      "Ensure cmin never goes below 0 (cmin = max(cmin, 0)) since '*' can always be chosen as empty.",
+      "At the end, return true if cmin == 0."
+    ],
+    "id": "cmus0y6bv0000zsfgsmy9womk"
+  },
+  {
+    "number": 130,
+    "externalId": "DSA-130",
+    "title": "Insert Interval",
+    "topic": "Intervals",
+    "difficulty": "Medium",
+    "rating": 1350,
+    "tags": [
+      "Array",
+      "Intervals"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Facebook",
+      "Apple",
+      "Uber",
+      "Bloomberg",
+      "LinkedIn"
+    ],
+    "statement": "You are given an array of non-overlapping intervals `intervals` where `intervals[i] = [start_i, end_i]` represents the start and the end time of the `i`th interval. `intervals` is initially sorted in ascending order by `start_i`.\n\nYou are also given an interval `newInterval = [start, end]`.\n\nInsert `newInterval` into `intervals` such that `intervals` is still sorted in ascending order by `start_i` and does not have any overlapping intervals (merge overlapping intervals if necessary).\n\nReturn `intervals` after adding `newInterval`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the number of intervals.\n- **Space Complexity:** O(n) auxiliary space to construct the result.",
+    "constraints": "0 <= intervals.length <= 10000\nintervals[i].length == 2\n0 <= start_i <= end_i <= 100000\nintervals is sorted by start_i in ascending order.\nnewInterval.length == 2\n0 <= start <= end <= 100000",
+    "inputFormat": "Line 1 contains an integer n (number of intervals).\nThe next n lines each contain two integers: start and end.\nThe last line contains two integers: start and end of newInterval.",
+    "outputFormat": "Print each resulting interval start and end separated by a space on a new line.",
+    "examples": [
+      {
+        "input": "2\n1 3\n4 6\n2 5",
+        "output": "1 6",
+        "explanation": "[2, 5] overlaps with [1, 3] and [4, 6], merging all three into [1, 6]."
+      },
+      {
+        "input": "3\n1 2\n3 5\n9 10\n6 7",
+        "output": "1 2\n3 5\n6 7\n9 10",
+        "explanation": "[6, 7] does not overlap with any interval, inserted between [3, 5] and [9, 10]."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "2\n1 3\n4 6\n2 5",
+        "expectedOutput": "1 6",
+        "explanation": "Overlapping merge."
+      },
+      {
+        "input": "3\n1 2\n3 5\n9 10\n6 7",
+        "expectedOutput": "1 2\n3 5\n6 7\n9 10",
+        "explanation": "Disjoint insertion."
+      },
+      {
+        "input": "0\n5 7",
+        "expectedOutput": "5 7",
+        "explanation": "Empty list becomes newInterval."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2\n3 5\n6 9\n1 2",
+        "expectedOutput": "1 2\n3 5\n6 9"
+      },
+      {
+        "input": "2\n1 2\n3 5\n6 8",
+        "expectedOutput": "1 2\n3 5\n6 8"
+      },
+      {
+        "input": "4\n1 2\n3 4\n5 6\n7 8\n0 10",
+        "expectedOutput": "0 10"
+      },
+      {
+        "input": "5\n1 2\n3 5\n6 7\n8 10\n12 16\n4 8",
+        "expectedOutput": "1 2\n3 10\n12 16"
+      }
+    ],
+    "hints": [
+      "The intervals are sorted and non-overlapping. Process them linearly in three phases:",
+      "Phase 1: Append all intervals ending before newInterval starts (intervals[i][1] < newInterval[0]).",
+      "Phase 2: Merge overlapping intervals (intervals[i][0] <= newInterval[1]) by updating newInterval[0] = min(newInterval[0], intervals[i][0]) and newInterval[1] = max(newInterval[1], intervals[i][1]).",
+      "Phase 3: Append the merged newInterval, then append all remaining intervals."
+    ],
+    "id": "cmus14f490000l0fgqsy8xgh2"
+  },
+  {
+    "number": 131,
+    "externalId": "DSA-131",
+    "title": "Merge Intervals",
+    "topic": "Intervals",
+    "difficulty": "Medium",
+    "rating": 1300,
+    "tags": [
+      "Array",
+      "Sorting",
+      "Intervals"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Apple",
+      "Uber",
+      "Bloomberg",
+      "Twitter",
+      "Salesforce"
+    ],
+    "statement": "Given an array of `intervals` where `intervals[i] = [start_i, end_i]`, merge all overlapping intervals, and return an array of the non-overlapping intervals that cover all the intervals in the input.\n\nReturn the merged intervals sorted in ascending order by their start times.\n\nNote: Intervals are non-overlapping if they have no common point. For example, `[1, 2]` and `[3, 4]` are non-overlapping, but `[1, 2]` and `[2, 3]` are overlapping.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n log n), where n is the number of intervals.\n- **Space Complexity:** O(n) auxiliary space for sorting and storing the result.",
+    "constraints": "1 <= intervals.length <= 10000\nintervals[i].length == 2\n0 <= start_i <= end_i <= 10000",
+    "inputFormat": "Line 1 contains an integer n (number of intervals).\nThe next n lines each contain two space-separated integers: start and end.",
+    "outputFormat": "Print each merged interval start and end separated by a space on a new line (sorted by start time).",
+    "examples": [
+      {
+        "input": "3\n1 3\n1 5\n6 7",
+        "output": "1 5\n6 7",
+        "explanation": "[1, 3] and [1, 5] overlap and merge into [1, 5]."
+      },
+      {
+        "input": "2\n1 2\n2 3",
+        "output": "1 3",
+        "explanation": "[1, 2] and [2, 3] overlap at point 2 and merge into [1, 3]."
+      },
+      {
+        "input": "4\n1 3\n2 6\n8 10\n15 18",
+        "output": "1 6\n8 10\n15 18",
+        "explanation": "[1, 3] and [2, 6] merge into [1, 6]."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3\n1 3\n1 5\n6 7",
+        "expectedOutput": "1 5\n6 7",
+        "explanation": "Overlapping intervals merged."
+      },
+      {
+        "input": "2\n1 2\n2 3",
+        "expectedOutput": "1 3",
+        "explanation": "Touching intervals merged."
+      },
+      {
+        "input": "4\n1 3\n2 6\n8 10\n15 18",
+        "expectedOutput": "1 6\n8 10\n15 18",
+        "explanation": "Classic intervals test."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1\n1 4",
+        "expectedOutput": "1 4"
+      },
+      {
+        "input": "2\n1 4\n0 4",
+        "expectedOutput": "0 4"
+      },
+      {
+        "input": "3\n1 10\n2 3\n4 8",
+        "expectedOutput": "1 10"
+      },
+      {
+        "input": "4\n1 4\n2 5\n3 6\n5 8",
+        "expectedOutput": "1 8"
+      }
+    ],
+    "hints": [
+      "Sort the intervals by their start times: this ensures all potential overlaps appear consecutively.",
+      "Initialize the result list with the first interval.",
+      "For each subsequent interval, if its start is <= last merged interval's end, merge them: last.end = max(last.end, curr.end).",
+      "Otherwise, add the interval to the result as a new non-overlapping range."
+    ],
+    "id": "cmus186vv0000sgfgf60ck8ui"
+  },
+  {
+    "number": 132,
+    "externalId": "DSA-132",
+    "title": "Non-overlapping Intervals",
+    "topic": "Intervals",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Dynamic Programming",
+      "Greedy",
+      "Sorting",
+      "Intervals"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Uber",
+      "Apple"
+    ],
+    "statement": "Given an array of intervals `intervals` where `intervals[i] = [start_i, end_i]`, return the minimum number of intervals you need to remove to make the rest of the intervals non-overlapping.\n\nNote: Intervals are non-overlapping even if they touch at a single point. For example, `[1, 2]` and `[2, 3]` are non-overlapping.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n log n), where n is the number of intervals.\n- **Space Complexity:** O(1) auxiliary space (or O(n) for sorting).",
+    "constraints": "1 <= intervals.length <= 100,000\nintervals[i].length == 2\n-50000 <= start_i < end_i <= 50000",
+    "inputFormat": "Line 1 contains an integer n (number of intervals).\nThe next n lines each contain two space-separated integers: start and end.",
+    "outputFormat": "Print the minimum number of intervals to remove.",
+    "examples": [
+      {
+        "input": "3\n1 2\n2 4\n1 4",
+        "output": "1",
+        "explanation": "After [1, 4] is removed, the remaining intervals [1, 2] and [2, 4] are non-overlapping."
+      },
+      {
+        "input": "2\n1 2\n2 4",
+        "output": "0",
+        "explanation": "The intervals [1, 2] and [2, 4] share a boundary at 2 and do not overlap."
+      },
+      {
+        "input": "4\n1 2\n2 3\n3 4\n1 3",
+        "output": "1",
+        "explanation": "Removing [1, 3] leaves [1, 2], [2, 3], and [3, 4] intact."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3\n1 2\n2 4\n1 4",
+        "expectedOutput": "1",
+        "explanation": "Remove 1 interval."
+      },
+      {
+        "input": "2\n1 2\n2 4",
+        "expectedOutput": "0",
+        "explanation": "Already non-overlapping."
+      },
+      {
+        "input": "4\n1 2\n2 3\n3 4\n1 3",
+        "expectedOutput": "1",
+        "explanation": "Remove [1, 3]."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "3\n1 2\n1 2\n1 2",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "3\n-50 -20\n-30 0\n-10 10",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "1\n1 2",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "5\n1 100\n11 22\n1 11\n2 12\n72 80",
+        "expectedOutput": "2"
+      }
+    ],
+    "hints": [
+      "To minimize the number of removals, maximize the number of compatible non-overlapping intervals kept (classic interval scheduling).",
+      "Sort the intervals by their end times in ascending order: intervals.sort(key=lambda x: x[1]).",
+      "Greedily select intervals that finish earliest to leave the maximum space for subsequent intervals.",
+      "Track `prev_end`. If the current interval's start is < prev_end, it overlaps with the chosen set, so remove it (increment count). Otherwise, update `prev_end = curr_end`."
+    ],
+    "id": "cmus1bn6j0000p0fgx7clhzmz"
+  },
+  {
+    "number": 133,
+    "externalId": "DSA-133",
+    "title": "Meeting Rooms",
+    "topic": "Intervals",
+    "difficulty": "Easy",
+    "rating": 900,
+    "tags": [
+      "Array",
+      "Sorting",
+      "Intervals"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Bloomberg",
+      "Uber",
+      "Apple",
+      "Twitter",
+      "Oracle"
+    ],
+    "statement": "Given an array of meeting time intervals `intervals` where `intervals[i] = [start_i, end_i]`, determine if a person could attend all meetings without any conflicts.\n\nNote that meetings starting and ending at the same time (e.g., `(0, 8)` and `(8, 10)`) do not conflict at time `8`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n log n), where n is the number of meetings.\n- **Space Complexity:** O(1) auxiliary space (or O(n) for sorting).",
+    "constraints": "0 <= intervals.length <= 500\nintervals[i].length == 2\n0 <= start_i < end_i <= 1000000",
+    "inputFormat": "Line 1 contains an integer n (number of meeting intervals).\nThe next n lines each contain two space-separated integers: start and end.",
+    "outputFormat": "Print true if a person could attend all meetings, otherwise false.",
+    "examples": [
+      {
+        "input": "3\n0 30\n5 10\n15 20",
+        "output": "false",
+        "explanation": "(0, 30) conflicts with both (5, 10) and (15, 20)."
+      },
+      {
+        "input": "2\n5 8\n9 15",
+        "output": "true",
+        "explanation": "No intervals overlap."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3\n0 30\n5 10\n15 20",
+        "expectedOutput": "false",
+        "explanation": "Overlapping meetings."
+      },
+      {
+        "input": "2\n5 8\n9 15",
+        "expectedOutput": "true",
+        "explanation": "Disjoint meetings."
+      },
+      {
+        "input": "0",
+        "expectedOutput": "true",
+        "explanation": "Zero meetings has no conflicts."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2\n0 8\n8 10",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "3\n1 4\n4 7\n6 9",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "1\n10 20",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "4\n1 5\n8 12\n13 15\n5 7",
+        "expectedOutput": "true"
+      }
+    ],
+    "hints": [
+      "Sort the intervals in ascending order based on their start times.",
+      "Compare adjacent intervals: if interval[i].start < interval[i-1].end, a conflict exists; return false.",
+      "If no conflicts are found across all adjacent pairs, return true."
+    ],
+    "id": "cmus1epgh0000i0fgi3nnniml"
+  },
+  {
+    "number": 134,
+    "externalId": "DSA-134",
+    "title": "Meeting Rooms II",
+    "topic": "Intervals",
+    "difficulty": "Medium",
+    "rating": 1450,
+    "tags": [
+      "Array",
+      "Two Pointers",
+      "Greedy",
+      "Sorting",
+      "Heap (Priority Queue)",
+      "Intervals"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Bloomberg",
+      "Uber",
+      "Apple",
+      "ByteDance",
+      "Walmart",
+      "Twitter",
+      "Oracle"
+    ],
+    "statement": "Given an array of meeting time intervals `intervals` where `intervals[i] = [start_i, end_i]`, find the minimum number of conference rooms required to schedule all meetings without any conflicts.\n\nNote: Meetings starting and ending at the same time (e.g., `(0, 8)` and `(8, 10)`) are NOT considered a conflict at `8`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n log n), where n is the number of meetings.\n- **Space Complexity:** O(n) to store the start/end arrays or min-heap.",
+    "constraints": "0 <= intervals.length <= 100,000\nintervals[i].length == 2\n0 <= start_i < end_i <= 1000000",
+    "inputFormat": "Line 1 contains an integer n (number of meeting intervals).\nThe next n lines each contain two space-separated integers: start and end.",
+    "outputFormat": "Print a single integer representing the minimum number of conference rooms required.",
+    "examples": [
+      {
+        "input": "3\n0 40\n5 10\n15 20",
+        "output": "2",
+        "explanation": "room1: (0, 40)\nroom2: (5, 10), (15, 20)"
+      },
+      {
+        "input": "1\n4 9",
+        "output": "1",
+        "explanation": "Only one meeting requires 1 room."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3\n0 40\n5 10\n15 20",
+        "expectedOutput": "2",
+        "explanation": "Requires 2 rooms."
+      },
+      {
+        "input": "1\n4 9",
+        "expectedOutput": "1",
+        "explanation": "Single meeting needs 1 room."
+      },
+      {
+        "input": "0",
+        "expectedOutput": "0",
+        "explanation": "Zero meetings require 0 rooms."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2\n0 8\n8 10",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "3\n1 5\n2 6\n3 7",
+        "expectedOutput": "3"
+      },
+      {
+        "input": "4\n1 4\n2 5\n7 9\n3 6",
+        "expectedOutput": "3"
+      },
+      {
+        "input": "5\n9 10\n4 9\n4 17\n15 20\n1 10",
+        "expectedOutput": "3"
+      }
+    ],
+    "hints": [
+      "Separate the start times and end times into two separate arrays and sort both in ascending order.",
+      "Use two pointers: s for start times and e for end times. Also maintain a counter for currently active meetings.",
+      "When start[s] < end[e], a meeting starts before another ends: increment the active room count, update max rooms, and increment s.",
+      "When start[s] >= end[e], a meeting has finished: decrement the active room count and increment e.",
+      "Alternatively, sort intervals by start time and use a min-heap to keep track of the earliest ending meeting."
+    ],
+    "id": "cmus1gp3f000014fg08yc81q0"
+  },
+  {
+    "number": 135,
+    "externalId": "DSA-135",
+    "title": "Minimum Interval to Include Each Query",
+    "topic": "Intervals",
+    "difficulty": "Hard",
+    "rating": 1850,
+    "tags": [
+      "Array",
+      "Binary Search",
+      "Line Sweep",
+      "Sorting",
+      "Heap (Priority Queue)",
+      "Intervals"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Meta",
+      "Bloomberg",
+      "Uber",
+      "Microsoft"
+    ],
+    "statement": "You are given a 2D integer array `intervals`, where `intervals[i] = [left_i, right_i]` represents the $i^{\\text{th}}$ interval starting at $left_i$ and ending at $right_i$ (inclusive).\n\nYou are also given an integer array `queries`. The result of `queries[j]` is the length of the shortest interval $i$ such that $left_i \\le queries[j] \\le right_i$. If no such interval exists, the result of this query is `-1`.\n\nReturn an array `output` where `output[j]` is the result of `queries[j]`.\n\nNote: The length of an interval `[left, right]` is calculated as `right - left + 1`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n log n + m log m), where n is the number of intervals and m is the number of queries.\n- **Space Complexity:** O(n + m) for storing sorted queries with original indices and the min-heap.",
+    "constraints": "1 <= intervals.length <= 100,000\n1 <= queries.length <= 100,000\nintervals[i].length == 2\n1 <= left_i <= right_i <= 10,000,000\n1 <= queries[j] <= 10,000,000",
+    "inputFormat": "Line 1 contains an integer n (number of intervals).\nThe next n lines each contain two space-separated integers: left and right.\nLine n + 2 contains an integer m (number of queries).\nLine n + 3 contains m space-separated integers representing queries.",
+    "outputFormat": "Print m space-separated integers representing the results for each query in order.",
+    "examples": [
+      {
+        "input": "4\n1 3\n2 3\n3 7\n6 6\n6\n2 3 1 7 6 8",
+        "output": "2 2 3 5 1 -1",
+        "explanation": "Query = 2: Shortest interval containing 2 is [2, 3] (length 2).\nQuery = 3: Shortest interval containing 3 is [2, 3] (length 2).\nQuery = 1: Shortest interval containing 1 is [1, 3] (length 3).\nQuery = 7: Shortest interval containing 7 is [3, 7] (length 5).\nQuery = 6: Shortest interval containing 6 is [6, 6] (length 1).\nQuery = 8: No interval contains 8, so -1."
+      },
+      {
+        "input": "4\n2 3\n2 5\n1 8\n20 25\n4\n2 19 5 22",
+        "output": "2 -1 4 6",
+        "explanation": "Query = 2: min length interval is [2, 3] of length 2.\nQuery = 19: no interval covers 19 (-1).\nQuery = 5: min length interval is [2, 5] of length 4.\nQuery = 22: min length interval is [20, 25] of length 6."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "4\n1 3\n2 3\n3 7\n6 6\n6\n2 3 1 7 6 8",
+        "expectedOutput": "2 2 3 5 1 -1",
+        "explanation": "Query results matching shortest valid interval lengths."
+      },
+      {
+        "input": "4\n2 3\n2 5\n1 8\n20 25\n4\n2 19 5 22",
+        "expectedOutput": "2 -1 4 6",
+        "explanation": "Disjoint intervals with queries in gaps."
+      },
+      {
+        "input": "1\n4 5\n3\n3 4 6",
+        "expectedOutput": "-1 2 -1",
+        "explanation": "Query 4 inside [4,5] length 2; others outside."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1\n1 10\n1\n5",
+        "expectedOutput": "10"
+      },
+      {
+        "input": "2\n10 20\n30 40\n3\n5 25 50",
+        "expectedOutput": "-1 -1 -1"
+      },
+      {
+        "input": "3\n1 10\n2 8\n3 5\n3\n2 4 9",
+        "expectedOutput": "7 3 10"
+      },
+      {
+        "input": "3\n5 5\n5 5\n5 5\n2\n5 6",
+        "expectedOutput": "1 -1"
+      }
+    ],
+    "hints": [
+      "Sort both intervals by start time and queries in ascending order (keeping track of their original indices).",
+      "Process each query one by one. Maintain a min-heap that stores pairs of (interval_length, right_endpoint).",
+      "Add all intervals with left <= query into the heap.",
+      "Remove intervals from the heap whose right endpoint is strictly less than query, because they can never cover the current query or any future larger query.",
+      "If the heap is not empty, the top element has the minimum length among all valid intervals covering the query. Otherwise, the answer is -1."
+    ],
+    "id": "cmus1jae10000vkfga0x929tc"
+  },
+  {
+    "number": 136,
+    "externalId": "DSA-136",
+    "title": "Rotate Image",
+    "topic": "Math & Geometry",
+    "difficulty": "Medium",
+    "rating": 1400,
+    "tags": [
+      "Array",
+      "Math",
+      "Matrix"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Apple",
+      "Google",
+      "Facebook",
+      "Bloomberg",
+      "Uber",
+      "Cisco",
+      "Adobe"
+    ],
+    "statement": "Given a square $n \\times n$ matrix of integers `matrix`, rotate it by 90 degrees clockwise in-place.\n\nYou must rotate the matrix in-place, which means you have to modify the input 2D matrix directly without allocating another 2D matrix.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n^2), where n is the length of the side of the given square matrix.\n- **Space Complexity:** O(1) auxiliary space (in-place rotation).",
+    "constraints": "n == matrix.length == matrix[i].length\n1 <= n <= 20\n-1000 <= matrix[i][j] <= 1000",
+    "inputFormat": "Line 1 contains an integer n (dimension of the square matrix).\nThe next n lines each contain n space-separated integers representing the rows of the matrix.",
+    "outputFormat": "Print n lines, each containing n space-separated integers representing the rotated matrix.",
+    "examples": [
+      {
+        "input": "2\n1 2\n3 4",
+        "output": "3 1\n4 2",
+        "explanation": "Rotating [[1, 2], [3, 4]] 90 degrees clockwise produces [[3, 1], [4, 2]]."
+      },
+      {
+        "input": "3\n1 2 3\n4 5 6\n7 8 9",
+        "output": "7 4 1\n8 5 2\n9 6 3",
+        "explanation": "Rotating [[1, 2, 3], [4, 5, 6], [7, 8, 9]] 90 degrees clockwise produces [[7, 4, 1], [8, 5, 2], [9, 6, 3]]."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "2\n1 2\n3 4",
+        "expectedOutput": "3 1\n4 2",
+        "explanation": "Rotated 90 degrees clockwise."
+      },
+      {
+        "input": "3\n1 2 3\n4 5 6\n7 8 9",
+        "expectedOutput": "7 4 1\n8 5 2\n9 6 3",
+        "explanation": "Rotated 90 degrees clockwise."
+      },
+      {
+        "input": "1\n42",
+        "expectedOutput": "42",
+        "explanation": "1x1 matrix remains unchanged when rotated."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "4\n5 1 9 11\n2 4 8 10\n13 3 6 7\n15 14 12 16",
+        "expectedOutput": "15 13 2 5\n14 3 4 1\n12 6 8 9\n16 7 10 11"
+      },
+      {
+        "input": "2\n-1 -2\n-3 -4",
+        "expectedOutput": "-3 -1\n-4 -2"
+      },
+      {
+        "input": "3\n0 1 0\n0 0 1\n1 0 0",
+        "expectedOutput": "1 0 0\n0 0 1\n0 1 0"
+      },
+      {
+        "input": "3\n5 5 5\n5 5 5\n5 5 5",
+        "expectedOutput": "5 5 5\n5 5 5\n5 5 5"
+      }
+    ],
+    "hints": [
+      "A clockwise 90-degree rotation is mathematically equivalent to transposing the matrix and then reversing each row.",
+      "Transpose: swap matrix[i][j] with matrix[j][i] for all 0 <= i < n and i < j < n.",
+      "Reverse rows: for each row i, reverse the elements from index 0 to n - 1.",
+      "Both steps can be performed in-place with O(1) extra space."
+    ],
+    "id": "cmus1lj1w00006gfger260o27"
+  },
+  {
+    "number": 137,
+    "externalId": "DSA-137",
+    "title": "Spiral Matrix",
+    "topic": "Math & Geometry",
+    "difficulty": "Medium",
+    "rating": 1350,
+    "tags": [
+      "Array",
+      "Matrix",
+      "Simulation"
+    ],
+    "companies": [
+      "Microsoft",
+      "Amazon",
+      "Apple",
+      "Google",
+      "Facebook",
+      "Bloomberg",
+      "Cisco",
+      "Oracle",
+      "Uber"
+    ],
+    "statement": "Given an $m \\times n$ matrix of integers `matrix`, return a list of all elements within the matrix in spiral order.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(m * n), visiting every element in the matrix once.\n- **Space Complexity:** O(1) auxiliary space (excluding the output list).",
+    "constraints": "1 <= matrix.length, matrix[i].length <= 10\n-100 <= matrix[i][j] <= 100",
+    "inputFormat": "Line 1 contains two space-separated integers m and n (number of rows and columns).\nThe next m lines each contain n space-separated integers.",
+    "outputFormat": "Print space-separated integers representing the matrix elements in spiral order.",
+    "examples": [
+      {
+        "input": "2 2\n1 2\n3 4",
+        "output": "1 2 4 3",
+        "explanation": "Traversing the 2x2 matrix clockwise: 1 -> 2 -> 4 -> 3."
+      },
+      {
+        "input": "3 3\n1 2 3\n4 5 6\n7 8 9",
+        "output": "1 2 3 6 9 8 7 4 5",
+        "explanation": "Traversing the outer ring then the inner center: 1, 2, 3, 6, 9, 8, 7, 4, 5."
+      },
+      {
+        "input": "3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12",
+        "output": "1 2 3 4 8 12 11 10 9 5 6 7",
+        "explanation": "Spiral traversal of a 3x4 rectangular matrix."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "2 2\n1 2\n3 4",
+        "expectedOutput": "1 2 4 3",
+        "explanation": "2x2 matrix."
+      },
+      {
+        "input": "3 3\n1 2 3\n4 5 6\n7 8 9",
+        "expectedOutput": "1 2 3 6 9 8 7 4 5",
+        "explanation": "3x3 matrix."
+      },
+      {
+        "input": "3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12",
+        "expectedOutput": "1 2 3 4 8 12 11 10 9 5 6 7",
+        "explanation": "3x4 rectangular matrix."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1 1\n7",
+        "expectedOutput": "7"
+      },
+      {
+        "input": "1 4\n10 20 30 40",
+        "expectedOutput": "10 20 30 40"
+      },
+      {
+        "input": "4 1\n1\n2\n3\n4",
+        "expectedOutput": "1 2 3 4"
+      },
+      {
+        "input": "2 3\n1 2 3\n4 5 6",
+        "expectedOutput": "1 2 3 6 5 4"
+      }
+    ],
+    "hints": [
+      "Maintain four boundary pointers: top = 0, bottom = m - 1, left = 0, and right = n - 1.",
+      "Traverse from left to right along the top row, then increment top.",
+      "Traverse from top to bottom along the right column, then decrement right.",
+      "If top <= bottom, traverse from right to left along the bottom row, then decrement bottom.",
+      "If left <= right, traverse from bottom to top along the left column, then increment left. Continue until boundaries overlap."
+    ],
+    "id": "cmus1nlxc0000lsfg5c1dw8nx"
+  },
+  {
+    "number": 138,
+    "externalId": "DSA-138",
+    "title": "Set Matrix Zeroes",
+    "topic": "Math & Geometry",
+    "difficulty": "Medium",
+    "rating": 1300,
+    "tags": [
+      "Array",
+      "Hash Table",
+      "Matrix"
+    ],
+    "companies": [
+      "Facebook",
+      "Microsoft",
+      "Amazon",
+      "Apple",
+      "Bloomberg",
+      "Google",
+      "Goldman Sachs",
+      "Uber"
+    ],
+    "statement": "Given an $m \\times n$ matrix of integers `matrix`, if an element is `0`, set its entire row and column to `0`'s.\n\nYou must update the matrix in-place using $\\mathcal{O}(1)$ auxiliary space.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(m * n), visiting each cell a constant number of times.\n- **Space Complexity:** O(1) auxiliary space (using the first row and column as markers).",
+    "constraints": "m == matrix.length\nn == matrix[0].length\n1 <= m, n <= 200\n-2^31 <= matrix[i][j] <= 2^31 - 1",
+    "inputFormat": "Line 1 contains two space-separated integers m and n (number of rows and columns).\nThe next m lines each contain n space-separated integers.",
+    "outputFormat": "Print m lines, each containing n space-separated integers representing the modified matrix.",
+    "examples": [
+      {
+        "input": "2 2\n0 1\n1 0",
+        "output": "0 0\n0 0",
+        "explanation": "Both rows and columns have a zero, so all cells are set to 0."
+      },
+      {
+        "input": "3 3\n1 2 3\n4 0 5\n6 7 8",
+        "output": "1 0 3\n0 0 0\n6 0 8",
+        "explanation": "Element at (1, 1) is 0, so row 1 and column 1 are zeroed out."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "2 2\n0 1\n1 0",
+        "expectedOutput": "0 0\n0 0",
+        "explanation": "All zeroes."
+      },
+      {
+        "input": "3 3\n1 2 3\n4 0 5\n6 7 8",
+        "expectedOutput": "1 0 3\n0 0 0\n6 0 8",
+        "explanation": "Row 1 and column 1 set to 0."
+      },
+      {
+        "input": "1 1\n0",
+        "expectedOutput": "0",
+        "explanation": "Single zero element."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2 3\n1 2 3\n4 5 6",
+        "expectedOutput": "1 2 3\n4 5 6"
+      },
+      {
+        "input": "3 3\n1 0 3\n4 5 6\n7 8 9",
+        "expectedOutput": "0 0 0\n4 0 6\n7 0 9"
+      },
+      {
+        "input": "3 3\n1 2 3\n0 5 6\n7 8 9",
+        "expectedOutput": "0 2 3\n0 0 0\n0 8 9"
+      },
+      {
+        "input": "1 4\n1 0 3 4",
+        "expectedOutput": "0 0 0 0"
+      }
+    ],
+    "hints": [
+      "To achieve O(1) space, use the first row and first column of the matrix itself to store zero flags.",
+      "Since cell (0, 0) overlaps both row 0 and column 0, use a separate boolean flag (e.g. rowZero) to track whether the first row should be zeroed.",
+      "Iterate through the matrix. If matrix[r][c] == 0, mark matrix[r][0] = 0 and matrix[0][c] = 0 (and set rowZero = true if r == 0).",
+      "Use the marks in the first row and column to zero out inner cells (1 <= r < m, 1 <= c < n).",
+      "Finally, zero out column 0 if matrix[0][0] == 0, and zero out row 0 if rowZero is true."
+    ],
+    "id": "cmus1qide0000qsfg9eotumbf"
+  },
+  {
+    "number": 139,
+    "externalId": "DSA-139",
+    "title": "Non-Cyclical Number",
+    "topic": "Math & Geometry",
+    "difficulty": "Easy",
+    "rating": 850,
+    "tags": [
+      "Hash Table",
+      "Math",
+      "Two Pointers"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook",
+      "Microsoft",
+      "Apple",
+      "Uber"
+    ],
+    "statement": "A non-cyclical number (also known as a happy number) is an integer defined by the following algorithm:\n\n1. Starting with any positive integer, replace the number by the sum of the squares of its digits.\n2. Repeat the process until the number equals 1 (where it stays), or it loops endlessly in a cycle which does not include 1.\n3. If it terminates at 1, then the number is a non-cyclical number.\n\nGiven a positive integer `n`, return `true` if it is a non-cyclical number, otherwise return `false`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(log n), since the sum of squared digits shrinks large numbers quickly and any cycle is bounded by small numbers.\n- **Space Complexity:** O(1) auxiliary space using Floyd's cycle detection, or O(log n) using a hash set.",
+    "constraints": "1 <= n <= 1000",
+    "inputFormat": "A single line containing the integer n.",
+    "outputFormat": "Print true if n is a non-cyclical number, otherwise false.",
+    "examples": [
+      {
+        "input": "100",
+        "output": "true",
+        "explanation": "1² + 0² + 0² = 1."
+      },
+      {
+        "input": "101",
+        "output": "false",
+        "explanation": "1² + 0² + 1² = 2 -> 4 -> 16 -> 37 -> 58 -> 89 -> 145 -> 42 -> 20 -> 4 (enters an infinite cycle)."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "100",
+        "expectedOutput": "true",
+        "explanation": "Reaches 1 immediately."
+      },
+      {
+        "input": "101",
+        "expectedOutput": "false",
+        "explanation": "Enters a cycle."
+      },
+      {
+        "input": "1",
+        "expectedOutput": "true",
+        "explanation": "1 is already 1."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "19",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "2",
+        "expectedOutput": "false"
+      },
+      {
+        "input": "7",
+        "expectedOutput": "true"
+      },
+      {
+        "input": "1000",
+        "expectedOutput": "true"
+      }
+    ],
+    "hints": [
+      "Write a helper function to compute the sum of squares of digits of a given number n.",
+      "Simulate the process and store each seen number in a hash set. If n equals 1, return true. If n is already in the set, a cycle is detected; return false.",
+      "To achieve O(1) space, use Floyd's Tortoise and Hare algorithm: slow pointer moves 1 step while fast pointer moves 2 steps. They will eventually meet."
+    ],
+    "id": "cmus1zwiw0000i4fgnx29aq1i"
+  },
+  {
+    "number": 140,
+    "externalId": "DSA-140",
+    "title": "Plus One",
+    "topic": "Math & Geometry",
+    "difficulty": "Easy",
+    "rating": 800,
+    "tags": [
+      "Array",
+      "Math"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Facebook",
+      "Apple",
+      "Bloomberg",
+      "Adobe"
+    ],
+    "statement": "You are given an integer array `digits`, where each `digits[i]` is the $i^{\\text{th}}$ digit of a large integer. It is ordered from most significant to least significant digit, and will not contain any leading zero.\n\nIncrement the large integer by one and return the resulting array of digits.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the number of digits.\n- **Space Complexity:** O(1) auxiliary space (or O(n) when a carry creates a new leading digit).",
+    "constraints": "1 <= digits.length <= 100\n0 <= digits[i] <= 9\ndigits does not contain any leading 0's (except possibly the single number 0).",
+    "inputFormat": "Line 1 contains an integer n (length of the digits array).\nLine 2 contains n space-separated integers representing the digits.",
+    "outputFormat": "Print space-separated integers representing the resulting digits.",
+    "examples": [
+      {
+        "input": "4\n1 2 3 4",
+        "output": "1 2 3 5",
+        "explanation": "1234 + 1 = 1235."
+      },
+      {
+        "input": "3\n9 9 9",
+        "output": "1 0 0 0",
+        "explanation": "999 + 1 = 1000."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "4\n1 2 3 4",
+        "expectedOutput": "1 2 3 5",
+        "explanation": "Simple increment of the last digit."
+      },
+      {
+        "input": "3\n9 9 9",
+        "expectedOutput": "1 0 0 0",
+        "explanation": "Carry rolls over all digits, resulting in a new most significant digit."
+      },
+      {
+        "input": "1\n0",
+        "expectedOutput": "1",
+        "explanation": "Single zero increments to 1."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1\n4",
+        "expectedOutput": "5"
+      },
+      {
+        "input": "1\n9",
+        "expectedOutput": "1 0"
+      },
+      {
+        "input": "4\n1 2 9 9",
+        "expectedOutput": "1 3 0 0"
+      },
+      {
+        "input": "6\n8 9 9 9 9 9",
+        "expectedOutput": "9 0 0 0 0 0"
+      }
+    ],
+    "hints": [
+      "Iterate through the digits from right to left (from the least significant digit).",
+      "If the current digit is less than 9, increment it by 1 and return the array immediately.",
+      "If the digit is 9, turn it into 0 and continue to the next digit to the left.",
+      "If the loop ends and all digits have become 0 (e.g. 999 -> 000), prepend 1 to the beginning of the array."
+    ],
+    "id": "cmus23osr0000m8fgi05pp5u3"
+  },
+  {
+    "number": 141,
+    "externalId": "DSA-141",
+    "title": "Pow(x, n)",
+    "topic": "Math & Geometry",
+    "difficulty": "Medium",
+    "rating": 1350,
+    "tags": [
+      "Math",
+      "Recursion"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Bloomberg",
+      "Apple",
+      "LinkedIn",
+      "Uber"
+    ],
+    "statement": "`Pow(x, n)` is a mathematical function to calculate the value of $x$ raised to the power of $n$ (i.e., $x^n$).\n\nGiven a floating-point value `x` and an integer value `n`, implement `myPow(x, n)`, which calculates $x$ raised to the power $n$.\n\nYou may not use any built-in library exponentiation functions.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(log |n|), using binary exponentiation.\n- **Space Complexity:** O(1) auxiliary space (iterative) or O(log |n|) (recursive call stack).",
+    "constraints": "-100.0 < x < 100.0\n-2^31 <= n <= 2^31 - 1\nn is an integer.\nEither x != 0 or n > 0.\n-10^4 <= x^n <= 10^4",
+    "inputFormat": "Line 1 contains a floating-point number x.\nLine 2 contains an integer n.",
+    "outputFormat": "Print x^n rounded to 5 decimal places.",
+    "examples": [
+      {
+        "input": "2.00000\n5",
+        "output": "32.00000",
+        "explanation": "2^5 = 32."
+      },
+      {
+        "input": "1.10000\n10",
+        "output": "2.59374",
+        "explanation": "1.1^10 = 2.59374."
+      },
+      {
+        "input": "2.00000\n-3",
+        "output": "0.12500",
+        "explanation": "2^(-3) = 1 / (2^3) = 1 / 8 = 0.125."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "2.00000\n5",
+        "expectedOutput": "32.00000",
+        "explanation": "2^5 = 32.00000"
+      },
+      {
+        "input": "1.10000\n10",
+        "expectedOutput": "2.59374",
+        "explanation": "1.1^10 = 2.59374"
+      },
+      {
+        "input": "2.00000\n-3",
+        "expectedOutput": "0.12500",
+        "explanation": "Negative exponent calculation."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2.50000\n0",
+        "expectedOutput": "1.00000"
+      },
+      {
+        "input": "-2.00000\n2",
+        "expectedOutput": "4.00000"
+      },
+      {
+        "input": "-2.00000\n3",
+        "expectedOutput": "-8.00000"
+      },
+      {
+        "input": "1.00000\n2147483647",
+        "expectedOutput": "1.00000"
+      },
+      {
+        "input": "2.00000\n-2",
+        "expectedOutput": "0.25000"
+      }
+    ],
+    "hints": [
+      "Use binary exponentiation (divide-and-conquer) to compute powers in O(log |n|) operations.",
+      "If n < 0, invert the base x = 1 / x and make the exponent positive n = -n. Watch out for integer overflow if n = -2^31.",
+      "Iterative binary exponentiation: maintain res = 1.0. While n > 0, if n is odd, res *= x; then x *= x, and n = Math.floor(n / 2).",
+      "Format the resulting float to 5 decimal places."
+    ],
+    "id": "cmus28p5u0000okfgdf58pl77"
+  },
+  {
+    "number": 142,
+    "externalId": "DSA-142",
+    "title": "Multiply Strings",
+    "topic": "Math & Geometry",
+    "difficulty": "Medium",
+    "rating": 1350,
+    "tags": [
+      "Math",
+      "String",
+      "Simulation"
+    ],
+    "companies": [
+      "Facebook",
+      "Microsoft",
+      "Google",
+      "Amazon",
+      "Apple",
+      "Oracle",
+      "Twitter"
+    ],
+    "statement": "You are given two strings `num1` and `num2` that represent non-negative integers.\n\nReturn the product of `num1` and `num2` in the form of a string.\n\nAssume that neither `num1` nor `num2` contain any leading zero, unless they are the number `0` itself.\n\nNote: You may not use any built-in BigInteger library or convert the inputs directly into integers.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(m * n), where m is the length of num1 and n is the length of num2.\n- **Space Complexity:** O(m + n) to store the product digits.",
+    "constraints": "1 <= num1.length, num2.length <= 200\nnum1 and num2 consist of digits only.\nNeither num1 nor num2 contains any leading zero, except the number 0 itself.",
+    "inputFormat": "Line 1 contains string num1.\nLine 2 contains string num2.",
+    "outputFormat": "Print the product of num1 and num2 as a string.",
+    "examples": [
+      {
+        "input": "3\n4",
+        "output": "12",
+        "explanation": "3 * 4 = 12."
+      },
+      {
+        "input": "111\n222",
+        "output": "24642",
+        "explanation": "111 * 222 = 24642."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3\n4",
+        "expectedOutput": "12",
+        "explanation": "Single-digit multiplication."
+      },
+      {
+        "input": "111\n222",
+        "expectedOutput": "24642",
+        "explanation": "Multi-digit multiplication."
+      },
+      {
+        "input": "0\n12345",
+        "expectedOutput": "0",
+        "explanation": "Multiplying by 0 results in 0."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "0\n0",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "9\n99",
+        "expectedOutput": "891"
+      },
+      {
+        "input": "123456789\n987654321",
+        "expectedOutput": "121932631112635269"
+      },
+      {
+        "input": "1\n456789",
+        "expectedOutput": "456789"
+      }
+    ],
+    "hints": [
+      "If either num1 == '0' or num2 == '0', return '0' immediately.",
+      "The maximum length of the product of two numbers with lengths m and n is m + n.",
+      "Allocate an array of size m + n initialized with 0. Iterate backwards from i = m - 1 down to 0 and j = n - 1 down to 0.",
+      "Multiply the digits: mul = (num1[i] - '0') * (num2[j] - '0'). Add it to pos = i + j + 1 along with any existing value, updating carry to pos = i + j.",
+      "Join the digits into a string and skip leading zeros."
+    ],
+    "id": "cmus2az0z0000a8fghnzhurfg"
+  },
+  {
+    "number": 143,
+    "externalId": "DSA-143",
+    "title": "Detect Squares",
+    "topic": "Math & Geometry",
+    "difficulty": "Medium",
+    "rating": 1500,
+    "tags": [
+      "Array",
+      "Hash Table",
+      "Math",
+      "Design",
+      "Counting"
+    ],
+    "companies": [
+      "Google",
+      "Amazon",
+      "Meta",
+      "Twitter",
+      "Apple"
+    ],
+    "statement": "You are given a stream of points consisting of x-y coordinates on a 2-D plane. Points can be added and queried as follows:\n- **Add**: new points can be added to the stream into a data structure. Duplicate points are allowed and should be treated as separate points.\n- **Query**: Given a single query point, count the number of ways to choose three additional points from the data structure such that the three points and the query point form an axis-aligned square with positive area.\n\nImplement the `CountSquares` class:\n- `CountSquares()`: Initializes the object with an empty data structure.\n- `void add(int[] point)`: Adds a new point `point = [x, y]`.\n- `int count(int[] point)`: Counts the number of ways to form valid squares with point `point = [x, y]`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(1) for `add()`, and O(n) for each `count()` call, where n is the number of points added so far.\n- **Space Complexity:** O(n) to store points and their frequencies.",
+    "constraints": "point.length == 2\n0 <= x, y <= 1000\nAt most 5000 calls will be made in total to add and count.",
+    "inputFormat": "Line 1 contains an integer q (number of operations).\nThe next q lines contain commands:\n- add <x> <y>\n- count <x> <y>",
+    "outputFormat": "For each count command, print the number of valid squares on a new line.",
+    "examples": [
+      {
+        "input": "7\nadd 1 1\nadd 2 2\nadd 1 2\ncount 2 1\ncount 3 3\nadd 2 2\ncount 2 1",
+        "output": "1\n0\n2",
+        "explanation": "Points (1,1), (2,2), (1,2) with (2,1) form 1 square.\nNo square can be formed with (3,3).\nAfter adding another (2,2), duplicate allows 2 ways with (2,1)."
+      },
+      {
+        "input": "4\nadd 0 0\nadd 0 5\nadd 5 0\ncount 5 5",
+        "output": "1",
+        "explanation": "Points (0,0), (0,5), (5,0), (5,5) form a single 5x5 square."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "7\nadd 1 1\nadd 2 2\nadd 1 2\ncount 2 1\ncount 3 3\nadd 2 2\ncount 2 1",
+        "expectedOutput": "1\n0\n2",
+        "explanation": "Sample operations with duplicates."
+      },
+      {
+        "input": "4\nadd 0 0\nadd 0 5\nadd 5 0\ncount 5 5",
+        "expectedOutput": "1",
+        "explanation": "Single square."
+      },
+      {
+        "input": "1\ncount 1 1",
+        "expectedOutput": "0",
+        "explanation": "No points added yet."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "7\nadd 1 1\nadd 1 1\nadd 1 3\nadd 1 3\nadd 1 3\nadd 3 1\ncount 3 3",
+        "expectedOutput": "6"
+      },
+      {
+        "input": "3\nadd 2 2\nadd 2 2\ncount 2 2",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "4\nadd 0 0\nadd 0 4\nadd 6 0\ncount 6 4",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "7\nadd 0 0\nadd 0 2\nadd 2 0\nadd 1 1\nadd 1 2\nadd 2 1\ncount 2 2",
+        "expectedOutput": "2"
+      }
+    ],
+    "hints": [
+      "Store points in a frequency hash map pointCounts[(x, y)] and also maintain a list of all added points.",
+      "For count(qx, qy): iterate over all points (x, y) in the list (or map). Consider (x, y) as the diagonally opposite corner to (qx, qy).",
+      "A valid diagonal must satisfy: abs(qx - x) == abs(qy - y) and abs(qx - x) > 0.",
+      "The other two vertices required to complete the axis-aligned square are (x, qy) and (qx, y).",
+      "Add pointCounts[(x, qy)] * pointCounts[(qx, y)] to the total count."
+    ],
+    "id": "cmus2f7s200007sfgwofahoah"
+  },
+  {
+    "number": 144,
+    "externalId": "DSA-144",
+    "title": "Single Number",
+    "topic": "Bit Manipulation",
+    "difficulty": "Easy",
+    "rating": 800,
+    "tags": [
+      "Array",
+      "Bit Manipulation"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook",
+      "Apple",
+      "Microsoft",
+      "Bloomberg",
+      "Adobe"
+    ],
+    "statement": "You are given a non-empty array of integers `nums`. Every integer appears twice except for one.\n\nReturn the integer that appears only once.\n\nYou must implement a solution with $\\mathcal{O}(n)$ runtime complexity and use only $\\mathcal{O}(1)$ extra space.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the size of the input array.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "1 <= nums.length <= 10,000\n-10,000 <= nums[i] <= 10,000\nEvery element appears twice except for one element which appears once.",
+    "inputFormat": "Line 1 contains an integer n (length of the array nums).\nLine 2 contains n space-separated integers.",
+    "outputFormat": "Print the single integer that appears only once.",
+    "examples": [
+      {
+        "input": "3\n3 2 3",
+        "output": "2",
+        "explanation": "3 appears twice, 2 appears once."
+      },
+      {
+        "input": "5\n7 6 6 7 8",
+        "output": "8",
+        "explanation": "6 and 7 appear twice, 8 appears once."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3\n3 2 3",
+        "expectedOutput": "2",
+        "explanation": "2 is the single number."
+      },
+      {
+        "input": "5\n7 6 6 7 8",
+        "expectedOutput": "8",
+        "explanation": "8 is the single number."
+      },
+      {
+        "input": "1\n1",
+        "expectedOutput": "1",
+        "explanation": "Single-element array."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "3\n-1 -1 -2",
+        "expectedOutput": "-2"
+      },
+      {
+        "input": "5\n4 1 2 1 2",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "3\n5 0 5",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "7\n-4 3 2 2 3 -4 100",
+        "expectedOutput": "100"
+      }
+    ],
+    "hints": [
+      "XOR of two identical numbers is 0: a ^ a = 0.",
+      "XOR of any number with 0 is the number itself: a ^ 0 = a.",
+      "XOR is commutative and associative: order does not matter.",
+      "XOR all numbers in the array together; all paired numbers will cancel out, leaving the single unique number."
+    ],
+    "id": "cmus2h58w0000q0fg8aq3lukn"
+  },
+  {
+    "number": 145,
+    "externalId": "DSA-145",
+    "title": "Number of 1 Bits",
+    "topic": "Bit Manipulation",
+    "difficulty": "Easy",
+    "rating": 800,
+    "tags": [
+      "Divide and Conquer",
+      "Bit Manipulation"
+    ],
+    "companies": [
+      "Microsoft",
+      "Amazon",
+      "Apple",
+      "Facebook",
+      "Google",
+      "Cisco",
+      "Bloomberg",
+      "Adobe"
+    ],
+    "statement": "You are given a non-negative integer `n` that fits within 32-bits. Return the number of `1` bits in its binary representation (also known as the Hamming weight).\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(1), at most 32 operations.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "0 <= n <= 2^31 - 1",
+    "inputFormat": "Line 1 contains a non-negative integer n.",
+    "outputFormat": "Print a single integer representing the number of 1 bits.",
+    "examples": [
+      {
+        "input": "23",
+        "output": "4",
+        "explanation": "23 in binary is 10111, which has four 1 bits."
+      },
+      {
+        "input": "2147483645",
+        "output": "30",
+        "explanation": "2147483645 in binary is 1111111111111111111111111111101, which has thirty 1 bits."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "23",
+        "expectedOutput": "4",
+        "explanation": "23 = 10111 in binary."
+      },
+      {
+        "input": "2147483645",
+        "expectedOutput": "30",
+        "explanation": "Thirty set bits."
+      },
+      {
+        "input": "0",
+        "expectedOutput": "0",
+        "explanation": "Zero has 0 set bits."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "128",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "11",
+        "expectedOutput": "3"
+      },
+      {
+        "input": "2147483647",
+        "expectedOutput": "31"
+      },
+      {
+        "input": "1",
+        "expectedOutput": "1"
+      }
+    ],
+    "hints": [
+      "You can inspect each bit by checking (n & 1) and right shifting n by 1 until n becomes 0.",
+      "Alternatively, use Brian Kernighan's trick: n = n & (n - 1) removes the lowest set bit from n.",
+      "Count how many times n = n & (n - 1) can be performed before n becomes 0."
+    ],
+    "id": "cmus2jd0x00008kfgiyd0coys"
+  },
+  {
+    "number": 146,
+    "externalId": "DSA-146",
+    "title": "Counting Bits",
+    "topic": "Bit Manipulation",
+    "difficulty": "Easy",
+    "rating": 800,
+    "tags": [
+      "Dynamic Programming",
+      "Bit Manipulation"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Apple",
+      "Microsoft",
+      "Facebook",
+      "Bloomberg",
+      "Adobe"
+    ],
+    "statement": "Given an integer `n`, count the number of `1`'s in the binary representation of every number in the range `[0, n]`.\n\nReturn an array `output` of length `n + 1` where `output[i]` is the number of `1`'s in the binary representation of `i`.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), computing each count in O(1) time.\n- **Space Complexity:** O(n) for the output array (O(1) auxiliary space).",
+    "constraints": "0 <= n <= 1000",
+    "inputFormat": "Line 1 contains an integer n.",
+    "outputFormat": "Print space-separated integers representing output[i] for each i from 0 to n.",
+    "examples": [
+      {
+        "input": "4",
+        "output": "0 1 1 2 1",
+        "explanation": "0 -> 0\n1 -> 1\n2 -> 10\n3 -> 11\n4 -> 100"
+      },
+      {
+        "input": "5",
+        "output": "0 1 1 2 1 2",
+        "explanation": "Counts of 1 bits for numbers from 0 to 5."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "4",
+        "expectedOutput": "0 1 1 2 1",
+        "explanation": "0 to 4."
+      },
+      {
+        "input": "5",
+        "expectedOutput": "0 1 1 2 1 2",
+        "explanation": "0 to 5."
+      },
+      {
+        "input": "0",
+        "expectedOutput": "0",
+        "explanation": "Only n = 0."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1",
+        "expectedOutput": "0 1"
+      },
+      {
+        "input": "2",
+        "expectedOutput": "0 1 1"
+      },
+      {
+        "input": "8",
+        "expectedOutput": "0 1 1 2 1 2 2 3 1"
+      },
+      {
+        "input": "15",
+        "expectedOutput": "0 1 1 2 1 2 2 3 1 2 2 3 2 3 3 4"
+      }
+    ],
+    "hints": [
+      "Use dynamic programming: the number of set bits in i can be derived from i / 2 (or i >> 1).",
+      "Notice that dp[i] = dp[i >> 1] + (i & 1).",
+      "Alternatively, dp[i] = dp[i & (i - 1)] + 1, clearing the lowest set bit and looking up the remaining count in O(1).",
+      "Initialize dp[0] = 0 and fill dp from 1 to n in O(n) total time."
+    ],
+    "id": "cmus2l2h60000r0fge1ry4nz1"
+  },
+  {
+    "number": 147,
+    "externalId": "DSA-147",
+    "title": "Reverse Bits",
+    "topic": "Bit Manipulation",
+    "difficulty": "Easy",
+    "rating": 800,
+    "tags": [
+      "Divide and Conquer",
+      "Bit Manipulation"
+    ],
+    "companies": [
+      "Apple",
+      "Amazon",
+      "Facebook",
+      "Google",
+      "Microsoft",
+      "Bloomberg",
+      "Nvidia"
+    ],
+    "statement": "Given a 32-bit unsigned integer `n`, reverse the bits of the binary representation of `n` and return the resulting unsigned 32-bit integer.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(1), exactly 32 bit operations.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "0 <= n <= 2^32 - 1",
+    "inputFormat": "Line 1 contains a non-negative integer n.",
+    "outputFormat": "Print the unsigned 32-bit integer obtained after reversing the bits.",
+    "examples": [
+      {
+        "input": "21",
+        "output": "2818572288",
+        "explanation": "21 in 32-bit binary is 00000000000000000000000000010101.\nReversing gives 10101000000000000000000000000000, which is 2818572288."
+      },
+      {
+        "input": "43261596",
+        "output": "964176192",
+        "explanation": "00000010100101000001111010011100 reversed is 00111001011110000010100101000000 (964176192)."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "21",
+        "expectedOutput": "2818572288",
+        "explanation": "21 reversed is 2818572288."
+      },
+      {
+        "input": "43261596",
+        "expectedOutput": "964176192",
+        "explanation": "Reversing 43261596 yields 964176192."
+      },
+      {
+        "input": "0",
+        "expectedOutput": "0",
+        "explanation": "All 0s reversed remains 0."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1",
+        "expectedOutput": "2147483648"
+      },
+      {
+        "input": "4294967295",
+        "expectedOutput": "4294967295"
+      },
+      {
+        "input": "2147483648",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "3",
+        "expectedOutput": "3221225472"
+      }
+    ],
+    "hints": [
+      "Iterate 32 times (i from 0 to 31).",
+      "In each iteration, extract the bit at position i using (n >> i) & 1.",
+      "Place this bit at position (31 - i) in the result using res |= (bit << (31 - i)).",
+      "In languages with signed 32-bit integers, ensure the result is treated as an unsigned 32-bit integer (e.g. using `res >>> 0` in JavaScript or unsigned long in C++)."
+    ],
+    "id": "cmus2meg40000ksfg3lc9hpwd"
+  },
+  {
+    "number": 148,
+    "externalId": "DSA-148",
+    "title": "Missing Number",
+    "topic": "Bit Manipulation",
+    "difficulty": "Easy",
+    "rating": 800,
+    "tags": [
+      "Array",
+      "Hash Table",
+      "Math",
+      "Bit Manipulation",
+      "Sorting"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Facebook",
+      "Apple",
+      "Google",
+      "Bloomberg",
+      "Adobe"
+    ],
+    "statement": "Given an array `nums` containing `n` distinct numbers in the range `[0, n]`, return the only number in the range that is missing from the array.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(n), where n is the size of the array.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "n == nums.length\n1 <= n <= 1000\n0 <= nums[i] <= n\nAll the numbers of nums are unique.",
+    "inputFormat": "Line 1 contains an integer n (length of array nums).\nLine 2 contains n space-separated integers.",
+    "outputFormat": "Print the single missing integer.",
+    "examples": [
+      {
+        "input": "3\n1 2 3",
+        "output": "0",
+        "explanation": "Since there are 3 numbers, the range is [0, 3]. The missing number is 0."
+      },
+      {
+        "input": "2\n0 2",
+        "output": "1",
+        "explanation": "Range is [0, 2], so 1 is missing."
+      },
+      {
+        "input": "9\n9 6 4 2 3 5 7 0 1",
+        "output": "8",
+        "explanation": "Range is [0, 9], so 8 is missing."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "3\n1 2 3",
+        "expectedOutput": "0",
+        "explanation": "0 is missing from [0, 3]."
+      },
+      {
+        "input": "2\n0 2",
+        "expectedOutput": "1",
+        "explanation": "1 is missing from [0, 2]."
+      },
+      {
+        "input": "9\n9 6 4 2 3 5 7 0 1",
+        "expectedOutput": "8",
+        "explanation": "8 is missing from [0, 9]."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "1\n0",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "1\n1",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "4\n0 1 2 3",
+        "expectedOutput": "4"
+      },
+      {
+        "input": "7\n5 3 0 7 1 6 2",
+        "expectedOutput": "4"
+      }
+    ],
+    "hints": [
+      "XOR all numbers from 0 to n: res = n; for i in 0..n-1: res ^= (i ^ nums[i]).",
+      "Since every number except the missing one appears both as an index and in the array, all present numbers cancel out, leaving the missing number.",
+      "Alternatively, use Gauss' summation formula: expectedSum = n * (n + 1) / 2. Subtract the sum of all elements in nums to get the answer."
+    ],
+    "id": "cmus2nna10000mkfgn5h26if5"
+  },
+  {
+    "number": 149,
+    "externalId": "DSA-149",
+    "title": "Sum of Two Integers",
+    "topic": "Bit Manipulation",
+    "difficulty": "Medium",
+    "rating": 1350,
+    "tags": [
+      "Math",
+      "Bit Manipulation"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Apple",
+      "Bloomberg"
+    ],
+    "statement": "Given two integers `a` and `b`, return the sum of the two integers without using the `+` and `-` operators.\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(1), at most 32 operations for 32-bit integers.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "-1000 <= a, b <= 1000",
+    "inputFormat": "Line 1 contains two space-separated integers a and b.",
+    "outputFormat": "Print a single integer representing the sum of a and b.",
+    "examples": [
+      {
+        "input": "1 1",
+        "output": "2",
+        "explanation": "1 + 1 = 2."
+      },
+      {
+        "input": "4 7",
+        "output": "11",
+        "explanation": "4 + 7 = 11."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "1 1",
+        "expectedOutput": "2",
+        "explanation": "Simple positive sum."
+      },
+      {
+        "input": "4 7",
+        "expectedOutput": "11",
+        "explanation": "Sum of positive numbers."
+      },
+      {
+        "input": "0 0",
+        "expectedOutput": "0",
+        "explanation": "Zero sum."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2 -3",
+        "expectedOutput": "-1"
+      },
+      {
+        "input": "-10 -20",
+        "expectedOutput": "-30"
+      },
+      {
+        "input": "50 -50",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "-1000 1000",
+        "expectedOutput": "0"
+      }
+    ],
+    "hints": [
+      "Bitwise XOR (a ^ b) simulates addition without carry.",
+      "Bitwise AND shifted left ((a & b) << 1) computes the carry bits.",
+      "Repeat the process until the carry becomes 0: a = a ^ b, b = (a & b) << 1.",
+      "For languages with arbitrary precision integers (like Python), mask with 0xFFFFFFFF at each step and handle the sign bit if the result is negative."
+    ],
+    "id": "cmus2ovn50000z4fgh4fcug8h"
+  },
+  {
+    "number": 150,
+    "externalId": "DSA-150",
+    "title": "Reverse Integer",
+    "topic": "Bit Manipulation",
+    "difficulty": "Medium",
+    "rating": 1300,
+    "tags": [
+      "Math",
+      "Bit Manipulation"
+    ],
+    "companies": [
+      "Amazon",
+      "Apple",
+      "Microsoft",
+      "Bloomberg",
+      "Google",
+      "Facebook",
+      "Adobe"
+    ],
+    "statement": "You are given a signed 32-bit integer `x`.\n\nReturn `x` after reversing each of its digits. If reversing `x` causes the value to go outside the signed 32-bit integer range `[-2^31, 2^31 - 1]`, then return `0` instead.\n\nAssume the environment does not allow you to store 64-bit integers (signed or unsigned).\n\n### Recommended Time & Space Complexity:\n- **Time Complexity:** O(log₁₀ |x|) ≈ O(1), since a 32-bit integer has at most 10 digits.\n- **Space Complexity:** O(1) auxiliary space.",
+    "constraints": "-2^31 <= x <= 2^31 - 1",
+    "inputFormat": "Line 1 contains a signed 32-bit integer x.",
+    "outputFormat": "Print the reversed integer, or 0 if the reversed value overflows the 32-bit signed integer range.",
+    "examples": [
+      {
+        "input": "1234",
+        "output": "4321",
+        "explanation": "Reversing 1234 gives 4321."
+      },
+      {
+        "input": "-1234",
+        "output": "-4321",
+        "explanation": "Reversing -1234 gives -4321."
+      },
+      {
+        "input": "1234236467",
+        "output": "0",
+        "explanation": "Reversing 1234236467 exceeds 2^31 - 1 (2147483647), so return 0."
+      }
+    ],
+    "visibleTestCases": [
+      {
+        "input": "1234",
+        "expectedOutput": "4321",
+        "explanation": "Standard reversal."
+      },
+      {
+        "input": "-1234",
+        "expectedOutput": "-4321",
+        "explanation": "Negative number reversal."
+      },
+      {
+        "input": "1234236467",
+        "expectedOutput": "0",
+        "explanation": "Reversal causes overflow."
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "120",
+        "expectedOutput": "21"
+      },
+      {
+        "input": "0",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "-2147483648",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "7",
+        "expectedOutput": "7"
+      },
+      {
+        "input": "1534236469",
+        "expectedOutput": "0"
+      }
+    ],
+    "hints": [
+      "Repeatedly pop the last digit from x using modulo 10 and integer division by 10.",
+      "Before pushing the digit onto the reversed result, check for potential 32-bit overflow.",
+      "Max 32-bit signed integer is 2147483647 and min is -2147483648.",
+      "If res > MAX / 10 or (res == MAX / 10 and digit > 7), return 0. If res < MIN / 10 or (res == MIN / 10 and digit < -8), return 0."
+    ],
+    "id": "cmus2q79c000074fg1sktujvm"
   }
 ]

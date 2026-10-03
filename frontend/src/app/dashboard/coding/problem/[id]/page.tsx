@@ -13,7 +13,8 @@ import {
   ChevronLeft, Play, Settings, AlertCircle, CheckCircle2,
   Maximize2, Minimize2, X, Info, Moon, Sun, Pin, PinOff,
   Trash2, Plus, Search, HelpCircle, ChevronRight, CornerDownRight,
-  BookOpen, Terminal, Send, Clock, RefreshCw, RotateCcw, Copy
+  BookOpen, Terminal, Send, Clock, RefreshCw, RotateCcw, Copy,
+  Star, Tag, Building2, ChevronDown, Lightbulb
 } from "lucide-react";
 import {
   FloatingOrbs,
@@ -115,6 +116,10 @@ export default function ProblemWorkspacePage() {
   const [hints, setHints] = useState<Record<number, string>>({});
   const [commonMistakes, setCommonMistakes] = useState<string[]>([]);
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [openHints, setOpenHints] = useState<Record<number, boolean>>({});
+  const toggleHint = (idx: number) => {
+    setOpenHints(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
 
   // Code execution state
   const [stdin, setStdin] = useState("");
@@ -2381,9 +2386,16 @@ Answer the student's question based on the coding problem. Provide hints or feed
               <span>Back</span>
             </button>
             <div className="h-4 w-px bg-[var(--border-color)]" />
-            <h1 className="text-sm font-bold text-[var(--text-primary)] truncate max-w-xs md:max-w-md flex items-center gap-2">
-              <span>{problem?.title}</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${
+            <div className="flex items-center gap-2.5 min-w-0">
+              {problem?.externalId && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-white/10 text-white/90 border border-white/10 shrink-0">
+                  {problem.externalId}
+                </span>
+              )}
+              <h1 className="text-sm font-bold text-[var(--text-primary)] truncate max-w-xs md:max-w-sm lg:max-w-md">
+                {problem?.title}
+              </h1>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase shrink-0 ${
                 problem?.difficulty === "Easy" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
                 problem?.difficulty === "Medium" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
                 "bg-rose-500/10 text-rose-500 border border-rose-500/20"
@@ -2391,11 +2403,12 @@ Answer the student's question based on the coding problem. Provide hints or feed
                 {problem?.difficulty}
               </span>
               {problem?.rating && (
-                <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-full font-semibold">
-                  ★ {problem.rating}
+                <span className="inline-flex items-center gap-1 leading-none py-0.5 px-2 rounded-full font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px] shrink-0">
+                  <Star size={11} className="fill-purple-400 text-purple-400 shrink-0" />
+                  <span className="leading-none">{problem.rating}</span>
                 </span>
               )}
-            </h1>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -2490,22 +2503,69 @@ Answer the student's question based on the coding problem. Provide hints or feed
               {activeTabLeft === "statement" && (
                 <div className="flex flex-col gap-6">
                   {/* Metadata tags */}
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-[10px] bg-white/5 border border-white/10 text-[var(--text-secondary)] px-2.5 py-1 rounded-full font-semibold capitalize">
-                      Topic: {problem?.topic}
-                    </span>
-                    <span className="text-[10px] bg-white/5 border border-white/10 text-[var(--text-secondary)] px-2.5 py-1 rounded-full font-semibold">
-                      Source: {problem?.source}
-                    </span>
-                    {problem?.placementImportance && (
-                      <span className="text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2.5 py-1 rounded-full font-black">
-                        💼 Placements Key
+                  <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {problem?.externalId && (
+                        <span className="text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2.5 py-1 rounded-full font-mono font-bold">
+                          {problem.externalId}
+                        </span>
+                      )}
+                      <span className="text-[10px] bg-white/5 border border-white/10 text-[var(--text-secondary)] px-2.5 py-1 rounded-full font-semibold capitalize">
+                        Topic: {problem?.topic}
                       </span>
+                      <span className="text-[10px] bg-white/5 border border-white/10 text-[var(--text-secondary)] px-2.5 py-1 rounded-full font-semibold">
+                        Source: {problem?.source}
+                      </span>
+                      {problem?.placementImportance && (
+                        <span className="text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2.5 py-1 rounded-full font-black">
+                          💼 Placements Key
+                        </span>
+                      )}
+                      {problem?.interviewImportance && (
+                        <span className="text-[10px] bg-purple-500/10 border border-purple-500/20 text-purple-400 px-2.5 py-1 rounded-full font-black">
+                          🎙 Interview Choice
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Companies Section */}
+                    {problem?.companies && Array.isArray(problem.companies) && problem.companies.length > 0 && (
+                      <div className="flex flex-col gap-1.5 pt-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                          <Building2 size={11} className="text-amber-400" />
+                          <span>Companies ({problem.companies.length})</span>
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {problem.companies.map((company: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full font-medium"
+                            >
+                              {company}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     )}
-                    {problem?.interviewImportance && (
-                      <span className="text-[10px] bg-purple-500/10 border border-purple-500/20 text-purple-400 px-2.5 py-1 rounded-full font-black">
-                        🎙 Interview Choice
-                      </span>
+
+                    {/* Tags Section */}
+                    {problem?.tags && Array.isArray(problem.tags) && problem.tags.length > 0 && (
+                      <div className="flex flex-col gap-1.5 pt-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                          <Tag size={11} className="text-sky-400" />
+                          <span>Related Tags ({problem.tags.length})</span>
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {problem.tags.map((tag: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="text-[10px] bg-sky-500/10 border border-sky-500/20 text-sky-300 px-2.5 py-0.5 rounded-full font-medium"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -2601,6 +2661,67 @@ Answer the student's question based on the coding problem. Provide hints or feed
                     <h3 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest">Examples</h3>
                     {renderExamples() || <p className="text-xs text-[var(--text-muted)] italic">No examples provided. Use AI Guidance to explain or discuss edge cases.</p>}
                   </div>
+
+                  {/* Dynamic Hints Section */}
+                  {(() => {
+                    const rawHints = (problem?.hints && Array.isArray(problem.hints) && problem.hints.length > 0)
+                      ? problem.hints
+                      : (aiAnalysis?.hints && Array.isArray(aiAnalysis.hints) && aiAnalysis.hints.length > 0)
+                        ? aiAnalysis.hints
+                        : [];
+                    if (!rawHints || rawHints.length === 0) return null;
+                    return (
+                      <div className="flex flex-col gap-2.5 mt-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-1.5">
+                            <Lightbulb size={14} className="text-amber-400" />
+                            <span>Hints ({rawHints.length})</span>
+                          </h3>
+                          <span className="text-[10px] text-[var(--text-muted)]">Click hint to reveal</span>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {rawHints.map((hintText: string, idx: number) => {
+                            const isOpen = !!openHints[idx];
+                            return (
+                              <div
+                                key={idx}
+                                className="border border-[var(--border-color)] bg-black/25 rounded-xl overflow-hidden transition"
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => toggleHint(idx)}
+                                  className="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-white/5 transition cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-5 h-5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-bold flex items-center justify-center">
+                                      {idx + 1}
+                                    </span>
+                                    <span className="text-xs font-bold text-[var(--text-primary)]">
+                                      Hint {idx + 1}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-[var(--text-muted)] font-medium">
+                                      {isOpen ? "Hide" : "Reveal"}
+                                    </span>
+                                    <ChevronDown
+                                      size={14}
+                                      className={`text-[var(--text-secondary)] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                                    />
+                                  </div>
+                                </button>
+                                {isOpen && (
+                                  <div className="px-4 py-3 border-t border-[var(--border-color)]/50 bg-black/40 text-xs leading-relaxed text-[var(--text-secondary)]">
+                                    {renderMarkdown(hintText, theme === "dark")}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -2975,13 +3096,24 @@ Answer the student's question based on the coding problem. Provide hints or feed
                                 <span className={`font-bold ${tr.passed ? "text-emerald-500" : "text-rose-400"}`}>
                                   Test Case {tr.testCase} {tr.passed ? "Passed" : "Failed"}
                                 </span>
+                                {tr.isHidden && (
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-sans font-semibold">
+                                    Hidden Test Case
+                                  </span>
+                                )}
                               </div>
                               {!tr.passed && (
-                                <div className="flex flex-col gap-1 text-[var(--text-secondary)]">
-                                  <div><span className="text-[var(--text-muted)]">Input:</span> {tr.input}</div>
-                                  <div><span className="text-[var(--text-muted)]">Expected:</span> {tr.expected}</div>
-                                  <div><span className="text-rose-400">Got:</span> {tr.actual}</div>
-                                </div>
+                                tr.isHidden ? (
+                                  <div className="text-[var(--text-muted)] text-[10px] italic">
+                                    Hidden test case failed. Check boundary conditions and edge cases.
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col gap-1 text-[var(--text-secondary)]">
+                                    <div><span className="text-[var(--text-muted)]">Input:</span> {tr.input}</div>
+                                    <div><span className="text-[var(--text-muted)]">Expected:</span> {tr.expected}</div>
+                                    <div><span className="text-rose-400">Got:</span> {tr.actual}</div>
+                                  </div>
+                                )
                               )}
                             </motion.div>
                           ))
@@ -3129,36 +3261,6 @@ Answer the student's question based on the coding problem. Provide hints or feed
 
             {/* AI Action Widgets Panel */}
             <div className="border-t border-[var(--border-color)] bg-black/25 p-3 flex flex-col gap-3 z-10 shrink-0">
-              
-              {/* Progressive Hints system */}
-              <div className="flex flex-col gap-2 bg-white/5 border border-white/10 rounded-xl p-3">
-                <div className="text-[10px] text-amber-500 uppercase tracking-widest font-black flex items-center justify-between">
-                  <span>Progressive Hint Scaffold</span>
-                  <span>Unlocked {activeHintIndex}/3</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-1">
-                  {[1, 2, 3].map(idx => {
-                    const unlocked = activeHintIndex >= idx;
-                    const available = activeHintIndex + 1 === idx;
-                    return (
-                      <button
-                        key={idx}
-                        disabled={unlocked || !available || aiGenerating}
-                        onClick={() => handleTriggerHint(idx)}
-                        className={`py-1.5 rounded-lg text-[10px] font-black uppercase transition flex items-center justify-center gap-1 ${
-                          unlocked 
-                            ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-bold" 
-                            : available 
-                              ? "bg-amber-500 hover:bg-amber-600 text-black shadow-md" 
-                              : "bg-white/5 border border-[var(--border-color)] text-[var(--text-muted)] cursor-not-allowed"
-                        }`}
-                      >
-                        <span>Hint {idx}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
 
               {/* Fast Coach Action list */}
               <div className="flex flex-wrap gap-1.5">

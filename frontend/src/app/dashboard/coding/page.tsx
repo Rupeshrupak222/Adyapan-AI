@@ -644,12 +644,20 @@ function CodingHubContent() {
                   className="px-3 py-2 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] outline-none text-xs text-[var(--text-primary)] cursor-pointer hover:border-amber-500"
                 >
                   <option value="">All Topics</option>
-                  {[
-                    "Arrays", "Strings", "Hashing", "Linked Lists", "Stacks", "Queues",
-                    "Trees", "Binary Trees", "BST", "Heaps", "Recursion", "Backtracking",
-                    "Greedy", "Dynamic Programming", "Graphs", "Tries", "Sliding Window",
-                    "Two Pointers", "Bit Manipulation"
-                  ].map(t => <option key={t} value={t}>{t}</option>)}
+                  {topicExplorer && topicExplorer.length > 0
+                    ? topicExplorer.map((t: any) => (
+                        <option key={t.topicName} value={t.topicName}>
+                          {t.topicName} ({t.questionCount})
+                        </option>
+                      ))
+                    : [
+                        "Arrays & Hashing", "Two Pointers", "Sliding Window", "Stack",
+                        "Binary Search", "Linked List", "Trees", "Heap / Priority Queue",
+                        "Backtracking", "Tries", "Graphs", "Advanced Graphs",
+                        "1-D Dynamic Programming", "2-D Dynamic Programming", "Greedy",
+                        "Intervals", "Math & Geometry", "Bit Manipulation"
+                      ].map(t => <option key={t} value={t}>{t}</option>)
+                  }
                 </select>
 
                 {/* Difficulty filter */}
@@ -767,9 +775,16 @@ function CodingHubContent() {
                             )}
                           </td>
                           <td className="py-4 px-2">
-                            <span className="font-bold text-[var(--text-primary)] hover:text-amber-500 cursor-pointer transition-colors block max-w-sm truncate" onClick={() => handleOpenQuestion(q)}>
-                              {q.title}
-                            </span>
+                            <div className="flex items-center gap-2 max-w-md">
+                              {q.externalId && (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/25 text-amber-500 font-mono text-[10px] font-bold shrink-0">
+                                  {q.externalId}
+                                </span>
+                              )}
+                              <span className="font-bold text-[var(--text-primary)] hover:text-amber-500 cursor-pointer transition-colors truncate" onClick={() => handleOpenQuestion(q)}>
+                                {q.title}
+                              </span>
+                            </div>
                           </td>
                           <td className="py-4 px-2 text-purple-500 font-semibold">{q.topic}</td>
                           <td className="py-4 px-2">
@@ -861,7 +876,14 @@ function CodingHubContent() {
                       DSA
                     </span>
                     <div>
-                      <h3 className="text-lg font-bold text-[var(--text-primary)] leading-tight">{selectedQuestion.title}</h3>
+                      <h3 className="text-lg font-bold text-[var(--text-primary)] leading-tight flex items-center gap-2">
+                        {selectedQuestion.externalId && (
+                          <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-500 font-mono text-xs font-bold shrink-0">
+                            {selectedQuestion.externalId}
+                          </span>
+                        )}
+                        <span>{selectedQuestion.title}</span>
+                      </h3>
                       <p className="text-[10px] text-[var(--text-secondary)] font-medium">{selectedQuestion.topic} • {selectedQuestion.difficulty}</p>
                     </div>
                   </div>
