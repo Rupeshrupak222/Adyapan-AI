@@ -152,11 +152,11 @@ function computeAnswerQuality(history: Message[]): number {
   let total = 0;
   for (const a of answers) {
     const len = a.content.trim().length;
-    if (len < 20) total += 25;
-    else if (len < 60) total += 45;
-    else if (len < 150) total += 60;
-    else if (len < 400) total += 72;
-    else total += 80;
+    if (len < 20) total += 35;
+    else if (len < 60) total += 55;
+    else if (len < 150) total += 70;
+    else if (len < 400) total += 80;
+    else total += 88;
   }
   return Math.round(total / answers.length);
 }
@@ -579,10 +579,16 @@ Return as JSON:
     answerBreakdowns: fallbackBreakdowns,
   };
 
+  // If candidate gave zero answers, return 0 score immediately without calling LLM
+  if (candidateMessages.length === 0) {
+    console.log(`[TechnicalEngine] No candidate responses recorded; returning 0-score evaluation without LLM call.`);
+    return fallback;
+  }
+
   try {
     const result = await generateJSON<TechnicalEvaluation>(
       systemPrompt,
-      `Evaluate this technical interview.\n\nTRANSCRIPT:\n${conversationHistory}\n\n${totalQuestions} QUESTIONS ASKED.`,
+      `Evaluate this technical interview.\n\nTRANSCRIPT:\n${conversationHistory}\n\nINTERVIEW SUMMARY:\n- Questions asked by interviewer: ${totalQuestions}\n- Answers submitted by candidate: ${candidateMessages.length}\n\nProvide an objective evaluation of the candidate's actual answers. If the interview concluded early, score them fairly on the questions they actually answered.`,
       { model: MODELS.BALANCED, temperature: 0.4, maxTokens: 12000 },
       fallback
     );

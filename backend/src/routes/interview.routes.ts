@@ -23,9 +23,41 @@ import { getSessionState } from "../services/interview-session.service";
 import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import { FeatureKey } from "../services/feature-keys";
 
+import { transcribeAudioBuffer } from "../services/transcription.service";
+
 export const interviewRouter = Router();
 
 interviewRouter.use(requireAuth);
+
+// ─── Phase 2.5: Transcribe candidate speech audio (all browsers) ──────────
+interviewRouter.post("/transcribe", async (req, res) => {
+  try {
+    const { audioBase64, mimeType, language } = req.body;
+    if (!audioBase64 || typeof audioBase64 !== "string") {
+      res.status(400).json({ success: false, error: "audioBase64 is required" });
+      return;
+    }
+
+    const cleanBase64 = audioBase64.replace(/^data:[^;]+;base64,/, "");
+    const buffer = Buffer.from(cleanBase64, "base64");
+
+    if (buffer.length === 0) {
+      res.json({ success: true, text: "" });
+      return;
+    }
+
+    const transcript = await transcribeAudioBuffer(
+      buffer,
+      mimeType || "audio/webm",
+      language || "en"
+    );
+
+    res.json({ success: true, text: transcript });
+  } catch (err: any) {
+    console.error("[Interview Transcribe Route Error]:", err);
+    res.status(500).json({ success: false, error: "Transcription failed", text: "" });
+  }
+});
 
 // ─── Phase 3: Start new interview session ──────────────────────────────────
 interviewRouter.post("/start", requireFeatureQuota(FeatureKey.INTERVIEW_ENGINE), async (req, res) => {

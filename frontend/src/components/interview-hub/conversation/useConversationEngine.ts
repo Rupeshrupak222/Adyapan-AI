@@ -175,9 +175,22 @@ export function useConversationEngine({
     if (isSubmittingRef.current) return;
     clearSilenceTimers();
 
-    const fullText = (
+    let fullText = (
       accumulatedTranscriptRef.current + " " + liveTranscriptRef.current
     ).trim();
+
+    // Universal audio flush for all browsers (Firefox, Safari, Brave, Chrome)
+    if (!fullText) {
+      try {
+        const flushed = await SharedSpeechEngine.getInstance().flushRecordedAudio();
+        if (flushed && flushed.trim()) {
+          fullText = flushed.trim();
+          setAccumulatedTranscript(fullText);
+        }
+      } catch (flushErr) {
+        logInterview("SpeechRecognition", "Audio flush error:", flushErr);
+      }
+    }
 
     if (!fullText) {
       toast.info("No response heard. Still listening...");
@@ -402,7 +415,7 @@ export function useConversationEngine({
       }
     );
 
-    const started = speechEngine.startListening();
+    const started = speechEngine.startListening(micStreamRef.current);
     if (started) {
       isListeningRef.current = true;
     }

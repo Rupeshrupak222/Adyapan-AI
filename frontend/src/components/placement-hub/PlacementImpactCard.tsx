@@ -117,7 +117,7 @@ export function PlacementImpactCard({
           <div className="flex items-center gap-2 mb-1">
             <Target size={12} style={{ color: accentColor }} />
             <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: accentColor }}>
-              Placement Intelligence
+              Placement Score
             </span>
           </div>
           <p className="text-xs font-bold" style={{ color: tc.text }}>

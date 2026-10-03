@@ -102,35 +102,40 @@ export default function HRView({ theme }: HRViewProps) {
   }, [config, lifecycle]);
 
   const DEFAULT_HR_EVALUATION: HREvaluation = {
-    overallScore: 40,
-    communicationScore: 45,
-    leadershipScore: 40,
-    starScore: 40,
-    confidenceScore: 40,
-    teamworkScore: 40,
-    ownershipScore: 40,
-    adaptabilityScore: 40,
-    emotionalIntelligence: 40,
-    professionalism: 45,
-    culturalFit: 40,
-    motivation: 45,
-    strengths: ["HR interview session initialized"],
-    weaknesses: ["Session completed early or terminated due to proctoring rules"],
-    improvements: ["Answer all behavioral questions for detailed STAR evaluation"],
-    summary: "The HR interview session was concluded early or ended due to security rules.",
-    hiringRecommendation: "maybe",
+    overallScore: 0,
+    communicationScore: 0,
+    leadershipScore: 0,
+    starScore: 0,
+    confidenceScore: 0,
+    teamworkScore: 0,
+    ownershipScore: 0,
+    adaptabilityScore: 0,
+    emotionalIntelligence: 0,
+    professionalism: 0,
+    culturalFit: 0,
+    motivation: 0,
+    strengths: ["Interview session initialized"],
+    weaknesses: ["No candidate responses recorded or session was concluded before answers were submitted"],
+    improvements: ["Answer interview questions aloud or via text to receive an accurate AI score and comprehensive feedback"],
+    summary: "The HR interview was concluded with no candidate responses recorded.",
+    hiringRecommendation: "do_not_recommend",
     competencyMatrix: [],
     answerBreakdowns: [],
     nextPracticeTopics: [],
-    recruiterPerspective: "Interview concluded early.",
+    recruiterPerspective: "A complete interview record with candidate responses is required for assessment.",
   };
 
   const handleInterviewComplete = useCallback(async (completedSessionId: string) => {
     lifecycle.markInterviewCompleted();
     try {
       toast.info("Generating your HR evaluation...");
-      const res = await api.post(`/interview/hr/${completedSessionId}/evaluate`);
-      const rawEval = res.data?.evaluation;
+      let res = await api.post(`/interview/hr/${completedSessionId}/evaluate`).catch(async () => {
+        return await api.post(`/interview/hr/${completedSessionId}/end`).catch(() => null);
+      });
+      if (!res?.data?.evaluation) {
+        res = await api.post(`/interview/hr/${completedSessionId}/end`).catch(() => null);
+      }
+      const rawEval = res?.data?.evaluation;
       const combinedEval = rawEval ? {
         ...(rawEval.detailedAnalysis || {}),
         ...rawEval,
@@ -150,8 +155,14 @@ export default function HRView({ theme }: HRViewProps) {
     lifecycle.markInterviewCompleted();
     if (!sessionId) return;
     try {
-      const res = await api.post(`/interview/hr/${sessionId}/end`);
-      const rawEval = res.data?.evaluation;
+      toast.info("Finalizing HR interview & generating report...");
+      let res = await api.post(`/interview/hr/${sessionId}/evaluate`).catch(async () => {
+        return await api.post(`/interview/hr/${sessionId}/end`).catch(() => null);
+      });
+      if (!res?.data?.evaluation) {
+        res = await api.post(`/interview/hr/${sessionId}/end`).catch(() => null);
+      }
+      const rawEval = res?.data?.evaluation;
       const combinedEval = rawEval ? {
         ...(rawEval.detailedAnalysis || {}),
         ...rawEval,

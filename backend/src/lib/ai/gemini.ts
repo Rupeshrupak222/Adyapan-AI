@@ -1942,6 +1942,18 @@ export async function generateInterviewFeedback(
   type: string,
   messages: { role: string; content: string }[]
 ): Promise<InterviewFeedback> {
+  const candidateMessages = messages.filter((m) => m.role === "candidate" || m.role === "user");
+  if (candidateMessages.length === 0) {
+    return {
+      overallScore: 0,
+      strengths: ["Session initialized"],
+      weaknesses: ["No candidate responses recorded in transcript"],
+      areasForImprovement: ["Provide spoken or written answers to interview questions to receive assessment"],
+      suggestedAnswers: [],
+      recommendedResources: ["Interview preparation fundamentals"],
+    };
+  }
+
   const conversation = messages
     .filter((m) => m.role !== "feedback")
     .map((m) => `[${m.role === "interviewer" ? "Interviewer" : "Candidate"}]: ${m.content}`)
@@ -1954,20 +1966,32 @@ Interview Transcript:
 ${conversation}
 """
 
+The candidate provided ${candidateMessages.length} responses. Evaluate the candidate's actual answers objectively.
 Provide comprehensive feedback as JSON:
-1. "overallScore": integer 0-100
-2. "strengths": array of 3-5 specific strengths demonstrated
-3. "weaknesses": array of 3-5 areas where the candidate struggled
-4. "areasForImprovement": array of 3-5 actionable improvement suggestions
-5. "suggestedAnswers": array of 2-3 example strong answers for questions they struggled with
+1. "overallScore": integer 0-100 reflecting the quality and depth of submitted answers
+2. "strengths": array of 2-4 specific strengths demonstrated
+3. "weaknesses": array of 2-4 areas where the candidate struggled
+4. "areasForImprovement": array of 2-4 actionable improvement suggestions
+5. "suggestedAnswers": array of 1-3 example strong answers for questions asked
 6. "recommendedResources": array of 2-3 resources (books, courses, topics) to study`;
 
+  let totalScore = 0;
+  for (const m of candidateMessages) {
+    const len = m.content.trim().length;
+    if (len < 25) totalScore += 35;
+    else if (len < 75) totalScore += 55;
+    else if (len < 200) totalScore += 70;
+    else if (len < 500) totalScore += 80;
+    else totalScore += 88;
+  }
+  const dynamicFallbackScore = Math.round(totalScore / candidateMessages.length);
+
   const fallback: InterviewFeedback = {
-    overallScore: 70,
-    strengths: ["Good communication skills", "Relevant technical knowledge"],
-    weaknesses: ["Could provide more specific examples", "Need more depth in some areas"],
-    areasForImprovement: ["Practice structured answers using STAR", "Deepen system design knowledge"],
-    suggestedAnswers: ["Use the STAR format to structure your answers"],
+    overallScore: dynamicFallbackScore,
+    strengths: dynamicFallbackScore >= 60 ? ["Good communication skills", "Relevant domain engagement"] : ["Engaged with interview questions"],
+    weaknesses: dynamicFallbackScore < 60 ? ["Answers lacked depth and technical specifics"] : ["Could provide more specific quantified examples"],
+    areasForImprovement: ["Practice structured answers using STAR", "Deepen domain and system design knowledge"],
+    suggestedAnswers: ["Use the STAR format (Situation, Task, Action, Result) to structure answers"],
     recommendedResources: ["Cracking the Coding Interview", "System Design Interview by Alex Xu"],
   };
 

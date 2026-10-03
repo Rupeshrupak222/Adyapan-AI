@@ -307,69 +307,121 @@ export default function InterviewRoomPage() {
     if (isRecording) return;
     setIsRecording(true);
     setLiveTranscript("");
+    audioChunksRef.current = [];
 
-    // Use SpeechRecognition API for live transcription
+    // 1. Setup MediaRecorder with existing stream as universal audio capture
+    try {
+      const activeStream = streamRef.current;
+      if (activeStream && activeStream.getAudioTracks().length > 0) {
+        const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg", "audio/mp4"];
+        let selectedMime = "audio/webm";
+        for (const m of mimeTypes) {
+          if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m)) {
+            selectedMime = m;
+            break;
+          }
+        }
+        const recorder = new MediaRecorder(activeStream, { mimeType: selectedMime });
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
+        recorder.onstop = async () => {
+          setIsRecording(false);
+          // If native recognition didn't yield text, transcribe via backend
+          if (audioChunksRef.current.length > 0) {
+            try {
+              const audioBlob = new Blob(audioChunksRef.current, { type: selectedMime });
+              audioChunksRef.current = [];
+              const reader = new FileReader();
+              reader.onloadend = async () => {
+                const base64Data = reader.result as string;
+                if (!base64Data || base64Data.length < 50) return;
+                try {
+                  const res = await api.post("/interview/transcribe", {
+                    audioBase64: base64Data,
+                    mimeType: selectedMime,
+                    language: session?.language || "english",
+                  });
+                  if (res.data?.success && res.data.text) {
+                    const transcribed = res.data.text.trim();
+                    setInput((prev) => (prev ? `${prev} ${transcribed}` : transcribed));
+                    setLiveTranscript(transcribed);
+                    toast.success("Voice response captured!");
+                  }
+                } catch {}
+              };
+              reader.readAsDataURL(audioBlob);
+            } catch {}
+          }
+        };
+        recorder.start(1000);
+        mediaRecorderRef.current = recorder;
+      }
+    } catch (recErr) {
+      console.warn("MediaRecorder start warning:", recErr);
+    }
+
+    // 2. Use SpeechRecognition API for instant live transcription where available (Chrome/Edge)
     const w = window as any;
     const SpeechRecognitionClass = w.SpeechRecognition || w.webkitSpeechRecognition;
     if (SpeechRecognitionClass) {
-      const recognition = new SpeechRecognitionClass();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = "en-US";
+      try {
+        const recognition = new SpeechRecognitionClass();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = session?.language === "hindi" ? "hi-IN" : "en-US";
 
-      recognition.onresult = (event: any) => {
-        let currentTranscript = "";
-        for (let i = 0; i < event.results.length; i++) {
-          currentTranscript += event.results[i][0].transcript;
-        }
-        const trimmed = currentTranscript.trim();
-        if (trimmed) {
-          setLiveTranscript(trimmed);
-          setInput(trimmed);
-        }
-      };
-
-      recognition.onerror = (event: any) => {
-        const err = event.error;
-        if (err === "no-speech" || err === "aborted") return;
-        if (err === "network") {
-          // Chrome fires "network" errors randomly — auto-restart silently
-          setTimeout(() => {
-            try { recognition.start(); } catch {}
-          }, 1500);
-          return;
-        }
-        setIsRecording(false);
-        toast.error("Speech recognition error. Please type your answer.");
-      };
-
-      recognition.onend = () => setIsRecording(false);
-      recognitionRef.current = recognition;
-      recognition.start();
-    } else {
-      // Fallback: MediaRecorder
-      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-        const recorder = new MediaRecorder(stream);
-        audioChunksRef.current = [];
-        recorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-        recorder.onstop = () => {
-          stream.getTracks().forEach(t => t.stop());
-          setIsRecording(false);
-          toast.info("Voice recorded. Please type or submit your answer.");
+        recognition.onresult = (event: any) => {
+          let currentTranscript = "";
+          for (let i = 0; i < event.results.length; i++) {
+            currentTranscript += event.results[i][0].transcript;
+          }
+          const trimmed = currentTranscript.trim();
+          if (trimmed) {
+            setLiveTranscript(trimmed);
+            setInput(trimmed);
+          }
         };
-        recorder.start();
-        mediaRecorderRef.current = recorder;
-      }).catch(() => {
-        setIsRecording(false);
-        toast.error("Microphone access denied");
-      });
+
+        recognition.onerror = (event: any) => {
+          const err = event.error;
+          if (err === "no-speech" || err === "aborted") return;
+          if (err === "network") {
+            setTimeout(() => {
+              try { recognition.start(); } catch {}
+            }, 1500);
+            return;
+          }
+          // Do not toast error if mediaRecorder is actively capturing audio
+        };
+
+        recognition.onend = () => {
+          if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
+            setIsRecording(false);
+          }
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (e) {
+        console.warn("SpeechRecognition init warning:", e);
+      }
     }
   };
 
   const stopVoiceRecording = () => {
-    recognitionRef.current?.stop();
-    mediaRecorderRef.current?.stop();
-    setIsRecording(false);
+    try {
+      recognitionRef.current?.stop();
+    } catch {}
+    try {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      } else {
+        setIsRecording(false);
+      }
+    } catch {
+      setIsRecording(false);
+    }
   };
 
   const handleSend = async () => {

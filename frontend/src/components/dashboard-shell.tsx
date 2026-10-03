@@ -77,7 +77,7 @@ const SEARCH_INDEX: SearchEntry[] = [
   { label: "Saved Jobs", viewId: "job-discovery", category: "Job Hub" },
   { label: "Aptitude Practice", viewId: "placement-hub", category: "Placement Hub" },
   { label: "Technical MCQs", viewId: "placement-hub", category: "Placement Hub" },
-  { label: "Placement Intelligence", viewId: "placement-intelligence", category: "Placement Hub" },
+  { label: "Placement Score", viewId: "placement-intelligence", category: "Placement Hub" },
   { label: "Company Match Analysis", viewId: "placement-intelligence", category: "Placement Hub" },
   { label: "AI Placement Score", viewId: "placement-intelligence", category: "Placement Hub" },
   { label: "AI Aptitude Engine", viewId: "aptitude-engine", category: "Placement Hub" },
@@ -159,6 +159,7 @@ export const sidebarItems: SidebarItem[] = [
   {
     id: "placement", label: "Placement Hub", icon: <Trophy size={18} />,
     submenu: [
+      { label: "Placement Score", href: "/dashboard/user?view=placement-intelligence" },
       { label: "AI Aptitude Engine", href: "/dashboard/user?view=placement-aptitude" },
       { label: "Technical MCQs", href: "/dashboard/user?view=placement-mcqs" },
     ],
@@ -352,6 +353,7 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                         else if (sub.label === "Research Paper AI") onViewTool("research-paper-ai");
                         else if (sub.label === "Plagiarism Checker") onViewTool("research-plagiarism");
                         else if (sub.label === "Job Discovery") onViewTool("job-discovery");
+                        else if (sub.label === "Placement Score" || sub.label === "Placement Intelligence") onViewTool("placement-intelligence");
                         else if (sub.label === "AI Aptitude Engine") onViewTool("placement-aptitude");
                         else if (sub.label === "Technical MCQs") onViewTool("placement-mcqs");
                         else if (sub.label === "Email Writer") onViewTool("prod-email");

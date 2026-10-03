@@ -34,6 +34,7 @@ export function Navbar({ forceWhiteText, hideThemeToggle }: { forceWhiteText?: b
 
   return (
     <header
+      suppressHydrationWarning
       className="sticky top-0 z-50 border-b transition-all duration-200 backdrop-blur-md"
       style={{
         background: navBg,
@@ -42,7 +43,7 @@ export function Navbar({ forceWhiteText, hideThemeToggle }: { forceWhiteText?: b
         WebkitBackdropFilter: "blur(12px)",
       }}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-12">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-12" suppressHydrationWarning>
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-semibold" style={{ color: logoColor }}>

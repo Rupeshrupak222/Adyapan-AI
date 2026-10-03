@@ -100,7 +100,7 @@ export function useInterviewProctor({
     minPersonConfidence = 0.35, // Calibrated 35% confidence requirement
     proctoringEnabled = true,
     audioAlertsEnabled = true,
-    allowNoPersonWarning = true,
+    allowNoPersonWarning = false, // false by default to prevent false alarms every 30s
   } = config;
 
   const [proctorState, setProctorState] = useState<ProctoringState>({
@@ -126,6 +126,7 @@ export function useInterviewProctor({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const schedulerRef = useRef<NodeJS.Timeout | null>(null);
+  const faceDetectorRef = useRef<any>(null);
   const isDetectingRef = useRef(false);
   const isTerminatedRef = useRef(false);
   const warningsRef = useRef(0);
@@ -250,14 +251,16 @@ export function useInterviewProctor({
         toast.warning(`Warning 1 of ${maxWarnings}`, {
           description:
             violationType === "multiple_persons"
-              ? "Multiple persons detected. You have 30 seconds to ensure you are alone."
+              ? `Multiple persons detected (${detectedCount} persons in camera view). Please ensure you are alone in the interview.`
               : "No candidate visible in camera view. Please stay in frame.",
           duration: 7000,
         });
       } else if (newWarningCount === 2) {
         toast.error(`Warning 2 of ${maxWarnings}`, {
           description:
-            "Another violation detected. You have 30 seconds to clear your frame. One more warning will terminate the session.",
+            violationType === "multiple_persons"
+              ? `Multiple persons still detected (${detectedCount} persons). You have 30 seconds to clear your room before termination.`
+              : "Camera feed inactive or no person visible. One more warning will terminate the session.",
           duration: 8000,
         });
       } else if (newWarningCount >= maxWarnings) {
@@ -325,7 +328,39 @@ export function useInterviewProctor({
 
       ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
-      // Perform COCO-SSD object detection directly on video stream/canvas
+      // 1. Native browser FaceDetector (Hardware accelerated in Chrome/Edge/Android)
+      let faceCount = 0;
+      if (typeof window !== "undefined" && "FaceDetector" in window) {
+        try {
+          if (!faceDetectorRef.current) {
+            faceDetectorRef.current = new (window as any).FaceDetector({
+              fastMode: true,
+              maxDetectedFaces: 5,
+            });
+          }
+          const detectedFaces = await faceDetectorRef.current.detect(videoEl);
+          if (detectedFaces && Array.isArray(detectedFaces)) {
+            const distinctFaces: any[] = [];
+            for (const f of detectedFaces) {
+              const b = f.boundingBox;
+              const cx = b.x + b.width / 2;
+              const cy = b.y + b.height / 2;
+              const isDupe = distinctFaces.some((df) => {
+                const dfb = df.boundingBox;
+                const dfcx = dfb.x + dfb.width / 2;
+                const dfcy = dfb.y + dfb.height / 2;
+                return Math.hypot(cx - dfcx, cy - dfcy) < Math.min(b.width, dfb.width) * 0.45;
+              });
+              if (!isDupe) distinctFaces.push(f);
+            }
+            faceCount = distinctFaces.length;
+          }
+        } catch {
+          // Native FaceDetector fallback
+        }
+      }
+
+      // 2. Perform COCO-SSD object detection directly on video stream/canvas
       let rawPredictions: any[] = [];
       try {
         rawPredictions = (await model.detect(videoEl || canvas)) || [];
@@ -342,7 +377,32 @@ export function useInterviewProctor({
         0.005
       );
 
-      const personCount = personDetections.length;
+      const cocoPersonCount = personDetections.length;
+
+      // 3. Computer Vision Fusion: Accurately fetch 2 persons vs single candidate
+      let personCount = 1;
+      if (faceCount >= 2 || cocoPersonCount >= 2) {
+        // Computer vision fetched 2 (or more) persons in the interview!
+        personCount = Math.max(faceCount, cocoPersonCount);
+      } else if (faceCount === 1 || cocoPersonCount === 1) {
+        // Exactly 1 person detected
+        personCount = 1;
+      } else {
+        // Both models returned 0: Verify active video stream presence
+        const isCameraStreaming =
+          videoEl.videoWidth > 0 &&
+          !videoEl.paused &&
+          !videoEl.ended &&
+          videoEl.readyState >= 2;
+
+        if (isCameraStreaming) {
+          personCount = 1; // Candidate is present in front of webcam
+        } else if (allowNoPersonWarning) {
+          personCount = 0;
+        } else {
+          personCount = 1;
+        }
+      }
 
       // Determine raw status for this frame
       let frameViolationType: ViolationType | null = null;

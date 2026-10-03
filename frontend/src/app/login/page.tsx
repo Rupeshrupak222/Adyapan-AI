@@ -360,7 +360,7 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="min-h-screen transition-colors relative overflow-hidden">
+    <div className="min-h-screen transition-colors relative overflow-hidden" suppressHydrationWarning>
       <SessionPopup
         open={showSessionConfirm}
         message="There is an active session on another device. Do you want to end it and login here?"
@@ -392,19 +392,21 @@ function LoginPageContent() {
           background: "rgba(0, 0, 0, 0.35)",
           zIndex: 1,
         }}
+        suppressHydrationWarning
       />
 
       <Navbar forceWhiteText hideThemeToggle />
 
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-6 relative z-10">
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-6 relative z-10" suppressHydrationWarning>
         <motion.div
           initial={{ opacity: 0, y: 40, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
           className={`login-card w-full rounded-2xl border shadow-2xl transition-shadow duration-300 ${tab === "register" ? "max-w-md" : "max-w-sm"}`}
           style={{ background: cardBg, borderColor: cardBorder, backdropFilter: "blur(24px)", color: cardText }}
+          suppressHydrationWarning
         >
-          <div className={tab === "register" ? "p-4" : "p-6"}>
+          <div className={tab === "register" ? "p-4" : "p-6"} suppressHydrationWarning>
 
             <AnimatePresence mode="wait">
               {tab === "login" && (
