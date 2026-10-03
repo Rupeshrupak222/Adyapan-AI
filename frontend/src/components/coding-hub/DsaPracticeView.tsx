@@ -62,6 +62,7 @@ export interface DsaProblem {
   source?: string;
   tags?: string[];
   company?: string;
+  companies?: string[];
 }
 
 const CODE_TEMPLATES: Record<string, string> = {
@@ -760,12 +761,12 @@ export function DsaPracticeView() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 bg-white/5 dark:bg-white/[0.03] text-[var(--text-muted)] text-[10px] rounded-md font-medium">{p.category}</span>
-                    {p.company && (
+                    {(p.company || (p.companies && p.companies[0])) && (
                       <CompanyLogo
-                        companyName={p.company}
+                        companyName={p.company || p.companies?.[0]}
                         size={20}
-                        className="border border-white/10 shadow-xs hover:scale-110 transition-transform cursor-pointer"
-                        title={p.company}
+                        className="rounded-full border border-white/10 shadow-xs hover:scale-110 transition-transform cursor-pointer"
+                        title={p.company || p.companies?.[0]}
                       />
                     )}
                     <ChevronRight size={12} className="text-[var(--text-muted)] group-hover:text-amber-500 transition-colors" />

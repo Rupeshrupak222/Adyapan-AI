@@ -1,4 +1,6 @@
 import { Router } from "express";
+import fs from "fs";
+import path from "path";
 import { requireAuth } from "../middleware/auth";
 import { generateDsaHint, reviewDsaSolution } from "../lib/ai/dsa";
 import { getUserPrismaFromRequest } from "../utils/prisma";
@@ -6,6 +8,40 @@ import { StreakService } from "../services/streak.service";
 import { handleRouteError } from "../utils/routeError";
 import { executeCode, runTestCases } from "../services/piston.service";
 import { prisma as masterPrisma } from "../config/prisma";
+
+let curatedQuestionsMap: Map<string, any> | null = null;
+function getCuratedQuestionMeta(identifier: string) {
+  if (!identifier) return null;
+  if (!curatedQuestionsMap) {
+    curatedQuestionsMap = new Map();
+    try {
+      const candidatePaths = [
+        path.resolve(__dirname, "../../data/curated-dsa-questions.json"),
+        path.resolve(process.cwd(), "data/curated-dsa-questions.json"),
+        path.resolve(process.cwd(), "backend/data/curated-dsa-questions.json")
+      ];
+      let jsonPath = candidatePaths.find(p => fs.existsSync(p));
+      if (jsonPath) {
+        const raw = fs.readFileSync(jsonPath, "utf-8");
+        const list = JSON.parse(raw);
+        for (const item of list) {
+          if (item.id) curatedQuestionsMap.set(item.id, item);
+          if (item.externalId) curatedQuestionsMap.set(item.externalId.toLowerCase().trim(), item);
+          if (item.externalId) curatedQuestionsMap.set(item.externalId, item);
+          if (item.title) curatedQuestionsMap.set(item.title.toLowerCase().trim(), item);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load curated-dsa-questions.json cache in dsa.routes:", e);
+    }
+  }
+  const cleanId = String(identifier).trim();
+  return (
+    curatedQuestionsMap.get(cleanId) ||
+    curatedQuestionsMap.get(cleanId.toLowerCase()) ||
+    null
+  );
+}
 
 const router = Router();
 router.use(requireAuth);
@@ -41,25 +77,31 @@ router.get("/problems", async (req: any, res) => {
           explanation: tc.explanation || ""
         }));
       }
+      const curatedMeta = getCuratedQuestionMeta(p.id) || getCuratedQuestionMeta(p.externalId) || getCuratedQuestionMeta(p.title);
+      const comps = (Array.isArray(p.companies) && p.companies.length > 0)
+        ? p.companies
+        : (curatedMeta?.companies || []);
 
       return {
-        id: p.id,
-        externalId: p.externalId,
-        title: p.title,
-        category: p.topic || "Arrays",
-        difficulty: p.difficulty || "Easy",
-        rating: p.rating || 1000,
-        description: p.statement || `Solve the problem: ${p.title}.`,
-        statement: p.statement,
-        constraints: p.constraints,
-        inputFormat: p.inputFormat,
-        outputFormat: p.outputFormat,
-        examples: parsedExamples,
-        visibleTestCases: p.visibleTestCases || [],
-        source: p.source || "Curated DSA",
-        tags: p.tagsJson || ["Core DSA"],
-      };
-    });
+          id: p.id,
+          externalId: p.externalId,
+          title: p.title,
+          category: p.topic || "Arrays",
+          difficulty: p.difficulty || "Easy",
+          rating: p.rating || 1000,
+          description: p.statement || `Solve the problem: ${p.title}.`,
+          statement: p.statement,
+          constraints: p.constraints,
+          inputFormat: p.inputFormat,
+          outputFormat: p.outputFormat,
+          examples: parsedExamples,
+          visibleTestCases: p.visibleTestCases || [],
+          source: p.source || "Curated DSA",
+          tags: p.tagsJson || curatedMeta?.tags || ["Core DSA"],
+          companies: comps,
+          company: comps[0] || undefined,
+        };
+      });
 
     res.json({ success: true, problems });
   } catch (error) {

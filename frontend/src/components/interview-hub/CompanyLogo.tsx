@@ -328,15 +328,18 @@ const COMPANY_INLINE_SVGS: Record<string, () => React.ReactNode> = {
   ),
   amazon: () => (
     <svg viewBox="0 0 24 24" className="w-full h-full">
-      <path fill="#131921" d="M13.62 13.94c-1.78 0-3.32-.47-4.63-1.42l1.04-1.78c1.08.79 2.34 1.18 3.77 1.18 1.48 0 2.22-.52 2.22-1.55 0-.54-.26-.95-.78-1.23-.52-.28-1.4-.53-2.64-.75-1.57-.28-2.73-.78-3.48-1.5-.75-.72-1.12-1.67-1.12-2.85 0-1.4.54-2.51 1.62-3.33C10.68.91 12.16.5 14.04.5c1.47 0 2.8.35 3.99 1.05l-.99 1.79c-1-.59-2.07-.88-3.21-.88-1.32 0-1.98.5-1.98 1.5 0 .49.25.87.75 1.14.5.27 1.34.5 2.52.7 1.62.27 2.82.76 3.6 1.47.78.71 1.17 1.68 1.17 2.91 0 1.42-.56 2.55-1.68 3.39-1.12.84-2.65 1.26-4.59 1.26z"/>
-      <path fill="#FF9900" d="M21.93 18.06c-3.13 2.3-7.38 3.52-12.01 3.52-6.19 0-11.75-2.22-15.92-5.94-.33-.29-.04-.69.36-.46 4.54 2.63 10.02 4.22 15.65 4.22 4.14 0 8.24-.95 11.51-2.87.62-.36 1.15.54.41 1.53z"/>
-      <path fill="#FF9900" d="M22.95 16.53c-.39-.5-2.59-.36-3.86-.21-.38.05-.44-.28-.1-.52 2.2-1.57 5.81-1.12 6.16-.68.35.45-.09 4.13-2.18 5.83-.32.26-.63.12-.49-.22.47-1.14 1.5-3.35.47-4.2z"/>
+      {/* Authentic Amazon lowercase "a" in dark charcoal/black */}
+      <path fill="#131921" d="M6.61 11.8c0-1.005.247-1.863.743-2.577.495-.71 1.17-1.25 2.04-1.615.796-.335 1.756-.575 2.912-.72.39-.046 1.033-.103 1.92-.174v-.37c0-.93-.105-1.558-.3-1.875-.302-.43-.78-.65-1.44-.65h-.182c-.48.046-.896.196-1.246.46-.35.27-.575.63-.675 1.096-.06.3-.206.465-.435.51l-2.52-.315c-.248-.06-.372-.18-.372-.39 0-.046.007-.09.022-.15.247-1.29.855-2.25 1.82-2.88.976-.616 2.1-.975 3.39-1.05h.54c1.65 0 2.957.434 3.888 1.29.135.15.27.3.405.48.12.165.224.314.283.45.075.134.15.33.195.57.06.254.105.42.135.51.03.104.062.3.076.615.01.313.02.493.02.553v5.28c0 .376.06.72.165 1.036.105.313.21.54.315.674l.51.674c.09.136.136.256.136.36 0 .12-.06.226-.18.314-1.2 1.05-1.86 1.62-1.963 1.71-.165.135-.375.15-.63.045a6.062 6.062 0 01-.526-.496l-.31-.347a9.391 9.391 0 01-.317-.42l-.3-.435c-.81.886-1.603 1.44-2.4 1.665-.494.15-1.093.227-1.83.227-1.11 0-2.04-.343-2.76-1.034-.72-.69-1.08-1.665-1.08-2.94l-.05-.076zm3.753-.438c0 .566.14 1.02.425 1.364.285.34.675.512 1.155.512.045 0 .106-.007.195-.02.09-.016.134-.023.166-.023.614-.16 1.08-.553 1.424-1.178.165-.28.285-.58.36-.91.09-.32.12-.59.135-.8.015-.195.015-.54.015-1.005v-.54c-.84 0-1.484.06-1.92.18-1.275.36-1.92 1.17-1.92 2.43l-.035-.02z" />
+      {/* Iconic Amazon orange smile arrow */}
+      <path fill="#FF9900" d="M.045 18.02c.072-.116.187-.124.348-.022 3.636 2.11 7.594 3.166 11.87 3.166 2.852 0 5.668-.533 8.447-1.595l.315-.14c.138-.06.234-.1.293-.13.226-.088.39-.046.525.13.12.174.09.336-.12.48-.256.19-.6.41-1.006.654-1.244.743-2.64 1.316-4.185 1.726a17.617 17.617 0 01-10.951-.577 17.88 17.88 0 01-5.43-3.35c-.1-.074-.151-.15-.151-.22 0-.047.021-.09.051-.13z" />
+      <path fill="#FF9900" d="M19.53 18.82c.03-.06.075-.11.132-.17.362-.243.714-.41 1.05-.5a8.094 8.094 0 011.612-.24c.14-.012.28 0 .41.03.65.06 1.05.168 1.172.33.063.09.099.228.099.39v.15c0 .51-.149 1.11-.424 1.8-.278.69-.664 1.248-1.156 1.68-.073.06-.14.09-.197.09-.03 0-.06 0-.09-.012-.09-.044-.107-.12-.064-.24.54-1.26.806-2.143.806-2.64 0-.15-.03-.27-.087-.344-.145-.166-.55-.257-1.224-.257-.243 0-.533.016-.87.046-.363.045-.7.09-1 .135-.09 0-.148-.014-.18-.044-.03-.03-.036-.047-.02-.077 0-.017.006-.03.02-.063v-.06z" />
     </svg>
   ),
   aws: () => (
     <svg viewBox="0 0 24 24" className="w-full h-full">
-      <path fill="#232F3E" d="M6.5 8h2l1 4 1-4h2l-2 6.5H8.5L6.5 8z"/>
-      <path fill="#FF9900" d="M20 18c-2.5 1.8-6 2.8-10 2.8-5 0-9.5-1.8-13-4.8-.3-.2 0-.6.3-.4 3.7 2.1 8.2 3.4 12.7 3.4 3.3 0 6.6-.8 9.3-2.3.5-.3.9.4.7 1.3z"/>
+      <path fill="#232F3E" d="M6.763 10.036c0 .296.032.535.088.71.064.176.144.368.256.576.04.063.056.127.056.183 0 .08-.048.16-.152.24l-.503.335a.383.383 0 0 1-.208.072c-.08 0-.16-.04-.239-.112a2.47 2.47 0 0 1-.287-.375 6.18 6.18 0 0 1-.248-.471c-.622.734-1.405 1.101-2.347 1.101-.67 0-1.205-.191-1.596-.574-.391-.384-.59-.894-.59-1.533 0-.678.239-1.23.726-1.644.487-.415 1.133-.623 1.955-.623.272 0 .551.024.846.064.296.04.6.104.918.176v-.583c0-.607-.127-1.03-.375-1.277-.255-.248-.686-.367-1.3-.367-.28 0-.568.031-.863.103-.295.072-.583.16-.862.272a2.287 2.287 0 0 1-.28.104.488.488 0 0 1-.127.023c-.112 0-.168-.08-.168-.247v-.391c0-.128.016-.224.056-.28a.597.597 0 0 1 .224-.167c.279-.144.614-.264 1.005-.36a4.84 4.84 0 0 1 1.246-.151c.95 0 1.644.216 2.091.647.439.43.662 1.085.662 1.963v2.586zm-3.24 1.214c.263 0 .534-.048.822-.144.287-.096.543-.271.758-.51.128-.152.224-.32.272-.512.047-.191.08-.423.08-.694v-.335a6.66 6.66 0 0 0-.735-.136 6.02 6.02 0 0 0-.75-.048c-.535 0-.926.104-1.19.32-.263.215-.39.518-.39.917 0 .375.095.655.295.846.191.2.47.296.838.296zm6.41.862c-.144 0-.24-.024-.304-.08-.064-.048-.12-.16-.168-.311L7.586 5.55a1.398 1.398 0 0 1-.072-.32c0-.128.064-.2.191-.2h.783c.151 0 .255.025.31.08.065.048.113.16.16.312l1.342 5.284 1.245-5.284c.04-.16.088-.264.151-.312a.549.549 0 0 1 .32-.08h.638c.152 0 .256.025.32.08.063.048.12.16.151.312l1.261 5.348 1.381-5.348c.048-.16.104-.264.16-.312a.52.52 0 0 1 .311-.08h.743c.127 0 .2.065.2.2 0 .04-.009.08-.017.128a1.137 1.137 0 0 1-.056.2l-1.923 6.17c-.048.16-.104.263-.168.311a.51.51 0 0 1-.303.08h-.687c-.151 0-.255-.024-.32-.08-.063-.056-.119-.16-.15-.32l-1.238-5.148-1.23 5.14c-.04.16-.087.264-.15.32-.065.056-.177.08-.32.08zm10.256.215c-.415 0-.83-.048-1.229-.143-.399-.096-.71-.2-.918-.32-.128-.071-.215-.151-.247-.223a.563.563 0 0 1-.048-.224v-.407c0-.167.064-.247.183-.247.048 0 .096.008.144.024.048.016.12.048.2.08.271.12.566.215.878.279.319.064.63.096.95.096.502 0 .894-.088 1.165-.264a.86.86 0 0 0 .415-.758.777.777 0 0 0-.215-.559c-.144-.151-.416-.287-.807-.415l-1.157-.36c-.583-.183-1.014-.454-1.277-.813a1.902 1.902 0 0 1-.4-1.158c0-.335.073-.63.216-.886.144-.255.335-.479.575-.654.24-.184.51-.32.83-.415.32-.096.655-.136 1.006-.136.175 0 .359.008.535.032.183.024.35.056.518.088.16.04.312.08.455.127.144.048.256.096.336.144a.69.69 0 0 1 .24.2.43.43 0 0 1 .071.263v.375c0 .168-.064.256-.184.256a.83.83 0 0 1-.303-.096 3.652 3.652 0 0 0-1.532-.311c-.455 0-.815.071-1.062.223-.248.152-.375.383-.375.71 0 .224.08.416.24.567.159.152.454.304.877.44l1.134.358c.574.184.99.44 1.237.767.247.327.367.702.367 1.117 0 .343-.072.655-.207.926-.144.272-.336.511-.583.703-.248.2-.543.343-.886.447-.36.111-.734.167-1.142.167z" />
+      <path fill="#FF9900" d="M21.698 16.207c-2.626 1.94-6.442 2.969-9.722 2.969-4.598 0-8.74-1.7-11.87-4.526-.247-.223-.024-.527.272-.351 3.384 1.963 7.559 3.153 11.877 3.153 2.914 0 6.114-.607 9.06-1.852.439-.2.814.287.383.607z" />
+      <path fill="#FF9900" d="M22.792 14.961c-.336-.43-2.22-.207-3.074-.103-.255.032-.295-.192-.063-.36 1.5-1.053 3.967-.75 4.254-.399.287.36-.08 2.826-1.485 4.007-.215.184-.423.088-.327-.151.32-.79 1.03-2.57.695-2.994z" />
     </svg>
   ),
   apple: () => (
@@ -657,6 +660,250 @@ const COMPANY_INLINE_SVGS: Record<string, () => React.ReactNode> = {
       <text x="12" y="16" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="900" fontFamily="Georgia, serif">pwc</text>
     </svg>
   ),
+  chase: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <path fill="#117ACA" d="M0 15.415c0 .468.38.85.848.85h5.937V.575L0 7.72v7.695m15.416 8.582c.467 0 .846-.38.846-.849v-5.937H.573l7.146 6.785h7.697M24 8.587a.844.844 0 0 0-.847-.846h-5.938V23.43l6.782-7.148L24 8.586M8.585.003a.847.847 0 0 0-.847.847v5.94h15.688L16.282.003H8.585Z" />
+    </svg>
+  ),
+  morganstanley: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#002B49" />
+      <text x="12" y="11" textAnchor="middle" fill="#FFFFFF" fontSize="5" fontWeight="900" fontFamily="Georgia, serif">Morgan</text>
+      <text x="12" y="18" textAnchor="middle" fill="#FFFFFF" fontSize="5" fontWeight="900" fontFamily="Georgia, serif">Stanley</text>
+    </svg>
+  ),
+  deshaw: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#0F2D59" />
+      <text x="12" y="15.5" textAnchor="middle" fill="#FFFFFF" fontSize="6.5" fontWeight="900" fontFamily="Georgia, serif">D·E·S</text>
+    </svg>
+  ),
+  twosigma: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#14213D" />
+      <text x="9" y="16.5" textAnchor="middle" fill="#00D2D3" fontSize="11" fontWeight="900" fontFamily="system-ui, sans-serif">2</text>
+      <text x="16" y="16.5" textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="900" fontFamily="system-ui, sans-serif">Σ</text>
+    </svg>
+  ),
+  janestreet: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#003554" />
+      <text x="12" y="11" textAnchor="middle" fill="#00A8E8" fontSize="6" fontWeight="900" fontFamily="system-ui, sans-serif">Jane</text>
+      <text x="12" y="18" textAnchor="middle" fill="#FFFFFF" fontSize="6" fontWeight="900" fontFamily="system-ui, sans-serif">Street</text>
+    </svg>
+  ),
+  hrt: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#FF5000" />
+      <text x="12" y="16.5" textAnchor="middle" fill="#FFFFFF" fontSize="9" fontWeight="900" fontFamily="system-ui, sans-serif" letterSpacing="0.5">HRT</text>
+    </svg>
+  ),
+  optiver: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#001871" />
+      <text x="12" y="15.5" textAnchor="middle" fill="#00D4C5" fontSize="5.5" fontWeight="900" fontFamily="system-ui, sans-serif" letterSpacing="0.5">OPTIVER</text>
+    </svg>
+  ),
+  tesla: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#E82127" />
+      <path fill="#FFFFFF" d="M12 5.362l2.475-3.026s4.245.09 8.471 2.054c-1.082 1.636-3.231 2.438-3.231 2.438-.146-1.439-1.154-1.79-4.354-1.79L12 24 8.619 5.034c-3.18 0-4.188.354-4.335 1.792 0 0-2.146-.795-3.229-2.43C5.28 2.431 9.525 2.34 9.525 2.34L12 5.362l-.004.002H12v-.002zm0-3.899c3.415-.03 7.326.528 11.328 2.28.535-.968.672-1.395.672-1.395C19.625.612 15.528.015 12 0 8.472.015 4.375.61 0 2.349c0 0 .195.525.672 1.396C4.674 1.989 8.585 1.435 12 1.46v.003z" />
+    </svg>
+  ),
+  slack: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <path fill="#E01E5A" d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313z" />
+      <path fill="#36C5F0" d="M8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z" />
+      <path fill="#2EB67D" d="M18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312z" />
+      <path fill="#ECB22E" d="M15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
+    </svg>
+  ),
+  discord: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#5865F2" />
+      <path fill="#FFFFFF" d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
+    </svg>
+  ),
+  reddit: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#FF4500" />
+      <path fill="#FFFFFF" d="M12 0C5.373 0 0 5.373 0 12c0 3.314 1.343 6.314 3.515 8.485l-2.286 2.286C.775 23.225 1.097 24 1.738 24H12c6.627 0 12-5.373 12-12S18.627 0 12 0Zm4.388 3.199c1.104 0 1.999.895 1.999 1.999 0 1.105-.895 2-1.999 2-.946 0-1.739-.657-1.947-1.539v.002c-1.147.162-2.032 1.15-2.032 2.341v.007c1.776.067 3.4.567 4.686 1.363.473-.363 1.064-.58 1.707-.58 1.547 0 2.802 1.254 2.802 2.802 0 1.117-.655 2.081-1.601 2.531-.088 3.256-3.637 5.876-7.997 5.876-4.361 0-7.905-2.617-7.998-5.87-.954-.447-1.614-1.415-1.614-2.538 0-1.548 1.255-2.802 2.803-2.802.645 0 1.239.218 1.712.585 1.275-.79 2.881-1.291 4.64-1.365v-.01c0-1.663 1.263-3.034 2.88-3.207.188-.911.993-1.595 1.959-1.595Zm-8.085 8.376c-.784 0-1.459.78-1.506 1.797-.047 1.016.64 1.429 1.426 1.429.786 0 1.371-.369 1.418-1.385.047-1.017-.553-1.841-1.338-1.841Zm7.406 0c-.786 0-1.385.824-1.338 1.841.047 1.017.634 1.385 1.418 1.385.785 0 1.473-.413 1.426-1.429-.046-1.017-.721-1.797-1.506-1.797Zm-3.703 4.013c-.974 0-1.907.048-2.77.135-.147.015-.241.168-.183.305.483 1.154 1.622 1.964 2.953 1.964 1.33 0 2.47-.81 2.953-1.964.057-.137-.037-.29-.184-.305-.863-.087-1.795-.135-2.769-.135Z" />
+    </svg>
+  ),
+  pinterest: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#E60023" />
+      <path fill="#FFFFFF" d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z" />
+    </svg>
+  ),
+  tiktok: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#000000" />
+      <path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+    </svg>
+  ),
+  coinbase: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#0052FF" />
+      <path fill="#FFFFFF" d="M4.844 11.053c-.872 0-1.553.662-1.553 1.548s.664 1.542 1.553 1.542c.889 0 1.564-.667 1.564-1.547 0-.875-.664-1.543-1.564-1.543zm.006 2.452c-.497 0-.86-.386-.86-.904 0-.523.357-.909.854-.909.502 0 .866.392.866.91 0 .517-.364.903-.86.903zm1.749-1.778h.433v2.36h.693V11.11H6.599zm-5.052-.035c.364 0 .653.224.762.558h.734c-.133-.713-.722-1.197-1.49-1.197-.872 0-1.553.662-1.553 1.548 0 .887.664 1.543 1.553 1.543.75 0 1.351-.484 1.484-1.203h-.728a.78.78 0 01-.756.564c-.502 0-.855-.386-.855-.904 0-.523.347-.909.85-.909zm18.215.622l-.508-.075c-.242-.035-.415-.115-.415-.305 0-.207.225-.31.53-.31.336 0 .55.143.595.379h.67c-.075-.599-.537-.95-1.247-.95-.733 0-1.218.375-1.218.904 0 .506.317.8.958.892l.508.075c.249.034.387.132.387.316 0 .236-.242.334-.577.334-.41 0-.641-.167-.676-.42h-.681c.064.581.52.99 1.35.99.757 0 1.26-.346 1.26-.938 0-.53-.364-.806-.936-.892zM7.378 9.885a.429.429 0 00-.444.437c0 .254.19.438.444.438a.429.429 0 00.445-.438.429.429 0 00-.445-.437zm10.167 2.245c0-.645-.392-1.076-1.224-1.076-.785 0-1.224.397-1.31 1.007h.687c.035-.236.22-.432.612-.432.352 0 .525.155.525.345 0 .248-.317.311-.71.351-.531.058-1.19.242-1.19.933 0 .535.4.88 1.034.88.497 0 .809-.207.965-.535.023.293.242.483.548.483h.404v-.616h-.34v-1.34zm-.68.748c0 .397-.347.69-.769.69-.26 0-.48-.11-.48-.34 0-.293.353-.373.676-.408.312-.028.485-.097.572-.23zm-3.679-1.825c-.386 0-.71.162-.94.432V9.856h-.693v4.23h.68v-.391c.232.282.56.449.953.449.832 0 1.461-.656 1.461-1.543 0-.886-.64-1.548-1.46-1.548zm-.103 2.452c-.497 0-.86-.386-.86-.904 0-.517.369-.909.865-.909.503 0 .855.386.855.91 0 .517-.364.903-.86.903zm-3.187-2.452c-.45 0-.745.184-.919.443v-.385H8.29v2.975h.693v-1.617c0-.455.289-.777.716-.777.398 0 .647.282.647.69v1.704h.692v-1.755c0-.748-.386-1.278-1.142-1.278zM24 12.503c0-.851-.624-1.45-1.46-1.45-.89 0-1.542.668-1.542 1.548 0 .927.698 1.543 1.553 1.543.722 0 1.287-.426 1.432-1.03h-.722c-.104.264-.358.414-.699.414-.445 0-.78-.276-.854-.76H24v-.264zm-2.252-.23c.11-.414.422-.615.78-.615.392 0 .693.224.762.615Z" />
+    </svg>
+  ),
+  snowflake: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#29B5E8" />
+      <path fill="#FFFFFF" d="M7.602 12.4c.038-.151.076-.304.076-.456 0-.114-.038-.228-.038-.342-.114-.343-.304-.647-.646-.838l-4.87-2.777c-.685-.38-1.56-.152-1.94.533-.381.685-.153 1.56.532 1.94l2.701 1.56-2.701 1.56c-.685.38-.913 1.256-.533 1.94.38.685 1.256.914 1.94.533l4.832-2.777c.343-.267.571-.533.647-.876zm1.332 2.626c-.266-.038-.57.038-.837.19l-4.832 2.777c-.685.38-.913 1.256-.532 1.94.38.686 1.255.914 1.94.533l2.701-1.56v3.12c0 .8.647 1.408 1.446 1.408.799 0 1.407-.647 1.407-1.408v-5.592c0-.761-.57-1.37-1.293-1.408zm4.946-6.088c.266.038.57-.038.837-.19l4.832-2.777c.685-.38.913-1.256.532-1.94-.38-.686-1.255-.914-1.94-.533l-2.701 1.56V1.975c0-.799-.647-1.408-1.446-1.408-.799 0-1.446.609-1.446 1.408V7.53c0 .76.609 1.37 1.332 1.407zM3.265 5.97l4.832 2.777c.266.152.533.19.837.19.723-.038 1.331-.684 1.331-1.407V1.975c0-.799-.646-1.408-1.407-1.408-.799 0-1.446.647-1.446 1.408v3.12l-2.701-1.56c-.685-.38-1.56-.152-1.94.533-.419.646-.19 1.521.494 1.902zm9.093 6.011a.412.412 0 00-.114-.266l-.57-.571a.346.346 0 00-.267-.114.412.412 0 00-.266.114l-.571.57a.411.411 0 00-.114.267c0 .076.038.19.114.267l.57.57a.345.345 0 00.267.114c.076 0 .19-.038.266-.114l.571-.57a.412.412 0 00.114-.267zm1.598.533L11.94 14.53c-.039.038-.153.114-.229.114h-.608a.411.411 0 01-.267-.114L8.82 12.514a.408.408 0 01-.076-.229v-.608c0-.076.038-.19.114-.267l2.016-2.016a.41.41 0 01.267-.114h.608a.41.41 0 01.267.114l2.016 2.016a.347.347 0 01.114.267v.608c-.076.077-.114.19-.19.229zm5.593 5.44l-4.832-2.777c-.266-.152-.57-.19-.837-.152-.723.038-1.332.684-1.332 1.408v5.554c0 .8.647 1.408 1.408 1.408.799 0 1.446-.647 1.446-1.408v-3.12l2.7 1.56c.686.38 1.561.152 1.941-.533.419-.646.19-1.521-.494-1.94zm2.549-7.533l-2.701 1.56 2.7 1.56c.686.38.914 1.256.533 1.94-.38.685-1.255.913-1.94.533l-4.832-2.778a1.644 1.644 0 01-.647-.798c-.037-.153-.076-.305-.076-.457 0-.114.039-.228.039-.342.114-.343.342-.647.646-.837l4.832-2.778c.685-.38 1.56-.152 1.94.533.457.609.19 1.484-.494 1.864" />
+    </svg>
+  ),
+  databricks: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#FF3621" />
+      <path fill="#FFFFFF" d="M.95 14.184L12 20.403l9.919-5.55v2.21L12 22.662l-10.484-5.96-.565.308v.77L12 24l11.05-6.218v-4.317l-.515-.309L12 19.118l-9.867-5.653v-2.21L12 16.805l11.05-6.218V6.32l-.515-.308L12 11.974 2.647 6.681 12 1.388l7.76 4.368.668-.411v-.566L12 0 .95 6.27v.72L12 13.207l9.919-5.55v2.26L12 15.52 1.516 9.56l-.565.308Z" />
+    </svg>
+  ),
+  palantir: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#101113" />
+      <path fill="#FFFFFF" d="M20.147 18L12 21.178 3.853 18 2.5 20.343 12 24l9.5-3.657L20.147 18zM12 0a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19zm0 16.078a6.568 6.568 0 1 1 0-13.136 6.568 6.568 0 0 1 0 13.136z" />
+    </svg>
+  ),
+  amd: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#ED1C24" />
+      <path fill="#FFFFFF" d="M18.324 9.137l1.559 1.56h2.556v2.557L24 14.814V9.137zM2 9.52l-2 4.96h1.309l.37-.982H3.9l.408.982h1.338L3.432 9.52zm4.209 0v4.955h1.238v-3.092l1.338 1.562h.188l1.338-1.556v3.091h1.238V9.52H10.47l-1.592 1.845L7.287 9.52zm6.283 0v4.96h2.057c1.979 0 2.88-1.046 2.88-2.472 0-1.36-.937-2.488-2.747-2.488zm1.237.91h.792c1.17 0 1.63.711 1.63 1.57 0 .728-.372 1.572-1.616 1.572h-.806zm-10.985.273l.791 1.932H2.008zm17.137.307l-1.604 1.603v2.25h2.246l1.604-1.607h-2.246z" />
+    </svg>
+  ),
+  qualcomm: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#3253DC" />
+      <path fill="#FFFFFF" d="M12 0C6.22933 0 1.5761 4.48645 1.5761 10.47394c0 6.00417 4.65323 10.47394 10.4239 10.47394.98402 0 1.93468-.13343 2.8353-.3836l1.13412 2.9187c.11675.31688.35025.51702.7672.51702h1.80125c.43364 0 .75052-.28353.55038-.83391l-1.46768-3.81932c2.88534-1.81793 4.80333-5.03683 4.80333-8.8895C22.4239 4.48644 17.77067 0 12 0m4.53648 16.5615l-1.31758-3.41904c-.11675-.28353-.35024-.55038-.85059-.55038h-1.71786c-.43363 0-.7672.28353-.56706.83391l1.73454 4.48645c-.56706.1501-1.18416.21682-1.81793.21682-4.2196 0-7.22168-3.31897-7.22168-7.65532C4.77832 6.1376 7.7804 2.81862 12 2.81862s7.22168 3.31898 7.22168 7.65532c0 2.5351-1.01737 4.70327-2.6852 6.08756" />
+    </svg>
+  ),
+  dropbox: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#0061FF" />
+      <path fill="#FFFFFF" d="M6 1.807L0 5.629l6 3.822 6.001-3.822L6 1.807zM18 1.807l-6 3.822 6 3.822 6-3.822-6-3.822zM0 13.274l6 3.822 6.001-3.822L6 9.452l-6 3.822zM18 9.452l-6 3.822 6 3.822 6-3.822-6-3.822zM6 18.371l6.001 3.822 6-3.822-6-3.822L6 18.371z" />
+    </svg>
+  ),
+  zoom: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#0B5CFF" />
+      <path fill="#FFFFFF" d="M5.033 14.649H.743a.74.74 0 0 1-.686-.458.74.74 0 0 1 .16-.808L3.19 10.41H1.06A1.06 1.06 0 0 1 0 9.35h3.957c.301 0 .57.18.686.458a.74.74 0 0 1-.161.808L1.51 13.59h2.464c.585 0 1.06.475 1.06 1.06zM24 11.338c0-1.14-.927-2.066-2.066-2.066-.61 0-1.158.265-1.537.686a2.061 2.061 0 0 0-1.536-.686c-1.14 0-2.066.926-2.066 2.066v3.311a1.06 1.06 0 0 0 1.06-1.06v-2.251a1.004 1.004 0 0 1 2.013 0v2.251c0 .586.474 1.06 1.06 1.06v-3.311a1.004 1.004 0 0 1 2.012 0v2.251c0 .586.475 1.06 1.06 1.06zM16.265 12a2.728 2.728 0 1 1-5.457 0 2.728 2.728 0 0 1 5.457 0zm-1.06 0a1.669 1.669 0 1 0-3.338 0 1.669 1.669 0 0 0 3.338 0zm-4.82 0a2.728 2.728 0 1 1-5.458 0 2.728 2.728 0 0 1 5.457 0zm-1.06 0a1.669 1.669 0 1 0-3.338 0 1.669 1.669 0 0 0 3.338 0z" />
+    </svg>
+  ),
+  phonepe: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#5F259F" />
+      <text x="12" y="17" textAnchor="middle" fill="#FFFFFF" fontSize="13" fontWeight="900" fontFamily="system-ui, sans-serif">पे</text>
+    </svg>
+  ),
+  cred: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#1C1C1E" />
+      <text x="12" y="16" textAnchor="middle" fill="#FFFFFF" fontSize="7" fontWeight="900" fontFamily="system-ui, sans-serif" letterSpacing="0.5">CRED</text>
+    </svg>
+  ),
+  zepto: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#540075" />
+      <text x="12" y="16.5" textAnchor="middle" fill="#FF3269" fontSize="13" fontStyle="italic" fontWeight="900" fontFamily="system-ui, sans-serif">Z</text>
+    </svg>
+  ),
+  blinkit: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#F8CB46" />
+      <text x="12" y="16" textAnchor="middle" fill="#0C831F" fontSize="7" fontWeight="900" fontFamily="system-ui, sans-serif">blink</text>
+    </svg>
+  ),
+  ola: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#000000" />
+      <text x="12" y="16" textAnchor="middle" fill="#BAEE00" fontSize="8" fontWeight="900" fontFamily="system-ui, sans-serif">OLA</text>
+    </svg>
+  ),
+  meesho: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#9C175A" />
+      <text x="12" y="16" textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="900" fontFamily="system-ui, sans-serif">m</text>
+    </svg>
+  ),
+  makemytrip: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#E41E26" />
+      <text x="12" y="16" textAnchor="middle" fill="#FFFFFF" fontSize="7.5" fontWeight="900" fontFamily="system-ui, sans-serif">mmt</text>
+    </svg>
+  ),
+  servicenow: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#293E40" />
+      <circle cx="12" cy="12" r="5" fill="#81B5A1" />
+    </svg>
+  ),
+  intuit: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#0D64BA" />
+      <text x="12" y="15.5" textAnchor="middle" fill="#FFFFFF" fontSize="7" fontWeight="900" fontFamily="system-ui, sans-serif">Intuit</text>
+    </svg>
+  ),
+  hcl: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#005A9C" />
+      <text x="12" y="16" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="900" fontFamily="system-ui, sans-serif">HCL</text>
+    </svg>
+  ),
+  hcltech: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#005A9C" />
+      <text x="12" y="16" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="900" fontFamily="system-ui, sans-serif">HCL</text>
+    </svg>
+  ),
+  techmahindra: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#E31837" />
+      <text x="12" y="16" textAnchor="middle" fill="#FFFFFF" fontSize="6.5" fontWeight="900" fontFamily="system-ui, sans-serif">TechM</text>
+    </svg>
+  ),
+  snapchat: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#FFFC00" />
+      <path fill="#000000" d="M12.028 3.5c-2.45 0-4.04 1.76-4.04 3.75 0 .54.12 1.07.24 1.57-.46.06-.9.25-1.28.56-.2.17-.18.39.06.49.52.22 1.09.28 1.66.19.14.77.47 1 2.05-.72.2-1.5.5-2.19.9-.22.12-.22.34-.02.48.59.43 1.25.75 1.96.95-.08.41-.09.84-.04 1.27.05.42.34.72.76.77.72.09 1.46.04 2.18-.15.72.19 1.46.24 2.18.15.42-.05.71-.35.76-.77.05-.43.04-.86-.04-1.27.71-.2 1.37-.52 1.96-.95.2-.14.2-.36-.02-.48-.69-.4-1.47-.7-2.19-.9.53-.57.86-1.28 1-2.05.57.09 1.14.03 1.66-.19.24-.1.26-.32.06-.49-.38-.31-.82-.5-1.28-.56.12-.5.24-1.03.24-1.57 0-1.99-1.59-3.75-4.04-3.75z"/>
+    </svg>
+  ),
+  snap: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#FFFC00" />
+      <path fill="#000000" d="M12.028 3.5c-2.45 0-4.04 1.76-4.04 3.75 0 .54.12 1.07.24 1.57-.46.06-.9.25-1.28.56-.2.17-.18.39.06.49.52.22 1.09.28 1.66.19.14.77.47 1 2.05-.72.2-1.5.5-2.19.9-.22.12-.22.34-.02.48.59.43 1.25.75 1.96.95-.08.41-.09.84-.04 1.27.05.42.34.72.76.77.72.09 1.46.04 2.18-.15.72.19 1.46.24 2.18.15.42-.05.71-.35.76-.77.05-.43.04-.86-.04-1.27.71-.2 1.37-.52 1.96-.95.2-.14.2-.36-.02-.48-.69-.4-1.47-.7-2.19-.9.53-.57.86-1.28 1-2.05.57.09 1.14.03 1.66-.19.24-.1.26-.32.06-.49-.38-.31-.82-.5-1.28-.56.12-.5.24-1.03.24-1.57 0-1.99-1.59-3.75-4.04-3.75z"/>
+    </svg>
+  ),
+  lyft: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#FF00BF" />
+      <text x="12" y="16" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="900" fontFamily="system-ui, sans-serif">lyft</text>
+    </svg>
+  ),
+  cloudflare: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#F38020" />
+      <path fill="#FFFFFF" d="M18.5 16.5h-13a3.5 3.5 0 0 1-.3-6.98A5.5 5.5 0 0 1 15.5 7a5.5 5.5 0 0 1 4.3 2.1 3.5 3.5 0 0 1-1.3 7.4z"/>
+    </svg>
+  ),
+  crowdstrike: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#E60000" />
+      <path fill="#FFFFFF" d="M12 4l8 12H4l8-12z" opacity="0.9"/>
+    </svg>
+  ),
+  datadog: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#632CA6" />
+      <text x="12" y="15.5" textAnchor="middle" fill="#FFFFFF" fontSize="7" fontWeight="900" fontFamily="system-ui, sans-serif">DD</text>
+    </svg>
+  ),
+  splunk: () => (
+    <svg viewBox="0 0 24 24" className="w-full h-full">
+      <rect width="24" height="24" rx="4" fill="#000000" />
+      <text x="12" y="15" textAnchor="middle" fill="#EB1C24" fontSize="12" fontWeight="900" fontFamily="Courier, monospace">&gt;</text>
+    </svg>
+  ),
 };
 
 const BRAND_SVGS: Record<string, string> = {
@@ -731,11 +978,198 @@ interface CompanyLogoProps {
   title?: string;
 }
 
+const COMPANY_ALIASES: Record<string, string> = {
+  // Amazon variations
+  amazon: "amazon",
+  "amazon.com": "amazon",
+  "amazon inc": "amazon",
+  "amazon com": "amazon",
+  "amazon web services": "aws",
+  "amazon aws": "aws",
+  aws: "aws",
+
+  // Google variations
+  google: "google",
+  "google llc": "google",
+  "google inc": "google",
+  alphabet: "google",
+  "alphabet inc": "google",
+
+  // Microsoft
+  microsoft: "microsoft",
+  "microsoft corporation": "microsoft",
+  "microsoft corp": "microsoft",
+  msft: "microsoft",
+
+  // Meta / Facebook
+  meta: "meta",
+  "meta platforms": "meta",
+  "meta platforms inc": "meta",
+  facebook: "facebook",
+  "facebook inc": "facebook",
+  fb: "facebook",
+
+  // Apple
+  apple: "apple",
+  "apple inc": "apple",
+  aapl: "apple",
+
+  // Bloomberg
+  bloomberg: "bloomberg",
+  "bloomberg lp": "bloomberg",
+  "bloomberg l.p.": "bloomberg",
+
+  // Netflix
+  netflix: "netflix",
+  "netflix inc": "netflix",
+
+  // Uber
+  uber: "uber",
+  "uber technologies": "uber",
+
+  // Adobe
+  adobe: "adobe",
+  "adobe inc": "adobe",
+  "adobe systems": "adobe",
+
+  // Twitter / X
+  twitter: "twitter",
+  "twitter inc": "twitter",
+  x: "twitter",
+  "x corp": "twitter",
+
+  // Goldman Sachs
+  goldmansachs: "goldmansachs",
+  "goldman sachs": "goldmansachs",
+  goldman: "goldmansachs",
+
+  // Morgan Stanley
+  morganstanley: "morganstanley",
+  "morgan stanley": "morganstanley",
+
+  // JPMorgan
+  jpmorgan: "chase",
+  "jp morgan": "chase",
+  "jpmorgan chase": "chase",
+  "jpmorgan chase & co": "chase",
+  chase: "chase",
+
+  // Palo Alto
+  paloaltonetworks: "paloalto",
+  "palo alto networks": "paloalto",
+  "palo alto": "paloalto",
+  paloalto: "paloalto",
+
+  // Citadel
+  citadel: "citadel",
+  "citadel securities": "citadel",
+  "citadel llc": "citadel",
+
+  // D. E. Shaw
+  deshaw: "deshaw",
+  "d. e. shaw": "deshaw",
+  "d.e. shaw": "deshaw",
+  "de shaw": "deshaw",
+
+  // Two Sigma
+  twosigma: "twosigma",
+  "two sigma": "twosigma",
+  "two sigma investments": "twosigma",
+
+  // Jane Street
+  janestreet: "janestreet",
+  "jane street": "janestreet",
+  "jane street capital": "janestreet",
+
+  // Hudson River Trading
+  hrt: "hrt",
+  "hudson river trading": "hrt",
+
+  // Optiver
+  optiver: "optiver",
+
+  // ByteDance / TikTok
+  bytedance: "bytedance",
+  "bytedance ltd": "bytedance",
+  tiktok: "tiktok",
+
+  // Cisco
+  cisco: "cisco",
+  "cisco systems": "cisco",
+
+  // Oracle
+  oracle: "oracle",
+  "oracle corporation": "oracle",
+
+  // Walmart
+  walmart: "walmart",
+  "walmart labs": "walmart",
+  "walmart global tech": "walmart",
+
+  // TCS
+  tcs: "tcs",
+  "tata consultancy services": "tcs",
+  "tata consultancy": "tcs",
+
+  // Infosys
+  infosys: "infosys",
+  "infosys limited": "infosys",
+
+  // Wipro
+  wipro: "wipro",
+  "wipro technologies": "wipro",
+
+  // Cognizant
+  cognizant: "cognizant",
+  "cognizant technology solutions": "cognizant",
+  cts: "cognizant",
+
+  // Accenture
+  accenture: "accenture",
+
+  // Capgemini
+  capgemini: "capgemini",
+
+  // HCL
+  hcl: "hcl",
+  hcltech: "hcl",
+  "hcl technologies": "hcl",
+
+  // Tech Mahindra
+  techmahindra: "techmahindra",
+  "tech mahindra": "techmahindra",
+
+  // Indian Startups
+  flipkart: "flipkart",
+  swiggy: "swiggy",
+  zomato: "zomato",
+  paytm: "paytm",
+  phonepe: "phonepe",
+  "phone pe": "phonepe",
+  razorpay: "razorpay",
+  cred: "cred",
+  zepto: "zepto",
+  blinkit: "blinkit",
+  grofers: "blinkit",
+  ola: "ola",
+  "ola cabs": "ola",
+  meesho: "meesho",
+  makemytrip: "makemytrip",
+  "make my trip": "makemytrip",
+};
+
 export function resolveCompanyInfo(rawName?: string, rawId?: string): { key: string; domain: string } {
   const name = (rawName || "").trim();
   const idStr = (rawId || "").replace(/^c-/, "").trim();
 
-  // 0. Check if name itself contains a domain pattern (e.g. Booking.com, zepto.gr, cred.club)
+  // 0. Check alias map first
+  const normalizedRaw = name.toLowerCase().replace(/['"\.]/g, "").trim();
+  if (COMPANY_ALIASES[normalizedRaw]) {
+    const aliased = COMPANY_ALIASES[normalizedRaw];
+    return { key: aliased, domain: COMPANY_DOMAINS[aliased] || `${aliased}.com` };
+  }
+
+  // 0b. Check if name itself contains a domain pattern (e.g. Booking.com, zepto.gr, cred.club)
   const domainMatch = name.toLowerCase().match(/([a-z0-9-]+\.(com|in|org|io|ai|net|tech|co|app|club|gr|live|so|dev))/i);
   if (domainMatch) {
     return { key: domainMatch[1].replace(/[^a-z0-9]/g, ""), domain: domainMatch[1] };
@@ -743,12 +1177,23 @@ export function resolveCompanyInfo(rawName?: string, rawId?: string): { key: str
 
   // 1. Direct ID match
   const idKey = idStr.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (idKey && COMPANY_ALIASES[idKey]) {
+    const aliased = COMPANY_ALIASES[idKey];
+    return { key: aliased, domain: COMPANY_DOMAINS[aliased] || `${aliased}.com` };
+  }
   if (idKey && COMPANY_DOMAINS[idKey]) {
     return { key: idKey, domain: COMPANY_DOMAINS[idKey] };
   }
 
   // 2. Direct name match
   const nameKey = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (nameKey && COMPANY_ALIASES[nameKey]) {
+    const aliased = COMPANY_ALIASES[nameKey];
+    return { key: aliased, domain: COMPANY_DOMAINS[aliased] || `${aliased}.com` };
+  }
+  if (nameKey && COMPANY_INLINE_SVGS[nameKey]) {
+    return { key: nameKey, domain: COMPANY_DOMAINS[nameKey] || `${nameKey}.com` };
+  }
   if (nameKey && COMPANY_DOMAINS[nameKey]) {
     return { key: nameKey, domain: COMPANY_DOMAINS[nameKey] };
   }
@@ -759,19 +1204,18 @@ export function resolveCompanyInfo(rawName?: string, rawId?: string): { key: str
     .trim();
   
   const strippedKey = stripped.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (strippedKey && COMPANY_ALIASES[strippedKey]) {
+    const aliased = COMPANY_ALIASES[strippedKey];
+    return { key: aliased, domain: COMPANY_DOMAINS[aliased] || `${aliased}.com` };
+  }
+  if (strippedKey && COMPANY_INLINE_SVGS[strippedKey]) {
+    return { key: strippedKey, domain: COMPANY_DOMAINS[strippedKey] || `${strippedKey}.com` };
+  }
   if (strippedKey && COMPANY_DOMAINS[strippedKey]) {
     return { key: strippedKey, domain: COMPANY_DOMAINS[strippedKey] };
   }
 
-  // 4. Check if strippedKey or nameKey matches any inline SVG directly
-  if (strippedKey && COMPANY_INLINE_SVGS[strippedKey]) {
-    return { key: strippedKey, domain: `${strippedKey}.com` };
-  }
-  if (nameKey && COMPANY_INLINE_SVGS[nameKey]) {
-    return { key: nameKey, domain: `${nameKey}.com` };
-  }
-
-  // 5. Partial dictionary lookup
+  // 4. Partial dictionary lookup
   for (const k of Object.keys(COMPANY_DOMAINS)) {
     if (strippedKey && k.length >= 3 && (strippedKey === k || strippedKey.startsWith(k) || k.startsWith(strippedKey))) {
       return { key: k, domain: COMPANY_DOMAINS[k] };
@@ -847,21 +1291,27 @@ export default function CompanyLogo({
   const containerBorder = isDark ? `1px solid ${color}50` : `1px solid rgba(0, 0, 0, 0.1)`;
   const containerShadow = isDark ? `0 4px 16px rgba(0, 0, 0, 0.35)` : `0 2px 10px rgba(0, 0, 0, 0.06)`;
 
+  const isRound = className.includes("rounded-full");
+  const roundedClass = isRound ? "rounded-full" : (className.includes("rounded-") ? "" : "rounded-xl");
+  const padVal = size <= 22 ? 2 : (size <= 28 ? 3 : 4);
+  const innerSize = Math.max(12, size - padVal * 2);
+
   // 0. Zero-latency vector inline SVG (instant render, offline, never blocked by CORS/hotlinking)
   if (!explicitLogo && COMPANY_INLINE_SVGS[key]) {
     return (
       <div
-        className={`rounded-xl flex items-center justify-center p-1.5 transition-all shrink-0 hover:scale-105 select-none ${className}`}
+        className={`${roundedClass} flex items-center justify-center transition-all shrink-0 hover:scale-105 select-none ${className}`}
         style={{
           width: size,
           height: size,
+          padding: padVal,
           background: containerBg,
           border: containerBorder,
           boxShadow: containerShadow,
         }}
         title={displayTitle}
       >
-        <div style={{ width: size - 10, height: size - 10 }} className="flex items-center justify-center shrink-0">
+        <div style={{ width: innerSize, height: innerSize }} className="flex items-center justify-center shrink-0">
           {COMPANY_INLINE_SVGS[key]()}
         </div>
       </div>
@@ -924,10 +1374,11 @@ export default function CompanyLogo({
   if (currentSrc && !imgError) {
     return (
       <div
-        className={`rounded-xl flex items-center justify-center p-1.5 transition-all shrink-0 hover:scale-105 ${className}`}
+        className={`${roundedClass} flex items-center justify-center transition-all shrink-0 hover:scale-105 ${className}`}
         style={{
           width: size,
           height: size,
+          padding: padVal,
           background: containerBg,
           border: containerBorder,
           boxShadow: containerShadow,
@@ -938,8 +1389,8 @@ export default function CompanyLogo({
         <img
           src={currentSrc}
           alt={`${name} logo`}
-          width={size - 10}
-          height={size - 10}
+          width={innerSize}
+          height={innerSize}
           className="max-w-full max-h-full object-contain filter drop-shadow-sm"
           referrerPolicy="no-referrer"
           onError={handleImageError}
@@ -952,10 +1403,11 @@ export default function CompanyLogo({
   if (key === "tcs") {
     return (
       <div
-        className={`rounded-xl flex items-center justify-center p-1 shrink-0 transition-transform hover:scale-105 ${className}`}
+        className={`${roundedClass} flex items-center justify-center shrink-0 transition-transform hover:scale-105 ${className}`}
         style={{
           width: size,
           height: size,
+          padding: padVal,
           background: containerBg,
           border: containerBorder,
           boxShadow: containerShadow,
@@ -983,7 +1435,7 @@ export default function CompanyLogo({
 
   return (
     <div
-      className={`rounded-xl flex items-center justify-center font-black shrink-0 transition-transform hover:scale-105 select-none ${className}`}
+      className={`${roundedClass} flex items-center justify-center font-black shrink-0 transition-transform hover:scale-105 select-none ${className}`}
       style={{
         width: size,
         height: size,

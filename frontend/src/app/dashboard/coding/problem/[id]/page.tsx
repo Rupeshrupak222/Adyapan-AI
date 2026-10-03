@@ -2425,7 +2425,7 @@ Answer the student's question based on the coding problem. Provide hints or feed
                         key={idx}
                         companyName={comp}
                         size={22}
-                        className="border border-white/20 shadow-xs hover:z-10 hover:scale-115 transition-transform cursor-pointer"
+                        className="rounded-full border border-white/20 shadow-xs hover:z-10 hover:scale-115 transition-transform cursor-pointer"
                         title={comp}
                       />
                     ))}
@@ -2583,7 +2583,7 @@ Answer the student's question based on the coding problem. Provide hints or feed
                                 <CompanyLogo
                                   companyName={company}
                                   size={28}
-                                  className="cursor-pointer border border-white/10 dark:border-white/10 shadow-sm hover:border-amber-400/50 hover:scale-110 transition-all duration-200"
+                                  className="rounded-full cursor-pointer border border-white/10 dark:border-white/10 shadow-sm hover:border-amber-400/50 hover:scale-110 transition-all duration-200"
                                   title={company}
                                 />
                                 <div className="pointer-events-none absolute -bottom-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-150 z-30 px-2 py-0.5 rounded-md bg-slate-900/95 text-[10px] font-medium text-amber-200 shadow-xl border border-amber-500/30 whitespace-nowrap">

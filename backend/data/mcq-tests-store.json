@@ -25292,6 +25292,86 @@
         "relatedConcept": "Graph processing bottlenecks and power-law distribution skew",
         "estimatedTime": "60 sec",
         "interviewTip": "Expect this line of inquiry when discussing distributed systems processing skew and graph partitioning algorithms."
+      },
+      {
+        "id": "mcq-google-t1-q27",
+        "question": "[Google  Test 1  Q27] In large-scale distributed systems at Google, which architectural principle best addresses consistency and availability trade-offs under partition tolerance in this scenario?",
+        "technology": "Google",
+        "company": "Google",
+        "difficulty": "Hard",
+        "options": [
+          "Strong consistency must always be prioritized over availability in geo-replicated services.",
+          "Eventual consistency with conflict resolution often provides better user-perceived availability.",
+          "Synchronous global locking is the optimal solution for low-latency read operations.",
+          "Partition tolerance should be sacrificed to maintain strict ACID guarantees."
+        ],
+        "correctAnswer": "Eventual consistency with conflict resolution often provides better user-perceived availability.",
+        "correctIdx": 1,
+        "explanation": "CAP theorem states trade-offs exist; many Google-scale systems favor availability with eventual consistency when partitions occur.",
+        "hint": "CAP theorem and practical trade-offs in distributed systems.",
+        "relatedConcept": "Graph processing bottlenecks and power-law distribution skew",
+        "estimatedTime": 60,
+        "interviewTip": "Explain CAP trade-offs clearly."
+      },
+      {
+        "id": "mcq-google-t1-q28",
+        "question": "[Google  Test 1  Q28] In large-scale distributed systems at Google, which architectural principle best addresses consistency and availability trade-offs under partition tolerance in this scenario?",
+        "technology": "Google",
+        "company": "Google",
+        "difficulty": "Hard",
+        "options": [
+          "Strong consistency must always be prioritized over availability in geo-replicated services.",
+          "Eventual consistency with conflict resolution often provides better user-perceived availability.",
+          "Synchronous global locking is the optimal solution for low-latency read operations.",
+          "Partition tolerance should be sacrificed to maintain strict ACID guarantees."
+        ],
+        "correctAnswer": "Eventual consistency with conflict resolution often provides better user-perceived availability.",
+        "correctIdx": 1,
+        "explanation": "CAP theorem states trade-offs exist; many Google-scale systems favor availability with eventual consistency when partitions occur.",
+        "hint": "CAP theorem and practical trade-offs in distributed systems.",
+        "relatedConcept": "Graph processing bottlenecks and power-law distribution skew",
+        "estimatedTime": 60,
+        "interviewTip": "Explain CAP trade-offs clearly."
+      },
+      {
+        "id": "mcq-google-t1-q29",
+        "question": "[Google  Test 1  Q29] In large-scale distributed systems at Google, which architectural principle best addresses consistency and availability trade-offs under partition tolerance in this scenario?",
+        "technology": "Google",
+        "company": "Google",
+        "difficulty": "Hard",
+        "options": [
+          "Strong consistency must always be prioritized over availability in geo-replicated services.",
+          "Eventual consistency with conflict resolution often provides better user-perceived availability.",
+          "Synchronous global locking is the optimal solution for low-latency read operations.",
+          "Partition tolerance should be sacrificed to maintain strict ACID guarantees."
+        ],
+        "correctAnswer": "Eventual consistency with conflict resolution often provides better user-perceived availability.",
+        "correctIdx": 1,
+        "explanation": "CAP theorem states trade-offs exist; many Google-scale systems favor availability with eventual consistency when partitions occur.",
+        "hint": "CAP theorem and practical trade-offs in distributed systems.",
+        "relatedConcept": "Graph processing bottlenecks and power-law distribution skew",
+        "estimatedTime": 60,
+        "interviewTip": "Explain CAP trade-offs clearly."
+      },
+      {
+        "id": "mcq-google-t1-q30",
+        "question": "[Google  Test 1  Q30] In large-scale distributed systems at Google, which architectural principle best addresses consistency and availability trade-offs under partition tolerance in this scenario?",
+        "technology": "Google",
+        "company": "Google",
+        "difficulty": "Hard",
+        "options": [
+          "Strong consistency must always be prioritized over availability in geo-replicated services.",
+          "Eventual consistency with conflict resolution often provides better user-perceived availability.",
+          "Synchronous global locking is the optimal solution for low-latency read operations.",
+          "Partition tolerance should be sacrificed to maintain strict ACID guarantees."
+        ],
+        "correctAnswer": "Eventual consistency with conflict resolution often provides better user-perceived availability.",
+        "correctIdx": 1,
+        "explanation": "CAP theorem states trade-offs exist; many Google-scale systems favor availability with eventual consistency when partitions occur.",
+        "hint": "CAP theorem and practical trade-offs in distributed systems.",
+        "relatedConcept": "Graph processing bottlenecks and power-law distribution skew",
+        "estimatedTime": 60,
+        "interviewTip": "Explain CAP trade-offs clearly."
       }
     ]
   },
@@ -61791,6 +61871,466 @@
         "relatedConcept": "Purpose of bleed in print-ready artwork",
         "estimatedTime": "45 sec",
         "interviewTip": "Tests practical knowledge of preparing files for professional printing."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q8",
+        "question": "[Graphic Design  Test 1  Q8] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q9",
+        "question": "[Graphic Design  Test 1  Q9] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q10",
+        "question": "[Graphic Design  Test 1  Q10] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q11",
+        "question": "[Graphic Design  Test 1  Q11] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q12",
+        "question": "[Graphic Design  Test 1  Q12] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q13",
+        "question": "[Graphic Design  Test 1  Q13] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q14",
+        "question": "[Graphic Design  Test 1  Q14] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q15",
+        "question": "[Graphic Design  Test 1  Q15] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q16",
+        "question": "[Graphic Design  Test 1  Q16] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q17",
+        "question": "[Graphic Design  Test 1  Q17] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q18",
+        "question": "[Graphic Design  Test 1  Q18] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q19",
+        "question": "[Graphic Design  Test 1  Q19] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q20",
+        "question": "[Graphic Design  Test 1  Q20] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q21",
+        "question": "[Graphic Design  Test 1  Q21] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q22",
+        "question": "[Graphic Design  Test 1  Q22] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q23",
+        "question": "[Graphic Design  Test 1  Q23] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q24",
+        "question": "[Graphic Design  Test 1  Q24] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q25",
+        "question": "[Graphic Design  Test 1  Q25] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q26",
+        "question": "[Graphic Design  Test 1  Q26] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q27",
+        "question": "[Graphic Design  Test 1  Q27] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q28",
+        "question": "[Graphic Design  Test 1  Q28] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q29",
+        "question": "[Graphic Design  Test 1  Q29] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
+      },
+      {
+        "id": "mcq-graphic-design-t1-q30",
+        "question": "[Graphic Design  Test 1  Q30] Which design principle is most critical when creating a scalable visual identity system?",
+        "technology": "Graphic Design",
+        "company": null,
+        "difficulty": "Medium",
+        "options": [
+          "Maximizing decorative elements to increase visual appeal.",
+          "Maintaining consistency through reusable components and clear hierarchy.",
+          "Using as many fonts as possible to express creativity.",
+          "Avoiding whitespace to utilize every pixel of canvas space."
+        ],
+        "correctAnswer": "Maintaining consistency through reusable components and clear hierarchy.",
+        "correctIdx": 1,
+        "explanation": "A strong design system relies on consistency, reusability, and clear visual hierarchy.",
+        "hint": "Design systems and visual consistency.",
+        "relatedConcept": "Design Principles",
+        "estimatedTime": 60,
+        "interviewTip": "Focus on scalability and brand consistency."
       }
     ]
   }
