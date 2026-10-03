@@ -108,20 +108,7 @@ export async function callAIRobust(
     timeoutMs?: number;
   }[] = [];
 
-  // 0. Moonshot / Kimi 2.6 API (Direct Kimi Provider if requested or key present)
-  const kimiKey = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
-  const isKimiRequested = (options.model?.toLowerCase() ?? "").includes("kimi");
-  if (kimiKey && (isKimiRequested || !env.geminiApiKey)) {
-    providers.push({
-      name: "Kimi 2.6 (Moonshot)",
-      url: "https://api.moonshot.cn/v1/chat/completions",
-      key: kimiKey,
-      model: "moonshot-v1-32k",
-      cooldownKey: "kimi",
-    });
-  }
-
-  // 1. Add Google Gemini with latest flash models first (primary)
+  // 0. Add Google Gemini with latest flash models first (absolute primary)
   if (env.geminiApiKey) {
     const modelLower = options.model?.toLowerCase() ?? "";
     const requestedModel = modelLower.includes("gemini")
@@ -141,6 +128,19 @@ export async function callAIRobust(
         cooldownKey: `gemini-${m}`,
       });
     }
+  }
+
+  // 1. Moonshot / Kimi 2.6 API (Direct Kimi Provider only if specifically requested)
+  const kimiKey = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
+  const isKimiRequested = (options.model?.toLowerCase() ?? "").includes("kimi");
+  if (kimiKey && isKimiRequested) {
+    providers.push({
+      name: "Kimi 2.6 (Moonshot)",
+      url: "https://api.moonshot.cn/v1/chat/completions",
+      key: kimiKey,
+      model: "moonshot-v1-32k",
+      cooldownKey: "kimi",
+    });
   }
 
   // 2. Add OpenRouter if key exists (secondary).
@@ -685,27 +685,27 @@ export const MODELS = {
 
 //Centralized Multi-LLM Orchestration Layer
 export const ORCHESTRATED_MODELS = {
-  career_coaching: "nvidia/llama-3.3-70b-instruct",
-  career_insights: "nvidia/llama-3.3-70b-instruct",
-  roadmap_reasoning: "nvidia/llama-3.3-70b-instruct",
-  technical_readiness: "deepseek-ai/deepseek-r1",
-  coding_analysis: "deepseek-ai/deepseek-r1",
-  project_evaluation: "deepseek-ai/deepseek-r1",
-  document_understanding: "moonshotai/kimi-k2",
-  resume_context: "moonshotai/kimi-k2",
-  job_descriptions: "moonshotai/kimi-k2",
-  fast_summaries: "gemini-2.0-flash",
-  ui_responses: "gemini-2.0-flash",
-  quick_recommendations: "gemini-2.0-flash",
-  general_assistant: "gemini-2.0-flash",
-  fallback: "gemini-2.0-flash",
-  hr_behavioral: "nvidia/llama-3.3-70b-instruct",
-  hr_star_analysis: "nvidia/llama-3.3-70b-instruct",
-  hr_communication: "deepseek-ai/deepseek-r1",
-  hr_resume_analysis: "moonshotai/kimi-k2",
-  hr_followup: "gemini-2.0-flash",
-  hr_evaluation: "nvidia/llama-3.3-70b-instruct",
-  hr_fallback: "gemini-2.0-flash",
+  career_coaching: "gemini-3.5-flash-lite",
+  career_insights: "gemini-3.5-flash-lite",
+  roadmap_reasoning: "gemini-3.5-flash-lite",
+  technical_readiness: "gemini-3.5-flash-lite",
+  coding_analysis: "gemini-3.5-flash-lite",
+  project_evaluation: "gemini-3.5-flash-lite",
+  document_understanding: "gemini-3.5-flash-lite",
+  resume_context: "gemini-3.5-flash-lite",
+  job_descriptions: "gemini-3.5-flash-lite",
+  fast_summaries: "gemini-3.5-flash-lite",
+  ui_responses: "gemini-3.5-flash-lite",
+  quick_recommendations: "gemini-3.5-flash-lite",
+  general_assistant: "gemini-3.5-flash-lite",
+  fallback: "gemini-3.5-flash-lite",
+  hr_behavioral: "gemini-3.5-flash-lite",
+  hr_star_analysis: "gemini-3.5-flash-lite",
+  hr_communication: "gemini-3.5-flash-lite",
+  hr_resume_analysis: "gemini-3.5-flash-lite",
+  hr_followup: "gemini-3.5-flash-lite",
+  hr_evaluation: "gemini-3.5-flash-lite",
+  hr_fallback: "gemini-3.5-flash-lite",
 } as const;
 
 export type OrchestratedTaskType = keyof typeof ORCHESTRATED_MODELS;

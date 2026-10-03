@@ -15,7 +15,39 @@ export async function transcribeAudioBuffer(
     return "";
   }
 
-  // 1. Try Groq Whisper (ultra-fast)
+  // 1. Primary: Google Gemini Multimodal Audio Transcription
+  if (env.geminiApiKey) {
+    try {
+      const genAI = new GoogleGenerativeAI(env.geminiApiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
+      const base64Data = audioBuffer.toString("base64");
+
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            mimeType: mimeType || "audio/webm",
+            data: base64Data,
+          },
+        },
+        {
+          text: `You are an accurate Speech-to-Text engine. Listen to this candidate audio clip and transcribe what the candidate said verbatim in ${language.toLowerCase().startsWith("hi") ? "Hindi or English" : "English"}.
+Return ONLY the raw transcribed text. Do NOT add preamble, commentary, quotes, or notes. If the audio is silent or unintelligible, return an empty string.`,
+        },
+      ]);
+
+      const text = result.response.text();
+      if (text && text.trim()) {
+        return text.trim();
+      }
+    } catch (geminiErr: any) {
+      console.warn(
+        "[TranscriptionService] Gemini audio primary error, attempting Groq fallback:",
+        geminiErr?.message || geminiErr
+      );
+    }
+  }
+
+  // 2. Secondary Fallback: Groq Whisper
   if (env.groqApiKey) {
     try {
       const groq = new Groq({ apiKey: env.groqApiKey });
@@ -43,39 +75,8 @@ export async function transcribeAudioBuffer(
       }
     } catch (err: any) {
       console.warn(
-        "[TranscriptionService] Groq Whisper error, trying fallback:",
+        "[TranscriptionService] Groq Whisper fallback error:",
         err?.message || err
-      );
-    }
-  }
-
-  // 2. Fallback to Gemini Multimodal Audio
-  if (env.geminiApiKey) {
-    try {
-      const genAI = new GoogleGenerativeAI(env.geminiApiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
-      const base64Data = audioBuffer.toString("base64");
-
-      const result = await model.generateContent([
-        {
-          inlineData: {
-            mimeType: mimeType || "audio/webm",
-            data: base64Data,
-          },
-        },
-        {
-          text: "Transcribe the spoken speech in this audio clip verbatim. Return ONLY the transcribed text. If the audio is silent or contains no intelligible words, return empty string.",
-        },
-      ]);
-
-      const text = result.response.text();
-      if (text) {
-        return text.trim();
-      }
-    } catch (geminiErr: any) {
-      console.warn(
-        "[TranscriptionService] Gemini audio fallback error:",
-        geminiErr?.message || geminiErr
       );
     }
   }

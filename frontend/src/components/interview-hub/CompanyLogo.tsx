@@ -55,6 +55,10 @@ const COMPANY_DOMAINS: Record<string, string> = {
   siemens: "siemens.com",
   bosch: "bosch.com",
 
+  bloomberg: "bloomberg.com",
+  paypal: "paypal.com",
+  walmart: "walmart.com",
+
   // Global Finance & Consulting
   goldmansachs: "goldmansachs.com",
   morganstanley: "morganstanley.com",
@@ -317,6 +321,9 @@ const BRAND_SVGS: Record<string, string> = {
   airbnb: "https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_Bélo.svg",
   dropbox: "https://upload.wikimedia.org/wikipedia/commons/7/74/Dropbox_Icon.svg",
   coinbase: "https://upload.wikimedia.org/wikipedia/commons/1/1a/24x7ndef.svg",
+  bloomberg: "https://upload.wikimedia.org/wikipedia/commons/5/52/Bloomberg_logo.svg",
+  paypal: "https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg",
+  walmart: "https://upload.wikimedia.org/wikipedia/commons/c/ca/Walmart_logo.svg",
 };
 
 interface CompanyLogoProps {
@@ -329,6 +336,7 @@ interface CompanyLogoProps {
   size?: number;
   theme?: string;
   className?: string;
+  title?: string;
 }
 
 export function resolveCompanyInfo(rawName?: string, rawId?: string): { key: string; domain: string } {
@@ -378,6 +386,7 @@ export default function CompanyLogo({
   size = 44,
   theme: themeProp,
   className = "",
+  title: titleProp,
 }: CompanyLogoProps) {
   const currentTheme = useTheme();
   const theme = themeProp || currentTheme;
@@ -385,6 +394,7 @@ export default function CompanyLogo({
 
   const name = companyName || company || "Company";
   const explicitLogo = logoUrl || logo;
+  const displayTitle = titleProp || name;
 
   const [imgError, setImgError] = useState(false);
   const [srcIndex, setSrcIndex] = useState(0);
@@ -463,6 +473,7 @@ export default function CompanyLogo({
           border: containerBorder,
           boxShadow: containerShadow,
         }}
+        title={displayTitle}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -489,6 +500,7 @@ export default function CompanyLogo({
           border: containerBorder,
           boxShadow: containerShadow,
         }}
+        title={displayTitle || "Tata Consultancy Services (TCS)"}
       >
         <svg viewBox="0 0 100 40" className="w-full h-full object-contain">
           <text x="50" y="26" textAnchor="middle" fill="#0066B3" fontSize="26" fontWeight="900" fontFamily="system-ui, -apple-system, sans-serif" letterSpacing="-1">TCS</text>

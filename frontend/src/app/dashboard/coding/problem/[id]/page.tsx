@@ -34,6 +34,7 @@ import {
 } from "@/components/dashboard-shell";
 import type { AdyapanUser } from "@/components/dashboard-shell";
 import { renderMarkdown, inlineFormat } from "@/utils/renderMarkdown";
+import CompanyLogo from "@/components/interview-hub/CompanyLogo";
 
 // Checklists for loading experience
 const loadingSteps = [
@@ -2408,6 +2409,34 @@ Answer the student's question based on the coding problem. Provide hints or feed
                   <span className="leading-none">{problem.rating}</span>
                 </span>
               )}
+              {problem?.companies && Array.isArray(problem.companies) && problem.companies.length > 0 && (() => {
+                const headerComps = Array.from(
+                  new Set(
+                    problem.companies.flatMap((c: string) =>
+                      typeof c === "string" ? c.split(/[,/|]/).map((s: string) => s.trim()).filter(Boolean) : []
+                    )
+                  )
+                );
+                if (headerComps.length === 0) return null;
+                return (
+                  <div className="hidden sm:flex items-center -space-x-1.5 shrink-0 pl-1" title={`Asked in: ${headerComps.join(", ")}`}>
+                    {headerComps.slice(0, 4).map((comp: string, idx: number) => (
+                      <CompanyLogo
+                        key={idx}
+                        companyName={comp}
+                        size={22}
+                        className="border border-white/20 shadow-xs hover:z-10 hover:scale-115 transition-transform cursor-pointer"
+                        title={comp}
+                      />
+                    ))}
+                    {headerComps.length > 4 && (
+                      <span className="text-[10px] font-bold text-[var(--text-muted)] pl-2 cursor-default" title={headerComps.slice(4).join(", ")}>
+                        +{headerComps.length - 4}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -2529,24 +2558,43 @@ Answer the student's question based on the coding problem. Provide hints or feed
                     </div>
 
                     {/* Companies Section */}
-                    {problem?.companies && Array.isArray(problem.companies) && problem.companies.length > 0 && (
-                      <div className="flex flex-col gap-1.5 pt-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
-                          <Building2 size={11} className="text-amber-400" />
-                          <span>Companies ({problem.companies.length})</span>
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {problem.companies.map((company: string, idx: number) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full font-medium"
-                            >
-                              {company}
-                            </span>
-                          ))}
+                    {problem?.companies && Array.isArray(problem.companies) && problem.companies.length > 0 && (() => {
+                      const companyList = Array.from(
+                        new Set(
+                          problem.companies.flatMap((c: string) =>
+                            typeof c === "string" ? c.split(/[,/|]/).map((s: string) => s.trim()).filter(Boolean) : []
+                          )
+                        )
+                      );
+                      if (companyList.length === 0) return null;
+
+                      return (
+                        <div className="flex flex-col gap-2 pt-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                            <Building2 size={11} className="text-amber-400" />
+                            <span>Companies ({companyList.length})</span>
+                          </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {companyList.map((company: string, idx: number) => (
+                              <div
+                                key={idx}
+                                className="group relative flex items-center justify-center"
+                              >
+                                <CompanyLogo
+                                  companyName={company}
+                                  size={28}
+                                  className="cursor-pointer border border-white/10 dark:border-white/10 shadow-sm hover:border-amber-400/50 hover:scale-110 transition-all duration-200"
+                                  title={company}
+                                />
+                                <div className="pointer-events-none absolute -bottom-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-150 z-30 px-2 py-0.5 rounded-md bg-slate-900/95 text-[10px] font-medium text-amber-200 shadow-xl border border-amber-500/30 whitespace-nowrap">
+                                  {company}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Tags Section */}
                     {problem?.tags && Array.isArray(problem.tags) && problem.tags.length > 0 && (

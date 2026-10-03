@@ -25,6 +25,7 @@ import {
   codingScaleIn,
 } from "./CodingHubShared";
 import { renderMarkdown } from "@/utils/renderMarkdown";
+import CompanyLogo from "@/components/interview-hub/CompanyLogo";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -760,7 +761,12 @@ export function DsaPracticeView() {
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 bg-white/5 dark:bg-white/[0.03] text-[var(--text-muted)] text-[10px] rounded-md font-medium">{p.category}</span>
                     {p.company && (
-                      <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] rounded-md font-bold">{p.company}</span>
+                      <CompanyLogo
+                        companyName={p.company}
+                        size={20}
+                        className="border border-white/10 shadow-xs hover:scale-110 transition-transform cursor-pointer"
+                        title={p.company}
+                      />
                     )}
                     <ChevronRight size={12} className="text-[var(--text-muted)] group-hover:text-amber-500 transition-colors" />
                   </div>
