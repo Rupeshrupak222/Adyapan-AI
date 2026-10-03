@@ -1,5 +1,6 @@
 import { getUserPrisma } from "../config/dynamicPrisma";
 import { DsaProgressService } from "./dsa-progress.service";
+import { detectDomainTrack, DomainTrack } from "../utils/domain-track";
 
 interface SubScores {
   coding: number;
@@ -98,20 +99,29 @@ interface PlacementIntelligenceResult {
 }
 
 export const ELIGIBILITY_OVERALL_THRESHOLD = 85;
-const GATE_MINS = { coding: 50, aptitude: 50, interview: 40, resume: 50 };
 
 export function computeEligibility(
   placementScore: number,
   subScores: SubScores,
   hasData: boolean,
-  nextAction: string = ""
+  nextAction: string = "",
+  domainTrack: DomainTrack = "tech"
 ): EligibilityInfo {
   const round = Math.round(placementScore || 0);
+
+  // Domain-Adaptive Gates: Non-coding domains don't get blocked by LeetCode/DSA coding gate
+  let gateMins = { coding: 50, aptitude: 50, interview: 40, resume: 50 };
+  if (domainTrack === "management") {
+    gateMins = { coding: 0, aptitude: 60, interview: 50, resume: 50 };
+  } else if (domainTrack === "core_engineering") {
+    gateMins = { coding: 0, aptitude: 55, interview: 45, resume: 50 };
+  }
+
   const gates: EligibilityInfo["gates"] = {
-    coding: { value: Math.round(subScores?.coding || 0), min: GATE_MINS.coding },
-    aptitude: { value: Math.round(subScores?.aptitude || 0), min: GATE_MINS.aptitude },
-    interview: { value: Math.round(subScores?.interview || 0), min: GATE_MINS.interview },
-    resume: { value: Math.round(subScores?.resume || 0), min: GATE_MINS.resume },
+    coding: { value: Math.round(subScores?.coding || 0), min: gateMins.coding },
+    aptitude: { value: Math.round(subScores?.aptitude || 0), min: gateMins.aptitude },
+    interview: { value: Math.round(subScores?.interview || 0), min: gateMins.interview },
+    resume: { value: Math.round(subScores?.resume || 0), min: gateMins.resume },
   };
   const pointsToGo = Math.max(0, ELIGIBILITY_OVERALL_THRESHOLD - round);
 
@@ -128,8 +138,9 @@ export function computeEligibility(
     };
   }
 
+  // Only fail gates that have a positive threshold required for that domain
   const gateFails = (Object.keys(gates) as (keyof typeof gates)[])
-    .filter((key) => gates[key].value < gates[key].min)
+    .filter((key) => gates[key].min > 0 && gates[key].value < gates[key].min)
     .map((key) => `${key[0].toUpperCase() + key.slice(1)}: ${gates[key].value}/${gates[key].min}`);
 
   const overallMet = round >= ELIGIBILITY_OVERALL_THRESHOLD;
@@ -211,6 +222,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     generatedNotes,
     quizzes,
     flashcards,
+    uploadedResumes,
   ] = await Promise.all([
     userPrisma.profile.findUnique({ where: { userId } }).catch(() => null),
     userPrisma.candidateProfile.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } }).catch(() => null),
@@ -237,6 +249,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     userPrisma.generatedNote.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }).catch(() => []),
     userPrisma.quiz.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }).catch(() => []),
     userPrisma.flashcard.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []),
+    userPrisma.uploadedResume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }).catch(() => []),
   ]);
 
   // ─── Compute Sub-Scores ──────────────────────────────────────
@@ -285,12 +298,15 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     ? Math.round(atsReports.reduce((s: number, r: any) => s + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
     : (candidateProfile?.strengthScore || 0);
 
+  const totalResumes = resumes.length + (uploadedResumes?.length || 0);
+  const hasGithub = Boolean(githubProfile || (profile?.github && profile.github.trim()));
+
   const resumeScore = clamp(Math.round(
-    (resumes.length > 0 ? 25 : 0) +
+    ((totalResumes > 0 || profile?.resumeUrl) ? 25 : 0) +
     avgAtsScore * 0.35 +
     (coverLetters.length > 0 ? 15 : 0) +
     (linkedinReports.length > 0 ? 15 : 0) +
-    (githubProfile ? 10 : 0)
+    (hasGithub ? 10 : 0)
   ), 0, 100);
 
   const learningScore = clamp(Math.round(
@@ -311,15 +327,44 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     Math.min(studySessions.length / 15, 1) * 20
   ), 0, 100);
 
-  // ─── Overall Placement Score ──────────────────────────────────
-  const placementScore = clamp(Math.round(
-    codingScore * 0.25 +
-    aptitudeScore * 0.20 +
-    interviewScore * 0.20 +
-    resumeScore * 0.15 +
-    learningScore * 0.10 +
-    softSkillsScore * 0.10
-  ), 0, 100);
+  // ─── Domain-Adaptive Overall Placement Score ──────────────────
+  const domainTrack = detectDomainTrack(profile);
+
+  let placementScore = 0;
+  if (domainTrack === "management") {
+    // Management: Domain Knowledge & Aptitude (35%), Interviews & Communication (25%), Resume & ATS (20%), Soft Skills (10%), Learning (10%)
+    // Any coding done acts as positive bonus (up to 5 points)
+    const baseScore = Math.round(
+      aptitudeScore * 0.35 +
+      interviewScore * 0.25 +
+      resumeScore * 0.20 +
+      softSkillsScore * 0.10 +
+      learningScore * 0.10
+    );
+    const techBonus = codingScore > 0 ? Math.min(5, Math.round(codingScore * 0.05)) : 0;
+    placementScore = clamp(baseScore + techBonus, 0, 100);
+  } else if (domainTrack === "core_engineering") {
+    // Core Engineering: Core Technical & Aptitude (35%), Learning & Projects (20%), Technical Interviews (20%), Resume & ATS (15%), Soft Skills (10%)
+    const baseScore = Math.round(
+      aptitudeScore * 0.35 +
+      learningScore * 0.20 +
+      interviewScore * 0.20 +
+      resumeScore * 0.15 +
+      softSkillsScore * 0.10
+    );
+    const codingBonus = codingScore > 0 ? Math.min(5, Math.round(codingScore * 0.05)) : 0;
+    placementScore = clamp(baseScore + codingBonus, 0, 100);
+  } else {
+    // Standard Tech/Software track
+    placementScore = clamp(Math.round(
+      codingScore * 0.25 +
+      aptitudeScore * 0.20 +
+      interviewScore * 0.20 +
+      resumeScore * 0.15 +
+      learningScore * 0.10 +
+      softSkillsScore * 0.10
+    ), 0, 100);
+  }
 
   // ─── Company Matches ─────────────────────────────────────────
   const userSkills = new Set<string>();
@@ -408,16 +453,16 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   if (aptitudeScore > 70) strengths.push(`${aptitudeScore}% aptitude readiness — solid analytical skills`);
   if (completedInterviews.length >= 5) strengths.push(`Completed ${completedInterviews.length} mock interviews — well-practiced`);
   if (coverLetters.length >= 3) strengths.push(`${coverLetters.length} cover letters generated — application-ready`);
-  if (githubProfile) strengths.push("GitHub profile connected — portfolio showcase active");
+  if (hasGithub) strengths.push("GitHub profile connected — portfolio showcase active");
   if (learningScore > 70) strengths.push(`${learningScore}% learning score — strong knowledge foundation`);
 
   if (codingScore < 30) weaknesses.push("Coding practice is below target — solve more DSA problems");
   if (aptitudeScore < 30) weaknesses.push("Aptitude score needs improvement — practice daily quizzes");
   if (interviewScore < 30) weaknesses.push("Interview readiness is low — schedule mock interviews");
   if (resumeScore < 30) weaknesses.push("Resume needs work — create or improve your resume");
-  if (avgAtsScore < 60 && resumes.length > 0) weaknesses.push(`ATS score is ${avgAtsScore}% — optimize keywords and formatting`);
+  if (avgAtsScore < 60 && totalResumes > 0) weaknesses.push(`ATS score is ${avgAtsScore}% — optimize keywords and formatting`);
   if (latestLinkedinScore < 50) weaknesses.push("LinkedIn profile needs optimization");
-  if (!githubProfile) weaknesses.push("GitHub not connected — missing portfolio evidence");
+  if (!hasGithub) weaknesses.push("GitHub not connected — missing portfolio evidence");
   if (coverLetters.length === 0) weaknesses.push("No cover letters generated — apply with personalized letters");
   if (dsaSolved < 20) weaknesses.push(`Only ${dsaSolved} DSA problems solved — target 50+ for placements`);
   weakTopics.slice(0, 3).forEach((w: any) => {
@@ -487,7 +532,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
       color: "#0077b5",
     });
   }
-  if (!githubProfile) {
+  if (!hasGithub) {
     recommendations.push({
       type: "portfolio",
       title: "Connect GitHub Portfolio",
@@ -559,10 +604,18 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
       description: "Basic learning, notes, and topic coverage",
     },
     {
-      stage: "Technical Skills",
-      completed: dsaSolved >= 30 && codingScore >= 40,
-      score: codingScore,
-      description: "DSA, coding challenges, and technical assessments",
+      stage: domainTrack === "management" ? "Case & Domain Mastery" : domainTrack === "core_engineering" ? "Core Technical Fundamentals" : "Technical Skills",
+      completed: domainTrack === "management"
+        ? (aptitudeSessions.length >= 5 && aptitudeScore >= 50)
+        : domainTrack === "core_engineering"
+        ? (aptitudeSessions.length >= 5 && aptitudeScore >= 50)
+        : (dsaSolved >= 30 && codingScore >= 40),
+      score: domainTrack === "management" || domainTrack === "core_engineering" ? aptitudeScore : codingScore,
+      description: domainTrack === "management"
+        ? "Business math, case study problem solving, and domain MCQs"
+        : domainTrack === "core_engineering"
+        ? "Core engineering concepts, problem solving, and technical MCQs"
+        : "DSA, coding challenges, and technical assessments",
     },
     {
       stage: "Aptitude",
@@ -629,7 +682,8 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
       placementScore,
       { coding: codingScore, aptitude: aptitudeScore, interview: interviewScore, resume: resumeScore, learning: learningScore, softSkills: softSkillsScore },
       hasActivity,
-      highestImpactTask?.action || recommendations[0]?.action || ""
+      highestImpactTask?.action || recommendations[0]?.action || "",
+      domainTrack
     ),
     companyMatches,
     skillWeights,
@@ -654,6 +708,8 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
     const fiveMinutes = 5 * 60 * 1000;
 
     if (now - lastCalculated < fiveMinutes) {
+      const profile = await userPrisma.profile.findUnique({ where: { userId } }).catch(() => null);
+      const domainTrack = detectDomainTrack(profile);
       return {
         placementScore: existing.placementScore,
         subScores: existing.subScores as unknown as SubScores,
@@ -661,7 +717,8 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
           existing.placementScore,
           existing.subScores as unknown as SubScores,
           existing.placementScore > 0,
-          (existing.highestImpactTask as unknown as HighestImpactTask | null)?.action || ""
+          (existing.highestImpactTask as unknown as HighestImpactTask | null)?.action || "",
+          domainTrack
         ),
         companyMatches: existing.companyMatches as unknown as CompanyMatch[],
         skillWeights: existing.skillWeights as unknown as SkillWeight[],

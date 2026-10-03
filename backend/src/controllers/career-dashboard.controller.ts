@@ -3,6 +3,7 @@ import { getUserPrismaFromRequest, masterPrisma } from "../utils/prisma";
 import { requireUserId } from "../utils/request";
 import { generateOrchestratedJSON } from "../lib/ai/openrouter";
 import { DsaProgressService } from "../services/dsa-progress.service";
+import { detectDomainTrack } from "../utils/domain-track";
 
 // Helper to compute the programmatic stats baseline (aggregating from ~30 tables)
 async function computeDashboardBaseline(userId: string, userPrisma: any) {
@@ -45,6 +46,8 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     codingRoadmaps,
     resumeVersions,
     uploadedDocuments,
+    portfolios,
+    generatedReadmes,
   ] = await Promise.all([
     q(() => userPrisma.profile.findUnique({ where: { userId } }), null),
     q(() => masterPrisma.user.findUnique({ where: { id: userId } }), null),
@@ -81,6 +84,8 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     q(() => userPrisma.codingRoadmap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 3 }), []),
     q(() => userPrisma.resumeVersion.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }), []),
     q(() => userPrisma.uploadedDocument.findMany({ where: { userId } }), []),
+    q(() => userPrisma.portfolio.findMany({ where: { userId }, orderBy: { updatedAt: "desc" }, take: 10 }), []),
+    q(() => userPrisma.generatedReadme.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }), []),
   ]);
 
   const rawName = userRecord?.name || (profile as any)?.name || "";
@@ -192,32 +197,108 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   ));
 
   // Recruiter readiness (0-100)
+  const hasGithub = Boolean(githubProfile || (profile?.github && profile.github.trim()));
   const recruiterReadiness = Math.min(100, Math.round(
     avgLinkedinScore * 0.4 +
     (coverLetters.length > 0 ? 15 : 0) +
-    (resumes.length > 0 ? 15 : 0) +
-    (githubProfile ? 15 : 0) +
-    (profile?.portfolio ? 5 : 0) +
+    (totalResumesCount > 0 ? 15 : 0) +
+    (hasGithub ? 15 : 0) +
+    ((profile?.portfolio || portfolios.length > 0) ? 5 : 0) +
     avgAtsScore * 0.1
   ));
 
   // Portfolio readiness (0-100)
+  // Dynamic multi-source calculation: GitHub connection, public repositories,
+  // resumes & showcased projects, live portfolio websites / builder generations, and practical coding output.
+  const githubReposCount = (githubProfile?.repos ? (Array.isArray(githubProfile.repos) ? githubProfile.repos.length : JSON.parse(JSON.stringify(githubProfile.repos)).length || 0) : 0);
+
+  // 1. GitHub Presence & Coding Proof (0 - 35 pts)
+  const githubConnectionScore = hasGithub ? 20 : 0;
+  const githubActivityScore = Math.min(
+    (githubReposCount > 0 ? Math.min(githubReposCount / 3, 1) * 15 : 0) +
+    (generatedReadmes.length > 0 ? 10 : 0) +
+    (hasGithub && dsaSolved >= 5 ? 15 : 0),
+    15
+  );
+  const githubScore = githubConnectionScore + githubActivityScore;
+
+  // 2. Resume & Project Showcase (0 - 30 pts)
+  const hasResumePresence = totalResumesCount > 0 || Boolean(profile?.resumeUrl);
+  const resumePresenceScore = hasResumePresence ? 15 : 0;
+  const resumeProjectsCount = resumes.reduce((acc: number, r: any) => {
+    const projs = Array.isArray(r.projects) ? r.projects : [];
+    return acc + projs.length;
+  }, 0);
+  const projectDemonstrationScore = Math.min(
+    (resumeProjectsCount > 0 ? Math.min(resumeProjectsCount / 2, 1) * 15 : 0) +
+    (acceptedChallengeSubmissions.length > 0 ? 15 : 0) +
+    (dsaSolved >= 10 ? 15 : 0) +
+    (hasResumePresence && avgAtsScore >= 50 ? 10 : 0),
+    15
+  );
+  const projectScore = resumePresenceScore + projectDemonstrationScore;
+
+  // 3. Live Portfolio / Personal Website / Professional Links (0 - 20 pts)
+  const hasPersonalPortfolio = Boolean(profile?.portfolio && profile.portfolio.trim());
+  const hasGeneratedPortfolio = portfolios.length > 0;
+  const hasLinkedSocials = hasGithub && Boolean(profile?.linkedin || linkedinReports.length > 0);
+  const portfolioLinkScore = (hasPersonalPortfolio || hasGeneratedPortfolio)
+    ? 20
+    : hasLinkedSocials
+    ? 15
+    : (profile?.linkedin ? 10 : 0);
+
+  // 4. Practical Coding Showcase & Work Output (0 - 15 pts)
+  const practicalShowcaseScore = Math.min(
+    Math.round(
+      Math.min(dsaSolved / 15, 1) * 8 +
+      (submissions.length > 0 ? 4 : 0) +
+      (codingSessions.length > 0 ? 3 : 0)
+    ),
+    15
+  );
+
   const portfolioReadiness = Math.min(100, Math.round(
-    (githubProfile ? 30 : 0) +
-    Math.min((githubProfile?.repos ? JSON.parse(JSON.stringify(githubProfile.repos)).length || 0 : 0) / 5, 1) * 30 +
-    (resumes.length > 0 ? 20 : 0) +
-    (profile?.portfolio ? 20 : 0)
+    githubScore + projectScore + portfolioLinkScore + practicalShowcaseScore
   ));
 
-  // Overall career readiness (weighted average)
-  const overallReadiness = Math.round(
-    codingReadiness * 0.25 +
-    learningReadiness * 0.15 +
-    resumeReadiness * 0.2 +
-    interviewReadiness * 0.15 +
-    recruiterReadiness * 0.15 +
-    portfolioReadiness * 0.1
-  );
+  // ─── Domain-Adaptive Overall Career Readiness ──────────────────
+  const domainTrack = detectDomainTrack(profile);
+
+  let overallReadiness = 0;
+  if (domainTrack === "management") {
+    // Management: Domain Knowledge & Aptitude (30%), Interviews & Communication (25%), Resume (20%), Recruiter (15%), Portfolio (10%)
+    const baseReadiness = Math.round(
+      learningReadiness * 0.30 +
+      interviewReadiness * 0.25 +
+      resumeReadiness * 0.20 +
+      recruiterReadiness * 0.15 +
+      portfolioReadiness * 0.10
+    );
+    const techBonus = codingReadiness > 0 ? Math.min(5, Math.round(codingReadiness * 0.05)) : 0;
+    overallReadiness = Math.min(100, baseReadiness + techBonus);
+  } else if (domainTrack === "core_engineering") {
+    // Core Engineering: Core Knowledge & Aptitude (30%), Interview (20%), Resume (20%), Portfolio & Projects (15%), Recruiter (15%)
+    const baseReadiness = Math.round(
+      learningReadiness * 0.30 +
+      interviewReadiness * 0.20 +
+      resumeReadiness * 0.20 +
+      portfolioReadiness * 0.15 +
+      recruiterReadiness * 0.15
+    );
+    const codingBonus = codingReadiness > 0 ? Math.min(5, Math.round(codingReadiness * 0.05)) : 0;
+    overallReadiness = Math.min(100, baseReadiness + codingBonus);
+  } else {
+    // Standard Tech/Software track
+    overallReadiness = Math.round(
+      codingReadiness * 0.25 +
+      learningReadiness * 0.15 +
+      resumeReadiness * 0.20 +
+      interviewReadiness * 0.15 +
+      recruiterReadiness * 0.15 +
+      portfolioReadiness * 0.10
+    );
+  }
 
   // ─── Profile Completion ─────────────────────────────────────────
   const profileFields = [
@@ -415,9 +496,9 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       title: "Portfolio Ready",
       description: "Connect GitHub profile",
       targetValue: 1,
-      currentValue: githubProfile ? 1 : 0,
+      currentValue: hasGithub ? 1 : 0,
       category: "portfolio",
-      completed: !!githubProfile,
+      completed: hasGithub,
       icon: "globe",
       color: "#8b5cf6"
     },
@@ -448,7 +529,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   // ─── Recommendations ──────────────────────────────────────────
   const recommendations: any[] = [];
 
-  if (codingReadiness < 50) {
+  if (domainTrack === "tech" && codingReadiness < 50) {
     recommendations.push({
       type: "coding",
       title: "Practice DSA Problems",
@@ -457,6 +538,18 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       icon: "code",
       color: "#f59e0b",
       action: "dsa-practice"
+    });
+  } else if ((domainTrack === "management" || domainTrack === "core_engineering") && learningReadiness < 60) {
+    recommendations.push({
+      type: "learning",
+      title: domainTrack === "management" ? "Practice Domain & Aptitude MCQs" : "Practice Core Engineering MCQs",
+      description: domainTrack === "management"
+        ? "Domain concepts, business math, and quantitative analysis are decisive in corporate placement rounds."
+        : "Master core branch fundamentals, design principles, and domain technical assessments.",
+      impact: "high",
+      icon: "book",
+      color: "#8b5cf6",
+      action: "placement-mcqs"
     });
   }
 
@@ -532,11 +625,11 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     });
   }
 
-  if (!githubProfile) {
+  if (!hasGithub) {
     recommendations.push({
       type: "portfolio",
-      title: "Connect GitHub",
-      description: "GitHub profile shows your coding activity to recruiters. Connect it to boost portfolio score.",
+      title: "Connect GitHub Profile",
+      description: "Link your GitHub handle or create a portfolio to showcase your code and projects to recruiters.",
       impact: "medium",
       icon: "globe",
       color: "#8b5cf6",
@@ -575,13 +668,29 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   // ─── Today's Actions ──────────────────────────────────────────
   const todayActions: any[] = [];
 
-  if (dsaSolved < 100) {
+  if (domainTrack === "tech" && dsaSolved < 100) {
     todayActions.push({
       title: `Solve ${Math.min(2, 100 - dsaSolved)} DSA problems`,
       priority: "High",
       category: "coding",
       icon: "code",
       estimatedMinutes: 90
+    });
+  } else if (domainTrack === "management") {
+    todayActions.push({
+      title: "Complete 1 Domain Aptitude & Case Test",
+      priority: "High",
+      category: "learning",
+      icon: "book",
+      estimatedMinutes: 20
+    });
+  } else if (domainTrack === "core_engineering") {
+    todayActions.push({
+      title: "Attempt 1 Core Domain MCQ Test",
+      priority: "High",
+      category: "learning",
+      icon: "book",
+      estimatedMinutes: 25
     });
   }
 
@@ -826,7 +935,9 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   return {
     scores: {
       overall: overallReadiness,
-      coding: codingReadiness,
+      coding: (domainTrack === "management" || domainTrack === "core_engineering") && codingReadiness === 0
+        ? Math.round(learningReadiness * 0.85)
+        : codingReadiness,
       learning: learningReadiness,
       resume: resumeReadiness,
       interview: interviewReadiness,
@@ -891,7 +1002,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       coverLettersGenerated: coverLettersCount,
       profileCompleteness: profileCompletion,
       networkingProgress: 0,
-      githubConnected: !!githubProfile,
+      githubConnected: hasGithub,
     },
     interviewSummary: {
       totalCompleted: completedInterviews.length,

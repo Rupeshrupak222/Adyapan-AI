@@ -10,7 +10,7 @@ import {
   Volume2, VolumeX, Target, Building2, Search, ArrowRight, ArrowLeft,
   Briefcase, Sliders, Check, Settings2, Flame, Layers, Server, Cpu, Database,
   ChevronLeft, ChevronRight, Trophy, BarChart3, Award, FileText, Download, Crown,
-  AlertTriangle,
+  AlertTriangle, Globe, Cloud, Smartphone, TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/services/api";
@@ -80,26 +80,33 @@ interface EngineMessage {
 }
 
 const TOPICS = [
-  { id: "dsa", label: "Data Structures & Algorithms", icon: Code2, desc: "Arrays, Trees, Graphs, DP & Algorithmic Problem Solving" },
-  { id: "frontend", label: "Frontend & React Architecture", icon: Layers, desc: "React 19, Next.js, Performance, State & SSR" },
-  { id: "backend", label: "Backend Systems & Node.js", icon: Server, desc: "REST APIs, Microservices, Caching & Async I/O" },
-  { id: "system-design", label: "System Design & Scalability", icon: Cpu, desc: "Distributed Systems, Load Balancers, Sharding & Caching" },
-  { id: "fullstack", label: "Full-Stack Web Engineering", icon: Terminal, desc: "End-to-end web apps, GraphQL & API integrations" },
-  { id: "dbms", label: "SQL, NoSQL & Data Modeling", icon: Database, desc: "Queries, Indexing, Transactions, Postgres & MongoDB" },
-  { id: "devops", label: "DevOps, Cloud & CI/CD", icon: Server, desc: "Docker, Kubernetes, AWS Services & Infrastructure as Code" },
-  { id: "ai-ml", label: "AI & Machine Learning Engineering", icon: Brain, desc: "LLMs, RAG, PyTorch, Model Deployment & MLOps" },
-  { id: "mobile", label: "Mobile Application Engineering", icon: Sliders, desc: "React Native, Flutter, iOS & Android Architecture" },
-  { id: "cybersecurity", label: "Cybersecurity & Web Defense", icon: Shield, desc: "OWASP Top 10, Auth Protocols, JWT & Cryptography" },
-  { id: "oop-design", label: "OOP & Design Patterns", icon: Target, desc: "SOLID principles, Structural Patterns & Clean Code" },
-  { id: "os-networking", label: "OS, Concurrency & Networking", icon: Terminal, desc: "Multithreading, Memory Locks, Sockets & TCP/IP Protocol" },
-  { id: "cloud-serverless", label: "Cloud Architecture & Serverless", icon: Server, desc: "AWS Lambda, Cloudflare Workers, GCP & Microservices" },
-  { id: "data-engineering", label: "Data Engineering & Pipelines", icon: Database, desc: "ETL, Spark, Airflow, Snowflake & Big Data Processing" },
-  { id: "game-dev", label: "Game Dev & Graphics Engine", icon: Code2, desc: "C++, OpenGL, DirectX, Shader Programming & Physics" },
-  { id: "embedded-iot", label: "Embedded Systems & IoT", icon: Cpu, desc: "C/C++, Microcontrollers, RTOS, Firmware & Protocols" },
-  { id: "blockchain", label: "Web3 & Smart Contracts", icon: Shield, desc: "Solidity, Ethereum, EVM Architecture & DeFi Protocols" },
-  { id: "qa-automation", label: "QA Automation & Testing (SDET)", icon: CheckCircle2, desc: "Cypress, Playwright, Jest, E2E & Test Strategy" },
-  { id: "microservices", label: "Microservices & Message Queues", icon: Layers, desc: "Event-Driven Systems, Kafka, RabbitMQ & gRPC" },
-  { id: "sre-observability", label: "Site Reliability (SRE) & Monitoring", icon: BarChart3, desc: "Prometheus, Grafana, SLOs, Incident Drills & Alerting" },
+  // ── 18 Core Adyapan CSE Domains (From Flyer) ──
+  { id: "data-science", label: "Data Science", category: "CSE Domain", icon: Database, desc: "EDA, statistics, pandas, predictive modeling & feature engineering", defaultLang: "python", defaultRole: "Data Scientist" },
+  { id: "ml-python", label: "ML with Python", category: "CSE Domain", icon: Brain, desc: "Scikit-learn, classification, regression, clustering & ML pipelines", defaultLang: "python", defaultRole: "Machine Learning Engineer" },
+  { id: "ai-ml", label: "AI with ML", category: "CSE Domain", icon: Brain, desc: "Deep learning, neural networks, PyTorch, computer vision & NLP", defaultLang: "python", defaultRole: "AI / ML Engineer" },
+  { id: "python-programming", label: "Programming in Python", category: "CSE Domain", icon: Terminal, desc: "Core Python, OOP, memory model, decorators, generators & async", defaultLang: "python", defaultRole: "Python Developer" },
+  { id: "fullstack", label: "Full Stack Web Development", category: "CSE Domain", icon: Layers, desc: "End-to-end web apps, React, Node.js, REST/GraphQL APIs & databases", defaultLang: "javascript", defaultRole: "Full Stack Developer" },
+  { id: "web-dev", label: "Web Development", category: "CSE Domain", icon: Globe, desc: "HTML5, CSS3, JavaScript ES6+, DOM manipulation & responsive UI", defaultLang: "javascript", defaultRole: "Web Developer" },
+  { id: "cybersecurity", label: "Cybersecurity", category: "CSE Domain", icon: Shield, desc: "OWASP Top 10, penetration testing, cryptography & network defenses", defaultLang: "python", defaultRole: "Cybersecurity Analyst" },
+  { id: "cloud-computing", label: "Cloud Computing", category: "CSE Domain", icon: Cloud, desc: "Cloud architecture, IaaS/PaaS, virtualization, scalability & security", defaultLang: "python", defaultRole: "Cloud Engineer" },
+  { id: "java-programming", label: "Programming in Java", category: "CSE Domain", icon: Code2, desc: "Core Java, JVM internals, multithreading, collections & OOP patterns", defaultLang: "java", defaultRole: "Java Developer" },
+  { id: "ai", label: "AI", category: "CSE Domain", icon: Sparkles, desc: "Search algorithms, heuristic search, knowledge bases & expert systems", defaultLang: "python", defaultRole: "AI Specialist" },
+  { id: "android-dev", label: "Android App Development", category: "CSE Domain", icon: Smartphone, desc: "Kotlin, Android SDK, Jetpack Compose, MVVM & Room database", defaultLang: "java", defaultRole: "Android Developer" },
+  { id: "data-analytics", label: "Data Analytics", category: "CSE Domain", icon: BarChart3, desc: "SQL queries, ETL pipelines, KPI dashboards & business insights", defaultLang: "python", defaultRole: "Data Analyst" },
+  { id: "business-analytics", label: "Business Analytics", category: "CSE Domain", icon: TrendingUp, desc: "Quantitative problem solving, unit economics, cohorts & A/B testing", defaultLang: "python", defaultRole: "Business Analyst" },
+  { id: "dsa-python", label: "DSA with Python", category: "CSE Domain", icon: Code2, desc: "LeetCode patterns, trees, graphs, dynamic programming & complexity in Python", defaultLang: "python", defaultRole: "Software Development Engineer" },
+  { id: "devops", label: "DevOps", category: "CSE Domain", icon: Server, desc: "CI/CD pipelines, Docker, Kubernetes, Terraform & infrastructure automation", defaultLang: "python", defaultRole: "DevOps Engineer" },
+  { id: "aws", label: "AWS", category: "CSE Domain", icon: Cloud, desc: "EC2, S3, Lambda, VPC, DynamoDB, IAM & cloud solutions design", defaultLang: "python", defaultRole: "AWS Cloud Architect" },
+  { id: "gen-agentic-ai", label: "AI (Generative & Agentic)", category: "CSE Domain", icon: Sparkles, desc: "LLMs, prompt engineering, RAG, LangChain, vector DBs & autonomous agents", defaultLang: "python", defaultRole: "Generative AI Engineer" },
+  { id: "mobile-dev", label: "Mobile App Development", category: "CSE Domain", icon: Smartphone, desc: "Cross-platform mobile apps, Flutter, React Native & mobile state", defaultLang: "javascript", defaultRole: "Mobile App Engineer" },
+
+  // ── Advanced Specializations & CS Fundamentals ──
+  { id: "dsa", label: "Data Structures & Algorithms (General)", category: "Fundamentals", icon: Code2, desc: "Arrays, Trees, Graphs, DP & Algorithmic Problem Solving", defaultLang: "cpp", defaultRole: "Software Engineer" },
+  { id: "system-design", label: "System Design & Scalability", category: "Fundamentals", icon: Cpu, desc: "Distributed Systems, Load Balancers, Sharding & Caching", defaultLang: "javascript", defaultRole: "Systems Architect" },
+  { id: "dbms", label: "SQL, NoSQL & Data Modeling", category: "Fundamentals", icon: Database, desc: "Queries, Indexing, Transactions, Postgres & MongoDB", defaultLang: "javascript", defaultRole: "Database Engineer" },
+  { id: "os-networking", label: "OS, Concurrency & Networking", category: "Fundamentals", icon: Terminal, desc: "Multithreading, Memory Locks, Sockets & TCP/IP Protocol", defaultLang: "cpp", defaultRole: "Systems Engineer" },
+  { id: "embedded-iot", label: "Embedded Systems & IoT", category: "Fundamentals", icon: Cpu, desc: "C/C++, Microcontrollers, RTOS, Firmware & Protocols", defaultLang: "cpp", defaultRole: "Embedded Engineer" },
+  { id: "microservices", label: "Microservices & Message Queues", category: "Fundamentals", icon: Layers, desc: "Event-Driven Systems, Kafka, RabbitMQ & gRPC", defaultLang: "javascript", defaultRole: "Backend Engineer" },
 ];
 
 const MODE_OPTIONS = [
@@ -150,13 +157,28 @@ const COMPANY_PRESETS = [
 ];
 
 const ROLE_PRESETS = [
+  "Data Scientist",
+  "Machine Learning Engineer",
+  "AI / ML Engineer",
+  "Python Developer",
+  "Full Stack Developer",
+  "Web Developer",
+  "Cybersecurity Analyst",
+  "Cloud Engineer",
+  "Java Developer",
+  "AI Specialist",
+  "Android Developer",
+  "Data Analyst",
+  "Business Analyst",
+  "Software Development Engineer (DSA)",
+  "DevOps Engineer",
+  "AWS Cloud Architect",
+  "Generative & Agentic AI Engineer",
+  "Mobile App Engineer",
   "Software Engineer",
   "Frontend Developer",
   "Backend Engineer",
-  "Full Stack Developer",
   "Systems Architect",
-  "ML / AI Engineer",
-  "DevOps Engineer",
 ];
 
 const CODING_LANGUAGES = [
@@ -1010,7 +1032,14 @@ export default function TechnicalInterviewView({
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setConfig({ ...config, topic: item.id, role: item.label })}
+                      onClick={() =>
+                        setConfig({
+                          ...config,
+                          topic: item.id as any,
+                          role: (item as any).defaultRole || item.label,
+                          ...((item as any).defaultLang ? { codingLanguage: (item as any).defaultLang } : {}),
+                        })
+                      }
                       className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
                         isSelected
                           ? isDark
@@ -1021,7 +1050,7 @@ export default function TechnicalInterviewView({
                           : "bg-white border-slate-200 text-slate-600 hover:border-purple-300 shadow-sm"
                       }`}
                     >
-                      <div className="flex items-center space-x-2.5 mb-2">
+                      <div className="flex items-start space-x-2.5 mb-2">
                         <div
                           className={`p-2 rounded-xl shrink-0 ${
                             isSelected
@@ -1033,13 +1062,22 @@ export default function TechnicalInterviewView({
                         >
                           <Icon className="w-4 h-4" />
                         </div>
-                        <span
-                          className={`text-xs font-bold block leading-snug ${
-                            isDark ? "text-slate-100" : "text-slate-900"
-                          }`}
-                        >
-                          {item.label}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`text-xs font-bold block leading-snug ${
+                                isDark ? "text-slate-100" : "text-slate-900"
+                              }`}
+                            >
+                              {item.label}
+                            </span>
+                            {item.category === "CSE Domain" && (
+                              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                CSE
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       <span
                         className={`text-[10px] leading-relaxed block mt-1 ${
