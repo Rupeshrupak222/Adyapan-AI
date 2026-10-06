@@ -1172,20 +1172,13 @@ function UserDashboardContent() {
     }
     if (urlView) {
       setActiveView(urlView);
-    } else {
       try {
-        const savedView = localStorage.getItem("dashboard-active-view");
-        if (savedView === "dsa-practice" || savedView === "dsa") {
-          localStorage.removeItem("dashboard-active-view");
-          router.replace("/dashboard/coding?tab=dsa");
-          return;
-        }
-        if (savedView && savedView !== "dashboard") {
-          setActiveView(savedView);
-          const url = new URL(window.location.href);
-          url.searchParams.set("view", savedView);
-          window.history.replaceState({}, "", url.toString());
-        }
+        localStorage.setItem("dashboard-active-view", urlView);
+      } catch { /* localStorage unavailable */ }
+    } else {
+      setActiveView("dashboard");
+      try {
+        localStorage.setItem("dashboard-active-view", "dashboard");
       } catch { /* localStorage unavailable */ }
     }
   }, [searchParams, router]);
@@ -1195,6 +1188,9 @@ function UserDashboardContent() {
       const params = new URLSearchParams(window.location.search);
       const viewParam = params.get("view") || "dashboard";
       setActiveView(viewParam);
+      try {
+        localStorage.setItem("dashboard-active-view", viewParam);
+      } catch { /* localStorage unavailable */ }
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -1466,7 +1462,7 @@ function UserDashboardContent() {
       {showOnboarding && <OnboardingFlow userId={user?.id} onComplete={() => setShowOnboarding(false)} />}
       <FloatingOrbs />
 
-      <DashboardTopNav user={user} theme={theme} onThemeToggle={handleThemeToggle} onViewProfile={handleViewProfile} onAdyChat={handleAdyChat} onViewTool={navigateTo} onMenuToggle={() => setSidebarOpen(prev => !prev)} notifications={notifications} setNotifications={setNotifications} unreadCount={unreadCount} onMarkAllRead={async () => { try { await api.put("/notifications/read-all"); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); setUnreadCount(0); } catch { } }} onClearAll={async () => { try { await api.delete("/notifications/clear"); setNotifications([]); setUnreadCount(0); } catch { } }} onPremium={handlePremium} onViewSettings={() => navigateTo("settings")} />
+      <DashboardTopNav user={user} theme={theme} onThemeToggle={handleThemeToggle} onViewProfile={handleViewProfile} onAdyChat={handleAdyChat} onViewDashboard={handleViewDashboard} onViewTool={navigateTo} onMenuToggle={() => setSidebarOpen(prev => !prev)} notifications={notifications} setNotifications={setNotifications} unreadCount={unreadCount} onMarkAllRead={async () => { try { await api.put("/notifications/read-all"); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); setUnreadCount(0); } catch { } }} onClearAll={async () => { try { await api.delete("/notifications/clear"); setNotifications([]); setUnreadCount(0); } catch { } }} onPremium={handlePremium} onViewSettings={() => navigateTo("settings")} />
       <DashboardSidebar activeView={activeView} onViewDashboard={handleViewDashboard} onViewTool={navigateTo} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <main className="dash-main relative z-10 resume-hub-theme">

@@ -99,6 +99,10 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         onThemeToggle={handleThemeToggle}
         onViewProfile={() => go("profile")}
         onAdyChat={() => go("ady-chat")}
+        onViewDashboard={() => {
+          try { localStorage.setItem("dashboard-active-view", "dashboard"); } catch {}
+          go();
+        }}
         onViewTool={(tool: string) => go(tool)}
         onMenuToggle={() => setSidebarOpen((prev) => !prev)}
         notifications={notifications}

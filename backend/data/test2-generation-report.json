@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-10-04T13:19:50.723Z",
+  "testNumber": 2,
+  "targetSize": 30,
+  "batchSize": 2,
+  "throttleMs": 2000,
+  "rebuild": false,
+  "summary": {
+    "processed": 1,
+    "written": 4,
+    "created": 0,
+    "toppedUp": 1,
+    "skipped": 0,
+    "short": 0,
+    "noModel": 0,
+    "exhausted": 0,
+    "error": 0,
+    "collisions": 0
+  },
+  "collisions": [],
+  "results": [
+    {
+      "suite": "mcq",
+      "label": "Amazon (company)",
+      "testId": "test-amazon-2",
+      "before": 26,
+      "requested": 4,
+      "written": 4,
+      "after": 30,
+      "attempts": 3,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 1,
+        "validResponses": 3,
+        "invalidCandidates": 0
+      },
+      "status": "topped-up"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import {
   loadBank,
   rejectAgainstBank,
 } from "./question-bank.service";
+import { deleteTestFromDb, loadTestsFromDb, persistTestToDb, persistTestsToDb } from "./mcq-store-db";
 
 // ─── Interfaces ─────────────────────────────────────────────────────────────
 
@@ -229,6 +230,37 @@ function shuffleWithOptions(correctVal: string, distractors: string[], targetIdx
   return opts;
 }
 
+/**
+ * Stable, collision-free question id.
+ *
+ * The positional form (`...-q{i}`) was not enough: `i` is the index within one
+ * generation batch, so a test assembled by two passes — a 15-question seed
+ * followed by a top-up — restarted the counter and minted the same ids for
+ * different questions. Fifteen such collisions sat in the store and made any
+ * `createMany` against `mcq_questions` fail on the primary key, which is why
+ * the database had 119 of 3,024 questions.
+ *
+ * Mixing in the content fingerprint makes the id a function of *what the
+ * question is*, so distinct questions can never collide and regenerating the
+ * same question is idempotent.
+ */
+function buildQuestionId(targetId: string, testNumber: number, index: number, fingerprint: string): string {
+  const slug = targetId.toLowerCase().replace(/[^a-z0-9]/g, "-");
+  const suffix = (fingerprint || `i${index}`).slice(0, 8).replace(/[^a-z0-9]/gi, "");
+  return `mcq-${slug}-t${testNumber}-q${index}-${suffix || `i${index}`}`;
+}
+
+/**
+ * First unused `<testId>-q<n>` id for a test. `questions.length + 1` collides
+ * as soon as a question has been deleted from the middle of a test.
+ */
+function nextFreeQuestionId(test: MCQTest): string {
+  const taken = new Set(test.questions.map((q) => q.id));
+  let n = test.questions.length + 1;
+  while (taken.has(`${test.id}-q${n}`)) n++;
+  return `${test.id}-q${n}`;
+}
+
 // ─── Test Store & Persistence ───────────────────────────────────────────────
 
 const STORAGE_FILE = path.join(__dirname, "../../data/mcq-tests-store.json");
@@ -297,6 +329,102 @@ function saveTestsToDisk(): void {
     fs.writeFileSync(STORAGE_FILE, JSON.stringify(list, null, 2), "utf-8");
   } catch (err) {
     console.error("[MCQ] Failed to save tests to disk:", err);
+  }
+}
+
+/**
+ * Rebuild the in-memory maps from a list of tests, repopulating the per-target
+ * anti-repetition registry from the questions themselves.
+ */
+function hydrateFromList(list: MCQTest[]): void {
+  testMap.clear();
+  globalSeenPerTarget.clear();
+  for (const t of list) {
+    testMap.set(t.id, t);
+    for (const q of t.questions || []) {
+      addSeenSignature(t.targetId, questionDedupKeys(q.question, q.codeSnippet), t.testNumber);
+    }
+  }
+}
+
+/**
+ * Make Postgres the source of truth for the store.
+ *
+ * Called once during boot, before the server starts listening. Postgres wins
+ * over the JSON file, because the JSON file is an ephemeral-host liability: any
+ * test generated at runtime was lost on the next deploy.
+ *
+ * If a test is present in the JSON file with *more* questions than the database
+ * row, the database is treated as stale and repaired from the JSON. That is what
+ * heals the tables left behind by the one-off import that ran before the store
+ * had been backfilled (101 test rows, 119 of 3,024 questions).
+ *
+ * Returns true when the store is now backed by the database. Never throws — a
+ * database outage leaves the JSON file in charge.
+ */
+export async function hydrateTestStoreFromDb(): Promise<boolean> {
+  const fromDb = await loadTestsFromDb();
+  if (!fromDb) {
+    console.warn("[MCQ] Postgres unavailable or empty — serving from the JSON store only.");
+    return false;
+  }
+
+  const jsonSnapshot = new Map<string, MCQTest>();
+  for (const t of Array.from(testMap.values())) {
+    jsonSnapshot.set(t.id, t);
+  }
+
+  hydrateFromList(fromDb.tests);
+
+  // Self-heal: push the JSON copy only where the database row is behind.
+  const stale: MCQTest[] = [];
+  for (const [id, jsonTest] of jsonSnapshot) {
+    const dbTest = testMap.get(id);
+    const jsonCount = (jsonTest.questions || []).length;
+    const dbCount = dbTest ? (dbTest.questions || []).length : 0;
+    if (jsonCount > dbCount) {
+      stale.push(jsonTest);
+      testMap.set(id, jsonTest);
+    }
+  }
+
+  console.log(
+    `[MCQ] Hydrated from Postgres: ${fromDb.tests.length} tests / ${fromDb.questions} questions.`
+  );
+
+  if (stale.length > 0) {
+    const repair = await persistTestsToDb(stale);
+    console.warn(
+      `[MCQ] Repaired ${repair.ok} stale database test(s) from the JSON store ` +
+        `(${repair.failed} failed).`
+    );
+  }
+
+  // Deliberately NOT writing the JSON file here. It is a derived cache that
+  // exists only so a database outage can still serve the store, so hydration
+  // has nothing to add. Rewriting it would let one process clobber another
+  // process's newer in-memory state — with two backends against one database
+  // that silently reverts the repair this function just performed.
+  return true;
+}
+
+/**
+ * Persist a mutation to both durable stores: the JSON cache and Postgres.
+ *
+ * `changed` is the single test that was touched, so a write costs one upsert
+ * plus one question-set replace rather than a full-store rewrite. Pass
+ * `removedId` for a delete. Never throws — the in-memory store stays
+ * authoritative for the current request either way.
+ */
+function commitStore(changed?: MCQTest | null, removedId?: string): void {
+  saveTestsToDisk();
+
+  if (removedId) {
+    void deleteTestFromDb(removedId);
+    return;
+  }
+  if (changed) {
+    void persistTestToDb(changed);
   }
 }
 
@@ -1006,7 +1134,7 @@ export function generateTestQuestionsWithAntiRepetition(
         const opts = shuffleWithOptions(def.correct, def.distractors, correctIdx);
 
         questionObj = {
-          id: `mcq-${targetId.toLowerCase().replace(/[^a-z0-9]/g, "-")}-t${testNumber}-q${i}`,
+          id: buildQuestionId(targetId, testNumber, i, keys.fingerprint),
           question: qStatement,
           technology: targetType === "technology" ? targetName : "Computer Science",
           company: targetType === "company" ? targetName : undefined,
@@ -1043,7 +1171,12 @@ export function generateTestQuestionsWithAntiRepetition(
       const qStatement = `[${targetName} • Test ${testNumber} • Q${i}] ${def.question.replace(/^\[.*?\]\s*/, "")} (Variant ${testNumber}.${i})`;
       const opts = shuffleWithOptions(def.correct, def.distractors, correctIdx);
       questionObj = {
-        id: `mcq-${targetId.toLowerCase().replace(/[^a-z0-9]/g, "-")}-t${testNumber}-q${i}`,
+        id: buildQuestionId(
+          targetId,
+          testNumber,
+          i,
+          questionDedupKeys(qStatement, def.codeSnippet).fingerprint
+        ),
         question: qStatement,
         technology: targetType === "technology" ? targetName : "Computer Science",
         company: targetType === "company" ? targetName : undefined,
@@ -1075,7 +1208,7 @@ export function initializeTestStore(): void {
   globalSeenPerTarget.clear();
 
   const loadedFromDisk = loadTestsFromDisk();
-  let newTestsAdded = false;
+  const addedTests: MCQTest[] = [];
 
   console.log(`[MCQ] Syncing Test 1 across all ${DEFAULT_TECHNOLOGIES.length} Technologies and ${DEFAULT_COMPANIES.length} Companies (Current in-memory: ${testMap.size})...`);
 
@@ -1113,7 +1246,7 @@ export function initializeTestStore(): void {
       };
 
       testMap.set(testId, testObj);
-      newTestsAdded = true;
+      addedTests.push(testObj);
     }
   }
 
@@ -1151,13 +1284,18 @@ export function initializeTestStore(): void {
       };
 
       testMap.set(testId, testObj);
-      newTestsAdded = true;
+      addedTests.push(testObj);
     }
   }
 
-  if (newTestsAdded || !loadedFromDisk) {
+  if (addedTests.length > 0 || !loadedFromDisk) {
     saveTestsToDisk();
     console.log(`[MCQ] Saved updated test store with ${testMap.size} tests across all technologies & companies.`);
+    if (addedTests.length > 0) {
+      // Only the freshly seeded tests need writing through; the rest are already
+      // durable from a previous run.
+      void persistTestsToDb(addedTests);
+    }
   } else {
     console.log(`[MCQ] All ${testMap.size} tests already in sync with persistent store.`);
   }
@@ -1377,7 +1515,7 @@ export async function createNewTest(input: {
   };
 
   testMap.set(testId, newTest);
-  saveTestsToDisk();
+  commitStore(newTest);
 
   return newTest;
 }
@@ -1722,6 +1860,8 @@ export async function batchAddTestsToOneEach(input: {
 
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length || 1) }, () => worker()));
 
+  // Each createNewTest already wrote its own row through; this only refreshes
+  // the JSON cache so the two stores stay in step.
   saveTestsToDisk();
 
   return {
@@ -1743,13 +1883,13 @@ export async function updateTest(testId: string, updates: Partial<MCQTest>): Pro
   };
 
   testMap.set(testId, updated);
-  saveTestsToDisk();
+  commitStore(updated);
   return updated;
 }
 
 export async function deleteTest(testId: string): Promise<boolean> {
   const res = testMap.delete(testId);
-  if (res) saveTestsToDisk();
+  if (res) commitStore(null, testId);
   return res;
 }
 
@@ -1757,8 +1897,9 @@ export async function addQuestionToTest(testId: string, question: Partial<MCQQue
   const test = testMap.get(testId);
   if (!test) return null;
 
+  const takenIds = new Set(test.questions.map((q) => q.id));
   const newQ: MCQQuestion = {
-    id: question.id || `${testId}-q${test.questions.length + 1}`,
+    id: question.id && !takenIds.has(question.id) ? question.id : nextFreeQuestionId(test),
     question: question.question || "New Technical Question",
     technology: test.targetType === "technology" ? test.targetName : "Computer Science",
     company: test.targetType === "company" ? test.targetName : undefined,
@@ -1778,7 +1919,7 @@ export async function addQuestionToTest(testId: string, question: Partial<MCQQue
   test.questions.push(newQ);
   test.questionCount = test.questions.length;
   testMap.set(testId, test);
-  saveTestsToDisk();
+  commitStore(test);
   return test;
 }
 
@@ -1789,7 +1930,7 @@ export async function deleteQuestionFromTest(testId: string, questionId: string)
   test.questions = test.questions.filter((q) => q.id !== questionId);
   test.questionCount = test.questions.length;
   testMap.set(testId, test);
-  saveTestsToDisk();
+  commitStore(test);
   return test;
 }
 

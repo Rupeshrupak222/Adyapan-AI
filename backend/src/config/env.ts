@@ -104,6 +104,7 @@ export const env = {
   pistonUrl: process.env.PISTON_URL ?? "http://localhost:2000",
   apifyApiKey: process.env.APIFY_API_KEY ?? process.env.APIFY_TOKEN ?? "",
   scrapflyApiKey: process.env.SCRAPFLY_API_KEY ?? "",
+  tinyfishApiKey: process.env.TINYFISH_API_KEY ?? "",
   nodeEnv: process.env.NODE_ENV ?? "development",
   masterDatabaseUrl: process.env.MASTER_DATABASE_URL ?? process.env.DATABASE_URL ?? "",
   // Registration workflow: when "true", a verification email is queued/attempted

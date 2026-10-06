@@ -63,7 +63,12 @@ export default function HRInterviewPage() {
     document.documentElement.setAttribute("data-theme", next);
   };
 
-  const handleViewDashboard = () => router.push("/dashboard/user");
+  const handleViewDashboard = () => {
+    try {
+      localStorage.setItem("dashboard-active-view", "dashboard");
+    } catch {}
+    router.push("/dashboard/user");
+  };
   const handleViewTool = (tool: string) => {
     if (tool === "interview-engine") router.push("/dashboard/interview/engine");
     else if (tool === "interview") router.push("/dashboard/interview");
@@ -83,6 +88,7 @@ export default function HRInterviewPage() {
         onThemeToggle={handleThemeToggle}
         onViewProfile={handleViewProfile}
         onAdyChat={handleAdyChat}
+        onViewDashboard={handleViewDashboard}
         onViewTool={handleViewTool}
         onMenuToggle={() => setSidebarOpen(p => !p)}
         notifications={notifications}

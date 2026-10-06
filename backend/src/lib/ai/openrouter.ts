@@ -22,6 +22,8 @@ export interface OpenRouterOptions {
 // line that is reliably available on free-tier keys.
 const GEMINI_MODEL_FALLBACKS = [
   "gemini-3.5-flash-lite",
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
 ];
 
 // Groq model fallback chain.
@@ -50,15 +52,15 @@ const GROQ_MODEL_FALLBACKS_FAST = [
 //
 // Live + verified to emit parseable JSON for MCQ payloads (see the probe in
 // scripts/): z-ai/glm-5.3-flash and moonshotai/kimi-k3 both returned valid
-// `{"questions":[...]}` objects. nemotron-3-super-120b and
-// nemotron-3.5-lightning answer 200 but ramble past max_tokens, so they are kept
-// last as a genuine last resort rather than leading the chain.
+// `{"questions":[...]}` objects. nemotron-3.5-lightning is the preferred free
+// generator (30B A3B MoE, fast) but has been observed to ramble past max_tokens,
+// so generation is run with --batch-size 1 and GLM/Kimi stay as backups.
 //
 // Keep this list short — every stale ID costs a full request timeout.
 const NVIDIA_NIM_MODELS = [
+  { model: "nvidia/nemotron-3.5-lightning-30b-a3b", label: "Nemotron 3.5 Lightning", timeoutMs: 200000 },
   { model: "z-ai/glm-5.3-flash", label: "GLM 5.3 Flash", timeoutMs: 120000 },
   { model: "moonshotai/kimi-k3", label: "Kimi K3", timeoutMs: 200000 },
-  { model: "nvidia/nemotron-3-super-120b-a12b", label: "Nemotron 3 Super 120B", timeoutMs: 150000 },
 ];
 
 const FAST_OPENROUTER_DEFAULT = "openai/gpt-4o-mini";
@@ -72,6 +74,7 @@ const FAST_OPENROUTER_DEFAULT = "openai/gpt-4o-mini";
 // The free tier is heavily rate-limited (429s are normal and transient), so
 // each id carries its own cooldown and the chain falls through on failure.
 const OPENROUTER_FREE_MODELS = [
+  { model: "nvidia/nemotron-3.5-lightning:free", label: "Nemotron 3.5 Lightning (free)" },
   { model: "nvidia/nemotron-3-super-120b-a12b:free", label: "Nemotron 3 Super 120B (free)" },
   { model: "nvidia/nemotron-3-ultra-550b-a55b:free", label: "Nemotron 3 Ultra 550B (free)" },
   { model: "google/gemma-4-31b-it:free", label: "Gemma 4 31B (free)" },
@@ -80,6 +83,17 @@ const OPENROUTER_FREE_MODELS = [
 
 // In-memory circuit breaker to prevent hammering dead/rate-limited providers
 const providerCooldownUntil = new Map<string, number>();
+
+// Per-provider consecutive-failure counters. Three in a row earns a longer
+// 5-minute cooldown (free tiers reset connections transiently, so a single
+// "fetch failed" should be retried rather than written off, but a run of them
+// means the key/endpoint really is unhealthy).
+const consecutiveFailures = new Map<string, number>();
+
+// Round-robin cursor so each request leads the NVIDIA NIM chain with a
+// different account key, spreading free-tier credit/rate-limit usage across
+// the five configured keys instead of hammering #1 until it cools down.
+let nvidiaRotation = 0;
 
 // Maps any requested model hint to a valid, fast OpenRouter model id.
 function resolveOpenRouterModel(requestedModel?: string): string {
@@ -196,7 +210,8 @@ export async function callAIRobust(
   // rate limit does not disable the other four.
   const nvidiaKeys = env.nvidiaApiKeys?.filter(Boolean) ?? [];
   if (nvidiaKeys.length > 0) {
-    for (let ki = 0; ki < nvidiaKeys.length; ki++) {
+    for (let x = 0; x < nvidiaKeys.length; x++) {
+      const ki = (nvidiaRotation + x) % nvidiaKeys.length;
       for (const m of NVIDIA_NIM_MODELS) {
         providers.push({
           name: `NVIDIA (${m.label} #${ki + 1})`,
@@ -208,6 +223,7 @@ export async function callAIRobust(
         });
       }
     }
+    nvidiaRotation = (nvidiaRotation + 1) % nvidiaKeys.length;
   }
 
   if (providers.length === 0) {
@@ -268,36 +284,49 @@ export async function callAIRobust(
         }
       }
 
-      const controller = new AbortController();
       // Default is deliberately short — it only has to cover Groq/Gemini, which
       // answer in a couple of seconds, and a dead hop should not stall the chain.
       // NVIDIA NIM legitimately needs 60-200s for a full 4k-token JSON payload,
       // so it carries its own budget; without that it was aborted mid-generation
       // and was misread as the endpoint being dead.
       const fetchTimeoutMs = provider.timeoutMs ?? 45000;
-      const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
+      const requestHeaders = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${provider.key}`,
+      };
+
+      const performFetch = async (): Promise<Response> => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
+        try {
+          return await fetch(provider.url, {
+            method: "POST",
+            headers: requestHeaders,
+            body: JSON.stringify(body),
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      };
 
       let res: Response;
       try {
-        res = await fetch(provider.url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${provider.key}`,
-          },
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        });
+        res = await performFetch();
       } catch (fetchErr: any) {
-        clearTimeout(timeoutId);
         const isAbort = fetchErr?.name === "AbortError" || String(fetchErr).includes("abort");
         if (isAbort) {
           console.warn(`[AI Engine] ${provider.name} timed out after ${fetchTimeoutMs}ms — failing over immediately...`);
           providerCooldownUntil.set(provider.cooldownKey, Date.now() + 30000);
+          throw fetchErr;
         }
-        throw fetchErr;
+        // Connection-level failures (ECONNRESET / "fetch failed") are transient on
+        // free tiers — retry once before burning the next provider hop.
+        console.warn(`[AI Engine] ${provider.name} fetch failed — retrying once in 2s...`);
+        await new Promise(r => setTimeout(r, 2000));
+        res = await performFetch();
       }
-      clearTimeout(timeoutId);
 
       const rawText = await res.text();
       let data: any;
@@ -328,12 +357,24 @@ export async function callAIRobust(
         throw new Error(`${provider.name} returned empty completion.`);
       }
 
-      // Success — clear any cooldown for this provider
+      // Success — clear any cooldown and failure streak for this provider
       providerCooldownUntil.delete(provider.cooldownKey);
+      consecutiveFailures.delete(provider.cooldownKey);
       return content;
     } catch (e: any) {
       const msg = e.message || String(e);
       errors.push(`${provider.name}: ${msg}`);
+      // A short streak of soft failures (timeouts, empty content, quota) is
+      // expected on free tiers; three consecutive ones take the provider offline
+      // for 5 minutes instead of stalling every request behind it.
+      const fails = (consecutiveFailures.get(provider.cooldownKey) ?? 0) + 1;
+      if (fails >= 3) {
+        providerCooldownUntil.set(provider.cooldownKey, Date.now() + 5 * 60 * 1000);
+        consecutiveFailures.delete(provider.cooldownKey);
+        console.warn(`[AI Engine] ${provider.name} failed ${fails}× consecutively — offline for 5 minutes.`);
+      } else {
+        consecutiveFailures.set(provider.cooldownKey, fails);
+      }
       // Immediate failover to the next healthy provider without blocking sleep delay
     }
   }

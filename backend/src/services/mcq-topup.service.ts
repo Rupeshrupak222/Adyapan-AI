@@ -21,7 +21,12 @@ import {
   sanitizeGeneratedQuestions,
   stripBracketedPrefix,
 } from "../lib/questions/question-fingerprint";
-import { buildAvoidanceBlock, loadBank, rejectAgainstBank } from "./question-bank.service";
+import {
+  buildAvoidanceBlock,
+  loadBank,
+  rejectAgainstBank,
+  type BankSnapshot,
+} from "./question-bank.service";
 
 export interface McqQuestion {
   id: string;
@@ -51,6 +56,8 @@ export interface McqGenerationResult {
     apiErrors: number;
     bankRejections: number;
     validResponses: number;
+    /** Candidates rejected by the structural gate before reaching the bank. */
+    invalidCandidates?: number;
   };
 }
 
@@ -114,6 +121,15 @@ export async function generateUniqueMcqQuestions(params: {
   maxAttempts?: number;
   batchSize?: number;
   throttleMs?: number;
+  /**
+   * Pre-built dedup registry. Defaults to question_bank.
+   *
+   * Pass one when uniqueness must be judged against more than question_bank —
+   * e.g. a caller that unions the bank with every question currently live in
+   * mcq_questions/aptitude_topic_tests, which is the only way to guarantee a new
+   * question differs from the *whole* database rather than from the bank alone.
+   */
+  bank?: BankSnapshot;
 }): Promise<McqGenerationResult> {
   const { target, targetType, count, difficulty, idPrefix } = params;
   const idOffset = params.idOffset ?? 0;
@@ -121,7 +137,7 @@ export async function generateUniqueMcqQuestions(params: {
   const batchSize = Math.max(1, params.batchSize ?? 2);
   const throttleMs = Math.max(0, params.throttleMs ?? 0);
 
-  const bank = await loadBank(undefined, { includeTexts: true });
+  const bank = params.bank ?? (await loadBank(undefined, { includeTexts: true }));
   const accepted: McqQuestion[] = [];
   const acceptedTexts: string[] = [];
   const rejectedConcepts: string[] = [];
@@ -130,6 +146,15 @@ export async function generateUniqueMcqQuestions(params: {
   let apiErrors = 0;
   let bankRejections = 0;
   let validResponses = 0;
+  // Candidates the model returned that never reached the bank because they failed
+  // the structural gate. Tracked separately so a shortfall can be told apart from
+  // "the topic has no unused concept left".
+  let invalidCandidates = 0;
+
+  console.log(
+    `[McqTopUp] "${target}" (${targetType}): ${count} question(s), batch ${batchSize}, ` +
+      `up to ${maxAttempts} attempt(s).`
+  );
 
   const focus = COMPANY_FOCUS[target.toLowerCase()];
   const audience =
@@ -238,6 +263,13 @@ Rules:
 
     // Cheap structural gate first so the bank only sees well-formed candidates.
     const { valid, rejected: invalid } = sanitizeGeneratedQuestions(candidates);
+    invalidCandidates += invalid.length;
+    if (invalid.length > 0) {
+      console.warn(
+        `[McqTopUp] "${target}" attempt ${attempt}: ${invalid.length}/${candidates.length} candidate(s) ` +
+          `failed validation. First problem: ${invalid[0]?.reasons?.join(", ") || "unknown"}`
+      );
+    }
     if (valid.length === 0) {
       parseFailures++;
       console.warn(
@@ -313,7 +345,7 @@ Rules:
     rejectedConcepts,
     attempts,
     exhausted: accepted.length < count,
-    diagnostics: { parseFailures, apiErrors, bankRejections, validResponses },
+    diagnostics: { parseFailures, apiErrors, bankRejections, validResponses, invalidCandidates },
   };
 }
 

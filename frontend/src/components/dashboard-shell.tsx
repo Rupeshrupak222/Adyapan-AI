@@ -400,6 +400,7 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
 export function DashboardTopNav({
   user, theme, onThemeToggle, onViewProfile, onAdyChat, onViewTool, onMenuToggle,
   notifications, setNotifications, unreadCount, onMarkAllRead, onClearAll, onPremium, onViewSettings,
+  onViewDashboard,
 }: {
   user: AdyapanUser | null;
   theme: string;
@@ -411,6 +412,7 @@ export function DashboardTopNav({
   notifications: Array<{ id: string; title: string; message: string; read: boolean; link?: string; targetAudience?: string; priority?: string; isSystem?: boolean; createdAt: string }>;
   onPremium?: () => void;
   onViewSettings?: () => void;
+  onViewDashboard?: () => void;
   setNotifications: React.Dispatch<React.SetStateAction<Array<{ id: string; title: string; message: string; read: boolean; link?: string; targetAudience?: string; priority?: string; isSystem?: boolean; createdAt: string }>>>;
   unreadCount: number;
   onMarkAllRead: () => void;
@@ -559,7 +561,20 @@ export function DashboardTopNav({
           <Menu size={20} />
         </motion.button>
 
-        <Link href="/dashboard/user" className="dash-brand" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+        <Link
+          href="/dashboard/user"
+          onClick={(e) => {
+            try {
+              localStorage.setItem("dashboard-active-view", "dashboard");
+            } catch {}
+            if (onViewDashboard) {
+              e.preventDefault();
+              onViewDashboard();
+            }
+          }}
+          className="dash-brand"
+          style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", cursor: "pointer" }}
+        >
           <Image src="/assets/logo.png" alt="Adyapan AI" width={237} height={208} className="dash-brand-logo" style={{ width: 30, height: 30, borderRadius: "50%" }} />
           <span className="dash-brand-text" style={{ fontWeight: 700, fontSize: "1.15rem", color: navBtnColor, whiteSpace: "nowrap" }}>Adyapan AI</span>
         </Link>

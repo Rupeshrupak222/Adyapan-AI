@@ -28,12 +28,26 @@ initSocketServer(server);
 
 import { JobSchedulerService } from "./services/job-scheduler.service";
 import { ensureAdminTables } from "./scripts/ensure-admin-tables";
+import { hydrateTestStoreFromDb } from "./services/mcq.service";
 
-server.listen(env.port, "0.0.0.0", () => {
-  console.log(`Backend server started on port ${env.port}`);
-  ensureAdminTables().catch((e) => {
-    console.warn("Admin tables sync skipped (non-fatal):", e?.message || e);
+async function start() {
+  // The MCQ store hydrates from Postgres before the first request so a test
+  // generated at runtime survives a redeploy. Failure is non-fatal: the service
+  // falls back to its JSON cache.
+  try {
+    await hydrateTestStoreFromDb();
+  } catch (e: any) {
+    console.warn("MCQ store hydration skipped (non-fatal):", e?.message || e);
+  }
+
+  server.listen(env.port, "0.0.0.0", () => {
+    console.log(`Backend server started on port ${env.port}`);
+    ensureAdminTables().catch((e) => {
+      console.warn("Admin tables sync skipped (non-fatal):", e?.message || e);
+    });
+    JobSchedulerService.start();
   });
-  JobSchedulerService.start();
-});
+}
+
+start();
 // Touch to reload dev server with regenerated prisma client types

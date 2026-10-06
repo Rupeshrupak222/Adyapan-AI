@@ -23,6 +23,8 @@ export default function ThemeScript() {
             return null;
           }
           return origSetAttrNode.apply(this, arguments);
+        };
+
         try {
           Object.defineProperty(Element.prototype, 'bis_skin_checked', {
             get: function() { return undefined; },
