@@ -59,6 +59,7 @@ const CSE_DOMAIN_PRESETS = [
   { name: "AWS", role: "AWS Cloud Architect", tech: "AWS EC2, S3, Lambda, VPC, DynamoDB, IAM" },
   { name: "AI (Generative & Agentic)", role: "Generative AI Engineer", tech: "LLMs, LangChain, RAG, LlamaIndex, AI Agents" },
   { name: "Mobile App Development", role: "Mobile App Engineer", tech: "Flutter, React Native, iOS, Android, Dart" },
+  { name: "UI/UX & Product Design", role: "UI / UX Designer", tech: "Figma, User Research, Wireframing, Prototyping, Design Systems" },
 ];
 
 export function InterviewHubView({ setView, activeModule = "interview-hub", theme = "dark" }: InterviewHubViewProps) {

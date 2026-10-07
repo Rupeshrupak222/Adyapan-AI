@@ -178,6 +178,7 @@ const ROLE_PRESETS = [
   "Software Engineer",
   "Frontend Developer",
   "Backend Engineer",
+  "UI / UX Designer",
   "Systems Architect",
 ];
 

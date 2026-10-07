@@ -49,6 +49,8 @@ const EXPERIENCE_OPTIONS: { value: HRExperienceLevel; label: string; description
 const DURATION_OPTIONS = [15, 20, 25, 30, 45, 60];
 
 const HR_ROLE_PRESETS = [
+  "UI / UX Designer",
+  "Product Designer (UI/UX)",
   "Data Scientist",
   "Machine Learning Engineer",
   "AI / ML Engineer",
@@ -371,7 +373,7 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
               <div className="space-y-3">
                 <div className="space-y-1">
                   <h2 className="text-xl font-extrabold flex items-center gap-2"><Briefcase size={20} className="text-amber-500" /> Target Role</h2>
-                  <p className="text-xs" style={{ color: c.textMuted }}>Type or pick any of the 18 Adyapan CSE domains:</p>
+                  <p className="text-xs" style={{ color: c.textMuted }}>Type or pick any Adyapan domain (UI/UX, AI, Engineering & Cloud):</p>
                 </div>
                 <input value={config.targetRole} onChange={(e) => updateConfig({ targetRole: e.target.value })}
                   placeholder="Enter your target role..."

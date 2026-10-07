@@ -157,6 +157,24 @@ function getInterviewPhaseGuidance(questionNumber: number, totalQuestions: numbe
   return "CLOSING: Ask about questions they have, any final thoughts, and wrap up professionally. This is their chance to leave a final impression.";
 }
 
+function getRoleSpecificHRGuidance(role: string): string {
+  const normalized = (role || "").toLowerCase();
+  if (
+    normalized.includes("ui") ||
+    normalized.includes("ux") ||
+    normalized.includes("design") ||
+    normalized.includes("product designer")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR UI/UX & PRODUCT DESIGN:
+- Assess cross-functional collaboration: Inquire about working with frontend/backend developers, product managers, and QA.
+- Handling design critique & stakeholder pushback: Ask how they handle situations where their design was questioned or rejected.
+- Balancing user advocacy with business constraints & deadlines: Explore how they prioritize user needs against engineering feasibility or commercial milestones.
+- Design storytelling & rationale: Evaluate their ability to clearly articulate the "why" behind their design decisions, personas, and user research.
+- Empathy, usability testing & accessibility: Inquire about user testing insights, handling edge cases, and accessibility (WCAG).`;
+  }
+  return "";
+}
+
 const HR_FALLBACK_QUESTION: HRQuestion = {
   question: "Tell me about yourself and what motivated you to apply for this role.",
   category: "tell_me_about_yourself",
@@ -167,6 +185,23 @@ const HR_FALLBACK_QUESTION: HRQuestion = {
   followUpHint: "Ask about specific career milestones that led to this application",
   tips: ["Listen for a clear narrative arc", "Note self-awareness and enthusiasm"],
 };
+
+function getHRFallbackQuestion(targetRole: string): HRQuestion {
+  const lower = (targetRole || "").toLowerCase();
+  if (lower.includes("ui") || lower.includes("ux") || lower.includes("design")) {
+    return {
+      question: "Could you tell me about yourself, your design journey, and what motivated you to pursue this UI/UX design role?",
+      category: "tell_me_about_yourself",
+      competency: "communication",
+      difficulty: "easy",
+      isFollowUp: false,
+      expectedSTAR: false,
+      followUpHint: "Ask about a specific design challenge or project where they championed the user experience",
+      tips: ["Listen for user empathy and design process awareness", "Observe how clearly they connect user needs with business goals"],
+    };
+  }
+  return HR_FALLBACK_QUESTION;
+}
 
 export function ensureQuestionFormat(text: string, defaultType: string = "behavioral"): string {
   if (!text) return "Could you walk me through a specific example from your past experience?";
@@ -198,6 +233,7 @@ export async function generateHRQuestion(
   const companyFocus = getCompanyHRFocus(config.targetCompany);
   const experienceGuidance = getExperienceLevelGuidance(config.experienceLevel);
   const phaseGuidance = getInterviewPhaseGuidance(questionNumber, totalQuestions);
+  const roleGuidance = getRoleSpecificHRGuidance(config.targetRole);
 
   const conversationHistory = history
     .filter((m) => m.role === "interviewer" || m.role === "candidate")
@@ -223,7 +259,7 @@ PHASE: ${phaseGuidance}
 EXPERIENCE LEVEL GUIDANCE:
 ${experienceGuidance}
 
-${companyFocus ? `COMPANY-SPECIFIC FOCUS:\n${companyFocus}\n` : ""}
+${roleGuidance ? `ROLE-SPECIFIC GUIDANCE:\n${roleGuidance}\n` : ""}${companyFocus ? `COMPANY-SPECIFIC FOCUS:\n${companyFocus}\n` : ""}
 ${resumeSection}
 BEHAVIORAL TOPICS TO COVER (choose based on phase and conversation flow):
 ${BEHAVIORAL_CATEGORIES.map((c) => `- ${c.replace(/_/g, " ")}`).join("\n")}
@@ -260,18 +296,19 @@ ${conversationHistory ? `Previous conversation:\n${conversationHistory}` : "This
 ${conversationHistory ? "First acknowledge their last response with 1 short sentence, then ask the next specific question ending with '?'." : "Generate the opening question."}`;
 
   try {
+    const fallbackQ = getHRFallbackQuestion(config.targetRole);
     const result = await generateJSON<HRQuestion>(
       systemPrompt,
       userPrompt,
       { model: MODELS.BALANCED, temperature: 0.8, maxTokens: 2048 },
-      HR_FALLBACK_QUESTION
+      fallbackQ
     );
     result.question = ensureQuestionFormat(result.question, config.interviewType);
     console.log(`[HR Interview] Generated question ${questionNumber} — category: ${result.category}, competency: ${result.competency}`);
     return result;
   } catch (error) {
     console.error(`[HR Interview] Question generation failed, using fallback:`, error);
-    return HR_FALLBACK_QUESTION;
+    return getHRFallbackQuestion(config.targetRole);
   }
 }
 
