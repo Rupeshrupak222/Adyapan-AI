@@ -98,6 +98,13 @@ apiRouter.use("/coding", premiumGate, codingRouter);
 apiRouter.use("/dsa", premiumGate, dsaRouter);
 apiRouter.use("/challenges", premiumGate, challengesRouter);
 apiRouter.use("/github", githubRouter);
+
+// Interview Engine Sub-routes (MUST be mounted before general /interview prefix)
+apiRouter.use("/interview/hr", premiumGate, hrInterviewRouter);
+apiRouter.use("/hr-interview", premiumGate, hrInterviewRouter);
+apiRouter.use("/interview/technical", premiumGate, technicalEngineRouter);
+apiRouter.use("/technical-engine", premiumGate, technicalEngineRouter);
+apiRouter.use("/engine", premiumGate, engineRouter);
 apiRouter.use("/interview", premiumGate, interviewRouter);
 apiRouter.use("/ady-chat", premiumGate, adyChatRouter);
 apiRouter.use("/flashcards", flashcardsRouter);
@@ -129,15 +136,6 @@ apiRouter.use("/community", communityRouter);
 
 // Career Navigation Engine Routes
 apiRouter.use("/career", careerRouter);
-
-// Interview Engine Routes
-apiRouter.use("/engine", premiumGate, engineRouter);
-
-// Technical Interview Engine Routes
-apiRouter.use("/technical-engine", premiumGate, technicalEngineRouter);
-
-// HR Interview Engine Routes
-apiRouter.use("/interview/hr", premiumGate, hrInterviewRouter);
 
 // Placement Hub Routes
 apiRouter.use("/placement", placementRouter);

@@ -95,6 +95,10 @@ const consecutiveFailures = new Map<string, number>();
 // the five configured keys instead of hammering #1 until it cools down.
 let nvidiaRotation = 0;
 
+// Same idea for Google Gemini: with more than one key, alternate which key leads
+// each request so both keys share the 429/cooldown load evenly.
+let geminiRotation = 0;
+
 // Maps any requested model hint to a valid, fast OpenRouter model id.
 function resolveOpenRouterModel(requestedModel?: string): string {
   const lower = (requestedModel ?? "").toLowerCase();
@@ -123,7 +127,11 @@ export async function callAIRobust(
   }[] = [];
 
   // 0. Add Google Gemini with latest flash models first (absolute primary)
-  if (env.geminiApiKey) {
+  const geminiKeys = env.geminiApiKeys && env.geminiApiKeys.length > 0
+    ? env.geminiApiKeys
+    : env.geminiApiKey ? [env.geminiApiKey] : [];
+
+  if (geminiKeys.length > 0) {
     const modelLower = options.model?.toLowerCase() ?? "";
     const requestedModel = modelLower.includes("gemini")
       ? options.model.split("/").pop() || ""
@@ -133,14 +141,22 @@ export async function callAIRobust(
       ? [requestedModel, ...GEMINI_MODEL_FALLBACKS.filter(m => m !== requestedModel)]
       : [...GEMINI_MODEL_FALLBACKS];
 
-    for (const m of modelsToTry) {
-      providers.push({
-        name: `Gemini (${m})`,
-        url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        key: env.geminiApiKey,
-        model: m,
-        cooldownKey: `gemini-${m}`,
-      });
+    for (let kIdx = 0; kIdx < geminiKeys.length; kIdx++) {
+      const ki = geminiKeys.length > 1 ? (geminiRotation + kIdx) % geminiKeys.length : kIdx;
+      const key = geminiKeys[ki];
+      const keySuffix = geminiKeys.length > 1 ? ` (Key ${ki + 1})` : "";
+      for (const m of modelsToTry) {
+        providers.push({
+          name: `Gemini (${m})${keySuffix}`,
+          url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+          key,
+          model: m,
+          cooldownKey: `gemini-${m}-k${ki + 1}`,
+        });
+      }
+    }
+    if (geminiKeys.length > 1) {
+      geminiRotation = (geminiRotation + 1) % geminiKeys.length;
     }
   }
 

@@ -54,6 +54,7 @@ import {
   handleGetTests,
   handleGetTestById,
 } from "../controllers/mcq.controller";
+import { HourlyQuestionSchedulerService } from "../services/hourly-question-scheduler.service";
 import { requireAdminAuth } from "../middleware/adminAuth";
 import { requireAdminPermission, requireSuperAdmin } from "../middleware/adminPermission";
 import {
@@ -167,6 +168,13 @@ adminRouter.put("/mcq/tests/:testId", ...can("content", "write"), handleAdminUpd
 adminRouter.delete("/mcq/tests/:testId", ...can("content", "write"), handleAdminDeleteTest);
 adminRouter.post("/mcq/tests/:testId/questions", ...can("content", "write"), handleAdminAddQuestionToTest);
 adminRouter.delete("/mcq/tests/:testId/questions/:questionId", ...can("content", "write"), handleAdminDeleteQuestion);
+adminRouter.get("/mcq/hourly-scheduler/status", ...can("content", "read"), (req, res) => {
+  res.json({ success: true, status: HourlyQuestionSchedulerService.getStatus() });
+});
+adminRouter.post("/mcq/hourly-scheduler/trigger", ...can("content", "write"), async (req, res) => {
+  const result = await HourlyQuestionSchedulerService.runHourlyCycle();
+  res.json({ success: true, result });
+});
 
 // AI Aptitude Engine & Topic Tests Management
 adminRouter.get("/aptitude/overview", ...can("content", "read"), getAptitudeOverviewAdminCtrl);

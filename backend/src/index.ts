@@ -27,6 +27,7 @@ const server = createServer(app);
 initSocketServer(server);
 
 import { JobSchedulerService } from "./services/job-scheduler.service";
+import { HourlyQuestionSchedulerService } from "./services/hourly-question-scheduler.service";
 import { ensureAdminTables } from "./scripts/ensure-admin-tables";
 import { hydrateTestStoreFromDb } from "./services/mcq.service";
 
@@ -46,6 +47,7 @@ async function start() {
       console.warn("Admin tables sync skipped (non-fatal):", e?.message || e);
     });
     JobSchedulerService.start();
+    HourlyQuestionSchedulerService.start();
   });
 }
 

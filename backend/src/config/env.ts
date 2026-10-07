@@ -47,6 +47,15 @@ export const env = {
     process.env.GOOGLE_GEMINI_API_KEY ||
     process.env.GEMINI_KEY ||
     "",
+  geminiApiKey2: process.env.GEMINI_API_KEY_2 ?? "",
+  geminiApiKeys: [
+    process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_API_KEY ||
+      process.env.GOOGLE_GEMINI_API_KEY ||
+      process.env.GEMINI_KEY ||
+      "",
+    process.env.GEMINI_API_KEY_2 ?? "",
+  ].filter(Boolean),
   groqApiKey: process.env.GROQ_API_KEY ?? "",
   openrouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
   nvidiaApiKey: process.env.NVIDIA_API_KEY ?? "",
