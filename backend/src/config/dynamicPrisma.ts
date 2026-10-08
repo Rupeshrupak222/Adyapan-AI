@@ -100,6 +100,7 @@ const recentlySynced = new Set<string>();
 export function createPrismaClient(databaseUrl: string): any {
   const pool = new Pool({
     connectionString: databaseUrl,
+    ssl: { rejectUnauthorized: false },
     max: 8,
     connectionTimeoutMillis: 20_000,
     idleTimeoutMillis: 60_000,
