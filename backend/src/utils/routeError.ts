@@ -23,6 +23,31 @@ export function handleRouteError(
   const httpErr = error as Partial<HttpError> & { status?: number; stack?: string };
   const statusCode = httpErr?.statusCode ?? httpErr?.status ?? 500;
 
+  const rawMsg = String((error as any)?.message || error || "").toLowerCase();
+  const isMaintenanceOrQuota =
+    statusCode === 402 ||
+    statusCode === 503 ||
+    statusCode === 507 ||
+    rawMsg.includes("quota") ||
+    rawMsg.includes("upgrade your plan") ||
+    rawMsg.includes("exceeded the quota") ||
+    rawMsg.includes("plan limit") ||
+    rawMsg.includes("too many connections") ||
+    rawMsg.includes("database is paused") ||
+    rawMsg.includes("project is paused") ||
+    rawMsg.includes("railway");
+
+  if (isMaintenanceOrQuota) {
+    const maintenanceMsg = "Site under maintenance. We are performing scheduled upgrades, please check back shortly.";
+    res.status(503).json({
+      success: false,
+      code: "SITE_MAINTENANCE",
+      message: maintenanceMsg,
+      error: maintenanceMsg,
+    });
+    return;
+  }
+
   if (statusCode >= 500) {
     const { PlatformLogger } = require("./logger");
     PlatformLogger.logError({

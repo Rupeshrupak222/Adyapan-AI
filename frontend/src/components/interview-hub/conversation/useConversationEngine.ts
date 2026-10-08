@@ -291,6 +291,9 @@ export function useConversationEngine({
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtx) return;
       const audioCtx = new AudioCtx();
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume().catch(() => {});
+      }
       audioContextRef.current = audioCtx;
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
@@ -312,6 +315,19 @@ export function useConversationEngine({
         // Voice Activity Detection threshold for interruption
         if (level > 25 && stateRef.current === "AI_SPEAKING" && !isDestroyedRef.current && !isSubmittingRef.current) {
           handleCandidateInterruption();
+        }
+
+        // Active speech energy detection while candidate is speaking: keep turn alive and refresh timestamp
+        if (level > 15 && stateRef.current !== "AI_SPEAKING" && !isDestroyedRef.current && !isSubmittingRef.current) {
+          lastSpeechTimeRef.current = Date.now();
+          if (
+            stateRef.current === "WAITING_FOR_CANDIDATE" ||
+            stateRef.current === "SHORT_PAUSE" ||
+            stateRef.current === "LONG_PAUSE_CONFIRMATION"
+          ) {
+            setState("LISTENING");
+          }
+          setSilenceStage("none");
         }
 
         if (!isDestroyedRef.current && analyserRef.current) {
@@ -365,7 +381,7 @@ export function useConversationEngine({
       },
       {
         onStateChange: (engineState) => {
-          if (engineState === "LISTENING") {
+          if (engineState === "LISTENING" || engineState === "HEARING") {
             isListeningRef.current = true;
             isStartingRef.current = false;
           } else if (engineState === "IDLE" || engineState === "ERROR") {

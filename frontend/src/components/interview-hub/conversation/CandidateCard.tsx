@@ -79,7 +79,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   }
 
   const containerClasses = isFloating
-    ? "fixed bottom-14 right-4 z-50 w-72 md:w-80 h-56 rounded-2xl border border-cyan-500/40 bg-slate-950/95 backdrop-blur-xl shadow-2xl p-2.5 text-slate-100 flex flex-col justify-between"
+    ? "fixed bottom-16 right-3 sm:bottom-14 sm:right-4 z-50 w-44 sm:w-72 md:w-80 h-32 sm:h-52 md:h-56 rounded-2xl border border-cyan-500/40 bg-slate-950/95 backdrop-blur-xl shadow-2xl p-2 sm:p-2.5 text-slate-100 flex flex-col justify-between"
     : `relative h-full flex flex-col justify-between p-3.5 rounded-2xl border backdrop-blur-md overflow-hidden transition-all duration-300 ${
         isDark
           ? "bg-slate-900/90 border-slate-800 shadow-xl shadow-cyan-950/20 text-slate-100"

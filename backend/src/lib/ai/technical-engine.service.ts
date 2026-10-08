@@ -12,7 +12,15 @@ export type TechnicalTopic =
   | "data-science" | "ml-python" | "ai-ml" | "python-programming"
   | "web-dev" | "cybersecurity" | "cloud-computing" | "java-programming"
   | "ai" | "android-dev" | "data-analytics" | "business-analytics"
-  | "dsa-python" | "devops" | "aws" | "gen-agentic-ai" | "mobile-dev";
+  | "dsa-python" | "devops" | "aws" | "gen-agentic-ai" | "mobile-dev"
+  | "ui-ux" | "graphic-design" | "product-management" | "finance"
+  | "investment-banking" | "stock-market" | "digital-marketing" | "hrm"
+  | "supply-chain" | "startup-entrepreneurship" | "sales-business-dev"
+  | "autocad-mechanical" | "hev" | "car-designing" | "civil-project-management"
+  | "mech-product-management" | "embedded-systems" | "vlsi" | "robotics"
+  | "drone-engineering" | "iot" | "clinical-research" | "medical-coding"
+  | "genetic-engineering" | "psychology" | "nanotechnology" | "system-design"
+  | "microservices" | "embedded-iot" | (string & {});
 
 export type CodingLanguage = "javascript" | "python" | "java" | "cpp" | "typescript";
 
@@ -86,7 +94,7 @@ export interface Message {
 
 // ─── Topic Configurations ───────────────────────────────────────────────────
 
-const TOPIC_FOCUS: Record<TechnicalTopic, string> = {
+const TOPIC_FOCUS: Record<string, string> = {
   dsa: "Focus on data structures (arrays, linked lists, trees, graphs, hash maps, stacks, queues, heaps) and algorithms (sorting, searching, dynamic programming, greedy, backtracking, graph algorithms). Ask about time/space complexity analysis, optimal solutions, and trade-offs.",
   backend: "Focus on server-side development: REST APIs, database design, caching, authentication, message queues, microservices, scalability patterns, deployment, and monitoring.",
   frontend: "Focus on UI development: DOM manipulation, browser rendering pipeline, CSS layouts, JavaScript engine internals, frameworks (React/Vue/Angular), performance optimization, accessibility, and responsive design.",
@@ -126,6 +134,41 @@ const TOPIC_FOCUS: Record<TechnicalTopic, string> = {
   aws: "Focus on AWS (Amazon Web Services): core services including EC2, S3, RDS, DynamoDB, Lambda, VPC networking, Route 53, IAM security policies, CloudWatch monitoring, and designing cost-efficient, scalable AWS architectures.",
   "gen-agentic-ai": "Focus on Generative and Agentic AI: Large Language Model (LLM) architectures, prompt engineering, Retrieval-Augmented Generation (RAG), vector embeddings, vector databases (Pinecone, Chroma), LangChain, LlamaIndex, autonomous multi-agent frameworks, tool use, and safety alignment.",
   "mobile-dev": "Focus on Mobile App Development: cross-platform mobile architecture (Flutter, React Native), state management, native bridge communication, responsive mobile UI, offline-first caching, push notifications, and release pipelines for iOS & Android.",
+  // ── Design & Creative ──
+  "ui-ux": "Focus on UI/UX & Product Design: Design Thinking methodologies, user research, wireframing, high-fidelity Figma prototypes, design systems, heuristic evaluations, micro-interactions, responsive design, usability testing, and accessibility (WCAG).",
+  "graphic-design": "Focus on Graphic & Brand Visual Design: visual hierarchy, color theory, typography, branding identity systems, vector mechanics in Illustrator, raster manipulation in Photoshop, grid systems, and multi-channel marketing design.",
+  // ── Management, Business & Finance ──
+  "product-management": "Focus on Product Management: PRD creation, Agile/Scrum sprint cycles, customer discovery, feature prioritization (RICE/MoSCoW), product metrics (AARRR, North Star), unit economics, A/B testing design, and cross-functional engineering alignment.",
+  finance: "Focus on Corporate Finance & Modeling: three-statement financial modeling, DCF valuation, WACC calculation, capital budgeting, working capital optimization, ratio analysis, sensitivity modeling, and financial reporting.",
+  "investment-banking": "Focus on Investment Banking & Advisory: M&A transaction dynamics, LBO modeling, comparable company analysis (comps), precedent transactions, pitch books, debt/equity underwriting, and company valuations.",
+  "stock-market": "Focus on Equity Research & Stock Market: technical indicators (RSI, MACD, Bollinger Bands), candlestick pattern analysis, derivatives (Options Greeks, Futures hedging), risk-reward ratios, portfolio rebalancing, and fundamental analysis.",
+  "digital-marketing": "Focus on Digital Marketing & Growth: SEO technical auditing, SEM campaign architecture, paid ad optimization (Meta/Google Ads), CAC/LTV unit economics, attribution modeling, conversion funnel optimization, and growth loops.",
+  hrm: "Focus on Human Resource Management (HRM): talent acquisition strategies, structured competency-based interviewing, performance management (OKRs/KPIs), compensation & benefits, employee engagement, and labor law compliance.",
+  "supply-chain": "Focus on Operations & Supply Chain: inventory management (EOQ, Safety Stock, JIT), Bullwhip effect mitigation, logistics & freight optimization, supplier negotiation, warehousing automation, and Six Sigma / Lean manufacturing.",
+  "startup-entrepreneurship": "Focus on Startup & Entrepreneurship: MVP validation, product-market fit discovery, pitch deck development, cap table management, runway & burn rate control, investor due diligence, and scalable go-to-market execution.",
+  "sales-business-dev": "Focus on Sales & Business Development: consultative enterprise selling, B2B pipeline generation, SPIN/Challenger sales methodologies, objection handling, CRM hygiene, contract negotiation, and customer relationship expansion.",
+  // ── Core Engineering (Mechanical, Civil, Automotive) ──
+  "autocad-mechanical": "Focus on Mechanical Design & AutoCAD: 2D orthographic drafting, 3D modeling in SolidWorks/AutoCAD, GD&T (ASME Y14.5), tolerance stack-up analysis, finite element analysis (FEA), stress-strain mechanics, and material selection.",
+  hev: "Focus on Hybrid & Electric Vehicles (HEV): electric powertrain architecture, Battery Management Systems (BMS), cell balancing, thermal runaway prevention, regenerative braking algorithms, inverter motor control, and high-voltage DC safety.",
+  "car-designing": "Focus on Car Designing & Automotive Engineering: automotive aerodynamics, drag coefficients, chassis engineering, suspension kinematics, Body-in-White (BIW) rigidity, crash safety standards, and Noise, Vibration & Harshness (NVH).",
+  "civil-project-management": "Focus on Civil Site & Project Engineering: structural BIM modeling, reinforced concrete design, bar bending schedules, soil bearing mechanics, quantity surveying, CPM/PERT construction scheduling, and high-rise project execution.",
+  "mech-product-management": "Focus on Mechanical Product Management: Design for Manufacturing (DFM), Design for Assembly (DFA), rapid prototyping, injection molding considerations, tooling economics, and mechanical lifecycle management.",
+  // ── ECE & Robotics ──
+  "embedded-systems": "Focus on Embedded Systems & Microcontrollers: bare-metal C/C++, ARM Cortex architectures, FreeRTOS task scheduling, interrupts, memory-mapped I/O, hardware timers, and communication protocols (I2C, SPI, UART, CAN).",
+  vlsi: "Focus on VLSI & Digital Electronics: Verilog/VHDL RTL design, CMOS logic gates, static timing analysis (setup/hold slack), ASIC design flow, clock tree synthesis, FPGA implementation, and low-power digital design.",
+  robotics: "Focus on Robotics & Automation: ROS/ROS2 node architectures, forward/inverse kinematics, dynamic modeling, SLAM, sensor fusion (IMU, LiDAR, Encoders), path planning (A*, RRT*), and PID control loops.",
+  "drone-engineering": "Focus on Drone Engineering & UAVs: multirotor flight dynamics, PX4/ArduPilot flight controllers, sensor calibration, electronic speed controllers (ESCs), telemetry links, brushless motor physics, and failsafe navigation.",
+  iot: "Focus on IoT & Sensor Networks: ESP32/STM32 interfacing, MQTT/CoAP telemetry, sensor integration (analog/digital), low-power sleep modes, edge computing, LoRaWAN, and cloud IoT dashboard architectures.",
+  // ── Healthcare, Pharma & Life Sciences ──
+  "clinical-research": "Focus on Clinical Trial & Research: Phases I-IV clinical trial protocols, Good Clinical Practice (ICH-GCP), Institutional Review Board (IRB) ethics, informed consent tracking, adverse event pharmacovigilance, and FDA audit readiness.",
+  "medical-coding": "Focus on Medical Coding & Health Informatics: ICD-10-CM diagnosis codes, CPT/HCPCS procedural coding, medical necessity guidelines, HIPAA compliance, clinical documentation improvement (CDI), and billing denial resolution.",
+  "genetic-engineering": "Focus on Genetic Engineering & Biotechnology: CRISPR-Cas9 genome editing, recombinant DNA technology, PCR amplification, primer design, plasmid vector cloning, restriction mapping, and bioinformatics sequence analysis.",
+  psychology: "Focus on Health Psychology & Behavioral Science: Cognitive Behavioral Therapy (CBT) frameworks, psychometric assessment tools, clinical case conceptualization, stress response biomarkers, and evidence-based mental health interventions.",
+  nanotechnology: "Focus on Nanotechnology: bottom-up/top-down nanoparticle synthesis, functionalization chemistry, targeted nanocarrier drug delivery, quantum dot physics, SEM/TEM/AFM characterization, and nanotoxicity assessment.",
+  // ── Advanced Specializations ──
+  "system-design": "Focus on System Design & Scalability: distributed storage, cache invalidation, consensus algorithms (Raft/Paxos), CQRS, event sourcing, load balancing, and high-availability architecture.",
+  microservices: "Focus on Microservices Architecture: domain-driven design, gRPC, Kafka event streams, saga pattern for distributed transactions, service discovery, API gateways, and distributed tracing.",
+  "embedded-iot": "Focus on Embedded Systems & IoT: microcontroller firmware, sensor drivers, RTOS threads, power budgets, and low-latency wireless communication.",
 };
 
 const COMPANY_FOCUS: Record<string, string> = {

@@ -226,8 +226,8 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   ] = await Promise.all([
     userPrisma.profile.findUnique({ where: { userId } }).catch(() => null),
     userPrisma.candidateProfile.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } }).catch(() => null),
-    userPrisma.resume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }).catch(() => []),
-    userPrisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }).catch(() => []),
+    userPrisma.resume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }).catch(() => []),
+    userPrisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []),
     userPrisma.linkedInReport.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }).catch(() => []),
     userPrisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []),
     DsaProgressService.calculateAndSyncProgress(userId, userPrisma).catch(() => null),
@@ -294,6 +294,16 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     avgInterviewScore * 0.5
   ), 0, 100);
 
+  // Candidates apply for placements using their HIGHEST scoring resume, not the average of draft attempts
+  const allAtsScores = atsReports
+    .map((r: any) => Number(r.overallScore ?? r.score ?? 0))
+    .filter((s: number) => !isNaN(s) && s > 0);
+
+  if (candidateProfile?.strengthScore && Number(candidateProfile.strengthScore) > 0) {
+    allAtsScores.push(Number(candidateProfile.strengthScore));
+  }
+
+  const highestAtsScore = allAtsScores.length > 0 ? Math.max(...allAtsScores) : 0;
   const avgAtsScore = atsReports.length
     ? Math.round(atsReports.reduce((s: number, r: any) => s + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
     : (candidateProfile?.strengthScore || 0);
@@ -301,12 +311,19 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   const totalResumes = resumes.length + (uploadedResumes?.length || 0);
   const hasGithub = Boolean(githubProfile || (profile?.github && profile.github.trim()));
 
+  const portfolioBonus =
+    (coverLetters.length > 0 ? 10 : 0) +
+    (linkedinReports.length > 0 ? 10 : 0) +
+    (hasGithub ? 5 : 0);
+
+  // Resume score feeds directly into placementScore, driven primarily by the user's highest ATS score
   const resumeScore = clamp(Math.round(
-    ((totalResumes > 0 || profile?.resumeUrl) ? 25 : 0) +
-    avgAtsScore * 0.35 +
-    (coverLetters.length > 0 ? 15 : 0) +
-    (linkedinReports.length > 0 ? 15 : 0) +
-    (hasGithub ? 10 : 0)
+    highestAtsScore > 0
+      ? Math.max(
+          highestAtsScore,
+          Math.min(100, Math.round(highestAtsScore * 0.85 + portfolioBonus + (totalResumes > 0 ? 10 : 0)))
+        )
+      : ((totalResumes > 0 || profile?.resumeUrl) ? 55 + portfolioBonus : 0)
   ), 0, 100);
 
   const learningScore = clamp(Math.round(
@@ -375,7 +392,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   if (codingSessions.length > 5) userSkills.add("programming");
   if (aptitudeScore > 50) userSkills.add("aptitude");
   if (aptitudeScore > 40) userSkills.add("logical_reasoning");
-  if (avgAtsScore > 50) userSkills.add("verbal");
+  if (highestAtsScore > 50) userSkills.add("verbal");
   if (resumeScore > 50) userSkills.add("web_development");
   if (submissions.some((s: any) => s.language === "sql" || (s as any).language === "SQL")) userSkills.add("sql");
   if (submissions.some((s: any) => s.language === "java" || s.language === "Java")) userSkills.add("java_basics");
@@ -414,8 +431,8 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   if (avgInterviewScore > 0) {
     skillWeights.push({ skill: "Interview Performance", weight: clamp(avgInterviewScore / 100, 0, 1), direction: avgInterviewScore > 60 ? "positive" : "negative", source: "Interview Hub" });
   }
-  if (avgAtsScore > 0) {
-    skillWeights.push({ skill: "ATS Score", weight: clamp(avgAtsScore / 100, 0, 1), direction: avgAtsScore > 70 ? "positive" : "negative", source: "Resume Hub" });
+  if (highestAtsScore > 0) {
+    skillWeights.push({ skill: "ATS Score", weight: clamp(highestAtsScore / 100, 0, 1), direction: highestAtsScore > 70 ? "positive" : "negative", source: "Resume Hub" });
   }
   if (latestLinkedinScore > 0) {
     skillWeights.push({ skill: "LinkedIn Profile", weight: clamp(latestLinkedinScore / 100, 0, 1), direction: latestLinkedinScore > 60 ? "positive" : "negative", source: "Career Hub" });
@@ -447,7 +464,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
 
   if (dsaSolved >= 50) strengths.push(`Solved ${dsaSolved} DSA problems — strong coding foundation`);
   if (dsaAccuracy > 75) strengths.push(`${dsaAccuracy}% coding accuracy — consistent problem solving`);
-  if (avgAtsScore > 75) strengths.push(`${avgAtsScore}% ATS score — well-optimized resume`);
+  if (highestAtsScore > 75) strengths.push(`${highestAtsScore}% ATS score (highest resume) — well-optimized resume`);
   if (latestLinkedinScore > 70) strengths.push(`${latestLinkedinScore}% LinkedIn score — strong professional brand`);
   if (avgInterviewScore > 70) strengths.push(`${avgInterviewScore}% interview score — strong communication`);
   if (aptitudeScore > 70) strengths.push(`${aptitudeScore}% aptitude readiness — solid analytical skills`);
@@ -460,7 +477,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   if (aptitudeScore < 30) weaknesses.push("Aptitude score needs improvement — practice daily quizzes");
   if (interviewScore < 30) weaknesses.push("Interview readiness is low — schedule mock interviews");
   if (resumeScore < 30) weaknesses.push("Resume needs work — create or improve your resume");
-  if (avgAtsScore < 60 && totalResumes > 0) weaknesses.push(`ATS score is ${avgAtsScore}% — optimize keywords and formatting`);
+  if (highestAtsScore < 60 && totalResumes > 0) weaknesses.push(`Highest ATS score is ${highestAtsScore}% — optimize keywords and formatting`);
   if (latestLinkedinScore < 50) weaknesses.push("LinkedIn profile needs optimization");
   if (!hasGithub) weaknesses.push("GitHub not connected — missing portfolio evidence");
   if (coverLetters.length === 0) weaknesses.push("No cover letters generated — apply with personalized letters");
@@ -512,7 +529,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     recommendations.push({
       type: "resume",
       title: "Optimize Resume & ATS",
-      description: `Your ATS score is ${avgAtsScore}%. Improving to 80%+ increases callbacks by 40%.`,
+      description: `Your highest ATS score is ${highestAtsScore}%. Improving to 80%+ increases callbacks by 40%.`,
       impact: "high",
       estimatedImprovement: 5,
       action: "ats-checker",
@@ -625,7 +642,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     },
     {
       stage: "Resume & Profile",
-      completed: resumes.length > 0 && avgAtsScore >= 70,
+      completed: (totalResumes > 0 || profile?.resumeUrl) && highestAtsScore >= 70,
       score: resumeScore,
       description: "ATS-optimized resume and professional profiles",
     },

@@ -226,7 +226,7 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
   );
 
   const ROLE_CATEGORIES = [
-    "All", "Engineering", "Core Engineering", "Robotics & ECE",
+    "All", "CSE Domains", "Engineering", "Core Engineering", "Robotics & ECE",
     "Management & Finance", "Healthcare & Pharma", "Design & Creative",
     "Sales & Retail", "AI/ML", "Data"
   ];
@@ -636,7 +636,14 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                           >
                             <RoleIcon size={16} style={{ color: selected ? c.primary : c.textMuted }} />
                           </div>
-                          <div className="text-[11px] font-bold">{role.title}</div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[11px] font-bold">{role.title}</span>
+                            {role.isCseCore && (
+                              <span className="text-[8px] px-1 py-0.2 rounded font-extrabold bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                                CSE
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[9px] mt-0.5" style={{ color: c.textMuted }}>{role.category}</div>
                         </motion.button>
                       );

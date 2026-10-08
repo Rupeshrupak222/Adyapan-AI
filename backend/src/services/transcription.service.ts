@@ -15,7 +15,63 @@ export async function transcribeAudioBuffer(
     return "";
   }
 
-  // 1. Primary: Google Gemini Multimodal Audio Transcription
+  const rawMime = mimeType || "audio/webm";
+  const cleanMime = rawMime.split(";")[0].trim().toLowerCase() || "audio/webm";
+  const ext = cleanMime.includes("wav")
+    ? "wav"
+    : cleanMime.includes("mp4") || cleanMime.includes("m4a") || cleanMime.includes("aac")
+    ? "m4a"
+    : cleanMime.includes("ogg")
+    ? "ogg"
+    : cleanMime.includes("mpeg") || cleanMime.includes("mp3")
+    ? "mp3"
+    : "webm";
+
+  // 1. Primary: Groq Whisper (ultra-fast STT, <300ms)
+  if (env.groqApiKey) {
+    try {
+      const groq = new Groq({ apiKey: env.groqApiKey });
+      const file = await toFile(audioBuffer, `candidate_audio.${ext}`, {
+        type: cleanMime,
+      });
+
+      const langCode = language.toLowerCase().startsWith("hi") ? "hi" : "en";
+      let transcription: any = null;
+      try {
+        transcription = await groq.audio.transcriptions.create({
+          file,
+          model: "whisper-large-v3-turbo",
+          language: langCode,
+          response_format: "json",
+        });
+      } catch (turboErr: any) {
+        // Fallback to whisper-large-v3
+        const fileRetry = await toFile(audioBuffer, `candidate_audio.${ext}`, {
+          type: cleanMime,
+        });
+        transcription = await groq.audio.transcriptions.create({
+          file: fileRetry,
+          model: "whisper-large-v3",
+          language: langCode,
+          response_format: "json",
+        });
+      }
+
+      if (transcription && typeof transcription.text === "string") {
+        const cleaned = transcription.text.trim();
+        if (cleaned) {
+          return cleaned;
+        }
+      }
+    } catch (err: any) {
+      console.warn(
+        "[TranscriptionService] Groq Whisper error, trying Gemini fallback:",
+        err?.message || err
+      );
+    }
+  }
+
+  // 2. Secondary Fallback: Google Gemini Multimodal Audio Transcription
   if (env.geminiApiKey) {
     try {
       const genAI = new GoogleGenerativeAI(env.geminiApiKey);
@@ -25,7 +81,7 @@ export async function transcribeAudioBuffer(
       const result = await model.generateContent([
         {
           inlineData: {
-            mimeType: mimeType || "audio/webm",
+            mimeType: cleanMime,
             data: base64Data,
           },
         },
@@ -41,42 +97,8 @@ Return ONLY the raw transcribed text. Do NOT add preamble, commentary, quotes, o
       }
     } catch (geminiErr: any) {
       console.warn(
-        "[TranscriptionService] Gemini audio primary error, attempting Groq fallback:",
+        "[TranscriptionService] Gemini audio fallback error:",
         geminiErr?.message || geminiErr
-      );
-    }
-  }
-
-  // 2. Secondary Fallback: Groq Whisper
-  if (env.groqApiKey) {
-    try {
-      const groq = new Groq({ apiKey: env.groqApiKey });
-      const ext = mimeType.includes("wav")
-        ? "wav"
-        : mimeType.includes("mp4")
-        ? "mp4"
-        : mimeType.includes("ogg")
-        ? "ogg"
-        : "webm";
-
-      const file = await toFile(audioBuffer, `candidate_audio.${ext}`, {
-        type: mimeType,
-      });
-
-      const transcription = await groq.audio.transcriptions.create({
-        file,
-        model: "whisper-large-v3",
-        language: language.toLowerCase().startsWith("hi") ? "hi" : "en",
-        response_format: "json",
-      });
-
-      if (transcription && typeof transcription.text === "string") {
-        return transcription.text.trim();
-      }
-    } catch (err: any) {
-      console.warn(
-        "[TranscriptionService] Groq Whisper fallback error:",
-        err?.message || err
       );
     }
   }

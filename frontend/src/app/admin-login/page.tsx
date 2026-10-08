@@ -10,8 +10,9 @@ import { saveAuthSession } from "@/hooks/useAuth";
 import { Navbar } from "@/components/layout/Navbar";
 import { SessionPopup } from "@/components/ui/SessionPopup";
 import {
-  ShieldCheck, Mail, Lock, Eye, EyeOff, ArrowRight,
+  ShieldCheck, Mail, Lock, Eye, EyeOff, ArrowRight, Wrench,
 } from "lucide-react";
+import { isMaintenanceOrQuotaError, MAINTENANCE_MESSAGE } from "@/utils/maintenanceHelper";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -84,6 +85,11 @@ export default function AdminLoginPage() {
       saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
       window.location.href = "/dashboard/admin";
     } catch (err: unknown) {
+      if (isMaintenanceOrQuotaError(err)) {
+        setError(MAINTENANCE_MESSAGE);
+        setLoading(false);
+        return;
+      }
       const response = (err as { response?: { status?: number; data?: { message?: string; error?: string } } })?.response;
       const status = response?.status;
       const serverMsg = response?.data?.message || response?.data?.error;
@@ -112,10 +118,14 @@ export default function AdminLoginPage() {
       saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
       router.replace("/dashboard/admin");
     } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message ||
-        "Login failed. Please try again.",
-      );
+      if (isMaintenanceOrQuotaError(err)) {
+        setError(MAINTENANCE_MESSAGE);
+      } else {
+        setError(
+          (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message ||
+          "Login failed. Please try again.",
+        );
+      }
       setLoading(false);
     }
   };
@@ -255,12 +265,22 @@ export default function AdminLoginPage() {
           {error && (
             <div
               style={{
-                fontSize: "0.78rem", color: "#f87171", fontWeight: 500,
-                background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)",
-                padding: "0.6rem 0.8rem", borderRadius: 8,
+                fontSize: "0.78rem",
+                color: error.toLowerCase().includes("maintenance") ? "#fbbf24" : "#f87171",
+                fontWeight: 500,
+                background: error.toLowerCase().includes("maintenance") ? "rgba(245,158,11,0.12)" : "rgba(239,68,68,0.1)",
+                border: `1px solid ${error.toLowerCase().includes("maintenance") ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.2)"}`,
+                padding: "0.6rem 0.8rem",
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
               }}
             >
-              {error}
+              {error.toLowerCase().includes("maintenance") && (
+                <Wrench size={14} className="animate-pulse" style={{ color: "#f59e0b", flexShrink: 0 }} />
+              )}
+              <span>{error}</span>
             </div>
           )}
 

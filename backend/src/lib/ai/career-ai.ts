@@ -119,6 +119,13 @@ function computeFallback(profileData: any): CareerRoadmapData {
   const projects = profileData?.resumeData?.projects || [];
   const dsaSolved = profileData?.codingAnalytics?.dsaSolved || 0;
   const dsaAccuracy = profileData?.codingAnalytics?.dsaAccuracy || 0;
+  const allAtsScores = (profileData?.atsReports || [])
+    .map((r: any) => Number(r.overallScore ?? r.score ?? 0))
+    .filter((s: number) => !isNaN(s) && s > 0);
+  if (profileData?.highestAtsScore && Number(profileData.highestAtsScore) > 0) {
+    allAtsScores.push(Number(profileData.highestAtsScore));
+  }
+  const highestAtsScore = allAtsScores.length > 0 ? Math.max(...allAtsScores) : 0;
   const avgAtsScore = profileData?.atsReports?.length
     ? Math.round(profileData.atsReports.reduce((s: number, r: any) => s + (r.score || 0), 0) / profileData.atsReports.length)
     : 0;
@@ -133,7 +140,8 @@ function computeFallback(profileData: any): CareerRoadmapData {
     + (dsaAccuracy * 30)
     + (skills.length > 5 ? 10 : skills.length * 2)
   ));
-  const resumeScore = Math.min(95, avgAtsScore || (experience.length > 0 && projects.length > 0 ? 55 : 30));
+  // Resume score is driven by candidate's highest resume ATS score
+  const resumeScore = Math.min(95, highestAtsScore || avgAtsScore || (experience.length > 0 && projects.length > 0 ? 55 : 30));
   const interviewScore = Math.min(95, Math.round(technicalScore * 0.4 + resumeScore * 0.3 + (linkedinScore || 30) * 0.3));
   const placementScore = Math.min(95, Math.round(overallProgress * 0.5 + technicalScore * 0.3 + resumeScore * 0.2));
   const recruiterScore = Math.min(95, Math.round(resumeScore * 0.4 + linkedinScore * 0.3 + (projects.length > 2 ? 25 : projects.length * 10)));
@@ -278,6 +286,11 @@ Quiz Attempts: ${profileData.learningAnalytics?.quizAttempts || 0}
 Avg Quiz Score: ${profileData.learningAnalytics?.avgQuizScore || 0}%
 
 === ATS REPORTS (from ATS Checker) ===
+Highest Resume ATS Score: ${(() => {
+  const scores = (profileData.atsReports || []).map((r: any) => Number(r.overallScore ?? r.score ?? 0)).filter((s: number) => !isNaN(s) && s > 0);
+  if (profileData.highestAtsScore) scores.push(Number(profileData.highestAtsScore));
+  return scores.length > 0 ? Math.max(...scores) : 0;
+})()}% (Note: prioritize user's HIGHEST scoring resume for resume readiness and placement readiness score)
 ${JSON.stringify(profileData.atsReports || [], null, 2)}
 
 === LINKEDIN DATA (from LinkedIn Optimizer) ===

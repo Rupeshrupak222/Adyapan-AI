@@ -32,6 +32,7 @@ export interface RolePreset {
   title: string;
   icon: string;
   category: string;
+  isCseCore?: boolean;
 }
 
 export interface EngineConfig {
@@ -225,6 +226,26 @@ export const COMPANY_PRESETS: CompanyPreset[] = [
 ];
 
 export const ROLE_PRESETS: RolePreset[] = [
+  // ── 18 Core Adyapan CSE Domains (From Flyer) ──
+  { id: "data-science", title: "Data Scientist", icon: "FlaskConical", category: "CSE Domains", isCseCore: true },
+  { id: "ml-python", title: "Machine Learning Engineer (Python)", icon: "Cpu", category: "CSE Domains", isCseCore: true },
+  { id: "ai-ml", title: "AI / ML Engineer", icon: "Brain", category: "CSE Domains", isCseCore: true },
+  { id: "python-programming", title: "Python Developer", icon: "Code2", category: "CSE Domains", isCseCore: true },
+  { id: "fullstack", title: "Full Stack Web Developer", icon: "Layers", category: "CSE Domains", isCseCore: true },
+  { id: "web-dev", title: "Web Developer", icon: "Monitor", category: "CSE Domains", isCseCore: true },
+  { id: "cybersecurity", title: "Cybersecurity Analyst", icon: "Shield", category: "CSE Domains", isCseCore: true },
+  { id: "cloud-computing", title: "Cloud Engineer", icon: "Server", category: "CSE Domains", isCseCore: true },
+  { id: "java-programming", title: "Java Developer", icon: "Code2", category: "CSE Domains", isCseCore: true },
+  { id: "ai", title: "AI Specialist", icon: "Brain", category: "CSE Domains", isCseCore: true },
+  { id: "android-dev", title: "Android App Developer", icon: "Smartphone", category: "CSE Domains", isCseCore: true },
+  { id: "data-analytics", title: "Data Analyst", icon: "BarChart3", category: "CSE Domains", isCseCore: true },
+  { id: "business-analytics", title: "Business Analytics Specialist", icon: "BarChart3", category: "CSE Domains", isCseCore: true },
+  { id: "dsa-python", title: "DSA with Python (SDE)", icon: "Code2", category: "CSE Domains", isCseCore: true },
+  { id: "devops", title: "DevOps Engineer", icon: "Container", category: "CSE Domains", isCseCore: true },
+  { id: "aws", title: "AWS Cloud Architect", icon: "Server", category: "CSE Domains", isCseCore: true },
+  { id: "gen-agentic-ai", title: "Generative & Agentic AI Engineer", icon: "Brain", category: "CSE Domains", isCseCore: true },
+  { id: "mobile-dev", title: "Mobile App Engineer", icon: "Smartphone", category: "CSE Domains", isCseCore: true },
+
   // Tech & Software
   { id: "software-engineer", title: "Software Engineer", icon: "Code2", category: "Engineering" },
   { id: "backend-developer", title: "Backend Developer", icon: "Server", category: "Engineering" },

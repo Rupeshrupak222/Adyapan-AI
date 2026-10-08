@@ -9,7 +9,8 @@ import { saveAuthSession } from "@/hooks/useAuth";
 import { Navbar } from "@/components/layout/Navbar";
 import { SessionPopup } from "@/components/ui/SessionPopup";
 import { AnimatedCheckCircle } from "@/components/ui/AnimatedIcons";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Wrench } from "lucide-react";
+import { isMaintenanceOrQuotaError, MAINTENANCE_MESSAGE } from "@/utils/maintenanceHelper";
 import type { PlatformUser } from "@/types/user";
 
 type Tab = "login" | "register" | "forgot";
@@ -247,6 +248,10 @@ function LoginPageContent() {
       saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
       router.replace(getPostLoginTarget(data.user.role));
     } catch (err: unknown) {
+      if (isMaintenanceOrQuotaError(err)) {
+        setLoginError(MAINTENANCE_MESSAGE);
+        return;
+      }
       const response = (err as { response?: { status?: number; data?: { message?: string; error?: string; code?: string } } })?.response;
       const status = response?.status;
       const data = response?.data;
@@ -271,8 +276,12 @@ function LoginPageContent() {
       saveAuthSession(data.token, data.user, rememberMe, data.sessionId, data.refreshToken);
       router.replace(getPostLoginTarget(data.user.role));
     } catch (err: unknown) {
-      const resp = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      setLoginError(resp?.message || "Login failed. Please try again.");
+      if (isMaintenanceOrQuotaError(err)) {
+        setLoginError(MAINTENANCE_MESSAGE);
+      } else {
+        const resp = (err as { response?: { data?: { message?: string } } })?.response?.data;
+        setLoginError(resp?.message || "Login failed. Please try again.");
+      }
     } finally { setLoginLoading(false); }
   };
 
@@ -302,12 +311,16 @@ function LoginPageContent() {
         setLoginEmail(reg.email.trim());
       }
     } catch (err: unknown) {
-      const data = (err as { response?: { data?: { code?: string; message?: string; error?: string } } })?.response?.data;
-      if (data?.code === "EMAIL_ALREADY_EXISTS") {
-        setRegEmailError(true);
+      if (isMaintenanceOrQuotaError(err)) {
+        setRegError(MAINTENANCE_MESSAGE);
       } else {
-        const serverMsg = data?.message || data?.error;
-        setRegError(serverMsg || "Registration failed.");
+        const data = (err as { response?: { data?: { code?: string; message?: string; error?: string } } })?.response?.data;
+        if (data?.code === "EMAIL_ALREADY_EXISTS") {
+          setRegEmailError(true);
+        } else {
+          const serverMsg = data?.message || data?.error;
+          setRegError(serverMsg || "Registration failed.");
+        }
       }
     } finally { setRegLoading(false); }
   };
@@ -335,13 +348,25 @@ function LoginPageContent() {
         setForgotMsg("OTP sent! Please check your email inbox for the 6-digit code.");
         setForgotStep("otp");
       }
-      catch (err: unknown) { setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not send OTP."); }
+      catch (err: unknown) {
+        if (isMaintenanceOrQuotaError(err)) {
+          setForgotError(MAINTENANCE_MESSAGE);
+        } else {
+          setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not send OTP.");
+        }
+      }
       finally { setForgotLoading(false); }
     } else if (forgotStep === "otp") {
       if (forgotNew !== forgotConfirm) { setForgotError("Passwords do not match."); return; }
       setForgotLoading(true);
       try { await api.post("/auth/reset-password", { email: forgotEmail, otp: forgotOtp, newPassword: forgotNew }); setForgotMsg("Password reset successfully! You can now log in."); setForgotStep("done"); }
-      catch (err: unknown) { setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Invalid OTP."); }
+      catch (err: unknown) {
+        if (isMaintenanceOrQuotaError(err)) {
+          setForgotError(MAINTENANCE_MESSAGE);
+        } else {
+          setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Invalid OTP.");
+        }
+      }
       finally { setForgotLoading(false); }
     }
   };
@@ -450,7 +475,18 @@ function LoginPageContent() {
                       </label>
                       <button type="button" onClick={() => switchTab("forgot")} className="font-semibold text-amber-400 cursor-pointer">Forgot password?</button>
                     </motion.div>
-                    {loginError && <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-xs text-red-400">{loginError}</motion.p>}
+                    {loginError && (
+                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}>
+                        {loginError.toLowerCase().includes("maintenance") ? (
+                          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
+                            <Wrench size={14} className="text-amber-400 shrink-0 animate-pulse" />
+                            <span className="font-semibold">{loginError}</span>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-red-400">{loginError}</p>
+                        )}
+                      </motion.div>
+                    )}
                     <motion.button type="submit" disabled={loginLoading} className="w-full rounded-full py-2.5 text-sm font-bold disabled:opacity-60 cursor-pointer" style={submitStyle} custom={3} variants={staggerItem} initial="hidden" animate="visible" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       {loginLoading ? "Logging in…" : "Login →"}
                     </motion.button>
@@ -621,7 +657,18 @@ function LoginPageContent() {
                         </motion.div>
                       );
                     })}
-                    {regError && <motion.p className="col-span-2 text-xs text-red-400" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{regError}</motion.p>}
+                    {regError && (
+                      <motion.div className="col-span-2" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}>
+                        {regError.toLowerCase().includes("maintenance") ? (
+                          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
+                            <Wrench size={14} className="text-amber-400 shrink-0 animate-pulse" />
+                            <span className="font-semibold">{regError}</span>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-red-400">{regError}</p>
+                        )}
+                      </motion.div>
+                    )}
                     <motion.button type="submit" disabled={regLoading}
                       className="col-span-2 w-full rounded-full py-2 text-sm font-bold disabled:opacity-60 cursor-pointer"
                       style={submitStyle} custom={8} variants={staggerItem} initial="hidden" animate="visible" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -696,7 +743,18 @@ function LoginPageContent() {
                         );
                       })}
                       {forgotMsg   && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-semibold text-green-400">{forgotMsg}</motion.p>}
-                      {forgotError && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-semibold text-red-400">{forgotError}</motion.p>}
+                      {forgotError && (
+                        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}>
+                          {forgotError.toLowerCase().includes("maintenance") ? (
+                            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
+                              <Wrench size={14} className="text-amber-400 shrink-0 animate-pulse" />
+                              <span className="font-semibold">{forgotError}</span>
+                            </div>
+                          ) : (
+                            <p className="text-xs font-semibold text-red-400">{forgotError}</p>
+                          )}
+                        </motion.div>
+                      )}
                       <motion.button type="submit" disabled={forgotLoading} className="w-full rounded-full py-2.5 text-sm font-bold disabled:opacity-60 cursor-pointer" style={submitStyle} custom={3} variants={staggerItem} initial="hidden" animate="visible" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                         {forgotLoading ? "Please wait…" : forgotStep === "email" ? "Send OTP →" : "Reset Password →"}
                       </motion.button>

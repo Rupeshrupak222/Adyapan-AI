@@ -11,7 +11,13 @@ import {
   Briefcase, Sliders, Check, Settings2, Flame, Layers, Server, Cpu, Database,
   ChevronLeft, ChevronRight, Trophy, BarChart3, Award, FileText, Download, Crown,
   AlertTriangle, Globe, Cloud, Smartphone, TrendingUp,
+  Palette, PenTool, DollarSign, Megaphone, Users, Truck, Rocket,
+  Compass, Zap, Car, HardHat, TestTube, Dna, FileSpreadsheet, HeartPulse, Atom, Navigation, Bot,
 } from "lucide-react";
+import {
+  ALL_INTERVIEW_DOMAINS,
+  INTERVIEW_DOMAIN_CATEGORIES,
+} from "../shared/interviewDomains";
 import { toast } from "sonner";
 import { api } from "@/services/api";
 import { useUserPlan } from "@/hooks/useUserPlan";
@@ -79,35 +85,24 @@ interface EngineMessage {
   questionNumber?: number;
 }
 
-const TOPICS = [
-  // ── 18 Core Adyapan CSE Domains (From Flyer) ──
-  { id: "data-science", label: "Data Science", category: "CSE Domain", icon: Database, desc: "EDA, statistics, pandas, predictive modeling & feature engineering", defaultLang: "python", defaultRole: "Data Scientist" },
-  { id: "ml-python", label: "ML with Python", category: "CSE Domain", icon: Brain, desc: "Scikit-learn, classification, regression, clustering & ML pipelines", defaultLang: "python", defaultRole: "Machine Learning Engineer" },
-  { id: "ai-ml", label: "AI with ML", category: "CSE Domain", icon: Brain, desc: "Deep learning, neural networks, PyTorch, computer vision & NLP", defaultLang: "python", defaultRole: "AI / ML Engineer" },
-  { id: "python-programming", label: "Programming in Python", category: "CSE Domain", icon: Terminal, desc: "Core Python, OOP, memory model, decorators, generators & async", defaultLang: "python", defaultRole: "Python Developer" },
-  { id: "fullstack", label: "Full Stack Web Development", category: "CSE Domain", icon: Layers, desc: "End-to-end web apps, React, Node.js, REST/GraphQL APIs & databases", defaultLang: "javascript", defaultRole: "Full Stack Developer" },
-  { id: "web-dev", label: "Web Development", category: "CSE Domain", icon: Globe, desc: "HTML5, CSS3, JavaScript ES6+, DOM manipulation & responsive UI", defaultLang: "javascript", defaultRole: "Web Developer" },
-  { id: "cybersecurity", label: "Cybersecurity", category: "CSE Domain", icon: Shield, desc: "OWASP Top 10, penetration testing, cryptography & network defenses", defaultLang: "python", defaultRole: "Cybersecurity Analyst" },
-  { id: "cloud-computing", label: "Cloud Computing", category: "CSE Domain", icon: Cloud, desc: "Cloud architecture, IaaS/PaaS, virtualization, scalability & security", defaultLang: "python", defaultRole: "Cloud Engineer" },
-  { id: "java-programming", label: "Programming in Java", category: "CSE Domain", icon: Code2, desc: "Core Java, JVM internals, multithreading, collections & OOP patterns", defaultLang: "java", defaultRole: "Java Developer" },
-  { id: "ai", label: "AI", category: "CSE Domain", icon: Sparkles, desc: "Search algorithms, heuristic search, knowledge bases & expert systems", defaultLang: "python", defaultRole: "AI Specialist" },
-  { id: "android-dev", label: "Android App Development", category: "CSE Domain", icon: Smartphone, desc: "Kotlin, Android SDK, Jetpack Compose, MVVM & Room database", defaultLang: "java", defaultRole: "Android Developer" },
-  { id: "data-analytics", label: "Data Analytics", category: "CSE Domain", icon: BarChart3, desc: "SQL queries, ETL pipelines, KPI dashboards & business insights", defaultLang: "python", defaultRole: "Data Analyst" },
-  { id: "business-analytics", label: "Business Analytics", category: "CSE Domain", icon: TrendingUp, desc: "Quantitative problem solving, unit economics, cohorts & A/B testing", defaultLang: "python", defaultRole: "Business Analyst" },
-  { id: "dsa-python", label: "DSA with Python", category: "CSE Domain", icon: Code2, desc: "LeetCode patterns, trees, graphs, dynamic programming & complexity in Python", defaultLang: "python", defaultRole: "Software Development Engineer" },
-  { id: "devops", label: "DevOps", category: "CSE Domain", icon: Server, desc: "CI/CD pipelines, Docker, Kubernetes, Terraform & infrastructure automation", defaultLang: "python", defaultRole: "DevOps Engineer" },
-  { id: "aws", label: "AWS", category: "CSE Domain", icon: Cloud, desc: "EC2, S3, Lambda, VPC, DynamoDB, IAM & cloud solutions design", defaultLang: "python", defaultRole: "AWS Cloud Architect" },
-  { id: "gen-agentic-ai", label: "AI (Generative & Agentic)", category: "CSE Domain", icon: Sparkles, desc: "LLMs, prompt engineering, RAG, LangChain, vector DBs & autonomous agents", defaultLang: "python", defaultRole: "Generative AI Engineer" },
-  { id: "mobile-dev", label: "Mobile App Development", category: "CSE Domain", icon: Smartphone, desc: "Cross-platform mobile apps, Flutter, React Native & mobile state", defaultLang: "javascript", defaultRole: "Mobile App Engineer" },
+const TOPIC_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Database, Brain, Terminal, Layers, Globe, Shield, Cloud, Code2,
+  Sparkles, Smartphone, BarChart3, TrendingUp, Server, Cpu,
+  Palette, PenTool, Briefcase, DollarSign, Megaphone, Users,
+  Truck, Rocket, Compass, Zap, Car, HardHat, TestTube, Dna,
+  FileSpreadsheet, HeartPulse, Atom, Navigation, Bot,
+};
 
-  // ── Advanced Specializations & CS Fundamentals ──
-  { id: "dsa", label: "Data Structures & Algorithms (General)", category: "Fundamentals", icon: Code2, desc: "Arrays, Trees, Graphs, DP & Algorithmic Problem Solving", defaultLang: "cpp", defaultRole: "Software Engineer" },
-  { id: "system-design", label: "System Design & Scalability", category: "Fundamentals", icon: Cpu, desc: "Distributed Systems, Load Balancers, Sharding & Caching", defaultLang: "javascript", defaultRole: "Systems Architect" },
-  { id: "dbms", label: "SQL, NoSQL & Data Modeling", category: "Fundamentals", icon: Database, desc: "Queries, Indexing, Transactions, Postgres & MongoDB", defaultLang: "javascript", defaultRole: "Database Engineer" },
-  { id: "os-networking", label: "OS, Concurrency & Networking", category: "Fundamentals", icon: Terminal, desc: "Multithreading, Memory Locks, Sockets & TCP/IP Protocol", defaultLang: "cpp", defaultRole: "Systems Engineer" },
-  { id: "embedded-iot", label: "Embedded Systems & IoT", category: "Fundamentals", icon: Cpu, desc: "C/C++, Microcontrollers, RTOS, Firmware & Protocols", defaultLang: "cpp", defaultRole: "Embedded Engineer" },
-  { id: "microservices", label: "Microservices & Message Queues", category: "Fundamentals", icon: Layers, desc: "Event-Driven Systems, Kafka, RabbitMQ & gRPC", defaultLang: "javascript", defaultRole: "Backend Engineer" },
-];
+const TOPICS = ALL_INTERVIEW_DOMAINS.map((d) => ({
+  id: d.id,
+  label: d.name,
+  category: d.isCseCore ? "CSE Domain" : d.category,
+  icon: TOPIC_ICON_MAP[d.iconName] || Code2,
+  desc: d.description,
+  defaultLang: d.defaultLang || "python",
+  defaultRole: d.role,
+  tech: d.tech,
+}));
 
 const MODE_OPTIONS = [
   {
@@ -596,6 +591,8 @@ export default function TechnicalInterviewView({
   const [evaluation, setEvaluation] = useState<any>(null);
   const [initialQuestion, setInitialQuestion] = useState<any>(null);
   const [step, setStep] = useState(0);
+  const [topicCategory, setTopicCategory] = useState<string>("All");
+  const [topicSearch, setTopicSearch] = useState<string>("");
 
   // Config State
   const [config, setConfig] = useState<TechnicalConfig>({
@@ -1017,17 +1014,72 @@ export default function TechnicalInterviewView({
 
             {/* Technical Skills Focus Grid */}
             <div className="space-y-3">
-              <h3
-                className={`text-sm font-bold flex items-center space-x-2 ${
-                  isDark ? "text-slate-200" : "text-slate-900"
-                }`}
-              >
-                <Terminal className="w-4 h-4 text-purple-500" />
-                <span>Select Technical Skill / Focus Area:</span>
-              </h3>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                <h3
+                  className={`text-sm font-bold flex items-center space-x-2 ${
+                    isDark ? "text-slate-200" : "text-slate-900"
+                  }`}
+                >
+                  <Terminal className="w-4 h-4 text-purple-500" />
+                  <span>Select Domain / Technical Focus Area:</span>
+                  <span className="text-[10px] font-normal text-slate-400">({TOPICS.length} Domains)</span>
+                </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {TOPICS.map((item) => {
+                {/* Search */}
+                <div className="relative sm:w-60">
+                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={topicSearch}
+                    onChange={(e) => setTopicSearch(e.target.value)}
+                    placeholder="Search all domains..."
+                    className={`w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border outline-none transition-colors ${
+                      isDark
+                        ? "bg-slate-900 border-slate-800 text-white placeholder-slate-500 focus:border-purple-500"
+                        : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 focus:border-purple-500"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+                {["All", "CSE Domain", "Core Engineering", "ECE & Robotics", "Design & Creative", "Management & Business", "Healthcare & Pharma"].map((cat) => {
+                  const isActive = topicCategory === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setTopicCategory(cat)}
+                      className={`px-2.5 py-1 rounded-xl font-bold shrink-0 transition-all border ${
+                        isActive
+                          ? "bg-purple-600 text-white border-purple-500 shadow-sm"
+                          : isDark
+                          ? "bg-slate-900/80 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200"
+                          : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                      }`}
+                    >
+                      {cat === "All" ? `All (${TOPICS.length})` : cat}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[460px] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+                {TOPICS.filter((item) => {
+                  const matchesCat =
+                    topicCategory === "All" ||
+                    item.category === topicCategory ||
+                    (topicCategory === "CSE Domain" && item.category === "CSE Domain");
+                  if (!matchesCat) return false;
+                  if (!topicSearch.trim()) return true;
+                  const q = topicSearch.toLowerCase();
+                  return (
+                    item.label.toLowerCase().includes(q) ||
+                    item.desc.toLowerCase().includes(q) ||
+                    (item.tech && item.tech.toLowerCase().includes(q))
+                  );
+                }).map((item) => {
                   const Icon = item.icon;
                   const isSelected = config.topic === item.id;
                   return (

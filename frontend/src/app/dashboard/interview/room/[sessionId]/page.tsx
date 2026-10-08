@@ -62,6 +62,7 @@ export default function InterviewRoomPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const isRecordingRef = useRef(false);
   const [liveTranscript, setLiveTranscript] = useState("");
   const recognitionRef = useRef<any | null>(null);
 
@@ -76,8 +77,9 @@ export default function InterviewRoomPage() {
   const [code, setCode] = useState("// Write your solution here\n\n");
   const [editorLang, setEditorLang] = useState("javascript");
 
-  // Panel
+  // Panel & Mobile Tab
   const [activePanel, setActivePanel] = useState<"chat" | "code">("chat");
+  const [mobileTab, setMobileTab] = useState<"interview" | "video">("interview");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Waveform animation
@@ -154,13 +156,32 @@ export default function InterviewRoomPage() {
   useEffect(() => {
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+          audio: true,
+        });
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
         }
       } catch {
-        toast.error("Camera/Mic access denied — proctoring may flag this.");
+        // Fallback to video only or audio only
+        try {
+          const videoOnly = await navigator.mediaDevices.getUserMedia({ video: true });
+          streamRef.current = videoOnly;
+          if (videoRef.current) {
+            videoRef.current.srcObject = videoOnly;
+            videoRef.current.play().catch(() => {});
+          }
+        } catch {
+          try {
+            const audioOnly = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streamRef.current = audioOnly;
+          } catch {
+            toast.error("Camera/Mic access denied — proctoring may flag this.");
+          }
+        }
       }
     };
     startCamera();
@@ -224,11 +245,23 @@ export default function InterviewRoomPage() {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [sessionId]);
 
-  // Fullscreen proctoring
+  // Fullscreen proctoring (safeguarded for iOS / mobile touch devices)
   useEffect(() => {
-    document.documentElement.requestFullscreen().catch(() => {});
+    const isMobileDevice =
+      typeof window !== "undefined" &&
+      (window.innerWidth < 1024 || "ontouchstart" in window || (navigator.maxTouchPoints || 0) > 0);
+
+    if (!isMobileDevice && typeof document.documentElement?.requestFullscreen === "function") {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+
     const onFsChange = async () => {
-      if (!document.fullscreenElement && sessionId) {
+      if (
+        !isMobileDevice &&
+        typeof document.documentElement?.requestFullscreen === "function" &&
+        !document.fullscreenElement &&
+        sessionId
+      ) {
         try {
           await api.post(`/interview/${sessionId}/proctor`, {
             eventType: "fullscreen_exit",
@@ -303,125 +336,159 @@ export default function InterviewRoomPage() {
     }
   };
 
-  const startVoiceRecording = () => {
-    if (isRecording) return;
+  const startVoiceRecording = async () => {
+    if (isRecordingRef.current) return;
     setIsRecording(true);
+    isRecordingRef.current = true;
     setLiveTranscript("");
     audioChunksRef.current = [];
 
-    // 1. Setup MediaRecorder with existing stream as universal audio capture
-    try {
-      const activeStream = streamRef.current;
-      if (activeStream && activeStream.getAudioTracks().length > 0) {
-        const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg", "audio/mp4"];
-        let selectedMime = "audio/webm";
-        for (const m of mimeTypes) {
-          if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m)) {
-            selectedMime = m;
-            break;
-          }
-        }
-        const recorder = new MediaRecorder(activeStream, { mimeType: selectedMime });
-        recorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
-        };
-        recorder.onstop = async () => {
-          setIsRecording(false);
-          // If native recognition didn't yield text, transcribe via backend
-          if (audioChunksRef.current.length > 0) {
-            try {
-              const audioBlob = new Blob(audioChunksRef.current, { type: selectedMime });
-              audioChunksRef.current = [];
-              const reader = new FileReader();
-              reader.onloadend = async () => {
-                const base64Data = reader.result as string;
-                if (!base64Data || base64Data.length < 50) return;
-                try {
-                  const res = await api.post("/interview/transcribe", {
-                    audioBase64: base64Data,
-                    mimeType: selectedMime,
-                    language: session?.language || "english",
-                  });
-                  if (res.data?.success && res.data.text) {
-                    const transcribed = res.data.text.trim();
-                    setInput((prev) => (prev ? `${prev} ${transcribed}` : transcribed));
-                    setLiveTranscript(transcribed);
-                    toast.success("Voice response captured!");
-                  }
-                } catch {}
-              };
-              reader.readAsDataURL(audioBlob);
-            } catch {}
-          }
-        };
-        recorder.start(1000);
-        mediaRecorderRef.current = recorder;
+    // Ensure active audio stream
+    let activeStream = streamRef.current;
+    if (!activeStream || activeStream.getAudioTracks().length === 0 || !activeStream.getAudioTracks()[0].enabled) {
+      try {
+        activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = activeStream;
+      } catch {
+        toast.error("Microphone access denied.");
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        return;
       }
+    }
+
+    // 1. Setup MediaRecorder with cross-browser audio stream support
+    try {
+      const mimeTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+        "audio/aac",
+        "audio/ogg",
+        "audio/wav",
+      ];
+      let selectedMime = "";
+      for (const m of mimeTypes) {
+        if (typeof MediaRecorder !== "undefined" && typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(m)) {
+          selectedMime = m;
+          break;
+        }
+      }
+      const recorder = selectedMime
+        ? new MediaRecorder(activeStream, { mimeType: selectedMime })
+        : new MediaRecorder(activeStream);
+
+      const effectiveMime = (recorder.mimeType || selectedMime || "audio/webm").split(";")[0].trim() || "audio/webm";
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        if (audioChunksRef.current.length > 0) {
+          try {
+            const cleanMime = effectiveMime;
+            const audioBlob = new Blob(audioChunksRef.current, { type: cleanMime });
+            audioChunksRef.current = [];
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+              const base64Data = reader.result as string;
+              if (!base64Data || base64Data.length < 50) return;
+              try {
+                const res = await api.post("/interview/transcribe", {
+                  audioBase64: base64Data,
+                  mimeType: cleanMime,
+                  language: session?.language || "english",
+                });
+                if (res.data?.success && res.data.text) {
+                  const transcribed = res.data.text.trim();
+                  setInput((prev) => {
+                    if (!prev) return transcribed;
+                    if (!prev.toLowerCase().includes(transcribed.toLowerCase())) {
+                      return `${prev} ${transcribed}`;
+                    }
+                    return prev;
+                  });
+                  setLiveTranscript(transcribed);
+                  toast.success("Voice response captured!");
+                }
+              } catch {}
+            };
+            reader.readAsDataURL(audioBlob);
+          } catch {}
+        }
+      };
+      recorder.start(1000);
+      mediaRecorderRef.current = recorder;
     } catch (recErr) {
-      console.warn("MediaRecorder start warning:", recErr);
+      console.warn("MediaRecorder start notice:", recErr);
     }
 
     // 2. Use SpeechRecognition API for instant live transcription where available (Chrome/Edge)
     const w = window as any;
     const SpeechRecognitionClass = w.SpeechRecognition || w.webkitSpeechRecognition;
     if (SpeechRecognitionClass) {
-      try {
-        const recognition = new SpeechRecognitionClass();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = session?.language === "hindi" ? "hi-IN" : "en-US";
+      const setupRecognition = () => {
+        if (!isRecordingRef.current) return;
+        try {
+          const recognition = new SpeechRecognitionClass();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = session?.language === "hindi" ? "hi-IN" : "en-US";
 
-        recognition.onresult = (event: any) => {
-          let currentTranscript = "";
-          for (let i = 0; i < event.results.length; i++) {
-            currentTranscript += event.results[i][0].transcript;
-          }
-          const trimmed = currentTranscript.trim();
-          if (trimmed) {
-            setLiveTranscript(trimmed);
-            setInput(trimmed);
-          }
-        };
+          recognition.onresult = (event: any) => {
+            let currentTranscript = "";
+            for (let i = 0; i < event.results.length; i++) {
+              currentTranscript += (event.results[i][0]?.transcript || "") + " ";
+            }
+            const trimmed = currentTranscript.trim();
+            if (trimmed) {
+              setLiveTranscript(trimmed);
+              setInput(trimmed);
+            }
+          };
 
-        recognition.onerror = (event: any) => {
-          const err = event.error;
-          if (err === "no-speech" || err === "aborted") return;
-          if (err === "network") {
-            setTimeout(() => {
-              try { recognition.start(); } catch {}
-            }, 1500);
-            return;
-          }
-          // Do not toast error if mediaRecorder is actively capturing audio
-        };
+          recognition.onerror = (event: any) => {
+            const err = event.error;
+            if (err === "no-speech" || err === "aborted") return;
+          };
 
-        recognition.onend = () => {
-          if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
-            setIsRecording(false);
-          }
-        };
+          recognition.onend = () => {
+            if (isRecordingRef.current) {
+              setTimeout(() => {
+                if (isRecordingRef.current) {
+                  setupRecognition();
+                }
+              }, 200);
+            }
+          };
 
-        recognitionRef.current = recognition;
-        recognition.start();
-      } catch (e) {
-        console.warn("SpeechRecognition init warning:", e);
-      }
+          recognitionRef.current = recognition;
+          recognition.start();
+        } catch (e) {
+          console.warn("SpeechRecognition init notice:", e);
+        }
+      };
+      setupRecognition();
     }
   };
 
   const stopVoiceRecording = () => {
+    isRecordingRef.current = false;
+    setIsRecording(false);
     try {
-      recognitionRef.current?.stop();
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
     } catch {}
     try {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
         mediaRecorderRef.current.stop();
-      } else {
-        setIsRecording(false);
       }
-    } catch {
-      setIsRecording(false);
-    }
+    } catch {}
   };
 
   const handleSend = async () => {
@@ -486,30 +553,57 @@ export default function InterviewRoomPage() {
   return (
     <div className="min-h-screen bg-[#060611] text-white flex flex-col" style={{ fontFamily: "var(--font-sans)" }}>
       {/* ── TOP BAR ─────────────────────────── */}
-      <div className={`flex items-center justify-between px-4 py-2.5 border-b border-white/8 ${urgency > 0.7 ? "bg-red-950/30" : "bg-[#0a0a1a]"} shrink-0`}>
+      <div className={`flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/8 ${urgency > 0.7 ? "bg-red-950/30" : "bg-[#0a0a1a]"} shrink-0 gap-2`}>
         {/* Session info */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 shrink-0">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Live Interview</span>
+            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Live</span>
           </div>
-          <div className="hidden sm:block">
+          <div className="hidden sm:block truncate">
             <span className="text-xs font-bold">{session.role}</span>
             {session.company && <span className="text-xs text-white/40"> @ {session.company}</span>}
             <span className="text-[10px] ml-2 px-1.5 py-0.5 rounded bg-white/5 capitalize text-white/50">{session.type}</span>
           </div>
         </div>
 
-        {/* Center: Timer */}
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${isTimeCritical ? "bg-red-500/15 border border-red-500/30" : "bg-white/5 border border-white/10"}`}>
-          <Clock size={14} className={isTimeCritical ? "text-red-400" : "text-amber-400"} />
-          <span className={`text-sm font-black tabular-nums ${isTimeCritical ? "text-red-400" : "text-white"}`}>
-            {formatTime(timeLeft)}
-          </span>
+        {/* Center: Timer & Mobile Switcher */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Mobile Tab Switcher */}
+          <div className="flex lg:hidden items-center p-0.5 rounded-xl border border-white/10 bg-white/5">
+            <button
+              onClick={() => setMobileTab("interview")}
+              className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                mobileTab === "interview"
+                  ? "bg-amber-500 text-black shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              {session.type === "technical" ? "Code/Chat" : "Chat"}
+            </button>
+            <button
+              onClick={() => setMobileTab("video")}
+              className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 ${
+                mobileTab === "video"
+                  ? "bg-amber-500 text-black shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              <Video size={10} />
+              Camera
+            </button>
+          </div>
+
+          <div className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-xl ${isTimeCritical ? "bg-red-500/15 border border-red-500/30" : "bg-white/5 border border-white/10"}`}>
+            <Clock size={13} className={isTimeCritical ? "text-red-400" : "text-amber-400"} />
+            <span className={`text-xs sm:text-sm font-black tabular-nums ${isTimeCritical ? "text-red-400" : "text-white"}`}>
+              {formatTime(timeLeft)}
+            </span>
+          </div>
         </div>
 
         {/* Proctoring + end */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${urgency > 0.5 ? "bg-red-500/10 border border-red-500/20" : "bg-white/5 border border-white/10"}`}>
             <AlertTriangle size={11} className={urgency > 0.5 ? "text-red-400" : "text-white/40"} />
             <span className={`text-[10px] font-bold ${urgency > 0.5 ? "text-red-400" : "text-white/40"}`}>
@@ -518,7 +612,7 @@ export default function InterviewRoomPage() {
           </div>
           <button
             onClick={handleEndInterview}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-[11px] font-bold hover:bg-red-500/25 transition-colors"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-[11px] font-bold hover:bg-red-500/25 transition-colors"
           >
             <PhoneOff size={12} />
             <span className="hidden sm:inline">End Interview</span>
@@ -527,9 +621,9 @@ export default function InterviewRoomPage() {
       </div>
 
       {/* ── MAIN AREA ───────────────────────── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         {/* Left: Chat / Code panel */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className={`flex-1 flex flex-col min-w-0 ${mobileTab === "interview" ? "flex" : "hidden lg:flex"}`}>
           {/* Panel switcher (technical only) */}
           {session.type === "technical" && (
             <div className="flex border-b border-white/8 bg-[#0a0a1a] shrink-0">
@@ -749,7 +843,7 @@ export default function InterviewRoomPage() {
         </div>
 
         {/* Right: Webcam + Info panel */}
-        <div className="w-64 xl:w-72 shrink-0 flex flex-col border-l border-white/8 bg-[#0a0a1a]">
+        <div className={`w-full lg:w-64 xl:w-72 shrink-0 flex flex-col border-t lg:border-t-0 lg:border-l border-white/8 bg-[#0a0a1a] overflow-y-auto ${mobileTab === "video" ? "flex" : "hidden lg:flex"}`}>
           {/* Webcam */}
           <div className="relative aspect-video bg-black border-b border-white/8">
             <video

@@ -18,6 +18,7 @@ import {
   HR_INTERVIEW_TYPES, HR_COMPANY_PRESETS, HR_BEHAVIORAL_TOPICS,
 } from "./HRTypes";
 import CompanyLogo from "../CompanyLogo";
+import { InterviewDomainSelector } from "../shared/InterviewDomainSelector";
 import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 import { useFeatureUsageStore, formatResetDate } from "@/store/feature-usage-store";
 
@@ -369,37 +370,24 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
                 )}
               </div>
 
-              {/* Role */}
+              {/* Role & Domain */}
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <h2 className="text-xl font-extrabold flex items-center gap-2"><Briefcase size={20} className="text-amber-500" /> Target Role</h2>
-                  <p className="text-xs" style={{ color: c.textMuted }}>Type or pick any Adyapan domain (UI/UX, AI, Engineering & Cloud):</p>
+                  <h2 className="text-xl font-extrabold flex items-center gap-2"><Briefcase size={20} className="text-amber-500" /> Target Role & Domain</h2>
+                  <p className="text-xs" style={{ color: c.textMuted }}>Pick from all Adyapan domains or type any custom role:</p>
                 </div>
                 <input value={config.targetRole} onChange={(e) => updateConfig({ targetRole: e.target.value })}
-                  placeholder="Enter your target role..."
+                  placeholder="Enter your target role or pick below..."
                   className="w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-amber-500/50 transition-colors"
                   style={{ background: c.inputBg, color: c.text, borderColor: c.border }} />
 
-                <div className="flex flex-wrap gap-1.5 pt-1 max-h-32 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                  {HR_ROLE_PRESETS.map((r) => {
-                    const isSelected = config.targetRole.toLowerCase() === r.toLowerCase();
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => updateConfig({ targetRole: r })}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-amber-500 text-black border-amber-400 shadow-sm"
-                            : isDark
-                            ? "bg-white/5 text-slate-300 border-white/10 hover:border-amber-500/40 hover:bg-white/10"
-                            : "bg-slate-100 text-slate-700 border-slate-200 hover:border-amber-400 hover:bg-amber-50"
-                        }`}
-                      >
-                        {r}
-                      </button>
-                    );
-                  })}
+                <div className="pt-1">
+                  <InterviewDomainSelector
+                    selectedRole={config.targetRole}
+                    onSelect={(d) => updateConfig({ targetRole: d.role })}
+                    theme={theme}
+                    maxHeight="max-h-44"
+                  />
                 </div>
               </div>
 

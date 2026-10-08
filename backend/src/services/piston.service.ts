@@ -80,7 +80,8 @@ async function executeNativeCode(
     if (norm === "javascript" || norm === "typescript") {
       const filePath = path.join(tmpDir, "solution.js");
       fs.writeFileSync(filePath, code, "utf-8");
-      const r = await runProcess("node", [filePath], { timeout, stdin });
+      const nodeCmd = process.execPath || "node";
+      const r = await runProcess(nodeCmd, [filePath], { timeout, stdin });
       const elapsed = (Date.now() - startTime) / 1000;
       const success = r.code === 0;
       cleanup(tmpDir);
@@ -163,6 +164,9 @@ const LANGUAGE_MAP: Record<string, string> = {
   js: "javascript",
   nodejs: "javascript",
   node: "javascript",
+  "node.js": "javascript",
+  "javascript nodejs": "javascript",
+  "javascript (node.js)": "javascript",
   c: "c",
   cpp: "c++",
   "c++": "c++",
@@ -292,6 +296,10 @@ async function getInstalledRuntimes(): Promise<{ endpoint: string; runtimes: Run
 const FILE_EXTENSIONS: Record<string, string> = {
   python: ".py",
   javascript: ".js",
+  js: ".js",
+  nodejs: ".js",
+  node: ".js",
+  "node.js": ".js",
   c: ".c",
   "c++": ".cpp",
   java: ".java",

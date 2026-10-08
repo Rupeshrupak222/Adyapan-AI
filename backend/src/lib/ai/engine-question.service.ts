@@ -151,6 +151,73 @@ function getCompanyFocus(company: string): string {
 function getRoleDomainTechnicalFocus(role: string, technology: string): string {
   const target = `${role || ""} ${technology || ""}`.toLowerCase();
 
+  // ── 18 Core Adyapan CSE Domains & AI/Data Focus ──
+  if (target.includes("generative") || target.includes("agentic") || target.includes("rag") || target.includes("llm")) {
+    return `Role Domain Expertise Focus — AI (Generative & Agentic):
+- Focus on: LLM architectures, prompt engineering, Retrieval-Augmented Generation (RAG), vector embeddings, vector databases (Pinecone, Chroma), LangChain, LlamaIndex, autonomous multi-agent frameworks, tool use, and safety alignment.`;
+  }
+
+  if (target.includes("data science") || target.includes("data scientist") || (target.includes("eda") && target.includes("model"))) {
+    return `Role Domain Expertise Focus — Data Science:
+- Focus on: Exploratory data analysis (EDA), statistical inference, probability distributions, pandas, NumPy, feature selection, data cleaning, model evaluation (ROC-AUC, RMSE, F1-score), and data storytelling.`;
+  }
+
+  if (target.includes("machine learning") || target.includes("ml with python") || target.includes("ml engineer")) {
+    return `Role Domain Expertise Focus — ML with Python / Machine Learning:
+- Focus on: Scikit-learn pipelines, model selection, hyperparameter tuning, regression, classification, clustering, handling imbalanced datasets, and ML productionization in Python.`;
+  }
+
+  if (target.includes("deep learning") || target.includes("ai with ml") || target.includes("pytorch") || target.includes("tensorflow") || target.includes("computer vision") || target.includes("nlp")) {
+    return `Role Domain Expertise Focus — AI with ML & Deep Learning:
+- Focus on: Deep learning architectures, CNNs, RNNs, LSTMs, Transformers, backpropagation, PyTorch/TensorFlow implementations, regularization techniques, and computer vision / NLP tasks.`;
+  }
+
+  if (target.includes("data analytics") || target.includes("business analytics") || target.includes("power bi") || target.includes("tableau")) {
+    return `Role Domain Expertise Focus — Data & Business Analytics:
+- Focus on: SQL complex aggregations and window functions, ETL/ELT pipelines, KPI metric definitions, cohort analysis, unit economics, LTV/CAC, churn prediction, A/B testing design, and executive dashboard storytelling.`;
+  }
+
+  if (target.includes("devops") || target.includes("ci/cd") || target.includes("docker") || target.includes("kubernetes") || target.includes("terraform")) {
+    return `Role Domain Expertise Focus — DevOps:
+- Focus on: CI/CD automation pipelines, Docker containerization, Kubernetes cluster orchestration, Infrastructure as Code (Terraform), Linux system administration, and observability (Prometheus/Grafana).`;
+  }
+
+  if (target.includes("aws") || target.includes("cloud computing") || target.includes("cloud engineer") || target.includes("cloud architect")) {
+    return `Role Domain Expertise Focus — AWS & Cloud Computing:
+- Focus on: AWS core services (EC2, S3, RDS, DynamoDB, Lambda, VPC networking, Route 53, IAM security), cloud design patterns, high availability, fault tolerance, virtualization, and cost-efficient cloud architectures.`;
+  }
+
+  if (target.includes("cybersecurity") || target.includes("security analyst") || target.includes("owasp") || target.includes("penetration")) {
+    return `Role Domain Expertise Focus — Cybersecurity:
+- Focus on: OWASP Top 10 vulnerabilities, web security (XSS, CSRF, SQL Injection), cryptography (symmetric/asymmetric encryption, hashing), authentication (OAuth2, JWT), network security, and secure coding practices.`;
+  }
+
+  if (target.includes("full stack") || target.includes("fullstack") || target.includes("web dev") || target.includes("web developer")) {
+    return `Role Domain Expertise Focus — Full Stack & Web Development:
+- Focus on: Modern semantic HTML5, CSS3 layouts (Flexbox, Grid), responsive UI, modern JavaScript/TypeScript, React/Next.js, Node.js/Express, REST/GraphQL APIs, database modeling, and web performance.`;
+  }
+
+  if (target.includes("android") || target.includes("mobile dev") || target.includes("flutter") || target.includes("react native") || target.includes("kotlin")) {
+    return `Role Domain Expertise Focus — Android & Mobile App Development:
+- Focus on: Kotlin & Android SDK, Jetpack Compose, MVVM/Clean Architecture, Room database, coroutines, cross-platform mobile architecture (Flutter, React Native), mobile state management, and offline caching.`;
+  }
+
+  if (target.includes("java developer") || target.includes("programming in java") || target.includes("spring boot")) {
+    return `Role Domain Expertise Focus — Programming in Java:
+- Focus on: Core Java, object-oriented design principles, Java Memory Model (JVM architecture, GC algorithms), Collections framework, Java 8+ features (Streams, Lambdas), multithreading, and Spring Boot microservices.`;
+  }
+
+  if (target.includes("python developer") || target.includes("programming in python") || target.includes("fastapi")) {
+    return `Role Domain Expertise Focus — Programming in Python:
+- Focus on: Core Python concepts, memory management, GIL, generators, decorators, iterators, magic/dunder methods, async/await (AsyncIO), typing, packaging, and standard library best practices.`;
+  }
+
+  if (target.includes("dsa with python") || target.includes("dsa") || target.includes("algorithms") || target.includes("leetcode")) {
+    return `Role Domain Expertise Focus — Data Structures & Algorithms:
+- Focus on: Time and space complexity (Big-O notation), arrays, hash tables, binary trees, heaps, graphs, dynamic programming, recursion, two-pointer techniques, and optimal algorithmic implementations.`;
+  }
+
+  // ── Core Engineering, ECE, Healthcare & Business Focus ──
   if (target.includes("civil") || target.includes("structural") || target.includes("bim") || target.includes("cad")) {
     return `Role Domain Expertise Focus — Civil & Structural Engineering:
 - Focus on: Bar bending schedules, concrete slump test, compressive strength, IS/ACI structural codes, load estimation, BIM LOD modeling, quantity surveying, and construction site safety protocols.`;

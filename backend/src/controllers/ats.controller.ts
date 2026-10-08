@@ -267,6 +267,9 @@ export async function analyzeATSReport(req: Request, res: Response, next: NextFu
           reportJson: JSON.parse(JSON.stringify(analysis)),
         },
       });
+
+      // Invalidate cached placement intelligence so placement score reflects the new ATS report immediately
+      userPrisma.placementIntelligence.deleteMany({ where: { userId } }).catch(() => {});
     } catch (dbErr: any) {
       console.error("[ATS] Failed to save ATS report to DB (returning analysis anyway):", dbErr?.message || dbErr);
     }

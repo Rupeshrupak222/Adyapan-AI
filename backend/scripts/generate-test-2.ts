@@ -31,8 +31,14 @@
  *   npx tsx scripts/generate-test-2.ts --apply --source mcq --limit 2
  *   npx tsx scripts/generate-test-2.ts --apply --rebuild       # discard Test #2, regenerate
  *   npx tsx scripts/generate-test-2.ts --verify-only           # uniqueness audit only
+ *   npx tsx scripts/generate-test-2.ts --test-number 3 --apply # create/top up Test #3
+ *   npx tsx scripts/generate-test-2.ts --test-number 3 --missing-only --apply
  *
- * Resumable and convergent: a target whose Test #2 already holds the target size
+ * The test number defaults to 2, so the run that built every Test #2 stays
+ * reproducible byte for byte; --test-number makes the same gated pipeline create
+ * any later level (Test #3, #4, ...).
+ *
+ * Resumable and convergent: a target whose Test already holds the target size
  * is skipped, so an interrupted run can simply be restarted and a second run
  * fills whatever the first one could not reach.
  */
@@ -66,7 +72,7 @@ import { persistTestsToDb } from "../src/services/mcq-store-db";
 import type { MCQQuestion, MCQTest } from "../src/services/mcq.service";
 
 const DATA_DIR = path.join(__dirname, "../data");
-const REPORT_FILE = path.join(DATA_DIR, "test2-generation-report.json");
+const MCQ_STORE_FILE = path.join(DATA_DIR, "mcq-tests-store.json");
 
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 
@@ -81,6 +87,10 @@ const val = (flag: string, fallback: number) => {
 const APPLY = has("--apply");
 const REBUILD = has("--rebuild");
 const VERIFY_ONLY = has("--verify-only");
+// Fill only targets that have no row for TEST_NUMBER at all. Without it a target
+// whose existing paper shares a template/concept with something else is discarded
+// and regenerated from scratch, which is not what "add the missing tests" means.
+const MISSING_ONLY = has("--missing-only");
 const SOURCE = (() => {
   const i = argv.indexOf("--source");
   const v = i >= 0 && argv[i + 1] ? argv[i + 1] : "all";
@@ -99,7 +109,8 @@ const BATCH_SIZE = val("--batch-size", 2);
 const THROTTLE_MS = val("--throttle-ms", 3000);
 // Pause between targets so one target's burst cannot starve the next.
 const TARGET_PAUSE_MS = val("--target-pause-ms", 2000);
-const TEST_NUMBER = 2;
+const TEST_NUMBER = val("--test-number", 2);
+const REPORT_FILE = path.join(DATA_DIR, `test${TEST_NUMBER}-generation-report.json`);
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -262,6 +273,30 @@ function banInRegistry(snapshot: BankSnapshot, questions: { text: string; codeSn
     snapshot.conceptSignatures.add(d.conceptSignature);
     snapshot.recentTexts.push(stripBracketedPrefix(d.text).toLowerCase());
   }
+}
+
+/**
+ * Tests written by this run, so the JSON cache can be updated alongside Postgres.
+ *
+ * Postgres is the durable store, but the running server serves the in-memory copy
+ * hydrated from the JSON file, so a test created only in the database stays
+ * invisible until the next boot.
+ */
+const generatedMcqTests: MCQTest[] = [];
+
+function syncMcqStoreJson(tests: MCQTest[]) {
+  let store: MCQTest[] = [];
+  try {
+    const parsed = JSON.parse(fs.readFileSync(MCQ_STORE_FILE, "utf-8"));
+    if (Array.isArray(parsed)) store = parsed;
+  } catch {
+    store = [];
+  }
+  const byId = new Map(store.map((t) => [t.id, t]));
+  for (const t of tests) byId.set(t.id, t);
+  const merged = Array.from(byId.values());
+  fs.writeFileSync(MCQ_STORE_FILE, JSON.stringify(merged, null, 2), "utf-8");
+  log(`JSON store: upserted ${tests.length} test(s), ${merged.length} total.`);
 }
 
 // ─── Discovery ───────────────────────────────────────────────────────────────
@@ -526,6 +561,7 @@ async function ensureMcqTest2(
     return result;
   }
 
+  generatedMcqTests.push(test);
   banInRegistry(snapshot, questions);
 
   result.written = added.length;
@@ -898,8 +934,12 @@ async function main() {
   // Missing Test #2 first, then broken copies, then the ones that came up short.
   const byPriority = (a: { have: number; collides: boolean }, b: { have: number; collides: boolean }) =>
     a.have - b.have || Number(a.collides) - Number(b.collides);
-  const mcqTodo = mcqTargets.filter((t) => needsWork(t.have, t.collides)).sort(byPriority);
-  const aptitudeTodo = aptitudeTargets.filter((t) => needsWork(t.have, t.collides)).sort(byPriority);
+  const mcqTodo = mcqTargets
+    .filter((t) => (MISSING_ONLY ? t.have === 0 : needsWork(t.have, t.collides)))
+    .sort(byPriority);
+  const aptitudeTodo = aptitudeTargets
+    .filter((t) => (MISSING_ONLY ? t.have === 0 : needsWork(t.have, t.collides)))
+    .sort(byPriority);
   const matches = (t: { targetName?: string; topic?: string }) =>
     !ONLY || `${t.targetName || t.topic}`.toLowerCase().includes(ONLY);
   const mcqQueue = (LIMIT > 0 ? mcqTodo.filter(matches).slice(0, LIMIT) : mcqTodo.filter(matches));
@@ -1079,6 +1119,8 @@ async function main() {
       ? `\n${short} target(s) are still short — re-run the same command to top them up.`
       : `\nEvery queued target reached ${TARGET_SIZE} questions.`
   );
+
+  if (generatedMcqTests.length > 0) syncMcqStoreJson(generatedMcqTests);
 
   await masterPrisma.$disconnect();
 }

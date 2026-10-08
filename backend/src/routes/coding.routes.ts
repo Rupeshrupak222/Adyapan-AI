@@ -1431,26 +1431,14 @@ router.post("/workspace/:id/run", async (req: any, res) => {
 
     let sampleResults: Array<{ input: string; expected: string; actual: string; passed: boolean }> = [];
     if (examples.length > 0) {
-      // Anti-cheat: detect hardcoded outputs
-      const cheatCheck = detectHardcodedOutput(code, examples.map((e: any) => ({ input: e.input, output: e.output })));
-      
-      if (cheatCheck.isHardcoded && cheatCheck.confidence >= 0.85) {
-        sampleResults = examples.map((ex: any, _i: number) => ({
-          input: ex.input,
-          expected: ex.output,
-          actual: "Hardcoded output detected — your code must read and process the input.",
-          passed: false,
-        }));
-      } else {
-        const testCases = examples.map((ex: any) => ({ input: ex.input, expectedOutput: ex.output }));
-        const submission = await runTestCases(language, code, testCases, 10000);
-        sampleResults = submission.testResults.map(tr => ({
-          input: tr.input,
-          expected: tr.expectedOutput,
-          actual: tr.actualOutput,
-          passed: tr.passed,
-        }));
-      }
+      const testCases = examples.map((ex: any) => ({ input: ex.input, expectedOutput: ex.output }));
+      const submission = await runTestCases(language, code, testCases, 10000);
+      sampleResults = submission.testResults.map(tr => ({
+        input: tr.input,
+        expected: tr.expectedOutput,
+        actual: tr.actualOutput,
+        passed: tr.passed,
+      }));
     }
 
     res.json({
@@ -1508,9 +1496,9 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
 
     const allTestCases = [...visibleTestCases, ...hiddenTestCases];
 
-    // Step 1: Anti-cheat detection
+    // Step 1: Anti-cheat detection (only high-confidence flagrant cheat)
     const cheatCheck = detectHardcodedOutput(code, visibleTestCases.map(e => ({ input: e.input, output: e.expectedOutput })));
-    if (cheatCheck.isHardcoded && cheatCheck.confidence >= 0.85) {
+    if (cheatCheck.isHardcoded && cheatCheck.confidence >= 0.95) {
       return res.json({
         allPassed: false,
         totalTests: allTestCases.length,
@@ -1521,7 +1509,7 @@ router.post("/workspace/:id/submit", async (req: any, res) => {
           testCase: 1,
           input: visibleTestCases[0]?.input || "",
           expected: visibleTestCases[0]?.expectedOutput || "",
-          actual: "Hardcoded output detected",
+          actual: "Hardcoded output detected — your code must read and process input dynamically.",
           passed: false,
           executionTime: 0,
           isHidden: false

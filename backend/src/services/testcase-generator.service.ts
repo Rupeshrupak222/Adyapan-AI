@@ -233,59 +233,89 @@ export function compareOutputs(actual: string, expected: string): boolean {
 /**
  * Anti-cheat: Detect if user is hardcoding outputs.
  * Checks if the code contains the expected output as a literal string
- * and doesn't actually process the input.
+ * and doesn't actually process the input or contain algorithmic logic.
  */
 export function detectHardcodedOutput(
   code: string,
   testCases: Array<{ input: string; output: string }>
 ): { isHardcoded: boolean; confidence: number; reason?: string } {
-  const codeNormalized = code.replace(/\s+/g, " ").toLowerCase();
+  // Check 1: Input reading patterns across Python, C/C++, Java, JavaScript/Node.js, and function signatures
+  const readsInput = (
+    /input\s*\(\)|sys\.stdin|sys\.argv|open\s*\(\s*0\s*\)|fileinput/i.test(code) || // Python
+    /scanf|cin\s*>>|getline\s*\(|getchar\s*\(|fgets|fread|read_line|read_exact/i.test(code) || // C/C++
+    /Scanner|BufferedReader|InputStreamReader|System\.in|FastScanner|DataInputStream/i.test(code) || // Java
+    /fs\.readFileSync|fs\.readFile|readSync|process\.stdin|process\.argv|require\s*\(\s*['"]fs['"]\s*\)|from\s+['"]fs['"]|createInterface|readline/i.test(code) || // Node.js / JavaScript
+    /\b(solve|solution|main)\s*\([a-zA-Z0-9_$,\s]+\)/i.test(code) || // Function invoked with parameters
+    /(?:function\s+[a-zA-Z0-9_$]+\s*\([^)]*[\w$][^)]*\)|\b(?:const|let|var)\s+[a-zA-Z0-9_$]+\s*=\s*\([^)]*[\w$][^)]*\)\s*=>)/.test(code) // Function definition with parameters
+  );
 
-  // Check 1: Code doesn't read input at all
-  const readsInput = /input\(\)|sys\.stdin|scanf|cin|readline|readLine|Scanner|BufferedReader|InputStream|FastScanner|DataInputStream|gets|read_line|process\.stdin/i.test(code);
-  
-  // Check 2: Expected outputs appear as literals in the code (print(411), print("411"), etc.)
+  // Check 2: Real algorithmic logic (loops, branches, math mutations, data structures)
+  const hasLogic = (
+    /\b(for|while|do)\s*\(|\.forEach\(|\.map\(|\.filter\(|\.reduce\(|\.sort\(|\.find\(|\.some\(|\.every\(/.test(code) ||
+    /\b(if|else\s+if|switch|case)\b/.test(code) ||
+    /\b(Math\.|Array\.|Set\(|Map\(|new\s+Map|new\s+Set|heap|queue|stack)/i.test(code) ||
+    /[+\-*/%]=|\+\+|--/.test(code)
+  );
+
+  // If the code has real algorithmic logic or explicitly reads/receives input, it is NOT hardcoded
+  if (readsInput || hasLogic) {
+    return { isHardcoded: false, confidence: 0 };
+  }
+
+  // Trivial outputs to ignore (e.g. 0, 1, -1, true, false, empty strings)
+  const isTrivialOutput = (out: string): boolean => {
+    const trimmed = out.trim().toLowerCase();
+    if (trimmed.length <= 2) return true;
+    if (["true", "false", "yes", "no", "null", "none", "undefined", "[]", "{}"].includes(trimmed)) return true;
+    return false;
+  };
+
+  // Check 3: Code only contains output/print statements
+  const codeLines = code
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith("#") && !l.startsWith("//") && !l.startsWith("/*") && !l.startsWith("*"));
+
+  const onlyPrints = codeLines.length > 0 && codeLines.every(line => {
+    return (
+      line.startsWith("print") ||
+      line.startsWith("console.log") ||
+      line.startsWith("System.out") ||
+      line.startsWith("cout") ||
+      line.startsWith("return") ||
+      line.startsWith("import") ||
+      line.startsWith("using") ||
+      line.startsWith("include") ||
+      line.startsWith("require") ||
+      line === "}" ||
+      line === "};"
+    );
+  });
+
+  // Check 4: Explicit hardcoded output printing
   let hardcodedCount = 0;
   for (const tc of testCases) {
-    const expectedNorm = tc.output.trim().replace(/\s+/g, " ").toLowerCase();
-    // Check if the output value appears in the code (even short ones like "411")
-    if (expectedNorm.length > 0 && codeNormalized.includes(expectedNorm)) {
+    const expectedNorm = tc.output.trim();
+    if (isTrivialOutput(expectedNorm)) continue;
+
+    const escaped = expectedNorm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const printPattern = new RegExp(
+      `(?:console\\.log|print|System\\.out\\.print(?:ln)?|cout\\s*<<)\\s*\\(?\\s*["'\`]?${escaped}["'\`]?\\s*\\)?`,
+      "i"
+    );
+    if (printPattern.test(code)) {
       hardcodedCount++;
     }
   }
 
-  // Check 3: Code is suspiciously short for the problem
-  const codeLines = code.trim().split("\n").filter(l => l.trim() && !l.trim().startsWith("#") && !l.trim().startsWith("//")).length;
-  const isTooShort = codeLines <= 3;
-
-  // Check 4: Code only contains print/output statements (no logic)
-  const onlyPrints = code.trim().split("\n").every(line => {
-    const trimmed = line.trim();
-    return !trimmed || trimmed.startsWith("#") || trimmed.startsWith("//") ||
-      trimmed.startsWith("print") || trimmed.startsWith("console.log") ||
-      trimmed.startsWith("System.out") || trimmed.startsWith("cout") ||
-      trimmed.startsWith("import") || trimmed.startsWith("using") ||
-      trimmed.startsWith("include");
-  });
-
-  // Primary check: No input reading + only print statements = definitely hardcoded
-  if (!readsInput && onlyPrints) {
-    return { isHardcoded: true, confidence: 0.95, reason: "Code doesn't read input and only contains print statements" };
+  // Blatant cheat: no input reading, no algorithmic logic, only print statements with hardcoded values
+  if (onlyPrints && hardcodedCount > 0) {
+    return { isHardcoded: true, confidence: 0.98, reason: "Code does not read input and only prints hardcoded expected outputs." };
   }
 
-  // Code doesn't read input and is very short
-  if (!readsInput && isTooShort) {
-    return { isHardcoded: true, confidence: 0.9, reason: "Code doesn't process any input and is suspiciously short" };
-  }
-
-  // Has hardcoded values + doesn't read input
-  if (!readsInput && hardcodedCount > 0) {
-    return { isHardcoded: true, confidence: 0.85, reason: "Code doesn't read input and contains hardcoded output values" };
-  }
-
-  // Multiple hardcoded outputs found + code is short AND doesn't read input
-  if (!readsInput && hardcodedCount >= 2 && isTooShort) {
-    return { isHardcoded: true, confidence: 0.8, reason: "Multiple expected outputs found as literals in very short code" };
+  // Suspiciously short with only print statements and no logic
+  if (onlyPrints && codeLines.length <= 2 && testCases.length > 0) {
+    return { isHardcoded: true, confidence: 0.95, reason: "Code only contains print statements without reading or processing input." };
   }
 
   return { isHardcoded: false, confidence: 0 };

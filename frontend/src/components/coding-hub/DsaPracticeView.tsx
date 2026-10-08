@@ -66,8 +66,8 @@ export interface DsaProblem {
 }
 
 const CODE_TEMPLATES: Record<string, string> = {
-  javascript: `// Write your JavaScript solution here\n\nfunction solve() {\n  // Process input and solve problem\n  \n}\n\nsolve();\n`,
-  python: `# Write your Python solution here\n\ndef solve():\n    # Process input and solve problem\n    pass\n\nif __name__ == "__main__":\n    solve()\n`,
+  javascript: `// Write your JavaScript (Node.js) solution here\nconst fs = require('fs');\n\nfunction solve() {\n  const input = fs.readFileSync(0, 'utf-8').trim();\n  // Process input and solve problem\n  \n}\n\nsolve();\n`,
+  python: `# Write your Python solution here\nimport sys\n\ndef solve():\n    # Process input and solve problem\n    pass\n\nif __name__ == "__main__":\n    solve()\n`,
   cpp: `// Write your C++ solution here\n#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nvoid solve() {\n    // Process input and solve problem\n    \n}\n\nint main() {\n    solve();\n    return 0;\n}\n`,
   java: `// Write your Java solution here\nimport java.util.*;\n\npublic class Solution {\n    public static void solve() {\n        // Process input and solve problem\n        \n    }\n\n    public static void main(String[] args) {\n        solve();\n    }\n}\n`
 };

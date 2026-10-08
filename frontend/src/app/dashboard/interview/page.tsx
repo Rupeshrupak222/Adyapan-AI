@@ -10,6 +10,7 @@ import { z } from "zod";
 import { api } from "@/services/api";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { useUsageStore } from "@/store/usage-store";
+import { InterviewDomainSelector } from "@/components/interview-hub/shared/InterviewDomainSelector";
 import Link from "next/link";
 import {
   Mic, Code, Briefcase, User, Sparkles, ChevronRight, History,
@@ -413,6 +414,24 @@ function InterviewPageContent() {
 
               <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="p-6 rounded-2xl border border-white/8 bg-white/3 space-y-5">
+                  {/* Domain Selector */}
+                  <div className="space-y-1.5 pb-2 border-b border-white/5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+                      <Sparkles size={12} className="text-amber-500" />
+                      Select Domain / Field:
+                    </label>
+                    <InterviewDomainSelector
+                      selectedRole={watch("role")}
+                      onSelect={(d) => {
+                        setValue("role", d.role);
+                        if (d.tech) setValue("technology", d.tech);
+                      }}
+                      theme="dark"
+                      showTechDetails={true}
+                      maxHeight="max-h-36"
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Role */}
                     <div>

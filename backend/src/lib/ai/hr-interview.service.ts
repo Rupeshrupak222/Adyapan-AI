@@ -171,6 +171,66 @@ function getRoleSpecificHRGuidance(role: string): string {
 - Balancing user advocacy with business constraints & deadlines: Explore how they prioritize user needs against engineering feasibility or commercial milestones.
 - Design storytelling & rationale: Evaluate their ability to clearly articulate the "why" behind their design decisions, personas, and user research.
 - Empathy, usability testing & accessibility: Inquire about user testing insights, handling edge cases, and accessibility (WCAG).`;
+  } else if (
+    normalized.includes("mechanical") ||
+    normalized.includes("civil") ||
+    normalized.includes("automotive") ||
+    normalized.includes("cad") ||
+    normalized.includes("car") ||
+    normalized.includes("hev") ||
+    normalized.includes("powertrain")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR CORE ENGINEERING & AUTOMOTIVE:
+- Safety, compliance & quality standards: Ask about how they handle strict safety margins, tolerance limits, and regulatory certifications.
+- Cross-disciplinary coordination: Inquire about collaboration between hardware/structural teams, electronics engineers, and manufacturing plants.
+- Handling unexpected physical test failures or prototype defects: Explore how they troubleshoot FEA/CAD discrepancies and physical stress tests under tight deadlines.
+- Project site/production challenges: Evaluate vendor negotiations, material delays, and managing on-site contractors.`;
+  } else if (
+    normalized.includes("embedded") ||
+    normalized.includes("vlsi") ||
+    normalized.includes("robotics") ||
+    normalized.includes("drone") ||
+    normalized.includes("iot")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR ECE, ROBOTICS & HARDWARE SYSTEMS:
+- Hardware-software co-design collaboration: Inquire about working with firmware developers, mechanical chassis teams, and PCB fabricators.
+- Rigorous lab testing & root-cause debugging: Ask how they isolate intermittent hardware glitches, timing violations, or sensor noise.
+- High-stakes safety in autonomous/embedded systems: Evaluate attitude towards fail-safe behaviors, redundancy, and risk mitigation.`;
+  } else if (
+    normalized.includes("clinical") ||
+    normalized.includes("medical") ||
+    normalized.includes("pharma") ||
+    normalized.includes("genetic") ||
+    normalized.includes("psychology")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR HEALTHCARE, PHARMA & LIFE SCIENCES:
+- Regulatory compliance & ethics: Assess strict adherence to GCP, HIPAA, FDA protocols, and patient confidentiality.
+- Handling high-pressure audits and documentation integrity: Ask about managing audit checklists, trial deadlines, and adverse event reporting.
+- Scientific communication & empathy: Evaluate communication with cross-functional investigators, clinicians, or patients.`;
+  } else if (
+    normalized.includes("product manager") ||
+    normalized.includes("management") ||
+    normalized.includes("finance") ||
+    normalized.includes("banking") ||
+    normalized.includes("supply chain") ||
+    normalized.includes("marketing")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR MANAGEMENT, FINANCE & BUSINESS:
+- Cross-functional leadership without direct authority: Inquire how they motivate engineering, sales, and design teams toward common KPIs.
+- Prioritization under resource constraints: Ask about trade-offs between urgent short-term fixes and long-term strategic investments.
+- Executive communication & stakeholder alignment: Assess ability to explain complex data or business cases to leadership.`;
+  } else if (
+    normalized.includes("data") ||
+    normalized.includes("machine learning") ||
+    normalized.includes("ai") ||
+    normalized.includes("cloud") ||
+    normalized.includes("devops") ||
+    normalized.includes("software")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR TECH, AI & SOFTWARE ROLES:
+- Incident response & ownership: Ask about how they handled a live production outage, unexpected model drift, or critical bug.
+- Managing technical debt vs business delivery: Inquire how they negotiated refactoring time with product managers.
+- Continuous learning & knowledge sharing: Assess how they mentor junior engineers and share learnings from mistakes.`;
   }
   return "";
 }

@@ -101,6 +101,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
   const [textInput, setTextInput] = useState("");
   const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
   const [isFloatingPIP, setIsFloatingPIP] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"stage" | "transcript">("stage");
 
   const handleManualTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +116,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
 
   return (
     <div
-      className={`relative h-[calc(100vh-76px)] w-full flex flex-col justify-between p-3.5 select-none overflow-hidden transition-colors duration-300 ${
+      className={`relative h-[calc(100dvh-76px)] min-h-[520px] w-full flex flex-col justify-between p-2.5 sm:p-3.5 select-none overflow-hidden transition-colors duration-300 ${
         isDark
           ? "bg-slate-950 text-slate-100"
           : "bg-slate-100/90 text-slate-900"
@@ -123,13 +124,13 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
     >
       {/* 1. Header Bar */}
       <header
-        className={`shrink-0 flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b transition-colors ${
+        className={`shrink-0 flex items-center justify-between gap-2 pb-2 sm:pb-2.5 border-b transition-colors ${
           isDark ? "border-slate-800/80" : "border-slate-200"
         }`}
       >
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
           <div
-            className={`p-1.5 rounded-xl border ${
+            className={`p-1.5 rounded-xl border shrink-0 ${
               isDark
                 ? "bg-purple-600/20 text-purple-400 border-purple-500/30"
                 : "bg-purple-100 text-purple-700 border-purple-200"
@@ -137,16 +138,16 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
           >
             <Sparkles className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1
-              className={`text-sm md:text-base font-bold tracking-tight leading-tight ${
+              className={`text-xs sm:text-base font-bold tracking-tight leading-tight truncate ${
                 isDark ? "text-slate-100" : "text-slate-900"
               }`}
             >
               {interviewTitle}
             </h1>
             <p
-              className={`text-[11px] font-medium ${
+              className={`text-[10px] sm:text-[11px] font-medium truncate ${
                 isDark ? "text-slate-400" : "text-slate-600"
               }`}
             >
@@ -159,7 +160,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
               {companyName && (
                 <>
                   {" "}
-                  • Company:{" "}
+                  •{" "}
                   <span
                     className={isDark ? "text-cyan-300 font-semibold" : "text-cyan-700 font-bold"}
                   >
@@ -167,29 +168,51 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
                   </span>
                 </>
               )}
-              {" "}
-              • Level:{" "}
-              <span
-                className={`capitalize font-semibold ${
-                  isDark ? "text-indigo-300" : "text-indigo-700"
-                }`}
-              >
-                {difficulty}
-              </span>
             </p>
           </div>
         </div>
 
-        {/* Status Indicators */}
-        <div className="flex items-center space-x-3">
+        {/* Status Indicators & Mobile Switcher */}
+        <div className="flex items-center space-x-2 shrink-0">
+          {/* Mobile Tab Switcher */}
           <div
-            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-xl border text-xs font-mono font-semibold ${
+            className={`flex lg:hidden items-center p-0.5 rounded-xl border text-xs font-semibold ${
+              isDark ? "bg-slate-900 border-slate-800" : "bg-slate-200/80 border-slate-300"
+            }`}
+          >
+            <button
+              onClick={() => setMobileTab("stage")}
+              className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                mobileTab === "stage"
+                  ? "bg-purple-600 text-white shadow-sm"
+                  : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Stage
+            </button>
+            <button
+              onClick={() => setMobileTab("transcript")}
+              className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all relative ${
+                mobileTab === "transcript"
+                  ? "bg-purple-600 text-white shadow-sm"
+                  : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Chat
+              {liveTranscript && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+            </button>
+          </div>
+
+          <div
+            className={`flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1 rounded-xl border text-[11px] sm:text-xs font-mono font-semibold ${
               isDark
                 ? "bg-slate-900 border-slate-800 text-slate-300"
                 : "bg-white border-slate-200 text-slate-700 shadow-sm"
             }`}
           >
-            <Clock className="w-3.5 h-3.5 text-purple-500" />
+            <Clock className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-purple-500" />
             <span>{formatTime(elapsedSeconds)}</span>
           </div>
 
@@ -201,19 +224,23 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Voice Room Active</span>
+            <span>Live Voice</span>
           </div>
         </div>
       </header>
 
       {/* 2. Main Stage Content */}
-      <main className="flex-1 min-h-0 my-2 flex flex-col space-y-2.5 overflow-hidden">
+      <main className="flex-1 min-h-0 my-1.5 sm:my-2 flex flex-col space-y-2 overflow-hidden">
         {/* Top Grid: Video Feeds + Live Transcript */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch overflow-hidden">
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 items-stretch overflow-hidden">
           {/* Left Column: Interviewer & Candidate Cards (7 cols) */}
-          <div className="lg:col-span-7 flex flex-col space-y-3 h-full min-h-0 overflow-hidden">
+          <div
+            className={`lg:col-span-7 flex flex-col space-y-2 sm:space-y-3 h-full min-h-0 overflow-hidden ${
+              mobileTab === "stage" ? "flex" : "hidden lg:flex"
+            }`}
+          >
             <div
-              className={`grid gap-3 flex-1 min-h-0 overflow-hidden ${
+              className={`grid gap-2 sm:gap-3 flex-1 min-h-0 overflow-hidden ${
                 isFloatingPIP ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"
               }`}
             >
@@ -246,7 +273,11 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
           </div>
 
           {/* Right Column: Live Meeting Transcript (5 cols) */}
-          <div className="lg:col-span-5 flex flex-col h-full min-h-0 overflow-hidden">
+          <div
+            className={`lg:col-span-5 flex flex-col h-full min-h-0 overflow-hidden ${
+              mobileTab === "transcript" ? "flex" : "hidden lg:flex"
+            }`}
+          >
             <LiveTranscriptTimeline
               messages={messages}
               liveTranscript={liveTranscript}
@@ -261,7 +292,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
 
         {/* Bottom Full-Width Section (Custom Workspace / Overlay) */}
         {customOverlayContent && (
-          <div className="shrink-0 w-full overflow-hidden">{customOverlayContent}</div>
+          <div className="shrink-0 w-full overflow-hidden max-h-[40vh] sm:max-h-none">{customOverlayContent}</div>
         )}
       </main>
 
@@ -324,15 +355,15 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
 
       {/* 5. Minimal Utility Toolbar (Bottom) */}
       <footer
-        className={`shrink-0 flex flex-wrap items-center justify-between gap-2 pt-2 border-t transition-colors ${
+        className={`shrink-0 flex items-center justify-between gap-1.5 sm:gap-2 pt-2 border-t transition-colors ${
           isDark ? "border-slate-800/80" : "border-slate-200"
         }`}
       >
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
           {/* Pause / Resume */}
           <button
             onClick={onPauseToggle}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors ${
+            className={`px-2 sm:px-3 py-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center space-x-1 sm:space-x-1.5 transition-colors ${
               isPaused
                 ? "bg-amber-600/20 text-amber-300 border-amber-500/40 hover:bg-amber-600/30"
                 : isDark
@@ -341,13 +372,13 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
             }`}
           >
             {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-            <span>{isPaused ? "Resume" : "Pause"}</span>
+            <span className="hidden sm:inline">{isPaused ? "Resume" : "Pause"}</span>
           </button>
 
           {/* Mute AI Voice */}
           <button
             onClick={onMuteToggle}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors ${
+            className={`px-2 sm:px-3 py-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center space-x-1 sm:space-x-1.5 transition-colors ${
               isAiMuted
                 ? "bg-rose-600/20 text-rose-300 border-rose-500/40 hover:bg-rose-600/30"
                 : isDark
@@ -356,7 +387,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
             }`}
           >
             {isAiMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-            <span>{isAiMuted ? "Unmute AI" : "Mute AI"}</span>
+            <span className="hidden sm:inline">{isAiMuted ? "Unmute" : "Mute"}</span>
           </button>
 
           {/* Replay Last Question / Unblock Voice */}
@@ -371,7 +402,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
               onReplayLastQuestion();
             }}
             disabled={!lastInterviewerMessage}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors disabled:opacity-50 ${
+            className={`px-2 sm:px-3 py-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center space-x-1 sm:space-x-1.5 transition-colors disabled:opacity-50 ${
               isDark
                 ? "bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800"
                 : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm"
@@ -379,16 +410,16 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
             title="Click to unblock browser audio and replay question voice out loud"
           >
             <RotateCcw className="w-3.5 h-3.5 text-purple-500" />
-            <span>Replay Voice</span>
+            <span className="hidden sm:inline">Replay</span>
           </button>
         </div>
 
         {/* Right Action Tools */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
           {/* Toggle Floating Camera PIP Popup */}
           <button
             onClick={() => setIsFloatingPIP((prev) => !prev)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors ${
+            className={`px-2 sm:px-3 py-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center space-x-1 sm:space-x-1.5 transition-colors ${
               isFloatingPIP
                 ? "bg-cyan-600/20 text-cyan-300 border-cyan-500/40"
                 : isDark
@@ -398,13 +429,13 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
             title="Toggle Floating Camera PIP Popup"
           >
             <PictureInPicture className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{isFloatingPIP ? "Dock Camera" : "Floating Camera"}</span>
+            <span className="hidden md:inline">{isFloatingPIP ? "Dock Camera" : "Floating Camera"}</span>
           </button>
 
           {/* Text Mode Toggle */}
           <button
             onClick={onTextModeToggle}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors ${
+            className={`px-2 sm:px-3 py-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center space-x-1 sm:space-x-1.5 transition-colors ${
               textModeEnabled
                 ? "bg-purple-600/20 text-purple-300 border-purple-500/40"
                 : isDark
@@ -414,16 +445,16 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
             title="Toggle Accessibility Text Mode"
           >
             <Keyboard className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Text Mode</span>
+            <span className="hidden sm:inline">Text</span>
           </button>
 
           {/* End Interview */}
           <button
             onClick={() => setShowEndConfirmModal(true)}
-            className="px-3 py-1.5 rounded-xl bg-rose-600/20 text-rose-400 border border-rose-500/40 hover:bg-rose-600/30 text-xs font-bold flex items-center space-x-1.5 transition-colors"
+            className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-rose-600/20 text-rose-400 border border-rose-500/40 hover:bg-rose-600/30 text-[11px] sm:text-xs font-bold flex items-center space-x-1 sm:space-x-1.5 transition-colors"
           >
             <PhoneOff className="w-3.5 h-3.5" />
-            <span>End Interview</span>
+            <span>End</span>
           </button>
         </div>
       </footer>

@@ -46,10 +46,10 @@ const loadingSteps = [
 ];
 
 const DEFAULT_CODE = {
-  python: `# Write your python solution here\n\ndef solve():\n    pass\n`,
-  cpp: `// Write your C++ solution here\n#include <iostream>\nusing namespace std;\n\nvoid solve() {\n    \n}\n`,
-  java: `// Write your Java solution here\npublic class Solution {\n    public static void solve() {\n        \n    }\n}\n`,
-  javascript: `// Write your JavaScript solution here\nfunction solve() {\n    \n}\n`
+  python: `# Write your python solution here\nimport sys\n\ndef solve():\n    pass\n\nif __name__ == "__main__":\n    solve()\n`,
+  cpp: `// Write your C++ solution here\n#include <iostream>\nusing namespace std;\n\nvoid solve() {\n    \n}\n\nint main() {\n    solve();\n    return 0;\n}\n`,
+  java: `// Write your Java solution here\nimport java.util.*;\n\npublic class Solution {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        // Write solution\n    }\n}\n`,
+  javascript: `// Write your JavaScript (Node.js) solution here\nconst fs = require('fs');\n\nfunction solve() {\n    const input = fs.readFileSync(0, 'utf-8').trim();\n    if (!input) return;\n    \n    // Process input and solve problem\n}\n\nsolve();\n`
 };
 
 export default function ProblemWorkspacePage() {

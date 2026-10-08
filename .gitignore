@@ -25,6 +25,7 @@ backend/data/backfill-*.log
 backend/data/backfill*.log
 # pre-dedupe safety backups (large, local-only rollback artifacts)
 backend/data/*.pre-dedupe.*.json
+backend/data/*.pre-*dedupe.*.json
 # per-run question backfill / replacement snapshots (same rationale: rollback-only)
 backend/data/*.pre-backfill.*.json
 backend/data/*.pre-replace.*.json

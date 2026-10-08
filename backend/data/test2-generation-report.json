@@ -1,38 +1,566 @@
 {
-  "generatedAt": "2026-10-04T13:19:50.723Z",
+  "generatedAt": "2026-10-08T07:32:45.294Z",
   "testNumber": 2,
   "targetSize": 30,
   "batchSize": 2,
-  "throttleMs": 2000,
+  "throttleMs": 2500,
   "rebuild": false,
   "summary": {
-    "processed": 1,
-    "written": 4,
-    "created": 0,
-    "toppedUp": 1,
+    "processed": 26,
+    "written": 543,
+    "created": 14,
+    "toppedUp": 7,
     "skipped": 0,
-    "short": 0,
+    "short": 5,
     "noModel": 0,
     "exhausted": 0,
     "error": 0,
-    "collisions": 0
+    "collisions": 12
   },
-  "collisions": [],
+  "collisions": [
+    {
+      "kind": "exact",
+      "question": "In the context of Python's Scikit-Learn library, what is the fundamental difference between 'fit_transform()' ",
+      "alsoIn": "mcq:test-tech-ds-1#test-tech-ds-1-q34",
+      "testKey": "mcq:test-tech-ds-2"
+    },
+    {
+      "kind": "template",
+      "question": "In the context of Python's Scikit-Learn library, what is the fundamental difference between 'fit_transform()' ",
+      "alsoIn": "mcq:test-tech-ds-1#test-tech-ds-1-q34",
+      "testKey": "mcq:test-tech-ds-2"
+    },
+    {
+      "kind": "concept",
+      "question": "In the context of Python's Scikit-Learn library, what is the fundamental difference between 'fit_transform()' ",
+      "alsoIn": "mcq:test-tech-ds-1#test-tech-ds-1-q34",
+      "testKey": "mcq:test-tech-ds-2"
+    },
+    {
+      "kind": "exact",
+      "question": "In the context of Android's ContentProvider architecture, what is the primary purpose of the 'android:grantUri",
+      "alsoIn": "mcq:test-tech-android-1#test-tech-android-1-q39",
+      "testKey": "mcq:test-tech-android-2"
+    },
+    {
+      "kind": "template",
+      "question": "In the context of Android's ContentProvider architecture, what is the primary purpose of the 'android:grantUri",
+      "alsoIn": "mcq:test-tech-android-1#test-tech-android-1-q39",
+      "testKey": "mcq:test-tech-android-2"
+    },
+    {
+      "kind": "concept",
+      "question": "In the context of Android's ContentProvider architecture, what is the primary purpose of the 'android:grantUri",
+      "alsoIn": "mcq:test-tech-android-1#test-tech-android-1-q39",
+      "testKey": "mcq:test-tech-android-2"
+    },
+    {
+      "kind": "exact",
+      "question": "In the context of Agile product development, what is the primary purpose of maintaining a refined Product Back",
+      "alsoIn": "mcq:test-tech-product-mgmt-1#test-tech-product-mgmt-1-q31",
+      "testKey": "mcq:test-tech-product-mgmt-2"
+    },
+    {
+      "kind": "template",
+      "question": "In the context of Agile product development, what is the primary purpose of maintaining a refined Product Back",
+      "alsoIn": "mcq:test-tech-product-mgmt-1#test-tech-product-mgmt-1-q31",
+      "testKey": "mcq:test-tech-product-mgmt-2"
+    },
+    {
+      "kind": "concept",
+      "question": "In the context of Agile product development, what is the primary purpose of maintaining a refined Product Back",
+      "alsoIn": "mcq:test-tech-product-mgmt-1#test-tech-product-mgmt-1-q31",
+      "testKey": "mcq:test-tech-product-mgmt-2"
+    },
+    {
+      "kind": "exact",
+      "question": "What is the result of evaluating the JavaScript expression `[1, 2, 3] + [4, 5, 6]`? console.log([1, 2, 3] + [4",
+      "alsoIn": "mcq:test-tech-js-1#test-tech-js-1-q31",
+      "testKey": "mcq:test-tech-js-2"
+    },
+    {
+      "kind": "template",
+      "question": "What is the result of evaluating the JavaScript expression `[1, 2, 3] + [4, 5, 6]`? console.log([1, 2, 3] + [4",
+      "alsoIn": "mcq:test-tech-js-1#test-tech-js-1-q31",
+      "testKey": "mcq:test-tech-js-2"
+    },
+    {
+      "kind": "concept",
+      "question": "What is the result of evaluating the JavaScript expression `[1, 2, 3] + [4, 5, 6]`? console.log([1, 2, 3] + [4",
+      "alsoIn": "mcq:test-tech-js-1#test-tech-js-1-q31",
+      "testKey": "mcq:test-tech-js-2"
+    }
+  ],
   "results": [
     {
       "suite": "mcq",
-      "label": "Amazon (company)",
-      "testId": "test-amazon-2",
-      "before": 26,
-      "requested": 4,
-      "written": 4,
+      "label": "PostgreSQL (technology)",
+      "testId": "test-tech-postgres-2",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "mcq",
+      "label": "Product & Project Management (technology)",
+      "testId": "test-tech-product-mgmt-2",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "mcq",
+      "label": "Data Science (technology)",
+      "testId": "test-tech-ds-2",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "mcq",
+      "label": "Angular (technology)",
+      "testId": "test-tech-angular-2",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 16,
+      "diagnostics": {
+        "parseFailures": 1,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 2
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Permutations & Combinations (quantitative)",
+      "testId": "cmuz3tmhv0040qkk44l0vr2r7",
+      "before": 0,
+      "requested": 30,
+      "written": 24,
+      "after": 24,
+      "attempts": 19,
+      "diagnostics": {
+        "parseFailures": 3,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 16,
+        "invalidCandidates": 1
+      },
+      "status": "short",
+      "note": "24/30 questions — the rest had no unused concept left"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Probability (quantitative)",
+      "testId": "cmuz4ndx7004lqkk4qdnhk65b",
+      "before": 0,
+      "requested": 30,
+      "written": 20,
+      "after": 20,
+      "attempts": 19,
+      "diagnostics": {
+        "parseFailures": 4,
+        "apiErrors": 0,
+        "bankRejections": 2,
+        "validResponses": 15,
+        "invalidCandidates": 1
+      },
+      "status": "short",
+      "note": "20/30 questions — the rest had no unused concept left"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Profit & Loss (quantitative)",
+      "testId": "cmuz5poeg0051qkk40b4rq10s",
+      "before": 0,
+      "requested": 30,
+      "written": 15,
+      "after": 15,
+      "attempts": 19,
+      "diagnostics": {
+        "parseFailures": 8,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 11,
+        "invalidCandidates": 1
+      },
+      "status": "short",
+      "note": "15/30 questions — the rest had no unused concept left"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Ratio & Proportion (quantitative)",
+      "testId": "cmuz6tyso005mqkk47yfbu83k",
+      "before": 0,
+      "requested": 30,
+      "written": 20,
+      "after": 20,
+      "attempts": 19,
+      "diagnostics": {
+        "parseFailures": 4,
+        "apiErrors": 0,
+        "bankRejections": 2,
+        "validResponses": 15,
+        "invalidCandidates": 3
+      },
+      "status": "short",
+      "note": "20/30 questions — the rest had no unused concept left"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Simple & Compound Interest (quantitative)",
+      "testId": "cmuz6xt2r006hqkk4wxyo0q3z",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 16,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 1,
+        "validResponses": 16,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Time & Work (quantitative)",
+      "testId": "cmuz72bja007cqkk4n09z7a6z",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Time, Speed & Distance (quantitative)",
+      "testId": "cmuz76eqo0087qkk4gq3kkk1f",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Fill in the Blanks (verbal)",
+      "testId": "cmuz79p600092qkk4zgub44im",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Grammar (verbal)",
+      "testId": "cmuz7cktv009xqkk4mgpdlr7g",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 16,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 2,
+        "validResponses": 16,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Idioms & Phrases (verbal)",
+      "testId": "cmuz7fayw00asqkk4x99pii9l",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Para Jumbles (verbal)",
+      "testId": "cmuz7ilhx00bnqkk4qj0pbxpm",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Reading Comprehension (verbal)",
+      "testId": "cmuz7mrxe00ciqkk494zjc04l",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Sentence Correction (verbal)",
+      "testId": "cmuz7pdl000ddqkk4h4rnfun1",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Synonyms & Antonyms (verbal)",
+      "testId": "cmuz7rxlc00e8qkk48c5xd70y",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 16,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 2,
+        "validResponses": 16,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Vocabulary (verbal)",
+      "testId": "cmuz7uz3a00etqkk48nw5y7vv",
+      "before": 0,
+      "requested": 30,
+      "written": 20,
+      "after": 20,
+      "attempts": 19,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 18,
+        "validResponses": 19,
+        "invalidCandidates": 0
+      },
+      "status": "short",
+      "note": "20/30 questions — the rest had no unused concept left"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Line Graphs (data_interpretation)",
+      "testId": "cmuwpskcm00p4pwk43mteqp04",
+      "before": 24,
+      "requested": 6,
+      "written": 6,
       "after": 30,
       "attempts": 3,
       "diagnostics": {
         "parseFailures": 0,
         "apiErrors": 0,
-        "bankRejections": 1,
+        "bankRejections": 0,
         "validResponses": 3,
+        "invalidCandidates": 0
+      },
+      "status": "topped-up"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Pie Charts (data_interpretation)",
+      "testId": "cmuxouqey00qlpwk4jzjo1iwy",
+      "before": 25,
+      "requested": 5,
+      "written": 5,
+      "after": 30,
+      "attempts": 3,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 3,
+        "invalidCandidates": 0
+      },
+      "status": "topped-up"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Tables (data_interpretation)",
+      "testId": "cmuxpp5zr00rbpwk4gk55wi6k",
+      "before": 25,
+      "requested": 5,
+      "written": 5,
+      "after": 30,
+      "attempts": 3,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 3,
+        "invalidCandidates": 0
+      },
+      "status": "topped-up"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Mixed Charts (data_interpretation)",
+      "testId": "cmuxnoh7100pvpwk447f1lklx",
+      "before": 26,
+      "requested": 4,
+      "written": 4,
+      "after": 30,
+      "attempts": 2,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 2,
+        "invalidCandidates": 0
+      },
+      "status": "topped-up"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Analogy (logical)",
+      "testId": "cmuxqw9yl00s4pwk4yh6bj3i6",
+      "before": 28,
+      "requested": 2,
+      "written": 2,
+      "after": 30,
+      "attempts": 1,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 1,
+        "invalidCandidates": 0
+      },
+      "status": "topped-up"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Caselets (data_interpretation)",
+      "testId": "cmuwo4mgs00nkpwk4chdvk9c8",
+      "before": 29,
+      "requested": 1,
+      "written": 1,
+      "after": 30,
+      "attempts": 1,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 1,
+        "invalidCandidates": 0
+      },
+      "status": "topped-up"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Averages (quantitative)",
+      "testId": "cmuxup299007a1sk4dhgswc82",
+      "before": 29,
+      "requested": 1,
+      "written": 1,
+      "after": 30,
+      "attempts": 1,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 1,
         "invalidCandidates": 0
       },
       "status": "topped-up"

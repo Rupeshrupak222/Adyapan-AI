@@ -24,6 +24,31 @@ export function errorHandler(error: HttpError, req: Request, res: Response, _nex
     return;
   }
 
+  const rawMsg = String(error.message || "").toLowerCase();
+  const isMaintenanceOrQuota =
+    statusCode === 402 ||
+    statusCode === 503 ||
+    statusCode === 507 ||
+    rawMsg.includes("quota") ||
+    rawMsg.includes("upgrade your plan") ||
+    rawMsg.includes("exceeded the quota") ||
+    rawMsg.includes("plan limit") ||
+    rawMsg.includes("too many connections") ||
+    rawMsg.includes("database is paused") ||
+    rawMsg.includes("project is paused") ||
+    rawMsg.includes("railway");
+
+  if (isMaintenanceOrQuota) {
+    const maintenanceMsg = "Site under maintenance. We are performing scheduled upgrades, please check back shortly.";
+    res.status(503).json({
+      success: false,
+      code: "SITE_MAINTENANCE",
+      message: maintenanceMsg,
+      error: maintenanceMsg,
+    });
+    return;
+  }
+
   const isPrismaError = error.message?.includes("prisma") || error.message?.includes("Prisma") || (error as any).code === "ETIMEDOUT";
 
   const message =

@@ -7,8 +7,9 @@ import { motion } from "framer-motion";
 import { api } from "@/services/api";
 import { saveAuthSession } from "@/hooks/useAuth";
 import {
-  ShieldCheck, User, Mail, Lock, Eye, EyeOff, KeyRound,
+  ShieldCheck, User, Mail, Lock, Eye, EyeOff, KeyRound, Wrench,
 } from "lucide-react";
+import { isMaintenanceOrQuotaError, MAINTENANCE_MESSAGE } from "@/utils/maintenanceHelper";
 
 export default function AdminRegisterPage() {
   const router = useRouter();
@@ -80,13 +81,21 @@ export default function AdminRegisterPage() {
       saveAuthSession(data.token, data.user, true, data.sessionId, data.refreshToken);
       router.replace("/dashboard/admin");
     } catch (err: unknown) {
+      if (isMaintenanceOrQuotaError(err)) {
+        setError(MAINTENANCE_MESSAGE);
+        return;
+      }
       const data = (err as { response?: { data?: { code?: string; message?: string; error?: string } } })?.response?.data;
       if (data?.code === "EMAIL_ALREADY_EXISTS") {
         setEmailError(true);
         setError("This email is already registered. Please sign in to the Admin Dashboard instead.");
       } else {
         const serverMsg = data?.message || data?.error;
-        setError(serverMsg || "Registration failed. Check your admin secret.");
+        if (isMaintenanceOrQuotaError(serverMsg)) {
+          setError(MAINTENANCE_MESSAGE);
+        } else {
+          setError(serverMsg || "Registration failed. Check your admin secret.");
+        }
       }
     } finally {
 
@@ -224,7 +233,28 @@ export default function AdminRegisterPage() {
           ))}
 
           {error && (
-            <p style={{ fontSize: "0.78rem", color: "#f87171", fontWeight: 500 }}>{error}</p>
+            isMaintenanceOrQuotaError(error) ? (
+              <div
+                style={{
+                  background: "rgba(245,158,11,0.12)",
+                  border: "1px solid rgba(245,158,11,0.35)",
+                  borderRadius: 10,
+                  padding: "0.75rem 0.9rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.6rem",
+                  color: "#f59e0b",
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  boxShadow: "0 4px 15px rgba(245,158,11,0.1)",
+                }}
+              >
+                <Wrench size={16} className="animate-spin" style={{ flexShrink: 0, animationDuration: "3s" }} />
+                <span>{MAINTENANCE_MESSAGE}</span>
+              </div>
+            ) : (
+              <p style={{ fontSize: "0.78rem", color: "#f87171", fontWeight: 500 }}>{error}</p>
+            )
           )}
 
           <button

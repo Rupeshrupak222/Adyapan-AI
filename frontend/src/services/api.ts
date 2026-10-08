@@ -1,4 +1,5 @@
 import axios from "axios";
+import { isMaintenanceOrQuotaError, MAINTENANCE_MESSAGE } from "@/utils/maintenanceHelper";
 
 const DEFAULT_API_URL = "http://localhost:5000/api";
 
@@ -75,6 +76,24 @@ api.interceptors.response.use(
   },
   async (err) => {
     const { config, response } = err;
+
+    // Never leak infrastructure, Railway, or Supabase quota messages to the UI
+    if (isMaintenanceOrQuotaError(err, response?.status)) {
+      if (response) {
+        if (!response.data || typeof response.data !== "object") {
+          response.data = {
+            message: MAINTENANCE_MESSAGE,
+            error: MAINTENANCE_MESSAGE,
+            code: "SITE_MAINTENANCE",
+          };
+        } else {
+          response.data.message = MAINTENANCE_MESSAGE;
+          response.data.error = MAINTENANCE_MESSAGE;
+          response.data.code = "SITE_MAINTENANCE";
+        }
+      }
+      err.message = MAINTENANCE_MESSAGE;
+    }
 
     if (typeof window !== "undefined" && response?.data?.code === "LIMIT_EXCEEDED") {
       import("@/store/usage-store").then(({ useUsageStore }) => useUsageStore.getState().openLimitModal(response.data));

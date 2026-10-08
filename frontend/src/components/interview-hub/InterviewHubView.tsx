@@ -21,6 +21,7 @@ import type {
   ProctoringEvent, InterviewEvaluation,
 } from "./InterviewTypes";
 import { generateInterviewPDF } from "@/utils/interview-pdf";
+import { InterviewDomainSelector } from "./shared/InterviewDomainSelector";
 
 interface InterviewHubViewProps {
   setView: (v: string) => void;
@@ -131,6 +132,7 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<any>(null);
 
   // Phase 10: Proctoring
   const [proctoringEvents, setProctoringEvents] = useState<ProctoringEvent[]>([]);
@@ -479,28 +481,66 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
     setIsVoiceMode(true);
 
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      const recorder = new MediaRecorder(stream);
+      const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg", "audio/mp4"];
+      let selectedMime = "audio/webm";
+      for (const m of mimeTypes) {
+        if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m)) {
+          selectedMime = m;
+          break;
+        }
+      }
+      const recorder = new MediaRecorder(stream, { mimeType: selectedMime });
       audioChunksRef.current = [];
       recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
       };
       recorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
+        try {
+          if (recognitionRef.current) {
+            recognitionRef.current.stop();
+            recognitionRef.current = null;
+          }
+        } catch {}
         if (audioChunksRef.current.length > 0) {
-          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-          await submitVoiceTranscript(audioBlob);
+          const audioBlob = new Blob(audioChunksRef.current, { type: selectedMime });
+          await submitVoiceTranscript(audioBlob, selectedMime);
         }
         setIsVoiceMode(false);
       };
-      recorder.start();
+      recorder.start(1000);
       mediaRecorderRef.current = recorder;
 
-      // Auto-stop after 30s
+      // Start live speech recognition for real-time text feedback
+      const w = window as any;
+      const SpeechRec = w.SpeechRecognition || w.webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          const rec = new SpeechRec();
+          rec.continuous = true;
+          rec.interimResults = true;
+          rec.lang = config.language === "hindi" ? "hi-IN" : "en-US";
+          rec.onresult = (e: any) => {
+            let cur = "";
+            for (let i = 0; i < e.results.length; i++) {
+              cur += (e.results[i][0]?.transcript || "") + " ";
+            }
+            if (cur.trim()) {
+              setChatInput(cur.trim());
+            }
+          };
+          rec.onerror = () => {};
+          rec.start();
+          recognitionRef.current = rec;
+        } catch {}
+      }
+
+      // Auto-stop after 45s
       setTimeout(() => {
         if (mediaRecorderRef.current?.state === "recording") {
           mediaRecorderRef.current.stop();
         }
-      }, 30000);
+      }, 45000);
     }).catch(() => {
       setError("Microphone access denied");
       setIsVoiceMode(false);
@@ -508,36 +548,57 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
   };
 
   const stopVoiceRecording = () => {
+    try {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+    } catch {}
     if (mediaRecorderRef.current?.state === "recording") {
       mediaRecorderRef.current.stop();
     }
   };
 
-  const submitVoiceTranscript = async (audioBlob: Blob) => {
+  const submitVoiceTranscript = async (audioBlob: Blob, mimeType = "audio/webm") => {
     if (!activeSession) return;
     try {
-      // For now, use browser's SpeechRecognition
-      const w = window as any;
-      const SpeechRecognitionClass = w.SpeechRecognition ?? w.webkitSpeechRecognition;
-      if (SpeechRecognitionClass) {
-        const recognition = new SpeechRecognitionClass();
-        recognition.lang = config.language === "hindi" ? "hi-IN" : "en-US";
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
+      let finalText = chatInput.trim();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        recognition.onresult = async (event: any) => {
-          const text = event.results[0][0].transcript;
-          if (text.trim()) {
-            const res = await api.post(`/interview/${activeSession.id}/voice`, { text, duration: 0 });
-            if (res.data.success) {
-              setMessages(res.data.messages || []);
-            }
+      // Transcribe via backend Whisper/Gemini if needed
+      const cleanMime = mimeType.split(";")[0].trim() || "audio/webm";
+      const reader = new FileReader();
+      const base64Audio = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(audioBlob);
+      });
+
+      if (base64Audio && base64Audio.length > 50) {
+        try {
+          const transRes = await api.post("/interview/transcribe", {
+            audioBase64: base64Audio,
+            mimeType: cleanMime,
+            language: config.language || "english",
+          });
+          const serverText = transRes.data?.text?.trim();
+          if (serverText) {
+            finalText = serverText;
+            setChatInput(serverText);
           }
-        };
-        recognition.start();
+        } catch {}
       }
-    } catch { /* ignore */ }
+
+      if (finalText) {
+        setSending(true);
+        const res = await api.post(`/interview/${activeSession.id}/voice`, { text: finalText, duration: 0 });
+        if (res.data.success) {
+          setMessages(res.data.messages || []);
+          setChatInput("");
+        }
+      }
+    } catch { /* ignore */ } finally {
+      setSending(false);
+    }
   };
 
   // ═══════════════════════════════════════════════════════════════════
@@ -799,30 +860,15 @@ export function InterviewHubView({ setView, activeModule = "interview-hub", them
               <div>
                 <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 mb-2" style={{ color: c.textSec }}>
                   <Sparkles size={13} className="text-amber-500" />
-                  Quick Presets: 18 Adyapan CSE Domains
+                  Select Domain & Role Presets:
                 </label>
-                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                  {CSE_DOMAIN_PRESETS.map((d) => {
-                    const isSelected =
-                      config.role.toLowerCase() === d.role.toLowerCase() ||
-                      config.role.toLowerCase() === d.name.toLowerCase();
-                    return (
-                      <button
-                        key={d.name}
-                        type="button"
-                        onClick={() => setConfig(p => ({ ...p, role: d.role, technology: d.tech }))}
-                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer"
-                        style={{
-                          background: isSelected ? "rgba(245, 158, 11, 0.15)" : c.inputBg,
-                          borderColor: isSelected ? "#f59e0b" : c.border,
-                          color: isSelected ? "#f59e0b" : c.text,
-                        }}
-                      >
-                        {d.name}
-                      </button>
-                    );
-                  })}
-                </div>
+                <InterviewDomainSelector
+                  selectedRole={config.role}
+                  onSelect={(d) => setConfig(p => ({ ...p, role: d.role, technology: d.tech }))}
+                  theme={theme}
+                  showTechDetails={true}
+                  maxHeight="max-h-40"
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
