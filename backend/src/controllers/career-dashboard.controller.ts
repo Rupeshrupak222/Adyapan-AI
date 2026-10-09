@@ -592,7 +592,6 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       impact: "medium",
       icon: "linkedin",
       color: "#0077b5",
-      action: "linkedin-optimizer"
     });
   }
 

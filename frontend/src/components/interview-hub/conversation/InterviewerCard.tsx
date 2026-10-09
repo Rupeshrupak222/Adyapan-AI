@@ -14,6 +14,7 @@ interface InterviewerCardProps {
   avatarAudioUrl?: string | null;
   companyName?: string;
   currentQuestion?: string;
+  showActiveQuestion?: boolean;
   theme?: string;
   className?: string;
 }
@@ -26,6 +27,7 @@ export const InterviewerCard: React.FC<InterviewerCardProps> = ({
   avatarAudioUrl,
   companyName,
   currentQuestion,
+  showActiveQuestion = false,
   theme = "dark",
   className = "",
 }) => {
@@ -135,8 +137,8 @@ export const InterviewerCard: React.FC<InterviewerCardProps> = ({
         />
       </div>
 
-      {/* Active Question Banner */}
-      {currentQuestion && (
+      {/* Active Question Banner (hidden by default) */}
+      {showActiveQuestion && currentQuestion && (
         <div
           className={`w-full my-1.5 p-2.5 rounded-xl border text-xs leading-relaxed max-h-24 overflow-y-auto ${
             isDark

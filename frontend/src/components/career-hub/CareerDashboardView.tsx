@@ -706,7 +706,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
                   transition={{ delay: 0.1 * i }}
                   className="flex items-center gap-3 p-3 rounded-xl border hover:border-amber-500/20 hover:bg-amber-500/[0.03] transition-all cursor-pointer group"
                   style={{ background: C.surface, borderColor: C.border }}
-                  onClick={() => navigateTo(action.category === "coding" ? "dsa-practice" : action.category === "resume" ? "ats-checker" : action.category === "career" ? "cover-letter" : action.category === "brand" ? "linkedin-optimizer" : action.category === "learning" ? "study-assistant" : "interview-hub")}
+                  onClick={() => navigateTo(action.category === "coding" ? "dsa-practice" : action.category === "resume" ? "ats-checker" : action.category === "career" ? "cover-letter" : action.category === "learning" ? "study-assistant" : "interview-hub")}
                 >
                   <ActionPriorityBadge priority={action.priority} />
                   <span className="text-xs font-semibold flex-1 group-hover:text-amber-400 transition-colors" style={{ color: C.text }}>{action.title}</span>
@@ -945,10 +945,7 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            <PremiumButton variant="secondary" className="flex-1 text-xs" onClick={() => navigateTo("linkedin-optimizer")}>
-              Optimize LinkedIn
-            </PremiumButton>
-            <PremiumButton variant="secondary" className="flex-1 text-xs" onClick={() => navigateTo("cover-letter")}>
+            <PremiumButton variant="secondary" className="flex-1 text-xs" onClick={() => navigateTo("cover-letter")}>
               Generate Cover Letter
             </PremiumButton>
             <PremiumButton variant="secondary" className="flex-1 text-xs" onClick={() => navigateTo("github-portfolio")}>
@@ -1209,7 +1206,6 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
               { label: "Improve Resume", icon: FileText, color: "#3b82f6", target: "resume-builder" },
               { label: "Run ATS Analysis", icon: BarChart3, color: "#10b981", target: "ats-checker" },
               { label: "Cover Letter", icon: Send, color: "#ec4899", target: "cover-letter" },
-              { label: "Optimize LinkedIn", icon: Globe, color: "#0077b5", target: "linkedin-optimizer" },
             ].map((action) => (
               <motion.button
                 key={action.label}
@@ -1234,3 +1230,9 @@ export function CareerDashboardView({ setView }: { setView?: (v: string) => void
     </motion.div>
   );
 }
+
+
+
+
+
+

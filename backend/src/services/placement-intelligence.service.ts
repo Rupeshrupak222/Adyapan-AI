@@ -537,18 +537,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
       color: "#3b82f6",
     });
   }
-  if (latestLinkedinScore > 0 && latestLinkedinScore < 70) {
-    recommendations.push({
-      type: "brand",
-      title: "Strengthen LinkedIn Profile",
-      description: `LinkedIn score: ${latestLinkedinScore}%. Optimizing increases recruiter visibility by 3x.`,
-      impact: "medium",
-      estimatedImprovement: 3,
-      action: "linkedin-optimizer",
-      icon: "globe",
-      color: "#0077b5",
-    });
-  }
+
   if (!hasGithub) {
     recommendations.push({
       type: "portfolio",
@@ -802,3 +791,4 @@ export async function getCompanyMatchDetails(userId: string, company: string): P
   const intelligence = await generatePlacementIntelligence(userId);
   return intelligence.companyMatches.find(c => c.company === company) || null;
 }
+

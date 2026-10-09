@@ -63,9 +63,6 @@ const AtsCheckerView = dynamic(() => import("@/components/resume-hub/AtsCheckerV
 const CoverLetterView = dynamic(() => import("@/components/resume-hub/CoverLetterView").then(m => m.CoverLetterView), {
   loading: () => <DashboardWidgetSkeleton title="Cover Letter Builder" />
 });
-const LinkedInView = dynamic(() => import("@/components/resume-hub/LinkedInView").then(m => m.LinkedInView), {
-  loading: () => <DashboardWidgetSkeleton title="LinkedIn Optimizer" />
-});
 const ResumeUploadView = dynamic(() => import("@/components/resume-hub/ResumeUploadView").then(m => m.ResumeUploadView), {
   loading: () => <DashboardWidgetSkeleton title="Resume Upload" />
 });
@@ -1482,6 +1479,14 @@ function UserDashboardContent() {
             <HubErrorBoundary><ProfileView /></HubErrorBoundary>
           ) : activeView === "career-dashboard" ? (
             <HubErrorBoundary><CareerDashboardView setView={navigateTo} /></HubErrorBoundary>
+          ) : activeView === "community-blog" ? (
+            <HubErrorBoundary><BlogView /></HubErrorBoundary>
+          ) : activeView === "community-messages" ? (
+            <HubErrorBoundary><CommunityMessagesView /></HubErrorBoundary>
+          ) : activeView === "community-browse" || activeView === "community-profiles" ? (
+            <HubErrorBoundary><CommunityProfilesView /></HubErrorBoundary>
+          ) : activeView === "community-profile" ? (
+            <HubErrorBoundary><CommunityProfileView /></HubErrorBoundary>
           ) : activeView.startsWith("community") ? (
             <HubErrorBoundary><CommunityComingSoonView /></HubErrorBoundary>
           ) : activeView === "settings" ? (
@@ -1496,8 +1501,6 @@ function UserDashboardContent() {
             <HubErrorBoundary><AtsCheckerView setView={navigateTo} /></HubErrorBoundary>
           ) : activeView === "cover-letter" ? (
             <HubErrorBoundary><CoverLetterView setView={navigateTo} /></HubErrorBoundary>
-          ) : activeView === "linkedin-optimizer" ? (
-            <HubErrorBoundary><LinkedInView setView={navigateTo} /></HubErrorBoundary>
           ) : activeView === "study-assistant" ? (
             <HubErrorBoundary><StudyAssistantView onViewLesson={(data) => { setLessonResult(data); navigateTo("lesson-view"); }} /></HubErrorBoundary>
           ) : activeView === "lesson-view" && lessonResult ? (
@@ -1516,6 +1519,8 @@ function UserDashboardContent() {
             <HubErrorBoundary><MindMapsView /></HubErrorBoundary>
           ) : activeView === "flashcards" ? (
             <HubErrorBoundary><FlashcardsView /></HubErrorBoundary>
+          ) : activeView === "dsa-practice" || activeView === "coding-dashboard" ? (
+            <HubErrorBoundary><DsaPracticeView /></HubErrorBoundary>
           ) : activeView === "coding-challenges" ? (
             <HubErrorBoundary><CodingChallengesView /></HubErrorBoundary>
           ) : activeView === "ady-chat" ? (

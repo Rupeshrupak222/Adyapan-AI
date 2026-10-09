@@ -810,21 +810,27 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
 
   // ─── URL Persistence (sync on change) ──────────────────────────────────
   useEffect(() => {
-    const sp = new URLSearchParams();
-    if (debouncedQuery) sp.set("q", debouncedQuery);
-    if (filters.locations.length) sp.set("locations", filters.locations.join(","));
-    if (filters.workModes.length) sp.set("workModes", filters.workModes.join(","));
-    if (filters.employmentTypes.length) sp.set("employmentTypes", filters.employmentTypes.join(","));
-    if (filters.sources.length) sp.set("sources", filters.sources.join(","));
-    if (filters.postedWithin) sp.set("postedWithin", filters.postedWithin);
-    if (filters.company) sp.set("company", filters.company);
-    if (filters.industry) sp.set("industry", filters.industry);
-    if (filters.experienceMin) sp.set("experienceMin", filters.experienceMin);
-    if (filters.experienceMax) sp.set("experienceMax", filters.experienceMax);
-    if (filters.salaryMin) sp.set("salaryMin", filters.salaryMin);
-    if (filters.salaryMax) sp.set("salaryMax", filters.salaryMax);
-    if (skillTags.length) sp.set("skills", skillTags.join(","));
-    if (sortBy !== "recommended") sp.set("sortBy", sortBy);
+    // Seed from the current URL so unrelated params (e.g. `view=job-discovery`,
+    // which the parent dashboard reads via useSearchParams) are preserved.
+    const sp = new URLSearchParams(window.location.search);
+    const sync = (key: string, value: string) => {
+      if (value) sp.set(key, value);
+      else sp.delete(key);
+    };
+    sync("q", debouncedQuery);
+    sync("locations", filters.locations.join(","));
+    sync("workModes", filters.workModes.join(","));
+    sync("employmentTypes", filters.employmentTypes.join(","));
+    sync("sources", filters.sources.join(","));
+    sync("postedWithin", filters.postedWithin);
+    sync("company", filters.company);
+    sync("industry", filters.industry);
+    sync("experienceMin", filters.experienceMin);
+    sync("experienceMax", filters.experienceMax);
+    sync("salaryMin", filters.salaryMin);
+    sync("salaryMax", filters.salaryMax);
+    sync("skills", skillTags.join(","));
+    sync("sortBy", sortBy !== "recommended" ? sortBy : "");
     const qs = sp.toString();
     const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     window.history.replaceState(null, "", newUrl);

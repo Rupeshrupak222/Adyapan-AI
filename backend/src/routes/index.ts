@@ -7,8 +7,6 @@ import { resumeRouter } from "./resume.routes";
 import { atsRouter } from "./ats.routes";
 import { resumeAnalysisRouter } from "./resume-analysis.routes";
 import { coverLetterRouter } from "./cover-letter.routes";
-import { linkedinRouter } from "./linkedin.routes";
-import { linkedinJobsRouter } from "./linkedin-jobs.routes";
 import { studyRouter } from "./study.routes";
 import { notesRouter } from "./notes.routes";
 import { notesExportRouter } from "./notes-export.routes";
@@ -81,8 +79,6 @@ apiRouter.use("/resume-upload", resumeUploadRouter);
 apiRouter.use("/ats", atsRouter);
 apiRouter.use("/resume-analysis", resumeAnalysisRouter);
 apiRouter.use("/cover-letter", coverLetterRouter);
-apiRouter.use("/linkedin", linkedinRouter);
-apiRouter.use("/linkedin-jobs", linkedinJobsRouter);
 
 // Learning Hub Routes
 apiRouter.use("/study", studyRouter);
@@ -186,3 +182,4 @@ apiRouter.use("/legal", legalRouter);
 
 // Security reporting (public, isolated) — receives browser CSP violation reports
 apiRouter.use("/security", securityRouter);
+

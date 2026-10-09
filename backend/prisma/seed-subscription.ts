@@ -219,7 +219,7 @@ const USAGE_LIMITS: UsageLimitEntry[] = [
   { featureKey: "resume-builder", planCode: "free", monthlyLimit: 3 },
   { featureKey: "ats-checker", planCode: "free", monthlyLimit: 3 },
   { featureKey: "cover-letter-generator", planCode: "free", monthlyLimit: 3 },
-  { featureKey: "linkedin-optimizer", planCode: "free", monthlyLimit: 3 },
+  
   // Interview features are premium-only: free is intentionally 0.
   { featureKey: "interview-engine", planCode: "free", monthlyLimit: 0 },
   { featureKey: "technical-interview", planCode: "free", monthlyLimit: 0 },

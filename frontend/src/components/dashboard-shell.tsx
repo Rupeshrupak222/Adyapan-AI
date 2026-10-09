@@ -38,64 +38,77 @@ export interface SidebarItem {
 
 
 // ΓöÇΓöÇΓöÇ Search Index ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-interface SearchEntry { label: string; viewId: string; category: string; }
-const SEARCH_INDEX: SearchEntry[] = [
-  { label: "Dashboard", viewId: "dashboard", category: "General" },
-  { label: "Career Dashboard", viewId: "career-dashboard", category: "General" },
-  { label: "Profile", viewId: "profile", category: "General" },
-  { label: "Community Profile", viewId: "community-profile", category: "General" },
-  { label: "Settings", viewId: "settings", category: "General" },
-  { label: "Billing", viewId: "billing", category: "General" },
-  { label: "Ady Chat", viewId: "ady-chat", category: "General" },
-  { label: "Notifications", viewId: "notifications", category: "General" },
-  { label: "Progress Tracking", viewId: "progress-hub", category: "General" },
-  { label: "Study Assistant", viewId: "study-assistant", category: "Learning Hub" },
-  { label: "Notes Generator", viewId: "notes-generator", category: "Learning Hub" },
-  { label: "Quiz Generator", viewId: "quiz-generator", category: "Learning Hub" },
-  { label: "Assignment Generator", viewId: "assignment-generator", category: "Learning Hub" },
-  { label: "Mind Maps", viewId: "mind-maps", category: "Learning Hub" },
-  { label: "Flashcards", viewId: "flashcards", category: "Learning Hub" },
-  { label: "Study Planner", viewId: "study-planner", category: "Learning Hub" },
-  { label: "Learning Streak", viewId: "learning-streak", category: "Learning Hub" },
-  { label: "DSA Practice", viewId: "dsa-practice", category: "Coding Hub" },
-  { label: "Coding Dashboard", viewId: "coding-dashboard", category: "Coding Hub" },
-  { label: "Coding Challenges", viewId: "coding-challenges", category: "Coding Hub" },
-  { label: "GitHub Portfolio", viewId: "github-portfolio", category: "Coding Hub" },
-  { label: "Resume Builder", viewId: "resume-builder", category: "Resume Hub" },
-  { label: "Resume Upload", viewId: "resume-upload", category: "Resume Hub" },
-  { label: "ATS Score Checker", viewId: "ats-checker", category: "Resume Hub" },
-  { label: "Cover Letter Generator", viewId: "cover-letter", category: "Resume Hub" },
-  { label: "LinkedIn Optimizer", viewId: "linkedin-optimizer", category: "Resume Hub" },
-  { label: "AI HR Interview", viewId: "interview-hub", category: "Interview Hub" },
-  { label: "AI Technical Interview", viewId: "interview-hub", category: "Interview Hub" },
-  { label: "Interview Engine", viewId: "interview-engine", category: "Interview Hub" },
-  { label: "Research Paper AI", viewId: "research-hub", category: "Research Hub" },
-  { label: "Plagiarism Checker", viewId: "research-plagiarism", category: "Research Hub" },
-  { label: "Job Discovery", viewId: "job-discovery", category: "Job Hub" },
-  { label: "Discover Jobs", viewId: "job-discovery", category: "Job Hub" },
-  { label: "Search All Jobs", viewId: "job-discovery", category: "Job Hub" },
-  { label: "Saved Jobs", viewId: "job-discovery", category: "Job Hub" },
-  { label: "Aptitude Practice", viewId: "placement-hub", category: "Placement Hub" },
-  { label: "Technical MCQs", viewId: "placement-hub", category: "Placement Hub" },
-  { label: "Placement Score", viewId: "placement-intelligence", category: "Placement Hub" },
-  { label: "Company Match Analysis", viewId: "placement-intelligence", category: "Placement Hub" },
-  { label: "AI Placement Score", viewId: "placement-intelligence", category: "Placement Hub" },
-  { label: "AI Aptitude Engine", viewId: "aptitude-engine", category: "Placement Hub" },
-  { label: "Aptitude Analytics", viewId: "aptitude-engine-analytics", category: "Placement Hub" },
-  { label: "Daily Challenge", viewId: "aptitude-engine", category: "Placement Hub" },
-  { label: "Company Tests", viewId: "aptitude-engine", category: "Placement Hub" },
-  { label: "Email Writer", viewId: "prod-email", category: "Productivity" },
-  { label: "SOP Generator", viewId: "prod-sop", category: "Productivity" },
-  { label: "LinkedIn Post Generator", viewId: "prod-linkedin", category: "Productivity" },
-  { label: "Content Writer", viewId: "prod-content", category: "Productivity" },
-  { label: "Progress Tracker", viewId: "analytics-hub", category: "Analytics" },
-  { label: "Interview Progress", viewId: "analytics-hub", category: "Analytics" },
-  { label: "Skill Growth", viewId: "analytics-hub", category: "Analytics" },
-  { label: "Community", viewId: "community-browse", category: "Community" },
-  { label: "Browse Profiles", viewId: "community-browse", category: "Community" },
-  { label: "Messages", viewId: "community-messages", category: "Community" },
-  { label: "Blog", viewId: "community-blog", category: "Community" },
-  { label: "Write Blog", viewId: "community-blog", category: "Community" },
+export interface SearchEntry {
+  id?: string;
+  label: string;
+  viewId: string;
+  category: string;
+  subtitle?: string;
+  keywords?: string[];
+}
+
+export const SEARCH_INDEX: SearchEntry[] = [
+  // ── General & Account ──
+  { label: "Dashboard", viewId: "dashboard", category: "General", subtitle: "Overview & key metrics", keywords: ["home", "main", "overview", "stats", "summary"] },
+  { label: "Career Dashboard", viewId: "career-dashboard", category: "General", subtitle: "Career goals & roadmaps", keywords: ["career", "roadmap", "goals", "path", "target role", "plan", "milestones"] },
+  { label: "Profile", viewId: "profile", category: "General", subtitle: "Personal account info", keywords: ["account", "me", "user", "bio", "avatar", "details", "contact"] },
+  { label: "Community Profile", viewId: "community-profile", category: "General", subtitle: "Public student profile", keywords: ["public profile", "social", "network", "badges", "portfolio"] },
+  { label: "Settings", viewId: "settings", category: "General", subtitle: "Preferences & security", keywords: ["manage account", "password", "preferences", "config", "security", "dark mode"] },
+  { label: "Billing & Plans", viewId: "billing", category: "General", subtitle: "Subscriptions & invoices", keywords: ["subscription", "payment", "plan", "pro", "invoice", "pricing", "razorpay", "upgrade"] },
+  { label: "Ady AI Chat", viewId: "ady-chat", category: "General", subtitle: "AI study companion", keywords: ["chat", "assistant", "ask ai", "chatgpt", "bot", "tutor", "help", "query"] },
+  { label: "Notifications", viewId: "notifications", category: "General", subtitle: "Activity alerts & inbox", keywords: ["alerts", "updates", "messages", "bell", "inbox", "system"] },
+  { label: "Progress Tracking", viewId: "progress-hub", category: "General", subtitle: "Learning milestones & growth", keywords: ["tracker", "analytics", "progress", "growth", "stats", "history", "milestones"] },
+
+  // ── Learning Hub ──
+  { label: "Study Assistant", viewId: "study-assistant", category: "Learning Hub", subtitle: "AI-guided study sessions", keywords: ["study", "learn", "tutor", "lesson", "ai teacher", "explain", "concept", "read"] },
+  { label: "Notes Generator", viewId: "notes-generator", category: "Learning Hub", subtitle: "Auto-summarize & create notes", keywords: ["notes", "summary", "lecture notes", "revision", "bullet points", "pdf notes", "cheat sheet"] },
+  { label: "Quiz Generator", viewId: "quiz-generator", category: "Learning Hub", subtitle: "Custom practice MCQs & tests", keywords: ["quiz", "test", "mcq", "exam", "questions", "practice questions", "assessment", "score"] },
+  { label: "Assignment Generator", viewId: "assignment-generator", category: "Learning Hub", subtitle: "AI homework & project helper", keywords: ["assignment", "homework", "task", "project report", "solution", "academic"] },
+  { label: "Mind Maps", viewId: "mind-maps", category: "Learning Hub", subtitle: "Interactive visual concept maps", keywords: ["mindmap", "brainstorm", "concept map", "visual map", "flowchart", "diagram", "nodes"] },
+  { label: "Flashcards", viewId: "flashcards", category: "Learning Hub", subtitle: "Spaced repetition revision cards", keywords: ["flashcards", "revision cards", "memorize", "spaced repetition", "deck", "anki", "cards"] },
+  { label: "Study Planner", viewId: "study-planner", category: "Learning Hub", subtitle: "Smart timetable & calendar", keywords: ["planner", "schedule", "timetable", "study plan", "calendar", "routine", "tasks"] },
+  { label: "Learning Streak", viewId: "learning-streak", category: "Learning Hub", subtitle: "Daily habits & gamification", keywords: ["streak", "daily habits", "consistency", "gamification", "badges", "points", "flame"] },
+
+  // ── Coding & Technical Hub ──
+  { label: "DSA Practice", viewId: "dsa-practice", category: "Coding Hub", subtitle: "Data structures & algorithms", keywords: ["dsa", "coding", "algorithm", "data structures", "leetcode", "problems", "code", "programming", "trees", "graphs", "arrays", "binary search"] },
+  { label: "Coding Dashboard", viewId: "dsa-practice", category: "Coding Hub", subtitle: "Coding workspace & progress", keywords: ["code", "developer", "ide", "editor", "practice", "compiler"] },
+  { label: "Coding Challenges", viewId: "coding-challenges", category: "Coding Hub", subtitle: "Weekly contests & challenges", keywords: ["contest", "challenges", "hackathon", "daily challenge", "problem solving", "timed challenge"] },
+  { label: "GitHub Portfolio Builder", viewId: "github-portfolio", category: "Coding Hub", subtitle: "Turn repositories into a portfolio", keywords: ["github", "portfolio", "projects", "git", "repositories", "showcase", "open source"] },
+
+  // ── Resume Hub ──
+  { label: "Resume Builder", viewId: "resume-builder", category: "Resume Hub", subtitle: "Professional ATS-friendly CV builder", keywords: ["resume", "cv", "curriculum vitae", "maker", "builder", "latex", "template", "format"] },
+  { label: "Resume Upload & Parse", viewId: "resume-upload", category: "Resume Hub", subtitle: "Import and analyze PDF resume", keywords: ["upload cv", "parse resume", "import resume", "pdf resume", "extract"] },
+  { label: "ATS Score Checker", viewId: "ats-checker", category: "Resume Hub", subtitle: "Audit resume against job descriptions", keywords: ["ats", "ats score", "resume checker", "resume score", "resume review", "job scan", "keywords match"] },
+  { label: "Cover Letter Generator", viewId: "cover-letter", category: "Resume Hub", subtitle: "AI tailored application letters", keywords: ["cover letter", "application letter", "job letter", "motivation letter", "formal letter"] },
+
+  // ── Interview Hub ──
+  { label: "AI HR Interview", viewId: "interview-hr", category: "Interview Hub", subtitle: "Behavioral & cultural fit mock", keywords: ["hr interview", "behavioral", "mock interview", "hr questions", "soft skills", "star method"] },
+  { label: "AI Technical Interview", viewId: "interview-technical", category: "Interview Hub", subtitle: "Live technical screening mock", keywords: ["technical interview", "coding interview", "system design", "tech mock", "cs fundamentals"] },
+  { label: "Interview Engine", viewId: "interview-engine", category: "Interview Hub", subtitle: "Voice & AI interactive interview", keywords: ["interview engine", "voice interview", "ai mock", "live interview", "simulator"] },
+  { label: "Interview Hub", viewId: "interview-hub", category: "Interview Hub", subtitle: "All interview practice modes", keywords: ["interview", "mock", "practice interview", "hiring questions", "role play"] },
+  { label: "Interview Analytics", viewId: "analytics-interview", category: "Interview Hub", subtitle: "Speech, clarity & answer scoring", keywords: ["interview scores", "feedback", "transcript", "confidence score"] },
+
+  // ── Research Hub ──
+  { label: "Research Paper AI", viewId: "research-hub", category: "Research Hub", subtitle: "Literature review & paper assistant", keywords: ["research", "paper", "arxiv", "academic", "literature review", "citation", "abstract", "ieee"] },
+  { label: "Plagiarism Checker", viewId: "research-plagiarism", category: "Research Hub", subtitle: "Originality and similarity detector", keywords: ["plagiarism", "duplicate", "turnitin", "originality", "similarity check", "integrity"] },
+
+  // ── Job & Placement Hub ──
+  { label: "Job Discovery", viewId: "job-discovery", category: "Job Hub", subtitle: "Search & filter opportunities", keywords: ["jobs", "careers", "internships", "vacancies", "openings", "hiring", "apply", "work", "remote"] },
+  { label: "Placement Intelligence", viewId: "placement-intelligence", category: "Placement Hub", subtitle: "Readiness score & company match", keywords: ["placement readiness", "readiness score", "company eligibility", "hiring chance", "match"] },
+  { label: "AI Aptitude Engine", viewId: "aptitude-engine", category: "Placement Hub", subtitle: "Timed test simulator & analytics", keywords: ["aptitude test", "online test", "mock test", "timed test", "company test"] },
+  { label: "Aptitude Practice", viewId: "placement-hub", category: "Placement Hub", subtitle: "Quant, logical & verbal practice", keywords: ["aptitude", "quantitative", "logical reasoning", "verbal", "placement preparation", "maths"] },
+  { label: "Technical MCQs", viewId: "placement-mcqs", category: "Placement Hub", subtitle: "CS fundamentals (DBMS, OS, CN, OOP)", keywords: ["mcq", "technical questions", "cs fundamentals", "oops", "dbms", "os", "networking", "sql"] },
+
+  // ── Productivity & Writing ──
+  { label: "Email Writer", viewId: "prod-email", category: "Productivity", subtitle: "Cold emails & outreach drafts", keywords: ["email", "cold email", "follow up", "networking email", "draft", "mailer"] },
+  { label: "SOP Generator", viewId: "prod-sop", category: "Productivity", subtitle: "Statement of purpose for universities", keywords: ["sop", "statement of purpose", "admission", "masters", "university essay", "grad school"] },
+  { label: "LinkedIn Post Generator", viewId: "prod-linkedin", category: "Productivity", subtitle: "Viral professional post drafts", keywords: ["linkedin", "post", "social media", "networking", "personal brand", "career update"] },
+  { label: "Content Writer", viewId: "prod-content", category: "Productivity", subtitle: "Articles, blogs & copywriting", keywords: ["content", "article", "blog writing", "copywriting", "essay", "creative writing"] },
+
+  // ── Community ──
+  { label: "Community Blog", viewId: "community-blog", category: "Community", subtitle: "Read & publish student articles", keywords: ["blog", "articles", "posts", "read blog", "write blog", "community blog", "stories"] },
+  { label: "Community Network", viewId: "community-browse", category: "Community", subtitle: "Connect with fellow learners", keywords: ["community", "students", "peers", "browse profiles", "study partners", "classmates"] },
+  { label: "Community Messages", viewId: "community-messages", category: "Community", subtitle: "Peer-to-peer student chat", keywords: ["messages", "dm", "inbox", "chat", "peer chat", "conversations"] },
 ];
 
 // ΓöÇΓöÇΓöÇ Sidebar Data ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
@@ -132,7 +145,6 @@ export const sidebarItems: SidebarItem[] = [
       { label: "Resume Builder", href: "/dashboard/user?view=resume-hub" },
       { label: "ATS Score Checker", href: "/dashboard/user?view=ats-checker" },
       { label: "Cover Letter Generator", href: "/dashboard/user?view=cover-letter" },
-      { label: "LinkedIn Optimizer", href: "/dashboard/user?view=linkedin-optimizer" },
     ],
   },
   {
@@ -335,7 +347,6 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
                         else if (sub.label === "Upload Resume") onViewTool("resume-upload");
                         else if (sub.label === "ATS Score Checker") onViewTool("ats-checker");
                         else if (sub.label === "Cover Letter Generator") onViewTool("cover-letter");
-                        else if (sub.label === "LinkedIn Optimizer") onViewTool("linkedin-optimizer");
                         else if (sub.label === "Study Assistant") onViewTool("study-assistant");
                         else if (sub.label === "Notes Generator") onViewTool("notes-generator");
                         else if (sub.label === "Quiz Generator") onViewTool("quiz-generator");
@@ -451,14 +462,20 @@ export function DashboardTopNav({
     }
   };
 
-  const navResults = searchQuery.trim().length >= 2
-    ? SEARCH_INDEX.filter((entry) =>
-      entry.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entry.category.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 8)
+  const searchTerms = searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const navResults = searchTerms.length > 0
+    ? SEARCH_INDEX.filter((entry) => {
+        const corpus = [
+          entry.label,
+          entry.category,
+          entry.subtitle || "",
+          ...(entry.keywords || []),
+        ].join(" ").toLowerCase();
+        return searchTerms.every((term) => corpus.includes(term));
+      }).slice(0, 10)
     : [];
 
-  const searchResults = [...navResults, ...dbSearchResults].slice(0, 15);
+  const searchResults = [...navResults, ...dbSearchResults].slice(0, 20);
 
   useEffect(() => {
     const q = searchQuery.trim();
@@ -608,11 +625,12 @@ export function DashboardTopNav({
           />
           {searchOpen && searchResults.length > 0 && (
             <div style={{
-              position: "absolute", top: "100%", left: 0, marginTop: 6, width: "100%", minWidth: 260,
-              background: dropdownBg, border: `1px solid ${isDarkTheme ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`,
-              borderRadius: 12, padding: "0.4rem", zIndex: 200,
-              boxShadow: isDarkTheme ? "0 12px 32px rgba(0,0,0,0.5)" : "0 12px 32px rgba(15,23,42,0.12)",
-              backdropFilter: "blur(16px)",
+              position: "absolute", top: "100%", left: 0, marginTop: 6, width: "100%", minWidth: 320, maxWidth: 440,
+              maxHeight: 400, overflowY: "auto",
+              background: dropdownBg, border: `1px solid ${isDarkTheme ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.12)"}`,
+              borderRadius: 12, padding: "0.5rem", zIndex: 200,
+              boxShadow: isDarkTheme ? "0 16px 40px rgba(0,0,0,0.6)" : "0 16px 40px rgba(15,23,42,0.14)",
+              backdropFilter: "blur(20px)",
             }}>
               {(() => {
                 const grouped = searchResults.reduce<Record<string, SearchEntry[]>>((acc, entry) => {
@@ -620,18 +638,40 @@ export function DashboardTopNav({
                   return acc;
                 }, {});
                 return Object.entries(grouped).map(([cat, entries]) => (
-                  <div key={cat}>
-                    <div style={{ padding: "0.3rem 0.6rem", fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{cat}</div>
-                    {entries.map((entry) => (
-                      <motion.button key={entry.label} whileHover={{ scale: 1.01, x: 2 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.08 }}
-                        onMouseDown={(e) => { e.preventDefault(); onViewTool(entry.viewId); setSearchQuery(""); setSearchOpen(false); }}
+                  <div key={cat} style={{ marginBottom: "0.4rem" }}>
+                    <div style={{
+                      padding: "0.25rem 0.6rem", fontSize: "0.65rem", fontWeight: 700,
+                      color: isDarkTheme ? "#94a3b8" : "#64748b", textTransform: "uppercase",
+                      letterSpacing: "0.06em", display: "flex", alignItems: "center", justifyContent: "space-between",
+                    }}>
+                      <span>{cat}</span>
+                      <span style={{ fontSize: "0.6rem", opacity: 0.7 }}>{entries.length}</span>
+                    </div>
+                    {entries.map((entry, idx) => (
+                      <motion.button
+                        key={entry.id || `${entry.viewId}-${entry.label}-${idx}`}
+                        whileHover={{ x: 2, background: isDarkTheme ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }}
+                        whileTap={{ scale: 0.99 }}
+                        transition={{ duration: 0.08 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          onViewTool(entry.viewId);
+                          setSearchQuery("");
+                          setSearchOpen(false);
+                        }}
                         style={{
-                          display: "block", width: "100%", textAlign: "left",
-                          padding: "0.45rem 0.6rem", fontSize: "0.8rem", color: "var(--text-secondary)",
+                          display: "flex", flexDirection: "column", width: "100%", textAlign: "left",
+                          padding: "0.45rem 0.65rem", fontSize: "0.82rem",
                           background: "transparent", border: "none", cursor: "pointer", borderRadius: 8,
+                          transition: "background 0.1s ease",
                         }}
                       >
-                        {entry.label}
+                        <span style={{ fontWeight: 600, color: navBtnColor, lineHeight: 1.3 }}>{entry.label}</span>
+                        {entry.subtitle && (
+                          <span style={{ fontSize: "0.72rem", color: isDarkTheme ? "#94a3b8" : "#64748b", marginTop: 2, lineHeight: 1.2 }}>
+                            {entry.subtitle}
+                          </span>
+                        )}
                       </motion.button>
                     ))}
                   </div>

@@ -39,7 +39,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   const togglePIP = onTogglePIP || (() => setInternalPIP((prev) => !prev));
 
   const isDark = theme === "dark";
-  const isSpeaking = micLevel > 15;
+  const isSpeaking = micLevel > 8;
 
   let silenceLabel = "Microphone Ready";
   let badgeColor = isDark
@@ -128,7 +128,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             ) : (
               <Mic className="w-2.5 h-2.5" />
             )}
-            <span>{isSpeaking ? "Speaking" : silenceStage !== "none" ? silenceStage : "Ready"}</span>
+            <span>{isSpeaking ? "Speaking" : silenceStage !== "none" ? silenceStage : isMicEnabled ? "Listening" : "Muted"}</span>
           </div>
 
           {/* Interactive Mic Toggle Button */}
@@ -185,36 +185,40 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
         {/* Microphone Audio Level Overlay */}
         <div
-          className={`absolute bottom-2 left-2 right-2 z-20 flex items-center space-x-2 backdrop-blur-md px-2 py-0.5 rounded-lg border ${
+          onClick={onToggleMic}
+          className={`absolute bottom-2 left-2 right-2 z-20 flex items-center space-x-2 backdrop-blur-md px-2.5 py-1 rounded-lg border cursor-pointer select-none transition-all hover:scale-[1.01] active:scale-[0.99] ${
             isDark || isFloating
-              ? "bg-slate-900/85 border-slate-700/50 text-slate-300"
-              : "bg-white/90 border-slate-200 text-slate-700 shadow-md"
+              ? "bg-slate-900/90 border-slate-700/60 text-slate-300 hover:border-cyan-500/40"
+              : "bg-white/95 border-slate-200 text-slate-700 shadow-md hover:border-cyan-400"
           }`}
+          title={isMicEnabled ? "Microphone live (click to mute/test)" : "Microphone muted (click to unmute)"}
         >
-          <div>
+          <div className="flex items-center justify-center">
             {isMicEnabled ? (
-              <Mic className="w-3 h-3 text-cyan-500" />
+              <Mic className={`w-3.5 h-3.5 ${isSpeaking ? "text-emerald-400 animate-pulse" : "text-cyan-400"}`} />
             ) : (
-              <MicOff className="w-3 h-3 text-rose-500" />
+              <MicOff className="w-3.5 h-3.5 text-rose-500" />
             )}
           </div>
           <div
-            className={`flex-1 h-1.5 rounded-full overflow-hidden ${
+            className={`flex-1 h-2 rounded-full overflow-hidden ${
               isDark || isFloating ? "bg-slate-800" : "bg-slate-200"
             }`}
           >
             <motion.div
               className={`h-full ${
                 isSpeaking
-                  ? "bg-gradient-to-r from-cyan-500 to-emerald-500"
+                  ? "bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400"
+                  : isMicEnabled
+                  ? "bg-cyan-500/60"
                   : "bg-slate-500"
               }`}
-              animate={{ width: `${micLevel}%` }}
-              transition={{ duration: 0.1 }}
+              animate={{ width: `${!isMicEnabled ? 0 : isSpeaking ? Math.max(15, micLevel) : 8}%` }}
+              transition={{ duration: 0.08 }}
             />
           </div>
-          <span className="text-[10px] font-mono font-semibold w-6 text-right">
-            {micLevel}%
+          <span className="text-[10px] font-mono font-semibold w-10 text-right">
+            {!isMicEnabled ? "Muted" : isSpeaking ? `${micLevel}%` : "Live"}
           </span>
         </div>
       </div>

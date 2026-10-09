@@ -546,7 +546,6 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
               onBack={() => setScreen("dashboard")}
               onCheckATS={() => { sessionStorage.setItem("pendingResumeUploadId", selectedResume.id); setView("ats-checker"); }}
               onCoverLetter={() => setView("cover-letter")}
-              onLinkedIn={() => setView("linkedin-optimizer")}
               showToast={showToast}
             />
           )}
@@ -609,14 +608,13 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
 
 // ─── Profile Sub-Component ────────────────────────────────────────────────────
 
-function ProfileScreen({ resume, profile, c, onBack, onCheckATS, onCoverLetter, onLinkedIn, showToast }: {
+function ProfileScreen({ resume, profile, c, onBack, onCheckATS, onCoverLetter, showToast }: {
   resume: UploadedResume;
   profile: CandidateProfile;
   c: ReturnType<typeof mkColors>;
   onBack: () => void;
   onCheckATS: () => void;
   onCoverLetter: () => void;
-  onLinkedIn: () => void;
   showToast: (msg: string, type?: "success" | "error") => void;
 }) {
   const [activeTab, setActiveTab] = useState<"overview" | "details" | "health">("overview");
@@ -947,7 +945,6 @@ function ProfileScreen({ resume, profile, c, onBack, onCheckATS, onCoverLetter, 
                 {[
                   { label: "Check ATS Score", icon: <Target size={18} />, color: col, bg: c.amberBg, border: c.amberBorder, onClick: onCheckATS },
                   { label: "Cover Letter", icon: <FileText size={18} />, color: c.cyan, bg: c.cyanBg, border: c.cyanBorder, onClick: onCoverLetter },
-                  { label: "LinkedIn Optimize", icon: <Globe size={18} />, color: c.green, bg: c.greenBg, border: c.greenBorder, onClick: onLinkedIn },
                 ].map((action) => (
                   <motion.button key={action.label} whileHover={{ scale: 1.03, y: -2 }} whileTap={buttonHover.whileTap}
                     onClick={action.onClick}
@@ -965,3 +962,8 @@ function ProfileScreen({ resume, profile, c, onBack, onCheckATS, onCoverLetter, 
     </motion.div>
   );
 }
+
+
+
+
+

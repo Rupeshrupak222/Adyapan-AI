@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import { logInterview, logInterviewError } from "../shared/interviewLogger";
 import { SharedSpeechEngine } from "../shared/speechState";
 import { MicrophoneHealthManager } from "../shared/microphoneHealth";
+import {
+  getSharedAudioContext,
+  ensureAudioContextRunning,
+} from "../shared/audioContextManager";
 import type {
   ConversationState,
   SilenceStage,
@@ -283,42 +287,114 @@ export function useConversationEngine({
   // Start Mic Audio Energy Monitoring (VAD)
   const startMicMonitoring = useCallback(async () => {
     try {
-      if (micStreamRef.current) return;
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micStreamRef.current = stream;
+      let stream = micStreamRef.current;
+      const hasActiveTracks =
+        stream &&
+        stream.getAudioTracks().length > 0 &&
+        stream.getAudioTracks()[0].readyState === "live" &&
+        stream.getAudioTracks()[0].enabled;
+
+      if (!hasActiveTracks) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+          });
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+        micStreamRef.current = stream;
+      }
+
+      // Explicitly enable and unmute all audio tracks
+      if (stream) {
+        stream.getAudioTracks().forEach((track) => {
+          track.enabled = true;
+        });
+      }
+
       setIsMicEnabled(true);
 
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const audioCtx = new AudioCtx();
-      if (audioCtx.state === "suspended") {
-        audioCtx.resume().catch(() => {});
-      }
+      const audioCtx = await ensureAudioContextRunning();
+      if (!audioCtx) return;
       audioContextRef.current = audioCtx;
-      const source = audioCtx.createMediaStreamSource(stream);
+
+      // Clean up previous analyser frame if any
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+
+      const source = audioCtx.createMediaStreamSource(stream!);
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.4;
+      analyser.smoothingTimeConstant = 0.15;
+
+      // Connect to destination through a silent gain node so Chromium audio graph actively pulls hardware samples
+      const silentGain = audioCtx.createGain();
+      silentGain.gain.value = 0;
       source.connect(analyser);
+      analyser.connect(silentGain);
+      silentGain.connect(audioCtx.destination);
+
       analyserRef.current = analyser;
 
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const timeData = new Uint8Array(analyser.fftSize);
+      const freqData = new Uint8Array(analyser.frequencyBinCount);
+
       const updateLevel = () => {
         if (isDestroyedRef.current || !analyserRef.current) return;
-        analyserRef.current.getByteFrequencyData(dataArray);
-        const sum = dataArray.reduce((acc, val) => acc + val, 0);
-        const avg = sum / dataArray.length;
-        const level = Math.min(Math.round((avg / 255) * 100), 100);
+
+        // Auto-resume AudioContext if suspended
+        if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+          audioContextRef.current.resume().catch(() => {});
+        }
+
+        // 1. Time-Domain RMS & Peak Amplitude
+        analyserRef.current.getByteTimeDomainData(timeData);
+        let sumSquares = 0;
+        let peakAmp = 0;
+        for (let i = 0; i < timeData.length; i++) {
+          const dev = Math.abs(timeData[i] - 128);
+          if (dev > peakAmp) peakAmp = dev;
+          const norm = dev / 128;
+          sumSquares += norm * norm;
+        }
+        const rms = Math.sqrt(sumSquares / timeData.length);
+        const rmsLevel = Math.min(100, Math.round(rms * 450));
+        const peakAmpLevel = Math.min(100, Math.round((peakAmp / 128) * 160));
+
+        // 2. Frequency Voice Band (first 40 bins: ~85Hz - 3.7kHz human speech range)
+        analyserRef.current.getByteFrequencyData(freqData);
+        let voiceSum = 0;
+        let peakVoiceFreq = 0;
+        const voiceBins = Math.min(40, freqData.length);
+        for (let i = 1; i < voiceBins; i++) {
+          const val = freqData[i];
+          voiceSum += val;
+          if (val > peakVoiceFreq) peakVoiceFreq = val;
+        }
+        const voiceAvg = voiceBins > 1 ? voiceSum / (voiceBins - 1) : 0;
+        const freqAvgLevel = Math.min(100, Math.round((voiceAvg / 90) * 100));
+        const freqPeakLevel = Math.min(100, Math.round((peakVoiceFreq / 180) * 100));
+
+        // Combined responsive level
+        const rawLevel = Math.max(rmsLevel, peakAmpLevel, freqAvgLevel, freqPeakLevel);
+        const level = rawLevel >= 4 ? rawLevel : 0;
+
         setMicLevel(level);
         callbacks.onMicLevelChange?.(level);
 
         // Voice Activity Detection threshold for interruption
-        if (level > 25 && stateRef.current === "AI_SPEAKING" && !isDestroyedRef.current && !isSubmittingRef.current) {
+        if (level > 20 && stateRef.current === "AI_SPEAKING" && !isDestroyedRef.current && !isSubmittingRef.current) {
           handleCandidateInterruption();
         }
 
-        // Active speech energy detection while candidate is speaking: keep turn alive and refresh timestamp
-        if (level > 15 && stateRef.current !== "AI_SPEAKING" && !isDestroyedRef.current && !isSubmittingRef.current) {
+        // Active speech energy detection while candidate is speaking
+        if (level > 10 && stateRef.current !== "AI_SPEAKING" && !isDestroyedRef.current && !isSubmittingRef.current) {
           lastSpeechTimeRef.current = Date.now();
           if (
             stateRef.current === "WAITING_FOR_CANDIDATE" ||
@@ -334,6 +410,7 @@ export function useConversationEngine({
           animFrameRef.current = requestAnimationFrame(updateLevel);
         }
       };
+
       updateLevel();
     } catch (err) {
       logInterviewError("VAD", "Microphone access failed", err);
@@ -690,13 +767,17 @@ export function useConversationEngine({
 
   // Cleanup on unmount
   const toggleCandidateMic = useCallback(async () => {
+    if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+      await audioContextRef.current.resume().catch(() => {});
+    }
+
     if (isMicEnabled) {
       stopMicMonitoring();
       SharedSpeechEngine.getInstance().pauseListening();
       setIsMicEnabled(false);
       toast.info("Microphone muted.");
     } else {
-      toast.info("Initializing microphone...");
+      toast.info("Activating microphone...");
       await startMicMonitoring();
       startSpeechRecognition();
       startSilenceMonitor();
