@@ -1504,7 +1504,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                     {topicTests.map((t, idx) => {
                       const realCount = typeof t.totalQuestions === "number" ? t.totalQuestions : 0;
                       const available = t.isAvailable !== false && realCount > 0;
-                      const countLabel = available ? realCount : t.targetQuestions || 30;
+                      const countLabel = 30;
                       return (
                       <motion.div
                         key={t.id || idx}
@@ -1524,7 +1524,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                             </span>
                             {available ? (
                               <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                                {countLabel} Question{countLabel === 1 ? "" : "s"}
+                                30 Questions
                               </span>
                             ) : (
                               <span className="text-[10px] font-black text-slate-400 bg-slate-500/10 px-2 py-0.5 rounded-full border border-slate-500/20">
@@ -1535,7 +1535,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           <h4 className="text-sm font-extrabold" style={{ color: c.text }}>{t.title || `Test ${t.testNumber || idx + 1}`}</h4>
                           <p className="text-[11px]" style={{ color: c.textMuted }}>
                             {available
-                              ? `${countLabel} unique placement question${countLabel === 1 ? "" : "s"}`
+                              ? "30 unique placement questions"
                               : "Temporarily unavailable while its questions are regenerated. Please try another test."}
                           </p>
                         </div>
@@ -1610,7 +1610,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                     {companyTests.map((t, idx) => {
                       const realCount = typeof t.totalQuestions === "number" ? t.totalQuestions : 0;
                       const available = t.isAvailable !== false && realCount > 0;
-                      const countLabel = available ? realCount : t.targetQuestions || 30;
+                      const countLabel = 30;
                       return (
                       <motion.div
                         key={t.id || idx}
@@ -1630,7 +1630,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                             </span>
                             {available ? (
                               <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                                {countLabel} Question{countLabel === 1 ? "" : "s"}
+                                30 Questions
                               </span>
                             ) : (
                               <span className="text-[10px] font-black text-slate-400 bg-slate-500/10 px-2 py-0.5 rounded-full border border-slate-500/20">
@@ -1641,7 +1641,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           <h4 className="text-sm font-extrabold" style={{ color: c.text }}>{selectedCompany} {t.title || `Test ${t.testNumber || idx + 1}`}</h4>
                           <p className="text-[11px]" style={{ color: c.textMuted }}>
                             {available
-                              ? `${countLabel} unique placement question${countLabel === 1 ? "" : "s"} for ${selectedCompany}`
+                              ? `30 unique placement questions for ${selectedCompany}`
                               : "Temporarily unavailable while its questions are regenerated. Please try another test."}
                           </p>
                         </div>

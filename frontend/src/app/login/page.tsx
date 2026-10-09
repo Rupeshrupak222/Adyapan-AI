@@ -345,7 +345,7 @@ function LoginPageContent() {
       try {
         await api.post("/auth/forgot-password", { email: forgotEmail });
         setForgotOtp("");
-        setForgotMsg("OTP sent! Please check your email inbox for the 6-digit code.");
+        setForgotMsg("OTP sent! Please check your email inbox (and Spam folder) for the 6-digit code.");
         setForgotStep("otp");
       }
       catch (err: unknown) {
@@ -368,6 +368,25 @@ function LoginPageContent() {
         }
       }
       finally { setForgotLoading(false); }
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setForgotLoading(true);
+    setForgotError("");
+    setForgotMsg("");
+    try {
+      await api.post("/auth/forgot-password", { email: forgotEmail });
+      setForgotOtp("");
+      setForgotMsg("New OTP sent! Please check your email inbox and Spam folder.");
+    } catch (err: unknown) {
+      if (isMaintenanceOrQuotaError(err)) {
+        setForgotError(MAINTENANCE_MESSAGE);
+      } else {
+        setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not resend OTP.");
+      }
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -742,6 +761,25 @@ function LoginPageContent() {
                           </motion.div>
                         );
                       })}
+                      {forgotStep === "otp" && (
+                        <div className="flex items-center justify-between text-xs px-1 -mt-1">
+                          <button
+                            type="button"
+                            onClick={() => { setForgotStep("email"); setForgotError(""); }}
+                            className="text-amber-400 hover:underline cursor-pointer"
+                          >
+                            ← Change email
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleResendOtp}
+                            disabled={forgotLoading}
+                            className="text-amber-400 hover:underline cursor-pointer font-bold disabled:opacity-50"
+                          >
+                            Resend OTP
+                          </button>
+                        </div>
+                      )}
                       {forgotMsg   && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-semibold text-green-400">{forgotMsg}</motion.p>}
                       {forgotError && (
                         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}>

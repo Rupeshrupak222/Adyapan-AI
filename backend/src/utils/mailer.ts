@@ -302,7 +302,7 @@ export async function sendPasswordResetOtpEmail(email: string, otp: string): Pro
   const config = getSmtpConfig();
   if (!transporter) {
     console.warn("[Mailer] Cannot send OTP email - SMTP not configured.");
-    return;
+    throw new Error("SMTP credentials not configured.");
   }
 
   const body = `
@@ -337,20 +337,37 @@ export async function sendPasswordResetOtpEmail(email: string, otp: string): Pro
     </p>
   `;
 
+  const mailOptions = {
+    from: `"Adyapan AI" <${config.user}>`,
+    replyTo: config.user,
+    to: email,
+    subject: `[Adyapan AI] Your Password Reset OTP: ${otp}`,
+    text: `Your Adyapan AI password reset OTP is: ${otp}\n\nThis verification code expires in 15 minutes.\n\nIf you did not request this password reset, please ignore this email.\n\nTeam Adyapan AI`,
+    html: baseTemplate(body),
+    attachments: logoAttachments(),
+  };
+
   try {
-    const info = await transporter.sendMail({
-      from: `"Adyapan AI" <${config.user}>`,
-      replyTo: config.user,
-      to: email,
-      subject: `[Adyapan AI] Your Password Reset OTP: ${otp}`,
-      text: `Your Adyapan AI password reset OTP is: ${otp}\n\nThis verification code expires in 15 minutes.\n\nIf you did not request this password reset, please ignore this email.\n\nTeam Adyapan AI`,
-      html: baseTemplate(body),
-      attachments: logoAttachments(),
-    });
+    const info = await transporter.sendMail(mailOptions);
     console.log(`[Mailer] Password reset OTP sent to ${email}. MessageId: ${info.messageId}`);
   } catch (error: any) {
-    console.error("[Mailer] Failed to send password reset OTP email:", error.message);
-    throw error;
+    console.warn(`[Mailer] Primary send failed (${error.message}), trying port 587 fallback...`);
+    try {
+      const fallbackTransporter = nodemailer.createTransport({
+        host: config.host,
+        port: 587,
+        secure: false,
+        auth: { user: config.user, pass: config.pass },
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 8000,
+      });
+      const info = await fallbackTransporter.sendMail(mailOptions);
+      console.log(`[Mailer] Fallback port 587 OTP sent to ${email}. MessageId: ${info.messageId}`);
+    } catch (fallbackErr: any) {
+      console.error("[Mailer] Failed to send password reset OTP email:", fallbackErr.message);
+      throw fallbackErr;
+    }
   }
 }
 
