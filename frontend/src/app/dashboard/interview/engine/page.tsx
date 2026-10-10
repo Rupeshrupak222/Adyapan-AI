@@ -3,12 +3,6 @@
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import {
-  DashboardSidebar,
-  DashboardTopNav,
-} from "@/components/dashboard-shell";
-import type { AdyapanUser } from "@/components/dashboard-shell";
 
 const EngineView = dynamic(
   () => import("@/components/interview-hub/engine/EngineView").then(m => m.default),
@@ -34,21 +28,12 @@ const EngineView = dynamic(
 
 export default function EnginePage() {
   useRequireAuth("USER");
-  const router = useRouter();
-  const [user, setUser] = useState<AdyapanUser | null>(null);
   const [theme, setTheme] = useState("dark");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; read: boolean; createdAt: string }>>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("adyapan-theme") || "dark";
     setTheme(savedTheme);
     document.documentElement.setAttribute("data-theme", savedTheme);
-    try {
-      const raw = localStorage.getItem("adyapan-user") || sessionStorage.getItem("adyapan-user");
-      if (raw) setUser(JSON.parse(raw) as AdyapanUser);
-    } catch {}
     const obs = new MutationObserver(() => {
       const t = document.documentElement.getAttribute("data-theme") || "dark";
       setTheme(t);
@@ -57,58 +42,12 @@ export default function EnginePage() {
     return () => obs.disconnect();
   }, []);
 
-  const handleThemeToggle = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    localStorage.setItem("adyapan-theme", next);
-    document.documentElement.setAttribute("data-theme", next);
-  };
-
-  const handleViewDashboard = () => {
-    try {
-      localStorage.setItem("dashboard-active-view", "dashboard");
-    } catch {}
-    router.push("/dashboard/user");
-  };
-  const handleViewTool = (tool: string) => {
-    if (tool === "interview-engine") router.push("/dashboard/interview/engine");
-    else if (tool === "interview") router.push("/dashboard/interview");
-    else router.push("/dashboard/user");
-  };
-  const handleViewProfile = () => {};
-  const handleAdyChat = () => {};
-  const handlePremium = () => {};
-  const handleViewSettings = () => {};
-
   return (
-    <div className="relative overflow-hidden" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
-      <DashboardTopNav
-        user={user}
-        theme={theme}
-        onThemeToggle={handleThemeToggle}
-        onViewProfile={handleViewProfile}
-        onAdyChat={handleAdyChat}
-        onViewDashboard={handleViewDashboard}
-        onViewTool={handleViewTool}
-        onMenuToggle={() => setSidebarOpen(p => !p)}
-        notifications={notifications}
-        setNotifications={setNotifications}
-        unreadCount={unreadCount}
-        onMarkAllRead={() => {}}
-        onClearAll={() => {}}
-        onPremium={handlePremium}
-        onViewSettings={handleViewSettings}
-      />
-      <DashboardSidebar
-        activeView="interview"
-        onViewDashboard={handleViewDashboard}
-        onViewTool={handleViewTool}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
-      <main className="dash-main relative z-10">
-        <EngineView theme={theme} />
-      </main>
+    <div
+      className="fixed inset-0 z-50 w-screen h-screen overflow-x-hidden overflow-y-auto"
+      style={{ background: "var(--bg-dark)", color: "var(--text-primary)" }}
+    >
+      <EngineView theme={theme} />
     </div>
   );
 }

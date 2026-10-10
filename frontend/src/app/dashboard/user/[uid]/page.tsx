@@ -1654,6 +1654,22 @@ function UserDashboardContent() {
       router.push("/dashboard/coding?tab=dsa");
       return;
     }
+    if (view === "interview-hr" || view === "hr-interview") {
+      router.push("/dashboard/interview/hr");
+      return;
+    }
+    if (view === "interview-technical" || view === "technical-interview") {
+      router.push("/dashboard/interview/technical");
+      return;
+    }
+    if (view === "interview-engine") {
+      router.push("/dashboard/interview/engine");
+      return;
+    }
+    if (view === "interview-hub" || view === "interview-mock" || view === "interview") {
+      router.push("/dashboard/interview");
+      return;
+    }
     if (view !== "community-messages") setOpenChatWith(null);
     if (view !== "community-browse") setCommunityProfileUserId(null);
     setActiveView(view);
@@ -1672,6 +1688,27 @@ function UserDashboardContent() {
   const handlePremium = () => router.push("/premium");
   const handleViewDashboard = () => navigateTo("dashboard");
   const handleAdyChat = () => navigateTo("ady-chat");
+
+  const isInterviewView =
+    activeView === "interview-engine" ||
+    activeView === "interview-technical" ||
+    activeView === "technical-interview" ||
+    activeView === "interview-hr" ||
+    activeView === "hr-interview";
+
+  if (isInterviewView) {
+    return (
+      <div className="fixed inset-0 z-50 w-screen h-screen overflow-x-hidden overflow-y-auto" style={{ background: "var(--bg-dark)", color: "var(--text-primary)" }}>
+        {activeView === "interview-engine" ? (
+          <HubErrorBoundary><EngineView theme={theme} /></HubErrorBoundary>
+        ) : activeView === "interview-technical" || activeView === "technical-interview" ? (
+          <HubErrorBoundary><TechnicalInterviewView theme={theme} /></HubErrorBoundary>
+        ) : (
+          <HubErrorBoundary><HRView theme={theme} /></HubErrorBoundary>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative overflow-hidden" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>

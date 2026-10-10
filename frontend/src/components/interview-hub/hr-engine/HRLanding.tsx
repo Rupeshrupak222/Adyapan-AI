@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Crown, Users, GraduationCap, Briefcase, Building2,
   Rocket, Target, Globe, Sliders, BookOpen, Search,
-  ChevronRight, ChevronLeft, ArrowRight, Play, Flame,
+  ChevronRight, ChevronLeft, ArrowRight, ArrowLeft, Play, Flame,
   Clock, Settings2, Check, AlertTriangle, Loader2,
   MessageSquare, Shield, Brain, Heart, RefreshCw, Award, Scale,
   Zap, Mic, MicOff, Volume2, Star, BarChart3,
@@ -173,6 +173,16 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-3 max-w-xl">
               <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="/dashboard/user"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-opacity hover:opacity-85 ${
+                    isDark
+                      ? "bg-slate-800/80 border-slate-700 text-slate-200"
+                      : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                  }`}
+                >
+                  <ArrowLeft size={13} /> Dashboard
+                </a>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider">
                   <Flame size={12} className="animate-pulse" /> AI HR Interview
                 </div>

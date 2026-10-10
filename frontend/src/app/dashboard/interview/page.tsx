@@ -1,21 +1,27 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "@/services/api";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { useUsageStore } from "@/store/usage-store";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { InterviewDomainSelector } from "@/components/interview-hub/shared/InterviewDomainSelector";
+import {
+  DashboardSidebar,
+  DashboardTopNav,
+  type AdyapanUser,
+} from "@/components/dashboard-shell";
+import { FloatingOrbs } from "@/components/ui/PremiumComponents";
 import Link from "next/link";
 import {
-  Mic, Code, Briefcase, User, Sparkles, ChevronRight, History,
-  BarChart3, ArrowLeft, Loader2, CheckCircle2, Flame, Award,
-  Clock, Calendar, Star, TrendingUp, AlertTriangle, Crown
+  Code, User, Sparkles, ChevronRight,
+  BarChart3, ArrowLeft, Loader2, CheckCircle2,
+  AlertTriangle, Crown
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,17 +41,6 @@ const interviewConfigSchema = z.object({
 
 type InterviewConfig = z.infer<typeof interviewConfigSchema>;
 
-interface SessionSummary {
-  id: string;
-  role: string;
-  company?: string;
-  type: string;
-  difficulty: string;
-  status: string;
-  evaluation?: { overallScore: number };
-  createdAt: string;
-}
-
 const INTERVIEW_TYPES = [
   {
     id: "technical" as const,
@@ -57,6 +52,7 @@ const INTERVIEW_TYPES = [
     bg: "rgba(6,182,212,0.08)",
     border: "rgba(6,182,212,0.2)",
     tags: ["Algorithms", "System Design", "Code Review"],
+    route: "/dashboard/interview/technical",
   },
   {
     id: "behavioral" as const,
@@ -68,28 +64,41 @@ const INTERVIEW_TYPES = [
     bg: "rgba(245,158,11,0.08)",
     border: "rgba(245,158,11,0.2)",
     tags: ["STAR Method", "Leadership", "Culture Fit"],
+    route: "/dashboard/interview/hr",
+  },
+  {
+    id: "general" as const,
+    title: "AI Interview Engine",
+    subtitle: "Comprehensive role & domain simulation",
+    description: "Multi-round simulated interview covering core technical skills, situational judgement, communication, and domain readiness.",
+    icon: Sparkles,
+    color: "#8b5cf6",
+    bg: "rgba(139,92,246,0.08)",
+    border: "rgba(139,92,246,0.2)",
+    tags: ["Full-Spectrum", "Domain Ready", "Adaptive AI"],
+    route: "/dashboard/interview/engine",
   },
 ];
 
-import { Suspense } from "react";
-
 function InterviewPageContent() {
+  useRequireAuth("USER");
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const completedSessionId = searchParams?.get("completed");
   const { isPremium } = useUserPlan();
   const openPremiumModal = useUsageStore((s) => s.openPremiumRequiredModal);
 
+  const [user, setUser] = useState<AdyapanUser | null>(null);
+  const [theme, setTheme] = useState("dark");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const [selectedType, setSelectedType] = useState<"technical" | "behavioral" | "general" | null>(null);
   const [showConfig, setShowConfig] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [completedSession, setCompletedSession] = useState<Record<string, unknown> | null>(null);
-
-  const orbs = useRef([
-    { x: "10%", y: "20%", size: 300, color: "rgba(245,158,11,0.06)", delay: 0 },
-    { x: "80%", y: "15%", size: 200, color: "rgba(6,182,212,0.05)", delay: 1 },
-    { x: "60%", y: "70%", size: 250, color: "rgba(16,185,129,0.04)", delay: 2 },
-  ]).current;
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<InterviewConfig>({
     resolver: zodResolver(interviewConfigSchema),
@@ -109,14 +118,62 @@ function InterviewPageContent() {
 
   const watchType = watch("type");
 
-  // Recent history
-  const { data: history, isLoading: historyLoading } = useQuery({
-    queryKey: ["interview-history"],
-    queryFn: async () => {
-      const res = await api.get("/interview/history");
-      return res.data.sessions as SessionSummary[];
-    },
-  });
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("adyapan-theme") || "dark";
+    setTheme(savedTheme);
+    document.documentElement.setAttribute("data-theme", savedTheme);
+
+    try {
+      const rawUser = localStorage.getItem("adyapan-user") || sessionStorage.getItem("adyapan-user");
+      if (rawUser) setUser(JSON.parse(rawUser));
+    } catch {}
+
+    api.get("/notifications?limit=5")
+      .then(res => {
+        setNotifications(res.data.notifications || []);
+        setUnreadCount(res.data.notifications?.filter((n: any) => !n.read).length || 0);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleThemeToggle = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    localStorage.setItem("adyapan-theme", next);
+    document.documentElement.setAttribute("data-theme", next);
+  };
+
+  const handleViewTool = (tool: string) => {
+    if (tool === "dashboard") {
+      router.push("/dashboard/user");
+      return;
+    }
+    if (tool === "settings") {
+      router.push("/dashboard/user/settings/account");
+      return;
+    }
+    if (tool === "support" || tool === "help-support" || tool === "help" || tool === "contact") {
+      router.push("/dashboard/user/settings/help");
+      return;
+    }
+    if (tool === "interview-technical" || tool === "technical-interview") {
+      router.push("/dashboard/interview/technical");
+      return;
+    }
+    if (tool === "interview-hr" || tool === "hr-interview") {
+      router.push("/dashboard/interview/hr");
+      return;
+    }
+    if (tool === "interview-engine") {
+      router.push("/dashboard/interview/engine");
+      return;
+    }
+    if (tool === "interview-hub" || tool === "interview") {
+      router.push("/dashboard/interview");
+      return;
+    }
+    router.push(`/dashboard/user?view=${tool}`);
+  };
 
   // Load completed session if redirected from room
   useEffect(() => {
@@ -153,7 +210,6 @@ function InterviewPageContent() {
 
       if (res.data.success) {
         const sessionId = res.data.session.id;
-        // Accept rules first (skip individual steps for streamlined flow)
         await api.post(`/interview/${sessionId}/accept-rules`);
         toast.success("Interview room ready! Launching...");
         router.push(`/dashboard/interview/room/${sessionId}`);
@@ -166,200 +222,126 @@ function InterviewPageContent() {
     }
   };
 
-  const completedSessions = (history || []).filter(s => s.evaluation?.overallScore);
-  const avgScore = completedSessions.length > 0
-    ? Math.round(completedSessions.reduce((acc, s) => acc + (s.evaluation?.overallScore || 0), 0) / completedSessions.length)
-    : null;
-
-  const scoreColor = (score: number) => score >= 80 ? "#10b981" : score >= 60 ? "#f59e0b" : "#ef4444";
-
   return (
-    <div className="min-h-screen bg-[#080710] text-white relative" style={{ fontFamily: "var(--font-sans)", maxWidth: "100vw", overflowX: "clip" }}>
-      {/* Animated background orbs */}
-      {orbs.map((orb, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full pointer-events-none"
-          style={{ left: orb.x, top: orb.y, width: orb.size, height: orb.size, background: orb.color, filter: "blur(80px)" }}
-          animate={{ scale: [1, 1.15, 1], opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 6 + orb.delay, repeat: Infinity, ease: "easeInOut", delay: orb.delay }}
-        />
-      ))}
+    <div
+      suppressHydrationWarning
+      className="relative overflow-hidden"
+      style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}
+    >
+      <FloatingOrbs />
 
-      {/* Header */}
-      <div className="relative z-10 border-b border-white/8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard/user" className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors">
-              <ArrowLeft size={16} />
-            </Link>
-            <div>
-              <h1 className="text-lg font-black">AI Interview Hub</h1>
-              <p className="text-xs text-white/40">Practice with AI. Get hired faster.</p>
-            </div>
-          </div>
-          <Link
-            href="/dashboard/interview/analytics"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold text-white/60 hover:bg-white/5 hover:text-white transition-all"
-          >
-            <BarChart3 size={13} /> Analytics
-          </Link>
-        </div>
-      </div>
+      {/* Top Navbar */}
+      <DashboardTopNav
+        user={user}
+        theme={theme}
+        onThemeToggle={handleThemeToggle}
+        onViewProfile={() => router.push("/dashboard/user?view=profile")}
+        onAdyChat={() => router.push("/dashboard/user?view=ady-chat")}
+        onViewDashboard={() => router.push("/dashboard/user")}
+        onViewTool={handleViewTool}
+        onMenuToggle={() => setSidebarOpen(prev => !prev)}
+        notifications={notifications}
+        setNotifications={setNotifications}
+        unreadCount={unreadCount}
+        onMarkAllRead={() => {}}
+        onClearAll={() => {}}
+        onPremium={() => router.push("/premium")}
+        onViewSettings={() => handleViewTool("settings")}
+      />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      {/* Dashboard Sidebar */}
+      <DashboardSidebar
+        activeView="interview"
+        onViewDashboard={() => router.push("/dashboard/user")}
+        onViewTool={handleViewTool}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
 
-        {/* Completed session banner */}
-        <AnimatePresence>
-          {completedSession && (
-            <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              className="p-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/8 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
-                  <CheckCircle2 size={20} className="text-emerald-500" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-emerald-400">Interview Completed!</h3>
-                  <p className="text-xs text-white/50 mt-0.5">
-                    {(completedSession as any).role} interview finished
-                    {(completedSession as any).evaluation?.overallScore
-                      ? ` — Score: ${(completedSession as any).evaluation?.overallScore}%`
-                      : ""}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {(completedSession as any).evaluation?.overallScore && (
-                  <button
-                    onClick={async () => {
-                      const { generateInterviewPDF } = await import("@/utils/interview-pdf");
-                      generateInterviewPDF({
-                        sessionId: (completedSession as any).id,
-                        role: (completedSession as any).role,
-                        type: (completedSession as any).type,
-                        difficulty: (completedSession as any).difficulty,
-                        language: "english",
-                        durationMinutes: 30,
-                        createdAt: (completedSession as any).createdAt,
-                        evaluation: (completedSession as any).evaluation,
-                      });
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold hover:bg-emerald-500/25 transition-colors"
-                  >
-                    Download PDF
-                  </button>
-                )}
-                <Link
-                  href="/dashboard/interview/analytics"
-                  className="px-3 py-1.5 rounded-lg bg-emerald-500 text-black text-[10px] font-bold hover:bg-emerald-400 transition-colors"
-                >
-                  View Full Report
-                </Link>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Main Workspace within Dashboard Layout */}
+      <main className="dash-main relative z-10 font-sans px-4 sm:px-6 md:px-8 py-6">
+        <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* Hero / Stats row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Hero banner */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="md:col-span-3 relative overflow-hidden p-7 rounded-3xl border border-amber-500/15 bg-gradient-to-br from-amber-500/10 via-orange-500/4 to-transparent"
-          >
-            <div className="relative z-10 space-y-3 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/12 text-amber-400 text-[10px] font-bold rounded-full uppercase tracking-widest border border-amber-500/20">
-                <Flame size={11} className="animate-pulse" /> AI-Powered Interview Coach
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black leading-tight">
-                Practice Like It&apos;s The{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
-                  Real Thing
-                </span>
-              </h2>
-              <p className="text-sm text-white/50 leading-relaxed">
-                Get grilled by our AI interviewer, receive instant evaluation, and download your performance report — all for free.
-              </p>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {["Live webcam proctoring", "Voice & text answers", "Code editor", "PDF reports"].map(f => (
-                  <span key={f} className="text-[10px] px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-white/50">{f}</span>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Stats card */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="p-5 rounded-3xl border border-white/8 bg-white/3 flex flex-col justify-between"
-          >
-            {historyLoading ? (
-              <div className="flex items-center justify-center h-full py-6">
-                <Loader2 size={20} className="animate-spin text-amber-500" />
-              </div>
-            ) : (
-              <>
-                <div>
-                  <div className="text-[10px] text-white/30 font-bold uppercase tracking-wider mb-1">Your Stats</div>
-                  <div className="text-3xl font-black text-amber-400">{history?.length ?? 0}</div>
-                  <div className="text-xs text-white/40">total interviews</div>
-                </div>
-                {avgScore !== null && (
-                  <div className="mt-4">
-                    <div className="text-[10px] text-white/30 font-bold uppercase tracking-wider mb-1">Avg Score</div>
-                    <div className="text-2xl font-black" style={{ color: scoreColor(avgScore) }}>{avgScore}%</div>
-                    <div className="mt-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${avgScore}%`, background: scoreColor(avgScore) }} />
-                    </div>
+          {/* Completed session banner */}
+          <AnimatePresence>
+            {completedSession && (
+              <motion.div
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                className="p-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+                    <CheckCircle2 size={20} className="text-emerald-500" />
                   </div>
-                )}
-                <Link
-                  href="/dashboard/interview/analytics"
-                  className="mt-4 text-[10px] text-amber-500 font-bold flex items-center gap-1 hover:gap-2 transition-all"
-                >
-                  View Analytics <ChevronRight size={11} />
-                </Link>
-              </>
+                  <div>
+                    <h3 className="text-sm font-bold text-emerald-400">Interview Completed!</h3>
+                    <p className="text-xs text-white/50 mt-0.5">
+                      {(completedSession as any).role} interview finished
+                      {(completedSession as any).evaluation?.overallScore
+                        ? ` — Score: ${(completedSession as any).evaluation?.overallScore}%`
+                        : ""}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/dashboard/interview/analytics"
+                    className="px-3 py-1.5 rounded-lg bg-emerald-500 text-black text-xs font-bold hover:bg-emerald-400 transition-colors"
+                  >
+                    View Report
+                  </Link>
+                </div>
+              </motion.div>
             )}
-          </motion.div>
-        </div>
+          </AnimatePresence>
 
-        {/* Interview type cards */}
-        <AnimatePresence mode="wait">
-          {!showConfig ? (
-            <motion.div
-              key="type-select"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              className="space-y-3"
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-amber-500" />
-                <h3 className="text-sm font-bold">Choose Interview Type</h3>
+          {/* Clean Dashboard Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/5">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider mb-2">
+                <Sparkles size={12} className="animate-pulse" /> AI Interview Hub
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>
+                Choose Your Interview Practice
+              </h1>
+              <p className="text-xs sm:text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                Practice coding, system design, HR behavioral rounds, or full-domain simulated interviews with AI proctoring.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/interview/analytics"
+              className="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 hover:border-amber-500/30 bg-white/5 hover:bg-white/10 text-xs font-bold transition-all text-white/90 hover:text-white"
+            >
+              <BarChart3 size={15} className="text-amber-500" />
+              <span>Interview Analytics</span>
+            </Link>
+          </div>
+
+          {/* Cards & Config */}
+          <AnimatePresence mode="wait">
+            {!showConfig ? (
+              <motion.div
+                key="cards-grid"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2"
+              >
                 {INTERVIEW_TYPES.map((type, i) => (
                   <motion.div
                     key={type.id}
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.08 }}
-                    onClick={() => handleTypeSelect(type.id)}
-                    className="group p-6 rounded-2xl border cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all relative overflow-hidden"
+                    onClick={() => router.push(type.route)}
+                    className="group p-6 rounded-2xl border cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all relative overflow-hidden flex flex-col justify-between"
                     style={{ background: type.bg, borderColor: type.border }}
                   >
-                    {/* Hover shimmer */}
                     <div
                       className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                      style={{ background: `radial-gradient(ellipse at top left, ${type.color}10, transparent 60%)` }}
+                      style={{ background: `radial-gradient(ellipse at top left, ${type.color}15, transparent 60%)` }}
                     />
                     <div className="relative z-10 space-y-4">
                       <div
@@ -370,275 +352,227 @@ function InterviewPageContent() {
                       </div>
                       <div>
                         <h3 className="font-extrabold text-base" style={{ color: type.color }}>{type.title}</h3>
-                        <p className="text-[11px] text-white/40 mt-0.5">{type.subtitle}</p>
+                        <p className="text-[11px] text-white/60 mt-0.5">{type.subtitle}</p>
                       </div>
-                      <p className="text-xs text-white/55 leading-relaxed">{type.description}</p>
+                      <p className="text-xs text-white/80 leading-relaxed">{type.description}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {type.tags.map(tag => (
-                          <span key={tag} className="text-[9px] px-2 py-0.5 rounded-full font-bold border" style={{ borderColor: `${type.color}30`, color: `${type.color}CC`, background: `${type.color}0A` }}>
+                          <span
+                            key={tag}
+                            className="text-[9px] px-2 py-0.5 rounded-full font-bold border"
+                            style={{ borderColor: `${type.color}30`, color: `${type.color}E6`, background: `${type.color}0D` }}
+                          >
                             {tag}
                           </span>
                         ))}
                       </div>
-                      <div className="flex items-center gap-1 text-[11px] font-bold pt-1" style={{ color: type.color }}>
-                        Configure & Start <ChevronRight size={13} className="group-hover:translate-x-1 transition-transform" />
-                      </div>
+                    </div>
+                    <div className="relative z-10 pt-4 flex items-center justify-between border-t border-white/5 mt-5">
+                      <span className="text-[11px] font-bold flex items-center gap-1" style={{ color: type.color }}>
+                        Start Full Interview <ChevronRight size={13} className="group-hover:translate-x-1 transition-transform" />
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTypeSelect(type.id);
+                        }}
+                        className="text-[10px] px-2.5 py-1 rounded-lg border border-white/10 hover:border-white/25 text-white/70 hover:text-white transition-colors"
+                      >
+                        Custom Setup
+                      </button>
                     </div>
                   </motion.div>
                 ))}
-              </div>
-            </motion.div>
-          ) : (
-            /* Configuration Form */
-            <motion.div
-              key="config-form"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              className="space-y-4"
-            >
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowConfig(false)}
-                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors"
-                >
-                  <ArrowLeft size={15} />
-                </button>
-                <div>
-                  <h3 className="text-base font-bold">
-                    Configure {INTERVIEW_TYPES.find(t => t.id === selectedType)?.title}
-                  </h3>
-                  <p className="text-xs text-white/40">Set your preferences to begin</p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="p-6 rounded-2xl border border-white/8 bg-white/3 space-y-5">
-                  {/* Domain Selector */}
-                  <div className="space-y-1.5 pb-2 border-b border-white/5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-                      <Sparkles size={12} className="text-amber-500" />
-                      Select Domain / Field:
-                    </label>
-                    <InterviewDomainSelector
-                      selectedRole={watch("role")}
-                      onSelect={(d) => {
-                        setValue("role", d.role);
-                        if (d.tech) setValue("technology", d.tech);
-                      }}
-                      theme="dark"
-                      showTechDetails={true}
-                      maxHeight="max-h-36"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Role */}
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Job Role *</label>
-                      <input
-                        {...register("role")}
-                        className="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-amber-500/40 transition-colors"
-                        placeholder="e.g. Software Engineer"
-                      />
-                      {errors.role && <p className="text-[9px] text-red-400 mt-1">{errors.role.message}</p>}
-                    </div>
-
-                    {/* Company */}
-                    {watchType !== "behavioral" && (
-                      <div>
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Target Company</label>
-                        <input
-                          {...register("company")}
-                          className="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-amber-500/40 transition-colors"
-                          placeholder="Google, Microsoft, etc."
-                        />
-                      </div>
-                    )}
-
-                    {/* Technology (technical only) */}
-                    {watchType === "technical" && (
-                      <div>
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Technology Stack</label>
-                        <input
-                          {...register("technology")}
-                          className="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-amber-500/40 transition-colors"
-                          placeholder="React, Node.js, Python..."
-                        />
-                      </div>
-                    )}
-
-                    {/* Difficulty */}
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Difficulty</label>
-                      <select
-                        {...register("difficulty")}
-                        className="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/40 cursor-pointer"
-                      >
-                        <option value="easy">Easy</option>
-                        <option value="medium">Medium</option>
-                        <option value="hard">Hard</option>
-                      </select>
-                    </div>
-
-                    {/* Experience */}
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Experience Level</label>
-                      <select
-                        {...register("experience")}
-                        className="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/40 cursor-pointer"
-                      >
-                        <option value="entry">Entry Level</option>
-                        <option value="mid">Mid Level</option>
-                        <option value="senior">Senior</option>
-                      </select>
-                    </div>
-
-                    {/* Duration */}
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Duration</label>
-                      <select
-                        {...register("durationMinutes", { valueAsNumber: true })}
-                        className="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/40 cursor-pointer"
-                      >
-                        {[15, 30, 45, 60].map(m => <option key={m} value={m}>{m} minutes</option>)}
-                      </select>
-                    </div>
-
-                    {/* Language */}
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Language</label>
-                      <select
-                        {...register("language")}
-                        className="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/40 cursor-pointer"
-                      >
-                        <option value="english">English</option>
-                        <option value="hindi">Hindi</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Toggles */}
-                  <div className="flex items-center gap-6 pt-1">
-                    <label className="flex items-center gap-2.5 cursor-pointer">
-                      <div
-                        onClick={() => setValue("aiVoiceEnabled", !watch("aiVoiceEnabled"))}
-                        className={`w-10 h-5 rounded-full transition-colors cursor-pointer relative ${watch("aiVoiceEnabled") ? "bg-amber-500" : "bg-white/10"}`}
-                      >
-                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${watch("aiVoiceEnabled") ? "translate-x-5" : "translate-x-0.5"}`} />
-                      </div>
-                      <span className="text-xs text-white/60">AI Voice Enabled</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 cursor-pointer">
-                      <div
-                        onClick={() => setValue("videoEnabled", !watch("videoEnabled"))}
-                        className={`w-10 h-5 rounded-full transition-colors cursor-pointer relative ${watch("videoEnabled") ? "bg-amber-500" : "bg-white/10"}`}
-                      >
-                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${watch("videoEnabled") ? "translate-x-5" : "translate-x-0.5"}`} />
-                      </div>
-                      <span className="text-xs text-white/60">Video Interview</span>
-                    </label>
-                  </div>
-
-                  {/* Notice */}
-                  <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                    <AlertTriangle size={13} className="text-amber-500 mt-0.5 shrink-0" />
-                    <p className="text-[10px] text-amber-400/80 leading-relaxed">
-                      The interview room uses your camera and microphone for proctoring. AI will monitor for violations like tab switching and multiple faces. By starting, you consent to this.
-                    </p>
-                  </div>
-
-                  <div className="flex gap-3 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setShowConfig(false)}
-                      className="px-5 py-2.5 rounded-xl border border-white/10 text-xs font-bold text-white/50 hover:bg-white/5 transition-colors"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={launching}
-                      className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {launching ? (
-                        <><Loader2 size={15} className="animate-spin" /> Launching Interview Room...</>
-                      ) : (
-                        <><Sparkles size={15} /> Launch Interview Room {!isPremium && <span className="ml-1 text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}</>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Recent history */}
-        {!showConfig && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-3"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <History size={15} className="text-amber-500" />
-                <h3 className="text-sm font-bold">Recent Interviews</h3>
-              </div>
-              <Link href="/dashboard/interview/analytics" className="text-[10px] text-amber-500 font-bold hover:text-amber-400 transition-colors flex items-center gap-1">
-                View All <ChevronRight size={11} />
-              </Link>
-            </div>
-
-            {historyLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 size={20} className="animate-spin text-amber-500" />
-              </div>
-            ) : !history || history.length === 0 ? (
-              <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
-                <Mic className="w-8 h-8 mx-auto mb-2 text-white/15" />
-                <p className="text-sm text-white/25">No interviews yet. Start your first one above!</p>
-              </div>
+              </motion.div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {history.slice(0, 6).map(session => (
-                  <div
-                    key={session.id}
-                    className="p-4 rounded-xl border border-white/8 bg-white/3 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/dashboard/interview/analytics`)}
+              /* Custom Configuration Form */
+              <motion.div
+                key="config-form"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                className="space-y-4 pt-2"
+              >
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowConfig(false)}
+                    className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors text-white"
                   >
-                    <div className="min-w-0 flex-1 pr-2">
-                      <div className="text-xs font-bold truncate">{session.role}{session.company && ` @ ${session.company}`}</div>
-                      <div className="text-[10px] text-white/40 capitalize mt-0.5 flex items-center gap-1.5">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: session.type === "technical" ? "#06b6d4" : session.type === "behavioral" ? "#f59e0b" : "#10b981" }} />
-                        {session.type} · {session.difficulty}
+                    <ArrowLeft size={15} />
+                  </button>
+                  <div>
+                    <h3 className="text-base font-bold text-white">
+                      Configure {INTERVIEW_TYPES.find(t => t.id === selectedType)?.title}
+                    </h3>
+                    <p className="text-xs text-white/40">Set your preferences to begin</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.03] space-y-5">
+                    {/* Domain Selector */}
+                    <div className="space-y-1.5 pb-2 border-b border-white/5">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+                        <Sparkles size={12} className="text-amber-500" />
+                        Select Domain / Field:
+                      </label>
+                      <InterviewDomainSelector
+                        selectedRole={watch("role")}
+                        onSelect={(d) => {
+                          setValue("role", d.role);
+                          if (d.tech) setValue("technology", d.tech);
+                        }}
+                        theme="dark"
+                        showTechDetails={true}
+                        maxHeight="max-h-36"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Role */}
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Job Role *</label>
+                        <input
+                          {...register("role")}
+                          className="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-amber-500/40 transition-colors"
+                          placeholder="e.g. Software Engineer"
+                        />
+                        {errors.role && <p className="text-[9px] text-red-400 mt-1">{errors.role.message}</p>}
                       </div>
-                      <div className="text-[9px] text-white/25 mt-0.5 flex items-center gap-1">
-                        <Calendar size={9} />
-                        {new Date(session.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+
+                      {/* Company */}
+                      {watchType !== "behavioral" && (
+                        <div>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Target Company</label>
+                          <input
+                            {...register("company")}
+                            className="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-amber-500/40 transition-colors"
+                            placeholder="Google, Microsoft, etc."
+                          />
+                        </div>
+                      )}
+
+                      {/* Technology (technical only) */}
+                      {watchType === "technical" && (
+                        <div>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Technology Stack</label>
+                          <input
+                            {...register("technology")}
+                            className="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-amber-500/40 transition-colors"
+                            placeholder="React, Node.js, Python..."
+                          />
+                        </div>
+                      )}
+
+                      {/* Difficulty */}
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Difficulty</label>
+                        <select
+                          {...register("difficulty")}
+                          className="w-full mt-1 bg-neutral-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/40 cursor-pointer"
+                        >
+                          <option value="easy">Easy</option>
+                          <option value="medium">Medium</option>
+                          <option value="hard">Hard</option>
+                        </select>
+                      </div>
+
+                      {/* Experience */}
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Experience Level</label>
+                        <select
+                          {...register("experience")}
+                          className="w-full mt-1 bg-neutral-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/40 cursor-pointer"
+                        >
+                          <option value="entry">Entry Level</option>
+                          <option value="mid">Mid Level</option>
+                          <option value="senior">Senior</option>
+                        </select>
+                      </div>
+
+                      {/* Duration */}
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Duration</label>
+                        <select
+                          {...register("durationMinutes", { valueAsNumber: true })}
+                          className="w-full mt-1 bg-neutral-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/40 cursor-pointer"
+                        >
+                          {[15, 30, 45, 60].map(m => <option key={m} value={m}>{m} minutes</option>)}
+                        </select>
+                      </div>
+
+                      {/* Language */}
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Language</label>
+                        <select
+                          {...register("language")}
+                          className="w-full mt-1 bg-neutral-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/40 cursor-pointer"
+                        >
+                          <option value="english">English</option>
+                          <option value="hindi">Hindi</option>
+                        </select>
                       </div>
                     </div>
-                    {session.evaluation?.overallScore ? (
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-[11px] shrink-0"
-                        style={{ background: `${scoreColor(session.evaluation.overallScore)}20`, color: scoreColor(session.evaluation.overallScore) }}
+
+                    {/* Toggles */}
+                    <div className="flex items-center gap-6 pt-1">
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <div
+                          onClick={() => setValue("aiVoiceEnabled", !watch("aiVoiceEnabled"))}
+                          className={`w-10 h-5 rounded-full transition-colors cursor-pointer relative ${watch("aiVoiceEnabled") ? "bg-amber-500" : "bg-white/10"}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${watch("aiVoiceEnabled") ? "translate-x-5" : "translate-x-0.5"}`} />
+                        </div>
+                        <span className="text-xs text-white/60">AI Voice Enabled</span>
+                      </label>
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <div
+                          onClick={() => setValue("videoEnabled", !watch("videoEnabled"))}
+                          className={`w-10 h-5 rounded-full transition-colors cursor-pointer relative ${watch("videoEnabled") ? "bg-amber-500" : "bg-white/10"}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${watch("videoEnabled") ? "translate-x-5" : "translate-x-0.5"}`} />
+                        </div>
+                        <span className="text-xs text-white/60">Video Interview</span>
+                      </label>
+                    </div>
+
+                    {/* Notice */}
+                    <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
+                      <AlertTriangle size={13} className="text-amber-500 mt-0.5 shrink-0" />
+                      <p className="text-[10px] text-amber-400/80 leading-relaxed">
+                        The interview room uses your camera and microphone for proctoring. AI will monitor for violations like tab switching and multiple faces. By starting, you consent to this.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowConfig(false)}
+                        className="px-5 py-2.5 rounded-xl border border-white/10 text-xs font-bold text-white/50 hover:bg-white/5 transition-colors"
                       >
-                        {session.evaluation.overallScore}%
-                      </div>
-                    ) : (
-                      <span className="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
-                        {session.status}
-                      </span>
-                    )}
+                        Back
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={launching}
+                        className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {launching ? (
+                          <><Loader2 size={15} className="animate-spin" /> Launching Interview Room...</>
+                        ) : (
+                          <><Sparkles size={15} /> Launch Interview Room {!isPremium && <span className="ml-1 text-[8px] bg-black/20 px-1.5 py-0.5 rounded-full font-black flex items-center gap-0.5"><Crown size={8} /> PRO</span>}</>
+                        )}
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </form>
+              </motion.div>
             )}
-          </motion.div>
-        )}
-      </div>
+          </AnimatePresence>
+
+        </div>
+      </main>
     </div>
   );
 }

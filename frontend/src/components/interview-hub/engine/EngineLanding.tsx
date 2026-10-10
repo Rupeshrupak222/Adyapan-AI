@@ -11,7 +11,7 @@ import { useUsageStore } from "@/store/usage-store";
 import {
   User, Code, Terminal, LayoutGrid, Users, Crown, GraduationCap,
   School, Briefcase, Sliders, Search, ChevronRight, ChevronLeft,
-  ArrowRight, Play, History as HistoryIcon, BarChart3, Sparkles,
+  ArrowRight, ArrowLeft, Play, History as HistoryIcon, BarChart3, Sparkles,
   Volume2, FileText, Clock, Flame, Target, Building2, Settings2,
   Loader2, Check, AlertTriangle, RotateCcw, Mic, MicOff, Zap,
   Brain, Code2, Server, Monitor, Layers, Cpu, FlaskConical,
@@ -285,6 +285,16 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-3 max-w-xl">
               <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="/dashboard/user"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-opacity hover:opacity-85 ${
+                    isDark
+                      ? "bg-slate-800/80 border-slate-700 text-slate-200"
+                      : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                  }`}
+                >
+                  <ArrowLeft size={13} /> Dashboard
+                </a>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider">
                   <Flame size={12} className="animate-pulse" /> AI Interview Engine
                 </div>

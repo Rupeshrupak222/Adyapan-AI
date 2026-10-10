@@ -839,7 +839,7 @@ export default function TechnicalInterviewView({
   // RESTORED ORIGINAL HIGHLY-RATED SETUP LANDING WIZARD TEMPLATE
   return (
     <div
-      className={`h-[calc(100vh-76px)] overflow-y-auto p-4 md:p-6 transition-colors ${
+      className={`min-h-screen overflow-y-auto p-4 md:p-6 transition-colors ${
         isDark ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
       }`}
     >
@@ -855,6 +855,16 @@ export default function TechnicalInterviewView({
           <div className="relative z-10 flex items-center justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="/dashboard/user"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border transition-opacity hover:opacity-85 ${
+                    isDark
+                      ? "bg-slate-800/80 border-slate-700 text-slate-200"
+                      : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                  }`}
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
+                </a>
                 <span
                   className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border ${
                     isDark

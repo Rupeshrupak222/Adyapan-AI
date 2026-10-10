@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Pause,
@@ -16,6 +16,8 @@ import {
   Loader2,
   AlertCircle,
   PictureInPicture,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { InterviewerCard } from "./InterviewerCard";
 import { CandidateCard } from "./CandidateCard";
@@ -102,6 +104,37 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
   const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
   const [isFloatingPIP, setIsFloatingPIP] = useState(false);
   const [mobileTab, setMobileTab] = useState<"stage" | "transcript">("stage");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+
+    // Attempt auto-fullscreen on mount if supported
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } catch {}
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    try {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      } else {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    } catch {}
+  };
 
   const handleManualTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,10 +149,10 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
 
   return (
     <div
-      className={`relative h-[calc(100dvh-76px)] min-h-[520px] w-full flex flex-col justify-between p-2.5 sm:p-3.5 select-none overflow-hidden transition-colors duration-300 ${
+      className={`fixed inset-0 z-[100] h-[100dvh] h-screen w-screen flex flex-col justify-between p-2.5 sm:p-3.5 select-none overflow-hidden transition-colors duration-300 ${
         isDark
-          ? "bg-slate-950 text-slate-100"
-          : "bg-slate-100/90 text-slate-900"
+          ? "bg-[#060611] text-slate-100"
+          : "bg-slate-100 text-slate-900"
       }`}
     >
       {/* 1. Header Bar */}
@@ -226,6 +259,29 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Live Voice</span>
           </div>
+
+          <button
+            onClick={toggleFullscreen}
+            type="button"
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            className={`flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1 rounded-xl border text-[11px] sm:text-xs font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+              isDark
+                ? "bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700"
+                : "bg-white border-slate-200 text-slate-700 hover:text-slate-900 shadow-sm"
+            }`}
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize2 className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-purple-400" />
+                <span className="hidden md:inline">Exit Fullscreen</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-purple-400" />
+                <span className="hidden md:inline">Fullscreen</span>
+              </>
+            )}
+          </button>
         </div>
       </header>
 

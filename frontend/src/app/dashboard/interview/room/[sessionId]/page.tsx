@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import {
   Mic, MicOff, Video, VideoOff, Send, AlertTriangle, Clock,
   Loader2, ChevronRight, X, Code, MessageSquare, BarChart3,
-  CheckCircle2, XCircle, Shield, PhoneOff, Volume2
+  CheckCircle2, XCircle, Shield, PhoneOff, Volume2, Maximize2, Minimize2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -81,6 +81,37 @@ export default function InterviewRoomPage() {
   const [activePanel, setActivePanel] = useState<"chat" | "code">("chat");
   const [mobileTab, setMobileTab] = useState<"interview" | "video">("interview");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fullscreen
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } catch {}
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    try {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      } else {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    } catch {}
+  };
 
   // Waveform animation
   const [waveHeights, setWaveHeights] = useState([4, 6, 8, 12, 8, 6, 4]);
@@ -551,7 +582,7 @@ export default function InterviewRoomPage() {
   const isTimeCritical = timeLeft < 300;
 
   return (
-    <div className="min-h-screen bg-[#060611] text-white flex flex-col" style={{ fontFamily: "var(--font-sans)" }}>
+    <div className="fixed inset-0 z-50 h-screen h-[100dvh] w-screen bg-[#060611] text-white flex flex-col overflow-hidden select-none" style={{ fontFamily: "var(--font-sans)" }}>
       {/* ── TOP BAR ─────────────────────────── */}
       <div className={`flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/8 ${urgency > 0.7 ? "bg-red-950/30" : "bg-[#0a0a1a]"} shrink-0 gap-2`}>
         {/* Session info */}
@@ -602,7 +633,7 @@ export default function InterviewRoomPage() {
           </div>
         </div>
 
-        {/* Proctoring + end */}
+        {/* Proctoring + Fullscreen + end */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${urgency > 0.5 ? "bg-red-500/10 border border-red-500/20" : "bg-white/5 border border-white/10"}`}>
             <AlertTriangle size={11} className={urgency > 0.5 ? "text-red-400" : "text-white/40"} />
@@ -610,9 +641,29 @@ export default function InterviewRoomPage() {
               {violationPoints}/{session.violationThreshold}
             </span>
           </div>
+
+          <button
+            onClick={toggleFullscreen}
+            type="button"
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-[11px] font-bold transition-all cursor-pointer"
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize2 size={12} className="text-amber-400" />
+                <span className="hidden sm:inline">Exit Fullscreen</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 size={12} className="text-amber-400" />
+                <span className="hidden sm:inline">Fullscreen</span>
+              </>
+            )}
+          </button>
+
           <button
             onClick={handleEndInterview}
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-[11px] font-bold hover:bg-red-500/25 transition-colors"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-[11px] font-bold hover:bg-red-500/25 transition-colors cursor-pointer"
           >
             <PhoneOff size={12} />
             <span className="hidden sm:inline">End Interview</span>
