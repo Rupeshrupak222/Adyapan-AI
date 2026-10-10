@@ -188,6 +188,18 @@ const BRAND_SVGS: Record<string, string> = {
   freshworks: "https://upload.wikimedia.org/wikipedia/commons/0/07/Freshworks_Logo.svg",
 };
 
+// Clearbit's logo API was sunset (Dec 2025) — every logo.clearbit.com URL is now
+// a dead link. Treat any stored Clearbit URL as missing so it gets re-resolved.
+const STALE_LOGO_HOSTS = ["logo.clearbit.com"];
+
+function isStaleLogoUrl(url: string): boolean {
+  return STALE_LOGO_HOSTS.some((host) => url.includes(host));
+}
+
+function googleFavicon(domain: string): string {
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+}
+
 /**
  * Automatically resolves and returns an official logo URL for any company name or apply link.
  */
@@ -196,7 +208,12 @@ export function autoResolveCompanyLogo(
   existingLogo?: string | null,
   applyUrl?: string | null
 ): string {
-  if (existingLogo && existingLogo.trim().startsWith("http") && !existingLogo.includes("example.com")) {
+  if (
+    existingLogo &&
+    existingLogo.trim().startsWith("http") &&
+    !existingLogo.includes("example.com") &&
+    !isStaleLogoUrl(existingLogo)
+  ) {
     return existingLogo.trim();
   }
 
@@ -217,7 +234,7 @@ export function autoResolveCompanyLogo(
 
   if (!companyName || !companyName.trim()) {
     if (applyDomain) {
-      return `https://logo.clearbit.com/${applyDomain}`;
+      return googleFavicon(applyDomain);
     }
     return "";
   }
@@ -255,7 +272,7 @@ export function autoResolveCompanyLogo(
   }
 
   if (domain) {
-    return `https://logo.clearbit.com/${domain}`;
+    return googleFavicon(domain);
   }
 
   return "";

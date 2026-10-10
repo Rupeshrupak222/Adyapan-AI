@@ -1390,7 +1390,16 @@ export class JobSearchService {
       recentlyViewed = !!viewRecord;
     }
 
-    return { ...job, saved, recentlyViewed };
+    // Re-resolve logo at read time so stale/dead stored URLs (e.g. sunset
+    // Clearbit links) never reach the frontend, matching the list endpoints.
+    const mapped = mapDiscoveryJobToListing(job);
+    return {
+      ...job,
+      logoUrl: mapped?.logoUrl || job.logoUrl || null,
+      logo: mapped?.logo || job.logoUrl || null,
+      saved,
+      recentlyViewed,
+    };
   }
 
   // ─── RECOMMENDATION ENGINE ────────────────────────────────────────────────

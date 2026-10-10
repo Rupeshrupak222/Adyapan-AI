@@ -1252,6 +1252,14 @@ export default function CompanyLogo({
 
   const { key, domain } = resolveCompanyInfo(name, companyId);
 
+  // Re-run the fallback chain whenever the candidate source list changes
+  // (new explicit logo arrives, or background discovery resolves a logo),
+  // otherwise a previously exhausted chain stays stuck on the letter badge.
+  useEffect(() => {
+    setSrcIndex(0);
+    setImgError(false);
+  }, [explicitLogo, autoLogo]);
+
   // Automated background logo discovery for unmapped or arbitrary company names
   useEffect(() => {
     if (explicitLogo || COMPANY_INLINE_SVGS[key]) return;
@@ -1260,7 +1268,10 @@ export default function CompanyLogo({
     try {
       if (typeof window !== "undefined") {
         const cached = localStorage.getItem(cacheKey);
-        if (cached) {
+        // Purge entries cached from the sunset Clearbit API (dead links).
+        if (cached && cached.includes("logo.clearbit.com")) {
+          localStorage.removeItem(cacheKey);
+        } else if (cached) {
           setAutoLogo(cached);
           return;
         }
@@ -1271,7 +1282,7 @@ export default function CompanyLogo({
     fetch(`/api/company-logo?name=${encodeURIComponent(name)}&key=${encodeURIComponent(key)}`)
       .then(res => res.json())
       .then(data => {
-        if (active && data?.logoUrl) {
+        if (active && data?.logoUrl && !String(data.logoUrl).includes("logo.clearbit.com")) {
           setAutoLogo(data.logoUrl);
           try {
             if (typeof window !== "undefined") {

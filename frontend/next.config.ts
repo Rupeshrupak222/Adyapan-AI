@@ -61,7 +61,11 @@ const nextConfig: NextConfig = {
               "child-src 'self' blob:",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
               "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
-              "img-src 'self' data: blob: https://images.unsplash.com https://api.dicebear.com https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://upload.wikimedia.org https://cdn.jsdelivr.net",
+              // Logo sources: CompanyLogo fallback chain (favicon services,
+              // brand SVG CDNs) + job-scraped company logo CDNs (LinkedIn,
+              // Indeed, Naukri, Internshala). Without these hosts the logo
+              // <img> chain is CSP-blocked and every job falls back to badge.
+              "img-src 'self' data: blob: https://images.unsplash.com https://api.dicebear.com https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://upload.wikimedia.org https://cdn.jsdelivr.net https://www.google.com https://icon.horse https://icons.duckduckgo.com https://unavatar.io https://logo.clearbit.com https://*.licdn.com https://img.naukimg.com https://*.naukimg.com https://d2zcp97n3ws9qv.cloudfront.net https://www.indeed.com https://img.naukri.com https://*.naukriimg.com https://internshala.com https://*.internshala.com https://*.ingeeks.in",
               "connect-src 'self' http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* https://*.up.railway.app wss://*.up.railway.app https://*.vercel.app https://cdn.jsdelivr.net https://api.razorpay.com https://lumberjack.razorpay.com",
               "media-src 'self'",
               "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",

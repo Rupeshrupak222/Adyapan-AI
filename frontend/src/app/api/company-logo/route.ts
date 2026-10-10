@@ -15,7 +15,7 @@ const LEGAL_TERMS = [
 ];
 
 function sanitizeCompanyName(raw: string): { slug: string; cleanName: string } {
-  let cleanName = (raw || "").trim();
+  const cleanName = (raw || "").trim();
   const lower = cleanName.toLowerCase();
   
   // Remove legal suffix regex
@@ -25,6 +25,40 @@ function sanitizeCompanyName(raw: string): { slug: string; cleanName: string } {
   
   const slug = words.join("").toLowerCase();
   return { slug: slug || lower.replace(/[^a-z0-9]/g, ""), cleanName };
+}
+
+// Host suffixes allowed by the CSP img-src directive. Images from any other
+// host would be blocked by the browser, so we skip them here and let the
+// frontend fall back to the next candidate source.
+const ALLOWED_IMAGE_HOST_SUFFIXES = [
+  "google.com",
+  "icon.horse",
+  "duckduckgo.com",
+  "unavatar.io",
+  "clearbit.com",
+  "upload.wikimedia.org",
+  "cdn.jsdelivr.net",
+  "licdn.com",
+  "naukimg.com",
+  "naukriimg.com",
+  "img.naukri.com",
+  "internshala.com",
+  "ingeeks.in",
+  "d2zcp97n3ws9qv.cloudfront.net",
+  "avatars.githubusercontent.com",
+];
+
+function isCspAllowedImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    return ALLOWED_IMAGE_HOST_SUFFIXES.some(
+      (suffix) => host === suffix || host.endsWith(`.${suffix}`)
+    );
+  } catch {
+    return false;
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -64,7 +98,12 @@ export async function GET(req: NextRequest) {
       });
       if (ddgRes.ok) {
         const ddgData = await ddgRes.json();
-        if (ddgData.Image && typeof ddgData.Image === "string" && ddgData.Image.startsWith("http")) {
+        if (
+          ddgData.Image &&
+          typeof ddgData.Image === "string" &&
+          ddgData.Image.startsWith("http") &&
+          isCspAllowedImageUrl(ddgData.Image)
+        ) {
           const result = { logoUrl: ddgData.Image, domain: candidateDomains[0] };
           logoCache.set(cacheKey, result);
           return NextResponse.json({ success: true, ...result, source: "duckduckgo" });
@@ -105,9 +144,9 @@ export async function GET(req: NextRequest) {
     logoCache.set(cacheKey, defaultResult);
 
     return NextResponse.json({ success: true, ...defaultResult, source: "fallback_domain" });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error?.message || "Failed to resolve company logo" },
+      { success: false, error: error instanceof Error ? error.message : "Failed to resolve company logo" },
       { status: 500 }
     );
   }
