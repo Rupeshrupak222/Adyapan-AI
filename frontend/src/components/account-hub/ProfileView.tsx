@@ -42,12 +42,6 @@ interface ProfileData {
   user?: { id: string; name: string; email: string; role: string; createdAt: string };
 }
 
-const DOMAINS = [
-  "Artificial Intelligence", "Machine Learning", "Data Science", "Cybersecurity",
-  "Web Development", "Cloud Computing", "UI/UX Design", "Mobile Development",
-  "DevOps", "Blockchain", "IoT"
-];
-
 // ─── Animations ────────────────────────────────────────────────────────────
 const cardHover = {
   rest: { y: 0, scale: 1, boxShadow: "0 10px 30px -15px rgba(0,0,0,0.3)" },
@@ -199,23 +193,13 @@ export function ProfileView() {
   const [f, setF] = useState({
     username: "", phone: "", location: "", aboutMe: "",
     college: "", branch: "", degree: "", graduationYear: "",
-    skills: "", interestedDomains: [] as string[],
+    skills: "", interestedDomains: "",
     targetRole: "", careerObjective: "",
     linkedin: "", github: "", portfolio: ""
   });
 
   const setField = useCallback((key: keyof typeof f) => (val: string) => {
     setF(p => ({ ...p, [key]: val }));
-    setHasChanges(true);
-  }, []);
-
-  const toggleDomain = useCallback((d: string) => {
-    setF(p => ({
-      ...p,
-      interestedDomains: p.interestedDomains.includes(d)
-        ? p.interestedDomains.filter(x => x !== d)
-        : [...p.interestedDomains, d]
-    }));
     setHasChanges(true);
   }, []);
 
@@ -230,7 +214,7 @@ export function ProfileView() {
       degree: data.degree ?? "",
       graduationYear: data.graduationYear ?? "",
       skills: (data.skills ?? []).join(", "),
-      interestedDomains: data.interestedDomains ?? [],
+      interestedDomains: (data.interestedDomains ?? []).join(", "),
       targetRole: data.targetRole ?? "",
       careerObjective: data.careerObjective ?? "",
       linkedin: data.linkedin ?? "",
@@ -266,7 +250,7 @@ export function ProfileView() {
       const payload = {
         ...f,
         skills: f.skills.split(",").map(s => s.trim()).filter(Boolean),
-        interestedDomains: f.interestedDomains
+        interestedDomains: f.interestedDomains.split(",").map(d => d.trim()).filter(Boolean)
       };
       await api.put("/profile/me", payload);
       toast.success("Profile updated successfully!");
@@ -676,28 +660,23 @@ export function ProfileView() {
                         )}
                       </div>
 
-                      <div className="border-t pt-5 space-y-3" style={{ borderColor: c.border }}>
-                        <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textSec }}>
-                          <Layers size={11} style={{ color: c.primary }} /> Interested Domains
-                        </label>
-                        <div className="flex flex-wrap gap-2.5">
-                          {DOMAINS.map(d => {
-                            const sel = f.interestedDomains.includes(d);
-                            return (
-                              <motion.button key={d} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                                type="button" onClick={() => toggleDomain(d)}
-                                className="px-3.5 py-2 rounded-full text-[11px] font-bold cursor-pointer border transition-all duration-200"
-                                style={{
-                                  background: sel ? "rgba(245,158,11,0.08)" : "transparent",
-                                  color: sel ? c.primary : c.textMuted,
-                                  borderColor: sel ? "rgba(245,158,11,0.25)" : c.border
-                                }}>
-                                {sel && <CheckCircle2 size={11} className="inline mr-1" />}
-                                {d}
-                              </motion.button>
-                            );
-                          })}
-                        </div>
+                      <div className="border-t pt-5" style={{ borderColor: c.border }}>
+                        <FormInput
+                          label="Interested Domains"
+                          value={f.interestedDomains}
+                          onChange={setField("interestedDomains")}
+                          placeholder="e.g. Artificial Intelligence, Cloud Computing, Cybersecurity"
+                          c={c}
+                          hint="Provide a comma-separated list of interested domains"
+                          icon={<Layers size={11} />}
+                        />
+                        {f.interestedDomains && (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {f.interestedDomains.split(",").map(d => d.trim()).filter(Boolean).map((domain, i) => (
+                              <TagChip key={i} label={domain} c={c} />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (

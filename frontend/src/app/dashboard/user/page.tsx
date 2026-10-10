@@ -1519,6 +1519,10 @@ function UserDashboardContent() {
       router.push("/dashboard/user/settings/account");
       return;
     }
+    if (view === "support" || view === "help-support" || view === "help" || view === "contact") {
+      router.push("/dashboard/user/settings/help");
+      return;
+    }
     if (view === "dsa-practice" || view === "dsa") {
       router.push("/dashboard/coding?tab=dsa");
       return;

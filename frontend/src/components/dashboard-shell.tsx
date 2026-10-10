@@ -14,7 +14,7 @@ import {
   User, LogOut, Settings, CreditCard, TrendingUp, Award,
   BookOpen, Code2, FileText, Mic, Briefcase, UserCircle, Wand2,
   GraduationCap, LayoutDashboard, Sun, Moon, BookMarked, ClipboardList,
-  Star, Zap, LineChart, Trophy, MessageCircle, Users, X,
+  Star, Zap, LineChart, Trophy, MessageCircle, Users, X, HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useUserPlan } from "@/hooks/useUserPlan";
@@ -57,6 +57,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { label: "Billing & Plans", viewId: "billing", category: "General", subtitle: "Subscriptions & invoices", keywords: ["subscription", "payment", "plan", "pro", "invoice", "pricing", "razorpay", "upgrade"] },
   { label: "Ady AI Chat", viewId: "ady-chat", category: "General", subtitle: "AI study companion", keywords: ["chat", "assistant", "ask ai", "chatgpt", "bot", "tutor", "help", "query"] },
   { label: "Notifications", viewId: "notifications", category: "General", subtitle: "Activity alerts & inbox", keywords: ["alerts", "updates", "messages", "bell", "inbox", "system"] },
+  { label: "Help & Support", viewId: "support", category: "General", subtitle: "Customer support & assistance", keywords: ["help", "support", "contact", "customer service", "faq", "issue", "problem", "ticket"] },
   { label: "Progress Tracking", viewId: "progress-hub", category: "General", subtitle: "Learning milestones & growth", keywords: ["tracker", "analytics", "progress", "growth", "stats", "history", "milestones"] },
 
   // ── Learning Hub ──
@@ -402,6 +403,50 @@ export function DashboardSidebar({ activeView, onViewDashboard, onViewTool, side
             </div>
           );
         })}
+
+        {/* ── Bottom Pin: Help & Support ── */}
+        <div style={{ marginTop: "auto", paddingTop: "0.5rem", borderTop: "1px solid var(--border-color)", flexShrink: 0 }}>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.12 }}
+            onClick={() => {
+              router.push("/dashboard/user/settings/help");
+              setSidebarOpen(false);
+            }}
+            title="Help & Support"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              padding: "0.55rem 0.5rem",
+              borderRadius: 12,
+              color: "var(--text-secondary)",
+              background: "transparent",
+              border: "1px solid transparent",
+              fontWeight: 500,
+              fontSize: "0.82rem",
+              cursor: "pointer",
+              width: "100%",
+              transition: "all 0.2s ease",
+              whiteSpace: "nowrap",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "rgba(245,158,11,0.1)";
+              (e.currentTarget as HTMLElement).style.color = "var(--primary)";
+              (e.currentTarget as HTMLElement).style.border = "1px solid rgba(245,158,11,0.2)";
+              router.prefetch("/dashboard/user/settings/help");
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "transparent";
+              (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+              (e.currentTarget as HTMLElement).style.border = "1px solid transparent";
+            }}
+          >
+            <span style={{ flexShrink: 0 }}><HelpCircle size={18} /></span>
+            <span className="sb-label" style={{ flex: 1, textAlign: "left" }}>Help & Support</span>
+          </motion.button>
+        </div>
       </aside>
     </>
   );
