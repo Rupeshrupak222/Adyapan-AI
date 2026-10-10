@@ -153,7 +153,8 @@ export class FeatureUsageService {
 
     for (const candidate of lookupOrder) {
       if (overrides.has(candidate)) {
-        return { limit: overrides.get(candidate)!, unlimited: false };
+        const ov = overrides.get(candidate)!;
+        return { limit: ov, unlimited: ov === UNLIMITED || ov < 0 };
       }
     }
 
@@ -161,7 +162,7 @@ export class FeatureUsageService {
     const planLimits = DEFAULT_PLAN_LIMITS[planTier] || DEFAULT_PLAN_LIMITS["free"];
     const fallback = planLimits[snake] ?? (DEFAULT_FREE_LIMITS[snake] ?? 10);
 
-    return { limit: fallback, unlimited: false };
+    return { limit: fallback, unlimited: fallback === UNLIMITED || fallback < 0 };
   }
 
   private static async loadLimitOverrides(): Promise<Map<string, number>> {

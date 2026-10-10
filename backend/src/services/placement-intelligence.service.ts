@@ -238,7 +238,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     userPrisma.learningAnalytics.findUnique({ where: { userId } }).catch(() => null),
     userPrisma.progressTracking.findUnique({ where: { userId } }).catch(() => null),
     userPrisma.coverLetter.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }).catch(() => []),
-    userPrisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10, include: { evaluations: true } }).catch(() => []),
+    userPrisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50, include: { evaluations: true } }).catch(() => []),
     userPrisma.topicProgress.findMany({ where: { userId }, orderBy: { lastActivity: "desc" }, take: 20 }).catch(() => []),
     userPrisma.aptitudeSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []),
     userPrisma.aptitudeAnalytics.findUnique({ where: { userId } }).catch(() => null),
@@ -282,6 +282,24 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   const completedInterviews = interviewSessions.filter((s: any) =>
     s.status === "completed" || s.status === "completed_with_feedback"
   );
+
+  // Candidates are evaluated for placement readiness on their BEST interview score, not penalized by earlier practice attempts
+  const allInterviewScores: number[] = [];
+  completedInterviews.forEach((sess: any) => {
+    const sc = Number(sess.evaluations?.[0]?.overallScore || sess.overallScore || 0);
+    if (!isNaN(sc) && sc > 0) allInterviewScores.push(sc);
+  });
+  interviewSessions.forEach((sess: any) => {
+    (sess.evaluations || []).forEach((ev: any) => {
+      const sc = Number(ev.overallScore || 0);
+      if (!isNaN(sc) && sc > 0) allInterviewScores.push(sc);
+    });
+    if (sess.overallScore && Number(sess.overallScore) > 0) {
+      allInterviewScores.push(Number(sess.overallScore));
+    }
+  });
+
+  const bestInterviewScore = allInterviewScores.length > 0 ? Math.max(...allInterviewScores) : 0;
   const avgInterviewScore = completedInterviews.length > 0
     ? Math.round(completedInterviews.reduce((s: number, sess: any) => {
         const eval_ = sess.evaluations?.[0];
@@ -289,9 +307,15 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
       }, 0) / completedInterviews.length)
     : 0;
 
+  // Placement readiness interview score: counted using the candidate's BEST interview score,
+  // matching how resume score is driven by the highest ATS score.
   const interviewScore = clamp(Math.round(
-    Math.min(completedInterviews.length / 10, 1) * 50 +
-    avgInterviewScore * 0.5
+    bestInterviewScore > 0
+      ? Math.max(
+          bestInterviewScore,
+          Math.min(100, Math.round(bestInterviewScore * 0.85 + (completedInterviews.length > 0 ? 15 : 0)))
+        )
+      : (completedInterviews.length > 0 ? 50 : 0)
   ), 0, 100);
 
   // Candidates apply for placements using their HIGHEST scoring resume, not the average of draft attempts
@@ -428,8 +452,8 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   if (aptitudeScore > 0) {
     skillWeights.push({ skill: "Aptitude Score", weight: clamp(aptitudeScore / 100, 0, 1), direction: aptitudeScore > 50 ? "positive" : "negative", source: "Aptitude Engine" });
   }
-  if (avgInterviewScore > 0) {
-    skillWeights.push({ skill: "Interview Performance", weight: clamp(avgInterviewScore / 100, 0, 1), direction: avgInterviewScore > 60 ? "positive" : "negative", source: "Interview Hub" });
+  if (bestInterviewScore > 0) {
+    skillWeights.push({ skill: "Interview Performance", weight: clamp(bestInterviewScore / 100, 0, 1), direction: bestInterviewScore > 60 ? "positive" : "negative", source: "Interview Hub" });
   }
   if (highestAtsScore > 0) {
     skillWeights.push({ skill: "ATS Score", weight: clamp(highestAtsScore / 100, 0, 1), direction: highestAtsScore > 70 ? "positive" : "negative", source: "Resume Hub" });
@@ -466,7 +490,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   if (dsaAccuracy > 75) strengths.push(`${dsaAccuracy}% coding accuracy — consistent problem solving`);
   if (highestAtsScore > 75) strengths.push(`${highestAtsScore}% ATS score (highest resume) — well-optimized resume`);
   if (latestLinkedinScore > 70) strengths.push(`${latestLinkedinScore}% LinkedIn score — strong professional brand`);
-  if (avgInterviewScore > 70) strengths.push(`${avgInterviewScore}% interview score — strong communication`);
+  if (bestInterviewScore > 70) strengths.push(`${bestInterviewScore}% best interview score — strong communication`);
   if (aptitudeScore > 70) strengths.push(`${aptitudeScore}% aptitude readiness — solid analytical skills`);
   if (completedInterviews.length >= 5) strengths.push(`Completed ${completedInterviews.length} mock interviews — well-practiced`);
   if (coverLetters.length >= 3) strengths.push(`${coverLetters.length} cover letters generated — application-ready`);
@@ -637,7 +661,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     },
     {
       stage: "Interview Ready",
-      completed: completedInterviews.length >= 5 && avgInterviewScore >= 60,
+      completed: (completedInterviews.length > 0 || bestInterviewScore > 0) && bestInterviewScore >= 60,
       score: interviewScore,
       description: "Mock interviews and communication skills",
     },

@@ -71,7 +71,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     [],
     q(() => userPrisma.careerRoadmap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 3, include: { tasks: true } }), []),
     q(() => userPrisma.learningStreak.findFirst({ where: { userId } }), null),
-    q(() => userPrisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10, include: { evaluations: true } }), []),
+    q(() => userPrisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50, include: { evaluations: true } }), []),
     q(() => userPrisma.topicProgress.findMany({ where: { userId }, orderBy: { lastActivity: "desc" }, take: 20 }), []),
     q(() => userPrisma.challengeSubmission.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }), []),
     q(() => userPrisma.githubProfile.findFirst({ where: { userId } }), null),
@@ -189,8 +189,24 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     (resumeAnalyses.length > 0 ? 10 : 0)
   ));
 
-  // Interview readiness (0-100)
+  // Interview readiness (0-100) — evaluated on candidate's BEST interview score
   const completedInterviews = interviewSessions.filter((s: any) => s.status === "completed" || s.status === "completed_with_feedback");
+  const allInterviewScores: number[] = [];
+  completedInterviews.forEach((sess: any) => {
+    const sc = Number(sess.evaluations?.[0]?.overallScore || sess.overallScore || 0);
+    if (!isNaN(sc) && sc > 0) allInterviewScores.push(sc);
+  });
+  interviewSessions.forEach((sess: any) => {
+    (sess.evaluations || []).forEach((ev: any) => {
+      const sc = Number(ev.overallScore || 0);
+      if (!isNaN(sc) && sc > 0) allInterviewScores.push(sc);
+    });
+    if (sess.overallScore && Number(sess.overallScore) > 0) {
+      allInterviewScores.push(Number(sess.overallScore));
+    }
+  });
+
+  const bestInterviewScore = allInterviewScores.length > 0 ? Math.max(...allInterviewScores) : 0;
   const avgInterviewScore = completedInterviews.length > 0
     ? Math.round(completedInterviews.reduce((s: number, sess: any) => {
         const eval_ = sess.evaluations?.[0];
@@ -199,8 +215,12 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     : 0;
 
   const interviewReadiness = Math.min(100, Math.round(
-    Math.min(completedInterviews.length / 10, 1) * 50 +
-    avgInterviewScore * 0.5
+    bestInterviewScore > 0
+      ? Math.max(
+          bestInterviewScore,
+          Math.min(100, Math.round(bestInterviewScore * 0.85 + (completedInterviews.length > 0 ? 15 : 0)))
+        )
+      : (completedInterviews.length > 0 ? 50 : 0)
   ));
 
   // Recruiter readiness (0-100)

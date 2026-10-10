@@ -27,7 +27,7 @@ aptitudeEngineRouter.get("/topic-tests", requireAuth, getTopicTests);
 aptitudeEngineRouter.post("/generate-test", requireAuth, generateNewTestController);
 
 // Session Management
-aptitudeEngineRouter.post("/session/start", requireAuth, requireFeatureQuota("AI_APTITUDE_ENGINE"), startSession);
+aptitudeEngineRouter.post("/session/start", requireAuth, startSession);
 aptitudeEngineRouter.post("/session/answer", requireAuth, submitAnswer);
 aptitudeEngineRouter.post("/session/complete", requireAuth, completeSession);
 aptitudeEngineRouter.post("/session/submit", requireAuth, submitSessionAnswers);

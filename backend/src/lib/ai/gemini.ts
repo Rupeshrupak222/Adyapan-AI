@@ -1897,30 +1897,67 @@ export async function generateInterviewQuestion(
 ): Promise<string> {
   const isFirstQuestion = history.length === 0;
 
-  const systemPrompt = `You are a professional interviewer conducting a ${type} interview for a ${role} position${company ? ` at ${company}` : ""}.
+  // Extract all questions already asked by the interviewer to prevent repetition
+  const previousQuestions = history
+    .filter((m) => m.role === "interviewer")
+    .map((m, i) => `${i + 1}. "${m.content.replace(/\s+/g, " ").trim()}"`);
+
+  const lastCandidateMessage = history.filter((m) => m.role === "candidate" || m.role === "user").pop();
+  const lastInterviewerMessage = history.filter((m) => m.role === "interviewer").pop();
+
+  // Check if the previous interviewer turn was already a follow-up / counter question
+  const lastWasFollowUp = lastInterviewerMessage
+    ? /(follow[- ]?up|elaborate|clarify|can you explain why|why did you|what if|how did you handle|walk me through|specifically)/i.test(lastInterviewerMessage.content)
+    : false;
+
+  const conversationTranscript = history
+    .map((m) => `[${m.role === "interviewer" ? "Interviewer" : "Candidate"}]: ${m.content}`)
+    .join("\n\n");
+
+  const systemPrompt = `You are an elite, perceptive interviewer conducting a realistic ${type} interview for a ${role} position${company ? ` at ${company}` : ""}.
 Difficulty: ${difficulty}
 
-Ask relevant, insightful questions that test the candidate's knowledge and skills.
-${type === "technical" ? "Focus on technical concepts, problem-solving, system design, and practical scenarios." : ""}
-${type === "behavioral" ? "Focus on past experiences, teamwork, leadership, conflict resolution using STAR format." : ""}
-${type === "general" ? "Mix of technical and behavioral questions." : ""}
+INTERVIEWING METHODOLOGY & COUNTER-QUESTIONING:
+- Real interviewers do NOT blindly jump from one topic to the next without probing!
+- If the candidate just answered a question:
+  ${!lastWasFollowUp ? `* MANDATORY COUNTER-QUESTION: Drill down into what the candidate specifically stated in their answer!
+    - If technical: Challenge their chosen approach/architecture ("Why did you choose X over Y?", "What is the worst-case time/space complexity?", "How does this handle edge cases or 100x scale?", "What happens if this component fails?").
+    - If behavioral/STAR: Cross-examine their claims ("What was your specific individual contribution vs the rest of the team?", "What was the hardest pushback you encountered?", "What was the measurable metric or business impact?", "What would you do differently in hindsight?").
+    - If vague or high-level: Call out the ambiguity and ask for a concrete, real-life implementation example.` : `* The previous question was already a follow-up probe. Briefly acknowledge their clarification (1 short sentence) and transition to a COMPLETELY NEW, UNTOUCHED TOPIC for the ${role} position.`}
 
-Keep questions concise. Do not evaluate or give feedback unless asked.`;
+CRITICAL ANTI-REPETITION MANDATE:
+The following questions have ALREADY BEEN ASKED in this interview:
+${previousQuestions.length > 0 ? previousQuestions.join("\n") : "(None yet - this is question 1)"}
+
+STRICT PROHIBITION: You MUST NEVER repeat, rephrase, or ask a question that overlaps with any of the questions listed above! Each question must explore a distinct concept, challenge, or scenario.
+
+OUTPUT FORMAT:
+- If this is a counter-question or follow-up: Start with 1 brief natural sentence reacting to their previous response (e.g. "That makes sense, but...", "Interesting approach to..."), followed immediately by exactly ONE clear counter-question ending with a question mark ('?').
+- If this is a fresh question: Exactly ONE focused question ending with '?'.
+- Do not output meta-text or bullet points. Output the interviewer's spoken words directly.`;
 
   const userPrompt = isFirstQuestion
-    ? `The interview is starting now. Ask the first ${type} interview question for a ${role} position${company ? ` at ${company}` : ""} at ${difficulty} difficulty.`
-    : `The candidate responded: "${history[history.length - 1].content}"
+    ? `The interview is starting now. Ask the first thoughtful opening question for a ${role} position${company ? ` at ${company}` : ""} at ${difficulty} difficulty.`
+    : `Interview Transcript so far:
+"""
+${conversationTranscript}
+"""
 
-Based on their answer, ask the next appropriate ${type} interview question. If you have enough information to evaluate, you may provide brief feedback before the next question.`;
+The candidate's latest answer:
+"${lastCandidateMessage?.content || ""}"
+
+${!lastWasFollowUp ? "Ask a penetrating COUNTER-QUESTION drilling deeper into what the candidate just claimed." : "Transition to a fresh, distinct topic that has NOT been asked yet."}`;
 
   try {
     return await generateText(systemPrompt, userPrompt, {
       model: MODELS.BALANCED,
-      temperature: 0.8,
+      temperature: 0.75,
     });
   } catch (error) {
     console.warn("[Gemini] generateInterviewQuestion failed, using fallback:", error);
-    return "Tell me about yourself and your experience relevant to this role.";
+    return !lastWasFollowUp && lastCandidateMessage
+      ? "That's an interesting approach. Could you walk me through the trade-offs of that decision and how you would handle potential edge cases?"
+      : `Could you describe a challenging technical or system-level problem you solved in your past work as a ${role}?`;
   }
 }
 

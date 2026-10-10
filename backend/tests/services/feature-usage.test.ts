@@ -196,9 +196,11 @@ describe("Feature key registry — final feature matrix", () => {
     FeatureKey.FLASHCARDS,
     FeatureKey.RESEARCH_PAPER_AI,
     FeatureKey.PLAGIARISM_CHECKER,
+    FeatureKey.AI_CHAT_ASSISTANT,
+  ];
+  const UNLIMITED_FEATURES = [
     FeatureKey.AI_APTITUDE_ENGINE,
     FeatureKey.TECHNICAL_MCQS,
-    FeatureKey.AI_CHAT_ASSISTANT,
   ];
   const THREE = [
     FeatureKey.STUDY_PLANNER,
@@ -217,6 +219,10 @@ describe("Feature key registry — final feature matrix", () => {
 
   it("assigns 10 free attempts/month to every 10-limit feature", () => {
     for (const k of TEN) expect(DEFAULT_FREE_LIMITS[k]).toBe(10);
+  });
+
+  it("assigns unlimited attempts to AI Aptitude Engine and Technical MCQs", () => {
+    for (const k of UNLIMITED_FEATURES) expect(DEFAULT_FREE_LIMITS[k]).toBe(UNLIMITED);
   });
 
   it("assigns 3 free attempts/month to every 3-limit feature", () => {
@@ -336,10 +342,10 @@ describe("Scenario 3 — exhausted allowance blocks execution", () => {
 
 describe("Scenario 4 — blocked request reserves nothing", () => {
   it("never records an attempt or mutates usage when disallowed", async () => {
-    seedQuota("TECHNICAL_MCQS", 10);
-    await FeatureUsageService.checkAndConsume(U_FREE, "TECHNICAL_MCQS", "rq-nope");
+    seedQuota("QUIZ_GENERATOR", 10);
+    await FeatureUsageService.checkAndConsume(U_FREE, "QUIZ_GENERATOR", "rq-nope");
     expect(harness().attempts.filter((a) => a.requestId === "rq-nope")).toHaveLength(0);
-    expect(rowFor("TECHNICAL_MCQS").used).toBe(10);
+    expect(rowFor("QUIZ_GENERATOR").used).toBe(10);
   });
 });
 
@@ -410,17 +416,17 @@ describe("Scenario 6 — double-click consumes exactly one credit", () => {
 
 describe("Scenario 7 — two tabs / concurrent requests stay atomic", () => {
   it("serializes racing consumers to exactly the limit", async () => {
-    seedQuota("AI_APTITUDE_ENGINE", 9); // one credit left
+    seedQuota("FLASHCARDS", 9); // one credit left
     const [a, b] = await Promise.all([
-      FeatureUsageService.checkAndConsume(U_FREE, "AI_APTITUDE_ENGINE", "rq-tabA"),
-      FeatureUsageService.checkAndConsume(U_FREE, "AI_APTITUDE_ENGINE", "rq-tabB"),
+      FeatureUsageService.checkAndConsume(U_FREE, "FLASHCARDS", "rq-tabA"),
+      FeatureUsageService.checkAndConsume(U_FREE, "FLASHCARDS", "rq-tabB"),
     ]);
     const consumed = [a, b].filter((r) => r.consumed);
     const blocked = [a, b].filter((r) => !r.allowed);
     expect(consumed).toHaveLength(1);
     expect(blocked).toHaveLength(1);
     expect(blocked[0].status.remaining).toBe(0);
-    expect(rowFor("AI_APTITUDE_ENGINE").used).toBe(10);
+    expect(rowFor("FLASHCARDS").used).toBe(10);
   });
 
   it("allows parallel distinct-feature consumption independently", async () => {

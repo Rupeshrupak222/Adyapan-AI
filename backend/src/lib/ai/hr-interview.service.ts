@@ -295,6 +295,10 @@ export async function generateHRQuestion(
   const phaseGuidance = getInterviewPhaseGuidance(questionNumber, totalQuestions);
   const roleGuidance = getRoleSpecificHRGuidance(config.targetRole);
 
+  const previousQuestions = history
+    .filter((m) => m.role === "interviewer")
+    .map((m, i) => `${i + 1}. "${m.content.replace(/\s+/g, " ").trim()}"`);
+
   const conversationHistory = history
     .filter((m) => m.role === "interviewer" || m.role === "candidate")
     .map((m) => `[${m.role === "interviewer" ? "Interviewer" : "Candidate"}]: ${m.content}`)
@@ -323,6 +327,12 @@ ${roleGuidance ? `ROLE-SPECIFIC GUIDANCE:\n${roleGuidance}\n` : ""}${companyFocu
 ${resumeSection}
 BEHAVIORAL TOPICS TO COVER (choose based on phase and conversation flow):
 ${BEHAVIORAL_CATEGORIES.map((c) => `- ${c.replace(/_/g, " ")}`).join("\n")}
+
+CRITICAL ANTI-REPETITION MANDATE (ABSOLUTE RULE):
+The following questions have ALREADY BEEN ASKED in this interview:
+${previousQuestions.length > 0 ? previousQuestions.join("\n") : "(None yet - this is question 1)"}
+
+STRICT PROHIBITION: You MUST NEVER repeat, rephrase, or ask questions that overlap with any of the questions listed above! Choose an entirely distinct behavioral topic that has NOT been discussed yet.
 
 QUESTION GENERATION RULES:
 1. Generate exactly ONE natural, conversational question appropriate for question ${questionNumber} of ${totalQuestions}
@@ -492,36 +502,51 @@ export async function generateHRFollowUp(
   config: HRInterviewConfig,
   starAnalysis: STARAnalysis
 ): Promise<string> {
-  const systemPrompt = `You are an experienced HR interviewer conducting a behavioral interview.
-The candidate just answered a question, but their response requires a follow-up to explore deeper details or missing STAR elements.
+  const isDetailedAnswer = starAnalysis.score >= 60;
 
-STAR ANALYSIS OF CANDIDATE'S RESPONSE:
+  const systemPrompt = `You are a perceptive senior HR and behavioral interviewer.
+The candidate just answered your question. Your task is to ask a natural, incisive COUNTER-QUESTION / CROSS-QUESTION probing their answer.
+
+CANDIDATE'S ANSWER ASSESSMENT:
 - Situation: ${starAnalysis.hasSituation ? "Present" : "Missing"}
 - Task: ${starAnalysis.hasTask ? "Present" : "Missing"}
 - Action: ${starAnalysis.hasAction ? "Present" : "Missing"}
 - Result: ${starAnalysis.hasResult ? "Present" : "Missing"}
 - STAR Score: ${starAnalysis.score}/100
-- Missing: ${starAnalysis.missingElements.join(", ") || "None"}
+- Missing Elements: ${starAnalysis.missingElements.join(", ") || "None"}
+
+CROSS-EXAMINATION STRATEGY:
+${
+  isDetailedAnswer
+    ? `- The candidate gave a structured answer. Cross-examine their claims and decision-making:
+  * Probe stakeholder friction or disagreement: "How did your teammates or stakeholders react to that decision, and how did you resolve any disagreements?"
+  * Probe trade-offs & alternatives: "What other solutions did you evaluate before picking that route, and what was the trade-off?"
+  * Probe retrospective reflection: "In hindsight, what would you have done differently or improved in that situation?"
+  * Probe quantified impact: "What specific business metric, efficiency gain, or measurable outcome proved that this succeeded?"`
+    : `- The candidate's answer was generic or missing key STAR details (${starAnalysis.missingElements.join(", ") || "actionable specifics"}).
+  * Directly probe their personal agency: "What was your specific individual contribution in that project rather than the team as a whole?"
+  * Probe measurable outcomes: "Could you share the concrete impact, data point, or final result of that situation?"
+  * Probe concrete scenario: "Could you walk me through one specific, real-world example where this happened?"`
+}
 
 CRITICAL OUTPUT RULES:
-1. You MUST include a clear, complete follow-up question that ends with a question mark ('?').
-2. Structure: You may start with a brief 1-sentence reaction/compliment acknowledging their answer, BUT you MUST ALWAYS follow it immediately with a specific follow-up question asking for examples, actions, or measurable outcomes.
-3. NEVER return only a compliment or reaction without asking a question ending in '?'.
-4. Do NOT leave any sentence incomplete or truncated.
+1. Start with 1 brief natural acknowledging phrase (e.g., "Understood.", "That's an interesting takeaway.", "I see your point on that."), followed immediately by exactly ONE focused counter-question ending with a question mark ('?').
+2. NEVER output meta-commentary, lists, or generic praise without a question ending in '?'.
+3. Keep it professional, conversational, and direct (1-2 sentences total).
 
-Return ONLY the complete text (1-2 sentences max), ending with a question mark ('?').`;
+Return ONLY the interviewer's spoken words, ending with a question mark ('?').`;
 
   const fallback = starAnalysis.hasResult
-    ? "Thanks for sharing that! Can you tell me about a specific metric or outcome that resulted from your actions?"
+    ? "Thanks for explaining that. What was the biggest challenge or pushback you faced while implementing that, and how did you overcome it?"
     : starAnalysis.hasAction
-      ? "That sounds interesting! What was the measurable result or key takeaway from your actions?"
-      : "Thank you for explaining! Could you walk me through a specific example or scenario where you applied this?";
+      ? "That makes sense. What was the measurable result or key takeaway from your actions?"
+      : "Thank you for sharing. Could you walk me through a specific real-world example where you personally took ownership of this?";
 
   try {
     const result = await generateText(
       systemPrompt,
-      `Original question: ${question}\nCandidate answer: ${answer}\n\nGenerate a natural follow-up question that acknowledges their response and asks for deeper STAR details ending with '?'.`,
-      { model: MODELS.FAST, temperature: 0.7, maxTokens: 512 }
+      `Original question: ${question}\nCandidate answer: ${answer}\n\nGenerate an incisive counter-question directly challenging or probing their response, ending with '?'.`,
+      { model: MODELS.FAST, temperature: 0.75, maxTokens: 512 }
     );
     const cleanFollowUp = ensureQuestionFormat(result.trim(), config.interviewType);
     return cleanFollowUp;

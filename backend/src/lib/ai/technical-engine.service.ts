@@ -254,6 +254,10 @@ export async function generateTechnicalQuestion(config: {
   // Deterministic coding challenge schedule: coding mode = always, voice+coding = every even question (2,4,6,...)
   const isCodingQuestion = mode === "coding" || (mode === "voice+coding" && questionNumber % 2 === 0);
 
+  const previousQuestions = history
+    .filter((m) => m.role === "interviewer")
+    .map((m, i) => `${i + 1}. "${m.content.replace(/\s+/g, " ").trim()}"`);
+
   const conversationHistory = history
     .filter((m) => m.role === "interviewer" || m.role === "candidate")
     .map((m) => `[${m.role === "interviewer" ? "Interviewer" : "Candidate"}]: ${m.content}`)
@@ -280,6 +284,12 @@ DIFFICULTY: ${dynamicDifficulty}
 ${isEarlyStage ? "Start with foundational questions to assess baseline." : ""}
 ${isLateStage ? "Ask a capstone question that tests holistic understanding." : ""}
 ${shouldChallenge ? "The candidate is performing well — present a CHALLENGE question." : ""}
+
+CRITICAL ANTI-REPETITION MANDATE (ABSOLUTE RULE):
+The following questions have ALREADY BEEN ASKED in this interview:
+${previousQuestions.length > 0 ? previousQuestions.join("\n") : "(None yet - this is question 1)"}
+
+STRICT PROHIBITION: You MUST NEVER repeat, rephrase, or ask questions that overlap with any of the questions or coding problems listed above! Pick a completely distinct concept, algorithm, or scenario within ${topic}.
 
 CODING CHALLENGE INSTRUCTION:
 ${isCodingQuestion

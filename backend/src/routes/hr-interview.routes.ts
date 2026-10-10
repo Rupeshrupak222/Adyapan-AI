@@ -233,7 +233,11 @@ hrInterviewRouter.post("/:sessionId/answer", async (req, res) => {
       ? await analyzeSTAR(lastQuestion.content, answer, hrConfig)
       : { hasSituation: false, hasTask: false, hasAction: false, hasResult: false, score: 50, feedback: "", missingElements: [] };
 
-    const shouldFollowUp = !isFollowUp && starAnalysis.score < 60 && questionCount < 12;
+    const lastContent = lastQuestion?.content || "";
+    const lastWasFollowUp = /(follow[- ]?up|elaborate|clarify|can you explain why|why did you|what if|how did you handle|walk me through|trade-off|pushback|conflict|outcome|metric|what was your specific role|specific example|what would you do differently)/i.test(lastContent);
+
+    // If candidate answered an initial question (not already a counter-question), probe deeper before switching topics
+    const shouldFollowUp = !lastWasFollowUp && questionCount < 14;
 
     let nextContent: string;
     let questionMeta: any;
@@ -245,7 +249,7 @@ hrInterviewRouter.post("/:sessionId/answer", async (req, res) => {
         hrConfig,
         starAnalysis
       );
-      questionMeta = { isFollowUp: true, category: "follow_up", competency: "communication", expectedSTAR: true };
+      questionMeta = { isFollowUp: true, category: "counter_question", competency: "communication", expectedSTAR: true };
     } else {
       const nextQ = await generateHRQuestion(hrConfig, history, false);
       nextContent = nextQ.question;

@@ -26,9 +26,9 @@ mcqRouter.get("/company/:name", optionalAuth, handleGetCompanyByName);
 mcqRouter.get("/tests", optionalAuth, handleGetTests);
 mcqRouter.get("/test/:testId", optionalAuth, handleGetTestById);
 
-// Session Start & Quota Metering
-mcqRouter.post("/session/start", requireAuth, requireFeatureQuota(FeatureKey.TECHNICAL_MCQS), handleStartMCQSession);
-mcqRouter.post("/start", requireAuth, requireFeatureQuota(FeatureKey.TECHNICAL_MCQS), handleStartMCQSession);
+// Session Start
+mcqRouter.post("/session/start", requireAuth, handleStartMCQSession);
+mcqRouter.post("/start", requireAuth, handleStartMCQSession);
 
 
 // Questions & Practice

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "@/lib/static-motion";
 import {
   Calculator, Brain, BookOpen, BarChart3, Lightbulb, Hash,
   Play, Timer, Target, Building2, Sparkles, Flame, RotateCcw,
@@ -249,20 +249,6 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     count?: number,
     testId?: string
   ) => {
-    if (quota.exhausted) {
-      toast.error(
-        quota.status?.plan === "free"
-          ? "You've used all 10 free AI Aptitude tests this month."
-          : "You've used all 30 Premium AI Aptitude tests this month.",
-        {
-          description: quota.status?.plan === "free"
-            ? "Upgrade to Premium for 30 tests per month."
-            : "Your allowance will reset on the 1st of next month.",
-          action: quota.status?.plan === "free" ? { label: "Upgrade", onClick: () => window.location.href = "/premium" } : undefined,
-        }
-      );
-      return;
-    }
     setAiLoading(true);
     setShowExplanation(false);
     try {
@@ -627,7 +613,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="no-page-motion relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
 
       <AnimatePresence>
         {aiLoading && (
@@ -771,9 +757,6 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   {progress.answers.length}/{session.totalQuestions}
                 </span>
               </div>
-            )}
-            {view !== "active_session" && (
-              <FeatureCreditBadge featureKey="AI_APTITUDE_ENGINE" isDark={isDark} compact />
             )}
             {view !== "active_session" && (
               <motion.button
@@ -1420,7 +1403,6 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                       {(TOPICS_BY_CATEGORY[selectedCategory] || [])
                         .filter(t => !categoryTopicSearch.trim() || t.toLowerCase().includes(categoryTopicSearch.toLowerCase().trim()))
                         .map((topic, i) => {
-                        const topicMastery = analytics?.topicMastery?.find(tm => tm.topic === topic);
                         return (
                           <motion.div
                             key={topic}
@@ -1439,24 +1421,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                             style={{ background: c.cardBg, borderColor: c.border }}
                           >
                             <p className="text-[11px] font-extrabold" style={{ color: c.text }}>{topic}</p>
-                            {topicMastery ? (
-                              <div className="mt-2 space-y-1">
-                                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
-                                  <div className="h-full rounded-full" style={{
-                                    width: `${topicMastery.accuracy}%`,
-                                    background: topicMastery.accuracy >= 70 ? c.green : topicMastery.accuracy >= 40 ? c.primary : c.red
-                                  }} />
-                                </div>
-                                <div className="flex justify-between text-[10px] font-bold" style={{ color: c.textMuted }}>
-                                  <span>{topicMastery.totalCorrect}/{topicMastery.totalAttempted}</span>
-                                  <span style={{ color: topicMastery.accuracy >= 70 ? c.green : topicMastery.accuracy >= 40 ? c.primary : c.red }}>
-                                    {topicMastery.accuracy}%
-                                  </span>
-                                </div>
-                              </div>
-                            ) : (
-                              <p className="text-[9px] mt-1.5" style={{ color: c.textMuted }}>Click to view tests (30 Qs)</p>
-                            )}
+                            <p className="text-[9px] mt-1.5" style={{ color: c.textMuted }}>Click to view tests (30 Qs)</p>
                           </motion.div>
                         );
                       })}
