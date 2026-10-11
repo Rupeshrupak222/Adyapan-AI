@@ -144,14 +144,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
 
   const totalRoadmapSolved = codingRoadmaps.reduce((acc: number, r: any) => acc + (r.completedQuestionsCount || 0), 0);
 
-  const dsaSolved = Math.max(
-    dsaProgress?.solved || 0,
-    solvedQuestionsCount,
-    solvedSubmissions.length,
-    acceptedChallengeSubmissions.length,
-    dsaActivities.length,
-    totalRoadmapSolved
-  );
+  const dsaSolved = dsaProgress ? dsaProgress.solved : solvedQuestionsCount;
   const dsaAccuracy = dsaProgress?.accuracy || (submissions.length > 0 ? Math.round((solvedSubmissions.length / submissions.length) * 100) : 0);
   const normalizedDsaAccuracy = dsaAccuracy > 1 ? dsaAccuracy / 100 : dsaAccuracy;
   const dsaStreak = dsaProgress?.streak || learningStreak?.currentStreak || 0;

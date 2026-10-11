@@ -405,15 +405,14 @@ export function CodingDashboardView() {
                   <div className="h-[250px] flex items-center justify-center">
                     <Doughnut
                       data={{
-                        labels: ["Easy", "Medium", "Hard", "Expert"],
+                        labels: ["Easy", "Medium", "Hard"],
                         datasets: [{
                           data: [
                             analytics.difficultyDistribution.Easy,
                             analytics.difficultyDistribution.Medium,
-                            analytics.difficultyDistribution.Hard,
-                            analytics.difficultyDistribution.Expert
+                            analytics.difficultyDistribution.Hard
                           ],
-                          backgroundColor: ["#10b981", "#f59e0b", "#f43f5e", "#a855f7"],
+                          backgroundColor: ["#10b981", "#f59e0b", "#f43f5e"],
                           borderColor: isDark ? "#0a0a0f" : "#ffffff",
                           borderWidth: 3,
                           hoverOffset: 6

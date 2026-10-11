@@ -31,13 +31,45 @@ export interface QuestionInput {
 }
 
 export async function insertSingleQuestion(q: QuestionInput) {
+  const fs = require("fs");
+  const path = require("path");
+  const jsonPath = path.resolve(__dirname, "../../data/curated-dsa-questions.json");
+  let jsonList: any[] = [];
+  if (fs.existsSync(jsonPath)) {
+    try {
+      jsonList = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
+    } catch { }
+  }
+
+  // Check duplicate by title in database & JSON
+  const normalizedTitle = q.title.trim().toLowerCase();
+  const existingInDb = await prisma.codingQuestion.findFirst({
+    where: {
+      title: { equals: q.title.trim(), mode: "insensitive" }
+    }
+  });
+
+  const existingInJson = jsonList.find((item: any) =>
+    item.title && item.title.trim().toLowerCase() === normalizedTitle
+  );
+
+  if (existingInDb) {
+    console.log(`[DUPLICATE DETECTED] Question "${q.title}" already exists in DB as ${existingInDb.externalId || existingInDb.id}. Skipping insertion.`);
+    return {
+      duplicate: true,
+      existing: existingInDb
+    };
+  }
+
   // If number or externalId not provided, determine next number
-  let externalId = q.externalId;
-  let qNum = q.number;
+  let externalId = q.externalId || existingInJson?.externalId;
+  let qNum = q.number || existingInJson?.number;
 
   if (!externalId) {
+    const lastNum = jsonList.reduce((max: number, it: any) => Math.max(max, it.number || 0), 0);
     const count = await prisma.codingQuestion.count();
-    const nextNum = qNum || count + 1;
+    const nextNum = qNum || Math.max(lastNum, count) + 1;
+    qNum = nextNum;
     externalId = `DSA-${String(nextNum).padStart(3, "0")}`;
   }
 
@@ -168,7 +200,7 @@ export async function insertSingleQuestion(q: QuestionInput) {
       list = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
     }
     const idx = list.findIndex((item: any) => item.externalId === externalId);
-    const itemToSave = { ...q, externalId, id: createdCodingQuestion.id };
+    const itemToSave = { number: qNum, ...q, externalId, id: createdCodingQuestion.id };
     if (idx >= 0) {
       list[idx] = itemToSave;
     } else {

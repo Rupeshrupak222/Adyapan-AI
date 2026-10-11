@@ -207,10 +207,14 @@ router.post("/submit", async (req: any, res) => {
 
     // Look up question to evaluate visible test cases (mentioned in the question)
     let testCases: Array<{ input: string; expectedOutput: string }> = [];
+    let canonicalProblemId = problemId;
     if (problemId) {
       try {
-        const question = await masterPrisma.codingQuestion.findUnique({ where: { id: problemId } });
+        const question = await masterPrisma.codingQuestion.findFirst({
+          where: { OR: [{ id: problemId }, { externalId: problemId }] }
+        });
         if (question) {
+          canonicalProblemId = question.id;
           const rawVisible = (question.visibleTestCases as any) || [];
           if (Array.isArray(rawVisible) && rawVisible.length > 0) {
             testCases = rawVisible.map((tc: any) => ({
@@ -281,7 +285,9 @@ router.post("/submit", async (req: any, res) => {
       console.warn("[Dsa.submit] Submission record creation notice:", subErr?.message || subErr);
       submission = {
         userId: req.user!.userId,
-        problemId,
+        problemId: canonicalProblemId,
+        code,
+        language,
         status: isAccepted ? "Accepted" : "Runtime Error",
         aiReview: review
       };
@@ -291,7 +297,7 @@ router.post("/submit", async (req: any, res) => {
     if (isAccepted) {
       progress = await DsaProgressService.recordSolved(
         req.user!.userId,
-        problemId,
+        canonicalProblemId,
         userPrisma,
         req
       );

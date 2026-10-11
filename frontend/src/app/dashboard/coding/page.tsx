@@ -605,7 +605,6 @@ function CodingHubContent() {
                     <span className="text-emerald-500/80">E: {t.difficultyDistribution?.Easy || 0}</span>
                     <span className="text-amber-500/80">M: {t.difficultyDistribution?.Medium || 0}</span>
                     <span className="text-rose-500/80">H: {t.difficultyDistribution?.Hard || 0}</span>
-                    <span className="text-purple-500/80">X: {t.difficultyDistribution?.Expert || 0}</span>
                   </div>
                 </div>
 
@@ -676,7 +675,6 @@ function CodingHubContent() {
                   <option value="Easy">Easy</option>
                   <option value="Medium">Medium</option>
                   <option value="Hard">Hard</option>
-                  <option value="Expert">Expert</option>
                 </select>
 
                 {/* Status filter */}
@@ -797,8 +795,7 @@ function CodingHubContent() {
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               q.difficulty === "Easy" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
                               q.difficulty === "Medium" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
-                              q.difficulty === "Hard" ? "bg-rose-500/10 text-rose-500 border border-rose-500/20" :
-                              "bg-purple-500/10 text-purple-500 border border-purple-500/20"
+                              "bg-rose-500/10 text-rose-500 border border-rose-500/20"
                             }`}>{q.difficulty}</span>
                           </td>
                           <td className="py-4 px-2 text-[var(--text-secondary)]">{q.rating || "N/A"}</td>
