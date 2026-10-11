@@ -7,7 +7,7 @@ import { api } from "@/services/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
-  Code2, Sparkles, Trophy, Clock, RefreshCw, Check, TrendingUp,
+  Code2, Sparkles, Trophy, RefreshCw, Check, TrendingUp,
   Target, Flame, Zap, BarChart3, Brain, Lightbulb, ArrowRight,
   AlertTriangle, Star, ChevronRight, BookOpen, Award, Calendar,
   Activity, LineChart as LineChartIcon, Shield, Rocket, CheckCircle2,
@@ -760,54 +760,6 @@ export function CodingDashboardView() {
                   <h3 className="text-base font-extrabold text-[var(--text-primary)]">Coding Activity Heatmap</h3>
                 </div>
                 <HeatmapGrid heatmap={analytics.heatmap} isDark={isDark} />
-              </PremiumCard>
-            </motion.div>
-
-            {/* ─── RECENT ACTIVITY ───────────────────────────────── */}
-            <motion.div custom={18} variants={codingFadeUp} initial="hidden" animate="visible">
-              <PremiumCard className="p-6 bg-[var(--bg-card)] border-[var(--border-color)] hover:border-amber-500/20 hover:shadow-[0_0_24px_rgba(245,158,11,0.04)] transition-all duration-300">
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock size={18} className="text-amber-500" />
-                  <h3 className="text-sm font-bold text-[var(--text-primary)]">Recent Activity</h3>
-                </div>
-                {analytics.recentActivity.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {analytics.recentActivity.slice(0, 8).map((activity: any, i: number) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.3 + i * 0.05 }}
-                        className="p-3 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] hover:border-amber-500/30 transition-all cursor-pointer"
-                        onClick={() => window.open(`/dashboard/coding/problem/${activity.questionId}`, "_blank")}
-                      >
-                        <div className="flex items-center gap-2 mb-1.5">
-                          {activity.status === "solved" ? (
-                            <CheckCircle2 size={12} className="text-emerald-500" />
-                          ) : activity.status === "attempted" ? (
-                            <Clock size={12} className="text-amber-500" />
-                          ) : (
-                            <Eye size={12} className="text-blue-500" />
-                          )}
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                            activity.status === "solved" ? "text-emerald-500" :
-                            activity.status === "attempted" ? "text-amber-500" : "text-blue-500"
-                          }`}>{activity.status}</span>
-                        </div>
-                        <p className="text-[10px] text-[var(--text-secondary)] font-mono truncate">{activity.questionId.slice(0, 16)}...</p>
-                        <p className="text-[9px] text-[var(--text-secondary)]/60 mt-1">
-                          {new Date(activity.updatedAt).toLocaleDateString()} {new Date(activity.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <Code2 size={28} className="text-[var(--text-secondary)]/40 mb-2" />
-                    <p className="text-xs font-bold text-[var(--text-primary)]">No recent activity</p>
-                    <p className="text-[10px] text-[var(--text-secondary)]">Start solving problems to see your activity here.</p>
-                  </div>
-                )}
               </PremiumCard>
             </motion.div>
           </div>

@@ -1,9 +1,8 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { getAuthUser } from "@/hooks/useAuth";
 import { api } from "@/services/api";
-import { motion, AnimatePresence } from "framer-motion";
 import { useFeatureQuota } from "@/hooks/useFeatureQuota";
 import { useFeatureUsageStore } from "@/store/feature-usage-store";
 import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
@@ -13,26 +12,16 @@ import {
   Copy,
   Download,
   Check,
-  RefreshCw,
   Sparkles,
   Eye,
   FileCode,
   Globe,
-  Mail,
-  ExternalLink,
-  Layers,
-  BarChart2,
-  Zap,
   User,
-  Heart,
-  Terminal,
   Cpu,
   Database,
   Cloud,
-  Wrench,
-  Flame,
-  Award,
-  BookOpen
+  BarChart2,
+  Type
 } from "lucide-react";
 
 const GithubIcon = ({ className = "w-8 h-8 text-amber-500", style }: { className?: string; style?: React.CSSProperties }) => (
@@ -42,9 +31,10 @@ const GithubIcon = ({ className = "w-8 h-8 text-amber-500", style }: { className
   </svg>
 );
 import { toast } from "sonner";
-import { renderMarkdown } from "@/utils/renderMarkdown";
 
 // ─── Skill Categories & Badges Data ──────────────────────────────────────────
+
+export type PortfolioTab = "header" | "work" | "skills" | "stats" | "social";
 
 interface SkillOption {
   id: string;
@@ -54,7 +44,7 @@ interface SkillOption {
 
 interface SkillCategory {
   title: string;
-  icon: any;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
   skills: SkillOption[];
 }
 
@@ -63,16 +53,39 @@ const SKILL_CATEGORIES: SkillCategory[] = [
     title: "Programming Languages",
     icon: Code2,
     skills: [
+      { id: "java", name: "Java", badgeUrl: "https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white" },
+      { id: "kotlin", name: "Kotlin", badgeUrl: "https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" },
+      { id: "python", name: "Python", badgeUrl: "https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" },
       { id: "js", name: "JavaScript", badgeUrl: "https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" },
       { id: "ts", name: "TypeScript", badgeUrl: "https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" },
-      { id: "python", name: "Python", badgeUrl: "https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" },
       { id: "cpp", name: "C++", badgeUrl: "https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" },
-      { id: "java", name: "Java", badgeUrl: "https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white" },
+      { id: "csharp", name: "C#", badgeUrl: "https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white" },
       { id: "go", name: "Go", badgeUrl: "https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white" },
       { id: "rust", name: "Rust", badgeUrl: "https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white" },
       { id: "php", name: "PHP", badgeUrl: "https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white" },
       { id: "html5", name: "HTML5", badgeUrl: "https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" },
-      { id: "css3", name: "CSS3", badgeUrl: "https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" }
+      { id: "css3", name: "CSS3", badgeUrl: "https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" },
+      { id: "sql", name: "SQL", badgeUrl: "https://img.shields.io/badge/SQL-CC292B?style=for-the-badge&logo=sqlite&logoColor=white" }
+    ]
+  },
+  {
+    title: "Backend & Enterprise Technologies",
+    icon: Database,
+    skills: [
+      { id: "springboot", name: "Spring Boot", badgeUrl: "https://img.shields.io/badge/Spring_Boot-F2F4F9?style=for-the-badge&logo=spring-boot" },
+      { id: "spring", name: "Spring Framework", badgeUrl: "https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white" },
+      { id: "hibernate", name: "Hibernate", badgeUrl: "https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white" },
+      { id: "kafka", name: "Apache Kafka", badgeUrl: "https://img.shields.io/badge/Apache_Kafka-231F20?style=for-the-badge&logo=apache-kafka&logoColor=white" },
+      { id: "nodejs", name: "Node.js", badgeUrl: "https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" },
+      { id: "express", name: "Express", badgeUrl: "https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" },
+      { id: "django", name: "Django", badgeUrl: "https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white" },
+      { id: "fastapi", name: "FastAPI", badgeUrl: "https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" },
+      { id: "postgres", name: "PostgreSQL", badgeUrl: "https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" },
+      { id: "mysql", name: "MySQL", badgeUrl: "https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" },
+      { id: "mongo", name: "MongoDB", badgeUrl: "https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" },
+      { id: "redis", name: "Redis", badgeUrl: "https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" },
+      { id: "graphql", name: "GraphQL", badgeUrl: "https://img.shields.io/badge/GraphQL-E10098?style=for-the-badge&logo=graphql&logoColor=white" },
+      { id: "firebase", name: "Firebase", badgeUrl: "https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" }
     ]
   },
   {
@@ -90,27 +103,15 @@ const SKILL_CATEGORIES: SkillCategory[] = [
     ]
   },
   {
-    title: "Backend & Databases",
-    icon: Database,
-    skills: [
-      { id: "nodejs", name: "Node.js", badgeUrl: "https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" },
-      { id: "express", name: "Express", badgeUrl: "https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" },
-      { id: "django", name: "Django", badgeUrl: "https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white" },
-      { id: "fastapi", name: "FastAPI", badgeUrl: "https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" },
-      { id: "postgres", name: "PostgreSQL", badgeUrl: "https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" },
-      { id: "mongo", name: "MongoDB", badgeUrl: "https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" },
-      { id: "redis", name: "Redis", badgeUrl: "https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" },
-      { id: "mysql", name: "MySQL", badgeUrl: "https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" },
-      { id: "graphql", name: "GraphQL", badgeUrl: "https://img.shields.io/badge/GraphQL-E10098?style=for-the-badge&logo=graphql&logoColor=white" },
-      { id: "firebase", name: "Firebase", badgeUrl: "https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" }
-    ]
-  },
-  {
-    title: "DevOps & Cloud Tools",
+    title: "Build, DevOps & Cloud Tools",
     icon: Cloud,
     skills: [
+      { id: "maven", name: "Apache Maven", badgeUrl: "https://img.shields.io/badge/Apache_Maven-C71A36?style=for-the-badge&logo=apache-maven&logoColor=white" },
+      { id: "gradle", name: "Gradle", badgeUrl: "https://img.shields.io/badge/Gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white" },
       { id: "docker", name: "Docker", badgeUrl: "https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" },
       { id: "kubernetes", name: "Kubernetes", badgeUrl: "https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" },
+      { id: "jenkins", name: "Jenkins", badgeUrl: "https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white" },
+      { id: "postman", name: "Postman", badgeUrl: "https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white" },
       { id: "aws", name: "AWS", badgeUrl: "https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white" },
       { id: "gcp", name: "Google Cloud", badgeUrl: "https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white" },
       { id: "git", name: "Git", badgeUrl: "https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" },
@@ -130,18 +131,15 @@ export function GithubPortfolioView() {
   const quota = useFeatureQuota("GITHUB_PORTFOLIO_BUILDER");
   const checkAndConsume = useFeatureUsageStore((s) => s.checkAndConsume);
 
-  // One logical generation per distinct README version. Each new configuration
-  // gets a fresh idempotency key; re-exporting the SAME version replays the
-  // same key so it can never consume a second credit.
   const attemptIdRef = useRef<string | null>(null);
   const consumedVersionRef = useRef<string | null>(null);
 
-  // Form State (100% BLANK INITIAL STATES - NO PREFILL OR MOCK DATA)
+  // Form State
   const [username, setUsername] = useState("");
   const [titleGreeting, setTitleGreeting] = useState("");
   const [name, setName] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [headerTheme, setHeaderTheme] = useState("tokyonight");
+  const [useTypingSvg, setUseTypingSvg] = useState(false);
 
   // Work & Bio
   const [workingOn, setWorkingOn] = useState("");
@@ -151,7 +149,7 @@ export function GithubPortfolioView() {
   const [reachMe, setReachMe] = useState("");
   const [funFact, setFunFact] = useState("");
 
-  // Selected Skills (100% Empty by default)
+  // Selected Skills
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
   // GitHub Cards Config
@@ -182,7 +180,7 @@ export function GithubPortfolioView() {
         if (p.github) {
           const cleanGh = p.github.replace(/https?:\/\/(www\.)?github\.com\//i, "").replace(/\/$/, "");
           setUsername(prev => prev || cleanGh);
-          setSocialGithub(prev => prev || (p.github.startsWith("http") ? p.github : `https://github.com/${cleanGh}`));
+          setSocialGithub(prev => prev || cleanGh);
         }
         if (p.name) {
           setName(prev => prev || p.name);
@@ -191,7 +189,8 @@ export function GithubPortfolioView() {
           setSubtitle(prev => prev || p.targetRole);
         }
         if (p.linkedin) {
-          setSocialLinkedin(prev => prev || p.linkedin);
+          const cleanLi = p.linkedin.replace(/https?:\/\/(www\.)?linkedin\.com\/in\//i, "").replace(/\/$/, "");
+          setSocialLinkedin(prev => prev || cleanLi);
         }
         if (p.portfolio) {
           setSocialPortfolio(prev => prev || p.portfolio);
@@ -209,22 +208,37 @@ export function GithubPortfolioView() {
     );
   };
 
+
+
   // Generate Markdown Text
   const generatedMarkdown = useMemo(() => {
     let md = "";
 
-    // Header Banner
-    const headerTitle = `${titleGreeting} ${name}`.trim();
-    if (headerTitle) {
-      md += `<h1 align="center">${headerTitle}</h1>\n`;
+    // Header Title
+    const effectiveGreeting = titleGreeting.trim() || "Hi 👋, I'm";
+    const effectiveName = name.trim();
+
+    if (effectiveName) {
+      md += `<h1 align="center">${effectiveGreeting} ${effectiveName}</h1>\n`;
+    } else if (username.trim()) {
+      md += `<h1 align="center">${effectiveGreeting} ${username.trim()}</h1>\n`;
+    } else if (subtitle.trim()) {
+      md += `<h1 align="center">Hi 👋, Welcome to my Profile!</h1>\n`;
     }
+
+    // Subtitle / Typing SVG
     if (subtitle.trim()) {
-      md += `<h3 align="center">${subtitle.trim()}</h3>\n\n`;
+      if (useTypingSvg) {
+        const encodedLines = encodeURIComponent(subtitle.trim().replace(/\s*\|\s*/g, ";"));
+        md += `<p align="center">\n  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=F59E0B&center=true&vCenter=true&width=500&lines=${encodedLines}" alt="Typing SVG" />\n</p>\n\n`;
+      } else {
+        md += `<h3 align="center">${subtitle.trim()}</h3>\n\n`;
+      }
     }
 
     // Visitor Badge
     if (showVisitorBadge && username.trim()) {
-      md += `<p align="center">\n  <img src="https://komarev.com/ghpvc/?username=${username.trim()}&label=Profile%20views&color=0e75b6&style=flat" alt="${username.trim()}" />\n</p>\n\n`;
+      md += `<p align="center">\n  <img src="https://komarev.com/ghpvc/?username=${encodeURIComponent(username.trim())}&label=Profile%20views&color=0e75b6&style=flat" alt="${username.trim()}" />\n</p>\n\n`;
     }
 
     // Bio / Work
@@ -267,43 +281,57 @@ export function GithubPortfolioView() {
       md += `## 📊 GitHub Analytics\n\n`;
 
       if (showTrophy) {
-        md += `<p align="center">\n  <img src="https://github-profile-trophy.vercel.app/?username=${username.trim()}&theme=${statsTheme}&no-frame=true&no-background=true" alt="${username.trim()}" />\n</p>\n\n`;
+        md += `<p align="center">\n  <img src="https://github-profile-trophy.vercel.app/?username=${encodeURIComponent(username.trim())}&theme=${statsTheme}&no-frame=true&no-background=true" alt="${username.trim()}" />\n</p>\n\n`;
       }
 
       md += `<p align="center">\n`;
       if (showStatsCard) {
-        md += `  <img src="https://github-readme-stats.vercel.app/api?username=${username.trim()}&show_icons=true&theme=${statsTheme}&hide_border=true" alt="GitHub Stats" />\n`;
+        md += `  <img src="https://github-readme-stats.vercel.app/api?username=${encodeURIComponent(username.trim())}&show_icons=true&theme=${statsTheme}&hide_border=true" alt="GitHub Stats" />\n`;
       }
       if (showTopLangs) {
-        md += `  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=${username.trim()}&layout=compact&theme=${statsTheme}&hide_border=true" alt="Top Languages" />\n`;
+        md += `  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=${encodeURIComponent(username.trim())}&layout=compact&theme=${statsTheme}&hide_border=true" alt="Top Languages" />\n`;
       }
       if (showStreakCard) {
-        md += `  <img src="https://github-readme-streak-stats.herokuapp.com/?user=${username.trim()}&theme=${statsTheme}&hide_border=true" alt="GitHub Streak" />\n`;
+        md += `  <img src="https://github-readme-streak-stats.herokuapp.com/?user=${encodeURIComponent(username.trim())}&theme=${statsTheme}&hide_border=true" alt="GitHub Streak" />\n`;
       }
       md += `</p>\n\n<br/>\n\n`;
     }
 
     // Social Links
-    const hasSocials = socialGithub.trim() || socialLinkedin.trim() || socialTwitter.trim() || socialPortfolio.trim() || socialLeetcode.trim() || socialCodeforces.trim();
+    const cleanUrl = (val: string, base: string) => {
+      const v = val.trim();
+      if (!v) return "";
+      if (v.startsWith("http://") || v.startsWith("https://")) return v;
+      return `${base}${v.replace(/^@/, "").replace(/\/$/, "")}`;
+    };
+
+    const ghLink = cleanUrl(socialGithub, "https://github.com/");
+    const liLink = cleanUrl(socialLinkedin, "https://linkedin.com/in/");
+    const twLink = cleanUrl(socialTwitter, "https://twitter.com/");
+    const pfLink = cleanUrl(socialPortfolio, "https://");
+    const lcLink = cleanUrl(socialLeetcode, "https://leetcode.com/");
+    const cfLink = cleanUrl(socialCodeforces, "https://codeforces.com/profile/");
+
+    const hasSocials = ghLink || liLink || twLink || pfLink || lcLink || cfLink;
     if (hasSocials) {
       md += `## 🌐 Connect & Socials\n\n<p align="left">\n`;
-      if (socialGithub.trim()) {
-        md += `  <a href="https://github.com/${socialGithub.trim()}" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/></a>\n`;
+      if (ghLink) {
+        md += `  <a href="${ghLink}" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/></a>\n`;
       }
-      if (socialLinkedin.trim()) {
-        md += `  <a href="https://linkedin.com/in/${socialLinkedin.trim()}" target="_blank"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/></a>\n`;
+      if (liLink) {
+        md += `  <a href="${liLink}" target="_blank"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/></a>\n`;
       }
-      if (socialTwitter.trim()) {
-        md += `  <a href="https://twitter.com/${socialTwitter.trim()}" target="_blank"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter"/></a>\n`;
+      if (twLink) {
+        md += `  <a href="${twLink}" target="_blank"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter"/></a>\n`;
       }
-      if (socialPortfolio.trim()) {
-        md += `  <a href="${socialPortfolio.trim()}" target="_blank"><img src="https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=todoist&logoColor=white" alt="Portfolio"/></a>\n`;
+      if (pfLink) {
+        md += `  <a href="${pfLink}" target="_blank"><img src="https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=todoist&logoColor=white" alt="Portfolio"/></a>\n`;
       }
-      if (socialLeetcode.trim()) {
-        md += `  <a href="https://leetcode.com/${socialLeetcode.trim()}" target="_blank"><img src="https://img.shields.io/badge/LeetCode-FFA116?style=for-the-badge&logo=leetcode&logoColor=black" alt="LeetCode"/></a>\n`;
+      if (lcLink) {
+        md += `  <a href="${lcLink}" target="_blank"><img src="https://img.shields.io/badge/LeetCode-FFA116?style=for-the-badge&logo=leetcode&logoColor=black" alt="LeetCode"/></a>\n`;
       }
-      if (socialCodeforces.trim()) {
-        md += `  <a href="https://codeforces.com/profile/${socialCodeforces.trim()}" target="_blank"><img src="https://img.shields.io/badge/Codeforces-1F8ACB?style=for-the-badge&logo=codeforces&logoColor=white" alt="Codeforces"/></a>\n`;
+      if (cfLink) {
+        md += `  <a href="${cfLink}" target="_blank"><img src="https://img.shields.io/badge/Codeforces-1F8ACB?style=for-the-badge&logo=codeforces&logoColor=white" alt="Codeforces"/></a>\n`;
       }
       md += `</p>\n\n`;
     }
@@ -315,7 +343,7 @@ export function GithubPortfolioView() {
 
     return md;
   }, [
-    titleGreeting, name, subtitle, username, showVisitorBadge, workingOn, workingOnUrl,
+    titleGreeting, name, subtitle, useTypingSvg, username, showVisitorBadge, workingOn, workingOnUrl,
     learning, askMe, reachMe, funFact, selectedSkills, showStatsCard, showTopLangs,
     showStreakCard, showTrophy, statsTheme, socialGithub, socialLinkedin, socialTwitter,
     socialPortfolio, socialLeetcode, socialCodeforces, showQuote
@@ -327,11 +355,6 @@ export function GithubPortfolioView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generatedMarkdown]);
 
-  /**
-   * Authoritative server-side consumption for exporting the current portfolio
-   * version. Idempotent per version: copy + download of the same README cost
-   * exactly one credit; editing inputs and exporting again costs another.
-   */
   const ensureQuotaForCurrentVersion = async (): Promise<boolean> => {
     if (quota.unlimited) return true;
     if (consumedVersionRef.current === attemptIdRef.current) return true;
@@ -437,22 +460,23 @@ export function GithubPortfolioView() {
       {/* Main Studio Grid (Form Config + Live Preview) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Side: Interactive Controls */}
-        <div className="lg:col-span-5 space-y-5">
+        <div className="lg:col-span-5 space-y-4">
+
           {/* Navigation Tabs */}
           <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] overflow-x-auto">
-            {[
-              { id: "header", label: "Header", icon: User },
-              { id: "work", label: "About & Bio", icon: Sparkles },
-              { id: "skills", label: "Tech Stack", icon: Cpu },
-              { id: "stats", label: "GitHub Cards", icon: BarChart2 },
-              { id: "social", label: "Social Links", icon: Globe }
-            ].map(tab => {
+            {([
+              { id: "header" as const, label: "Header", icon: User },
+              { id: "work" as const, label: "About & Bio", icon: Sparkles },
+              { id: "skills" as const, label: "Tech Stack", icon: Cpu },
+              { id: "stats" as const, label: "GitHub Cards", icon: BarChart2 },
+              { id: "social" as const, label: "Social Links", icon: Globe }
+            ] satisfies { id: PortfolioTab; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[]).map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`px-3 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
                     isActive
                       ? "bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-sm"
@@ -514,10 +538,26 @@ export function GithubPortfolioView() {
                     rows={2}
                     value={subtitle}
                     onChange={(e) => setSubtitle(e.target.value)}
-                    placeholder="e.g. Full-Stack Engineer passionate about Open Source"
+                    placeholder="e.g. Java Developer | Spring Boot Enthusiast | Problem Solver"
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
                   />
                 </div>
+
+                <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] cursor-pointer hover:border-amber-500/20">
+                  <div className="flex items-center gap-2">
+                    <Type size={14} className="text-amber-500" />
+                    <div>
+                      <span className="text-xs font-bold text-[var(--text-primary)] block">Animated Typing Subtitle</span>
+                      <span className="text-[10px] text-[var(--text-secondary)]">Types out roles smoothly using readme-typing-svg</span>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={useTypingSvg}
+                    onChange={(e) => setUseTypingSvg(e.target.checked)}
+                    className="w-4 h-4 accent-amber-500 rounded"
+                  />
+                </label>
               </div>
             )}
 
@@ -534,7 +574,7 @@ export function GithubPortfolioView() {
                     type="text"
                     value={workingOn}
                     onChange={(e) => setWorkingOn(e.target.value)}
-                    placeholder="e.g. AI-powered web tools"
+                    placeholder="e.g. Scalable Java Microservices & Cloud Architectures"
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
                   />
                 </div>
@@ -556,7 +596,7 @@ export function GithubPortfolioView() {
                     type="text"
                     value={learning}
                     onChange={(e) => setLearning(e.target.value)}
-                    placeholder="e.g. System Design, Rust, Microservices"
+                    placeholder="e.g. System Design, Apache Kafka, Distributed Caching"
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
                   />
                 </div>
@@ -567,7 +607,7 @@ export function GithubPortfolioView() {
                     type="text"
                     value={askMe}
                     onChange={(e) => setAskMe(e.target.value)}
-                    placeholder="e.g. React, Node.js, Python, Architecture"
+                    placeholder="e.g. Core Java, Spring Boot, Hibernate, SQL & REST APIs"
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
                   />
                 </div>
@@ -589,7 +629,7 @@ export function GithubPortfolioView() {
                     type="text"
                     value={funFact}
                     onChange={(e) => setFunFact(e.target.value)}
-                    placeholder="e.g. I turn coffee into code!"
+                    placeholder="e.g. I turn coffee into clean, robust code!"
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
                   />
                 </div>
@@ -690,7 +730,7 @@ export function GithubPortfolioView() {
                 </h3>
 
                 <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">GitHub Username</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">GitHub Username or URL</label>
                   <input
                     type="text"
                     value={socialGithub}
@@ -701,7 +741,7 @@ export function GithubPortfolioView() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">LinkedIn Profile</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">LinkedIn Profile or URL</label>
                   <input
                     type="text"
                     value={socialLinkedin}
@@ -712,7 +752,7 @@ export function GithubPortfolioView() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">Twitter / X Handle</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">Twitter / X Handle or URL</label>
                   <input
                     type="text"
                     value={socialTwitter}
@@ -734,7 +774,7 @@ export function GithubPortfolioView() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">LeetCode Username</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">LeetCode Username or URL</label>
                   <input
                     type="text"
                     value={socialLeetcode}
@@ -745,7 +785,7 @@ export function GithubPortfolioView() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">Codeforces Username</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">Codeforces Username or URL</label>
                   <input
                     type="text"
                     value={socialCodeforces}
@@ -817,20 +857,96 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
       <div className="flex flex-col items-center justify-center min-h-[440px] text-center p-8 text-[var(--text-secondary)] space-y-3">
         <GithubIcon className="w-12 h-12 text-amber-500/40" />
         <p className="text-sm font-bold text-[var(--text-primary)]">Live README Preview</p>
-        <p className="text-xs max-w-sm">Fill in your information or select skills on the left to see your GitHub Profile README rendered live here!</p>
+        <p className="text-xs max-w-sm">
+          Fill in your details or choose a Quick Role Template on the left to see your GitHub Profile README rendered live here!
+        </p>
       </div>
     );
   }
 
-  const lines = markdown.split("\n");
+  // Pre-process markdown to collapse multi-line <p ...>...</p> blocks into single custom tokens
+  // so that badges and stats aren't broken across lines.
+  const processed = markdown
+    .replace(/\r\n/g, "\n")
+    .replace(/<p\s+align=["']([^"']+)["'][^>]*>([\s\S]*?)<\/p>/gi, (_, align, inner) => {
+      const singleLineInner = inner.replace(/\n\s*/g, " ").trim();
+      return `\n%%P_BLOCK%%${align}%%${singleLineInner}%%END_P_BLOCK%%\n`;
+    });
+
+  const lines = processed.split("\n");
 
   return (
-    <div className="space-y-4 font-sans text-xs text-[var(--text-primary)] leading-relaxed overflow-x-auto p-2">
+    <div className="space-y-4 font-sans text-xs text-[var(--text-primary)] leading-relaxed overflow-x-auto p-4 rounded-xl bg-[var(--bg-dark)]/40 border border-[var(--border-color)]">
       {lines.map((line, idx) => {
         const trimmed = line.trim();
-        if (!trimmed || trimmed === "<br/>" || trimmed === "---") return <div key={idx} className="h-1" />;
+        if (!trimmed || trimmed === "<br/>" || trimmed === "<br>") return <div key={idx} className="h-1.5" />;
+        if (trimmed === "---" || trimmed === "***" || trimmed === "<hr/>" || trimmed === "<hr>") {
+          return <hr key={idx} className="my-4 border-[var(--border-color)] opacity-60" />;
+        }
 
-        // Header 1: <h1 align="center">...</h1>
+        // P_BLOCK for badges, images, and links
+        if (trimmed.startsWith("%%P_BLOCK%%") && trimmed.endsWith("%%END_P_BLOCK%%")) {
+          const match = trimmed.match(/^%%P_BLOCK%%([^%]+)%%([\s\S]*?)%%END_P_BLOCK%%$/);
+          if (match) {
+            const align = match[1].toLowerCase();
+            const inner = match[2];
+
+            // Extract all link+img or standalone img items
+            const itemRegex = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>\s*<img\s+[^>]*src=["']([^"']+)["'](?:[^>]*alt=["']([^"']*)["'])?[^>]*>\s*<\/a>|<img\s+[^>]*src=["']([^"']+)["'](?:[^>]*alt=["']([^"']*)["'])?[^>]*>/gi;
+            const items: { href?: string; src: string; alt?: string }[] = [];
+            let itemMatch;
+            while ((itemMatch = itemRegex.exec(inner)) !== null) {
+              if (itemMatch[1] && itemMatch[2]) {
+                items.push({ href: itemMatch[1], src: itemMatch[2], alt: itemMatch[3] || "badge" });
+              } else if (itemMatch[4]) {
+                items.push({ src: itemMatch[4], alt: itemMatch[5] || "badge" });
+              }
+            }
+
+            if (items.length > 0) {
+              return (
+                <div
+                  key={idx}
+                  className={`flex flex-wrap items-center gap-2.5 my-3 ${
+                    align === "center" ? "justify-center" : align === "right" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {items.map((item, itemIdx) => {
+                    const imgEl = (
+                      <img
+                        key={itemIdx}
+                        src={item.src}
+                        alt={item.alt || "badge"}
+                        className="max-w-full h-auto inline-block rounded transition-transform hover:scale-105"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    );
+
+                    if (item.href) {
+                      return (
+                        <a
+                          key={itemIdx}
+                          href={item.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block transition-transform hover:scale-105 focus:outline-none"
+                        >
+                          {imgEl}
+                        </a>
+                      );
+                    }
+                    return imgEl;
+                  })}
+                </div>
+              );
+            }
+          }
+          return null;
+        }
+
+        // Header 1: <h1 align="center">...</h1> or # ...
         if (trimmed.startsWith("<h1") || trimmed.startsWith("# ")) {
           const content = trimmed.replace(/<[^>]*>/g, "").replace(/^#\s*/, "");
           if (!content.trim()) return null;
@@ -841,12 +957,12 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
           );
         }
 
-        // Header 3: <h3 align="center">...</h3>
+        // Header 3: <h3 align="center">...</h3> or ### ...
         if (trimmed.startsWith("<h3") || trimmed.startsWith("### ")) {
           const content = trimmed.replace(/<[^>]*>/g, "").replace(/^###\s*/, "");
           if (!content.trim()) return null;
           return (
-            <h3 key={idx} className="text-sm font-semibold text-center my-2 text-[var(--text-secondary)]">
+            <h3 key={idx} className="text-sm md:text-base font-semibold text-center my-2 text-[var(--text-secondary)]">
               {content}
             </h3>
           );
@@ -856,7 +972,7 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
         if (trimmed.startsWith("## ")) {
           const content = trimmed.replace(/^##\s*/, "");
           return (
-            <h2 key={idx} className="text-base font-bold my-4 pb-1.5 border-b border-[var(--border-color)] text-[var(--text-primary)] flex items-center gap-2">
+            <h2 key={idx} className="text-base font-bold my-4 pb-2 border-b border-[var(--border-color)] text-[var(--text-primary)] flex items-center gap-2">
               {content}
             </h2>
           );
@@ -878,7 +994,7 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
                     const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)/);
                     if (match) {
                       return (
-                        <a key={pIdx} href={match[2]} target="_blank" rel="noreferrer" className="text-amber-500 font-bold underline hover:text-amber-400">
+                        <a key={pIdx} href={match[2]} target="_blank" rel="noopener noreferrer" className="text-amber-500 font-bold underline hover:text-amber-400">
                           {match[1]}
                         </a>
                       );
@@ -891,27 +1007,45 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
           );
         }
 
-        // Paragraph / Badge containers (<p align="center"> or <p align="left">) or img tags
+        // Standalone images / links not wrapped in <p>
         if (trimmed.includes("<img") || trimmed.includes("<a")) {
-          const imgMatches = Array.from(trimmed.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/g));
-          if (imgMatches.length > 0) {
-            const isCenter = trimmed.includes('align="center"');
+          const itemRegex = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>\s*<img\s+[^>]*src=["']([^"']+)["'](?:[^>]*alt=["']([^"']*)["'])?[^>]*>\s*<\/a>|<img\s+[^>]*src=["']([^"']+)["'](?:[^>]*alt=["']([^"']*)["'])?[^>]*>/gi;
+          const items: { href?: string; src: string; alt?: string }[] = [];
+          let m;
+          while ((m = itemRegex.exec(trimmed)) !== null) {
+            if (m[1] && m[2]) {
+              items.push({ href: m[1], src: m[2], alt: m[3] || "badge" });
+            } else if (m[4]) {
+              items.push({ src: m[4], alt: m[5] || "badge" });
+            }
+          }
+          if (items.length > 0) {
             return (
-              <div key={idx} className={`flex flex-wrap items-center gap-2.5 my-3 ${isCenter ? "justify-center" : "justify-start"}`}>
-                {imgMatches.map((m, imgIdx) => (
-                  <img
-                    key={imgIdx}
-                    src={m[1]}
-                    alt="badge"
-                    className="max-w-full h-auto inline-block rounded border border-transparent hover:scale-105 transition-transform"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = "none";
-                    }}
-                  />
-                ))}
+              <div key={idx} className="flex flex-wrap items-center gap-2.5 my-2">
+                {items.map((item, itemIdx) => {
+                  const img = (
+                    <img
+                      key={itemIdx}
+                      src={item.src}
+                      alt={item.alt || "badge"}
+                      className="max-w-full h-auto inline-block rounded"
+                      onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                    />
+                  );
+                  return item.href ? (
+                    <a key={itemIdx} href={item.href} target="_blank" rel="noopener noreferrer">
+                      {img}
+                    </a>
+                  ) : img;
+                })}
               </div>
             );
           }
+        }
+
+        // Filter out leftover HTML open/close tags
+        if (/^<\/?(p|div|br|span|section)[^>]*>$/i.test(trimmed)) {
+          return null;
         }
 
         return <div key={idx} className="text-xs text-[var(--text-secondary)]">{trimmed}</div>;

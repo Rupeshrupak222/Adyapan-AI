@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { requireAuth } from "../middleware/auth";
-import { generateSpeech } from "../services/avatar.service";
+import { generateSpeech, getInterviewElevenLabsKey } from "../services/avatar.service";
 
 const router = Router();
 
@@ -13,7 +13,7 @@ router.post("/speak", requireAuth, async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, message: "text is required" });
   }
 
-  const hasElevenLabs = !!process.env.ELEVENLABS_API_KEY;
+  const hasElevenLabs = !!getInterviewElevenLabsKey();
 
   try {
     // Mode 1: ElevenLabs audio (browser renders animated SVG avatar + sound)

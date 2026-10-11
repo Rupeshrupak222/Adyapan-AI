@@ -4,13 +4,26 @@
 const DEFAULT_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
 
 // ─────────────────────────────────────────────
+// ElevenLabs API key resolution
+// The Interview Hub (avatar / TTS) uses a dedicated second key so its usage
+// does not consume the primary key. Falls back to the primary if unset.
+// ─────────────────────────────────────────────
+export function getInterviewElevenLabsKey(): string {
+  return (
+    process.env.ELEVENLABS_API_KEY_2 ||
+    process.env.ELEVENLABS_API_KEY ||
+    ""
+  ).trim();
+}
+
+// ─────────────────────────────────────────────
 // ElevenLabs TTS
 // ─────────────────────────────────────────────
 export async function generateSpeech(
   text: string,
   voiceId: string = DEFAULT_VOICE_ID
 ): Promise<Buffer | null> {
-  const apiKey = (process.env.ELEVENLABS_API_KEY || "").trim();
+  const apiKey = getInterviewElevenLabsKey();
   if (!apiKey) return null;
 
   const cleanText = text
