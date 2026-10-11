@@ -24,6 +24,9 @@ const OperationsCenter = dynamic(() => import("@/components/admin/sections/Opera
 const UserManagement = dynamic(() => import("@/components/admin/sections/UserManagement"), {
   loading: () => <PageLoading />,
 });
+const UserProgressReports = dynamic(() => import("@/components/admin/sections/UserProgressReports"), {
+  loading: () => <PageLoading />,
+});
 const OrganizationManagement = dynamic(() => import("@/components/admin/sections/OrganizationManagement"), {
   loading: () => <PageLoading />,
 });
@@ -124,6 +127,7 @@ const sectionImporters: Record<string, () => Promise<any>> = {
   executive: () => import("@/components/admin/sections/ExecutiveDashboard"),
   operations: () => import("@/components/admin/sections/OperationsCenter"),
   users: () => import("@/components/admin/sections/UserManagement"),
+  "progress-reports": () => import("@/components/admin/sections/UserProgressReports"),
   organizations: () => import("@/components/admin/sections/OrganizationManagement"),
   "ai-platform": () => import("@/components/admin/sections/AIPlatform"),
   features: () => import("@/components/admin/sections/FeatureManagement"),
@@ -157,6 +161,7 @@ const sectionComponents: Record<string, React.ComponentType> = {
   executive: ExecutiveDashboard,
   operations: OperationsCenter,
   users: UserManagement,
+  "progress-reports": UserProgressReports,
   organizations: OrganizationManagement,
   "ai-platform": AIPlatform,
   features: FeatureManagement,

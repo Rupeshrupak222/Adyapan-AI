@@ -23,7 +23,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Derive the backend origin from the (normalized) API base URL by
     // stripping the /api path — keeps socket + HTTP calls on the same host.
-    const apiUrl = api.defaults.baseURL || "http://localhost:5000/api";
+    const apiUrl = api.defaults.baseURL || "https://adyapan-ai-production.up.railway.app/api";
     const socketUrl = apiUrl.replace(/\/api\/?$/, "");
 
     const token =

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { isMaintenanceOrQuotaError, MAINTENANCE_MESSAGE } from "@/utils/maintenanceHelper";
 
-const DEFAULT_API_URL = "http://localhost:5000/api";
+const DEFAULT_API_URL = "https://adyapan-ai-production.up.railway.app/api";
 
 export function normalizeApiBaseUrl(raw?: string): string {
   const input = (raw ?? "").trim();
@@ -24,6 +24,7 @@ export const api = axios.create({
 // Request interceptor — attach token, session ID, timezone
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
+    config.baseURL = API_BASE_URL;
     const token = sessionStorage.getItem("adyapan-token") || localStorage.getItem("adyapan-token");
     if (token) config.headers.Authorization = `Bearer ${token}`;
     const sessionId = sessionStorage.getItem("adyapan-session-id") || localStorage.getItem("adyapan-session-id");

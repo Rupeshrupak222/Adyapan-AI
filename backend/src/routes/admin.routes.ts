@@ -41,6 +41,8 @@ import {
   getAptitudeTestsAdminCtrl,
   generateAptitudeTestAdminCtrl,
   deleteAptitudeTestAdminCtrl,
+  getAdminUsersProgressReports,
+  getAdminSingleUserProgressReport,
 } from "../controllers/admin.controller";
 import {
   handleAdminGetMCQOverview,
@@ -114,6 +116,8 @@ adminRouter.post("/organizations/bulk-students", ...can("organizations", "write"
 adminRouter.get("/dashboard", ...can("analytics", "read"), getDashboardStats);
 adminRouter.get("/activity", ...can("analytics", "read"), getActivityFeed);
 adminRouter.get("/analytics/registrations", ...can("analytics", "read"), getRegistrationAnalytics);
+adminRouter.get("/users/progress-reports", ...can("users", "read"), getAdminUsersProgressReports);
+adminRouter.get("/users/:userId/progress-report", ...can("users", "read"), getAdminSingleUserProgressReport);
 adminRouter.get("/users", ...can("users", "read"), getAdminUsers);
 adminRouter.post("/users", ...can("users", "write"), createAdminUser);
 adminRouter.put("/users/:id", ...can("users", "write"), editAdminUser);

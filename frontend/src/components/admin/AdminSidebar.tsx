@@ -6,6 +6,7 @@ import {
   GraduationCap, Briefcase, FileText, CreditCard, BarChart3,
   ActivitySquare, Shield, Server, Puzzle, ScrollText,
   Bell, Terminal, Bot, Settings, LifeBuoy, BookOpen, Code2, Calculator,
+  TrendingUp,
 } from "lucide-react";
 
 interface SidebarSectionItem {
@@ -19,6 +20,7 @@ const sidebarSections: SidebarSectionItem[] = [
   { id: "executive", label: "Executive Dashboard", icon: <LayoutDashboard size={18} /> },
   { id: "operations", label: "Operations Center", icon: <Activity size={18} /> },
   { id: "users", label: "User Management", icon: <Users size={18} /> },
+  { id: "progress-reports", label: "User Progress Reports", icon: <TrendingUp size={18} /> },
   { id: "organizations", label: "Organizations", icon: <Building2 size={18} /> },
   { id: "ai-platform", label: "AI Platform", icon: <Brain size={18} /> },
   { id: "features", label: "Feature Management", icon: <ToggleLeft size={18} /> },

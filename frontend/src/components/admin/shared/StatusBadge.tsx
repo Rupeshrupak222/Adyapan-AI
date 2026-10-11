@@ -11,7 +11,7 @@ const variants = {
   warning: { bg: "rgba(245,158,11,0.12)", color: "#f59e0b", border: "rgba(245,158,11,0.3)" },
   error: { bg: "rgba(239,68,68,0.12)", color: "#ef4444", border: "rgba(239,68,68,0.3)" },
   info: { bg: "rgba(99,102,241,0.12)", color: "#818cf8", border: "rgba(99,102,241,0.3)" },
-  default: { bg: "rgba(255,255,255,0.05)", color: "var(--text-secondary)", border: "rgba(255,255,255,0.1)" },
+  default: { bg: "var(--admin-surface, rgba(128,128,128,0.08))", color: "var(--text-secondary)", border: "var(--border-color)" },
 };
 
 export function StatusBadge({ variant = "default", children, pulse }: StatusBadgeProps) {
