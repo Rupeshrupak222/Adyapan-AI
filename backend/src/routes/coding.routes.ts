@@ -235,26 +235,24 @@ router.get("/dashboard", async (req: any, res) => {
     const userId = req.user.userId;
     const userPrisma = await getUserPrismaFromRequest(req);
 
-    // 1. Fetch user progress records
+    // 1. Solved & Attempted & Bookmarks from synced DSA progress
+    const dsaProgress = await DsaProgressService.calculateAndSyncProgress(userId, userPrisma).catch(() => null);
+
+    // 2. Fetch user progress records (includes any self-healed records)
     const userProgress = await userPrisma.userQuestionProgress.findMany({
       where: { userId }
     });
-
     const progressMap = new Map(userProgress.map((p: any) => [p.questionId, p]));
 
-    // 2. Fetch global statistics from Master DB
+    // 3. Fetch global statistics from Master DB
     const totalQuestions = await masterPrisma.codingQuestion.count();
-    
-    // Solved & Attempted & Bookmarks from user progress & synced DSA progress
-    const dsaProgress = await DsaProgressService.calculateAndSyncProgress(userId, userPrisma).catch(() => null);
-    const solvedCount = Math.max(
-      userProgress.filter((p: any) => p.status?.toLowerCase() === "solved" || p.solved === true).length,
-      dsaProgress?.solved || 0
-    );
+
+    const solvedCount = dsaProgress
+      ? dsaProgress.solved
+      : userProgress.filter((p: any) => p.status?.toLowerCase() === "solved" || p.solved === true).length;
     const attemptedCount = Math.max(
       solvedCount,
-      userProgress.filter((p: any) => p.status === "attempted" || p.status?.toLowerCase() === "solved" || p.attempted === true || (p.runCount && p.runCount > 0)).length,
-      dsaProgress?.solved || 0
+      userProgress.filter((p: any) => p.status === "attempted" || p.status?.toLowerCase() === "solved" || p.attempted === true || (p.runCount && p.runCount > 0)).length
     );
     const bookmarkedCount = userProgress.filter((p: any) => p.bookmarked).length;
 
@@ -1986,25 +1984,32 @@ router.get("/dashboard/analytics", async (req: any, res) => {
     const userPrisma = await getUserPrismaFromRequest(req);
 
     // 1. User Question Progress & Synced DSA Progress
-    const userProgress = await userPrisma.userQuestionProgress.findMany({ where: { userId } });
     const dsaProgress = await DsaProgressService.calculateAndSyncProgress(userId, userPrisma).catch(() => null);
+    const userProgress = await userPrisma.userQuestionProgress.findMany({ where: { userId } });
     const progressMap = new Map(userProgress.map((p: any) => [p.questionId, p]));
-    const solvedCount = Math.max(
-      userProgress.filter((p: any) => p.status?.toLowerCase() === "solved" || p.solved === true).length,
-      dsaProgress?.solved || 0
-    );
+
+    // 2. Global questions & Accurate Solved Check
+    const globalQuestions = await masterPrisma.codingQuestion.findMany({
+      select: { id: true, externalId: true, topic: true, difficulty: true }
+    });
+
+    const isQuestionSolved = (q: any) => {
+      const p: any = progressMap.get(q.id) || (q.externalId ? progressMap.get(q.externalId) : null);
+      if (!p) return false;
+      return p.solved === true || p.status?.toLowerCase() === "solved";
+    };
+
+    const solvedQuestions = globalQuestions.filter(q => isQuestionSolved(q));
+    const solvedCount = dsaProgress ? dsaProgress.solved : solvedQuestions.length;
     const attemptedCount = Math.max(userProgress.length, solvedCount);
 
-    // 2. Topic Explorer (reuse existing logic pattern)
-    const globalQuestions = await masterPrisma.codingQuestion.findMany({
-      select: { id: true, topic: true, difficulty: true }
-    });
-    const topicNames = [...new Set(globalQuestions.map(q => q.topic))];
+    // Topic Explorer / Topic Mastery
+    const topicNames = [...new Set(globalQuestions.map(q => q.topic).filter(Boolean))];
 
     const topicMastery = topicNames.map(topicName => {
       const topicQs = globalQuestions.filter(q => q.topic === topicName);
       const totalQ = topicQs.length;
-      const solvedQ = topicQs.filter(q => (progressMap.get(q.id) as any)?.status === "solved").length;
+      const solvedQ = topicQs.filter(q => isQuestionSolved(q)).length;
       return {
         topic: topicName,
         score: totalQ > 0 ? Math.round((solvedQ / totalQ) * 100) : 0,
@@ -2013,15 +2018,12 @@ router.get("/dashboard/analytics", async (req: any, res) => {
       };
     });
 
-    // 3. Difficulty Distribution
-    const solvedQuestionIds = userProgress.filter((p: any) => p.status === "solved").map((p: any) => p.questionId);
-    const solvedQuestions = solvedQuestionIds.length > 0
-      ? await masterPrisma.codingQuestion.findMany({ where: { id: { in: solvedQuestionIds } } })
-      : [];
+    // 3. Difficulty Distribution (consistent with isQuestionSolved)
     const difficultyDistribution = { Easy: 0, Medium: 0, Hard: 0, Expert: 0 };
     solvedQuestions.forEach(q => {
       const d = q.difficulty as keyof typeof difficultyDistribution;
       if (d in difficultyDistribution) difficultyDistribution[d]++;
+      else difficultyDistribution["Easy"]++;
     });
 
     // 4. Challenge Analytics
