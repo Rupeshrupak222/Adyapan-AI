@@ -307,7 +307,7 @@ router.get("/dashboard", async (req: any, res) => {
         const completionPercentage = totalQ > 0 ? Math.round((solvedQ / totalQ) * 100) : 0;
 
         // Difficulty distribution
-        const difficultyDist = { Easy: 0, Medium: 0, Hard: 0, Expert: 0 };
+        const difficultyDist = { Easy: 0, Medium: 0, Hard: 0 };
         topicQuestions.forEach(q => {
           const diff = q.difficulty as keyof typeof difficultyDist;
           if (diff in difficultyDist) {
@@ -2007,7 +2007,7 @@ router.get("/dashboard/analytics", async (req: any, res) => {
     });
 
     // 3. Difficulty Distribution (consistent with isQuestionSolved)
-    const difficultyDistribution = { Easy: 0, Medium: 0, Hard: 0, Expert: 0 };
+    const difficultyDistribution = { Easy: 0, Medium: 0, Hard: 0 };
     solvedQuestions.forEach(q => {
       const d = q.difficulty as keyof typeof difficultyDistribution;
       if (d in difficultyDistribution) difficultyDistribution[d]++;
