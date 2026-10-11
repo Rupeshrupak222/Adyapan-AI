@@ -170,6 +170,10 @@ export function useInterviewProctor({
         throw new Error("Both camera and microphone permissions are required to begin the interview.");
       }
 
+      // Stop proctor stream audio tracks immediately: Proctor only needs video for COCO-SSD detection.
+      // Releasing the audio track frees the hardware microphone exclusively for speech recognition & conversation engine.
+      stream.getAudioTracks().forEach((track) => track.stop());
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});

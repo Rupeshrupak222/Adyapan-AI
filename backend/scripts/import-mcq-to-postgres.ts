@@ -2,10 +2,14 @@
  * Migrates the MCQ test bank from data/mcq-tests-store.json into the Postgres
  * `mcq_tests` / `mcq_questions` tables.
  *
- * This is a COPY, not a move: the JSON file stays authoritative until
- * mcq.service.ts is switched over to read from the database, so a failure here
- * can never lose data. It is idempotent (upsert by id) and defaults to a dry
- * run.
+ * STATUS: the migration is done. `mcq.service.ts` now reads and writes those
+ * tables directly (see `src/services/mcq-store-db.ts`), so Postgres — not this
+ * JSON file — is the source of truth. Keep this script as a repair/reconciliation
+ * tool: it is idempotent (upsert by id) and defaults to a dry run.
+ *
+ * Do not point it at a JSON file to *restore* from without also stopping the
+ * backend, because a running backend will write its own in-memory state back to
+ * that file.
  *
  * Usage:
  *   npx tsx scripts/import-mcq-to-postgres.ts            # dry run, reports plan

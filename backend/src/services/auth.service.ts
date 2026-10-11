@@ -713,7 +713,7 @@ export async function loginUser(
   }
 
   if (!user.password) {
-    throw httpError(401, "This account was created via GitHub login. Please use GitHub to sign in.");
+    throw httpError(401, "This account was created via GitHub login. Please use GitHub to sign in, or use 'Forgot Password' to create a password.");
   }
 
   const isPasswordValid = await bcrypt.compare(input.password, user.password);
@@ -950,18 +950,15 @@ export async function requestPasswordReset(email: string): Promise<{ devOtp?: st
     createdAt: new Date(),
   });
 
-  // Dispatch OTP email via configured SMTP
   try {
     await sendPasswordResetOtpEmail(normalizedEmail, otp);
     console.log(`[PasswordReset] OTP email dispatched successfully to ${normalizedEmail}`);
   } catch (emailErr: any) {
     console.error(`[PasswordReset] Failed to dispatch OTP email to ${normalizedEmail}:`, emailErr?.message || emailErr);
+    throw httpError(500, "Could not send verification email. Please check your email address or try again shortly.");
   }
 
-  // In development, also return devOtp for fast testing
-  if (env.nodeEnv === "development") {
-    return { devOtp: otp };
-  }
+  console.log(`🔐 [PasswordReset] Generated and emailed OTP for ${normalizedEmail} (Valid for 10 mins)`);
   return {};
 }
 
@@ -1004,9 +1001,6 @@ export async function resetPassword(email: string, otp: string, newPassword: str
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) {
     throw httpError(404, "Account not found.");
-  }
-  if (!user.password) {
-    throw httpError(400, "This account was created via GitHub login and has no password. Please use GitHub to sign in.");
   }
 
   const hashed = await bcrypt.hash(newPassword, 12);

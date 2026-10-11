@@ -14,10 +14,10 @@ describe("Interview Hub Premium Quota Configuration", () => {
     expect(FeatureKey.HR_INTERVIEW).toBe("HR_INTERVIEW");
   });
 
-  it("should enforce 5 monthly attempts each on Premium tier", () => {
-    expect(DEFAULT_PREMIUM_LIMITS[FeatureKey.INTERVIEW_ENGINE]).toBe(5);
-    expect(DEFAULT_PREMIUM_LIMITS[FeatureKey.TECHNICAL_INTERVIEW]).toBe(5);
-    expect(DEFAULT_PREMIUM_LIMITS[FeatureKey.HR_INTERVIEW]).toBe(5);
+  it("should enforce 10 monthly attempts each on Premium tier", () => {
+    expect(DEFAULT_PREMIUM_LIMITS[FeatureKey.INTERVIEW_ENGINE]).toBe(10);
+    expect(DEFAULT_PREMIUM_LIMITS[FeatureKey.TECHNICAL_INTERVIEW]).toBe(10);
+    expect(DEFAULT_PREMIUM_LIMITS[FeatureKey.HR_INTERVIEW]).toBe(10);
   });
 
   it("should require premium (0 free attempts) on Free tier", () => {

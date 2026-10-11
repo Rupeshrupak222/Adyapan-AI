@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "@/lib/static-motion";
 import {
   Sparkles, ChevronRight, Brain, CheckCircle2, XCircle,
   Clock, Bookmark, BookmarkCheck, TrendingUp, Zap, Target, Flame,
@@ -878,21 +878,6 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
 
   // ── Start Direct Dynamic Test (15 Qs, 30 Mins) ──
   const startTestSession = useCallback(async (test: MCQTest) => {
-    if (quota.exhausted) {
-      toast.error(
-        quota.status?.plan === "free"
-          ? "You've used all 10 free Technical MCQ tests this month."
-          : "You've used all 30 Premium Technical MCQ tests this month.",
-        {
-          description: quota.status?.plan === "free"
-            ? "Upgrade to Premium for 30 tests per month."
-            : "Your allowance will reset on the 1st of next month.",
-          action: quota.status?.plan === "free" ? { label: "Upgrade", onClick: () => window.location.href = "/premium" } : undefined,
-        }
-      );
-      return;
-    }
-
     setAiLoading(true);
     setShowExplanation(false);
     setShowHint(false);
@@ -1100,7 +1085,7 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
   }, [setActiveTab]);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="no-page-motion relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
 
       {/* ── LOADING OVERLAY ────────────────────────────────────────────── */}
       <AnimatePresence>
@@ -1170,8 +1155,6 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
         </div>
 
         <div className="flex items-center gap-2">
-          <FeatureCreditBadge featureKey="TECHNICAL_MCQS" compact isDark={isDark} />
-
           {/* 30-Minute Live Countdown Timer */}
           {view === "active_session" && (
             <div className="flex items-center gap-3">

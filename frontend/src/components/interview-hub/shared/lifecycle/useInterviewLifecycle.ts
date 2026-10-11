@@ -217,6 +217,11 @@ export function useInterviewLifecycle({
 
   const markInterviewStarted = useCallback(() => {
     isTerminatedRef.current = false;
+    // Release pre-validation media tracks so hardware microphone & camera are completely free for the active interview engine
+    if (activeStreamRef.current) {
+      activeStreamRef.current.getTracks().forEach((track) => track.stop());
+      activeStreamRef.current = null;
+    }
     setLifecycleState("INTERVIEW_ACTIVE");
     logInterview("State", `[${interviewType}] Interview session STARTED -> INTERVIEW_ACTIVE`);
   }, [interviewType]);

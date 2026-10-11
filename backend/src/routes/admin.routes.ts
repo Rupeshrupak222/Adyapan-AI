@@ -41,6 +41,8 @@ import {
   getAptitudeTestsAdminCtrl,
   generateAptitudeTestAdminCtrl,
   deleteAptitudeTestAdminCtrl,
+  getAdminUsersProgressReports,
+  getAdminSingleUserProgressReport,
 } from "../controllers/admin.controller";
 import {
   handleAdminGetMCQOverview,
@@ -54,6 +56,7 @@ import {
   handleGetTests,
   handleGetTestById,
 } from "../controllers/mcq.controller";
+import { HourlyQuestionSchedulerService } from "../services/hourly-question-scheduler.service";
 import { requireAdminAuth } from "../middleware/adminAuth";
 import { requireAdminPermission, requireSuperAdmin } from "../middleware/adminPermission";
 import {
@@ -113,6 +116,8 @@ adminRouter.post("/organizations/bulk-students", ...can("organizations", "write"
 adminRouter.get("/dashboard", ...can("analytics", "read"), getDashboardStats);
 adminRouter.get("/activity", ...can("analytics", "read"), getActivityFeed);
 adminRouter.get("/analytics/registrations", ...can("analytics", "read"), getRegistrationAnalytics);
+adminRouter.get("/users/progress-reports", ...can("users", "read"), getAdminUsersProgressReports);
+adminRouter.get("/users/:userId/progress-report", ...can("users", "read"), getAdminSingleUserProgressReport);
 adminRouter.get("/users", ...can("users", "read"), getAdminUsers);
 adminRouter.post("/users", ...can("users", "write"), createAdminUser);
 adminRouter.put("/users/:id", ...can("users", "write"), editAdminUser);
@@ -167,6 +172,13 @@ adminRouter.put("/mcq/tests/:testId", ...can("content", "write"), handleAdminUpd
 adminRouter.delete("/mcq/tests/:testId", ...can("content", "write"), handleAdminDeleteTest);
 adminRouter.post("/mcq/tests/:testId/questions", ...can("content", "write"), handleAdminAddQuestionToTest);
 adminRouter.delete("/mcq/tests/:testId/questions/:questionId", ...can("content", "write"), handleAdminDeleteQuestion);
+adminRouter.get("/mcq/hourly-scheduler/status", ...can("content", "read"), (req, res) => {
+  res.json({ success: true, status: HourlyQuestionSchedulerService.getStatus() });
+});
+adminRouter.post("/mcq/hourly-scheduler/trigger", ...can("content", "write"), async (req, res) => {
+  const result = await HourlyQuestionSchedulerService.runHourlyCycle();
+  res.json({ success: true, result });
+});
 
 // AI Aptitude Engine & Topic Tests Management
 adminRouter.get("/aptitude/overview", ...can("content", "read"), getAptitudeOverviewAdminCtrl);

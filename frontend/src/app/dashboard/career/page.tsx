@@ -63,7 +63,12 @@ export default function CareerDashboardPage() {
 
   const handleViewProfile = () => router.push("/profile");
   const handlePremium = () => router.push("/premium");
-  const handleViewDashboard = () => router.push("/dashboard/user");
+  const handleViewDashboard = () => {
+    try {
+      localStorage.setItem("dashboard-active-view", "dashboard");
+    } catch {}
+    router.push("/dashboard/user");
+  };
   const handleAdyChat = () => {
     localStorage.setItem("dashboard-active-view", "ady-chat");
     router.push("/dashboard/user");
@@ -83,6 +88,7 @@ export default function CareerDashboardPage() {
         onThemeToggle={handleThemeToggle}
         onViewProfile={handleViewProfile}
         onAdyChat={handleAdyChat}
+        onViewDashboard={handleViewDashboard}
         onViewTool={handleViewTool}
         onMenuToggle={() => setSidebarOpen(p => !p)}
         notifications={notifications}

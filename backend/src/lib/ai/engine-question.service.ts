@@ -151,6 +151,73 @@ function getCompanyFocus(company: string): string {
 function getRoleDomainTechnicalFocus(role: string, technology: string): string {
   const target = `${role || ""} ${technology || ""}`.toLowerCase();
 
+  // ── 18 Core Adyapan CSE Domains & AI/Data Focus ──
+  if (target.includes("generative") || target.includes("agentic") || target.includes("rag") || target.includes("llm")) {
+    return `Role Domain Expertise Focus — AI (Generative & Agentic):
+- Focus on: LLM architectures, prompt engineering, Retrieval-Augmented Generation (RAG), vector embeddings, vector databases (Pinecone, Chroma), LangChain, LlamaIndex, autonomous multi-agent frameworks, tool use, and safety alignment.`;
+  }
+
+  if (target.includes("data science") || target.includes("data scientist") || (target.includes("eda") && target.includes("model"))) {
+    return `Role Domain Expertise Focus — Data Science:
+- Focus on: Exploratory data analysis (EDA), statistical inference, probability distributions, pandas, NumPy, feature selection, data cleaning, model evaluation (ROC-AUC, RMSE, F1-score), and data storytelling.`;
+  }
+
+  if (target.includes("machine learning") || target.includes("ml with python") || target.includes("ml engineer")) {
+    return `Role Domain Expertise Focus — ML with Python / Machine Learning:
+- Focus on: Scikit-learn pipelines, model selection, hyperparameter tuning, regression, classification, clustering, handling imbalanced datasets, and ML productionization in Python.`;
+  }
+
+  if (target.includes("deep learning") || target.includes("ai with ml") || target.includes("pytorch") || target.includes("tensorflow") || target.includes("computer vision") || target.includes("nlp")) {
+    return `Role Domain Expertise Focus — AI with ML & Deep Learning:
+- Focus on: Deep learning architectures, CNNs, RNNs, LSTMs, Transformers, backpropagation, PyTorch/TensorFlow implementations, regularization techniques, and computer vision / NLP tasks.`;
+  }
+
+  if (target.includes("data analytics") || target.includes("business analytics") || target.includes("power bi") || target.includes("tableau")) {
+    return `Role Domain Expertise Focus — Data & Business Analytics:
+- Focus on: SQL complex aggregations and window functions, ETL/ELT pipelines, KPI metric definitions, cohort analysis, unit economics, LTV/CAC, churn prediction, A/B testing design, and executive dashboard storytelling.`;
+  }
+
+  if (target.includes("devops") || target.includes("ci/cd") || target.includes("docker") || target.includes("kubernetes") || target.includes("terraform")) {
+    return `Role Domain Expertise Focus — DevOps:
+- Focus on: CI/CD automation pipelines, Docker containerization, Kubernetes cluster orchestration, Infrastructure as Code (Terraform), Linux system administration, and observability (Prometheus/Grafana).`;
+  }
+
+  if (target.includes("aws") || target.includes("cloud computing") || target.includes("cloud engineer") || target.includes("cloud architect")) {
+    return `Role Domain Expertise Focus — AWS & Cloud Computing:
+- Focus on: AWS core services (EC2, S3, RDS, DynamoDB, Lambda, VPC networking, Route 53, IAM security), cloud design patterns, high availability, fault tolerance, virtualization, and cost-efficient cloud architectures.`;
+  }
+
+  if (target.includes("cybersecurity") || target.includes("security analyst") || target.includes("owasp") || target.includes("penetration")) {
+    return `Role Domain Expertise Focus — Cybersecurity:
+- Focus on: OWASP Top 10 vulnerabilities, web security (XSS, CSRF, SQL Injection), cryptography (symmetric/asymmetric encryption, hashing), authentication (OAuth2, JWT), network security, and secure coding practices.`;
+  }
+
+  if (target.includes("full stack") || target.includes("fullstack") || target.includes("web dev") || target.includes("web developer")) {
+    return `Role Domain Expertise Focus — Full Stack & Web Development:
+- Focus on: Modern semantic HTML5, CSS3 layouts (Flexbox, Grid), responsive UI, modern JavaScript/TypeScript, React/Next.js, Node.js/Express, REST/GraphQL APIs, database modeling, and web performance.`;
+  }
+
+  if (target.includes("android") || target.includes("mobile dev") || target.includes("flutter") || target.includes("react native") || target.includes("kotlin")) {
+    return `Role Domain Expertise Focus — Android & Mobile App Development:
+- Focus on: Kotlin & Android SDK, Jetpack Compose, MVVM/Clean Architecture, Room database, coroutines, cross-platform mobile architecture (Flutter, React Native), mobile state management, and offline caching.`;
+  }
+
+  if (target.includes("java developer") || target.includes("programming in java") || target.includes("spring boot")) {
+    return `Role Domain Expertise Focus — Programming in Java:
+- Focus on: Core Java, object-oriented design principles, Java Memory Model (JVM architecture, GC algorithms), Collections framework, Java 8+ features (Streams, Lambdas), multithreading, and Spring Boot microservices.`;
+  }
+
+  if (target.includes("python developer") || target.includes("programming in python") || target.includes("fastapi")) {
+    return `Role Domain Expertise Focus — Programming in Python:
+- Focus on: Core Python concepts, memory management, GIL, generators, decorators, iterators, magic/dunder methods, async/await (AsyncIO), typing, packaging, and standard library best practices.`;
+  }
+
+  if (target.includes("dsa with python") || target.includes("dsa") || target.includes("algorithms") || target.includes("leetcode")) {
+    return `Role Domain Expertise Focus — Data Structures & Algorithms:
+- Focus on: Time and space complexity (Big-O notation), arrays, hash tables, binary trees, heaps, graphs, dynamic programming, recursion, two-pointer techniques, and optimal algorithmic implementations.`;
+  }
+
+  // ── Core Engineering, ECE, Healthcare & Business Focus ──
   if (target.includes("civil") || target.includes("structural") || target.includes("bim") || target.includes("cad")) {
     return `Role Domain Expertise Focus — Civil & Structural Engineering:
 - Focus on: Bar bending schedules, concrete slump test, compressive strength, IS/ACI structural codes, load estimation, BIM LOD modeling, quantity surveying, and construction site safety protocols.`;
@@ -261,6 +328,17 @@ export async function generateEngineQuestion(
   const isEarlyStage = questionNumber <= 2;
   const isLateStage = questionNumber >= totalQuestions - 2;
 
+  const previousQuestions = config.history
+    .filter((m) => m.role === "interviewer")
+    .map((m, i) => `${i + 1}. "${m.content.replace(/\s+/g, " ").trim()}"`);
+
+  const lastCandidateMsg = config.history.filter((m) => m.role === "candidate").pop();
+  const lastInterviewerMsg = config.history.filter((m) => m.role === "interviewer").pop();
+
+  const lastWasFollowUp = lastInterviewerMsg
+    ? /(follow[- ]?up|elaborate|clarify|can you explain why|why did you|what if|how did you handle|walk me through|trade-off|specifically|counter|probe)/i.test(lastInterviewerMsg.content)
+    : false;
+
   const conversationHistory = config.history
     .filter((m) => m.role === "interviewer" || m.role === "candidate")
     .map((m) => `[${m.role === "interviewer" ? "Interviewer" : "Candidate"}]: ${m.content}`)
@@ -290,30 +368,32 @@ ${companyFocus}
 DYNAMIC DIFFICULTY: ${dynamicDifficulty}
 ${difficultyInstructions}
 ${resumeSection}
-QUESTION GENERATION & INTERACTIVE EVALUATION RULES:
+
+CRITICAL ANTI-REPETITION MANDATE (ABSOLUTE RULE):
+The following questions have ALREADY BEEN ASKED in this session:
+${previousQuestions.length > 0 ? previousQuestions.join("\n") : "(None yet - this is question 1)"}
+
+STRICT PROHIBITION: You MUST NEVER repeat, rephrase, or ask questions that overlap with any of the questions listed above! If moving to a new subject, pick a completely untouched topic within ${config.role} and ${config.technology || "the role"}.
+
+COUNTER-QUESTIONING & DRILL-DOWN RULES:
+${!lastWasFollowUp && questionNumber > 1 ? `1. MANDATORY COUNTER-QUESTION: A skilled interviewer does NOT jump blindly across topics like a quiz. Cross-examine what the candidate JUST said:
+   - If technical: Challenge their chosen approach or tool ("Why choose X instead of Y?", "What are the trade-offs?", "How do you handle edge cases, concurrent writes, or scaling to 10M records?", "What happens during a crash or network partition?").
+   - If behavioral: Probe their specific individual impact ("What was YOUR personal contribution versus the team?", "What was the hardest disagreement, and how did you resolve it?", "What metric proved it succeeded?").
+   - If vague or generic: Ask them to walk you through a concrete, production-level code/architecture implementation.` : `1. The previous question was already a drill-down/follow-up. Provide a brief 1-sentence transition and introduce a FRESH, UNTOUCHED TOPIC for the ${config.role} role.`}
+
+QUESTION GENERATION RULES:
 1. Generate exactly ONE question appropriate for question ${questionNumber} of ${totalQuestions}
-2. ${isEarlyStage ? "Start with foundational/ice-breaker questions to assess baseline." : ""}
-3. ${isLateStage ? "This is near the end — ask a capstone question that tests holistic understanding." : ""}
-4. ${shouldChallenge ? "The candidate is performing well — present a CHALLENGE question that pushes their limits." : ""}
+2. ${isEarlyStage ? "Start with foundational questions to assess baseline." : ""}
+3. ${isLateStage ? "This is near the end — ask a capstone question testing holistic problem solving." : ""}
+4. ${shouldChallenge ? "The candidate is performing well — present a CHALLENGE question testing their limits." : ""}
 5. ${shouldSupport ? "The candidate has been struggling — ask a supportive question to help them demonstrate knowledge." : ""}
-6. Questions must be specific to the ${config.type} interview type
-7. ${config.company ? `Include company-specific elements for ${config.company}` : ""}
-8. Vary question types: scenario-based, hypothetical, knowledge-check, problem-solving, reflection
-9. Each question should be natural and conversational
-10. CRITICAL CANDIDATE ANSWER ANALYSIS & TRANSITION RULE:
-- Inspect the candidate's MOST RECENT response in the conversation history against the INTERVIEWER'S IMMEDIATELY PRECEDING QUESTION:
-  a) IF THE CANDIDATE GAVE AN INTRO, GREETING, OR OFF-TOPIC STATEMENT (e.g. "Hi, I am...", "My background is...", or did not address the specific question asked):
-     DO NOT hallucinate praise or say "Great explanation of [topic]!". Acknowledge what they actually said naturally (e.g., "Thanks for introducing yourself! Let's get right into the technical discussion on...") and ask the question without false praise.
-  b) IF THE CANDIDATE SAID "I DON'T KNOW", SKIPPED, OR GAVE A VERY BRIEF/WEAK ANSWER:
-     Briefly provide a 1-sentence helpful insight on the topic, then move gracefully to the next concept.
-  c) IF THE CANDIDATE ACTUALLY ANSWERED THE PREVIOUS QUESTION:
-     Provide 1 brief, relevant sentence summarizing the key takeaway of what they actually said before asking the next question.
+6. Format: 1 short conversational sentence reacting to their previous response, followed immediately by exactly 1 sharp counter-question or novel question ending with '?'.
 
 ${config.customInstructions ? `Additional Instructions: ${config.customInstructions}` : ""}
 
 Return the question as JSON with this exact structure:
 {
-  "question": "Brief evaluation of previous answer (if applicable) + The next interview question text",
+  "question": "Brief evaluation of previous answer (if applicable) + The next interview question text ending with '?'",
   "category": "question category",
   "difficulty": "easy|medium|hard|expert",
   "expectedTopics": ["topic1", "topic2"],
@@ -326,20 +406,25 @@ Return the question as JSON with this exact structure:
 
 ${conversationHistory ? `Previous conversation history:\n${conversationHistory}` : "This is the first question of the interview."}
 
-${conversationHistory ? "First evaluate the candidate's last response, then present the next interview question." : "Generate the first interview question."}`;
+Candidate's latest answer:
+"${lastCandidateMsg?.content || ""}"
+
+${!lastWasFollowUp && questionNumber > 1 ? "Ask a penetrating COUNTER-QUESTION drilling deeper into what the candidate just claimed." : "Present the next fresh interview question on an untouched topic."}`;
 
   try {
     const result = await generateJSON<EngineQuestion>(
       systemPrompt,
       userPrompt,
-      { model: MODELS.BALANCED, temperature: 0.8, maxTokens: 2048 },
+      { model: MODELS.BALANCED, temperature: 0.75, maxTokens: 2048 },
       FALLBACK_QUESTION
     );
     console.log(`[Engine] Generated question ${questionNumber} for ${config.type} interview (${result.category})`);
     return result.question;
   } catch (error) {
     console.error(`[Engine] Question generation failed, using fallback:`, error);
-    return FALLBACK_QUESTION.question;
+    return !lastWasFollowUp && lastCandidateMsg
+      ? "That's an interesting approach. Could you explain the key trade-offs and how you would handle edge cases or failure scenarios in that solution?"
+      : FALLBACK_QUESTION.question;
   }
 }
 

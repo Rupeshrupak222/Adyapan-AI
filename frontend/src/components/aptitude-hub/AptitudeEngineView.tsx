@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "@/lib/static-motion";
 import {
   Calculator, Brain, BookOpen, BarChart3, Lightbulb, Hash,
   Play, Timer, Target, Building2, Sparkles, Flame, RotateCcw,
@@ -249,20 +249,6 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
     count?: number,
     testId?: string
   ) => {
-    if (quota.exhausted) {
-      toast.error(
-        quota.status?.plan === "free"
-          ? "You've used all 10 free AI Aptitude tests this month."
-          : "You've used all 30 Premium AI Aptitude tests this month.",
-        {
-          description: quota.status?.plan === "free"
-            ? "Upgrade to Premium for 30 tests per month."
-            : "Your allowance will reset on the 1st of next month.",
-          action: quota.status?.plan === "free" ? { label: "Upgrade", onClick: () => window.location.href = "/premium" } : undefined,
-        }
-      );
-      return;
-    }
     setAiLoading(true);
     setShowExplanation(false);
     try {
@@ -627,7 +613,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="no-page-motion relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
 
       <AnimatePresence>
         {aiLoading && (
@@ -771,9 +757,6 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   {progress.answers.length}/{session.totalQuestions}
                 </span>
               </div>
-            )}
-            {view !== "active_session" && (
-              <FeatureCreditBadge featureKey="AI_APTITUDE_ENGINE" isDark={isDark} compact />
             )}
             {view !== "active_session" && (
               <motion.button
@@ -1420,7 +1403,6 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                       {(TOPICS_BY_CATEGORY[selectedCategory] || [])
                         .filter(t => !categoryTopicSearch.trim() || t.toLowerCase().includes(categoryTopicSearch.toLowerCase().trim()))
                         .map((topic, i) => {
-                        const topicMastery = analytics?.topicMastery?.find(tm => tm.topic === topic);
                         return (
                           <motion.div
                             key={topic}
@@ -1439,24 +1421,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                             style={{ background: c.cardBg, borderColor: c.border }}
                           >
                             <p className="text-[11px] font-extrabold" style={{ color: c.text }}>{topic}</p>
-                            {topicMastery ? (
-                              <div className="mt-2 space-y-1">
-                                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
-                                  <div className="h-full rounded-full" style={{
-                                    width: `${topicMastery.accuracy}%`,
-                                    background: topicMastery.accuracy >= 70 ? c.green : topicMastery.accuracy >= 40 ? c.primary : c.red
-                                  }} />
-                                </div>
-                                <div className="flex justify-between text-[10px] font-bold" style={{ color: c.textMuted }}>
-                                  <span>{topicMastery.totalCorrect}/{topicMastery.totalAttempted}</span>
-                                  <span style={{ color: topicMastery.accuracy >= 70 ? c.green : topicMastery.accuracy >= 40 ? c.primary : c.red }}>
-                                    {topicMastery.accuracy}%
-                                  </span>
-                                </div>
-                              </div>
-                            ) : (
-                              <p className="text-[9px] mt-1.5" style={{ color: c.textMuted }}>Click to view tests (30 Qs)</p>
-                            )}
+                            <p className="text-[9px] mt-1.5" style={{ color: c.textMuted }}>Click to view tests (30 Qs)</p>
                           </motion.div>
                         );
                       })}
@@ -1504,7 +1469,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                     {topicTests.map((t, idx) => {
                       const realCount = typeof t.totalQuestions === "number" ? t.totalQuestions : 0;
                       const available = t.isAvailable !== false && realCount > 0;
-                      const countLabel = available ? realCount : t.targetQuestions || 30;
+                      const countLabel = 30;
                       return (
                       <motion.div
                         key={t.id || idx}
@@ -1524,7 +1489,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                             </span>
                             {available ? (
                               <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                                {countLabel} Question{countLabel === 1 ? "" : "s"}
+                                30 Questions
                               </span>
                             ) : (
                               <span className="text-[10px] font-black text-slate-400 bg-slate-500/10 px-2 py-0.5 rounded-full border border-slate-500/20">
@@ -1535,7 +1500,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           <h4 className="text-sm font-extrabold" style={{ color: c.text }}>{t.title || `Test ${t.testNumber || idx + 1}`}</h4>
                           <p className="text-[11px]" style={{ color: c.textMuted }}>
                             {available
-                              ? `${countLabel} unique placement question${countLabel === 1 ? "" : "s"}`
+                              ? "30 unique placement questions"
                               : "Temporarily unavailable while its questions are regenerated. Please try another test."}
                           </p>
                         </div>
@@ -1610,7 +1575,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                     {companyTests.map((t, idx) => {
                       const realCount = typeof t.totalQuestions === "number" ? t.totalQuestions : 0;
                       const available = t.isAvailable !== false && realCount > 0;
-                      const countLabel = available ? realCount : t.targetQuestions || 30;
+                      const countLabel = 30;
                       return (
                       <motion.div
                         key={t.id || idx}
@@ -1630,7 +1595,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                             </span>
                             {available ? (
                               <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                                {countLabel} Question{countLabel === 1 ? "" : "s"}
+                                30 Questions
                               </span>
                             ) : (
                               <span className="text-[10px] font-black text-slate-400 bg-slate-500/10 px-2 py-0.5 rounded-full border border-slate-500/20">
@@ -1641,7 +1606,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                           <h4 className="text-sm font-extrabold" style={{ color: c.text }}>{selectedCompany} {t.title || `Test ${t.testNumber || idx + 1}`}</h4>
                           <p className="text-[11px]" style={{ color: c.textMuted }}>
                             {available
-                              ? `${countLabel} unique placement question${countLabel === 1 ? "" : "s"} for ${selectedCompany}`
+                              ? `30 unique placement questions for ${selectedCompany}`
                               : "Temporarily unavailable while its questions are regenerated. Please try another test."}
                           </p>
                         </div>

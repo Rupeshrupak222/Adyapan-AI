@@ -28,7 +28,7 @@ export const FeatureCreditBadge: React.FC<FeatureCreditBadgeProps> = ({
 
   const usage = getFeatureUsage(featureKey);
 
-  if (!usage) return null;
+  if (!usage || usage.unlimited || usage.limit === -1 || usage.limit < 0) return null;
 
   const { remaining, limit, plan, allowed, resetAt } = usage;
   const isPaid = plan !== "free";

@@ -59,9 +59,7 @@ const AtsCheckerView = dynamic(() => import("@/components/resume-hub/AtsCheckerV
 const CoverLetterView = dynamic(() => import("@/components/resume-hub/CoverLetterView").then(m => m.CoverLetterView), {
   loading: () => <DashboardWidgetSkeleton title="Cover Letter Builder" />
 });
-const LinkedInView = dynamic(() => import("@/components/resume-hub/LinkedInView").then(m => m.LinkedInView), {
-  loading: () => <DashboardWidgetSkeleton title="LinkedIn Optimizer" />
-});
+
 const ResumeUploadView = dynamic(() => import("@/components/resume-hub/ResumeUploadView").then(m => m.ResumeUploadView), {
   loading: () => <DashboardWidgetSkeleton title="Resume Upload" />
 });
@@ -329,7 +327,11 @@ function WelcomeBanner({
 
 
 // ΓöÇΓöÇΓöÇ Stat Cards Grid ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-function StatCardsGrid({ stats }: { stats: { avgAtsScore: number; resumesCount: number; avgLinkedinScore: number; dsaSolved: number; dsaStreak: number; studySessionsCount: number; notesCount: number; quizzesCount: number; dsaAccuracy: number; assignmentsCount: number; mindmapsCount: number } }) {
+function StatCardsGrid({ stats }: { stats: { avgAtsScore: number; resumesCount: number; avgInterviewScore: number; bestInterviewScore?: number; interviewsCount: number; avgLinkedinScore?: number; dsaSolved: number; dsaStreak: number; studySessionsCount: number; notesCount: number; quizzesCount: number; dsaAccuracy: number; assignmentsCount: number; mindmapsCount: number } }) {
+  const displayInterviewScore = (stats.bestInterviewScore && stats.bestInterviewScore > 0)
+    ? stats.bestInterviewScore
+    : (stats.avgInterviewScore > 0 ? stats.avgInterviewScore : 0);
+
   return (
     <div style={{
       display: "grid",
@@ -339,14 +341,22 @@ function StatCardsGrid({ stats }: { stats: { avgAtsScore: number; resumesCount: 
       className="stat-grid-responsive"
     >
       <StatCard icon={<FileText size={17} />} iconBg="rgba(59,130,246,0.1)" iconColor="#3b82f6" value={`${stats.avgAtsScore}%`} label="Avg Resume ATS" trend={stats.resumesCount > 0 ? `${stats.resumesCount} Resumes` : "No resumes"} />
-      <StatCard icon={<BarChart3 size={17} />} iconBg="rgba(236,72,153,0.1)" iconColor="#ec4899" value={`${stats.avgLinkedinScore}%`} label="Avg LinkedIn Score" trend={stats.avgLinkedinScore > 0 ? "Optimized" : "Not optimized"} />
+      <StatCard
+        icon={<Mic size={17} />}
+        iconBg="rgba(244,63,94,0.1)"
+        iconColor="#f43f5e"
+        value={displayInterviewScore > 0 ? `${displayInterviewScore}%` : "0%"}
+        label="AI Interview Score"
+        trend={stats.interviewsCount > 0 ? `${stats.interviewsCount} Sessions` : "Practice Ready"}
+        trendUp={displayInterviewScore >= 60}
+      />
       <StatCard icon={<Code2 size={17} />} iconBg="rgba(245,158,11,0.1)" iconColor="var(--primary)" value={String(stats.dsaSolved)} label="DSA Problems Solved" trend={stats.dsaStreak > 0 ? `${stats.dsaStreak} Day Streak` : "No active streak"} trendUp={stats.dsaStreak > 0} />
       <StatCard icon={<GraduationCap size={17} />} iconBg="rgba(139,92,246,0.1)" iconColor="#8b5cf6" value={String(stats.studySessionsCount)} label="Study Sessions" trend={`${stats.notesCount + stats.quizzesCount} Assets Gen`} />
     </div>
   );
 }
 // ΓöÇΓöÇΓöÇ 3-Column Panel Grid ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resumesCount: number; avgLinkedinScore: number; dsaSolved: number; dsaStreak: number; studySessionsCount: number; notesCount: number; quizzesCount: number; coverLettersCount: number; codingSessionsCount: number; challengesCount: number; profileCompletion: number; targetRole: string; dsaAccuracy: number; assignmentsCount: number; mindmapsCount: number }; onViewTool: (v: string) => void }) {
+function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resumesCount: number; avgInterviewScore: number; bestInterviewScore?: number; interviewsCount: number; avgLinkedinScore?: number; dsaSolved: number; dsaStreak: number; studySessionsCount: number; notesCount: number; quizzesCount: number; coverLettersCount: number; codingSessionsCount: number; challengesCount: number; profileCompletion: number; targetRole: string; dsaAccuracy: number; assignmentsCount: number; mindmapsCount: number }; onViewTool: (v: string) => void }) {
   const router = useRouter();
   const quickActions = [
     { label: "Study Assistant", icon: <GraduationCap size={16} />, color: "#8b5cf6", target: "study-assistant", href: null },
@@ -411,12 +421,12 @@ function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resume
 
       {/* Column 3: Resume Hub & Quick Actions */}
       <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
-        <PanelCard title="Resume Hub Performance">
+        <PanelCard title="Resume & Interview Hub">
           <div style={{ marginTop: "0.4rem" }}>
             <CompactItem label="Resumes Created" value={stats.resumesCount} />
             <CompactItem label="Cover Letters" value={stats.coverLettersCount} />
             <CompactItem label="Average ATS Score" value={`${stats.avgAtsScore}%`} highlight />
-            <CompactItem label="Average LinkedIn Score" value={`${stats.avgLinkedinScore}%`} highlight />
+            <CompactItem label="AI Interview Score" value={(stats.bestInterviewScore && stats.bestInterviewScore > 0 ? stats.bestInterviewScore : stats.avgInterviewScore) > 0 ? `${stats.bestInterviewScore && stats.bestInterviewScore > 0 ? stats.bestInterviewScore : stats.avgInterviewScore}%` : "Not Started"} highlight />
           </div>
         </PanelCard>
 
@@ -515,6 +525,7 @@ function CrossModuleAnalytics({
   const aptitudeAcc = Math.round(Number(aptitude?.overallAccuracy || aptitude?.placementReadiness || 0));
   const interviewAvg = Math.round(Number(interview?.averageScore || 0));
   const interviewBest = Math.round(Number(interview?.bestScore || 0));
+  const displayInterviewScore = interviewBest > 0 ? interviewBest : (interviewAvg > 0 ? interviewAvg : 0);
 
   return (
     <div style={{ marginTop: "1.5rem", marginBottom: "1.5rem" }}>
@@ -556,7 +567,7 @@ function CrossModuleAnalytics({
             <ProgressBar value={placementScoreVal} color="#10b981" />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginTop: "0.8rem", fontSize: "0.73rem", color: "var(--text-secondary)" }}>
               <span>Coding: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.coding ?? 0}%</strong></span>
-              <span>Interview: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.interview ?? 0}%</strong></span>
+              <span>Interview: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.interview ?? displayInterviewScore}%</strong></span>
               <span>Aptitude: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.aptitude ?? 0}%</strong></span>
               <span>Resume: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.resume ?? 0}%</strong></span>
             </div>
@@ -616,10 +627,12 @@ function CrossModuleAnalytics({
                 </span>
                 <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem", marginTop: 2 }}>
                   <span style={{ fontSize: "1.6rem", fontWeight: 800, color: "#f43f5e" }}>
-                    {interviewAvg > 0 ? `${interviewAvg}%` : "Not Started"}
+                    {displayInterviewScore > 0 ? `${displayInterviewScore}%` : "Not Started"}
                   </span>
                   <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-                    {interviewBest > 0 ? `Best: ${interviewBest}%` : "No interviews"}
+                    {interviewBest > 0 && interviewAvg > 0 && interviewBest !== interviewAvg
+                      ? `Avg: ${interviewAvg}% (${interview?.totalInterviews ?? 0} sessions)`
+                      : (interview?.totalInterviews > 0 ? `${interview.totalInterviews} sessions` : "No interviews")}
                   </span>
                 </div>
               </div>
@@ -627,7 +640,7 @@ function CrossModuleAnalytics({
                 <Mic size={18} />
               </div>
             </div>
-            <ProgressBar value={interviewAvg} color="#f43f5e" />
+            <ProgressBar value={displayInterviewScore} color="#f43f5e" />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginTop: "0.8rem", fontSize: "0.73rem", color: "var(--text-secondary)" }}>
               <span>Completed: <strong style={{ color: "var(--text-primary)" }}>{interview?.totalInterviews ?? 0}</strong></span>
               <span>Practice Time: <strong style={{ color: "var(--text-primary)" }}>{interview?.totalHours ?? 0}h</strong></span>
@@ -1265,6 +1278,9 @@ function UserDashboardContent() {
   const [dashboardStats, setDashboardStats] = useState({
     resumesCount: 0,
     avgAtsScore: 0,
+    avgInterviewScore: 0,
+    bestInterviewScore: 0,
+    interviewsCount: 0,
     avgLinkedinScore: 0,
     coverLettersCount: 0,
     notesCount: 0,
@@ -1296,15 +1312,13 @@ function UserDashboardContent() {
     const urlView = searchParams.get("view");
     if (urlView) {
       setActiveView(urlView);
-    } else {
       try {
-        const savedView = localStorage.getItem("dashboard-active-view");
-        if (savedView && savedView !== "dashboard") {
-          setActiveView(savedView);
-          const url = new URL(window.location.href);
-          url.searchParams.set("view", savedView);
-          window.history.replaceState({}, "", url.toString());
-        }
+        localStorage.setItem("dashboard-active-view", urlView);
+      } catch { /* localStorage unavailable */ }
+    } else {
+      setActiveView("dashboard");
+      try {
+        localStorage.setItem("dashboard-active-view", "dashboard");
       } catch { /* localStorage unavailable */ }
     }
   }, [searchParams]);
@@ -1314,6 +1328,9 @@ function UserDashboardContent() {
       const params = new URLSearchParams(window.location.search);
       const viewParam = params.get("view") || "dashboard";
       setActiveView(viewParam);
+      try {
+        localStorage.setItem("dashboard-active-view", viewParam);
+      } catch { /* localStorage unavailable */ }
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -1385,6 +1402,7 @@ function UserDashboardContent() {
         resumesRes,
         atsRes,
         linkedinRes,
+        interviewRes,
         lettersRes,
         notesRes,
         quizRes,
@@ -1400,6 +1418,7 @@ function UserDashboardContent() {
         api.get("/resume/list"),
         api.get("/ats/history"),
         api.get("/linkedin/history"),
+        api.get("/interview/history"),
         api.get("/cover-letter/history"),
         api.get("/notes/history"),
         api.get("/quiz/history"),
@@ -1419,6 +1438,7 @@ function UserDashboardContent() {
       const resumes = resumesRes.status === "fulfilled" ? (resumesRes.value.data.resumes || []) : [];
       const atsReports = atsRes.status === "fulfilled" ? (atsRes.value.data.reports || []) : [];
       const linkedinReports = linkedinRes.status === "fulfilled" ? (linkedinRes.value.data.reports || []) : [];
+      const interviewSessions = interviewRes.status === "fulfilled" ? (interviewRes.value.data.sessions || []) : [];
       const coverLetters = lettersRes.status === "fulfilled" ? (lettersRes.value.data.coverLetters || []) : [];
 
       const notes = notesRes.status === "fulfilled" ? (notesRes.value.data.notes || []) : [];
@@ -1431,15 +1451,6 @@ function UserDashboardContent() {
       const dsaProgress = dsaRes.status === "fulfilled" ? (dsaRes.value.data.progress || null) : null;
       const challenges = challengesRes.status === "fulfilled" ? (challengesRes.value.data?.challenges || challengesRes.value.data || []) : [];
 
-      if (analyticsRes.status === "fulfilled" && analyticsRes.value.data?.success) {
-        const aData = analyticsRes.value.data;
-        if (aData.aptitude) setAptitudeAnalytics(aData.aptitude);
-        if (aData.interview) setInterviewAnalytics(aData.interview);
-        if (aData.streak) setStreakData(aData.streak);
-        if (aData.placement) setPlacementScore(aData.placement);
-        if (aData.weakTopics) setWeakTopicsData(aData.weakTopics);
-      }
-
       const avgAtsScore = atsReports.length
         ? Math.round(atsReports.reduce((sum: number, r: any) => sum + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
         : Number(profileData?.strengthScore || 0);
@@ -1448,9 +1459,97 @@ function UserDashboardContent() {
         ? Math.round(linkedinReports.reduce((sum: number, r: any) => sum + Number(r.score ?? r.visibilityScore ?? 0), 0) / linkedinReports.length)
         : 0;
 
+      const completedInterviews = interviewSessions.filter((s: any) => s.evaluation?.overallScore || s.status === "completed" || s.evaluations?.[0] || s.overallScore);
+      
+      const allInterviewScores: number[] = [];
+      interviewSessions.forEach((s: any) => {
+        const sc = Number(s.evaluation?.overallScore ?? s.evaluations?.[0]?.overallScore ?? s.overallScore ?? 0);
+        if (!isNaN(sc) && sc > 0) {
+          allInterviewScores.push(sc);
+        }
+      });
+
+      const analyticsInterview = analyticsRes.status === "fulfilled" ? analyticsRes.value.data?.interview : null;
+      if (analyticsInterview?.bestScore && Number(analyticsInterview.bestScore) > 0) {
+        allInterviewScores.push(Number(analyticsInterview.bestScore));
+      }
+
+      const bestFromHistory = allInterviewScores.length ? Math.max(...allInterviewScores) : 0;
+      const bestInterviewScore = Math.max(Number(analyticsInterview?.bestScore || 0), bestFromHistory);
+      const avgFromHistory = completedInterviews.length
+        ? Math.round(completedInterviews.reduce((sum: number, s: any) => sum + Number(s.evaluation?.overallScore ?? s.evaluations?.[0]?.overallScore ?? s.overallScore ?? 0), 0) / completedInterviews.length)
+        : 0;
+      const avgInterviewScore = Number(analyticsInterview?.averageScore ?? avgFromHistory) || 0;
+      const effectiveInterviewScore = bestInterviewScore > 0 ? bestInterviewScore : avgInterviewScore;
+      const interviewsCount = interviewSessions.length || Number(analyticsInterview?.totalInterviews) || 0;
+
+      if (analyticsRes.status === "fulfilled" && analyticsRes.value.data?.success) {
+        const aData = analyticsRes.value.data;
+        if (aData.aptitude) setAptitudeAnalytics(aData.aptitude);
+        if (aData.streak) setStreakData(aData.streak);
+        if (aData.weakTopics) setWeakTopicsData(aData.weakTopics);
+      }
+
+      // Update interview analytics with accurate best score
+      if (analyticsInterview || effectiveInterviewScore > 0) {
+        setInterviewAnalytics({
+          ...(analyticsInterview || {}),
+          averageScore: avgInterviewScore,
+          bestScore: effectiveInterviewScore,
+          totalInterviews: interviewsCount
+        });
+      }
+
+      // Recompute and calibrate Placement Readiness using the candidate's BEST interview score
+      const rawPlacement = (analyticsRes.status === "fulfilled" && analyticsRes.value.data?.success) ? analyticsRes.value.data.placement : null;
+      if (rawPlacement || effectiveInterviewScore > 0) {
+        const currentSub = rawPlacement?.subScores || {};
+        const oldInterviewSub = Number(currentSub.interview || 0);
+
+        // Candidates are evaluated on their BEST interview score
+        const interviewForPlacement = effectiveInterviewScore > 0
+          ? Math.min(100, Math.max(
+              effectiveInterviewScore,
+              Math.min(100, Math.round(effectiveInterviewScore * 0.85 + (completedInterviews.length > 0 ? 15 : 0)))
+            ))
+          : (completedInterviews.length > 0 ? 50 : 0);
+
+        const updatedSub = {
+          ...currentSub,
+          interview: interviewForPlacement,
+          coding: Number(currentSub.coding || 0),
+          aptitude: Number(currentSub.aptitude || 0),
+          resume: Number(currentSub.resume || avgAtsScore || 0)
+        };
+
+        let updatedPlacementScore = Number(rawPlacement?.placementScore || 0);
+        if (updatedPlacementScore > 0 && oldInterviewSub !== interviewForPlacement) {
+          const diff = Math.round((interviewForPlacement - oldInterviewSub) * 0.20);
+          updatedPlacementScore = Math.min(100, Math.max(0, updatedPlacementScore + diff));
+        } else if (updatedPlacementScore === 0 && (effectiveInterviewScore > 0 || avgAtsScore > 0)) {
+          updatedPlacementScore = Math.min(100, Math.round(
+            (updatedSub.coding * 0.25) +
+            (updatedSub.aptitude * 0.20) +
+            (interviewForPlacement * 0.20) +
+            ((updatedSub.resume || avgAtsScore) * 0.15) +
+            (Number(updatedSub.learning || 50) * 0.10) +
+            (Number(updatedSub.softSkills || 50) * 0.10)
+          ));
+        }
+
+        setPlacementScore({
+          ...(rawPlacement || {}),
+          placementScore: updatedPlacementScore,
+          subScores: updatedSub
+        });
+      }
+
       setDashboardStats({
         resumesCount: resumes.length,
         avgAtsScore,
+        avgInterviewScore,
+        bestInterviewScore: effectiveInterviewScore,
+        interviewsCount,
         avgLinkedinScore,
         coverLettersCount: coverLetters.length,
         notesCount: notes.length,
@@ -1547,8 +1646,28 @@ function UserDashboardContent() {
       router.push("/dashboard/user/settings/account");
       return;
     }
+    if (view === "support" || view === "help-support" || view === "help" || view === "contact") {
+      router.push("/dashboard/user/settings/help");
+      return;
+    }
     if (view === "dsa-practice" || view === "dsa") {
       router.push("/dashboard/coding?tab=dsa");
+      return;
+    }
+    if (view === "interview-hr" || view === "hr-interview") {
+      router.push("/dashboard/interview/hr");
+      return;
+    }
+    if (view === "interview-technical" || view === "technical-interview") {
+      router.push("/dashboard/interview/technical");
+      return;
+    }
+    if (view === "interview-engine") {
+      router.push("/dashboard/interview/engine");
+      return;
+    }
+    if (view === "interview-hub" || view === "interview-mock" || view === "interview") {
+      router.push("/dashboard/interview");
       return;
     }
     if (view !== "community-messages") setOpenChatWith(null);
@@ -1570,12 +1689,33 @@ function UserDashboardContent() {
   const handleViewDashboard = () => navigateTo("dashboard");
   const handleAdyChat = () => navigateTo("ady-chat");
 
+  const isInterviewView =
+    activeView === "interview-engine" ||
+    activeView === "interview-technical" ||
+    activeView === "technical-interview" ||
+    activeView === "interview-hr" ||
+    activeView === "hr-interview";
+
+  if (isInterviewView) {
+    return (
+      <div className="fixed inset-0 z-50 w-screen h-screen overflow-x-hidden overflow-y-auto" style={{ background: "var(--bg-dark)", color: "var(--text-primary)" }}>
+        {activeView === "interview-engine" ? (
+          <HubErrorBoundary><EngineView theme={theme} /></HubErrorBoundary>
+        ) : activeView === "interview-technical" || activeView === "technical-interview" ? (
+          <HubErrorBoundary><TechnicalInterviewView theme={theme} /></HubErrorBoundary>
+        ) : (
+          <HubErrorBoundary><HRView theme={theme} /></HubErrorBoundary>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="relative overflow-hidden" style={{ minHeight: "100vh", background: "var(--bg-dark)", color: "var(--text-primary)" }}>
       {showOnboarding && <OnboardingFlow userId={user?.id} onComplete={() => setShowOnboarding(false)} />}
       <FloatingOrbs />
 
-      <DashboardTopNav user={user} theme={theme} onThemeToggle={handleThemeToggle} onViewProfile={handleViewProfile} onAdyChat={handleAdyChat} onViewTool={navigateTo} onMenuToggle={() => setSidebarOpen(prev => !prev)} notifications={notifications} setNotifications={setNotifications} unreadCount={unreadCount} onMarkAllRead={async () => { try { await api.put("/notifications/read-all"); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); setUnreadCount(0); } catch { } }} onClearAll={async () => { try { await api.delete("/notifications/clear"); setNotifications([]); setUnreadCount(0); } catch { } }} onPremium={handlePremium} onViewSettings={() => navigateTo("settings")} />
+      <DashboardTopNav user={user} theme={theme} onThemeToggle={handleThemeToggle} onViewProfile={handleViewProfile} onAdyChat={handleAdyChat} onViewDashboard={handleViewDashboard} onViewTool={navigateTo} onMenuToggle={() => setSidebarOpen(prev => !prev)} notifications={notifications} setNotifications={setNotifications} unreadCount={unreadCount} onMarkAllRead={async () => { try { await api.put("/notifications/read-all"); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); setUnreadCount(0); } catch { } }} onClearAll={async () => { try { await api.delete("/notifications/clear"); setNotifications([]); setUnreadCount(0); } catch { } }} onPremium={handlePremium} onViewSettings={() => navigateTo("settings")} />
       <DashboardSidebar activeView={activeView} onViewDashboard={handleViewDashboard} onViewTool={navigateTo} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <main className="dash-main relative z-10 resume-hub-theme">
@@ -1595,6 +1735,14 @@ function UserDashboardContent() {
             <HubErrorBoundary><ProfileView /></HubErrorBoundary>
           ) : activeView === "career-dashboard" ? (
             <HubErrorBoundary><CareerDashboardView setView={navigateTo} /></HubErrorBoundary>
+          ) : activeView === "community-blog" ? (
+            <HubErrorBoundary><BlogView /></HubErrorBoundary>
+          ) : activeView === "community-messages" ? (
+            <HubErrorBoundary><CommunityMessagesView /></HubErrorBoundary>
+          ) : activeView === "community-browse" || activeView === "community-profiles" ? (
+            <HubErrorBoundary><CommunityProfilesView /></HubErrorBoundary>
+          ) : activeView === "community-profile" ? (
+            <HubErrorBoundary><CommunityProfileView /></HubErrorBoundary>
           ) : activeView.startsWith("community") ? (
             <HubErrorBoundary><CommunityComingSoonView /></HubErrorBoundary>
           ) : activeView === "settings" ? (
@@ -1609,8 +1757,6 @@ function UserDashboardContent() {
             <HubErrorBoundary><AtsCheckerView setView={navigateTo} /></HubErrorBoundary>
           ) : activeView === "cover-letter" ? (
             <HubErrorBoundary><CoverLetterView setView={navigateTo} /></HubErrorBoundary>
-          ) : activeView === "linkedin-optimizer" ? (
-            <HubErrorBoundary><LinkedInView setView={navigateTo} /></HubErrorBoundary>
           ) : activeView === "study-assistant" ? (
             <HubErrorBoundary><StudyAssistantView onViewLesson={(data) => { setLessonResult(data); navigateTo("lesson-view"); }} /></HubErrorBoundary>
           ) : activeView === "lesson-view" && lessonResult ? (
@@ -1629,6 +1775,8 @@ function UserDashboardContent() {
             <HubErrorBoundary><MindMapsView /></HubErrorBoundary>
           ) : activeView === "flashcards" ? (
             <HubErrorBoundary><FlashcardsView /></HubErrorBoundary>
+          ) : activeView === "dsa-practice" || activeView === "coding-dashboard" ? (
+            <HubErrorBoundary><DsaPracticeView /></HubErrorBoundary>
           ) : activeView === "coding-challenges" ? (
             <HubErrorBoundary><CodingChallengesView /></HubErrorBoundary>
           ) : activeView === "ady-chat" ? (

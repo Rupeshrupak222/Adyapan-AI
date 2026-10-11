@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback, lazy, Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "@/lib/static-motion";
 import { stripMarkdown } from "@/utils/stripMarkdown";
 import {
   Search, Calendar, DollarSign, Send, Sparkles, CheckCircle2,
@@ -256,7 +256,7 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="no-page-motion relative flex flex-col h-full min-h-[calc(100vh-120px)]" style={{ color: c.text }}>
       <div className="flex-1 flex flex-col gap-4">
 
 
@@ -275,7 +275,7 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
                 className="w-full"
               >
                 <Suspense fallback={
-                  <div className="p-10 border rounded-2xl text-center" style={{ background: c.cardBg, borderColor: c.border }}>
+                  <div className="no-page-motion p-10 border rounded-2xl text-center" style={{ background: c.cardBg, borderColor: c.border }}>
                     <Clock size={20} className="text-amber-500 animate-spin mx-auto mb-2" />
                     <p className="text-xs font-bold" style={{ color: c.textMuted }}>Loading AI Aptitude Engine...</p>
                   </div>
@@ -295,7 +295,7 @@ export function PlacementHubView({ setView, activeModule = "placement-hub", them
                 className="w-full"
               >
                 <Suspense fallback={
-                  <div className="p-10 border rounded-2xl text-center" style={{ background: c.cardBg, borderColor: c.border }}>
+                  <div className="no-page-motion p-10 border rounded-2xl text-center" style={{ background: c.cardBg, borderColor: c.border }}>
                     <Clock size={20} className="text-amber-500 animate-spin mx-auto mb-2" />
                     <p className="text-xs font-bold" style={{ color: c.textMuted }}>Loading Technical MCQs Module...</p>
                   </div>

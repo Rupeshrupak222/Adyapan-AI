@@ -106,6 +106,14 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
     const resumesCount = resumesCreatedCount + uploadedResumesCount;
     const studySessionsCount = Math.max(rawStudySessionsCount, uploadedDocsCount);
 
+    const allAtsScores = atsReports
+      .map((r: any) => Number(r.overallScore ?? r.score ?? 0))
+      .filter((s: number) => !isNaN(s) && s > 0);
+    if (candidateProfile?.strengthScore && Number(candidateProfile.strengthScore) > 0) {
+      allAtsScores.push(Number(candidateProfile.strengthScore));
+    }
+    const highestAtsScore = allAtsScores.length > 0 ? Math.max(...allAtsScores) : (candidateProfile?.strengthScore || 0);
+
     const avgAtsScore = atsReports.length
       ? Math.round(atsReports.reduce((sum: number, r: any) => sum + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
       : (candidateProfile?.strengthScore || 0);
@@ -123,7 +131,9 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
       profile,
       stats: {
         resumesCount,
+        highestAtsScore,
         avgAtsScore,
+        atsScore: highestAtsScore,
         avgLinkedinScore,
         coverLettersCount,
         notesCount,

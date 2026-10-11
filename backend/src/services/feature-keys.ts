@@ -37,7 +37,7 @@ export const FeatureKey = {
   COVER_LETTER_GENERATOR: "COVER_LETTER_GENERATOR",
   LINKEDIN_OPTIMIZER: "LINKEDIN_OPTIMIZER",
 
-  // Interviews — Premium-only, 5 attempts / month per interview type
+  // Interviews — Premium-only, 10 attempts / month per interview type
   INTERVIEW_ENGINE: "INTERVIEW_ENGINE",
   TECHNICAL_INTERVIEW: "TECHNICAL_INTERVIEW",
   HR_INTERVIEW: "HR_INTERVIEW",
@@ -46,6 +46,13 @@ export const FeatureKey = {
 export type FeatureKeyValue = (typeof FeatureKey)[keyof typeof FeatureKey];
 
 export type PlanCode = "free" | "premium" | "pro" | "enterprise";
+
+/**
+ * Sentinel used by every feature on unlimited tiers. FeatureUsageService treats
+ * this value as "no monthly cap" (see resolveMonthlyLimit → `unlimited`), so the
+ * per-feature counters keep incrementing for analytics but never block a request.
+ */
+export const UNLIMITED = -1;
 
 /** Default free-tier monthly limits (Group A: 10, Group B: 3, Interviews: 0 / Premium required). */
 export const DEFAULT_FREE_LIMITS: Record<FeatureKeyValue, number> = {
@@ -57,8 +64,8 @@ export const DEFAULT_FREE_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.FLASHCARDS]: 10,
   [FeatureKey.RESEARCH_PAPER_AI]: 10,
   [FeatureKey.PLAGIARISM_CHECKER]: 10,
-  [FeatureKey.AI_APTITUDE_ENGINE]: 10,
-  [FeatureKey.TECHNICAL_MCQS]: 10,
+  [FeatureKey.AI_APTITUDE_ENGINE]: UNLIMITED,
+  [FeatureKey.TECHNICAL_MCQS]: UNLIMITED,
   [FeatureKey.AI_CHAT_ASSISTANT]: 10,
   [FeatureKey.STUDY_PLANNER]: 3,
   [FeatureKey.CODING_ROADMAP]: 3,
@@ -73,7 +80,7 @@ export const DEFAULT_FREE_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.HR_INTERVIEW]: 0,
 };
 
-/** Default premium-tier monthly limits (Group A: 30, Group B: 9, Interviews: 5 attempts/month each). */
+/** Default premium-tier monthly limits (Group A: 30, Group B: 9, Interviews: 10 attempts/month each). */
 export const DEFAULT_PREMIUM_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.STUDY_ASSISTANT]: 30,
   [FeatureKey.NOTES_GENERATOR]: 30,
@@ -83,8 +90,8 @@ export const DEFAULT_PREMIUM_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.FLASHCARDS]: 30,
   [FeatureKey.RESEARCH_PAPER_AI]: 30,
   [FeatureKey.PLAGIARISM_CHECKER]: 30,
-  [FeatureKey.AI_APTITUDE_ENGINE]: 30,
-  [FeatureKey.TECHNICAL_MCQS]: 30,
+  [FeatureKey.AI_APTITUDE_ENGINE]: UNLIMITED,
+  [FeatureKey.TECHNICAL_MCQS]: UNLIMITED,
   [FeatureKey.AI_CHAT_ASSISTANT]: 30,
   [FeatureKey.STUDY_PLANNER]: 9,
   [FeatureKey.CODING_ROADMAP]: 9,
@@ -94,17 +101,10 @@ export const DEFAULT_PREMIUM_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.ATS_CHECKER]: 9,
   [FeatureKey.COVER_LETTER_GENERATOR]: 9,
   [FeatureKey.LINKEDIN_OPTIMIZER]: 9,
-  [FeatureKey.INTERVIEW_ENGINE]: 5,
-  [FeatureKey.TECHNICAL_INTERVIEW]: 5,
-  [FeatureKey.HR_INTERVIEW]: 5,
+  [FeatureKey.INTERVIEW_ENGINE]: 10,
+  [FeatureKey.TECHNICAL_INTERVIEW]: 10,
+  [FeatureKey.HR_INTERVIEW]: 10,
 };
-
-/**
- * Sentinel used by every feature on unlimited tiers. FeatureUsageService treats
- * this value as "no monthly cap" (see resolveMonthlyLimit → `unlimited`), so the
- * per-feature counters keep incrementing for analytics but never block a request.
- */
-export const UNLIMITED = -1;
 
 /** Every feature entry for unlimited tiers, derived from the registry so a new
  *  feature key cannot be forgotten here. */
@@ -129,8 +129,8 @@ export const DEFAULT_PLAN_LIMITS: Record<string, Record<FeatureKeyValue, number>
     [FeatureKey.FLASHCARDS]: 100,
     [FeatureKey.RESEARCH_PAPER_AI]: 100,
     [FeatureKey.PLAGIARISM_CHECKER]: 100,
-    [FeatureKey.AI_APTITUDE_ENGINE]: 100,
-    [FeatureKey.TECHNICAL_MCQS]: 100,
+    [FeatureKey.AI_APTITUDE_ENGINE]: UNLIMITED,
+    [FeatureKey.TECHNICAL_MCQS]: UNLIMITED,
     [FeatureKey.AI_CHAT_ASSISTANT]: 100,
     [FeatureKey.STUDY_PLANNER]: 30,
     [FeatureKey.CODING_ROADMAP]: 30,

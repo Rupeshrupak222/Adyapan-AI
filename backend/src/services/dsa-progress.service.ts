@@ -1,6 +1,7 @@
 import { StreakService } from "./streak.service";
 import { getTimezone } from "../utils/request";
 import { prisma as masterPrisma } from "../config/prisma";
+import { refreshPlacementIntelligence } from "./placement-intelligence.service";
 
 export interface CalculatedDsaProgress {
   solved: number;
@@ -132,7 +133,6 @@ export class DsaProgressService {
           }).catch(() => null)
         )).catch(() => {});
       }
-
       // 5. Calculate total attempted problems/executions to compute true accuracy
       const allExecutions = await userPrisma.codeExecution.findMany({
         where: { userId },
@@ -278,7 +278,9 @@ export class DsaProgressService {
           attempted: true,
           timeSpent
         }
-      }).catch(() => {});
+      }).catch((uqpErr: any) => {
+        console.warn("[DsaProgressService.recordSolved] userQuestionProgress upsert warning:", uqpErr?.message || uqpErr);
+      });
 
       // 2. Track streak activity
       const tz = req ? getTimezone(req) : "UTC";
@@ -295,7 +297,14 @@ export class DsaProgressService {
       });
 
       // 3. Recalculate and synchronize dSAProgress
-      return await this.calculateAndSyncProgress(userId, userPrisma);
+      const progress = await this.calculateAndSyncProgress(userId, userPrisma);
+
+      // 4. Trigger placement intelligence recalculation so placement readiness bar updates immediately
+      refreshPlacementIntelligence(userId).catch((piErr) => {
+        console.warn("[DsaProgressService.recordSolved] Placement intelligence refresh warning:", piErr?.message || piErr);
+      });
+
+      return progress;
     } catch (err) {
       console.error("[DsaProgressService.recordSolved] Error:", err);
       return null;

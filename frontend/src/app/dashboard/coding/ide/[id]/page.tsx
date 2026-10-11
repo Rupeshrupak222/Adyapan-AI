@@ -24,10 +24,10 @@ import {
 // ─── Defaults ───────────────────────────────────────────────────────────────
 
 const DEFAULT_CODE: Record<string, string> = {
-  javascript: `// Write your JavaScript solution here\nfunction solve(input) {\n  \n}\n`,
-  python: `# Write your Python solution here\ndef solve(input_data):\n    pass\n`,
-  cpp: `// Write your C++ solution here\n#include <iostream>\n#include <string>\nusing namespace std;\n\nstring solve(string input) {\n    return "";\n}\n`,
-  java: `// Write your Java solution here\npublic class Solution {\n    public static String solve(String input) {\n        return "";\n    }\n}\n`,
+  javascript: `// Write your JavaScript (Node.js) solution here\nconst fs = require('fs');\n\nfunction solve(input) {\n    // Process input and return result\n    return "";\n}\n\nconst input = fs.readFileSync(0, 'utf-8').trim();\nconsole.log(solve(input));\n`,
+  python: `# Write your Python solution here\nimport sys\n\ndef solve(input_data):\n    pass\n\nif __name__ == "__main__":\n    input_data = sys.stdin.read().strip()\n    print(solve(input_data))\n`,
+  cpp: `// Write your C++ solution here\n#include <iostream>\n#include <string>\nusing namespace std;\n\nstring solve(string input) {\n    return "";\n}\n\nint main() {\n    string input;\n    if (getline(cin, input)) {\n        cout << solve(input) << endl;\n    }\n    return 0;\n}\n`,
+  java: `// Write your Java solution here\nimport java.util.*;\n\npublic class Solution {\n    public static String solve(String input) {\n        return "";\n    }\n\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        if (scanner.hasNextLine()) {\n            System.out.println(solve(scanner.nextLine()));\n        }\n    }\n}\n`,
 };
 
 const LANGUAGES = ["javascript", "python", "cpp", "java"] as const;

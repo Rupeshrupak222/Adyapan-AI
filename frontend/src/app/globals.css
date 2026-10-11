@@ -1613,8 +1613,40 @@ h1, h2, h3, h4, h5, h6 {
 /* ── Fix input fields in modals that are outside .dash-main ── */
 [data-theme="light"] .rounded-3xl input:not([type="checkbox"]):not([type="radio"]),
 [data-theme="light"] .rounded-2xl input:not([type="checkbox"]):not([type="radio"]) {
-  background-color: #f9fafb !important;
+  background: #f9fafb !important;
   color: var(--text-primary) !important;
   border-color: #e5e7eb !important;
   -webkit-text-fill-color: var(--text-primary) !important;
+}
+
+/* ── Static mode: AI Aptitude Engine + Technical MCQs (no animations) ── */
+.no-page-motion,
+.no-page-motion *,
+.no-page-motion *::before,
+.no-page-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+/* Hover/active transform utilities → no movement (Tailwind v4 native props) */
+.no-page-motion [class*="hover:scale"]:hover,
+.no-page-motion [class*="active:scale"]:active,
+.no-page-motion .group:hover [class*="group-hover:scale"] {
+  scale: 1 !important;
+}
+.no-page-motion [class*="hover:translate"]:hover,
+.no-page-motion [class*="hover:-translate"]:hover,
+.no-page-motion [class*="active:translate"]:active,
+.no-page-motion [class*="active:-translate"]:active,
+.no-page-motion .group:hover [class*="group-hover:translate"],
+.no-page-motion .group:hover [class*="group-hover:-translate"] {
+  translate: none !important;
+}
+.no-page-motion [class*="hover:rotate"]:hover,
+.no-page-motion .group:hover [class*="group-hover:rotate"] {
+  rotate: none !important;
 }

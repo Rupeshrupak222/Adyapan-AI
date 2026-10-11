@@ -1,7 +1,5 @@
 // Uses native fetch (Node 18+) — no node-fetch dependency needed
 
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || "";
-
 // Default voice: "Sarah" — natural, professional female voice
 const DEFAULT_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
 
@@ -12,7 +10,8 @@ export async function generateSpeech(
   text: string,
   voiceId: string = DEFAULT_VOICE_ID
 ): Promise<Buffer | null> {
-  if (!ELEVENLABS_API_KEY) return null;
+  const apiKey = (process.env.ELEVENLABS_API_KEY || "").trim();
+  if (!apiKey) return null;
 
   const cleanText = text
     .replace(/[*_#`~]/g, "")
@@ -26,7 +25,7 @@ export async function generateSpeech(
       {
         method: "POST",
         headers: {
-          "xi-api-key": ELEVENLABS_API_KEY,
+          "xi-api-key": apiKey,
           "Content-Type": "application/json",
           Accept: "audio/mpeg",
         },

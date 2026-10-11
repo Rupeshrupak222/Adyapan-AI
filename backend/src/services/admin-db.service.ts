@@ -165,41 +165,94 @@ class AdminDbService {
       map.set(id, { resumes: 0, chatSessions: 0, interviewSessions: 0, codingSessions: 0, studySessions: 0, atsReports: 0, candidateProfiles: 0 })
     );
 
+    if (!userIds.length) return map;
+
+    try {
+      const { getUserPrisma } = require("../config/dynamicPrisma");
+      const userPrisma = await getUserPrisma();
+      if (userPrisma) {
+        const [
+          resumes,
+          chatSessions,
+          interviewSessions,
+          codingSessions,
+          studySessions,
+          atsReports,
+        ] = await Promise.all([
+          userPrisma.resume?.groupBy({ by: ["userId"], where: { userId: { in: userIds } }, _count: { id: true } }).catch(() => []),
+          userPrisma.chatSession?.groupBy({ by: ["userId"], where: { userId: { in: userIds } }, _count: { id: true } }).catch(() => []),
+          userPrisma.interviewSession?.groupBy({ by: ["userId"], where: { userId: { in: userIds } }, _count: { id: true } }).catch(() => []),
+          userPrisma.codingSession?.groupBy({ by: ["userId"], where: { userId: { in: userIds } }, _count: { id: true } }).catch(() => []),
+          userPrisma.studySession?.groupBy({ by: ["userId"], where: { userId: { in: userIds } }, _count: { id: true } }).catch(() => []),
+          userPrisma.aTSReport?.groupBy({ by: ["userId"], where: { userId: { in: userIds } }, _count: { id: true } }).catch(() => []),
+        ]);
+
+        const getCountMap = (arr: any[] = []) =>
+          new Map<string, number>(arr.map((item: any) => [item.userId, item._count?.id || item._count || 0]));
+
+        const resumeMap = getCountMap(resumes);
+        const chatMap = getCountMap(chatSessions);
+        const ivMap = getCountMap(interviewSessions);
+        const codingMap = getCountMap(codingSessions);
+        const studyMap = getCountMap(studySessions);
+        const atsMap = getCountMap(atsReports);
+
+        for (const userId of userIds) {
+          map.set(userId, {
+            resumes: resumeMap.get(userId) || 0,
+            chatSessions: chatMap.get(userId) || 0,
+            interviewSessions: ivMap.get(userId) || 0,
+            codingSessions: codingMap.get(userId) || 0,
+            studySessions: studyMap.get(userId) || 0,
+            atsReports: atsMap.get(userId) || 0,
+            candidateProfiles: 0,
+          });
+        }
+      }
+    } catch {
+      // Continue to per-db fallback if needed
+    }
+
     const dbNames = userIds.map((id) => `user_${id}`);
-    const dbs = (await this.listUserDatabasesCached()).filter((db) => dbNames.includes(db.dbName));
+    const dbs = (await this.listUserDatabasesCached().catch(() => [])).filter((db) => dbNames.includes(db.dbName));
 
-    const tables = ["resume", "chatSession", "interviewSession", "codingSession", "studySession", "aTSReport", "candidateProfile"] as const;
-    const perDb: Record<string, Record<string, number>> = {};
+    if (dbs.length > 0) {
+      const tables = ["resume", "chatSession", "interviewSession", "codingSession", "studySession", "aTSReport", "candidateProfile"] as const;
+      const perDb: Record<string, Record<string, number>> = {};
 
-    await mapLimit(dbs, 4, async (db) => {
-      const dbUrl = await databaseService.getConnectionString(db.dbName);
-      const client = this.getClient(dbUrl);
-      const counts: Record<string, number> = {};
-      await Promise.all(
-        tables.map(async (table) => {
-          try {
-            const c = await (client as any)[table].count({ where: { userId: db.userId } });
-            counts[table] = c ?? 0;
-          } catch {
-            counts[table] = 0;
-          }
-        })
-      );
-      perDb[db.userId] = counts;
-    });
-
-    for (const userId of userIds) {
-      const counts = perDb[userId];
-      if (!counts) continue;
-      map.set(userId, {
-        resumes: counts["resume"] || 0,
-        chatSessions: counts["chatSession"] || 0,
-        interviewSessions: counts["interviewSession"] || 0,
-        codingSessions: counts["codingSession"] || 0,
-        studySessions: counts["studySession"] || 0,
-        atsReports: counts["aTSReport"] || 0,
-        candidateProfiles: counts["candidateProfile"] || 0,
+      await mapLimit(dbs, 4, async (db) => {
+        try {
+          const dbUrl = await databaseService.getConnectionString(db.dbName);
+          const client = this.getClient(dbUrl);
+          const counts: Record<string, number> = {};
+          await Promise.all(
+            tables.map(async (table) => {
+              try {
+                const c = await (client as any)[table].count({ where: { userId: db.userId } });
+                counts[table] = c ?? 0;
+              } catch {
+                counts[table] = 0;
+              }
+            })
+          );
+          perDb[db.userId] = counts;
+        } catch {}
       });
+
+      for (const userId of userIds) {
+        const counts = perDb[userId];
+        if (!counts) continue;
+        const current = map.get(userId)!;
+        map.set(userId, {
+          resumes: Math.max(current.resumes, counts["resume"] || 0),
+          chatSessions: Math.max(current.chatSessions, counts["chatSession"] || 0),
+          interviewSessions: Math.max(current.interviewSessions, counts["interviewSession"] || 0),
+          codingSessions: Math.max(current.codingSessions, counts["codingSession"] || 0),
+          studySessions: Math.max(current.studySessions, counts["studySession"] || 0),
+          atsReports: Math.max(current.atsReports, counts["aTSReport"] || 0),
+          candidateProfiles: counts["candidateProfile"] || 0,
+        });
+      }
     }
 
     return map;

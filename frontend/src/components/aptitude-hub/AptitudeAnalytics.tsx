@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "@/lib/static-motion";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -133,24 +133,8 @@ function formatTimeMs(ms: number): string {
   return `${mins}m ${secs}s`;
 }
 
-function useAnimatedCounter(target: number, duration = 1200) {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    if (target === 0) {
-      setValue(0);
-      return;
-    }
-    const start = performance.now();
-    const step = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(eased * target));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [target, duration]);
-  return value;
+function useAnimatedCounter(target: number): number {
+  return target;
 }
 
 export default function AptitudeAnalytics({
@@ -632,6 +616,7 @@ export default function AptitudeAnalytics({
                 <Line
                   data={accuracyTrendData}
                   options={{
+                    animation: false,
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -682,6 +667,7 @@ export default function AptitudeAnalytics({
                 <Radar
                   data={categoryRadarData}
                   options={{
+                    animation: false,
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -742,6 +728,7 @@ export default function AptitudeAnalytics({
                   <Doughnut
                     data={difficultyDoughnutData}
                     options={{
+                      animation: false,
                       responsive: true,
                       maintainAspectRatio: false,
                       cutout: "65%",
@@ -980,6 +967,7 @@ export default function AptitudeAnalytics({
               <Bar
                 data={topicMasteryData}
                 options={{
+                  animation: false,
                   indexAxis: "y",
                   responsive: true,
                   maintainAspectRatio: false,
@@ -1253,6 +1241,7 @@ export default function AptitudeAnalytics({
               <Bar
                 data={weeklyProgressData as any}
                 options={{
+                  animation: false,
                   responsive: true,
                   maintainAspectRatio: false,
                   plugins: {
@@ -1348,6 +1337,7 @@ export default function AptitudeAnalytics({
                   ],
                 }}
                 options={{
+                  animation: false,
                   responsive: true,
                   maintainAspectRatio: false,
                   plugins: {

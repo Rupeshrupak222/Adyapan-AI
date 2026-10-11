@@ -47,6 +47,15 @@ export const env = {
     process.env.GOOGLE_GEMINI_API_KEY ||
     process.env.GEMINI_KEY ||
     "",
+  geminiApiKey2: process.env.GEMINI_API_KEY_2 ?? "",
+  geminiApiKeys: [
+    process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_API_KEY ||
+      process.env.GOOGLE_GEMINI_API_KEY ||
+      process.env.GEMINI_KEY ||
+      "",
+    process.env.GEMINI_API_KEY_2 ?? "",
+  ].filter(Boolean),
   groqApiKey: process.env.GROQ_API_KEY ?? "",
   openrouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
   nvidiaApiKey: process.env.NVIDIA_API_KEY ?? "",
@@ -104,6 +113,7 @@ export const env = {
   pistonUrl: process.env.PISTON_URL ?? "http://localhost:2000",
   apifyApiKey: process.env.APIFY_API_KEY ?? process.env.APIFY_TOKEN ?? "",
   scrapflyApiKey: process.env.SCRAPFLY_API_KEY ?? "",
+  tinyfishApiKey: process.env.TINYFISH_API_KEY ?? "",
   nodeEnv: process.env.NODE_ENV ?? "development",
   masterDatabaseUrl: process.env.MASTER_DATABASE_URL ?? process.env.DATABASE_URL ?? "",
   // Registration workflow: when "true", a verification email is queued/attempted

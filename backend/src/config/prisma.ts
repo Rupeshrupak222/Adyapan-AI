@@ -10,6 +10,7 @@ const pool = new Pool({
   connectionString: env.nodeEnv === "development" && env.directUrl
     ? env.directUrl
     : env.databaseUrl,
+  ssl: { rejectUnauthorized: false },
   max: 10,
   connectionTimeoutMillis: 30_000,
   idleTimeoutMillis: 60_000,

@@ -7,8 +7,6 @@ import { resumeRouter } from "./resume.routes";
 import { atsRouter } from "./ats.routes";
 import { resumeAnalysisRouter } from "./resume-analysis.routes";
 import { coverLetterRouter } from "./cover-letter.routes";
-import { linkedinRouter } from "./linkedin.routes";
-import { linkedinJobsRouter } from "./linkedin-jobs.routes";
 import { studyRouter } from "./study.routes";
 import { notesRouter } from "./notes.routes";
 import { notesExportRouter } from "./notes-export.routes";
@@ -81,8 +79,6 @@ apiRouter.use("/resume-upload", resumeUploadRouter);
 apiRouter.use("/ats", atsRouter);
 apiRouter.use("/resume-analysis", resumeAnalysisRouter);
 apiRouter.use("/cover-letter", coverLetterRouter);
-apiRouter.use("/linkedin", linkedinRouter);
-apiRouter.use("/linkedin-jobs", linkedinJobsRouter);
 
 // Learning Hub Routes
 apiRouter.use("/study", studyRouter);
@@ -98,6 +94,13 @@ apiRouter.use("/coding", premiumGate, codingRouter);
 apiRouter.use("/dsa", premiumGate, dsaRouter);
 apiRouter.use("/challenges", premiumGate, challengesRouter);
 apiRouter.use("/github", githubRouter);
+
+// Interview Engine Sub-routes (MUST be mounted before general /interview prefix)
+apiRouter.use("/interview/hr", premiumGate, hrInterviewRouter);
+apiRouter.use("/hr-interview", premiumGate, hrInterviewRouter);
+apiRouter.use("/interview/technical", premiumGate, technicalEngineRouter);
+apiRouter.use("/technical-engine", premiumGate, technicalEngineRouter);
+apiRouter.use("/engine", premiumGate, engineRouter);
 apiRouter.use("/interview", premiumGate, interviewRouter);
 apiRouter.use("/ady-chat", premiumGate, adyChatRouter);
 apiRouter.use("/flashcards", flashcardsRouter);
@@ -129,15 +132,6 @@ apiRouter.use("/community", communityRouter);
 
 // Career Navigation Engine Routes
 apiRouter.use("/career", careerRouter);
-
-// Interview Engine Routes
-apiRouter.use("/engine", premiumGate, engineRouter);
-
-// Technical Interview Engine Routes
-apiRouter.use("/technical-engine", premiumGate, technicalEngineRouter);
-
-// HR Interview Engine Routes
-apiRouter.use("/interview/hr", premiumGate, hrInterviewRouter);
 
 // Placement Hub Routes
 apiRouter.use("/placement", placementRouter);
@@ -188,3 +182,4 @@ apiRouter.use("/legal", legalRouter);
 
 // Security reporting (public, isolated) — receives browser CSP violation reports
 apiRouter.use("/security", securityRouter);
+

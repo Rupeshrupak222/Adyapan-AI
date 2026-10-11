@@ -1,7 +1,7 @@
 import { generateJSON, generateText, MODELS } from "../lib/ai/openrouter";
 import { dedupInfoFromQuestion, dedupeQuestions, filterQuestionsAgainstSeen, sanitizeGeneratedQuestions, seenRegistryFromTexts } from "../lib/questions/question-fingerprint";
 import { buildDiversifiedTopicTest } from "./aptitude-archetypes";
-import { QuestionPoolExhaustedError, buildAvoidanceBlock, loadBank, rejectAgainstBank } from "./question-bank.service";
+import { QuestionPoolExhaustedError, buildAvoidanceBlock, loadBank, rejectAgainstBank, type BankSnapshot } from "./question-bank.service";
 import { balanceCorrectOptionPositions } from "../lib/questions/option-balance";
 
 /**
@@ -813,6 +813,8 @@ export interface UniqueGenerationResult {
     apiErrors: number;
     bankRejections: number;
     validResponses: number;
+    /** Candidates rejected by the structural gate before reaching the bank. */
+    invalidCandidates?: number;
   };
 }
 
@@ -839,6 +841,14 @@ export async function generateUniqueTopicQuestions(params: {
   batchSize?: number;
   /** Milliseconds to wait between attempts; 0 for the live request path. */
   throttleMs?: number;
+  /**
+   * Pre-built dedup registry. Defaults to question_bank.
+   *
+   * Pass one when uniqueness must be judged against more than question_bank —
+   * 2,826 of the 4,620 live aptitude questions were never banked, so a bank-only
+   * registry would happily re-serve one of those as a "new" question.
+   */
+  bank?: BankSnapshot;
 }): Promise<UniqueGenerationResult> {
   const { topic, category, count, difficulty, company } = params;
   const maxAttempts = Math.max(1, params.maxAttempts ?? 6);
@@ -851,7 +861,7 @@ export async function generateUniqueTopicQuestions(params: {
   const throttleMs = Math.max(0, params.throttleMs ?? 0);
   const companyTags = company && COMPANY_PRESETS[company] ? [company] : [];
 
-  const bank = await loadBank(undefined, { includeTexts: true });
+  const bank = params.bank ?? (await loadBank(undefined, { includeTexts: true }));
   const accepted: GeneratedQuestion[] = [];
   const acceptedTexts: string[] = [];
   const rejectedConcepts: string[] = [];
@@ -860,6 +870,10 @@ export async function generateUniqueTopicQuestions(params: {
   let apiErrors = 0;
   let bankRejections = 0;
   let validResponses = 0;
+  // Candidates the model returned that never reached the bank because they failed
+  // the structural gate, tracked so a shortfall is not mistaken for an exhausted
+  // topic.
+  let invalidCandidates = 0;
 
   for (let attempt = 1; attempt <= maxAttempts && accepted.length < count; attempt++) {
     attempts = attempt;
@@ -984,6 +998,13 @@ Rules:
     }));
 
     const { valid, rejected: invalid } = sanitizeGeneratedQuestions(candidates);
+    invalidCandidates += invalid.length;
+    if (invalid.length > 0) {
+      console.warn(
+        `[AptitudeEngine] top-up "${topic}" attempt ${attempt}: ${invalid.length}/${candidates.length} ` +
+          `candidate(s) failed validation. First problem: ${invalid[0]?.reasons?.join(", ") || "unknown"}`
+      );
+    }
     if (valid.length === 0) {
       parseFailures++;
       console.warn(
@@ -1029,7 +1050,7 @@ Rules:
     // Distinguishes "the model never gave us anything usable" (a quota/rate-limit
     // or JSON problem, worth retrying later) from "the model kept proposing
     // concepts the bank already holds" (a genuine content ceiling).
-    diagnostics: { parseFailures, apiErrors, bankRejections, validResponses },
+    diagnostics: { parseFailures, apiErrors, bankRejections, validResponses, invalidCandidates },
   };
 }
 

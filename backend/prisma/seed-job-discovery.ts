@@ -5,8 +5,7 @@ import { autoResolveCompanyLogo } from "../src/utils/companyLogoResolver";
 
 dotenv.config();
 
-const adapter = new PrismaPg(process.env.DATABASE_URL!);
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "../src/config/prisma";
 
 function simpleHash(str: string): string {
   let hash = 0;

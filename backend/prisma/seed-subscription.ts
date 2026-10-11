@@ -8,16 +8,8 @@
  *
  * Run: npx ts-node prisma/seed-subscription.ts
  */
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
-
-const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  "postgresql://postgres:password@localhost:5432/adyapan_ai";
-
-const pool = new Pool({ connectionString: DATABASE_URL });
-const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
+import "dotenv/config";
+import { prisma } from "../src/config/prisma";
 
 // ─── Plans ────────────────────────────────────────────────────────────────
 
@@ -227,7 +219,7 @@ const USAGE_LIMITS: UsageLimitEntry[] = [
   { featureKey: "resume-builder", planCode: "free", monthlyLimit: 3 },
   { featureKey: "ats-checker", planCode: "free", monthlyLimit: 3 },
   { featureKey: "cover-letter-generator", planCode: "free", monthlyLimit: 3 },
-  { featureKey: "linkedin-optimizer", planCode: "free", monthlyLimit: 3 },
+  
   // Interview features are premium-only: free is intentionally 0.
   { featureKey: "interview-engine", planCode: "free", monthlyLimit: 0 },
   { featureKey: "technical-interview", planCode: "free", monthlyLimit: 0 },
@@ -236,9 +228,9 @@ const USAGE_LIMITS: UsageLimitEntry[] = [
   // Premium overrides = monthly credits from DEFAULT_PREMIUM_LIMITS.
   { featureKey: "notes-generator", planCode: "premium", monthlyLimit: 30 },
   { featureKey: "resume-builder", planCode: "premium", monthlyLimit: 9 },
-  { featureKey: "interview-engine", planCode: "premium", monthlyLimit: 5 },
-  { featureKey: "technical-interview", planCode: "premium", monthlyLimit: 5 },
-  { featureKey: "hr-interview", planCode: "premium", monthlyLimit: 5 },
+  { featureKey: "interview-engine", planCode: "premium", monthlyLimit: 10 },
+  { featureKey: "technical-interview", planCode: "premium", monthlyLimit: 10 },
+  { featureKey: "hr-interview", planCode: "premium", monthlyLimit: 10 },
 ];
 
 async function main() {

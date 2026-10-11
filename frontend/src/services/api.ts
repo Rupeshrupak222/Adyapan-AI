@@ -1,6 +1,7 @@
 import axios from "axios";
+import { isMaintenanceOrQuotaError, MAINTENANCE_MESSAGE } from "@/utils/maintenanceHelper";
 
-const DEFAULT_API_URL = "http://localhost:5000/api";
+const DEFAULT_API_URL = "https://adyapan-ai-production.up.railway.app/api";
 
 export function normalizeApiBaseUrl(raw?: string): string {
   const input = (raw ?? "").trim();
@@ -23,6 +24,7 @@ export const api = axios.create({
 // Request interceptor — attach token, session ID, timezone
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
+    config.baseURL = API_BASE_URL;
     const token = sessionStorage.getItem("adyapan-token") || localStorage.getItem("adyapan-token");
     if (token) config.headers.Authorization = `Bearer ${token}`;
     const sessionId = sessionStorage.getItem("adyapan-session-id") || localStorage.getItem("adyapan-session-id");
@@ -75,6 +77,24 @@ api.interceptors.response.use(
   },
   async (err) => {
     const { config, response } = err;
+
+    // Never leak infrastructure, Railway, or Supabase quota messages to the UI
+    if (isMaintenanceOrQuotaError(err, response?.status)) {
+      if (response) {
+        if (!response.data || typeof response.data !== "object") {
+          response.data = {
+            message: MAINTENANCE_MESSAGE,
+            error: MAINTENANCE_MESSAGE,
+            code: "SITE_MAINTENANCE",
+          };
+        } else {
+          response.data.message = MAINTENANCE_MESSAGE;
+          response.data.error = MAINTENANCE_MESSAGE;
+          response.data.code = "SITE_MAINTENANCE";
+        }
+      }
+      err.message = MAINTENANCE_MESSAGE;
+    }
 
     if (typeof window !== "undefined" && response?.data?.code === "LIMIT_EXCEEDED") {
       import("@/store/usage-store").then(({ useUsageStore }) => useUsageStore.getState().openLimitModal(response.data));

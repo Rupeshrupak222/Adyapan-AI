@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import { getUserPrismaFromRequest } from "../utils/prisma";
-import { prisma as masterPrisma } from "../config/prisma";
 
 interface SearchResult {
   id: string;
@@ -27,244 +26,365 @@ export async function globalSearch(req: Request, res: Response) {
     }
 
     const userPrisma = await getUserPrismaFromRequest(req);
-    const userId = req.user!.userId;
-    const opts: any = { mode: "insensitive" };
+    const userId = (req as any).user?.userId || (req as any).user?.id || null;
+    const like = { contains: q, mode: "insensitive" as const };
 
     const [
       notes,
       quizzes,
       assignments,
-      presentations,
       mindMaps,
       chatSessions,
       interviewSessions,
       codingSessions,
       resumes,
       coverLetters,
-      linkedinReports,
-      jobListings,
-      jobs,
       flashcards,
       codingQuestions,
       careerRoadmaps,
       researchPapers,
+      blogs,
+      studySessions,
+      jobListings,
     ] = await Promise.all<any[]>([
+      // 1. Notes (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.generatedNote.findMany({
+              where: { userId, OR: [{ topic: like }, { subject: like }] },
+              select: { id: true, topic: true, subject: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 2. Quizzes (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.quiz.findMany({
+              where: { userId, topic: like },
+              select: { id: true, topic: true, difficulty: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 3. Assignments (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.assignment.findMany({
+              where: { userId, topic: like },
+              select: { id: true, topic: true, academicLevel: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 4. Mind Maps (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.mindMap.findMany({
+              where: { userId, topic: like },
+              select: { id: true, topic: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 5. Chat Sessions (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.chatSession.findMany({
+              where: { userId, title: like },
+              select: { id: true, title: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 6. Interview Sessions (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.interviewSession.findMany({
+              where: {
+                userId,
+                OR: [{ role: like }, { company: like }, { technology: like }],
+              },
+              select: { id: true, role: true, company: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 7. Coding Sessions (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.codingSession.findMany({
+              where: { userId, title: like },
+              select: { id: true, title: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 8. Resumes (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.resume.findMany({
+              where: {
+                userId,
+                OR: [{ title: like }, { targetCompany: like }],
+              },
+              select: { id: true, title: true, template: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 9. Cover Letters (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.coverLetter.findMany({
+              where: {
+                userId,
+                OR: [{ companyName: like }, { role: like }],
+              },
+              select: { id: true, companyName: true, role: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 10. Flashcards (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.flashcard.findMany({
+              where: { userId, OR: [{ topic: like }, { front: like }] },
+              select: { id: true, topic: true, front: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 11. Coding Questions (public)
       safeQuery(() =>
-        userPrisma.generatedNote.findMany({
-          where: { userId, OR: [{ topic: opts }, { subject: opts }] },
-          select: { id: true, topic: true, subject: true, createdAt: true },
+        userPrisma.codingQuestion.findMany({
+          where: { OR: [{ title: like }, { topic: like }] },
+          select: { id: true, title: true, difficulty: true, topic: true },
           orderBy: { createdAt: "desc" },
-          take: 5,
+          take: 6,
         })
       ),
+
+      // 12. Career Roadmaps (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.careerRoadmap.findMany({
+              where: { userId, OR: [{ title: like }, { targetRole: like }] },
+              select: { id: true, title: true, targetRole: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 13. Research Papers (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.researchPaper.findMany({
+              where: { userId, OR: [{ title: like }, { domain: like }] },
+              select: { id: true, title: true, domain: true, status: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 14. Blogs (public)
       safeQuery(() =>
-        userPrisma.quiz.findMany({
-          where: { userId, topic: opts },
-          select: { id: true, topic: true, difficulty: true, createdAt: true },
+        userPrisma.blog.findMany({
+          where: { OR: [{ title: like }, { content: like }] },
+          select: { id: true, title: true, category: true },
           orderBy: { createdAt: "desc" },
-          take: 5,
+          take: 6,
         })
       ),
-      safeQuery(() =>
-        userPrisma.assignment.findMany({
-          where: { userId, topic: opts },
-          select: { id: true, topic: true, academicLevel: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.presentation.findMany({
-          where: { userId, topic: opts },
-          select: { id: true, topic: true, slideCount: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.mindMap.findMany({
-          where: { userId, topic: opts },
-          select: { id: true, topic: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.chatSession.findMany({
-          where: { userId, title: opts },
-          select: { id: true, title: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.interviewSession.findMany({
-          where: {
-            userId,
-            OR: [{ role: opts }, { company: opts }, { technology: opts }],
-          },
-          select: { id: true, role: true, company: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.codingSession.findMany({
-          where: { userId, title: opts },
-          select: { id: true, title: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.resume.findMany({
-          where: {
-            userId,
-            OR: [{ title: opts }, { targetCompany: opts }],
-          },
-          select: { id: true, title: true, template: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.coverLetter.findMany({
-          where: {
-            userId,
-            OR: [{ companyName: opts }, { role: opts }],
-          },
-          select: { id: true, companyName: true, role: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.linkedInReport.findMany({
-          where: { userId, headline: opts },
-          select: { id: true, headline: true, score: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 3,
-        })
-      ),
+
+      // 15. Study Sessions (user-scoped)
+      userId
+        ? safeQuery(() =>
+            userPrisma.studySession.findMany({
+              where: { userId, OR: [{ topic: like }, { subject: like }] },
+              select: { id: true, topic: true, subject: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            })
+          )
+        : Promise.resolve([]),
+
+      // 16. Job Listings (public)
       safeQuery(() =>
         userPrisma.jobListing.findMany({
           where: {
-            OR: [{ title: opts }, { company: opts }, { location: opts }],
+            OR: [
+              { title: like },
+              { company: like },
+              { location: like },
+              { category: like },
+            ],
           },
           select: { id: true, title: true, company: true, location: true },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.job.findMany({
-          where: {
-            OR: [{ role: opts }, { company: opts }, { location: opts }],
-          },
-          select: { id: true, role: true, company: true, location: true },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.flashcard.findMany({
-          where: { userId, topic: opts },
-          select: { id: true, topic: true, front: true, createdAt: true },
           orderBy: { createdAt: "desc" },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        masterPrisma.codingQuestion.findMany({
-          where: {
-            OR: [{ title: opts }, { topic: opts }],
-          },
-          select: { id: true, title: true, topic: true, difficulty: true },
-          take: 5,
-        })
-      ),
-      safeQuery(() =>
-        userPrisma.careerRoadmap.findMany({
-          where: { userId, targetRole: opts },
-          select: { id: true, targetRole: true, timeline: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 3,
-        })
-      ),
-      safeQuery(() =>
-        masterPrisma.researchPaper.findMany({
-          where: {
-            userId,
-            OR: [{ title: opts }, { domain: opts }],
-          },
-          select: { id: true, title: true, domain: true, status: true },
-          orderBy: { createdAt: "desc" },
-          take: 5,
+          take: 6,
         })
       ),
     ]);
 
+    // ── Map results to SearchResult ─────────────────────────────────────
     const results: SearchResult[] = [];
 
-    const addItems = (
-      items: any[],
-      mapFn: (item: any) => SearchResult
-    ) => {
-      for (const item of items) results.push(mapFn(item));
+    const push = (items: any[], mapFn: (item: any) => SearchResult) => {
+      for (const item of items) {
+        if (item) results.push(mapFn(item));
+      }
     };
 
-    addItems(notes, (n) => ({
-      id: n.id, label: n.topic, category: "Notes", viewId: "notes-generator",
-      subtitle: n.subject || undefined,
+    push(notes, (n) => ({
+      id: `note-${n.id}`,
+      label: n.topic || "Untitled Note",
+      category: "Notes",
+      viewId: "notes-generator",
+      subtitle: n.subject || "Generated Study Note",
     }));
-    addItems(quizzes, (q) => ({
-      id: q.id, label: q.topic, category: "Quizzes", viewId: "quiz-generator",
-      subtitle: q.difficulty || undefined,
+
+    push(quizzes, (q) => ({
+      id: `quiz-${q.id}`,
+      label: q.topic || "Untitled Quiz",
+      category: "Quizzes",
+      viewId: "quiz-generator",
+      subtitle: q.difficulty ? `${q.difficulty} Difficulty` : "Quiz",
     }));
-    addItems(assignments, (a) => ({
-      id: a.id, label: a.topic, category: "Assignments", viewId: "assignment-generator",
-      subtitle: a.academicLevel,
+
+    push(assignments, (a) => ({
+      id: `assignment-${a.id}`,
+      label: a.topic || "Untitled Assignment",
+      category: "Assignments",
+      viewId: "assignment-generator",
+      subtitle: a.academicLevel || "Assignment",
     }));
-    addItems(mindMaps, (m) => ({
-      id: m.id, label: m.topic, category: "Mind Maps", viewId: "mind-maps",
+
+    push(mindMaps, (m) => ({
+      id: `mindmap-${m.id}`,
+      label: m.topic || "Untitled Mind Map",
+      category: "Mind Maps",
+      viewId: "mind-maps",
+      subtitle: "Visual Concept Map",
     }));
-    addItems(chatSessions, (c) => ({
-      id: c.id, label: c.title, category: "Ady Chats", viewId: "ady-chat",
+
+    push(chatSessions, (c) => ({
+      id: `chat-${c.id}`,
+      label: c.title || "Untitled Chat",
+      category: "Ady Chats",
+      viewId: "ady-chat",
+      subtitle: "AI Conversation History",
     }));
-    addItems(interviewSessions, (i) => ({
-      id: i.id, label: `${i.role}${i.company ? ` @ ${i.company}` : ""}`, category: "Interviews", viewId: "interview-hub",
+
+    push(interviewSessions, (i) => ({
+      id: `interview-${i.id}`,
+      label: `${i.role || "Interview"}${i.company ? ` @ ${i.company}` : ""}`,
+      category: "Interviews",
+      viewId: "interview-hub",
+      subtitle: "Interview Prep Session",
     }));
-    addItems(codingSessions, (s) => ({
-      id: s.id, label: s.title, category: "Coding Sessions", viewId: "dsa-practice",
+
+    push(codingSessions, (s) => ({
+      id: `codesess-${s.id}`,
+      label: s.title || "Coding Session",
+      category: "Coding Sessions",
+      viewId: "dsa-practice",
+      subtitle: "DSA Coding Workspace",
     }));
-    addItems(resumes, (r) => ({
-      id: r.id, label: r.title, category: "Resumes", viewId: "resume-builder",
-      subtitle: r.template,
+
+    push(resumes, (r) => ({
+      id: `resume-${r.id}`,
+      label: r.title || "Untitled Resume",
+      category: "Resumes",
+      viewId: "resume-builder",
+      subtitle: r.template ? `${r.template} Template` : "Resume Document",
     }));
-    addItems(coverLetters, (c) => ({
-      id: c.id, label: `${c.companyName} — ${c.role}`, category: "Cover Letters", viewId: "cover-letter",
+
+    push(coverLetters, (c) => ({
+      id: `cl-${c.id}`,
+      label: `${c.companyName || "Company"} — ${c.role || "Role"}`,
+      category: "Cover Letters",
+      viewId: "cover-letter",
+      subtitle: "Tailored Cover Letter",
     }));
-    addItems(linkedinReports, (l) => ({
-      id: l.id, label: l.headline, category: "LinkedIn Reports", viewId: "linkedin-optimizer",
-      subtitle: `Score: ${l.score}`,
+
+    push(flashcards, (f) => ({
+      id: `flashcard-${f.id}`,
+      label: f.topic || "Flashcard",
+      category: "Flashcards",
+      viewId: "flashcards",
+      subtitle: f.front ? f.front.slice(0, 60) : "Flashcard Item",
     }));
-    addItems(jobListings, (j) => ({
-      id: j.id, label: `${j.title} @ ${j.company}`, category: "Job Listings", viewId: "job-hub",
-      subtitle: j.location,
+
+    push(codingQuestions, (c) => ({
+      id: `problem-${c.id}`,
+      label: c.title || "DSA Problem",
+      category: "DSA Problems",
+      viewId: "dsa-practice",
+      subtitle: `${c.difficulty || "Medium"} · ${c.topic || "Algorithm"}`.replace(/^ · | · $/g, ""),
     }));
-    addItems(jobs, (j) => ({
-      id: j.id, label: `${j.role} @ ${j.company}`, category: "Jobs", viewId: "job-hub",
-      subtitle: j.location,
+
+    push(careerRoadmaps, (r) => ({
+      id: `roadmap-${r.id}`,
+      label: r.title || "Career Roadmap",
+      category: "Career Roadmaps",
+      viewId: "career-dashboard",
+      subtitle: r.targetRole ? `Goal: ${r.targetRole}` : "Roadmap",
     }));
-    addItems(flashcards, (f) => ({
-      id: f.id, label: f.topic, category: "Flashcards", viewId: "flashcards",
-      subtitle: f.front.slice(0, 60),
+
+    push(researchPapers, (p) => ({
+      id: `paper-${p.id}`,
+      label: p.title || "Research Paper",
+      category: "Research Papers",
+      viewId: "research-hub",
+      subtitle: [p.domain, p.status].filter(Boolean).join(" · ") || "Academic Research",
     }));
-    addItems(codingQuestions, (c) => ({
-      id: c.id, label: c.title, category: "DSA Problems", viewId: "dsa-practice",
-      subtitle: `${c.difficulty} · ${c.topic}`,
+
+    push(blogs, (b) => ({
+      id: `blog-${b.id}`,
+      label: b.title || "Blog Post",
+      category: "Community Blogs",
+      viewId: "community-blog",
+      subtitle: b.category ? `Category: ${b.category}` : "Community Article",
     }));
-    addItems(researchPapers, (p) => ({
-      id: p.id, label: p.title, category: "Research Papers", viewId: "research-hub",
-      subtitle: `${p.domain} · ${p.status}`,
+
+    push(studySessions, (s) => ({
+      id: `study-${s.id}`,
+      label: s.topic || "Study Session",
+      category: "Study Sessions",
+      viewId: "study-assistant",
+      subtitle: s.subject || "Study Assistant Lesson",
+    }));
+
+    push(jobListings, (j) => ({
+      id: `job-${j.id}`,
+      label: `${j.title || "Job"}${j.company ? ` @ ${j.company}` : ""}`,
+      category: "Job Listings",
+      viewId: "job-discovery",
+      subtitle: j.location || "Active Opportunity",
     }));
 
     res.json({ success: true, data: results });

@@ -66,6 +66,14 @@ export async function generateRoadmap(req: Request, res: Response, next: NextFun
 
     let resumeImprovements: any[] = [];
 
+    const allAtsScores = atsReports
+      .map((r: any) => Number(r.overallScore ?? r.score ?? 0))
+      .filter((s: number) => !isNaN(s) && s > 0);
+    if (candidateProfile?.strengthScore && Number(candidateProfile.strengthScore) > 0) {
+      allAtsScores.push(Number(candidateProfile.strengthScore));
+    }
+    const highestAtsScore = allAtsScores.length > 0 ? Math.max(...allAtsScores) : (candidateProfile?.strengthScore || 0);
+
     const avgAtsScore = atsReports.length
       ? Math.round(atsReports.reduce((s: number, r: any) => s + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
       : (candidateProfile?.strengthScore || 0);
@@ -75,6 +83,7 @@ export async function generateRoadmap(req: Request, res: Response, next: NextFun
       : 0;
 
     const profileData = {
+      highestAtsScore,
       profile: {
         name: profile?.user?.name || "",
         targetRole: targetRole || profile?.targetRole || profile?.careerGoal || "",

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Crown, Users, GraduationCap, Briefcase, Building2,
   Rocket, Target, Globe, Sliders, BookOpen, Search,
-  ChevronRight, ChevronLeft, ArrowRight, Play, Flame,
+  ChevronRight, ChevronLeft, ArrowRight, ArrowLeft, Play, Flame,
   Clock, Settings2, Check, AlertTriangle, Loader2,
   MessageSquare, Shield, Brain, Heart, RefreshCw, Award, Scale,
   Zap, Mic, MicOff, Volume2, Star, BarChart3,
@@ -18,6 +18,7 @@ import {
   HR_INTERVIEW_TYPES, HR_COMPANY_PRESETS, HR_BEHAVIORAL_TOPICS,
 } from "./HRTypes";
 import CompanyLogo from "../CompanyLogo";
+import { InterviewDomainSelector } from "../shared/InterviewDomainSelector";
 import { FeatureCreditBadge } from "@/components/shared/FeatureCreditBadge";
 import { useFeatureUsageStore, formatResetDate } from "@/store/feature-usage-store";
 
@@ -49,6 +50,8 @@ const EXPERIENCE_OPTIONS: { value: HRExperienceLevel; label: string; description
 const DURATION_OPTIONS = [15, 20, 25, 30, 45, 60];
 
 const HR_ROLE_PRESETS = [
+  "UI / UX Designer",
+  "Product Designer (UI/UX)",
   "Data Scientist",
   "Machine Learning Engineer",
   "AI / ML Engineer",
@@ -143,7 +146,7 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
       return;
     }
     if (isLimitReached) {
-      toast.error(`You've used all ${hrUsage?.limit || 5} HR Interview attempts this month.`);
+      toast.error(`You've used all ${hrUsage?.limit || 10} HR Interview attempts this month.`);
       return;
     }
     toast.success("HR Interview configured! Launching...");
@@ -170,6 +173,16 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-3 max-w-xl">
               <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="/dashboard/user"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-opacity hover:opacity-85 ${
+                    isDark
+                      ? "bg-slate-800/80 border-slate-700 text-slate-200"
+                      : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                  }`}
+                >
+                  <ArrowLeft size={13} /> Dashboard
+                </a>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider">
                   <Flame size={12} className="animate-pulse" /> AI HR Interview
                 </div>
@@ -367,37 +380,24 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
                 )}
               </div>
 
-              {/* Role */}
+              {/* Role & Domain */}
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <h2 className="text-xl font-extrabold flex items-center gap-2"><Briefcase size={20} className="text-amber-500" /> Target Role</h2>
-                  <p className="text-xs" style={{ color: c.textMuted }}>Type or pick any of the 18 Adyapan CSE domains:</p>
+                  <h2 className="text-xl font-extrabold flex items-center gap-2"><Briefcase size={20} className="text-amber-500" /> Target Role & Domain</h2>
+                  <p className="text-xs" style={{ color: c.textMuted }}>Pick from all Adyapan domains or type any custom role:</p>
                 </div>
                 <input value={config.targetRole} onChange={(e) => updateConfig({ targetRole: e.target.value })}
-                  placeholder="Enter your target role..."
+                  placeholder="Enter your target role or pick below..."
                   className="w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-amber-500/50 transition-colors"
                   style={{ background: c.inputBg, color: c.text, borderColor: c.border }} />
 
-                <div className="flex flex-wrap gap-1.5 pt-1 max-h-32 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                  {HR_ROLE_PRESETS.map((r) => {
-                    const isSelected = config.targetRole.toLowerCase() === r.toLowerCase();
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => updateConfig({ targetRole: r })}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-amber-500 text-black border-amber-400 shadow-sm"
-                            : isDark
-                            ? "bg-white/5 text-slate-300 border-white/10 hover:border-amber-500/40 hover:bg-white/10"
-                            : "bg-slate-100 text-slate-700 border-slate-200 hover:border-amber-400 hover:bg-amber-50"
-                        }`}
-                      >
-                        {r}
-                      </button>
-                    );
-                  })}
+                <div className="pt-1">
+                  <InterviewDomainSelector
+                    selectedRole={config.targetRole}
+                    onSelect={(d) => updateConfig({ targetRole: d.role })}
+                    theme={theme}
+                    maxHeight="max-h-44"
+                  />
                 </div>
               </div>
 
@@ -622,7 +622,7 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
                 <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-3">
                   <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400" />
                   <div className="flex-1">
-                    <div>You&apos;ve used all {hrUsage?.limit || 5} HR Interview attempts this month.</div>
+                    <div>You&apos;ve used all {hrUsage?.limit || 10} HR Interview attempts this month.</div>
                     {hrUsage?.resetAt && (
                       <div className="text-[11px] text-amber-400/80 mt-0.5">
                         Resets on {formatResetDate(hrUsage.resetAt)}

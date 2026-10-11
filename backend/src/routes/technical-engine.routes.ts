@@ -221,21 +221,51 @@ technicalEngineRouter.post("/:sessionId/answer", async (req, res) => {
       return;
     }
 
-    const nextQuestion = await generateTechnicalQuestion({
-      topic: (config.technology || "dsa") as TechnicalTopic,
-      role: session.role,
-      company: session.company || "",
-      difficulty: session.difficulty || "medium",
-      experienceLevel: config.experienceLevel || "mid",
-      codingLanguage: (config.codingLanguage || "javascript") as CodingLanguage,
-      mode: (config.mode || "voice+coding") as InterviewMode,
-      history,
-      resumeContext: resumeContext || "",
-      customInstructions: config.customInstructions || "",
-      questionNumber: questionCount + 1,
-      totalQuestions,
-      durationMinutes: session.durationMinutes || 45,
-    });
+    const lastInterviewerMsg = allMessages.filter((m: any) => m.role === "interviewer").pop();
+    const lastContent = lastInterviewerMsg?.content || "";
+    const lastWasFollowUp = /(follow[- ]?up|elaborate|clarify|can you explain why|why did you|what if|how would you handle|trade-off|concurrency|edge case|time complexity|space complexity|optimize)/i.test(lastContent);
+    const lastWasCoding = lastContent.toLowerCase().includes("coding challenge") || lastContent.toLowerCase().includes("problem statement");
+
+    let nextQuestion: any;
+    if (!lastWasFollowUp && !lastWasCoding && questionCount < totalQuestions) {
+      const followUpText = await generateFollowUp({
+        originalQuestion: lastContent,
+        candidateAnswer: answer,
+        topic: (config.technology || "dsa") as TechnicalTopic,
+        difficulty: session.difficulty || "medium",
+        codingLanguage: (config.codingLanguage || "javascript") as CodingLanguage,
+        history,
+      });
+
+      nextQuestion = {
+        question: followUpText,
+        category: "counter_question",
+        difficulty: session.difficulty || "medium",
+        isCodingChallenge: false,
+        codingProblem: null,
+        expectedTopics: ["trade-offs", "complexity", "optimization"],
+        followUpHint: "Probe edge cases and implementation trade-offs",
+        timeEstimate: "2 minutes",
+        tips: ["Evaluate depth of understanding and technical rigor"],
+        isFollowUp: true,
+      };
+    } else {
+      nextQuestion = await generateTechnicalQuestion({
+        topic: (config.technology || "dsa") as TechnicalTopic,
+        role: session.role,
+        company: session.company || "",
+        difficulty: session.difficulty || "medium",
+        experienceLevel: config.experienceLevel || "mid",
+        codingLanguage: (config.codingLanguage || "javascript") as CodingLanguage,
+        mode: (config.mode || "voice+coding") as InterviewMode,
+        history,
+        resumeContext: resumeContext || "",
+        customInstructions: config.customInstructions || "",
+        questionNumber: questionCount + 1,
+        totalQuestions,
+        durationMinutes: session.durationMinutes || 45,
+      });
+    }
 
     await p.interviewMessage.create({
       data: { sessionId, role: "interviewer", content: nextQuestion.question },

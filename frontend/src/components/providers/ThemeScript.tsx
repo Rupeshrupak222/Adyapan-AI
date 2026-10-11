@@ -1,3 +1,5 @@
+import Script from "next/script";
+
 export default function ThemeScript() {
   const script = `
     (function() {
@@ -23,6 +25,8 @@ export default function ThemeScript() {
             return null;
           }
           return origSetAttrNode.apply(this, arguments);
+        };
+
         try {
           Object.defineProperty(Element.prototype, 'bis_skin_checked', {
             get: function() { return undefined; },
@@ -153,6 +157,11 @@ export default function ThemeScript() {
       } catch (e) {}
     })();
   `;
-  return <script dangerouslySetInnerHTML={{ __html: script }} />;
+  return (
+    <Script
+      id="theme-script"
+      strategy="beforeInteractive"
+      dangerouslySetInnerHTML={{ __html: script }}
+    />
+  );
 }
-

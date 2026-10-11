@@ -15,41 +15,63 @@ export async function transcribeAudioBuffer(
     return "";
   }
 
-  // 1. Try Groq Whisper (ultra-fast)
+  const rawMime = mimeType || "audio/webm";
+  const cleanMime = rawMime.split(";")[0].trim().toLowerCase() || "audio/webm";
+  const ext = cleanMime.includes("wav")
+    ? "wav"
+    : cleanMime.includes("mp4") || cleanMime.includes("m4a") || cleanMime.includes("aac")
+    ? "m4a"
+    : cleanMime.includes("ogg")
+    ? "ogg"
+    : cleanMime.includes("mpeg") || cleanMime.includes("mp3")
+    ? "mp3"
+    : "webm";
+
+  // 1. Primary: Groq Whisper (ultra-fast STT, <300ms)
   if (env.groqApiKey) {
     try {
       const groq = new Groq({ apiKey: env.groqApiKey });
-      const ext = mimeType.includes("wav")
-        ? "wav"
-        : mimeType.includes("mp4")
-        ? "mp4"
-        : mimeType.includes("ogg")
-        ? "ogg"
-        : "webm";
-
       const file = await toFile(audioBuffer, `candidate_audio.${ext}`, {
-        type: mimeType,
+        type: cleanMime,
       });
 
-      const transcription = await groq.audio.transcriptions.create({
-        file,
-        model: "whisper-large-v3",
-        language: language.toLowerCase().startsWith("hi") ? "hi" : "en",
-        response_format: "json",
-      });
+      const langCode = language.toLowerCase().startsWith("hi") ? "hi" : "en";
+      let transcription: any = null;
+      try {
+        transcription = await groq.audio.transcriptions.create({
+          file,
+          model: "whisper-large-v3-turbo",
+          language: langCode,
+          response_format: "json",
+        });
+      } catch (turboErr: any) {
+        // Fallback to whisper-large-v3
+        const fileRetry = await toFile(audioBuffer, `candidate_audio.${ext}`, {
+          type: cleanMime,
+        });
+        transcription = await groq.audio.transcriptions.create({
+          file: fileRetry,
+          model: "whisper-large-v3",
+          language: langCode,
+          response_format: "json",
+        });
+      }
 
       if (transcription && typeof transcription.text === "string") {
-        return transcription.text.trim();
+        const cleaned = transcription.text.trim();
+        if (cleaned) {
+          return cleaned;
+        }
       }
     } catch (err: any) {
       console.warn(
-        "[TranscriptionService] Groq Whisper error, trying fallback:",
+        "[TranscriptionService] Groq Whisper error, trying Gemini fallback:",
         err?.message || err
       );
     }
   }
 
-  // 2. Fallback to Gemini Multimodal Audio
+  // 2. Secondary Fallback: Google Gemini Multimodal Audio Transcription
   if (env.geminiApiKey) {
     try {
       const genAI = new GoogleGenerativeAI(env.geminiApiKey);
@@ -59,17 +81,18 @@ export async function transcribeAudioBuffer(
       const result = await model.generateContent([
         {
           inlineData: {
-            mimeType: mimeType || "audio/webm",
+            mimeType: cleanMime,
             data: base64Data,
           },
         },
         {
-          text: "Transcribe the spoken speech in this audio clip verbatim. Return ONLY the transcribed text. If the audio is silent or contains no intelligible words, return empty string.",
+          text: `You are an accurate Speech-to-Text engine. Listen to this candidate audio clip and transcribe what the candidate said verbatim in ${language.toLowerCase().startsWith("hi") ? "Hindi or English" : "English"}.
+Return ONLY the raw transcribed text. Do NOT add preamble, commentary, quotes, or notes. If the audio is silent or unintelligible, return an empty string.`,
         },
       ]);
 
       const text = result.response.text();
-      if (text) {
+      if (text && text.trim()) {
         return text.trim();
       }
     } catch (geminiErr: any) {

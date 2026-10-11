@@ -157,6 +157,84 @@ function getInterviewPhaseGuidance(questionNumber: number, totalQuestions: numbe
   return "CLOSING: Ask about questions they have, any final thoughts, and wrap up professionally. This is their chance to leave a final impression.";
 }
 
+function getRoleSpecificHRGuidance(role: string): string {
+  const normalized = (role || "").toLowerCase();
+  if (
+    normalized.includes("ui") ||
+    normalized.includes("ux") ||
+    normalized.includes("design") ||
+    normalized.includes("product designer")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR UI/UX & PRODUCT DESIGN:
+- Assess cross-functional collaboration: Inquire about working with frontend/backend developers, product managers, and QA.
+- Handling design critique & stakeholder pushback: Ask how they handle situations where their design was questioned or rejected.
+- Balancing user advocacy with business constraints & deadlines: Explore how they prioritize user needs against engineering feasibility or commercial milestones.
+- Design storytelling & rationale: Evaluate their ability to clearly articulate the "why" behind their design decisions, personas, and user research.
+- Empathy, usability testing & accessibility: Inquire about user testing insights, handling edge cases, and accessibility (WCAG).`;
+  } else if (
+    normalized.includes("mechanical") ||
+    normalized.includes("civil") ||
+    normalized.includes("automotive") ||
+    normalized.includes("cad") ||
+    normalized.includes("car") ||
+    normalized.includes("hev") ||
+    normalized.includes("powertrain")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR CORE ENGINEERING & AUTOMOTIVE:
+- Safety, compliance & quality standards: Ask about how they handle strict safety margins, tolerance limits, and regulatory certifications.
+- Cross-disciplinary coordination: Inquire about collaboration between hardware/structural teams, electronics engineers, and manufacturing plants.
+- Handling unexpected physical test failures or prototype defects: Explore how they troubleshoot FEA/CAD discrepancies and physical stress tests under tight deadlines.
+- Project site/production challenges: Evaluate vendor negotiations, material delays, and managing on-site contractors.`;
+  } else if (
+    normalized.includes("embedded") ||
+    normalized.includes("vlsi") ||
+    normalized.includes("robotics") ||
+    normalized.includes("drone") ||
+    normalized.includes("iot")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR ECE, ROBOTICS & HARDWARE SYSTEMS:
+- Hardware-software co-design collaboration: Inquire about working with firmware developers, mechanical chassis teams, and PCB fabricators.
+- Rigorous lab testing & root-cause debugging: Ask how they isolate intermittent hardware glitches, timing violations, or sensor noise.
+- High-stakes safety in autonomous/embedded systems: Evaluate attitude towards fail-safe behaviors, redundancy, and risk mitigation.`;
+  } else if (
+    normalized.includes("clinical") ||
+    normalized.includes("medical") ||
+    normalized.includes("pharma") ||
+    normalized.includes("genetic") ||
+    normalized.includes("psychology")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR HEALTHCARE, PHARMA & LIFE SCIENCES:
+- Regulatory compliance & ethics: Assess strict adherence to GCP, HIPAA, FDA protocols, and patient confidentiality.
+- Handling high-pressure audits and documentation integrity: Ask about managing audit checklists, trial deadlines, and adverse event reporting.
+- Scientific communication & empathy: Evaluate communication with cross-functional investigators, clinicians, or patients.`;
+  } else if (
+    normalized.includes("product manager") ||
+    normalized.includes("management") ||
+    normalized.includes("finance") ||
+    normalized.includes("banking") ||
+    normalized.includes("supply chain") ||
+    normalized.includes("marketing")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR MANAGEMENT, FINANCE & BUSINESS:
+- Cross-functional leadership without direct authority: Inquire how they motivate engineering, sales, and design teams toward common KPIs.
+- Prioritization under resource constraints: Ask about trade-offs between urgent short-term fixes and long-term strategic investments.
+- Executive communication & stakeholder alignment: Assess ability to explain complex data or business cases to leadership.`;
+  } else if (
+    normalized.includes("data") ||
+    normalized.includes("machine learning") ||
+    normalized.includes("ai") ||
+    normalized.includes("cloud") ||
+    normalized.includes("devops") ||
+    normalized.includes("software")
+  ) {
+    return `ROLE-SPECIFIC FOCUS FOR TECH, AI & SOFTWARE ROLES:
+- Incident response & ownership: Ask about how they handled a live production outage, unexpected model drift, or critical bug.
+- Managing technical debt vs business delivery: Inquire how they negotiated refactoring time with product managers.
+- Continuous learning & knowledge sharing: Assess how they mentor junior engineers and share learnings from mistakes.`;
+  }
+  return "";
+}
+
 const HR_FALLBACK_QUESTION: HRQuestion = {
   question: "Tell me about yourself and what motivated you to apply for this role.",
   category: "tell_me_about_yourself",
@@ -167,6 +245,23 @@ const HR_FALLBACK_QUESTION: HRQuestion = {
   followUpHint: "Ask about specific career milestones that led to this application",
   tips: ["Listen for a clear narrative arc", "Note self-awareness and enthusiasm"],
 };
+
+function getHRFallbackQuestion(targetRole: string): HRQuestion {
+  const lower = (targetRole || "").toLowerCase();
+  if (lower.includes("ui") || lower.includes("ux") || lower.includes("design")) {
+    return {
+      question: "Could you tell me about yourself, your design journey, and what motivated you to pursue this UI/UX design role?",
+      category: "tell_me_about_yourself",
+      competency: "communication",
+      difficulty: "easy",
+      isFollowUp: false,
+      expectedSTAR: false,
+      followUpHint: "Ask about a specific design challenge or project where they championed the user experience",
+      tips: ["Listen for user empathy and design process awareness", "Observe how clearly they connect user needs with business goals"],
+    };
+  }
+  return HR_FALLBACK_QUESTION;
+}
 
 export function ensureQuestionFormat(text: string, defaultType: string = "behavioral"): string {
   if (!text) return "Could you walk me through a specific example from your past experience?";
@@ -198,6 +293,11 @@ export async function generateHRQuestion(
   const companyFocus = getCompanyHRFocus(config.targetCompany);
   const experienceGuidance = getExperienceLevelGuidance(config.experienceLevel);
   const phaseGuidance = getInterviewPhaseGuidance(questionNumber, totalQuestions);
+  const roleGuidance = getRoleSpecificHRGuidance(config.targetRole);
+
+  const previousQuestions = history
+    .filter((m) => m.role === "interviewer")
+    .map((m, i) => `${i + 1}. "${m.content.replace(/\s+/g, " ").trim()}"`);
 
   const conversationHistory = history
     .filter((m) => m.role === "interviewer" || m.role === "candidate")
@@ -223,10 +323,16 @@ PHASE: ${phaseGuidance}
 EXPERIENCE LEVEL GUIDANCE:
 ${experienceGuidance}
 
-${companyFocus ? `COMPANY-SPECIFIC FOCUS:\n${companyFocus}\n` : ""}
+${roleGuidance ? `ROLE-SPECIFIC GUIDANCE:\n${roleGuidance}\n` : ""}${companyFocus ? `COMPANY-SPECIFIC FOCUS:\n${companyFocus}\n` : ""}
 ${resumeSection}
 BEHAVIORAL TOPICS TO COVER (choose based on phase and conversation flow):
 ${BEHAVIORAL_CATEGORIES.map((c) => `- ${c.replace(/_/g, " ")}`).join("\n")}
+
+CRITICAL ANTI-REPETITION MANDATE (ABSOLUTE RULE):
+The following questions have ALREADY BEEN ASKED in this interview:
+${previousQuestions.length > 0 ? previousQuestions.join("\n") : "(None yet - this is question 1)"}
+
+STRICT PROHIBITION: You MUST NEVER repeat, rephrase, or ask questions that overlap with any of the questions listed above! Choose an entirely distinct behavioral topic that has NOT been discussed yet.
 
 QUESTION GENERATION RULES:
 1. Generate exactly ONE natural, conversational question appropriate for question ${questionNumber} of ${totalQuestions}
@@ -260,18 +366,19 @@ ${conversationHistory ? `Previous conversation:\n${conversationHistory}` : "This
 ${conversationHistory ? "First acknowledge their last response with 1 short sentence, then ask the next specific question ending with '?'." : "Generate the opening question."}`;
 
   try {
+    const fallbackQ = getHRFallbackQuestion(config.targetRole);
     const result = await generateJSON<HRQuestion>(
       systemPrompt,
       userPrompt,
       { model: MODELS.BALANCED, temperature: 0.8, maxTokens: 2048 },
-      HR_FALLBACK_QUESTION
+      fallbackQ
     );
     result.question = ensureQuestionFormat(result.question, config.interviewType);
     console.log(`[HR Interview] Generated question ${questionNumber} — category: ${result.category}, competency: ${result.competency}`);
     return result;
   } catch (error) {
     console.error(`[HR Interview] Question generation failed, using fallback:`, error);
-    return HR_FALLBACK_QUESTION;
+    return getHRFallbackQuestion(config.targetRole);
   }
 }
 
@@ -395,36 +502,51 @@ export async function generateHRFollowUp(
   config: HRInterviewConfig,
   starAnalysis: STARAnalysis
 ): Promise<string> {
-  const systemPrompt = `You are an experienced HR interviewer conducting a behavioral interview.
-The candidate just answered a question, but their response requires a follow-up to explore deeper details or missing STAR elements.
+  const isDetailedAnswer = starAnalysis.score >= 60;
 
-STAR ANALYSIS OF CANDIDATE'S RESPONSE:
+  const systemPrompt = `You are a perceptive senior HR and behavioral interviewer.
+The candidate just answered your question. Your task is to ask a natural, incisive COUNTER-QUESTION / CROSS-QUESTION probing their answer.
+
+CANDIDATE'S ANSWER ASSESSMENT:
 - Situation: ${starAnalysis.hasSituation ? "Present" : "Missing"}
 - Task: ${starAnalysis.hasTask ? "Present" : "Missing"}
 - Action: ${starAnalysis.hasAction ? "Present" : "Missing"}
 - Result: ${starAnalysis.hasResult ? "Present" : "Missing"}
 - STAR Score: ${starAnalysis.score}/100
-- Missing: ${starAnalysis.missingElements.join(", ") || "None"}
+- Missing Elements: ${starAnalysis.missingElements.join(", ") || "None"}
+
+CROSS-EXAMINATION STRATEGY:
+${
+  isDetailedAnswer
+    ? `- The candidate gave a structured answer. Cross-examine their claims and decision-making:
+  * Probe stakeholder friction or disagreement: "How did your teammates or stakeholders react to that decision, and how did you resolve any disagreements?"
+  * Probe trade-offs & alternatives: "What other solutions did you evaluate before picking that route, and what was the trade-off?"
+  * Probe retrospective reflection: "In hindsight, what would you have done differently or improved in that situation?"
+  * Probe quantified impact: "What specific business metric, efficiency gain, or measurable outcome proved that this succeeded?"`
+    : `- The candidate's answer was generic or missing key STAR details (${starAnalysis.missingElements.join(", ") || "actionable specifics"}).
+  * Directly probe their personal agency: "What was your specific individual contribution in that project rather than the team as a whole?"
+  * Probe measurable outcomes: "Could you share the concrete impact, data point, or final result of that situation?"
+  * Probe concrete scenario: "Could you walk me through one specific, real-world example where this happened?"`
+}
 
 CRITICAL OUTPUT RULES:
-1. You MUST include a clear, complete follow-up question that ends with a question mark ('?').
-2. Structure: You may start with a brief 1-sentence reaction/compliment acknowledging their answer, BUT you MUST ALWAYS follow it immediately with a specific follow-up question asking for examples, actions, or measurable outcomes.
-3. NEVER return only a compliment or reaction without asking a question ending in '?'.
-4. Do NOT leave any sentence incomplete or truncated.
+1. Start with 1 brief natural acknowledging phrase (e.g., "Understood.", "That's an interesting takeaway.", "I see your point on that."), followed immediately by exactly ONE focused counter-question ending with a question mark ('?').
+2. NEVER output meta-commentary, lists, or generic praise without a question ending in '?'.
+3. Keep it professional, conversational, and direct (1-2 sentences total).
 
-Return ONLY the complete text (1-2 sentences max), ending with a question mark ('?').`;
+Return ONLY the interviewer's spoken words, ending with a question mark ('?').`;
 
   const fallback = starAnalysis.hasResult
-    ? "Thanks for sharing that! Can you tell me about a specific metric or outcome that resulted from your actions?"
+    ? "Thanks for explaining that. What was the biggest challenge or pushback you faced while implementing that, and how did you overcome it?"
     : starAnalysis.hasAction
-      ? "That sounds interesting! What was the measurable result or key takeaway from your actions?"
-      : "Thank you for explaining! Could you walk me through a specific example or scenario where you applied this?";
+      ? "That makes sense. What was the measurable result or key takeaway from your actions?"
+      : "Thank you for sharing. Could you walk me through a specific real-world example where you personally took ownership of this?";
 
   try {
     const result = await generateText(
       systemPrompt,
-      `Original question: ${question}\nCandidate answer: ${answer}\n\nGenerate a natural follow-up question that acknowledges their response and asks for deeper STAR details ending with '?'.`,
-      { model: MODELS.FAST, temperature: 0.7, maxTokens: 512 }
+      `Original question: ${question}\nCandidate answer: ${answer}\n\nGenerate an incisive counter-question directly challenging or probing their response, ending with '?'.`,
+      { model: MODELS.FAST, temperature: 0.75, maxTokens: 512 }
     );
     const cleanFollowUp = ensureQuestionFormat(result.trim(), config.interviewType);
     return cleanFollowUp;

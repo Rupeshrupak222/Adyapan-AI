@@ -54,6 +54,8 @@ export class SharedSpeechEngine {
   private activeStream: MediaStream | null = null;
   private ownsStream = false;
   private isTranscribing = false;
+  private nativeSpeechDisabled = false;
+  private initSafetyTimer: NodeJS.Timeout | null = null;
 
   private constructor() {}
 
@@ -100,166 +102,230 @@ export class SharedSpeechEngine {
   }
 
   private getBestMimeType(): string {
-    if (typeof window === "undefined" || typeof MediaRecorder === "undefined") return "audio/webm";
+    if (typeof window === "undefined" || typeof MediaRecorder === "undefined") return "";
     const types = [
       "audio/webm;codecs=opus",
       "audio/webm",
-      "audio/ogg;codecs=opus",
       "audio/mp4",
+      "audio/aac",
+      "audio/ogg;codecs=opus",
+      "audio/ogg",
       "audio/wav",
     ];
     for (const t of types) {
-      if (MediaRecorder.isTypeSupported(t)) return t;
+      if (typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(t)) {
+        return t;
+      }
     }
-    return "audio/webm";
+    return "";
   }
 
   /**
-   * Starts universal listening.
-   * If provided, existing stream is reused to avoid duplicate microphone access.
+   * Starts universal listening with native Web Speech API and MediaRecorder in parallel.
    */
   public startListening(existingStream?: MediaStream | null): boolean {
     if (typeof window === "undefined") return false;
     if (this.isDestroyed) this.isDestroyed = false;
 
-    if (this.state === "LISTENING" || this.state === "HEARING" || this.state === "INITIALIZING") {
-      logInterview("SpeechState", "Recognition already running or initializing.");
-      return true;
-    }
-
     this.isExplicitlyStopped = false;
-    this.setState("INITIALIZING");
-    this.cleanupNativeRecognition();
 
     if (existingStream) {
       this.activeStream = existingStream;
       this.ownsStream = false;
     }
 
-    // 1. Initialize Universal MediaRecorder audio buffer
+    // 1. Ensure MediaRecorder is running (only starts if not already recording)
     this.startMediaRecorder(existingStream);
 
-    // 2. Try native Web Speech API (Chrome, Edge, Safari if enabled)
-    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRec) {
-      try {
-        const recognition = new SpeechRec();
-        recognition.continuous = this.config.continuous !== false;
-        recognition.interimResults = this.config.interimResults !== false;
-        recognition.lang = this.config.language === "hindi" ? "hi-IN" : "en-US";
-
-        recognition.onstart = () => {
-          logInterview("SpeechState", "Native SpeechRecognition onstart fired");
-          this.restartCount = 0;
-          this.setState("LISTENING");
-          this.startWatchdog();
-        };
-
-        recognition.onresult = (event: any) => {
-          if (this.isExplicitlyStopped || this.isDestroyed) return;
-          this.resetWatchdog();
-
-          let currentInterim = "";
-          let newFinalChunk = "";
-
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const chunk = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              newFinalChunk += chunk + " ";
-            } else {
-              currentInterim += chunk;
-            }
-          }
-
-          if (newFinalChunk) {
-            this.accumulatedFinalText = (this.accumulatedFinalText + " " + newFinalChunk).trim();
-            this.setState("HEARING");
-            this.callbacks.onFinalResult?.(this.accumulatedFinalText);
-          } else if (currentInterim) {
-            this.setState("HEARING");
-            this.callbacks.onInterimResult?.(currentInterim.trim());
-          }
-        };
-
-        recognition.onerror = (event: any) => {
-          const err = event?.error || "unknown";
-          logInterview("SpeechState", `Native onerror fired: ${err}`);
-
-          if (err === "no-speech" || err === "aborted") {
-            return;
-          }
-
-          // In Brave or Firefox with flags, Google Speech server is blocked -> fallback to MediaRecorder silently
-          if (err === "network" || err === "not-allowed" || err === "service-not-allowed") {
-            logInterview("SpeechState", "Web Speech API network/permission restriction - falling back to Universal MediaRecorder");
-            this.setState("LISTENING");
-            return;
-          }
-
-          this.callbacks.onError?.(`Speech recognition notice: ${err}`, event);
-        };
-
-        recognition.onend = () => {
-          logInterview("SpeechState", "Native SpeechRecognition onend fired");
-          this.clearWatchdog();
-
-          if (this.isExplicitlyStopped || this.isDestroyed) {
-            this.setState("IDLE");
-            return;
-          }
-
-          // Auto-recover speech recognition stream while active
-          this.restartCount++;
-          this.setState("RESTARTING");
-          logInterview("SpeechState", `Auto-recovering speech recognition (Attempt ${this.restartCount})...`);
-          this.callbacks.onAutoRecover?.();
-
-          setTimeout(() => {
-            if (!this.isExplicitlyStopped && !this.isDestroyed) {
-              try {
-                this.recognition?.start();
-              } catch {
-                this.startListening(this.activeStream);
-              }
-            }
-          }, 300);
-        };
-
-        this.recognition = recognition;
-        (window as any).__activeSpeechRecognition = recognition;
-        recognition.start();
-        return true;
-      } catch (e: any) {
-        logInterview("SpeechState", "Native SpeechRecognition start warning, falling back to MediaRecorder", e);
+    // 2. If already listening or hearing, ensure native recognition is active and return
+    if (this.state === "LISTENING" || this.state === "HEARING") {
+      if (!this.recognition && !this.nativeSpeechDisabled) {
+        this.startNativeRecognition();
       }
+      return true;
     }
 
-    // In browsers without Web Speech (like Firefox), MediaRecorder acts as the primary STT
-    this.setState("LISTENING");
+    this.setState("INITIALIZING");
+
+    // 3. Start native Web Speech recognition
+    this.startNativeRecognition();
+
+    // 4. Safety timer: if native recognition takes > 1.2s to fire onstart, force state to LISTENING
+    if (this.initSafetyTimer) clearTimeout(this.initSafetyTimer);
+    this.initSafetyTimer = setTimeout(() => {
+      if (this.state === "INITIALIZING") {
+        logInterview("SpeechState", "Initializing safety timer fired: setting state to LISTENING");
+        this.setState("LISTENING");
+      }
+    }, 1200);
+
     return true;
   }
 
   /**
-   * Initializes MediaRecorder for universal cross-browser audio capture
+   * Creates and starts a fresh instance of native SpeechRecognition.
+   */
+  private startNativeRecognition() {
+    if (typeof window === "undefined" || this.isExplicitlyStopped || this.isDestroyed || this.nativeSpeechDisabled) {
+      return;
+    }
+
+    this.cleanupNativeRecognition();
+
+    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRec) {
+      logInterview("SpeechState", "Web Speech API not present; relying on MediaRecorder fallback.");
+      this.setState("LISTENING");
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRec();
+      recognition.continuous = this.config.continuous !== false;
+      recognition.interimResults = this.config.interimResults !== false;
+      const lang = (this.config.language || "").toLowerCase();
+      recognition.lang = lang.includes("hi") ? "hi-IN" : "en-US";
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        logInterview("SpeechState", "Native SpeechRecognition onstart fired");
+        this.restartCount = 0;
+        if (this.initSafetyTimer) {
+          clearTimeout(this.initSafetyTimer);
+          this.initSafetyTimer = null;
+        }
+        this.setState("LISTENING");
+        this.startWatchdog();
+      };
+
+      recognition.onresult = (event: any) => {
+        if (this.isExplicitlyStopped || this.isDestroyed) return;
+        this.resetWatchdog();
+
+        let currentInterim = "";
+        let newFinalChunk = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const item = event.results[i];
+          if (!item || !item[0]) continue;
+          const chunk = item[0].transcript || "";
+          if (item.isFinal) {
+            newFinalChunk += chunk + " ";
+          } else {
+            currentInterim += chunk;
+          }
+        }
+
+        if (newFinalChunk) {
+          this.accumulatedFinalText = (this.accumulatedFinalText + " " + newFinalChunk)
+            .replace(/\s+/g, " ")
+            .trim();
+          this.setState("HEARING");
+          this.callbacks.onFinalResult?.(this.accumulatedFinalText);
+        } else if (currentInterim) {
+          this.setState("HEARING");
+          this.callbacks.onInterimResult?.(currentInterim.trim());
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        const err = event?.error || "unknown";
+        logInterview("SpeechState", `Native onerror: ${err}`);
+
+        if (err === "no-speech" || err === "aborted") {
+          return; // Let onend auto-restart recognition
+        }
+
+        if (err === "not-allowed" || err === "service-not-allowed") {
+          logInterview("SpeechState", "Web Speech permission restricted. Falling back permanently to Universal MediaRecorder.");
+          this.nativeSpeechDisabled = true;
+          this.setState("LISTENING");
+          return;
+        }
+
+        if (err === "network") {
+          logInterview("SpeechState", "Web Speech network restriction. MediaRecorder audio capturing in background.");
+          this.setState("LISTENING");
+          return;
+        }
+
+        this.callbacks.onError?.(`Speech recognition notice: ${err}`, event);
+      };
+
+      recognition.onend = () => {
+        logInterview("SpeechState", "Native SpeechRecognition onend fired");
+        this.clearWatchdog();
+
+        if (this.isExplicitlyStopped || this.isDestroyed) {
+          this.setState("IDLE");
+          return;
+        }
+
+        // Auto-recover native recognition without touching MediaRecorder
+        this.restartCount++;
+        const maxAttempts = this.config.maxRestartAttempts || 50;
+
+        if (!this.nativeSpeechDisabled && this.restartCount <= maxAttempts) {
+          this.setState("RESTARTING");
+          this.callbacks.onAutoRecover?.();
+
+          setTimeout(() => {
+            if (!this.isExplicitlyStopped && !this.isDestroyed && !this.nativeSpeechDisabled) {
+              this.startNativeRecognition();
+            }
+          }, 250);
+        } else {
+          // Stay listening via MediaRecorder
+          this.setState("LISTENING");
+        }
+      };
+
+      this.recognition = recognition;
+      (window as any).__activeSpeechRecognition = recognition;
+      recognition.start();
+    } catch (e: any) {
+      logInterview("SpeechState", "Native SpeechRecognition start notice, relying on MediaRecorder", e);
+      this.setState("LISTENING");
+    }
+  }
+
+  /**
+   * Initializes MediaRecorder for continuous cross-browser audio capture.
+   * If already active, it keeps running without resetting chunks.
    */
   private async startMediaRecorder(existingStream?: MediaStream | null) {
     if (typeof window === "undefined" || typeof MediaRecorder === "undefined") return;
 
+    if (this.mediaRecorder && (this.mediaRecorder.state === "recording" || this.mediaRecorder.state === "paused")) {
+      if (this.mediaRecorder.state === "paused") {
+        try {
+          this.mediaRecorder.resume();
+        } catch {}
+      }
+      return;
+    }
+
     try {
       let stream = existingStream || this.activeStream;
-      if (!stream) {
+      if (!stream || stream.getAudioTracks().length === 0 || !stream.getAudioTracks()[0].enabled) {
         if (navigator.mediaDevices?.getUserMedia) {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          this.activeStream = stream;
-          this.ownsStream = true;
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.activeStream = stream;
+            this.ownsStream = true;
+          } catch (streamErr) {
+            logInterview("SpeechState", "Microphone access notice for MediaRecorder:", streamErr);
+            return;
+          }
         }
       }
 
       if (!stream) return;
 
       const mimeType = this.getBestMimeType();
-      const recorder = new MediaRecorder(stream, { mimeType });
-      this.recordedChunks = [];
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
 
       recorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
@@ -268,7 +334,11 @@ export class SharedSpeechEngine {
       };
 
       recorder.onstart = () => {
-        logInterview("SpeechState", `MediaRecorder active (${mimeType})`);
+        logInterview("SpeechState", `MediaRecorder active (${recorder.mimeType || mimeType || "native"})`);
+      };
+
+      recorder.onerror = (recErr) => {
+        logInterview("SpeechState", "MediaRecorder runtime error:", recErr);
       };
 
       recorder.start(1000); // 1-second timeslices
@@ -285,10 +355,27 @@ export class SharedSpeechEngine {
   public async flushRecordedAudio(): Promise<string> {
     if (this.isTranscribing) return this.accumulatedFinalText;
 
+    // Await the latest timeslice from MediaRecorder
     if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
-      try {
-        this.mediaRecorder.requestData();
-      } catch {}
+      await new Promise<void>((resolve) => {
+        if (!this.mediaRecorder || this.mediaRecorder.state !== "recording") {
+          resolve();
+          return;
+        }
+        const onData = (e: BlobEvent) => {
+          if (e.data && e.data.size > 0) {
+            this.recordedChunks.push(e.data);
+          }
+          resolve();
+        };
+        this.mediaRecorder.addEventListener("dataavailable", onData, { once: true });
+        try {
+          this.mediaRecorder.requestData();
+        } catch {
+          resolve();
+        }
+        setTimeout(resolve, 350);
+      });
     }
 
     if (this.recordedChunks.length === 0) {
@@ -297,9 +384,14 @@ export class SharedSpeechEngine {
 
     this.isTranscribing = true;
     try {
-      const mimeType = this.mediaRecorder?.mimeType || this.getBestMimeType();
-      const audioBlob = new Blob(this.recordedChunks, { type: mimeType });
-      this.recordedChunks = [];
+      const rawMime = this.mediaRecorder?.mimeType || this.getBestMimeType();
+      const cleanMime = rawMime.split(";")[0].trim() || "audio/webm";
+      const audioBlob = new Blob(this.recordedChunks, { type: cleanMime });
+
+      // If buffer is too small (<600 bytes), it is only an empty container header
+      if (audioBlob.size < 600) {
+        return this.accumulatedFinalText;
+      }
 
       // Convert to base64
       const base64Audio = await new Promise<string>((resolve, reject) => {
@@ -315,7 +407,7 @@ export class SharedSpeechEngine {
 
       const res = await api.post("/interview/transcribe", {
         audioBase64: base64Audio,
-        mimeType,
+        mimeType: cleanMime,
         language: this.config.language || "english",
       });
 
@@ -323,7 +415,7 @@ export class SharedSpeechEngine {
       if (transcribedText) {
         // If native recognition already caught some text, merge without duplicate
         if (!this.accumulatedFinalText.toLowerCase().includes(transcribedText.toLowerCase())) {
-          this.accumulatedFinalText = (this.accumulatedFinalText + " " + transcribedText).trim();
+          this.accumulatedFinalText = (this.accumulatedFinalText + " " + transcribedText).replace(/\s+/g, " ").trim();
           this.callbacks.onFinalResult?.(this.accumulatedFinalText);
         }
       }
@@ -340,6 +432,10 @@ export class SharedSpeechEngine {
     logInterview("SpeechState", "Explicit stopListening called");
     this.isExplicitlyStopped = true;
     this.clearWatchdog();
+    if (this.initSafetyTimer) {
+      clearTimeout(this.initSafetyTimer);
+      this.initSafetyTimer = null;
+    }
     this.setState("STOPPING");
 
     if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {

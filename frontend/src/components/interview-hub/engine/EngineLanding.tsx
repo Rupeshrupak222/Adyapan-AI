@@ -11,7 +11,7 @@ import { useUsageStore } from "@/store/usage-store";
 import {
   User, Code, Terminal, LayoutGrid, Users, Crown, GraduationCap,
   School, Briefcase, Sliders, Search, ChevronRight, ChevronLeft,
-  ArrowRight, Play, History as HistoryIcon, BarChart3, Sparkles,
+  ArrowRight, ArrowLeft, Play, History as HistoryIcon, BarChart3, Sparkles,
   Volume2, FileText, Clock, Flame, Target, Building2, Settings2,
   Loader2, Check, AlertTriangle, RotateCcw, Mic, MicOff, Zap,
   Brain, Code2, Server, Monitor, Layers, Cpu, FlaskConical,
@@ -226,7 +226,7 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
   );
 
   const ROLE_CATEGORIES = [
-    "All", "Engineering", "Core Engineering", "Robotics & ECE",
+    "All", "CSE Domains", "Engineering", "Core Engineering", "Robotics & ECE",
     "Management & Finance", "Healthcare & Pharma", "Design & Creative",
     "Sales & Retail", "AI/ML", "Data"
   ];
@@ -285,6 +285,16 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-3 max-w-xl">
               <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="/dashboard/user"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-opacity hover:opacity-85 ${
+                    isDark
+                      ? "bg-slate-800/80 border-slate-700 text-slate-200"
+                      : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                  }`}
+                >
+                  <ArrowLeft size={13} /> Dashboard
+                </a>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider">
                   <Flame size={12} className="animate-pulse" /> AI Interview Engine
                 </div>
@@ -636,7 +646,14 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                           >
                             <RoleIcon size={16} style={{ color: selected ? c.primary : c.textMuted }} />
                           </div>
-                          <div className="text-[11px] font-bold">{role.title}</div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[11px] font-bold">{role.title}</span>
+                            {role.isCseCore && (
+                              <span className="text-[8px] px-1 py-0.2 rounded font-extrabold bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                                CSE
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[9px] mt-0.5" style={{ color: c.textMuted }}>{role.category}</div>
                         </motion.button>
                       );
@@ -1099,7 +1116,7 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                   <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-3">
                     <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400" />
                     <div className="flex-1">
-                      <div>You&apos;ve used all {engineUsage?.limit || 5} Interview Engine attempts this month.</div>
+                      <div>You&apos;ve used all {engineUsage?.limit || 10} Interview Engine attempts this month.</div>
                       {engineUsage?.resetAt && (
                         <div className="text-[11px] text-amber-400/80 mt-0.5">
                           Resets on {formatResetDate(engineUsage.resetAt)}

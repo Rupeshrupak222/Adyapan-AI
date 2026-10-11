@@ -71,7 +71,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     [],
     q(() => userPrisma.careerRoadmap.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 3, include: { tasks: true } }), []),
     q(() => userPrisma.learningStreak.findFirst({ where: { userId } }), null),
-    q(() => userPrisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10, include: { evaluations: true } }), []),
+    q(() => userPrisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50, include: { evaluations: true } }), []),
     q(() => userPrisma.topicProgress.findMany({ where: { userId }, orderBy: { lastActivity: "desc" }, take: 20 }), []),
     q(() => userPrisma.challengeSubmission.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }), []),
     q(() => userPrisma.githubProfile.findFirst({ where: { userId } }), null),
@@ -101,6 +101,13 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   const candidateScore = candidateProfile?.strengthScore || 0;
   const totalResumesCount = resumes.length + uploadedResumes.length;
 
+  const allAtsScores = atsReports
+    .map((r: any) => Number(r.overallScore ?? r.score ?? 0))
+    .filter((s: number) => !isNaN(s) && s > 0);
+  if (candidateScore > 0) allAtsScores.push(candidateScore);
+
+  const highestAtsScore = allAtsScores.length > 0 ? Math.max(...allAtsScores) : candidateScore;
+
   const avgAtsScore = atsReports.length
     ? Math.round(atsReports.reduce((s: number, r: any) => s + Number(r.overallScore ?? r.score ?? 0), 0) / atsReports.length)
     : candidateScore;
@@ -116,7 +123,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
 
   const latestLinkedinScore = linkedinReports.length > 0 ? Number(linkedinReports[0].score ?? linkedinReports[0].visibilityScore ?? 0) : 0;
 
-  const resumeScore = Math.max(avgAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0);
+  const resumeScore = Math.max(highestAtsScore, candidateScore, totalResumesCount > 0 ? 60 : 0);
 
   // Comprehensive DSA Solved computation across dsaProgress, userQuestionProgress, submissions, challengeSubmissions, and streakActivity
   const solvedQuestionsCount = userQuestionProgress.filter(
@@ -169,14 +176,30 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
   // Resume readiness (0-100)
   const resumeReadiness = Math.min(100, Math.round(
     (totalResumesCount > 0 ? 30 : 0) +
-    avgAtsScore * 0.35 +
+    highestAtsScore * 0.35 +
     (resumeImprovements.length > 0 ? 15 : 0) +
     (coverLetters.length > 0 ? 10 : 0) +
     (resumeAnalyses.length > 0 ? 10 : 0)
   ));
 
-  // Interview readiness (0-100)
+  // Interview readiness (0-100) — evaluated on candidate's BEST interview score
   const completedInterviews = interviewSessions.filter((s: any) => s.status === "completed" || s.status === "completed_with_feedback");
+  const allInterviewScores: number[] = [];
+  completedInterviews.forEach((sess: any) => {
+    const sc = Number(sess.evaluations?.[0]?.overallScore || sess.overallScore || 0);
+    if (!isNaN(sc) && sc > 0) allInterviewScores.push(sc);
+  });
+  interviewSessions.forEach((sess: any) => {
+    (sess.evaluations || []).forEach((ev: any) => {
+      const sc = Number(ev.overallScore || 0);
+      if (!isNaN(sc) && sc > 0) allInterviewScores.push(sc);
+    });
+    if (sess.overallScore && Number(sess.overallScore) > 0) {
+      allInterviewScores.push(Number(sess.overallScore));
+    }
+  });
+
+  const bestInterviewScore = allInterviewScores.length > 0 ? Math.max(...allInterviewScores) : 0;
   const avgInterviewScore = completedInterviews.length > 0
     ? Math.round(completedInterviews.reduce((s: number, sess: any) => {
         const eval_ = sess.evaluations?.[0];
@@ -185,8 +208,12 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     : 0;
 
   const interviewReadiness = Math.min(100, Math.round(
-    Math.min(completedInterviews.length / 10, 1) * 50 +
-    avgInterviewScore * 0.5
+    bestInterviewScore > 0
+      ? Math.max(
+          bestInterviewScore,
+          Math.min(100, Math.round(bestInterviewScore * 0.85 + (completedInterviews.length > 0 ? 15 : 0)))
+        )
+      : (completedInterviews.length > 0 ? 50 : 0)
   ));
 
   // Recruiter readiness (0-100)
@@ -197,7 +224,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     (totalResumesCount > 0 ? 15 : 0) +
     (hasGithub ? 15 : 0) +
     ((profile?.portfolio || portfolios.length > 0) ? 5 : 0) +
-    avgAtsScore * 0.1
+    highestAtsScore * 0.1
   ));
 
   // Portfolio readiness (0-100)
@@ -226,7 +253,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     (resumeProjectsCount > 0 ? Math.min(resumeProjectsCount / 2, 1) * 15 : 0) +
     (acceptedChallengeSubmissions.length > 0 ? 15 : 0) +
     (dsaSolved >= 10 ? 15 : 0) +
-    (hasResumePresence && avgAtsScore >= 50 ? 10 : 0),
+    (hasResumePresence && highestAtsScore >= 50 ? 10 : 0),
     15
   );
   const projectScore = resumePresenceScore + projectDemonstrationScore;
@@ -550,7 +577,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     recommendations.push({
       type: "resume",
       title: "Improve Your Resume",
-      description: `Your ATS score is ${avgAtsScore}%. Improving it to 80%+ will increase callback rates by 40%.`,
+      description: `Your highest ATS score is ${highestAtsScore}%. Improving it to 80%+ will increase callback rates by 40%.`,
       impact: "high",
       icon: "file",
       color: "#3b82f6",
@@ -578,7 +605,6 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       impact: "medium",
       icon: "linkedin",
       color: "#0077b5",
-      action: "linkedin-optimizer"
     });
   }
 
@@ -687,7 +713,7 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
     });
   }
 
-  if (avgAtsScore < 80 && resumes.length > 0) {
+  if (highestAtsScore < 80 && resumes.length > 0) {
     todayActions.push({
       title: "Run ATS Analysis",
       priority: "High",
@@ -981,8 +1007,8 @@ async function computeDashboardBaseline(userId: string, userPrisma: any) {
       codingSessions: codingSessions.length,
     },
     resumeSummary: {
-      resumeScore: atsReports.length > 0 ? avgAtsScore : (candidateProfile?.strengthScore || (totalResumesCount > 0 ? 60 : 0)),
-      atsScore: atsReports.length > 0 ? (atsReports[0].overallScore || atsReports[0].score || 0) : (candidateProfile?.strengthScore || 0),
+      resumeScore: highestAtsScore > 0 ? highestAtsScore : (candidateProfile?.strengthScore || (totalResumesCount > 0 ? 60 : 0)),
+      atsScore: highestAtsScore > 0 ? highestAtsScore : (candidateProfile?.strengthScore || 0),
       improvementSuggestionsRemaining,
       resumeVersions: resumeVersions.length,
       resumesCreated: totalResumesCount,

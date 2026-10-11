@@ -25,6 +25,7 @@ import {
   codingScaleIn,
 } from "./CodingHubShared";
 import { renderMarkdown } from "@/utils/renderMarkdown";
+import CompanyLogo from "@/components/interview-hub/CompanyLogo";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -61,11 +62,12 @@ export interface DsaProblem {
   source?: string;
   tags?: string[];
   company?: string;
+  companies?: string[];
 }
 
 const CODE_TEMPLATES: Record<string, string> = {
-  javascript: `// Write your JavaScript solution here\n\nfunction solve() {\n  // Process input and solve problem\n  \n}\n\nsolve();\n`,
-  python: `# Write your Python solution here\n\ndef solve():\n    # Process input and solve problem\n    pass\n\nif __name__ == "__main__":\n    solve()\n`,
+  javascript: `// Write your JavaScript (Node.js) solution here\nconst fs = require('fs');\n\nfunction solve() {\n  const input = fs.readFileSync(0, 'utf-8').trim();\n  // Process input and solve problem\n  \n}\n\nsolve();\n`,
+  python: `# Write your Python solution here\nimport sys\n\ndef solve():\n    # Process input and solve problem\n    pass\n\nif __name__ == "__main__":\n    solve()\n`,
   cpp: `// Write your C++ solution here\n#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nvoid solve() {\n    // Process input and solve problem\n    \n}\n\nint main() {\n    solve();\n    return 0;\n}\n`,
   java: `// Write your Java solution here\nimport java.util.*;\n\npublic class Solution {\n    public static void solve() {\n        // Process input and solve problem\n        \n    }\n\n    public static void main(String[] args) {\n        solve();\n    }\n}\n`
 };
@@ -205,7 +207,7 @@ export function DsaPracticeView() {
           toast.warning(data.executionResult?.stdout || "Some test cases failed.");
         }
       } else {
-        toast.success("AI Review completed!");
+        toast.info("AI Review completed. Code submission encountered an issue.");
       }
     } catch {
       toast.error("Failed to submit code. Please try again.");
@@ -759,8 +761,13 @@ export function DsaPracticeView() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 bg-white/5 dark:bg-white/[0.03] text-[var(--text-muted)] text-[10px] rounded-md font-medium">{p.category}</span>
-                    {p.company && (
-                      <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] rounded-md font-bold">{p.company}</span>
+                    {(p.company || (p.companies && p.companies[0])) && (
+                      <CompanyLogo
+                        companyName={p.company || p.companies?.[0]}
+                        size={20}
+                        className="rounded-full border border-white/10 shadow-xs hover:scale-110 transition-transform cursor-pointer"
+                        title={p.company || p.companies?.[0]}
+                      />
                     )}
                     <ChevronRight size={12} className="text-[var(--text-muted)] group-hover:text-amber-500 transition-colors" />
                   </div>
