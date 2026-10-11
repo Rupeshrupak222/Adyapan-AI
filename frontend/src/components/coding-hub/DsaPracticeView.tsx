@@ -207,7 +207,7 @@ export function DsaPracticeView() {
           toast.warning(data.executionResult?.stdout || "Some test cases failed.");
         }
       } else {
-        toast.success("AI Review completed!");
+        toast.info("AI Review completed. Code submission encountered an issue.");
       }
     } catch {
       toast.error("Failed to submit code. Please try again.");

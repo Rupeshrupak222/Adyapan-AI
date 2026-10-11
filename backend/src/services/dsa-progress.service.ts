@@ -1,5 +1,6 @@
 import { StreakService } from "./streak.service";
 import { getTimezone } from "../utils/request";
+import { refreshPlacementIntelligence } from "./placement-intelligence.service";
 
 export interface CalculatedDsaProgress {
   solved: number;
@@ -50,6 +51,15 @@ export class DsaProgressService {
         select: { challengeId: true }
       }).catch(() => []);
 
+      // 4. Gather accepted executions from coding workspace executions
+      const acceptedExecutions = await userPrisma.codeExecution.findMany({
+        where: {
+          userId,
+          status: { in: ["Accepted", "accepted", "success", "Success", "OK", "0"] }
+        },
+        select: { questionId: true }
+      }).catch(() => []);
+
       // Combine distinct solved IDs across all modules
       const distinctSolvedSet = new Set<string>();
       solvedQuestionProgress.forEach((q: any) => {
@@ -61,8 +71,11 @@ export class DsaProgressService {
       acceptedChallenges.forEach((c: any) => {
         if (c.challengeId) distinctSolvedSet.add(c.challengeId);
       });
+      acceptedExecutions.forEach((e: any) => {
+        if (e.questionId) distinctSolvedSet.add(e.questionId);
+      });
 
-      // 4. Calculate total attempted problems/executions to compute true accuracy
+      // 5. Calculate total attempted problems/executions to compute true accuracy
       const allExecutions = await userPrisma.codeExecution.findMany({
         where: { userId },
         select: { status: true }
@@ -189,7 +202,9 @@ export class DsaProgressService {
           attempted: true,
           timeSpent
         }
-      }).catch(() => {});
+      }).catch((uqpErr: any) => {
+        console.warn("[DsaProgressService.recordSolved] userQuestionProgress upsert warning:", uqpErr?.message || uqpErr);
+      });
 
       // 2. Track streak activity
       const tz = req ? getTimezone(req) : "UTC";
@@ -206,7 +221,14 @@ export class DsaProgressService {
       });
 
       // 3. Recalculate and synchronize dSAProgress
-      return await this.calculateAndSyncProgress(userId, userPrisma);
+      const progress = await this.calculateAndSyncProgress(userId, userPrisma);
+
+      // 4. Trigger placement intelligence recalculation so placement readiness bar updates immediately
+      refreshPlacementIntelligence(userId).catch((piErr) => {
+        console.warn("[DsaProgressService.recordSolved] Placement intelligence refresh warning:", piErr?.message || piErr);
+      });
+
+      return progress;
     } catch (err) {
       console.error("[DsaProgressService.recordSolved] Error:", err);
       return null;

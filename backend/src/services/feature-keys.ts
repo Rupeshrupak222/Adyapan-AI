@@ -37,7 +37,7 @@ export const FeatureKey = {
   COVER_LETTER_GENERATOR: "COVER_LETTER_GENERATOR",
   LINKEDIN_OPTIMIZER: "LINKEDIN_OPTIMIZER",
 
-  // Interviews — Premium-only, 5 attempts / month per interview type
+  // Interviews — Premium-only, 10 attempts / month per interview type
   INTERVIEW_ENGINE: "INTERVIEW_ENGINE",
   TECHNICAL_INTERVIEW: "TECHNICAL_INTERVIEW",
   HR_INTERVIEW: "HR_INTERVIEW",
@@ -80,7 +80,7 @@ export const DEFAULT_FREE_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.HR_INTERVIEW]: 0,
 };
 
-/** Default premium-tier monthly limits (Group A: 30, Group B: 9, Interviews: 5 attempts/month each). */
+/** Default premium-tier monthly limits (Group A: 30, Group B: 9, Interviews: 10 attempts/month each). */
 export const DEFAULT_PREMIUM_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.STUDY_ASSISTANT]: 30,
   [FeatureKey.NOTES_GENERATOR]: 30,
@@ -101,9 +101,9 @@ export const DEFAULT_PREMIUM_LIMITS: Record<FeatureKeyValue, number> = {
   [FeatureKey.ATS_CHECKER]: 9,
   [FeatureKey.COVER_LETTER_GENERATOR]: 9,
   [FeatureKey.LINKEDIN_OPTIMIZER]: 9,
-  [FeatureKey.INTERVIEW_ENGINE]: 5,
-  [FeatureKey.TECHNICAL_INTERVIEW]: 5,
-  [FeatureKey.HR_INTERVIEW]: 5,
+  [FeatureKey.INTERVIEW_ENGINE]: 10,
+  [FeatureKey.TECHNICAL_INTERVIEW]: 10,
+  [FeatureKey.HR_INTERVIEW]: 10,
 };
 
 /** Every feature entry for unlimited tiers, derived from the registry so a new

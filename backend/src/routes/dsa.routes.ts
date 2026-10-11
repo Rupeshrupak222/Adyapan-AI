@@ -263,18 +263,29 @@ router.post("/submit", async (req: any, res) => {
       isAccepted = executionResult ? executionResult.success : true;
     }
 
-    const submission = await userPrisma.submission.create({
-      data: {
+    let submission: any = null;
+    try {
+      submission = await userPrisma.submission.create({
+        data: {
+          userId: req.user!.userId,
+          problemId,
+          code,
+          language,
+          status: isAccepted ? "Accepted" : "Runtime Error",
+          timeMs: executionResult?.executionTime || null,
+          memoryKb: executionResult?.memory || null,
+          aiReview: review,
+        }
+      });
+    } catch (subErr: any) {
+      console.warn("[Dsa.submit] Submission record creation notice:", subErr?.message || subErr);
+      submission = {
         userId: req.user!.userId,
         problemId,
-        code,
-        language,
         status: isAccepted ? "Accepted" : "Runtime Error",
-        timeMs: executionResult?.executionTime || null,
-        memoryKb: executionResult?.memory || null,
-        aiReview: review,
-      }
-    });
+        aiReview: review
+      };
+    }
 
     let progress: any = null;
     if (isAccepted) {

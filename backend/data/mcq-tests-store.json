@@ -8,7 +8,7 @@
     "title": "Accenture - Test 1: OA Screening Assessment",
     "description": "Official technical screening test pattern for Accenture campus and off-campus recruitment drives.",
     "difficulty": "Medium",
-    "questionCount": 65,
+    "questionCount": 66,
     "durationMinutes": 20,
     "isPublished": true,
     "createdAt": "2026-08-29T06:01:47.903Z",
@@ -1366,6 +1366,26 @@
         "codeSnippet": "SELECT account_id, customer_name \nFROM all_customers \nWHERE account_id NOT IN (\n    SELECT account_id \n    FROM active_subscriptions\n);",
         "language": "sql",
         "interviewTip": "A very common bug in corporate reporting dashboards happens when engineers use `NOT IN` with subqueries containing nullable columns. Suggesting `NOT EXISTS` instead shows strong database semantics expertise."
+      },
+      {
+        "id": "test-company-accenture-1-q66",
+        "question": "In a distributed system, you are designing a task retry mechanism using an exponential backoff strategy. The current implementation uses a 'sleep(base * 2^attempt)' approach. You observe that during a system-wide failure, this leads to a 'thundering herd' problem. Which technique is the industry-standard way to mitigate this specific issue?",
+        "technology": "Computer Science",
+        "company": "Accenture",
+        "difficulty": "Medium",
+        "options": [
+          "Implementing a circuit breaker that immediately kills the connection",
+          "Introducing jitter to the backoff duration for each retry attempt",
+          "Increasing the base multiplier to delay retries further",
+          "Switching from an exponential backoff to a linear backoff strategy"
+        ],
+        "correctAnswer": "Introducing jitter to the backoff duration for each retry attempt",
+        "correctIdx": 1,
+        "explanation": "Exponential backoff alone causes synchronized retry attempts when many clients fail at once. Adding a random 'jitter' ensures that retries are spread out in time, preventing the thundering herd effect. Linear backoff would exacerbate the issue, and a circuit breaker solves the failure isolation but is not a retry mitigation strategy.",
+        "hint": "Think about how to prevent synchronized clients from hitting the server at the exact same time.",
+        "relatedConcept": "Distributed Systems Resilience",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Accenture interviewers often look for knowledge of production-grade reliability patterns rather than just raw code syntax."
       }
     ]
   },
@@ -1378,7 +1398,7 @@
     "title": "Accenture - Test 2: Technical Assessment",
     "description": "Test 2 for Accenture. Every question is unique against the whole question database — no repeats, no renumbered or reworded variants of an existing question.",
     "difficulty": "Medium",
-    "questionCount": 65,
+    "questionCount": 66,
     "durationMinutes": 30,
     "isPublished": true,
     "createdAt": "2026-10-04T11:06:13.683Z",
@@ -2739,6 +2759,26 @@
         "codeSnippet": "// Received from external enterprise API\nconst payload = '{\"transactionId\": 9007199254741993}';\nconst parsed = JSON.parse(payload);\nconsole.log(parsed.transactionId);",
         "language": "javascript",
         "interviewTip": "Interviewers use this to test your practical understanding of backend-frontend data serialization quirks and silent data corruption risks."
+      },
+      {
+        "id": "test-accenture-2-q66",
+        "question": "In the context of Enterprise Resource Planning (ERP) consulting and master data management, what is the primary business risk associated with having duplicate customer master records across distinct regional subsidiary databases?",
+        "technology": "Computer Science",
+        "company": "Accenture",
+        "difficulty": "Medium",
+        "options": [
+          "Automatic database schema corruption due to foreign key constraint violations in relational storage engines.",
+          "Inaccurate aggregate analytics, fragmented credit risk assessment, and operational inefficiencies in order fulfillment.",
+          "Immediate compliance failure under network-layer encryption standards and secure transport protocols.",
+          "Permanent loss of transaction history when executing batch aggregation scripts across disparate systems."
+        ],
+        "correctAnswer": "Inaccurate aggregate analytics, fragmented credit risk assessment, and operational inefficiencies in order fulfillment.",
+        "correctIdx": 1,
+        "explanation": "Duplicate customer records fragment customer history, leading to distorted metrics, inaccurate credit evaluation, and multiple disparate touchpoints during order fulfillment. Technical corruption or encryption failures are unrelated to logical master data duplication.",
+        "hint": "Consider how fragmented records impact downstream analytics, customer visibility, and financial risk profiles.",
+        "relatedConcept": "Master Data Management and Enterprise Data Integrity",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Accenture consultants often deal with system integration and data cleansing; interviewers look for business impact awareness beyond pure database mechanics."
       }
     ]
   },
@@ -2751,7 +2791,7 @@
     "title": "Accenture - Test 3: Technical Assessment",
     "description": "Test 3 for Accenture. Every question is unique against the whole question database — no repeats, no renumbered or reworded variants of an existing question.",
     "difficulty": "Hard",
-    "questionCount": 46,
+    "questionCount": 47,
     "durationMinutes": 30,
     "isPublished": true,
     "createdAt": "2026-10-08T10:34:00.294Z",
@@ -3718,6 +3758,28 @@
         "codeSnippet": "int arr1[10];\nint arr2[10];\nptrdiff_t diff = &arr1[5] - &arr2[2];",
         "language": "C",
         "interviewTip": "This tests depth of knowledge regarding memory safety and adherence to language standards, a key trait for system-level developers."
+      },
+      {
+        "id": "test-accenture-3-q47",
+        "question": "In the context of the C++ memory model and atomic operations, what is the observable effect of an 'acquire' load operation synchronized with a 'release' store operation?",
+        "technology": "Computer Science",
+        "company": "Accenture",
+        "difficulty": "Hard",
+        "options": [
+          "It forces an immediate cache coherency synchronization across all CPU cores, guaranteeing the absolute global order of operations.",
+          "It establishes a synchronizes-with relationship, ensuring all memory writes performed by Thread 1 before the store are visible to Thread 2 after the load.",
+          "It prevents the compiler from reordering instructions, but does not affect the visibility of memory writes in the CPU cache hierarchy.",
+          "It guarantees that 'data' will be loaded by Thread 2 only if 'flag' was modified by an atomic increment operation on Thread 1."
+        ],
+        "correctAnswer": "It establishes a synchronizes-with relationship, ensuring all memory writes performed by Thread 1 before the store are visible to Thread 2 after the load.",
+        "correctIdx": 1,
+        "explanation": "The acquire-release semantics provide a mechanism for inter-thread synchronization without requiring sequential consistency. The release store ensures all previous writes (including relaxed ones) are visible to any thread that performs an acquire load on that same variable, establishing a happens-before relationship.",
+        "hint": "Focus on the relationship between memory visibility and the happens-before guarantee.",
+        "relatedConcept": "Atomic memory ordering semantics",
+        "estimatedTime": "90 sec",
+        "codeSnippet": "std::atomic<int> flag{0};\nstd::atomic<int> data{0};\n// Thread 1: data.store(42, std::memory_order_relaxed); flag.store(1, std::memory_order_release);\n// Thread 2: if (flag.load(std::memory_order_acquire) == 1) { assert(data.load(std::memory_order_relaxed) == 42); }",
+        "language": "C++",
+        "interviewTip": "Accenture looks for candidates who understand that performance in distributed or low-latency systems often requires relaxed memory models over expensive locks."
       }
     ]
   },
@@ -3730,7 +3792,7 @@
     "title": "Adobe - Test 1: OA Screening Assessment",
     "description": "Official technical screening test pattern for Adobe campus and off-campus recruitment drives.",
     "difficulty": "Hard",
-    "questionCount": 64,
+    "questionCount": 65,
     "durationMinutes": 20,
     "isPublished": true,
     "createdAt": "2026-08-29T06:01:47.902Z",
@@ -5114,6 +5176,28 @@
         "codeSnippet": "var proto = { inherited: 'base' };\nvar obj = Object.create(proto);\nobj.own = 'child';\n$.writeln(obj.hasOwnProperty('inherited'));\n$.writeln(obj.hasOwnProperty('own'));",
         "language": "javascript",
         "interviewTip": "This tests depth of knowledge regarding how legacy engines (like those powering Photoshop/InDesign scripting) handle property lookup, which is critical when writing robust plugins."
+      },
+      {
+        "id": "test-company-adobe-1-q65",
+        "question": "In an Adobe Photoshop ExtendScript script, you want to print the name of every top‑level layer in the active document. The following code throws a runtime error. Which change will reliably print all layer names without error?",
+        "technology": "Computer Science",
+        "company": "Adobe",
+        "difficulty": "Hard",
+        "options": [
+          "Replace the loop with `for (var i = 0; i <= app.activeDocument.layers.length; i++) { $.writeln(app.activeDocument.layers[i].name); }`.",
+          "Use a numeric index loop: `for (var i = 0; i < app.activeDocument.layers.length; i++) { $.writeln(app.activeDocument.layers[i].name); }`.",
+          "Keep the `for...in` loop but access each layer via `app.activeDocument.layers.item(i).name`.",
+          "Call `app.activeDocument.layers.forEach(function(l){ $.writeln(l.name); });`."
+        ],
+        "correctAnswer": "Use a numeric index loop: `for (var i = 0; i < app.activeDocument.layers.length; i++) { $.writeln(app.activeDocument.layers[i].name); }`.",
+        "correctIdx": 1,
+        "explanation": "Photoshop's `layers` collection is an array‑like object that also contains methods (e.g., `add`, `remove`). A `for...in` loop enumerates **all** enumerable properties, not just numeric indices, so `app.activeDocument.layers[i]` is `undefined` when `i` is a method name, causing the runtime error. A classic numeric `for` loop (`i = 0; i < length; i++`) iterates only over valid indices, making option 4 the only safe choice. Option 1 goes out of bounds because of the `<=`. Option 2 still suffers from the `for...in` enumeration problem. Option 3 fails because the `layers` collection does not implement the `forEach` method.",
+        "hint": "Remember what `for...in` enumerates on a Photoshop collection.",
+        "relatedConcept": "Iterating over ExtendScript collection objects and JavaScript enumeration semantics",
+        "estimatedTime": "45 sec",
+        "codeSnippet": "for (var i in app.activeDocument.layers) {\n    $.writeln(app.activeDocument.layers[i].name);\n}",
+        "language": "javascript",
+        "interviewTip": "Interviewers use this to see if candidates understand the quirks of Adobe's scripting APIs versus vanilla JavaScript, especially the difference between enumerable properties and array‑like indexing."
       }
     ]
   },
@@ -5126,7 +5210,7 @@
     "title": "Adobe - Test 2: Technical Assessment",
     "description": "Test 2 for Adobe. Every question is unique against the whole question database — no repeats, no renumbered or reworded variants of an existing question.",
     "difficulty": "Medium",
-    "questionCount": 64,
+    "questionCount": 65,
     "durationMinutes": 30,
     "isPublished": true,
     "createdAt": "2026-10-04T11:11:02.617Z",
@@ -6474,6 +6558,28 @@
         "codeSnippet": "switch (n) {\n  [[likely]] case 1: return true;\n  case 2: return false;\n}",
         "language": "cpp",
         "interviewTip": "Distinguish between language-level semantic guarantees and compiler-specific optimization hints."
+      },
+      {
+        "id": "test-adobe-2-q65",
+        "question": "In an Adobe ExtendScript (ES3) media-processing script, which syntactic construct is strictly prohibited for defining methods within an Object literal or Class, leading to a runtime error if used?",
+        "technology": "Computer Science",
+        "company": "Adobe",
+        "difficulty": "Medium",
+        "options": [
+          "Declaring methods with the 'function' keyword: process: function(data) {};",
+          "Using strict equality '===' to compare property values",
+          "Using 'var' to declare a local variable inside a method body",
+          "Omitting the semicolon at the end of the object assignment statement"
+        ],
+        "correctAnswer": "Using strict equality '===' to compare property values",
+        "correctIdx": 1,
+        "explanation": "ExtendScript is based on ECMAScript 3 compatibility. It does not support the strict equality operator '===' (which was introduced in ES5). Attempting to use it causes a syntax error or unexpected behavior depending on the interpreter version, whereas ES3 only guarantees loose equality '=='. The other options are standard ES3 constructs.",
+        "hint": "Think about the ECMAScript version that underlies ExtendScript and which common modern operator is missing.",
+        "relatedConcept": "ExtendScript ES3 compatibility and operator support",
+        "estimatedTime": "45 sec",
+        "codeSnippet": "var processor = {\n  init: function() {},\n  process: function(data) { return data; }\n};\n\nvar invalidVariant = {\n  // Which of the following lines is INVALID in ExtendScript?\n};",
+        "language": "javascript",
+        "interviewTip": "Tests if the developer understands the legacy nature of Adobe's scripting engine and can avoid using modern JS features that will break in legacy environments."
       }
     ]
   },
@@ -7421,7 +7527,7 @@
     "title": "Amazon - Test 1: OA Screening Assessment",
     "description": "Official technical screening test pattern for Amazon campus and off-campus recruitment drives.",
     "difficulty": "Hard",
-    "questionCount": 64,
+    "questionCount": 65,
     "durationMinutes": 20,
     "isPublished": true,
     "createdAt": "2026-08-29T06:01:47.902Z",
@@ -8780,6 +8886,28 @@
         "codeSnippet": "std::atomic<bool> ready{false};\nint data = 0;\n// Thread 1:\ndata = 42;\nready.store(true, std::memory_order_relaxed);\n// Thread 2:\nif (ready.load(std::memory_order_relaxed)) {\n    assert(data == 42); // Can this fail?\n}",
         "language": "C++",
         "interviewTip": "This tests if a candidate understands that atomicity does not imply sequential consistency, which is critical for writing performant, thread-safe low-level code."
+      },
+      {
+        "id": "test-company-amazon-1-q65",
+        "question": "self-contained question, no reference to 'the code above' unless codeSnippet is provided",
+        "technology": "Computer Science",
+        "company": "Amazon",
+        "difficulty": "Hard",
+        "options": [
+          "option2",
+          "option1",
+          "option3",
+          "option4"
+        ],
+        "correctAnswer": "option1",
+        "correctIdx": 1,
+        "explanation": "why the correct answer is right and the closest distractor is wrong",
+        "hint": "one-line nudge without giving the answer away",
+        "relatedConcept": "the specific concept being tested",
+        "estimatedTime": "45 sec",
+        "codeSnippet": "optional short snippet, or empty string if none is needed",
+        "language": "language of the snippet, or empty string",
+        "interviewTip": "why an interviewer would ask this"
       }
     ]
   },

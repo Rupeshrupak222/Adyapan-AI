@@ -146,7 +146,7 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
       return;
     }
     if (isLimitReached) {
-      toast.error(`You've used all ${hrUsage?.limit || 5} HR Interview attempts this month.`);
+      toast.error(`You've used all ${hrUsage?.limit || 10} HR Interview attempts this month.`);
       return;
     }
     toast.success("HR Interview configured! Launching...");
@@ -622,7 +622,7 @@ export default function HRLanding({ onStart, onViewHistory, onViewAnalytics, the
                 <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-3">
                   <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400" />
                   <div className="flex-1">
-                    <div>You&apos;ve used all {hrUsage?.limit || 5} HR Interview attempts this month.</div>
+                    <div>You&apos;ve used all {hrUsage?.limit || 10} HR Interview attempts this month.</div>
                     {hrUsage?.resetAt && (
                       <div className="text-[11px] text-amber-400/80 mt-0.5">
                         Resets on {formatResetDate(hrUsage.resetAt)}

@@ -228,9 +228,9 @@ const USAGE_LIMITS: UsageLimitEntry[] = [
   // Premium overrides = monthly credits from DEFAULT_PREMIUM_LIMITS.
   { featureKey: "notes-generator", planCode: "premium", monthlyLimit: 30 },
   { featureKey: "resume-builder", planCode: "premium", monthlyLimit: 9 },
-  { featureKey: "interview-engine", planCode: "premium", monthlyLimit: 5 },
-  { featureKey: "technical-interview", planCode: "premium", monthlyLimit: 5 },
-  { featureKey: "hr-interview", planCode: "premium", monthlyLimit: 5 },
+  { featureKey: "interview-engine", planCode: "premium", monthlyLimit: 10 },
+  { featureKey: "technical-interview", planCode: "premium", monthlyLimit: 10 },
+  { featureKey: "hr-interview", planCode: "premium", monthlyLimit: 10 },
 ];
 
 async function main() {

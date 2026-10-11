@@ -1116,7 +1116,7 @@ export default function EngineLanding({ onStart, onViewHistory, onViewAnalytics,
                   <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-3">
                     <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400" />
                     <div className="flex-1">
-                      <div>You&apos;ve used all {engineUsage?.limit || 5} Interview Engine attempts this month.</div>
+                      <div>You&apos;ve used all {engineUsage?.limit || 10} Interview Engine attempts this month.</div>
                       {engineUsage?.resetAt && (
                         <div className="text-[11px] text-amber-400/80 mt-0.5">
                           Resets on {formatResetDate(engineUsage.resetAt)}

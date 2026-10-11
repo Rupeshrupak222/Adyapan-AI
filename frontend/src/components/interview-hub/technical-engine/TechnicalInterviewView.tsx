@@ -226,7 +226,7 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
   ]);
 
   const [questionNumber, setQuestionNumber] = useState(1);
-  const [totalQuestions, setTotalQuestions] = useState(5);
+  const [totalQuestions, setTotalQuestions] = useState(10);
   const [currentQuestion, setCurrentQuestion] = useState<any>(initialQuestion || null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -655,7 +655,7 @@ export default function TechnicalInterviewView({
       return;
     }
     if (isLimitReached) {
-      toast.error(`You've used all ${techUsage?.limit || 5} Technical Interview attempts this month.`);
+      toast.error(`You've used all ${techUsage?.limit || 10} Technical Interview attempts this month.`);
       return;
     }
     setScreen("permission_gate");
@@ -1364,7 +1364,7 @@ export default function TechnicalInterviewView({
                   <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2.5">
                     <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
                     <div className="flex-1">
-                      <div>You&apos;ve used all {techUsage?.limit || 5} Technical Interview attempts this month.</div>
+                      <div>You&apos;ve used all {techUsage?.limit || 10} Technical Interview attempts this month.</div>
                       {techUsage?.resetAt && (
                         <div className="text-[10px] text-amber-400/80 mt-0.5">
                           Resets on {formatResetDate(techUsage.resetAt)}
