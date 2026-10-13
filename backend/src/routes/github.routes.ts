@@ -11,6 +11,72 @@ import { getUserPrismaFromRequest } from "../utils/prisma";
 import { handleRouteError } from "../utils/routeError";
 
 const router = Router();
+
+// Public route - fetch public github profile details without authentication barrier
+router.get("/user-details/:username", async (req: any, res) => {
+  try {
+    const rawUsername = String(req.params.username || "");
+    const cleanUsername = rawUsername
+      .trim()
+      .replace(/https?:\/\/(www\.)?github\.com\//i, "")
+      .replace(/\/$/, "")
+      .replace(/^@/, "");
+
+    if (!cleanUsername) {
+      return res.status(400).json({ error: "Username is required" });
+    }
+
+    const headers: Record<string, string> = {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "Adyapan-AI-Copilot/1.0",
+    };
+    if (process.env.GITHUB_TOKEN) {
+      headers["Authorization"] = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+
+    // 1. Fetch user data
+    const userRes = await fetch(
+      `https://api.github.com/users/${encodeURIComponent(cleanUsername)}`,
+      { headers }
+    );
+
+    if (!userRes.ok) {
+      if (userRes.status === 404) {
+        return res.status(404).json({ error: `GitHub user "@${cleanUsername}" was not found.` });
+      }
+      const errorText = await userRes.text().catch(() => "");
+      return res.status(userRes.status).json({
+        error: `GitHub returned status ${userRes.status}`,
+        details: errorText,
+      });
+    }
+
+    const userData = await userRes.json();
+
+    // 2. Fetch public repos
+    let reposData: any[] = [];
+    try {
+      const reposRes = await fetch(
+        `https://api.github.com/users/${encodeURIComponent(cleanUsername)}/repos?sort=pushed&per_page=30`,
+        { headers }
+      );
+      if (reposRes.ok) {
+        reposData = await reposRes.json();
+      }
+    } catch {
+      // Repos fetch is non-blocking
+    }
+
+    return res.json({
+      success: true,
+      user: userData,
+      repos: Array.isArray(reposData) ? reposData : [],
+    });
+  } catch (error: any) {
+    handleRouteError(res, error, "Github.userDetails", "Failed to fetch GitHub details");
+  }
+});
+
 router.use(requireAuth);
 
 router.post("/analyze", async (req: any, res) => {

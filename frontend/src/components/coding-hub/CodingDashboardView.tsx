@@ -135,6 +135,18 @@ export function CodingDashboardView() {
     }).catch(() => {});
 
     fetchAnalytics();
+
+    // Refresh the solved count when the user returns to this tab/window
+    // (e.g. after solving a question elsewhere) so the number is not stale.
+    const refreshOnReturn = () => {
+      if (document.visibilityState === "visible") fetchAnalytics();
+    };
+    window.addEventListener("focus", refreshOnReturn);
+    document.addEventListener("visibilitychange", refreshOnReturn);
+    return () => {
+      window.removeEventListener("focus", refreshOnReturn);
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+    };
   }, []);
 
   const handleThemeToggle = () => {

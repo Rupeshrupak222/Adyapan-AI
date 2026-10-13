@@ -4,6 +4,14 @@ import { isMaintenanceOrQuotaError, MAINTENANCE_MESSAGE } from "@/utils/maintena
 const DEFAULT_API_URL = "https://adyapan-ai-production.up.railway.app/api";
 
 export function normalizeApiBaseUrl(raw?: string): string {
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      if (!raw || raw.includes("localhost") || raw.includes("127.0.0.1")) {
+        return "http://localhost:5000/api";
+      }
+    }
+  }
   const input = (raw ?? "").trim();
   if (!input) return DEFAULT_API_URL;
   const withScheme = /^https?:\/\//i.test(input) ? input : `https://${input}`;
@@ -24,7 +32,10 @@ export const api = axios.create({
 // Request interceptor — attach token, session ID, timezone
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    config.baseURL = API_BASE_URL;
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    config.baseURL = isLocal && (!process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL.includes("localhost") || process.env.NEXT_PUBLIC_API_URL.includes("127.0.0.1"))
+      ? "http://localhost:5000/api"
+      : API_BASE_URL;
     const token = sessionStorage.getItem("adyapan-token") || localStorage.getItem("adyapan-token");
     if (token) config.headers.Authorization = `Bearer ${token}`;
     const sessionId = sessionStorage.getItem("adyapan-session-id") || localStorage.getItem("adyapan-session-id");

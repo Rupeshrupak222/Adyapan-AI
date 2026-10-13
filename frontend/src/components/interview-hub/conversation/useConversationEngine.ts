@@ -18,11 +18,11 @@ import type {
 } from "./conversation-types";
 
 const DEFAULT_THRESHOLDS = {
-  shortPause: 2000,
-  thinkingPause: 5000,
-  hintPause: 10000,
-  confirmPause: 15000,
-  finalizePause: 20000,
+  shortPause: 1500,
+  thinkingPause: 3000,
+  hintPause: 5000,
+  confirmPause: 7000,
+  finalizePause: 9000,
 };
 
 export interface UseConversationEngineOptions {
@@ -117,7 +117,13 @@ export function useConversationEngine({
 
       const unblockBraveAudio = () => {
         try {
-          if (window.speechSynthesis.paused) {
+          if (activeAudioElementRef.current && activeAudioElementRef.current.paused) {
+            activeAudioElementRef.current.play().catch(() => {});
+          }
+          if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+            audioContextRef.current.resume().catch(() => {});
+          }
+          if (window.speechSynthesis && window.speechSynthesis.paused) {
             window.speechSynthesis.resume();
           }
         } catch {}

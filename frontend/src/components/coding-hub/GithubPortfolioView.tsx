@@ -21,7 +21,11 @@ import {
   Database,
   Cloud,
   BarChart2,
-  Type
+  RefreshCw,
+  Heart,
+  Search,
+  Laugh,
+  Coffee
 } from "lucide-react";
 
 const GithubIcon = ({ className = "w-8 h-8 text-amber-500", style }: { className?: string; style?: React.CSSProperties }) => (
@@ -34,12 +38,15 @@ import { toast } from "sonner";
 
 // ─── Skill Categories & Badges Data ──────────────────────────────────────────
 
-export type PortfolioTab = "header" | "work" | "skills" | "stats" | "social";
+export type PortfolioTab = "header" | "work" | "skills" | "stats" | "social" | "support";
 
 interface SkillOption {
   id: string;
   name: string;
-  badgeUrl: string;
+  badgeName: string;
+  badgeColor: string;
+  logo: string;
+  logoColor?: string;
 }
 
 interface SkillCategory {
@@ -53,79 +60,100 @@ const SKILL_CATEGORIES: SkillCategory[] = [
     title: "Programming Languages",
     icon: Code2,
     skills: [
-      { id: "java", name: "Java", badgeUrl: "https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white" },
-      { id: "kotlin", name: "Kotlin", badgeUrl: "https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" },
-      { id: "python", name: "Python", badgeUrl: "https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" },
-      { id: "js", name: "JavaScript", badgeUrl: "https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" },
-      { id: "ts", name: "TypeScript", badgeUrl: "https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" },
-      { id: "cpp", name: "C++", badgeUrl: "https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" },
-      { id: "csharp", name: "C#", badgeUrl: "https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white" },
-      { id: "go", name: "Go", badgeUrl: "https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white" },
-      { id: "rust", name: "Rust", badgeUrl: "https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white" },
-      { id: "php", name: "PHP", badgeUrl: "https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white" },
-      { id: "html5", name: "HTML5", badgeUrl: "https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" },
-      { id: "css3", name: "CSS3", badgeUrl: "https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" },
-      { id: "sql", name: "SQL", badgeUrl: "https://img.shields.io/badge/SQL-CC292B?style=for-the-badge&logo=sqlite&logoColor=white" }
+      { id: "java", name: "Java", badgeName: "Java", badgeColor: "ED8B00", logo: "java", logoColor: "white" },
+      { id: "kotlin", name: "Kotlin", badgeName: "Kotlin", badgeColor: "7F52FF", logo: "kotlin", logoColor: "white" },
+      { id: "python", name: "Python", badgeName: "Python", badgeColor: "3776AB", logo: "python", logoColor: "white" },
+      { id: "js", name: "JavaScript", badgeName: "JavaScript", badgeColor: "F7DF1E", logo: "javascript", logoColor: "black" },
+      { id: "ts", name: "TypeScript", badgeName: "TypeScript", badgeColor: "3178C6", logo: "typescript", logoColor: "white" },
+      { id: "cpp", name: "C++", badgeName: "C%2B%2B", badgeColor: "00599C", logo: "c%2B%2B", logoColor: "white" },
+      { id: "csharp", name: "C#", badgeName: "C%23", badgeColor: "239120", logo: "c-sharp", logoColor: "white" },
+      { id: "go", name: "Go", badgeName: "Go", badgeColor: "00ADD8", logo: "go", logoColor: "white" },
+      { id: "rust", name: "Rust", badgeName: "Rust", badgeColor: "000000", logo: "rust", logoColor: "white" },
+      { id: "php", name: "PHP", badgeName: "PHP", badgeColor: "777BB4", logo: "php", logoColor: "white" },
+      { id: "html5", name: "HTML5", badgeName: "HTML5", badgeColor: "E34F26", logo: "html5", logoColor: "white" },
+      { id: "css3", name: "CSS3", badgeName: "CSS3", badgeColor: "1572B6", logo: "css3", logoColor: "white" },
+      { id: "sql", name: "SQL", badgeName: "SQL", badgeColor: "CC292B", logo: "sqlite", logoColor: "white" }
     ]
   },
   {
-    title: "Backend & Enterprise Technologies",
+    title: "Backend & Databases",
     icon: Database,
     skills: [
-      { id: "springboot", name: "Spring Boot", badgeUrl: "https://img.shields.io/badge/Spring_Boot-F2F4F9?style=for-the-badge&logo=spring-boot" },
-      { id: "spring", name: "Spring Framework", badgeUrl: "https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white" },
-      { id: "hibernate", name: "Hibernate", badgeUrl: "https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white" },
-      { id: "kafka", name: "Apache Kafka", badgeUrl: "https://img.shields.io/badge/Apache_Kafka-231F20?style=for-the-badge&logo=apache-kafka&logoColor=white" },
-      { id: "nodejs", name: "Node.js", badgeUrl: "https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" },
-      { id: "express", name: "Express", badgeUrl: "https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" },
-      { id: "django", name: "Django", badgeUrl: "https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white" },
-      { id: "fastapi", name: "FastAPI", badgeUrl: "https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" },
-      { id: "postgres", name: "PostgreSQL", badgeUrl: "https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" },
-      { id: "mysql", name: "MySQL", badgeUrl: "https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" },
-      { id: "mongo", name: "MongoDB", badgeUrl: "https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" },
-      { id: "redis", name: "Redis", badgeUrl: "https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" },
-      { id: "graphql", name: "GraphQL", badgeUrl: "https://img.shields.io/badge/GraphQL-E10098?style=for-the-badge&logo=graphql&logoColor=white" },
-      { id: "firebase", name: "Firebase", badgeUrl: "https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" }
+      { id: "springboot", name: "Spring Boot", badgeName: "Spring_Boot", badgeColor: "F2F4F9", logo: "spring-boot" },
+      { id: "spring", name: "Spring Framework", badgeName: "Spring", badgeColor: "6DB33F", logo: "spring", logoColor: "white" },
+      { id: "hibernate", name: "Hibernate", badgeName: "Hibernate", badgeColor: "59666C", logo: "hibernate", logoColor: "white" },
+      { id: "kafka", name: "Apache Kafka", badgeName: "Apache_Kafka", badgeColor: "231F20", logo: "apache-kafka", logoColor: "white" },
+      { id: "nodejs", name: "Node.js", badgeName: "Node.js", badgeColor: "339933", logo: "nodedotjs", logoColor: "white" },
+      { id: "express", name: "Express", badgeName: "Express.js", badgeColor: "000000", logo: "express", logoColor: "white" },
+      { id: "django", name: "Django", badgeName: "Django", badgeColor: "092E20", logo: "django", logoColor: "white" },
+      { id: "fastapi", name: "FastAPI", badgeName: "FastAPI", badgeColor: "009688", logo: "fastapi", logoColor: "white" },
+      { id: "postgres", name: "PostgreSQL", badgeName: "PostgreSQL", badgeColor: "316192", logo: "postgresql", logoColor: "white" },
+      { id: "mysql", name: "MySQL", badgeName: "MySQL", badgeColor: "4479A1", logo: "mysql", logoColor: "white" },
+      { id: "mongo", name: "MongoDB", badgeName: "MongoDB", badgeColor: "47A248", logo: "mongodb", logoColor: "white" },
+      { id: "redis", name: "Redis", badgeName: "Redis", badgeColor: "DC382D", logo: "redis", logoColor: "white" },
+      { id: "graphql", name: "GraphQL", badgeName: "GraphQL", badgeColor: "E10098", logo: "graphql", logoColor: "white" },
+      { id: "firebase", name: "Firebase", badgeName: "Firebase", badgeColor: "FFCA28", logo: "firebase", logoColor: "black" }
     ]
   },
   {
     title: "Frontend Frameworks & UI",
     icon: Cpu,
     skills: [
-      { id: "react", name: "React", badgeUrl: "https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" },
-      { id: "nextjs", name: "Next.js", badgeUrl: "https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" },
-      { id: "vue", name: "Vue.js", badgeUrl: "https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" },
-      { id: "angular", name: "Angular", badgeUrl: "https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white" },
-      { id: "tailwind", name: "Tailwind CSS", badgeUrl: "https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" },
-      { id: "redux", name: "Redux", badgeUrl: "https://img.shields.io/badge/Redux-764ABC?style=for-the-badge&logo=redux&logoColor=white" },
-      { id: "bootstrap", name: "Bootstrap", badgeUrl: "https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white" },
-      { id: "sass", name: "SASS", badgeUrl: "https://img.shields.io/badge/Sass-CC6699?style=for-the-badge&logo=sass&logoColor=white" }
+      { id: "react", name: "React", badgeName: "React", badgeColor: "61DAFB", logo: "react", logoColor: "black" },
+      { id: "nextjs", name: "Next.js", badgeName: "Next.js", badgeColor: "000000", logo: "nextdotjs", logoColor: "white" },
+      { id: "vue", name: "Vue.js", badgeName: "Vue.js", badgeColor: "4FC08D", logo: "vuedotjs", logoColor: "white" },
+      { id: "angular", name: "Angular", badgeName: "Angular", badgeColor: "DD0031", logo: "angular", logoColor: "white" },
+      { id: "tailwind", name: "Tailwind CSS", badgeName: "Tailwind_CSS", badgeColor: "38B2AC", logo: "tailwind-css", logoColor: "white" },
+      { id: "redux", name: "Redux", badgeName: "Redux", badgeColor: "764ABC", logo: "redux", logoColor: "white" },
+      { id: "bootstrap", name: "Bootstrap", badgeName: "Bootstrap", badgeColor: "563D7C", logo: "bootstrap", logoColor: "white" },
+      { id: "sass", name: "SASS", badgeName: "Sass", badgeColor: "CC6699", logo: "sass", logoColor: "white" }
     ]
   },
   {
     title: "Build, DevOps & Cloud Tools",
     icon: Cloud,
     skills: [
-      { id: "maven", name: "Apache Maven", badgeUrl: "https://img.shields.io/badge/Apache_Maven-C71A36?style=for-the-badge&logo=apache-maven&logoColor=white" },
-      { id: "gradle", name: "Gradle", badgeUrl: "https://img.shields.io/badge/Gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white" },
-      { id: "docker", name: "Docker", badgeUrl: "https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" },
-      { id: "kubernetes", name: "Kubernetes", badgeUrl: "https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" },
-      { id: "jenkins", name: "Jenkins", badgeUrl: "https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white" },
-      { id: "postman", name: "Postman", badgeUrl: "https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white" },
-      { id: "aws", name: "AWS", badgeUrl: "https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white" },
-      { id: "gcp", name: "Google Cloud", badgeUrl: "https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white" },
-      { id: "git", name: "Git", badgeUrl: "https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" },
-      { id: "githubactions", name: "GitHub Actions", badgeUrl: "https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white" },
-      { id: "vercel", name: "Vercel", badgeUrl: "https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" },
-      { id: "linux", name: "Linux", badgeUrl: "https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black" }
+      { id: "maven", name: "Apache Maven", badgeName: "Apache_Maven", badgeColor: "C71A36", logo: "apache-maven", logoColor: "white" },
+      { id: "gradle", name: "Gradle", badgeName: "Gradle", badgeColor: "02303A", logo: "gradle", logoColor: "white" },
+      { id: "docker", name: "Docker", badgeName: "Docker", badgeColor: "2496ED", logo: "docker", logoColor: "white" },
+      { id: "kubernetes", name: "Kubernetes", badgeName: "Kubernetes", badgeColor: "326CE5", logo: "kubernetes", logoColor: "white" },
+      { id: "jenkins", name: "Jenkins", badgeName: "Jenkins", badgeColor: "D24939", logo: "jenkins", logoColor: "white" },
+      { id: "postman", name: "Postman", badgeName: "Postman", badgeColor: "FF6C37", logo: "postman", logoColor: "white" },
+      { id: "aws", name: "AWS", badgeName: "AWS", badgeColor: "232F3E", logo: "amazon-aws", logoColor: "white" },
+      { id: "gcp", name: "Google Cloud", badgeName: "Google_Cloud", badgeColor: "4285F4", logo: "google-cloud", logoColor: "white" },
+      { id: "git", name: "Git", badgeName: "Git", badgeColor: "F05032", logo: "git", logoColor: "white" },
+      { id: "githubactions", name: "GitHub Actions", badgeName: "GitHub_Actions", badgeColor: "2088FF", logo: "github-actions", logoColor: "white" },
+      { id: "vercel", name: "Vercel", badgeName: "Vercel", badgeColor: "000000", logo: "vercel", logoColor: "white" },
+      { id: "linux", name: "Linux", badgeName: "Linux", badgeColor: "FCC624", logo: "linux", logoColor: "black" }
+    ]
+  },
+  {
+    title: "AI, Machine Learning & Data",
+    icon: Sparkles,
+    skills: [
+      { id: "tensorflow", name: "TensorFlow", badgeName: "TensorFlow", badgeColor: "FF6F00", logo: "tensorflow", logoColor: "white" },
+      { id: "pytorch", name: "PyTorch", badgeName: "PyTorch", badgeColor: "EE4C2C", logo: "pytorch", logoColor: "white" },
+      { id: "opencv", name: "OpenCV", badgeName: "OpenCV", badgeColor: "5C3EE8", logo: "opencv", logoColor: "white" },
+      { id: "pandas", name: "Pandas", badgeName: "pandas", badgeColor: "150458", logo: "pandas", logoColor: "white" },
+      { id: "numpy", name: "NumPy", badgeName: "numpy", badgeColor: "013243", logo: "numpy", logoColor: "white" },
+      { id: "scikitlearn", name: "Scikit-Learn", badgeName: "scikit_learn", badgeColor: "F7931E", logo: "scikitlearn", logoColor: "white" }
+    ]
+  },
+  {
+    title: "Mobile App Development",
+    icon: Globe,
+    skills: [
+      { id: "android", name: "Android", badgeName: "Android", badgeColor: "3DDC84", logo: "android", logoColor: "white" },
+      { id: "flutter", name: "Flutter", badgeName: "Flutter", badgeColor: "02569B", logo: "flutter", logoColor: "white" },
+      { id: "reactnative", name: "React Native", badgeName: "React_Native", badgeColor: "61DAFB", logo: "react", logoColor: "black" }
     ]
   }
 ];
 
-const THEMES = ["tokyonight", "radical", "dracula", "onedark", "dark", "synthwave", "github_dark"];
+const THEMES = ["tokyonight", "radical", "dracula", "onedark", "dark", "synthwave", "github_dark", "gruvbox", "nord"];
 
 export function GithubPortfolioView() {
-  const [activeTab, setActiveTab] = useState<"header" | "work" | "skills" | "stats" | "social">("header");
+  const [activeTab, setActiveTab] = useState<PortfolioTab>("header");
   const [previewMode, setPreviewMode] = useState<"preview" | "code">("preview");
   const [copied, setCopied] = useState(false);
   const quota = useFeatureQuota("GITHUB_PORTFOLIO_BUILDER");
@@ -134,31 +162,52 @@ export function GithubPortfolioView() {
   const attemptIdRef = useRef<string | null>(null);
   const consumedVersionRef = useRef<string | null>(null);
 
-  // Form State
+  // Form State - Header
   const [username, setUsername] = useState("");
   const [titleGreeting, setTitleGreeting] = useState("");
   const [name, setName] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [useTypingSvg, setUseTypingSvg] = useState(false);
+  const [headerStyle, setHeaderStyle] = useState<"clean" | "typing" | "wave">("clean");
+  const [loadingGithub, setLoadingGithub] = useState(false);
+  const [githubFetched, setGithubFetched] = useState(false);
+  const [githubAvatar, setGithubAvatar] = useState("");
+  const [githubStats, setGithubStats] = useState<{ publicRepos?: number; followers?: number } | null>(null);
+  const [githubUser, setGithubUser] = useState<{
+    login: string;
+    name?: string;
+    avatar_url?: string;
+    bio?: string;
+    company?: string;
+    location?: string;
+    blog?: string;
+    twitter_username?: string;
+    email?: string;
+    public_repos?: number;
+    followers?: number;
+    following?: number;
+  } | null>(null);
 
   // Work & Bio
   const [workingOn, setWorkingOn] = useState("");
   const [workingOnUrl, setWorkingOnUrl] = useState("");
   const [learning, setLearning] = useState("");
+  const [collaboratingOn, setCollaboratingOn] = useState("");
+  const [helpWith, setHelpWith] = useState("");
   const [askMe, setAskMe] = useState("");
   const [reachMe, setReachMe] = useState("");
   const [funFact, setFunFact] = useState("");
 
-  // Selected Skills
+  // Skills
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [badgeStyle, setBadgeStyle] = useState<"for-the-badge" | "flat" | "flat-square">("for-the-badge");
+  const [skillSearch, setSkillSearch] = useState("");
 
   // GitHub Cards Config
   const [showStatsCard, setShowStatsCard] = useState(true);
   const [showTopLangs, setShowTopLangs] = useState(true);
   const [showStreakCard, setShowStreakCard] = useState(true);
   const [showVisitorBadge, setShowVisitorBadge] = useState(true);
-  const [showQuote, setShowQuote] = useState(true);
-  const [showTrophy, setShowTrophy] = useState(true);
+  const [showTrophy, setShowTrophy] = useState(false);
   const [statsTheme, setStatsTheme] = useState("tokyonight");
 
   // Social Links
@@ -168,6 +217,312 @@ export function GithubPortfolioView() {
   const [socialPortfolio, setSocialPortfolio] = useState("");
   const [socialLeetcode, setSocialLeetcode] = useState("");
   const [socialCodeforces, setSocialCodeforces] = useState("");
+  const [socialYoutube, setSocialYoutube] = useState("");
+  const [socialDiscord, setSocialDiscord] = useState("");
+  const [socialInstagram, setSocialInstagram] = useState("");
+  const [socialMedium, setSocialMedium] = useState("");
+
+  // Support & Fun Components (GPRM Features)
+  const [supportBmc, setSupportBmc] = useState("");
+  const [supportKofi, setSupportKofi] = useState("");
+  const [supportPaypal, setSupportPaypal] = useState("");
+  const [supportPatreon, setSupportPatreon] = useState("");
+  const [showQuote, setShowQuote] = useState(true);
+  const [showJoke, setShowJoke] = useState(false);
+
+  const toggleSkill = (skillId: string) => {
+    setSelectedSkills(prev =>
+      prev.includes(skillId) ? prev.filter(s => s !== skillId) : [...prev, skillId]
+    );
+  };
+
+  const fetchGithubDetails = async (targetUsername?: string) => {
+    const rawInput = targetUsername ?? username;
+    const ghHandle = rawInput.trim().replace(/https?:\/\/(www\.)?github\.com\//i, "").replace(/\/$/, "").replace(/^@/, "");
+    if (!ghHandle) {
+      toast.error("Please enter a GitHub username first.");
+      return;
+    }
+
+    setLoadingGithub(true);
+    try {
+      let u: {
+        name?: string;
+        avatar_url?: string;
+        bio?: string;
+        company?: string;
+        blog?: string;
+        twitter_username?: string;
+        email?: string;
+        location?: string;
+        public_repos?: number;
+        followers?: number;
+        following?: number;
+      } | null = null;
+      let repos: Array<{
+        name?: string;
+        html_url?: string;
+        language?: string;
+        topics?: string[];
+        description?: string;
+        fork?: boolean;
+      }> = [];
+
+      // 1. Primary: Use Next.js local server route (zero CORS, server-to-server with GitHub)
+      try {
+        const nextRes = await fetch(`/api/github-details?username=${encodeURIComponent(ghHandle)}`);
+        if (nextRes.ok) {
+          const nextData = await nextRes.json();
+          if (nextData.success && nextData.user) {
+            u = nextData.user;
+            repos = Array.isArray(nextData.repos) ? nextData.repos : [];
+          } else if (nextData.error && nextRes.status === 404) {
+            toast.error(nextData.error);
+            setLoadingGithub(false);
+            return;
+          }
+        }
+      } catch (nextErr) {
+        console.warn("Next.js /api/github-details unavailable, trying backend proxy:", nextErr);
+      }
+
+      // 2. Secondary: Backend API proxy
+      if (!u) {
+        try {
+          const backendRes = await api.get(`/github/user-details/${encodeURIComponent(ghHandle)}`);
+          if (backendRes.data?.success && backendRes.data?.user) {
+            u = backendRes.data.user;
+            repos = Array.isArray(backendRes.data.repos) ? backendRes.data.repos : [];
+          }
+        } catch (backendErr: unknown) {
+          const status = (backendErr as { response?: { status?: number } })?.response?.status;
+          if (status === 404) {
+            toast.error(`GitHub user "@${ghHandle}" not found.`);
+            setLoadingGithub(false);
+            return;
+          }
+          console.warn("Backend GitHub proxy unavailable, attempting direct fetch fallback:", backendErr);
+        }
+      }
+
+      // 3. Fallback: Direct GitHub API if server proxies were unreachable
+      if (!u) {
+        const userRes = await fetch(`https://api.github.com/users/${encodeURIComponent(ghHandle)}`, {
+          headers: { Accept: "application/vnd.github.v3+json" }
+        });
+
+        if (!userRes.ok) {
+          if (userRes.status === 404) {
+            toast.error(`GitHub user "@${ghHandle}" not found.`);
+          } else if (userRes.status === 403) {
+            toast.error("GitHub rate limit reached. Please try again in a few moments.");
+          } else {
+            toast.error(`GitHub error (${userRes.status}). Could not fetch profile.`);
+          }
+          setLoadingGithub(false);
+          return;
+        }
+
+        u = await userRes.json();
+
+        try {
+          const reposRes = await fetch(`https://api.github.com/users/${encodeURIComponent(ghHandle)}/repos?sort=pushed&per_page=30`, {
+            headers: { Accept: "application/vnd.github.v3+json" }
+          });
+          if (reposRes.ok) {
+            repos = await reposRes.json();
+          }
+        } catch {
+          // Repos fetch is non-blocking
+        }
+      }
+
+      if (!u) {
+        toast.error(`Could not retrieve details for "@${ghHandle}".`);
+        setLoadingGithub(false);
+        return;
+      }
+
+      setGithubUser({
+        login: ghHandle,
+        name: u.name,
+        avatar_url: u.avatar_url,
+        bio: u.bio,
+        company: u.company,
+        location: u.location,
+        blog: u.blog,
+        twitter_username: u.twitter_username,
+        email: u.email,
+        public_repos: u.public_repos,
+        followers: u.followers,
+        following: u.following,
+      });
+
+      setUsername(ghHandle);
+      setTitleGreeting("Hi 👋, I'm");
+      setName(u.name || ghHandle);
+      if (u.avatar_url) setGithubAvatar(u.avatar_url);
+      setSubtitle(
+        u.bio ||
+        "Inquisitive, energetic computer science specialist skilled in leadership, with a strong foundation in math, logic, and cross-platform coding."
+      );
+
+      // Socials
+      setSocialGithub(ghHandle);
+      if (u.twitter_username) setSocialTwitter(u.twitter_username);
+      if (u.blog) {
+        const blogUrl = u.blog.startsWith("http") ? u.blog : `https://${u.blog}`;
+        setSocialPortfolio(blogUrl);
+      }
+
+      setGithubStats({
+        publicRepos: u.public_repos ?? 0,
+        followers: u.followers ?? 0
+      });
+
+      // Repos and Skills
+      let detectedSkillsCount = 0;
+      const detected = new Set<string>(selectedSkills);
+      const repoList = Array.isArray(repos) ? repos : [];
+      const repoNamesLower = repoList.map(r => (r.name || "").toLowerCase());
+
+      if (repoList.length > 0) {
+        const ownRepos = repoList.filter((r) => !r.fork);
+        const topRepo = ownRepos[0] || repoList[0];
+        if (topRepo) {
+          setWorkingOn(topRepo.name || "");
+          if (topRepo.html_url) setWorkingOnUrl(topRepo.html_url);
+        }
+
+        repoList.forEach((r) => {
+          const lang = (r.language || "").toLowerCase();
+          const topics = Array.isArray(r.topics) ? r.topics.map(t => t.toLowerCase()) : [];
+          const textPool = [...topics, (r.name || "").toLowerCase(), (r.description || "").toLowerCase()];
+
+          // Languages
+          if (lang === "java" || textPool.some(t => t.includes("java"))) detected.add("java");
+          if (lang === "kotlin" || textPool.some(t => t.includes("kotlin"))) {
+            detected.add("kotlin");
+            detected.add("android");
+          }
+          if (lang === "typescript" || textPool.some(t => t.includes("typescript") || t.includes("ts"))) {
+            detected.add("ts");
+            detected.add("js");
+          }
+          if (lang === "javascript" || textPool.some(t => t.includes("javascript") || t.includes("js"))) detected.add("js");
+          if (lang === "python" || textPool.some(t => t.includes("python"))) detected.add("python");
+          if (lang === "c++" || lang === "cpp" || textPool.some(t => t.includes("c++") || t.includes("cpp") || t.includes("dsa") || t.includes("algorithm") || t.includes("cipher"))) detected.add("cpp");
+          if (lang === "c#" || lang === "csharp") detected.add("csharp");
+          if (lang === "c") detected.add("c");
+          if (lang === "go" || lang === "golang") detected.add("go");
+          if (lang === "rust") detected.add("rust");
+          if (lang === "php") detected.add("php");
+          if (lang === "html" || textPool.some(t => t.includes("html"))) detected.add("html5");
+          if (lang === "css" || textPool.some(t => t.includes("css"))) detected.add("css3");
+
+          // Frameworks & Tools
+          if (textPool.some(t => t.includes("android"))) {
+            detected.add("android");
+            detected.add("kotlin");
+          }
+          if (textPool.some(t => t.includes("flutter"))) detected.add("flutter");
+          if (textPool.some(t => t.includes("react-native") || t.includes("reactnative"))) detected.add("reactnative");
+          if (textPool.some(t => t.includes("machine-learning") || t.includes("ml") || t.includes("ai") || t.includes("chatbot") || t.includes("deep-learning") || t.includes("face_recognition") || t.includes("recognition") || t.includes("vision"))) {
+            detected.add("python");
+            detected.add("tensorflow");
+            detected.add("opencv");
+          }
+          if (textPool.some(t => t.includes("pytorch"))) detected.add("pytorch");
+          if (textPool.some(t => t.includes("spring") || t.includes("springboot"))) {
+            detected.add("springboot");
+            detected.add("spring");
+          }
+          if (textPool.some(t => t.includes("react"))) detected.add("react");
+          if (textPool.some(t => t.includes("nextjs") || t.includes("next.js"))) detected.add("nextjs");
+          if (textPool.some(t => t.includes("tailwind"))) detected.add("tailwind");
+          if (textPool.some(t => t.includes("node") || t.includes("express"))) {
+            detected.add("nodejs");
+            detected.add("express");
+          }
+          if (textPool.some(t => t.includes("django"))) detected.add("django");
+          if (textPool.some(t => t.includes("fastapi"))) detected.add("fastapi");
+          if (textPool.some(t => t.includes("postgres"))) detected.add("postgres");
+          if (textPool.some(t => t.includes("mysql") || t.includes("sql"))) detected.add("mysql");
+          if (textPool.some(t => t.includes("mongo"))) detected.add("mongo");
+          if (textPool.some(t => t.includes("docker"))) detected.add("docker");
+          if (textPool.some(t => t.includes("kubernetes"))) detected.add("kubernetes");
+          if (textPool.some(t => t.includes("aws"))) detected.add("aws");
+          if (textPool.some(t => t.includes("linux"))) detected.add("linux");
+        });
+      } else {
+        setWorkingOn("Open Source Software Engineering");
+        setWorkingOnUrl(`https://github.com/${ghHandle}`);
+      }
+
+      // Always include Git, and if html5 is present ensure css3 is selected too
+      detected.add("git");
+      if (detected.has("html5")) detected.add("css3");
+      if (detected.size <= 1) {
+        detected.add("js");
+        detected.add("python");
+      }
+
+      const newSkills = Array.from(detected);
+      detectedSkillsCount = newSkills.length;
+      setSelectedSkills(newSkills);
+
+      // Smart About & Bio Auto-Fill from Profile and Repos
+      const hasAI = repoNamesLower.some(n => n.includes("learning") || n.includes("ai") || n.includes("dl") || n.includes("recognition") || n.includes("chatbot") || n.includes("vision"));
+      const hasAndroid = repoNamesLower.some(n => n.includes("android") || n.includes("kotlin"));
+      const hasDSA = repoNamesLower.some(n => n.includes("structure") || n.includes("algorithm") || n.includes("dsa") || n.includes("c++") || n.includes("cipher") || n.includes("cpp"));
+      const hasWeb = repoNamesLower.some(n => n.includes("web") || n.includes("html") || n.includes("react") || n.includes("property") || n.includes("javascript"));
+
+      const learningFocus: string[] = [];
+      if (hasAI) learningFocus.push("Machine Learning & Artificial Intelligence");
+      if (hasAndroid) learningFocus.push("Android Architecture & Modern Kotlin");
+      if (hasDSA) learningFocus.push("Data Structures & Competitive Algorithms");
+      if (hasWeb && learningFocus.length < 2) learningFocus.push("Full-Stack Web Development");
+
+      setLearning(learningFocus.length > 0 ? learningFocus.join(" & ") : "Emerging Tech, AI & System Architecture");
+      setCollaboratingOn("Open-source AI, Android & Web Innovations");
+
+      const helpTech: string[] = [];
+      if (hasAndroid) helpTech.push("Android");
+      if (hasAI) helpTech.push("Python & Machine Learning");
+      if (hasDSA) helpTech.push("C++ Algorithms");
+      setHelpWith(helpTech.length > 0 ? `${helpTech.join(", ")} projects` : "Full-stack development, AI and open source");
+
+      const askTech: string[] = [];
+      if (hasDSA) askTech.push("Data Structures & Algorithms");
+      if (hasAI) askTech.push("Machine Learning");
+      if (hasAndroid) askTech.push("Android App Development");
+      if (hasWeb) askTech.push("Web Development");
+      setAskMe(askTech.length > 0 ? askTech.join(", ") : "Problem solving, clean code & software engineering");
+
+      // Reach Me
+      const reachParts: string[] = [];
+      if (u.location) reachParts.push(`Based in ${u.location}`);
+      if (u.company) reachParts.push(u.company);
+      if (u.email) reachParts.unshift(u.email);
+      setReachMe(reachParts.length > 0 ? reachParts.join(" · ") : `@${ghHandle} on GitHub`);
+
+      // Fun Fact
+      setFunFact("I turn complex algorithmic problems and caffeine into clean, working code! 🚀");
+
+      setGithubFetched(true);
+      toast.success(`Imported details for @${ghHandle}!`, {
+        description: `Name, bio, active repo, and ${detectedSkillsCount} tech skills loaded.`
+      });
+    } catch (err: unknown) {
+      console.error("Failed to fetch GitHub details:", err);
+      const errMsg = err instanceof Error ? err.message : undefined;
+      toast.error(`Could not load details for "${ghHandle}".`, {
+        description: errMsg || "Please check the username spelling or try again.",
+      });
+    } finally {
+      setLoadingGithub(false);
+    }
+  };
 
   // Load existing profile to prefill GitHub handle/links if user has them saved
   useEffect(() => {
@@ -178,9 +533,10 @@ export function GithubPortfolioView() {
         const p = res?.data?.profile;
         if (!mounted || !p) return;
         if (p.github) {
-          const cleanGh = p.github.replace(/https?:\/\/(www\.)?github\.com\//i, "").replace(/\/$/, "");
+          const cleanGh = p.github.replace(/https?:\/\/(www\.)?github\.com\//i, "").replace(/\/$/, "").replace(/^@/, "");
           setUsername(prev => prev || cleanGh);
           setSocialGithub(prev => prev || cleanGh);
+          fetchGithubDetails(cleanGh);
         }
         if (p.name) {
           setName(prev => prev || p.name);
@@ -200,38 +556,41 @@ export function GithubPortfolioView() {
       }
     })();
     return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const toggleSkill = (skillId: string) => {
-    setSelectedSkills(prev =>
-      prev.includes(skillId) ? prev.filter(s => s !== skillId) : [...prev, skillId]
-    );
-  };
-
-
 
   // Generate Markdown Text
   const generatedMarkdown = useMemo(() => {
     let md = "";
 
-    // Header Title
     const effectiveGreeting = titleGreeting.trim() || "Hi 👋, I'm";
     const effectiveName = name.trim();
+    const headerTitle = effectiveName
+      ? `${effectiveGreeting} ${effectiveName}`
+      : username.trim()
+      ? `${effectiveGreeting} ${username.trim()}`
+      : subtitle.trim()
+      ? "Hi 👋, Welcome to my Profile!"
+      : "";
 
-    if (effectiveName) {
-      md += `<h1 align="center">${effectiveGreeting} ${effectiveName}</h1>\n`;
-    } else if (username.trim()) {
-      md += `<h1 align="center">${effectiveGreeting} ${username.trim()}</h1>\n`;
-    } else if (subtitle.trim()) {
-      md += `<h1 align="center">Hi 👋, Welcome to my Profile!</h1>\n`;
-    }
-
-    // Subtitle / Typing SVG
-    if (subtitle.trim()) {
-      if (useTypingSvg) {
-        const encodedLines = encodeURIComponent(subtitle.trim().replace(/\s*\|\s*/g, ";"));
-        md += `<p align="center">\n  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=F59E0B&center=true&vCenter=true&width=500&lines=${encodedLines}" alt="Typing SVG" />\n</p>\n\n`;
-      } else {
+    // 1. Header Banner & Title
+    if (headerStyle === "wave") {
+      const bannerText = headerTitle || "Welcome to my Profile!";
+      md += `<p align="center">\n  <img src="https://capsule-render.vercel.app/api?type=waving&color=auto&height=200&section=header&text=${encodeURIComponent(bannerText)}&fontSize=42&animation=fadeIn" alt="Header Banner" />\n</p>\n\n`;
+      if (subtitle.trim()) {
+        md += `<h3 align="center">${subtitle.trim()}</h3>\n\n`;
+      }
+    } else if (headerStyle === "typing") {
+      if (headerTitle) {
+        md += `<h1 align="center">${headerTitle}</h1>\n`;
+      }
+      const typingLines = subtitle.trim() ? subtitle.trim().replace(/\s*\|\s*/g, ";") : "Software Developer;Tech Enthusiast;Open Source Explorer";
+      md += `<p align="center">\n  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=F59E0B&center=true&vCenter=true&width=500&lines=${encodeURIComponent(typingLines)}" alt="Typing SVG" />\n</p>\n\n`;
+    } else {
+      if (headerTitle) {
+        md += `<h1 align="center">${headerTitle}</h1>\n`;
+      }
+      if (subtitle.trim()) {
         md += `<h3 align="center">${subtitle.trim()}</h3>\n\n`;
       }
     }
@@ -241,8 +600,8 @@ export function GithubPortfolioView() {
       md += `<p align="center">\n  <img src="https://komarev.com/ghpvc/?username=${encodeURIComponent(username.trim())}&label=Profile%20views&color=0e75b6&style=flat" alt="${username.trim()}" />\n</p>\n\n`;
     }
 
-    // Bio / Work
-    const hasBio = workingOn.trim() || learning.trim() || askMe.trim() || reachMe.trim() || funFact.trim();
+    // 2. About & Bio
+    const hasBio = workingOn.trim() || learning.trim() || collaboratingOn.trim() || helpWith.trim() || askMe.trim() || reachMe.trim() || funFact.trim();
     if (hasBio) {
       md += `## 🚀 About Me\n\n`;
       if (workingOn.trim()) {
@@ -250,6 +609,12 @@ export function GithubPortfolioView() {
       }
       if (learning.trim()) {
         md += `- 🌱 I’m currently learning **${learning.trim()}**\n`;
+      }
+      if (collaboratingOn.trim()) {
+        md += `- 👯 I’m looking to collaborate on **${collaboratingOn.trim()}**\n`;
+      }
+      if (helpWith.trim()) {
+        md += `- 🤝 I’m looking for help with **${helpWith.trim()}**\n`;
       }
       if (askMe.trim()) {
         md += `- 💬 Ask me about **${askMe.trim()}**\n`;
@@ -263,20 +628,22 @@ export function GithubPortfolioView() {
       md += `\n<br/>\n\n`;
     }
 
-    // Skills
+    // 3. Tech Stack
     if (selectedSkills.length > 0) {
       md += `## 🛠️ Tech Stack & Skills\n\n<p align="left">\n`;
       SKILL_CATEGORIES.forEach(cat => {
         cat.skills.forEach(skill => {
           if (selectedSkills.includes(skill.id)) {
-            md += `  <img src="${skill.badgeUrl}" alt="${skill.name}" />\n`;
+            const logoColorParam = skill.logoColor ? `&logoColor=${skill.logoColor}` : "";
+            const badgeUrl = `https://img.shields.io/badge/${skill.badgeName}-${skill.badgeColor}?style=${badgeStyle}&logo=${skill.logo}${logoColorParam}`;
+            md += `  <img src="${badgeUrl}" alt="${skill.name}" />\n`;
           }
         });
       });
       md += `</p>\n\n<br/>\n\n`;
     }
 
-    // GitHub Stats
+    // 4. GitHub Stats & Cards
     if (username.trim() && (showStatsCard || showTopLangs || showStreakCard || showTrophy)) {
       md += `## 📊 GitHub Analytics\n\n`;
 
@@ -297,7 +664,7 @@ export function GithubPortfolioView() {
       md += `</p>\n\n<br/>\n\n`;
     }
 
-    // Social Links
+    // 5. Social Links
     const cleanUrl = (val: string, base: string) => {
       const v = val.trim();
       if (!v) return "";
@@ -311,42 +678,88 @@ export function GithubPortfolioView() {
     const pfLink = cleanUrl(socialPortfolio, "https://");
     const lcLink = cleanUrl(socialLeetcode, "https://leetcode.com/");
     const cfLink = cleanUrl(socialCodeforces, "https://codeforces.com/profile/");
+    const ytLink = cleanUrl(socialYoutube, "https://youtube.com/@");
+    const dcLink = cleanUrl(socialDiscord, "https://discord.gg/");
+    const igLink = cleanUrl(socialInstagram, "https://instagram.com/");
+    const medLink = cleanUrl(socialMedium, "https://medium.com/@");
 
-    const hasSocials = ghLink || liLink || twLink || pfLink || lcLink || cfLink;
+    const hasSocials = ghLink || liLink || twLink || pfLink || lcLink || cfLink || ytLink || dcLink || igLink || medLink;
     if (hasSocials) {
       md += `## 🌐 Connect & Socials\n\n<p align="left">\n`;
       if (ghLink) {
-        md += `  <a href="${ghLink}" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/></a>\n`;
+        md += `  <a href="${ghLink}" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?style=${badgeStyle}&logo=github&logoColor=white" alt="GitHub"/></a>\n`;
       }
       if (liLink) {
-        md += `  <a href="${liLink}" target="_blank"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/></a>\n`;
+        md += `  <a href="${liLink}" target="_blank"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=${badgeStyle}&logo=linkedin&logoColor=white" alt="LinkedIn"/></a>\n`;
       }
       if (twLink) {
-        md += `  <a href="${twLink}" target="_blank"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter"/></a>\n`;
+        md += `  <a href="${twLink}" target="_blank"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=${badgeStyle}&logo=twitter&logoColor=white" alt="Twitter"/></a>\n`;
       }
       if (pfLink) {
-        md += `  <a href="${pfLink}" target="_blank"><img src="https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=todoist&logoColor=white" alt="Portfolio"/></a>\n`;
+        md += `  <a href="${pfLink}" target="_blank"><img src="https://img.shields.io/badge/Portfolio-FF5722?style=${badgeStyle}&logo=todoist&logoColor=white" alt="Portfolio"/></a>\n`;
       }
       if (lcLink) {
-        md += `  <a href="${lcLink}" target="_blank"><img src="https://img.shields.io/badge/LeetCode-FFA116?style=for-the-badge&logo=leetcode&logoColor=black" alt="LeetCode"/></a>\n`;
+        md += `  <a href="${lcLink}" target="_blank"><img src="https://img.shields.io/badge/LeetCode-FFA116?style=${badgeStyle}&logo=leetcode&logoColor=black" alt="LeetCode"/></a>\n`;
       }
       if (cfLink) {
-        md += `  <a href="${cfLink}" target="_blank"><img src="https://img.shields.io/badge/Codeforces-1F8ACB?style=for-the-badge&logo=codeforces&logoColor=white" alt="Codeforces"/></a>\n`;
+        md += `  <a href="${cfLink}" target="_blank"><img src="https://img.shields.io/badge/Codeforces-1F8ACB?style=${badgeStyle}&logo=codeforces&logoColor=white" alt="Codeforces"/></a>\n`;
       }
-      md += `</p>\n\n`;
+      if (ytLink) {
+        md += `  <a href="${ytLink}" target="_blank"><img src="https://img.shields.io/badge/YouTube-FF0000?style=${badgeStyle}&logo=youtube&logoColor=white" alt="YouTube"/></a>\n`;
+      }
+      if (dcLink) {
+        md += `  <a href="${dcLink}" target="_blank"><img src="https://img.shields.io/badge/Discord-5865F2?style=${badgeStyle}&logo=discord&logoColor=white" alt="Discord"/></a>\n`;
+      }
+      if (igLink) {
+        md += `  <a href="${igLink}" target="_blank"><img src="https://img.shields.io/badge/Instagram-E4405F?style=${badgeStyle}&logo=instagram&logoColor=white" alt="Instagram"/></a>\n`;
+      }
+      if (medLink) {
+        md += `  <a href="${medLink}" target="_blank"><img src="https://img.shields.io/badge/Medium-12100E?style=${badgeStyle}&logo=medium&logoColor=white" alt="Medium"/></a>\n`;
+      }
+      md += `</p>\n\n<br/>\n\n`;
     }
 
-    // Random Dev Quote
-    if (showQuote && username.trim()) {
-      md += `\n---\n\n<p align="center">\n  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=${statsTheme}" alt="Dev Quote" />\n</p>\n`;
+    // 6. Support & Donations
+    const hasDonations = supportBmc.trim() || supportKofi.trim() || supportPaypal.trim() || supportPatreon.trim();
+    if (hasDonations) {
+      md += `## 💖 Support & Donations\n\n<p align="left">\n`;
+      if (supportBmc.trim()) {
+        const bmcUser = supportBmc.trim().replace(/https?:\/\/(www\.)?buymeacoffee\.com\//i, "");
+        md += `  <a href="https://buymeacoffee.com/${bmcUser}" target="_blank"><img src="https://img.shields.io/badge/Buy_Me_a_Coffee-FFDD00?style=${badgeStyle}&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"/></a>\n`;
+      }
+      if (supportKofi.trim()) {
+        const kofiUser = supportKofi.trim().replace(/https?:\/\/(www\.)?ko-fi\.com\//i, "");
+        md += `  <a href="https://ko-fi.com/${kofiUser}" target="_blank"><img src="https://img.shields.io/badge/Ko--fi-F16061?style=${badgeStyle}&logo=ko-fi&logoColor=white" alt="Ko-fi"/></a>\n`;
+      }
+      if (supportPaypal.trim()) {
+        const paypalUser = supportPaypal.trim().replace(/https?:\/\/(www\.)?paypal\.me\//i, "");
+        md += `  <a href="https://paypal.me/${paypalUser}" target="_blank"><img src="https://img.shields.io/badge/PayPal-00457C?style=${badgeStyle}&logo=paypal&logoColor=white" alt="PayPal"/></a>\n`;
+      }
+      if (supportPatreon.trim()) {
+        const patreonUser = supportPatreon.trim().replace(/https?:\/\/(www\.)?patreon\.com\//i, "");
+        md += `  <a href="https://patreon.com/${patreonUser}" target="_blank"><img src="https://img.shields.io/badge/Patreon-F96854?style=${badgeStyle}&logo=patreon&logoColor=white" alt="Patreon"/></a>\n`;
+      }
+      md += `</p>\n\n<br/>\n\n`;
+    }
+
+    // 7. Fun Components (Quotes & Jokes)
+    if (showQuote || showJoke) {
+      md += `## 💡 Dev Insight & Humor\n\n`;
+      if (showQuote) {
+        md += `<p align="center">\n  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=${statsTheme}" alt="Dev Quote" />\n</p>\n\n`;
+      }
+      if (showJoke) {
+        md += `<p align="center">\n  <img src="https://readme-jokes.vercel.app/api?theme=${statsTheme}" alt="Random Dev Joke" />\n</p>\n\n`;
+      }
     }
 
     return md;
   }, [
-    titleGreeting, name, subtitle, useTypingSvg, username, showVisitorBadge, workingOn, workingOnUrl,
-    learning, askMe, reachMe, funFact, selectedSkills, showStatsCard, showTopLangs,
-    showStreakCard, showTrophy, statsTheme, socialGithub, socialLinkedin, socialTwitter,
-    socialPortfolio, socialLeetcode, socialCodeforces, showQuote
+    titleGreeting, name, subtitle, headerStyle, username, showVisitorBadge, workingOn, workingOnUrl,
+    learning, collaboratingOn, helpWith, askMe, reachMe, funFact, selectedSkills, badgeStyle,
+    showStatsCard, showTopLangs, showStreakCard, showTrophy, statsTheme, socialGithub, socialLinkedin,
+    socialTwitter, socialPortfolio, socialLeetcode, socialCodeforces, socialYoutube, socialDiscord,
+    socialInstagram, socialMedium, supportBmc, supportKofi, supportPaypal, supportPatreon, showQuote, showJoke
   ]);
 
   // A new distinct README configuration starts a fresh logical attempt.
@@ -418,6 +831,16 @@ export function GithubPortfolioView() {
     syncToProfile();
   };
 
+  // Filter skills by search query
+  const filteredCategories = useMemo(() => {
+    if (!skillSearch.trim()) return SKILL_CATEGORIES;
+    const q = skillSearch.toLowerCase();
+    return SKILL_CATEGORIES.map(cat => ({
+      ...cat,
+      skills: cat.skills.filter(s => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))
+    })).filter(cat => cat.skills.length > 0);
+  }, [skillSearch]);
+
   return (
     <div className="w-full font-sans space-y-6">
       {/* Header Bar */}
@@ -461,7 +884,6 @@ export function GithubPortfolioView() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Side: Interactive Controls */}
         <div className="lg:col-span-5 space-y-4">
-
           {/* Navigation Tabs */}
           <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] overflow-x-auto">
             {([
@@ -469,7 +891,8 @@ export function GithubPortfolioView() {
               { id: "work" as const, label: "About & Bio", icon: Sparkles },
               { id: "skills" as const, label: "Tech Stack", icon: Cpu },
               { id: "stats" as const, label: "GitHub Cards", icon: BarChart2 },
-              { id: "social" as const, label: "Social Links", icon: Globe }
+              { id: "social" as const, label: "Social Links", icon: Globe },
+              { id: "support" as const, label: "Support & Fun", icon: Heart }
             ] satisfies { id: PortfolioTab; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[]).map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -492,22 +915,97 @@ export function GithubPortfolioView() {
 
           {/* Form Content Body */}
           <div className="p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm space-y-4">
+            {/* TAB 1: HEADER */}
             {activeTab === "header" && (
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                   <User size={16} className="text-amber-500" />
-                  Header Info
+                  Header & Profile Info
                 </h3>
 
                 <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">GitHub Username</label>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="e.g. octocat"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-[var(--text-secondary)]">GitHub Username</label>
+                    <span className="text-[10px] text-[var(--text-secondary)]">Press Enter or click Fetch to auto-fill</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          fetchGithubDetails();
+                        }
+                      }}
+                      placeholder="e.g. octocat or profile URL"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fetchGithubDetails()}
+                      disabled={loadingGithub || !username.trim()}
+                      className="px-3.5 py-2 text-xs font-bold rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      <RefreshCw size={12} className={loadingGithub ? "animate-spin" : ""} />
+                      {loadingGithub ? "Fetching..." : "Fetch Details"}
+                    </button>
+                  </div>
+
+                  {githubFetched && (
+                    <div className="mt-3 p-3.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 space-y-2.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          {githubAvatar ? (
+                            <img src={githubAvatar} alt="GitHub avatar" className="w-10 h-10 rounded-full border-2 border-amber-500/40 shadow-sm" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center font-bold text-amber-500">GH</div>
+                          )}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-[var(--text-primary)]">{name || username}</span>
+                              <span className="text-[10px] text-amber-500 font-mono">@{username}</span>
+                            </div>
+                            <div className="text-[10px] text-[var(--text-secondary)] flex flex-wrap items-center gap-2 mt-0.5">
+                              {githubUser?.company && <span>🏢 {githubUser.company}</span>}
+                              {githubUser?.location && <span>📍 {githubUser.location}</span>}
+                              {githubUser?.twitter_username && <span>🐦 @{githubUser.twitter_username}</span>}
+                              {githubUser?.blog && <span>🌐 {githubUser.blog.replace(/^https?:\/\//, "")}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 whitespace-nowrap">
+                          Synced
+                        </span>
+                      </div>
+
+                      {githubUser?.bio && (
+                        <p className="text-[11px] text-[var(--text-secondary)] italic pl-2 border-l-2 border-amber-500/40">
+                          &ldquo;{githubUser.bio}&rdquo;
+                        </p>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-2.5 text-[10px] text-[var(--text-secondary)] pt-2 border-t border-amber-500/10">
+                        <span className="px-2 py-0.5 rounded-md bg-[var(--bg-dark)] border border-[var(--border-color)]">
+                          <strong className="text-[var(--text-primary)]">{githubStats?.publicRepos ?? 0}</strong> Repos
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-[var(--bg-dark)] border border-[var(--border-color)]">
+                          <strong className="text-[var(--text-primary)]">{githubStats?.followers ?? 0}</strong> Followers
+                        </span>
+                        {githubUser?.following !== undefined && (
+                          <span className="px-2 py-0.5 rounded-md bg-[var(--bg-dark)] border border-[var(--border-color)]">
+                            <strong className="text-[var(--text-primary)]">{githubUser.following}</strong> Following
+                          </span>
+                        )}
+                        {selectedSkills.length > 0 && (
+                          <span className="ml-auto text-amber-500 font-bold flex items-center gap-1">
+                            <Sparkles size={11} /> {selectedSkills.length} Skills Auto-Detected
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -543,24 +1041,43 @@ export function GithubPortfolioView() {
                   />
                 </div>
 
-                <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] cursor-pointer hover:border-amber-500/20">
-                  <div className="flex items-center gap-2">
-                    <Type size={14} className="text-amber-500" />
-                    <div>
-                      <span className="text-xs font-bold text-[var(--text-primary)] block">Animated Typing Subtitle</span>
-                      <span className="text-[10px] text-[var(--text-secondary)]">Types out roles smoothly using readme-typing-svg</span>
-                    </div>
+                <div>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">Header Banner Style</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { id: "clean", label: "Simple Text" },
+                      { id: "typing", label: "Typing SVG" },
+                      { id: "wave", label: "Wave Banner" }
+                    ] as const).map(style => (
+                      <button
+                        key={style.id}
+                        type="button"
+                        onClick={() => setHeaderStyle(style.id)}
+                        className={`p-2.5 text-xs font-bold rounded-xl border text-center transition-all ${
+                          headerStyle === style.id
+                            ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                            : "bg-[var(--bg-dark)] text-[var(--text-secondary)] border-[var(--border-color)] hover:border-amber-500/20"
+                        }`}
+                      >
+                        {style.label}
+                      </button>
+                    ))}
                   </div>
+                </div>
+
+                <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] cursor-pointer hover:border-amber-500/20">
+                  <span className="text-xs font-bold text-[var(--text-primary)]">Show Profile Views Counter Badge</span>
                   <input
                     type="checkbox"
-                    checked={useTypingSvg}
-                    onChange={(e) => setUseTypingSvg(e.target.checked)}
+                    checked={showVisitorBadge}
+                    onChange={(e) => setShowVisitorBadge(e.target.checked)}
                     className="w-4 h-4 accent-amber-500 rounded"
                   />
                 </label>
               </div>
             )}
 
+            {/* TAB 2: ABOUT & BIO */}
             {activeTab === "work" && (
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
@@ -602,6 +1119,28 @@ export function GithubPortfolioView() {
                 </div>
 
                 <div>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">👯 Looking to collaborate on</label>
+                  <input
+                    type="text"
+                    value={collaboratingOn}
+                    onChange={(e) => setCollaboratingOn(e.target.value)}
+                    placeholder="e.g. Open-source backend libraries, developer tools"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">🤝 Looking for help with</label>
+                  <input
+                    type="text"
+                    value={helpWith}
+                    onChange={(e) => setHelpWith(e.target.value)}
+                    placeholder="e.g. Distributed consensus algorithms & benchmarking"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                  />
+                </div>
+
+                <div>
                   <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">💬 Ask me about</label>
                   <input
                     type="text"
@@ -636,17 +1175,43 @@ export function GithubPortfolioView() {
               </div>
             )}
 
+            {/* TAB 3: TECH STACK */}
             {activeTab === "skills" && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <Cpu size={16} className="text-amber-500" />
-                    Select Skills & Tech Stack ({selectedSkills.length} selected)
+                    Select Tech Stack ({selectedSkills.length} selected)
                   </h3>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-[var(--text-secondary)] font-semibold">Badge Style:</span>
+                    <select
+                      value={badgeStyle}
+                      onChange={(e) => setBadgeStyle(e.target.value as "for-the-badge" | "flat" | "flat-square")}
+                      className="px-2 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none"
+                    >
+                      <option value="for-the-badge">Badge (Large)</option>
+                      <option value="flat">Flat</option>
+                      <option value="flat-square">Flat Square</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
-                  {SKILL_CATEGORIES.map(category => {
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-2.5 text-[var(--text-secondary)]" />
+                  <input
+                    type="text"
+                    value={skillSearch}
+                    onChange={(e) => setSkillSearch(e.target.value)}
+                    placeholder="Filter skills (e.g. Java, Docker, React)..."
+                    className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                  />
+                </div>
+
+                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                  {filteredCategories.map(category => {
                     const CatIcon = category.icon;
                     return (
                       <div key={category.title} className="p-3.5 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)]">
@@ -679,6 +1244,7 @@ export function GithubPortfolioView() {
               </div>
             )}
 
+            {/* TAB 4: GITHUB CARDS */}
             {activeTab === "stats" && (
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
@@ -687,7 +1253,7 @@ export function GithubPortfolioView() {
                 </h3>
 
                 <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">Select Theme</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">Theme</label>
                   <select
                     value={statsTheme}
                     onChange={(e) => setStatsTheme(e.target.value)}
@@ -704,9 +1270,7 @@ export function GithubPortfolioView() {
                     { label: "Show Profile Stats Card", state: showStatsCard, setState: setShowStatsCard },
                     { label: "Show Top Languages Card", state: showTopLangs, setState: setShowTopLangs },
                     { label: "Show Streak Stats Card", state: showStreakCard, setState: setShowStreakCard },
-                    { label: "Show Trophy Badges", state: showTrophy, setState: setShowTrophy },
-                    { label: "Show Visitor Count Badge", state: showVisitorBadge, setState: setShowVisitorBadge },
-                    { label: "Show Dev Quote Card", state: showQuote, setState: setShowQuote }
+                    { label: "Show Trophy Badges", state: showTrophy, setState: setShowTrophy }
                   ].map((item, idx) => (
                     <label key={idx} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] cursor-pointer hover:border-amber-500/20">
                       <span className="text-xs font-bold text-[var(--text-primary)]">{item.label}</span>
@@ -722,77 +1286,207 @@ export function GithubPortfolioView() {
               </div>
             )}
 
+            {/* TAB 5: SOCIAL LINKS */}
             {activeTab === "social" && (
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
                 <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                   <Globe size={16} className="text-amber-500" />
                   Social Profiles & Contact Links
                 </h3>
 
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">GitHub Username or URL</label>
-                  <input
-                    type="text"
-                    value={socialGithub}
-                    onChange={(e) => setSocialGithub(e.target.value)}
-                    placeholder="e.g. username"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">GitHub Username</label>
+                    <input
+                      type="text"
+                      value={socialGithub}
+                      onChange={(e) => setSocialGithub(e.target.value)}
+                      placeholder="e.g. octocat"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">LinkedIn Profile</label>
+                    <input
+                      type="text"
+                      value={socialLinkedin}
+                      onChange={(e) => setSocialLinkedin(e.target.value)}
+                      placeholder="e.g. in/username"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">Twitter / X Handle</label>
+                    <input
+                      type="text"
+                      value={socialTwitter}
+                      onChange={(e) => setSocialTwitter(e.target.value)}
+                      placeholder="e.g. username"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">Portfolio URL</label>
+                    <input
+                      type="text"
+                      value={socialPortfolio}
+                      onChange={(e) => setSocialPortfolio(e.target.value)}
+                      placeholder="https://yourportfolio.com"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">LeetCode Username</label>
+                    <input
+                      type="text"
+                      value={socialLeetcode}
+                      onChange={(e) => setSocialLeetcode(e.target.value)}
+                      placeholder="e.g. username"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">Codeforces Username</label>
+                    <input
+                      type="text"
+                      value={socialCodeforces}
+                      onChange={(e) => setSocialCodeforces(e.target.value)}
+                      placeholder="e.g. username"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">YouTube Handle</label>
+                    <input
+                      type="text"
+                      value={socialYoutube}
+                      onChange={(e) => setSocialYoutube(e.target.value)}
+                      placeholder="e.g. @yourchannel"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">Discord Invite</label>
+                    <input
+                      type="text"
+                      value={socialDiscord}
+                      onChange={(e) => setSocialDiscord(e.target.value)}
+                      placeholder="e.g. invite_code"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">Instagram Username</label>
+                    <input
+                      type="text"
+                      value={socialInstagram}
+                      onChange={(e) => setSocialInstagram(e.target.value)}
+                      placeholder="e.g. username"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">Medium Username</label>
+                    <input
+                      type="text"
+                      value={socialMedium}
+                      onChange={(e) => setSocialMedium(e.target.value)}
+                      placeholder="e.g. @username"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 6: SUPPORT & FUN COMPONENTS (GPRM) */}
+            {activeTab === "support" && (
+              <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
+                <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <Coffee size={16} className="text-amber-500" />
+                  Donations & Support
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">Buy Me a Coffee Username</label>
+                    <input
+                      type="text"
+                      value={supportBmc}
+                      onChange={(e) => setSupportBmc(e.target.value)}
+                      placeholder="e.g. username"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">Ko-fi Username</label>
+                    <input
+                      type="text"
+                      value={supportKofi}
+                      onChange={(e) => setSupportKofi(e.target.value)}
+                      placeholder="e.g. username"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">PayPal Username</label>
+                    <input
+                      type="text"
+                      value={supportPaypal}
+                      onChange={(e) => setSupportPaypal(e.target.value)}
+                      placeholder="e.g. username"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1">Patreon Username</label>
+                    <input
+                      type="text"
+                      value={supportPatreon}
+                      onChange={(e) => setSupportPatreon(e.target.value)}
+                      placeholder="e.g. username"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">LinkedIn Profile or URL</label>
-                  <input
-                    type="text"
-                    value={socialLinkedin}
-                    onChange={(e) => setSocialLinkedin(e.target.value)}
-                    placeholder="e.g. username"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
-                  />
-                </div>
+                <div className="pt-2 border-t border-[var(--border-color)] space-y-2">
+                  <h4 className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                    <Laugh size={14} className="text-amber-500" />
+                    Fun Profile Components
+                  </h4>
 
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">Twitter / X Handle or URL</label>
-                  <input
-                    type="text"
-                    value={socialTwitter}
-                    onChange={(e) => setSocialTwitter(e.target.value)}
-                    placeholder="e.g. username"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
-                  />
-                </div>
+                  <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] cursor-pointer hover:border-amber-500/20">
+                    <span className="text-xs font-bold text-[var(--text-primary)]">Show Random Developer Quote</span>
+                    <input
+                      type="checkbox"
+                      checked={showQuote}
+                      onChange={(e) => setShowQuote(e.target.checked)}
+                      className="w-4 h-4 accent-amber-500 rounded"
+                    />
+                  </label>
 
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">Portfolio Website URL</label>
-                  <input
-                    type="text"
-                    value={socialPortfolio}
-                    onChange={(e) => setSocialPortfolio(e.target.value)}
-                    placeholder="https://yourportfolio.com"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">LeetCode Username or URL</label>
-                  <input
-                    type="text"
-                    value={socialLeetcode}
-                    onChange={(e) => setSocialLeetcode(e.target.value)}
-                    placeholder="e.g. username"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] block mb-1.5">Codeforces Username or URL</label>
-                  <input
-                    type="text"
-                    value={socialCodeforces}
-                    onChange={(e) => setSocialCodeforces(e.target.value)}
-                    placeholder="e.g. username"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50"
-                  />
+                  <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-dark)] border border-[var(--border-color)] cursor-pointer hover:border-amber-500/20">
+                    <span className="text-xs font-bold text-[var(--text-primary)]">Show Random Programming Joke</span>
+                    <input
+                      type="checkbox"
+                      checked={showJoke}
+                      onChange={(e) => setShowJoke(e.target.checked)}
+                      className="w-4 h-4 accent-amber-500 rounded"
+                    />
+                  </label>
                 </div>
               </div>
             )}
@@ -851,6 +1545,136 @@ export function GithubPortfolioView() {
 
 // ─── Live Github Readme Preview Component ─────────────────────────────────────
 
+function extractMediaItems(html: string): { href?: string; src: string; alt?: string }[] {
+  const items: { href?: string; src: string; alt?: string }[] = [];
+
+  // 1. Match <a ...><img .../></a> blocks regardless of attribute ordering
+  const aRegex = /<a\s+([^>]+)>([\s\S]*?)<\/a>/gi;
+  let aMatch;
+  while ((aMatch = aRegex.exec(html)) !== null) {
+    const aAttrs = aMatch[1];
+    const aContent = aMatch[2];
+    const hrefMatch = aAttrs.match(/href=["']([^"']+)["']/i);
+    const imgMatch = aContent.match(/<img\s+([^>]+)>/i);
+    if (imgMatch) {
+      const imgAttrs = imgMatch[1];
+      const srcMatch = imgAttrs.match(/src=["']([^"']+)["']/i);
+      const altMatch = imgAttrs.match(/alt=["']([^"']*)["']/i);
+      if (srcMatch) {
+        items.push({
+          href: hrefMatch ? hrefMatch[1] : undefined,
+          src: srcMatch[1],
+          alt: altMatch ? altMatch[1] : "badge",
+        });
+      }
+    }
+  }
+
+  // Remove matched <a> tags so inner images are not matched again
+  const htmlWithoutA = html.replace(/<a\s+[^>]*>[\s\S]*?<\/a>/gi, " ");
+
+  // 2. Match standalone <img ...> tags
+  const imgRegex = /<img\s+([^>]+)>/gi;
+  let imgMatch;
+  while ((imgMatch = imgRegex.exec(htmlWithoutA)) !== null) {
+    const imgAttrs = imgMatch[1];
+    const srcMatch = imgAttrs.match(/src=["']([^"']+)["']/i);
+    const altMatch = imgAttrs.match(/alt=["']([^"']*)["']/i);
+    if (srcMatch) {
+      items.push({
+        src: srcMatch[1],
+        alt: altMatch ? altMatch[1] : "image",
+      });
+    }
+  }
+
+  // 3. Match markdown links with images: [![alt](src)](href)
+  const mdLinkRegex = /\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g;
+  let mdLinkMatch;
+  while ((mdLinkMatch = mdLinkRegex.exec(html)) !== null) {
+    items.push({
+      alt: mdLinkMatch[1] || "badge",
+      src: mdLinkMatch[2],
+      href: mdLinkMatch[3],
+    });
+  }
+
+  // 4. Match standalone markdown images: ![alt](src)
+  const mdImgRegex = /(?<!\[)!\[([^\]]*)\]\(([^)]+)\)(?!\))/g;
+  let mdImgMatch;
+  while ((mdImgMatch = mdImgRegex.exec(html)) !== null) {
+    items.push({
+      alt: mdImgMatch[1] || "image",
+      src: mdImgMatch[2],
+    });
+  }
+
+  return items;
+}
+
+function ReadmeMediaItem({ item }: { item: { href?: string; src: string; alt?: string } }) {
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  const isBadge = item.src.includes("img.shields.io") || item.src.includes("badge");
+  const isCard =
+    item.src.includes("github-readme-stats") ||
+    item.src.includes("streak") ||
+    item.src.includes("quotes") ||
+    item.src.includes("jokes") ||
+    item.src.includes("trophy") ||
+    item.src.includes("capsule-render");
+
+  let content: React.ReactNode;
+
+  if (loadFailed) {
+    if (isBadge) {
+      content = (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-primary)] shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+          {item.alt || "Skill Badge"}
+        </span>
+      );
+    } else if (isCard) {
+      content = (
+        <div className="inline-flex flex-col items-center justify-center p-3 m-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-secondary)] text-[11px] min-w-[200px] shadow-sm">
+          <span className="font-semibold text-[var(--text-primary)]">{item.alt || "GitHub Analytics"}</span>
+          <span className="text-[10px] text-amber-500/80 mt-0.5">Live GitHub card active in README</span>
+        </div>
+      );
+    } else {
+      content = null;
+    }
+  } else {
+    content = (
+      <img
+        src={item.src}
+        alt={item.alt || "badge"}
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        className="max-w-full h-auto inline-block rounded transition-transform hover:scale-105"
+        onError={() => setLoadFailed(true)}
+      />
+    );
+  }
+
+  if (!content) return null;
+
+  if (item.href) {
+    return (
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block transition-transform hover:scale-105 focus:outline-none"
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return <>{content}</>;
+}
+
 function GithubReadmePreview({ markdown }: { markdown: string }) {
   if (!markdown || !markdown.trim()) {
     return (
@@ -858,20 +1682,27 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
         <GithubIcon className="w-12 h-12 text-amber-500/40" />
         <p className="text-sm font-bold text-[var(--text-primary)]">Live README Preview</p>
         <p className="text-xs max-w-sm">
-          Fill in your details or choose a Quick Role Template on the left to see your GitHub Profile README rendered live here!
+          Fill in your details or fetch your GitHub account on the left to see your GitHub Profile README rendered live here!
         </p>
       </div>
     );
   }
 
-  // Pre-process markdown to collapse multi-line <p ...>...</p> blocks into single custom tokens
-  // so that badges and stats aren't broken across lines.
-  const processed = markdown
+  // Normalize line breaks and split attached HTML blocks into separate lines
+  const normalized = markdown
     .replace(/\r\n/g, "\n")
-    .replace(/<p\s+align=["']([^"']+)["'][^>]*>([\s\S]*?)<\/p>/gi, (_, align, inner) => {
+    .replace(/(<\/h[1-6]>)\s*(<h[1-6]|<p|##|- )/gi, "$1\n$2")
+    .replace(/(<\/p>)\s*(<h[1-6]|<p|##|- )/gi, "$1\n$2")
+    .replace(/(<br\s*\/?>)\s*(<h[1-6]|<p|##|- )/gi, "$1\n$2");
+
+  // Pre-process markdown to collapse <p ...>...</p> blocks into single custom tokens
+  const processed = normalized.replace(
+    /<p(?:\s+align=["']([^"']+)["'])?[^>]*>([\s\S]*?)<\/p>/gi,
+    (_, align, inner) => {
       const singleLineInner = inner.replace(/\n\s*/g, " ").trim();
-      return `\n%%P_BLOCK%%${align}%%${singleLineInner}%%END_P_BLOCK%%\n`;
-    });
+      return `\n%%P_BLOCK%%${align || "left"}%%${singleLineInner}%%END_P_BLOCK%%\n`;
+    }
+  );
 
   const lines = processed.split("\n");
 
@@ -890,56 +1721,35 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
           if (match) {
             const align = match[1].toLowerCase();
             const inner = match[2];
-
-            // Extract all link+img or standalone img items
-            const itemRegex = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>\s*<img\s+[^>]*src=["']([^"']+)["'](?:[^>]*alt=["']([^"']*)["'])?[^>]*>\s*<\/a>|<img\s+[^>]*src=["']([^"']+)["'](?:[^>]*alt=["']([^"']*)["'])?[^>]*>/gi;
-            const items: { href?: string; src: string; alt?: string }[] = [];
-            let itemMatch;
-            while ((itemMatch = itemRegex.exec(inner)) !== null) {
-              if (itemMatch[1] && itemMatch[2]) {
-                items.push({ href: itemMatch[1], src: itemMatch[2], alt: itemMatch[3] || "badge" });
-              } else if (itemMatch[4]) {
-                items.push({ src: itemMatch[4], alt: itemMatch[5] || "badge" });
-              }
-            }
+            const items = extractMediaItems(inner);
 
             if (items.length > 0) {
               return (
                 <div
                   key={idx}
                   className={`flex flex-wrap items-center gap-2.5 my-3 ${
-                    align === "center" ? "justify-center" : align === "right" ? "justify-end" : "justify-start"
+                    align === "center" ? "justify-center text-center" : align === "right" ? "justify-end text-right" : "justify-start text-left"
                   }`}
                 >
-                  {items.map((item, itemIdx) => {
-                    const imgEl = (
-                      <img
-                        key={itemIdx}
-                        src={item.src}
-                        alt={item.alt || "badge"}
-                        className="max-w-full h-auto inline-block rounded transition-transform hover:scale-105"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = "none";
-                        }}
-                      />
-                    );
-
-                    if (item.href) {
-                      return (
-                        <a
-                          key={itemIdx}
-                          href={item.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block transition-transform hover:scale-105 focus:outline-none"
-                        >
-                          {imgEl}
-                        </a>
-                      );
-                    }
-                    return imgEl;
-                  })}
+                  {items.map((item, itemIdx) => (
+                    <ReadmeMediaItem key={itemIdx} item={item} />
+                  ))}
                 </div>
+              );
+            }
+
+            // Fallback for text-only <p>
+            const textContent = inner.replace(/<[^>]*>/g, "").trim();
+            if (textContent) {
+              return (
+                <p
+                  key={idx}
+                  className={`my-2 text-xs text-[var(--text-secondary)] ${
+                    align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left"
+                  }`}
+                >
+                  {textContent}
+                </p>
               );
             }
           }
@@ -948,8 +1758,8 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
 
         // Header 1: <h1 align="center">...</h1> or # ...
         if (trimmed.startsWith("<h1") || trimmed.startsWith("# ")) {
-          const content = trimmed.replace(/<[^>]*>/g, "").replace(/^#\s*/, "");
-          if (!content.trim()) return null;
+          const content = trimmed.replace(/<[^>]*>/g, "").replace(/^#\s*/, "").trim();
+          if (!content) return null;
           return (
             <h1 key={idx} className="text-2xl md:text-3xl font-extrabold text-center my-4 text-[var(--text-primary)] tracking-tight">
               {content}
@@ -959,8 +1769,8 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
 
         // Header 3: <h3 align="center">...</h3> or ### ...
         if (trimmed.startsWith("<h3") || trimmed.startsWith("### ")) {
-          const content = trimmed.replace(/<[^>]*>/g, "").replace(/^###\s*/, "");
-          if (!content.trim()) return null;
+          const content = trimmed.replace(/<[^>]*>/g, "").replace(/^###?\s*/, "").trim();
+          if (!content) return null;
           return (
             <h3 key={idx} className="text-sm md:text-base font-semibold text-center my-2 text-[var(--text-secondary)]">
               {content}
@@ -968,9 +1778,9 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
           );
         }
 
-        // Header 2: ## 🚀 About Me / ## 🛠️ Tech Stack & Skills / ## 📊 GitHub Analytics / ## 🌐 Connect & Socials
+        // Header 2: ## 🚀 About Me / ## 🛠️ Tech Stack & Skills / ## 📊 GitHub Analytics / etc.
         if (trimmed.startsWith("## ")) {
-          const content = trimmed.replace(/^##\s*/, "");
+          const content = trimmed.replace(/^##\s*/, "").trim();
           return (
             <h2 key={idx} className="text-base font-bold my-4 pb-2 border-b border-[var(--border-color)] text-[var(--text-primary)] flex items-center gap-2">
               {content}
@@ -980,7 +1790,7 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
 
         // Bullet point lines (- 🔭 I’m currently working on...)
         if (trimmed.startsWith("- ")) {
-          const content = trimmed.slice(2);
+          const content = trimmed.slice(2).trim();
           const parts = content.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
           return (
             <div key={idx} className="flex items-start gap-2 my-1 text-xs text-[var(--text-primary)]">
@@ -1008,36 +1818,14 @@ function GithubReadmePreview({ markdown }: { markdown: string }) {
         }
 
         // Standalone images / links not wrapped in <p>
-        if (trimmed.includes("<img") || trimmed.includes("<a")) {
-          const itemRegex = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>\s*<img\s+[^>]*src=["']([^"']+)["'](?:[^>]*alt=["']([^"']*)["'])?[^>]*>\s*<\/a>|<img\s+[^>]*src=["']([^"']+)["'](?:[^>]*alt=["']([^"']*)["'])?[^>]*>/gi;
-          const items: { href?: string; src: string; alt?: string }[] = [];
-          let m;
-          while ((m = itemRegex.exec(trimmed)) !== null) {
-            if (m[1] && m[2]) {
-              items.push({ href: m[1], src: m[2], alt: m[3] || "badge" });
-            } else if (m[4]) {
-              items.push({ src: m[4], alt: m[5] || "badge" });
-            }
-          }
+        if (trimmed.includes("<img") || trimmed.includes("<a") || trimmed.includes("![") || trimmed.includes("[![")) {
+          const items = extractMediaItems(trimmed);
           if (items.length > 0) {
             return (
               <div key={idx} className="flex flex-wrap items-center gap-2.5 my-2">
-                {items.map((item, itemIdx) => {
-                  const img = (
-                    <img
-                      key={itemIdx}
-                      src={item.src}
-                      alt={item.alt || "badge"}
-                      className="max-w-full h-auto inline-block rounded"
-                      onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
-                    />
-                  );
-                  return item.href ? (
-                    <a key={itemIdx} href={item.href} target="_blank" rel="noopener noreferrer">
-                      {img}
-                    </a>
-                  ) : img;
-                })}
+                {items.map((item, itemIdx) => (
+                  <ReadmeMediaItem key={itemIdx} item={item} />
+                ))}
               </div>
             );
           }

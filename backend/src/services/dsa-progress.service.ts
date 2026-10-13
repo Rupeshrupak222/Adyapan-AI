@@ -96,25 +96,35 @@ export class DsaProgressService {
 
       solvedQuestionProgress.forEach((q: any) => {
         if (!q.questionId) return;
-        const canon = canonicalMap.get(q.questionId) || (canonicalMap.size === 0 ? q.questionId : null);
+        // Preserve historical solves: if the question no longer exists in the
+        // master bank (e.g. the question bank was replaced), still count the
+        // solve under its raw id instead of dropping it. New solves then add
+        // on top of the previous total instead of resetting toward 0.
+        const canon = canonicalMap.get(q.questionId) || q.questionId;
         if (canon) distinctSolvedSet.add(canon);
       });
 
       solvedSubmissions.forEach((s: any) => {
         if (!s.problemId) return;
-        const canon = canonicalMap.get(s.problemId) || (canonicalMap.size === 0 ? s.problemId : null);
+        const canon = canonicalMap.get(s.problemId);
         if (canon) {
           distinctSolvedSet.add(canon);
           questionsToEnsureSolved.push(canon);
+        } else {
+          // Question no longer in the bank: keep the solve for the count, but
+          // never self-heal a progress row for a non-existent question.
+          distinctSolvedSet.add(s.problemId);
         }
       });
 
       acceptedExecutions.forEach((e: any) => {
         if (!e.questionId) return;
-        const canon = canonicalMap.get(e.questionId) || (canonicalMap.size === 0 ? e.questionId : null);
+        const canon = canonicalMap.get(e.questionId);
         if (canon) {
           distinctSolvedSet.add(canon);
           questionsToEnsureSolved.push(canon);
+        } else {
+          distinctSolvedSet.add(e.questionId);
         }
       });
 
@@ -202,11 +212,15 @@ export class DsaProgressService {
         }).catch(() => {});
       }
 
+      // Never let the stored solved count decrease: preserve the previous
+      // value as a floor so a question-bank swap cannot reset a user to 0.
+      const preservedSolved = Math.max(solvedCount, progressRecord?.solved || 0);
+
       if (!progressRecord) {
         progressRecord = await userPrisma.dSAProgress.create({
           data: {
             userId,
-            solved: solvedCount,
+            solved: preservedSolved,
             accuracy: calculatedAccuracy,
             streak: currentStreak
           }
@@ -215,7 +229,7 @@ export class DsaProgressService {
         progressRecord = await userPrisma.dSAProgress.update({
           where: { id: progressRecord.id },
           data: {
-            solved: solvedCount,
+            solved: preservedSolved,
             accuracy: calculatedAccuracy > 0 ? calculatedAccuracy : (progressRecord.accuracy || 0),
             streak: Math.max(progressRecord.streak || 0, currentStreak)
           }
@@ -223,7 +237,7 @@ export class DsaProgressService {
       }
 
       return {
-        solved: solvedCount,
+        solved: preservedSolved,
         accuracy: calculatedAccuracy > 0 ? calculatedAccuracy : (progressRecord?.accuracy || 0),
         streak: Math.max(progressRecord?.streak || 0, currentStreak),
         challengesSolved: challengesSolvedCount,

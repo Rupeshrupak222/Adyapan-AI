@@ -32,6 +32,15 @@ interface AdminUser {
     codingSessions?: number;
     studySessions?: number;
   };
+  placement?: {
+    placementScore: number;
+    subScores: {
+      coding: number;
+      interview: number;
+      aptitude: number;
+      resume: number;
+    };
+  };
 }
 
 interface PaginationInfo {
@@ -434,10 +443,10 @@ export default function UserManagement() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left" style={{ minWidth: 900 }}>
+            <table className="w-full text-left" style={{ minWidth: 1040 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
-                  {["User", "Role", "Plan & Status", "Assigned Storage", "Hub Usage", "Created", "Actions"].map((h) => (
+                  {["User", "Role", "Plan & Status", "Placement Score", "Assigned Storage", "Hub Usage", "Created", "Actions"].map((h) => (
                     <th key={h} className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                       {h}
                     </th>
@@ -515,6 +524,45 @@ export default function UserManagement() {
                               </StatusBadge>
                             )}
                           </div>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {(() => {
+                            const pScore = user.placement?.placementScore ?? 0;
+                            const subs = user.placement?.subScores;
+                            return (
+                              <div className="space-y-1 min-w-[125px]">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-extrabold text-[12px] flex items-center gap-1" style={{ color: pScore >= 75 ? "#10b981" : pScore >= 50 ? "#f59e0b" : pScore > 0 ? "#06b6d4" : "var(--text-muted)" }}>
+                                    {pScore > 0 ? `${pScore}%` : "—"}
+                                  </span>
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{
+                                    background: pScore >= 75 ? "rgba(16, 185, 129, 0.12)" : pScore >= 50 ? "rgba(245, 158, 11, 0.12)" : "rgba(255, 255, 255, 0.05)",
+                                    color: pScore >= 75 ? "#10b981" : pScore >= 50 ? "#f59e0b" : "var(--text-muted)",
+                                  }}>
+                                    {pScore >= 80 ? "Top Tier" : pScore >= 60 ? "Job Ready" : pScore >= 40 ? "Advancing" : "Foundation"}
+                                  </span>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all"
+                                    style={{
+                                      width: `${Math.max(4, pScore)}%`,
+                                      background: pScore >= 75 ? "#10b981" : pScore >= 50 ? "#f59e0b" : "#06b6d4",
+                                    }}
+                                  />
+                                </div>
+                                {subs && (
+                                  <div className="flex items-center justify-between text-[9px] pt-0.5" style={{ color: "var(--text-muted)" }}>
+                                    <span>Cd: <b style={{ color: "var(--text-primary)" }}>{subs.coding}%</b></span>
+                                    <span>Iv: <b style={{ color: "var(--text-primary)" }}>{subs.interview}%</b></span>
+                                    <span>Ap: <b style={{ color: "var(--text-primary)" }}>{subs.aptitude}%</b></span>
+                                    <span>Rs: <b style={{ color: "var(--text-primary)" }}>{subs.resume}%</b></span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
 
                         <td className="px-4 py-3">

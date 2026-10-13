@@ -19,6 +19,26 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "img.shields.io",
+      },
+      {
+        protocol: "https",
+        hostname: "komarev.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.vercel.app",
+      },
+      {
+        protocol: "https",
+        hostname: "**.herokuapp.com",
+      },
+      {
+        protocol: "https",
+        hostname: "readme-typing-svg.demolab.com",
+      },
     ],
   },
   async headers() {
@@ -65,7 +85,9 @@ const nextConfig: NextConfig = {
               // brand SVG CDNs) + job-scraped company logo CDNs (LinkedIn,
               // Indeed, Naukri, Internshala). Without these hosts the logo
               // <img> chain is CSP-blocked and every job falls back to badge.
-              "img-src 'self' data: blob: https://images.unsplash.com https://api.dicebear.com https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://upload.wikimedia.org https://cdn.jsdelivr.net https://www.google.com https://icon.horse https://icons.duckduckgo.com https://unavatar.io https://logo.clearbit.com https://*.licdn.com https://img.naukimg.com https://*.naukimg.com https://d2zcp97n3ws9qv.cloudfront.net https://www.indeed.com https://img.naukri.com https://*.naukriimg.com https://internshala.com https://*.internshala.com https://*.ingeeks.in",
+              // Also includes GitHub profile README badge & stats card CDNs:
+              // img.shields.io, komarev.com, *.vercel.app, *.herokuapp.com, demolab.
+              "img-src 'self' data: blob: https://images.unsplash.com https://api.dicebear.com https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://upload.wikimedia.org https://cdn.jsdelivr.net https://www.google.com https://icon.horse https://icons.duckduckgo.com https://unavatar.io https://logo.clearbit.com https://*.licdn.com https://img.naukimg.com https://*.naukimg.com https://d2zcp97n3ws9qv.cloudfront.net https://www.indeed.com https://img.naukri.com https://*.naukriimg.com https://internshala.com https://*.internshala.com https://*.ingeeks.in https://img.shields.io https://komarev.com https://*.vercel.app https://*.herokuapp.com https://readme-typing-svg.demolab.com https://capsule-render.vercel.app https://github-readme-stats.vercel.app https://github-profile-trophy.vercel.app https://quotes-github-readme.vercel.app https://readme-jokes.vercel.app",
               "connect-src 'self' http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* https://*.up.railway.app wss://*.up.railway.app https://*.vercel.app https://cdn.jsdelivr.net https://api.razorpay.com https://lumberjack.razorpay.com",
               "media-src 'self'",
               "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",

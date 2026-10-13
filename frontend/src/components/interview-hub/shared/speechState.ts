@@ -39,7 +39,7 @@ export class SharedSpeechEngine {
     language: "english",
     continuous: true,
     interimResults: true,
-    maxRestartAttempts: 10,
+    maxRestartAttempts: 9999,
   };
 
   private restartCount = 0;
@@ -263,7 +263,7 @@ export class SharedSpeechEngine {
 
         // Auto-recover native recognition without touching MediaRecorder
         this.restartCount++;
-        const maxAttempts = this.config.maxRestartAttempts || 50;
+        const maxAttempts = this.config.maxRestartAttempts ?? 9999;
 
         if (!this.nativeSpeechDisabled && this.restartCount <= maxAttempts) {
           this.setState("RESTARTING");
@@ -273,9 +273,9 @@ export class SharedSpeechEngine {
             if (!this.isExplicitlyStopped && !this.isDestroyed && !this.nativeSpeechDisabled) {
               this.startNativeRecognition();
             }
-          }, 250);
+          }, 150);
         } else {
-          // Stay listening via MediaRecorder
+          // Stay listening via MediaRecorder fallback
           this.setState("LISTENING");
         }
       };

@@ -46,9 +46,13 @@ const PREMIUM_MOUNT_PREFIXES: { prefix: string; featureKey: string }[] = [
 ];
 
 // Non-AI paths that should never be blocked even if they fall under
-// a premium mount prefix (e.g., GET /sessions, core code execution/testing, workspace saving/notes).
+// a premium mount prefix (e.g., GET /sessions, core code execution/testing, workspace saving/notes, speech/transcription).
 const EXCLUDE_PATHS: RegExp[] = [
   /^\/(sessions|list|status|health|config|voices|profile)(\/|$)/i,
+  // Avatar TTS speech synthesis and interview audio transcription
+  /^\/(speak|transcribe)(\/|$)/i,
+  // Active interview in-session operations (answering, ending, evaluating, proctoring events)
+  /^\/[^/]+\/(answer|end|evaluate|respond|submit|accept-rules|verify-identity|store-device|system-check|environment-scan|proctoring-event)(\/|$)/i,
   // Core coding workspace operations (running code, submitting test cases, auto-saving, notes, bookmarks)
   /^\/workspace\/[^/]+\/(run|submit|save|notes|bookmark|discussion|executions|execution)(\/|$)/i,
   /^\/workspace(\/|$)/i,
@@ -78,7 +82,9 @@ export async function requirePremiumEntitlement(
     }
 
     // Reconstruct the full path (Express strips mount prefix from req.path)
-    const fullPath = (req.baseUrl || "") + (req.path || "");
+    // Strip leading /api prefix if present so matching against PREMIUM_MOUNT_PREFIXES is consistent
+    const rawPath = (req.baseUrl || "") + (req.path || "");
+    const fullPath = rawPath.replace(/^\/api(?=\/|$)/, "") || "/";
 
     // Find the matching premium mount prefix (longest match first for
     // /interview/hr vs /interview ordering)

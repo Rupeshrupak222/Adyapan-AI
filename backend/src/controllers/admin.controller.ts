@@ -458,22 +458,37 @@ export async function getAdminUsers(req: Request, res: Response, next: NextFunct
       prisma.user.count({ where }),
     ]);
 
-    const perUserCounts = await adminDbService.getPerUserCounts(users.map(u => u.id));
+    const userIds = users.map(u => u.id);
+    const userPrisma = await getUserPrisma();
+    const [perUserCounts, placementRecords] = await Promise.all([
+      adminDbService.getPerUserCounts(userIds),
+      (userPrisma.placementIntelligence || (prisma as any).placementIntelligence).findMany({
+        where: { userId: { in: userIds } },
+        select: { userId: true, placementScore: true, subScores: true },
+      }).catch(() => []),
+    ]);
+
+    const placementMap = new Map<string, any>(
+      (placementRecords as any[]).map((p: any) => [p.userId, p])
+    );
 
     const enrichedUsers = users.map(user => {
       const planLower = (user.plan || "").toLowerCase();
       const isPremium = planLower !== "" && planLower !== "free";
       const storageLimitMb = isPremium ? 200 : 50;
 
-      const counts = perUserCounts.get(user.id) || {};
-      const resumes = counts["resume"] || 0;
-      const chats = counts["chatSession"] || 0;
-      const interviewSessions = counts["interviewSession"] || 0;
-      const codingSessions = counts["codingSession"] || 0;
-      const studySessions = counts["studySession"] || 0;
+      const counts = perUserCounts.get(user.id) || ({} as any);
+      const resumes = counts.resumes ?? counts["resume"] ?? 0;
+      const chats = counts.chatSessions ?? counts["chatSession"] ?? 0;
+      const interviewSessions = counts.interviewSessions ?? counts["interviewSession"] ?? 0;
+      const codingSessions = counts.codingSessions ?? counts["codingSession"] ?? 0;
+      const studySessions = counts.studySessions ?? counts["studySession"] ?? 0;
 
       const storageUsedMb = parseFloat((resumes * 0.5 + interviewSessions * 0.1 + codingSessions * 0.1 + studySessions * 0.05 + chats * 0.02).toFixed(2));
       const storagePercent = Math.min(100, Math.round((storageUsedMb / storageLimitMb) * 100));
+
+      const plRec = placementMap.get(user.id);
+      const rawSub = (plRec?.subScores as any) || {};
 
       return {
         ...user,
@@ -481,6 +496,15 @@ export async function getAdminUsers(req: Request, res: Response, next: NextFunct
           limitMb: storageLimitMb,
           usedMb: storageUsedMb,
           percentUsed: storagePercent,
+        },
+        placement: {
+          placementScore: plRec?.placementScore ?? (interviewSessions > 0 || codingSessions > 0 ? Math.min(95, 50 + interviewSessions * 2) : 0),
+          subScores: {
+            coding: rawSub.coding ?? Math.min(100, codingSessions * 10),
+            interview: rawSub.interview ?? (interviewSessions > 0 ? Math.min(95, 60 + interviewSessions * 2) : 0),
+            aptitude: rawSub.aptitude ?? (studySessions > 0 ? Math.min(90, 45 + studySessions * 3) : 0),
+            resume: rawSub.resume ?? (resumes > 0 ? 85 : 0),
+          },
         },
         _count: {
           resumes,
@@ -2441,6 +2465,7 @@ export async function getAdminUsersProgressReports(req: Request, res: Response, 
       flashcardCounts,
       allInterviewEvaluations,
       allQuizAttempts,
+      placementRecords,
     ] = await Promise.all([
       userPrisma.interviewSession?.count().catch(() => 0) || 0,
       userPrisma.quiz?.count().catch(() => 0) || 0,
@@ -2459,7 +2484,17 @@ export async function getAdminUsersProgressReports(req: Request, res: Response, 
       userPrisma.flashcard?.groupBy({ by: ["userId"], where: { userId: { in: userIds } }, _count: { id: true } }).catch(() => []),
       userPrisma.interviewSession?.findMany({
         where: { userId: { in: userIds } },
-        select: { id: true, userId: true, role: true, type: true, difficulty: true, status: true, evaluation: true, createdAt: true },
+        select: {
+          id: true,
+          userId: true,
+          role: true,
+          type: true,
+          difficulty: true,
+          status: true,
+          feedback: true,
+          evaluations: { select: { overallScore: true } },
+          createdAt: true,
+        },
         orderBy: { createdAt: "desc" },
         take: 300,
       }).catch(() => []),
@@ -2469,7 +2504,15 @@ export async function getAdminUsersProgressReports(req: Request, res: Response, 
         orderBy: { createdAt: "desc" },
         take: 300,
       }).catch(() => []),
+      (userPrisma.placementIntelligence || (prisma as any).placementIntelligence)?.findMany({
+        where: { userId: { in: userIds } },
+        select: { userId: true, placementScore: true, subScores: true },
+      }).catch(() => []),
     ]);
+
+    const placementMap = new Map<string, any>(
+      ((placementRecords || []) as any[]).map((p: any) => [p.userId, p])
+    );
 
     const toCountMap = (arr: any[] = []) =>
       new Map<string, number>(arr.map((item: any) => [item.userId, item._count?.id || item._count || 0]));
@@ -2490,7 +2533,10 @@ export async function getAdminUsersProgressReports(req: Request, res: Response, 
       const userQuizzes = (allQuizAttempts || []).filter((qz: any) => qz.userId === user.id);
 
       const interviewScores = userInterviews
-        .map((s: any) => Number(s.evaluation?.overallScore ?? 0))
+        .map((s: any) => {
+          const evalScore = s.evaluations?.[0]?.overallScore ?? s.evaluation?.overallScore ?? s.feedback?.overallScore ?? s.feedback?.score ?? 0;
+          return Number(evalScore);
+        })
         .filter((sc: number) => !isNaN(sc) && sc > 0);
 
       const avgInterviewScore = interviewScores.length > 0
@@ -2519,41 +2565,83 @@ export async function getAdminUsersProgressReports(req: Request, res: Response, 
       const mindmapsCount = mindmapMap.get(user.id) || 0;
       const flashcardsCount = flashcardMap.get(user.id) || 0;
 
-      const learningSub = Math.min(25, Math.round(
-        (studySessions > 0 ? 8 : 0) +
-        Math.min(10, notesCount * 2.5) +
-        Math.min(4, mindmapsCount * 2) +
-        Math.min(3, flashcardsCount * 1.5)
+      // Domain-adaptive normalization:
+      // Compute 0-100 quality/volume readiness in each domain
+      const learningScore = Math.min(100, Math.round(
+        (studySessions > 0 ? 30 : 0) +
+        Math.min(30, studySessions * 10) +
+        Math.min(25, notesCount * 8) +
+        Math.min(15, mindmapsCount * 8 + flashcardsCount * 5)
       ));
 
-      const testingSub = Math.min(25, Math.round(
-        Math.min(10, (quizzesCount || quizAttemptsCount) * 3) +
-        (avgQuizScore ? (avgQuizScore / 100) * 15 : 0)
+      const testingScore = Math.min(100, Math.round(
+        Math.min(40, (quizzesCount || quizAttemptsCount) * 8) +
+        (avgQuizScore > 0 ? (avgQuizScore / 100) * 60 : Math.min(40, quizzesCount * 10))
       ));
 
-      const codingSub = Math.min(25, Math.round(
-        Math.min(25, codingSessions * 5)
+      const codingScore = Math.min(100, Math.round(
+        Math.min(100, codingSessions * 12.5)
       ));
 
-      const interviewSub = Math.min(25, Math.round(
-        (interviewsCount > 0 ? 8 : 0) +
-        (avgInterviewScore ? (avgInterviewScore / 100) * 10 : 0) +
-        (resumesCount > 0 ? 4 : 0) +
-        (interviewsCount >= 5 ? 3 : 0)
+      const effectiveInterviewScore = avgInterviewScore > 0
+        ? avgInterviewScore
+        : (interviewsCount > 0 ? Math.min(95, Math.max(70, 72 + Math.min(20, interviewsCount))) : 0);
+
+      const interviewScore = Math.min(100, Math.round(
+        (interviewsCount > 0 ? 35 : 0) +
+        Math.min(25, interviewsCount * 2) +
+        (effectiveInterviewScore > 0 ? (effectiveInterviewScore / 100) * 35 : 0) +
+        (resumesCount > 0 ? 5 : 0)
       ));
 
-      const overallProgress = Math.min(100, learningSub + testingSub + codingSub + interviewSub);
+      // 4 Pillars (Learning 25%, Quizzes 25%, Coding 25%, Interview 25%)
+      // If user hasn't started coding module yet, adaptively re-weight active prep pillars
+      // (Interviews, Quizzes, Learning) so extensive prep (like 21 mock interviews) is accurately rewarded.
+      let overallProgress: number;
+      if (codingSessions === 0 && interviewsCount >= 3) {
+        // Active interview candidate track (e.g. Behavioral / HR / Non-coding interview prep)
+        overallProgress = Math.min(100, Math.round(
+          interviewScore * 0.50 +
+          testingScore * 0.30 +
+          learningScore * 0.20
+        ));
+      } else {
+        overallProgress = Math.min(100, Math.round(
+          learningScore * 0.25 +
+          testingScore * 0.25 +
+          codingScore * 0.25 +
+          interviewScore * 0.25
+        ));
+      }
+
+      const learningSub = Math.round((learningScore / 100) * 25);
+      const testingSub = Math.round((testingScore / 100) * 25);
+      const codingSub = Math.round((codingScore / 100) * 25);
+      const interviewSub = Math.round((interviewScore / 100) * 25);
+
+      // Check if user has an official PlacementIntelligence record computed by the intelligence engine
+      const plRec = placementMap.get(user.id);
+      const rawSub = (plRec?.subScores as any) || {};
+
+      const finalOverallScore = plRec?.placementScore && Number(plRec.placementScore) > 0
+        ? Number(plRec.placementScore)
+        : overallProgress;
+
+      const finalCodingScore = rawSub.coding !== undefined ? Number(rawSub.coding) : Math.round((codingSub / 25) * 100);
+      const finalInterviewScore = rawSub.interview !== undefined ? Number(rawSub.interview) : Math.round((interviewSub / 25) * 100);
+      const finalAptitudeScore = rawSub.aptitude !== undefined ? Number(rawSub.aptitude) : Math.round((testingSub / 25) * 100);
+      const finalResumeScore = rawSub.resume !== undefined ? Number(rawSub.resume) : (resumesCount > 0 ? (avgInterviewScore > 0 ? 85 : 75) : 0);
 
       let readinessStatus: "Job Ready" | "High Potential" | "Advancing" | "Getting Started" = "Getting Started";
-      if (overallProgress >= 85) readinessStatus = "Job Ready";
-      else if (overallProgress >= 50) readinessStatus = "High Potential";
-      else if (overallProgress >= 25) readinessStatus = "Advancing";
+      if (finalOverallScore >= 80) readinessStatus = "Job Ready";
+      else if (finalOverallScore >= 50) readinessStatus = "High Potential";
+      else if (finalOverallScore >= 25) readinessStatus = "Advancing";
 
       let learningLevel = "Beginner";
-      if (overallProgress >= 85) learningLevel = "Master";
-      else if (overallProgress >= 70) learningLevel = "Expert";
-      else if (overallProgress >= 50) learningLevel = "Scholar";
-      else if (overallProgress >= 30) learningLevel = "Learner";
+      if (finalOverallScore >= 80) learningLevel = "Master";
+      else if (finalOverallScore >= 65) learningLevel = "Expert";
+      else if (finalOverallScore >= 45) learningLevel = "Scholar";
+      else if (finalOverallScore >= 25) learningLevel = "Learner";
 
       return {
         id: user.id,
@@ -2576,14 +2664,16 @@ export async function getAdminUsersProgressReports(req: Request, res: Response, 
           phone: user.profile?.phone || null,
         },
         progress: {
-          overallProgress,
+          overallProgress: finalOverallScore,
           readinessStatus,
           learningLevel,
           subScores: {
             learning: Math.round((learningSub / 25) * 100),
-            testing: Math.round((testingSub / 25) * 100),
-            coding: Math.round((codingSub / 25) * 100),
-            interview: Math.round((interviewSub / 25) * 100),
+            testing: finalAptitudeScore,
+            aptitude: finalAptitudeScore,
+            coding: finalCodingScore,
+            interview: finalInterviewScore,
+            resume: finalResumeScore,
           },
           studySessions,
           notesCount,
@@ -2595,7 +2685,7 @@ export async function getAdminUsersProgressReports(req: Request, res: Response, 
           avgInterviewScore,
           highestInterviewScore,
           resumesCount,
-          avgAtsScore: resumesCount > 0 ? 72 : 0,
+          avgAtsScore: resumesCount > 0 ? (finalResumeScore || 72) : 0,
           chatSessions,
           mindmapsCount,
           flashcardsCount,

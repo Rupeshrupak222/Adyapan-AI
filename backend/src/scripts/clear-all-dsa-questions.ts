@@ -10,8 +10,11 @@ async function clearAll() {
     const dailyChallenges = await prisma.dailyChallenge.deleteMany({});
     console.log(`Deleted ${dailyChallenges.count} DailyChallenge records.`);
 
-    const userProgress = await prisma.userQuestionProgress.deleteMany({});
-    console.log(`Deleted ${userProgress.count} UserQuestionProgress records.`);
+    // Preserve userQuestionProgress (and thus historical solved counts) across
+    // a question-bank swap. The progress rows become orphaned but are still
+    // counted by DsaProgressService. Do NOT delete them here.
+    const userProgress = await prisma.userQuestionProgress.count();
+    console.log(`Preserved ${userProgress} UserQuestionProgress records (user solved history kept).`);
 
     const sessions = await prisma.problemWorkspaceSession.deleteMany({});
     console.log(`Deleted ${sessions.count} ProblemWorkspaceSession records.`);

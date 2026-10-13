@@ -6,7 +6,7 @@ const router = Router();
 
 // POST /api/avatar/speak
 // Returns audio buffer (ElevenLabs) or informs frontend to use browser TTS
-router.post("/speak", requireAuth, async (req: Request, res: Response) => {
+router.post("/speak", async (req: Request, res: Response) => {
   const { text, voiceId } = req.body;
 
   if (!text || typeof text !== "string") {

@@ -470,6 +470,35 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
           </button>
         </div>
 
+        {/* Center: Prominent Submit Answer Button for Instant Turn-taking */}
+        <div className="flex items-center">
+          <button
+            onClick={() => {
+              if (typeof window !== "undefined" && "speechSynthesis" in window) {
+                try {
+                  window.speechSynthesis.cancel();
+                  window.speechSynthesis.resume();
+                } catch {}
+              }
+              onSubmitAnswer();
+            }}
+            disabled={state === "PROCESSING"}
+            className={`px-3 sm:px-5 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 sm:space-x-2 transition-all shadow-md ${
+              state === "PROCESSING"
+                ? "bg-slate-700 text-slate-400 opacity-60 cursor-not-allowed"
+                : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-900/30 hover:scale-[1.02] active:scale-[0.98]"
+            }`}
+            title="Click to immediately submit your answer and get AI interviewer follow-up question"
+          >
+            {state === "PROCESSING" ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Send className="w-3.5 h-3.5" />
+            )}
+            <span>Submit Answer</span>
+          </button>
+        </div>
+
         {/* Right Action Tools */}
         <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
           {/* Toggle Floating Camera PIP Popup */}

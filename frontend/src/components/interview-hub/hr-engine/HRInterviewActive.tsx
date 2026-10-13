@@ -97,11 +97,16 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
     messages.find((m) => m.role === "interviewer")?.content ||
     `Welcome to your HR behavioral interview for ${config.targetRole}. Could you start by introducing yourself and sharing your career highlights?`;
 
+  const hasInitializedMessagesRef = useRef(false);
   useEffect(() => {
     setTotalQuestions(Math.ceil((config.durationMinutes || 30) / 4));
+    if (hasInitializedMessagesRef.current) return;
+
     if (initialMessages && initialMessages.length > 0) {
+      hasInitializedMessagesRef.current = true;
       setMessages(initialMessages);
     } else if (messages.length === 0) {
+      hasInitializedMessagesRef.current = true;
       const initMsg: HRMessage = {
         id: `ai-init-${Date.now()}`,
         role: "interviewer",
@@ -111,7 +116,7 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
       };
       setMessages([initMsg]);
     }
-  }, [config, initialMessages, initialQuestionText, messages.length, setMessages, setTotalQuestions]);
+  }, [config.durationMinutes, initialMessages, initialQuestionText, messages.length, setMessages, setTotalQuestions]);
 
   // ── Proctoring ──
   const handleProctorAutoSubmit = useCallback(() => {

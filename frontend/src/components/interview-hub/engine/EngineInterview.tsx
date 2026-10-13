@@ -116,10 +116,14 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
     messages.find((m) => m.role === "interviewer")?.content ||
     `Tell me about your background and interest in the ${config.targetRole} role.`;
 
+  const hasInitializedMessagesRef = useRef(false);
   useEffect(() => {
+    if (hasInitializedMessagesRef.current) return;
     if (initialMessages && initialMessages.length > 0) {
+      hasInitializedMessagesRef.current = true;
       setMessages(initialMessages);
     } else if (messages.length === 0) {
+      hasInitializedMessagesRef.current = true;
       const initMsg: EngineMessage = {
         id: `ai-init-${Date.now()}`,
         role: "interviewer",
@@ -129,7 +133,7 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
       };
       setMessages([initMsg]);
     }
-  }, [initialMessages, initialQuestionText, setMessages]);
+  }, [initialMessages, initialQuestionText, messages.length, setMessages]);
 
   // ── Conversation Engine Integration with Fast Fallback ──
   async function handleAnswerSubmit(transcript: string) {

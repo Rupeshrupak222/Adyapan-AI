@@ -41,8 +41,10 @@ interface UserProgressData {
     subScores: {
       learning: number;
       testing: number;
+      aptitude?: number;
       coding: number;
       interview: number;
+      resume?: number;
     };
     studySessions: number;
     notesCount: number;
@@ -169,40 +171,73 @@ export default function UserProgressReports() {
             const highestInterviewScore = interviewsCount > 0 ? Math.min(98, Math.max(68, avgInterviewScore + 6)) : 0;
             const avgAtsScore = resumesCount > 0 ? Math.min(92, Math.max(55, 68 + ((resumesCount * 4) % 24))) : 0;
 
-            const learningSub = Math.min(25, Math.round(
-              (studySessions > 0 ? 8 : 0) +
-              Math.min(10, notesCount * 2) +
-              Math.min(7, (chatSessions > 0 ? 4 : 0) + studySessions)
+            const learningScore = Math.min(100, Math.round(
+              (studySessions > 0 ? 30 : 0) +
+              Math.min(30, studySessions * 10) +
+              Math.min(25, notesCount * 8) +
+              Math.min(15, (chatSessions > 0 ? 10 : 0))
             ));
 
-            const testingSub = Math.min(25, Math.round(
-              Math.min(10, quizzesCount * 3) +
-              (avgQuizScore ? (avgQuizScore / 100) * 15 : 0)
+            const testingScore = Math.min(100, Math.round(
+              Math.min(40, quizzesCount * 8) +
+              (avgQuizScore > 0 ? (avgQuizScore / 100) * 60 : Math.min(40, quizzesCount * 10))
             ));
 
-            const codingSub = Math.min(25, Math.round(
-              Math.min(25, codingSessions * 5)
+            const codingScore = Math.min(100, Math.round(
+              Math.min(100, codingSessions * 12.5)
             ));
 
-            const interviewSub = Math.min(25, Math.round(
-              (interviewsCount > 0 ? 8 : 0) +
-              (avgInterviewScore ? (avgInterviewScore / 100) * 10 : 0) +
-              (resumesCount > 0 ? 4 : 0) +
-              (avgAtsScore ? (avgAtsScore / 100) * 3 : 0)
+            const effectiveInterviewScore = avgInterviewScore > 0
+              ? avgInterviewScore
+              : (interviewsCount > 0 ? Math.min(95, Math.max(70, 72 + Math.min(20, interviewsCount))) : 0);
+
+            const interviewScore = Math.min(100, Math.round(
+              (interviewsCount > 0 ? 35 : 0) +
+              Math.min(25, interviewsCount * 2) +
+              (effectiveInterviewScore > 0 ? (effectiveInterviewScore / 100) * 35 : 0) +
+              (resumesCount > 0 ? 5 : 0)
             ));
 
-            const overallProgress = Math.min(100, learningSub + testingSub + codingSub + interviewSub);
+            let overallProgress: number;
+            if (codingSessions === 0 && interviewsCount >= 3) {
+              overallProgress = Math.min(100, Math.round(
+                interviewScore * 0.50 +
+                testingScore * 0.30 +
+                learningScore * 0.20
+              ));
+            } else {
+              overallProgress = Math.min(100, Math.round(
+                learningScore * 0.25 +
+                testingScore * 0.25 +
+                codingScore * 0.25 +
+                interviewScore * 0.25
+              ));
+            }
+
+            const learningSub = Math.round((learningScore / 100) * 25);
+            const testingSub = Math.round((testingScore / 100) * 25);
+            const codingSub = Math.round((codingScore / 100) * 25);
+            const interviewSub = Math.round((interviewScore / 100) * 25);
+
+            const plScore = u.placement?.placementScore && Number(u.placement.placementScore) > 0
+              ? Number(u.placement.placementScore)
+              : overallProgress;
+
+            const finalCoding = u.placement?.subScores?.coding !== undefined ? Number(u.placement.subScores.coding) : Math.round((codingSub / 25) * 100);
+            const finalInterview = u.placement?.subScores?.interview !== undefined ? Number(u.placement.subScores.interview) : Math.round((interviewSub / 25) * 100);
+            const finalAptitude = u.placement?.subScores?.aptitude !== undefined ? Number(u.placement.subScores.aptitude) : Math.round((testingSub / 25) * 100);
+            const finalResume = u.placement?.subScores?.resume !== undefined ? Number(u.placement.subScores.resume) : (resumesCount > 0 ? (avgAtsScore || 75) : 0);
 
             let readinessStatus: "Job Ready" | "High Potential" | "Advancing" | "Getting Started" = "Getting Started";
-            if (overallProgress >= 85) readinessStatus = "Job Ready";
-            else if (overallProgress >= 50) readinessStatus = "High Potential";
-            else if (overallProgress >= 25) readinessStatus = "Advancing";
+            if (plScore >= 80) readinessStatus = "Job Ready";
+            else if (plScore >= 50) readinessStatus = "High Potential";
+            else if (plScore >= 25) readinessStatus = "Advancing";
 
             let learningLevel = "Beginner";
-            if (overallProgress >= 85) learningLevel = "Master";
-            else if (overallProgress >= 70) learningLevel = "Expert";
-            else if (overallProgress >= 50) learningLevel = "Scholar";
-            else if (overallProgress >= 30) learningLevel = "Learner";
+            if (plScore >= 80) learningLevel = "Master";
+            else if (plScore >= 65) learningLevel = "Expert";
+            else if (plScore >= 45) learningLevel = "Scholar";
+            else if (plScore >= 25) learningLevel = "Learner";
 
             const recentInterviews = interviewsCount > 0 ? [
               {
@@ -247,14 +282,16 @@ export default function UserProgressReports() {
                 location: u.profile?.location || null,
               },
               progress: {
-                overallProgress,
+                overallProgress: plScore,
                 readinessStatus,
                 learningLevel,
                 subScores: {
                   learning: Math.round((learningSub / 25) * 100),
-                  testing: Math.round((testingSub / 25) * 100),
-                  coding: Math.round((codingSub / 25) * 100),
-                  interview: Math.round((interviewSub / 25) * 100),
+                  testing: finalAptitude,
+                  aptitude: finalAptitude,
+                  coding: finalCoding,
+                  interview: finalInterview,
+                  resume: finalResume,
                 },
                 studySessions,
                 notesCount,
@@ -615,6 +652,26 @@ export default function UserProgressReports() {
                       <span>Level: <b className="text-gray-700 dark:text-white/70">{pr.learningLevel}</b></span>
                       <span>Profile: <b className="text-gray-700 dark:text-white/70">{u.profile.profileCompletion}%</b></span>
                     </div>
+
+                    {/* Sub-Score Breakdown (Coding, Interview, Aptitude/Testing, Resume/Learning) */}
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-1 text-[10px] text-gray-500 dark:text-white/60 border-t border-gray-100 dark:border-white/5 mt-1">
+                      <div className="flex justify-between items-center">
+                        <span>Coding:</span>
+                        <strong className="text-gray-900 dark:text-white font-bold">{pr.subScores?.coding ?? 0}%</strong>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Interview:</span>
+                        <strong className="text-gray-900 dark:text-white font-bold">{pr.subScores?.interview ?? (pr.avgInterviewScore || 0)}%</strong>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Aptitude:</span>
+                        <strong className="text-gray-900 dark:text-white font-bold">{pr.subScores?.aptitude ?? pr.subScores?.testing ?? (pr.avgQuizScore || 0)}%</strong>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Resume:</span>
+                        <strong className="text-gray-900 dark:text-white font-bold">{pr.subScores?.resume !== undefined ? pr.subScores.resume : (pr.resumesCount > 0 ? (pr.avgAtsScore || 75) : 0)}%</strong>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Domain Snapshot Metrics */}
@@ -845,8 +902,8 @@ export default function UserProgressReports() {
                     <div className="text-[9px] text-gray-500 dark:text-white/30">{selectedUser.progress.studySessions} sessions &middot; {selectedUser.progress.notesCount} notes</div>
                   </div>
                   <div className="p-3 rounded-xl border border-gray-200 dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02] text-center space-y-1">
-                    <div className="text-lg font-black text-purple-600 dark:text-purple-400">{selectedUser.progress.subScores.testing}%</div>
-                    <div className="text-[10px] text-gray-700 dark:text-white/50 font-bold uppercase">Quizzes & Tests</div>
+                    <div className="text-lg font-black text-purple-600 dark:text-purple-400">{selectedUser.progress.subScores.aptitude ?? selectedUser.progress.subScores.testing}%</div>
+                    <div className="text-[10px] text-gray-700 dark:text-white/50 font-bold uppercase">Aptitude & Tests</div>
                     <div className="text-[9px] text-gray-500 dark:text-white/30">{selectedUser.progress.quizzesCount} tests &middot; {selectedUser.progress.avgQuizScore}% avg</div>
                   </div>
                   <div className="p-3 rounded-xl border border-gray-200 dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02] text-center space-y-1">
