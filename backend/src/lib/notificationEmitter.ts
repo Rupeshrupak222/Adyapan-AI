@@ -12,8 +12,24 @@ export function emitNotification(userId: string, notification: { id: string; typ
   }
 }
 
-export function emitBroadcastNotification(notification: { id: string; type: string; title: string; message: string; targetAudience: string; link?: string | null; createdAt: Date }) {
+export async function emitBroadcastNotification(notification: { id: string; type: string; title: string; message: string; targetAudience: string; link?: string | null; createdAt: Date }) {
   try {
+    if (notification.targetAudience === "PLACEMENT_READY_85") {
+      const { masterPrisma } = require("../utils/prisma");
+      const readyUsers = await masterPrisma.placementIntelligence.findMany({
+        where: { placementScore: { gte: 85 } },
+        select: { userId: true },
+      }).catch(() => []);
+
+      for (const u of readyUsers) {
+        emitNotification(u.userId, {
+          ...notification,
+          read: false,
+        });
+      }
+      return;
+    }
+
     io.emit("notification:broadcast", notification);
     io.emit("notification:new", {
       ...notification,

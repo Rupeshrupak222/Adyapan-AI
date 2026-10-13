@@ -1671,26 +1671,29 @@ export async function getAdminNotifications(req: Request, res: Response, next: N
     let totalAllUsers = 0;
     let freeUsersCount = 0;
     let premiumUsersCount = 0;
+    let placementReadyCount = 0;
 
     try {
-      [notifications, total, totalAllUsers, freeUsersCount, premiumUsersCount] = await Promise.all([
+      [notifications, total, totalAllUsers, freeUsersCount, premiumUsersCount, placementReadyCount] = await Promise.all([
         (prisma as any).systemNotification.findMany({ where, orderBy: { createdAt: "desc" }, skip, take: limit }),
         (prisma as any).systemNotification.count({ where }),
         prisma.user.count(),
         prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: "FREE" }, { plan: "" }] } }),
         prisma.user.count({ where: { OR: [{ plan: { in: ["pro", "premium", "enterprise", "pro_monthly", "pro_yearly", "PRO", "PREMIUM"] } }, { subscriptionStatus: "active" }] } }),
+        prisma.placementIntelligence.count({ where: { placementScore: { gte: 85 } } }).catch(() => 0),
       ]);
       activeCount = await (prisma as any).systemNotification.count({ where: { isRevoked: false } });
     } catch (dbErr: any) {
       console.warn("[getAdminNotifications] Initial query failed, verifying tables:", dbErr?.message || dbErr);
       await ensureSystemNotificationTableExists();
       try {
-        [notifications, total, totalAllUsers, freeUsersCount, premiumUsersCount] = await Promise.all([
+        [notifications, total, totalAllUsers, freeUsersCount, premiumUsersCount, placementReadyCount] = await Promise.all([
           (prisma as any).systemNotification.findMany({ where, orderBy: { createdAt: "desc" }, skip, take: limit }).catch(() => []),
           (prisma as any).systemNotification.count({ where }).catch(() => 0),
           prisma.user.count().catch(() => 0),
           prisma.user.count({ where: { OR: [{ plan: "free" }, { plan: "FREE" }, { plan: "" }] } }).catch(() => 0),
           prisma.user.count({ where: { OR: [{ plan: { in: ["pro", "premium", "enterprise", "pro_monthly", "pro_yearly", "PRO", "PREMIUM"] } }, { subscriptionStatus: "active" }] } }).catch(() => 0),
+          prisma.placementIntelligence.count({ where: { placementScore: { gte: 85 } } }).catch(() => 0),
         ]);
         activeCount = await (prisma as any).systemNotification.count({ where: { isRevoked: false } }).catch(() => 0);
       } catch (retryErr) {
@@ -1708,6 +1711,7 @@ export async function getAdminNotifications(req: Request, res: Response, next: N
           all: totalAllUsers,
           free: freeUsersCount,
           premium: premiumUsersCount,
+          placementReady: placementReadyCount,
         },
       },
       pagination: {
@@ -1768,7 +1772,7 @@ export async function createAdminBroadcastNotification(req: Request, res: Respon
     const { title, message, type, targetAudience, actionUrl, priority, sendEmail } = req.body;
     if (!title || !message) throw httpError(400, "Title and message are required");
 
-    const validAudience = ["ALL", "FREE", "PREMIUM", "ADMIN"].includes((targetAudience || "").toUpperCase())
+    const validAudience = ["ALL", "FREE", "PREMIUM", "ADMIN", "PLACEMENT_READY_85"].includes((targetAudience || "").toUpperCase())
       ? targetAudience.toUpperCase()
       : "ALL";
 
@@ -1818,6 +1822,8 @@ export async function createAdminBroadcastNotification(req: Request, res: Respon
       targetCount = await prisma.user.count({ where: { OR: [{ plan: { in: ["pro", "premium", "enterprise", "pro_monthly", "pro_yearly", "PRO", "PREMIUM"] } }, { subscriptionStatus: "active" }] } });
     } else if (validAudience === "ADMIN") {
       targetCount = await (prisma as any).adminUser.count();
+    } else if (validAudience === "PLACEMENT_READY_85") {
+      targetCount = await prisma.placementIntelligence.count({ where: { placementScore: { gte: 85 } } }).catch(() => 0);
     }
 
     // Real-time emit notification event via Socket.io

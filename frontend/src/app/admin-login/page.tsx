@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import { isMaintenanceOrQuotaError, MAINTENANCE_MESSAGE } from "@/utils/maintenanceHelper";
 
-export default function AdminLoginPage() {
+function AdminLoginPageContent() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -326,4 +327,17 @@ export default function AdminLoginPage() {
       />
     </div>
   );
+}
+
+const DynamicAdminLoginPage = dynamic(() => Promise.resolve(AdminLoginPageContent), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center bg-[#080710] text-amber-500 font-bold text-sm">
+      Loading Admin Login...
+    </div>
+  ),
+});
+
+export default function AdminLoginPage() {
+  return <DynamicAdminLoginPage />;
 }

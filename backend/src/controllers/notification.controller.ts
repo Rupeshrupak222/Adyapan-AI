@@ -27,6 +27,16 @@ export async function listNotifications(req: Request, res: Response, next: NextF
 
     const userPrisma = await getUserPrismaFromRequest(req);
 
+    // If user reached 85+ placement readiness score, include PLACEMENT_READY_85 broadcasts
+    const userPlacement = await userPrisma.placementIntelligence.findUnique({
+      where: { userId },
+      select: { placementScore: true },
+    }).catch(() => null);
+
+    if (userPlacement && userPlacement.placementScore >= 85) {
+      targetFilter.push("PLACEMENT_READY_85");
+    }
+
     // Fetch personal notifications and active system broadcast notifications in parallel
     const [personalNotifications, systemBroadcasts] = await Promise.all([
       userPrisma.notification.findMany({
@@ -107,6 +117,15 @@ export async function getUnreadCount(req: Request, res: Response, next: NextFunc
     const userRegCutoff = user?.createdAt ? new Date(new Date(user.createdAt).getTime() - 60000) : null;
 
     const userPrisma = await getUserPrismaFromRequest(req);
+
+    const userPlacement = await userPrisma.placementIntelligence.findUnique({
+      where: { userId },
+      select: { placementScore: true },
+    }).catch(() => null);
+
+    if (userPlacement && userPlacement.placementScore >= 85) {
+      targetFilter.push("PLACEMENT_READY_85");
+    }
 
     const [personalUnread, systemBroadcasts] = await Promise.all([
       userPrisma.notification.count({ where: { userId, read: false } }),

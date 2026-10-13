@@ -27,6 +27,7 @@ import {
   useInterviewProctor,
   ProctoringHUD,
   PermissionGateModal,
+  ProctorWarningModal,
 } from "../proctoring";
 import {
   useConversationEngine,
@@ -280,7 +281,7 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
     }
   }, [onEnd]);
 
-  const { proctorState, videoRef, startProctoring, stopProctoring } =
+  const { proctorState, videoRef, startProctoring, stopProctoring, dismissWarningModal } =
     useInterviewProctor({
       onAutoSubmit: handleProctorAutoSubmit,
     });
@@ -444,6 +445,14 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
     <ProctoringHUD proctorState={proctorState} isDark={theme === "dark"} />
   );
 
+  const warningModalNode = (
+    <ProctorWarningModal
+      warning={proctorState.activeWarningModal}
+      onDismiss={dismissWarningModal}
+      isTerminated={proctorState.status === "terminated"}
+    />
+  );
+
   const codingWorkspaceOverlay = (
     <div className="flex flex-col h-full rounded-2xl border border-slate-800 bg-slate-900/90 overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2 bg-slate-950 border-b border-slate-800 shrink-0">
@@ -534,6 +543,7 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
       elapsedSeconds={elapsedSeconds}
       candidateVideoElement={candidateVideoNode}
       proctoringHUD={proctoringHUDNode}
+      warningModal={warningModalNode}
       customOverlayContent={showCoding ? codingWorkspaceOverlay : undefined}
       onPauseToggle={() => {
         if (conversationEngine.isPaused) {

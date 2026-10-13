@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/services/api";
@@ -343,7 +344,7 @@ function LoginPageContent() {
     if (forgotStep === "email") {
       setForgotLoading(true);
       try {
-        await api.post("/auth/forgot-password", { email: forgotEmail });
+        await api.post("/auth/forgot-password", { email: forgotEmail }, { timeout: 15000 });
         setForgotOtp("");
         setForgotMsg("OTP sent! Please check your email inbox (and Spam folder) for the 6-digit code.");
         setForgotStep("otp");
@@ -352,14 +353,14 @@ function LoginPageContent() {
         if (isMaintenanceOrQuotaError(err)) {
           setForgotError(MAINTENANCE_MESSAGE);
         } else {
-          setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not send OTP.");
+          setForgotError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not send OTP. Please check your email address or try again.");
         }
       }
       finally { setForgotLoading(false); }
     } else if (forgotStep === "otp") {
       if (forgotNew !== forgotConfirm) { setForgotError("Passwords do not match."); return; }
       setForgotLoading(true);
-      try { await api.post("/auth/reset-password", { email: forgotEmail, otp: forgotOtp, newPassword: forgotNew }); setForgotMsg("Password reset successfully! You can now log in."); setForgotStep("done"); }
+      try { await api.post("/auth/reset-password", { email: forgotEmail, otp: forgotOtp, newPassword: forgotNew }, { timeout: 15000 }); setForgotMsg("Password reset successfully! You can now log in."); setForgotStep("done"); }
       catch (err: unknown) {
         if (isMaintenanceOrQuotaError(err)) {
           setForgotError(MAINTENANCE_MESSAGE);
@@ -376,7 +377,7 @@ function LoginPageContent() {
     setForgotError("");
     setForgotMsg("");
     try {
-      await api.post("/auth/forgot-password", { email: forgotEmail });
+      await api.post("/auth/forgot-password", { email: forgotEmail }, { timeout: 15000 });
       setForgotOtp("");
       setForgotMsg("New OTP sent! Please check your email inbox and Spam folder.");
     } catch (err: unknown) {
@@ -812,14 +813,23 @@ function LoginPageContent() {
   );
 }
 
+const DynamicLoginContent = dynamic(() => Promise.resolve(LoginPageContent), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center bg-[#080710] text-amber-500 font-bold text-sm">
+      Loading Login...
+    </div>
+  ),
+});
+
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#080710] text-indigo-500 font-bold text-sm">
+      <div className="min-h-screen flex items-center justify-center bg-[#080710] text-amber-500 font-bold text-sm">
         Loading Login...
       </div>
     }>
-      <LoginPageContent />
+      <DynamicLoginContent />
     </Suspense>
   );
 }

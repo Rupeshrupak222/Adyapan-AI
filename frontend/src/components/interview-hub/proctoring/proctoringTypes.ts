@@ -11,7 +11,22 @@ export type ProctoringStatus =
 
 export type DetectionStatus = "normal" | "checking" | "pending_violation" | "violation";
 
-export type ViolationType = "no_person" | "multiple_persons" | "camera_disconnected";
+export type ViolationType =
+  | "no_person"
+  | "multiple_persons"
+  | "camera_disconnected"
+  | "tab_switch"
+  | "fullscreen_exit";
+
+export interface ActiveWarningInfo {
+  visible: boolean;
+  type: ViolationType;
+  warningNumber: number;
+  maxWarnings: number;
+  title: string;
+  message: string;
+  timestamp: number;
+}
 
 export interface ViolationLog {
   id: string;
@@ -31,6 +46,7 @@ export interface ProctoringConfig {
   proctoringEnabled?: boolean;
   audioAlertsEnabled?: boolean;
   allowNoPersonWarning?: boolean; // true if 0 persons should trigger warning
+  tabSwitchWarningEnabled?: boolean; // default true
 }
 
 export interface ProctoringState {
@@ -48,6 +64,7 @@ export interface ProctoringState {
   violationLogs: ViolationLog[];
   errorMessage: string | null;
   loadingStepMessage: string;
+  activeWarningModal: ActiveWarningInfo | null;
 }
 
 export interface InterviewProctorReturn {
@@ -64,4 +81,5 @@ export interface InterviewProctorReturn {
   isMinimised: boolean;
   setIsMinimised: (val: boolean | ((prev: boolean) => boolean)) => void;
   isTerminated: boolean;
+  dismissWarningModal: () => void;
 }

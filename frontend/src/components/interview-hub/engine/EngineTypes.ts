@@ -258,12 +258,12 @@ export const ROLE_PRESETS: RolePreset[] = [
   { id: "ml-engineer", title: "ML Engineer", icon: "Cpu", category: "AI/ML" },
   { id: "data-scientist", title: "Data Scientist", icon: "FlaskConical", category: "Data" },
   { id: "data-analyst", title: "Data Analyst", icon: "BarChart3", category: "Data" },
-  { id: "business-analytics", title: "Business Analytics Specialist", icon: "BarChart3", category: "Data" },
+  { id: "business-analytics-data", title: "Business Analytics Specialist", icon: "BarChart3", category: "Data" },
 
   // Infrastructure & Security
-  { id: "devops", title: "DevOps Engineer", icon: "Container", category: "Infrastructure" },
+  { id: "devops-infrastructure", title: "DevOps Engineer", icon: "Container", category: "Infrastructure" },
   { id: "qa", title: "QA Automation Engineer", icon: "Bug", category: "Quality" },
-  { id: "cybersecurity", title: "Cybersecurity Analyst", icon: "Shield", category: "Security" },
+  { id: "cybersecurity-security", title: "Cybersecurity Analyst", icon: "Shield", category: "Security" },
 
   // Core Engineering & Automotive
   { id: "mechanical-engineer", title: "Mechanical Design Engineer (CAD/FEA)", icon: "Compass", category: "Core Engineering" },

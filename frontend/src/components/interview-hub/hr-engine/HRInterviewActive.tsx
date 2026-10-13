@@ -7,6 +7,7 @@ import { useHRStore } from "./HRStore";
 import {
   useInterviewProctor,
   ProctoringHUD,
+  ProctorWarningModal,
 } from "@/components/interview-hub/proctoring";
 import {
   useConversationEngine,
@@ -130,7 +131,7 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
     }
   }, [onEnd]);
 
-  const { proctorState, videoRef, startProctoring, stopProctoring } =
+  const { proctorState, videoRef, startProctoring, stopProctoring, dismissWarningModal } =
     useInterviewProctor({
       onAutoSubmit: handleProctorAutoSubmit,
     });
@@ -265,6 +266,14 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
     <ProctoringHUD proctorState={proctorState} isDark={theme === "dark"} />
   );
 
+  const warningModalNode = (
+    <ProctorWarningModal
+      warning={proctorState.activeWarningModal}
+      onDismiss={dismissWarningModal}
+      isTerminated={proctorState.status === "terminated"}
+    />
+  );
+
   return (
     <InterviewRoomUI
       state={conversationEngine.state}
@@ -286,6 +295,7 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
       elapsedSeconds={elapsedSeconds}
       candidateVideoElement={candidateVideoNode}
       proctoringHUD={proctoringHUDNode}
+      warningModal={warningModalNode}
       customOverlayContent={undefined}
       onPauseToggle={() => {
         if (conversationEngine.isPaused) {

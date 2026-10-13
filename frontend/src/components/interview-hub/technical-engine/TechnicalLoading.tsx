@@ -12,7 +12,9 @@ import {
   BarChart3,
   Rocket,
   FileText,
+  ArrowRight,
 } from "lucide-react";
+import { QuantumTechReactor } from "../shared/QuantumTechReactor";
 
 interface TechnicalLoadingProps {
   config: {
@@ -41,6 +43,18 @@ export const TechnicalLoading: React.FC<TechnicalLoadingProps> = ({
   const [currentStep, setCurrentStep] = useState(-1);
   const [allComplete, setAllComplete] = useState(false);
   const [, setProgress] = useState(0);
+
+  const onCompleteRef = React.useRef(onComplete);
+  React.useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  const hasTriggeredCompleteRef = React.useRef(false);
+  const triggerComplete = React.useCallback(() => {
+    if (hasTriggeredCompleteRef.current) return;
+    hasTriggeredCompleteRef.current = true;
+    onCompleteRef.current();
+  }, []);
 
   const isDark = theme === "dark";
 
@@ -108,7 +122,9 @@ export const TechnicalLoading: React.FC<TechnicalLoadingProps> = ({
   useEffect(() => {
     if (currentStep >= totalSteps) {
       setAllComplete(true);
-      const t = setTimeout(() => onComplete(), 1000);
+      const t = setTimeout(() => {
+        triggerComplete();
+      }, 1000);
       return () => clearTimeout(t);
     }
 
@@ -126,7 +142,7 @@ export const TechnicalLoading: React.FC<TechnicalLoadingProps> = ({
     }, 1200);
 
     return () => clearTimeout(t);
-  }, [currentStep, totalSteps, onComplete]);
+  }, [currentStep, totalSteps, triggerComplete]);
 
   useEffect(() => {
     if (currentStep < 0) {
@@ -169,48 +185,12 @@ export const TechnicalLoading: React.FC<TechnicalLoadingProps> = ({
 
       {/* Content Container */}
       <div className="relative z-10 flex flex-col items-center max-w-lg w-full px-6">
-        {/* Animated Icon Container */}
-        <motion.div
-          className="relative mb-8"
-          animate={
-            allComplete
-              ? { scale: [1, 1.15, 1] }
-              : { scale: [1, 1.06, 1] }
-          }
-          transition={
-            allComplete
-              ? { duration: 0.5, ease: "easeInOut" }
-              : { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
-          }
-        >
-          <div
-            className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl"
-            style={{
-              background: isDark
-                ? "linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)"
-                : "linear-gradient(135deg, #6d28d9 0%, #0284c7 100%)",
-              boxShadow: "0 0 50px rgba(124, 58, 237, 0.4)",
-            }}
-          >
-            {allComplete ? (
-              <Check className="w-10 h-10 text-white" strokeWidth={3} />
-            ) : (
-              <Code2 className="w-10 h-10 text-white" />
-            )}
-          </div>
-
-          {!allComplete && (
-            <motion.div
-              className="absolute -inset-3 rounded-[28px] border-2 border-transparent"
-              style={{
-                borderTopColor: "#a855f7",
-                borderRightColor: "rgba(168, 85, 247, 0.3)",
-              }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            />
-          )}
-        </motion.div>
+        {/* Quantum Tech Reactor Animation */}
+        <QuantumTechReactor
+          allComplete={allComplete}
+          isDark={isDark}
+          iconType="code"
+        />
 
         {/* Title */}
         <motion.h1
@@ -324,6 +304,35 @@ export const TechnicalLoading: React.FC<TechnicalLoadingProps> = ({
             );
           })}
         </div>
+
+        {/* Enter Interview Room Action Button */}
+        {allComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: 12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="w-full mt-4 flex flex-col items-center gap-2"
+          >
+            <button
+              id="enter-tech-interview-room-btn"
+              type="button"
+              onClick={() => {
+                triggerComplete();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-semibold text-sm text-white shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              style={{
+                background: "linear-gradient(135deg, #9333ea 0%, #7c3aed 100%)",
+                boxShadow: "0 10px 25px -5px rgba(147, 51, 234, 0.4)",
+              }}
+            >
+              <span>Enter Interview Room</span>
+              <ArrowRight className="w-4 h-4 animate-pulse" />
+            </button>
+            <p className={`text-xs text-center ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+              Redirecting... Click if you are not automatically redirected
+            </p>
+          </motion.div>
+        )}
       </div>
     </div>
   );

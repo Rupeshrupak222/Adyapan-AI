@@ -19,7 +19,7 @@ interface SystemNotification {
   title: string;
   message: string;
   type: string; // info, announcement, alert, promotion, feature, maintenance
-  targetAudience: "ALL" | "FREE" | "PREMIUM" | "ADMIN";
+  targetAudience: "ALL" | "FREE" | "PREMIUM" | "ADMIN" | "PLACEMENT_READY_85";
   actionUrl?: string;
   priority: "low" | "normal" | "high" | "urgent";
   deliveryChannel: string;
@@ -36,6 +36,7 @@ interface NotificationStats {
     all: number;
     free: number;
     premium: number;
+    placementReady?: number;
   };
 }
 
@@ -117,6 +118,13 @@ const AUDIENCE_CONFIG: Record<string, { label: string; icon: React.ReactNode; bg
     bg: "rgba(168,85,247,0.12)",
     color: "#c084fc",
     border: "rgba(168,85,247,0.3)",
+  },
+  PLACEMENT_READY_85: {
+    label: "Job Ready (85+)",
+    icon: <Sparkles size={14} />,
+    bg: "rgba(16,185,129,0.12)",
+    color: "#34d399",
+    border: "rgba(16,185,129,0.3)",
   },
   ADMIN: {
     label: "Admins Only",
@@ -272,7 +280,9 @@ export default function Notifications() {
       ? stats.reachStats.all
       : formData.targetAudience === "FREE"
       ? stats.reachStats.free
-      : stats.reachStats.premium;
+      : formData.targetAudience === "PREMIUM"
+      ? stats.reachStats.premium
+      : (stats.reachStats.placementReady ?? 0);
 
   if (loading && notifications.length === 0) {
     return (
@@ -367,6 +377,7 @@ export default function Notifications() {
             { id: "ALL", label: "All Users", icon: <Users size={13} /> },
             { id: "FREE", label: "Free Users", icon: <Gift size={13} /> },
             { id: "PREMIUM", label: "Premium Users", icon: <Crown size={13} /> },
+            { id: "PLACEMENT_READY_85", label: "Job Ready (85+)", icon: <Sparkles size={13} /> },
           ].map((tab) => {
             const active = targetFilter === tab.id;
             return (
@@ -623,11 +634,12 @@ export default function Notifications() {
                   <label className="block text-xs font-extrabold uppercase tracking-wider mb-2" style={{ color: "var(--text-secondary)" }}>
                     Target Audience Segment *
                   </label>
-                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     {[
                       { id: "ALL", label: "All Users", icon: <Users size={16} />, desc: "Every user", count: stats.reachStats.all },
                       { id: "FREE", label: "Free Tier", icon: <Gift size={16} />, desc: "Free plan users", count: stats.reachStats.free },
                       { id: "PREMIUM", label: "Premium Pro", icon: <Crown size={16} />, desc: "Paid subscribers", count: stats.reachStats.premium },
+                      { id: "PLACEMENT_READY_85", label: "Job Ready (85+)", icon: <Sparkles size={16} />, desc: "Score ≥ 85", count: stats.reachStats.placementReady ?? 0 },
                     ].map((seg) => {
                       const selected = formData.targetAudience === seg.id;
                       return (

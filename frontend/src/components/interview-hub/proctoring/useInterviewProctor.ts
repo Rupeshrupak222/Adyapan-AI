@@ -101,6 +101,7 @@ export function useInterviewProctor({
     proctoringEnabled = true,
     audioAlertsEnabled = true,
     allowNoPersonWarning = false, // false by default to prevent false alarms every 30s
+    tabSwitchWarningEnabled = true,
   } = config;
 
   const [proctorState, setProctorState] = useState<ProctoringState>({
@@ -118,6 +119,7 @@ export function useInterviewProctor({
     violationLogs: [],
     errorMessage: null,
     loadingStepMessage: "Initializing Camera & AI Proctor",
+    activeWarningModal: null,
   });
 
   const [isMinimised, setIsMinimised] = useState(false);
@@ -132,6 +134,9 @@ export function useInterviewProctor({
   const warningsRef = useRef(0);
   const lastWarningTimestampRef = useRef<number>(0);
   const pendingViolationRef = useRef<{ type: ViolationType; cycles: number } | null>(null);
+  const isTabAwayRef = useRef(false);
+  const tabAwayTimestampRef = useRef(0);
+  const lastTabSwitchTriggerRef = useRef(0);
   const onAutoSubmitRef = useRef(onAutoSubmit);
   const onWarningIssuedRef = useRef(onWarningIssued);
 
@@ -215,16 +220,40 @@ export function useInterviewProctor({
       const newWarningCount = warningsRef.current + 1;
       warningsRef.current = newWarningCount;
 
+      const violationMsg =
+        violationType === "tab_switch"
+          ? "Tab switch or window defocus detected"
+          : violationType === "multiple_persons"
+          ? `Multiple persons detected (${detectedCount})`
+          : violationType === "no_person"
+          ? "No person visible in frame"
+          : violationType === "fullscreen_exit"
+          ? "Exited fullscreen mode"
+          : "Camera feed disconnected";
+
+      const modalTitle =
+        violationType === "tab_switch"
+          ? "Tab Switching Detected"
+          : violationType === "multiple_persons"
+          ? "Multiple Persons Detected"
+          : violationType === "no_person"
+          ? "Candidate Not in Frame"
+          : "Proctoring Security Alert";
+
+      const modalMessage =
+        violationType === "tab_switch"
+          ? "You switched browser tabs or minimized the interview window. Tab switching is strictly prohibited and logged."
+          : violationType === "multiple_persons"
+          ? `Multiple people detected in camera frame (${detectedCount} persons). You must be alone in the room during the interview.`
+          : violationType === "no_person"
+          ? "No candidate visible in the webcam frame. Please stay centered facing the camera."
+          : "Camera feed inactive or disconnected.";
+
       const logEntry: ViolationLog = {
         id: `v_${now}`,
         timestamp: now,
         type: violationType,
-        message:
-          violationType === "multiple_persons"
-            ? `Multiple persons detected (${detectedCount})`
-            : violationType === "no_person"
-            ? "No person visible in frame"
-            : "Camera feed disconnected",
+        message: violationMsg,
         personCount: detectedCount,
         warningNumber: newWarningCount,
       };
@@ -237,6 +266,15 @@ export function useInterviewProctor({
         pendingViolation: null,
         cooldownActive: true,
         cooldownRemainingSeconds: Math.ceil(warningCooldownMs / 1000),
+        activeWarningModal: {
+          visible: true,
+          type: violationType,
+          warningNumber: newWarningCount,
+          maxWarnings,
+          title: modalTitle,
+          message: modalMessage,
+          timestamp: now,
+        },
       }));
 
       pendingViolationRef.current = null;
@@ -251,23 +289,12 @@ export function useInterviewProctor({
 
       onWarningIssuedRef.current?.(newWarningCount, violationType);
 
-      if (newWarningCount === 1) {
-        toast.warning(`Warning 1 of ${maxWarnings}`, {
-          description:
-            violationType === "multiple_persons"
-              ? `Multiple persons detected (${detectedCount} persons in camera view). Please ensure you are alone in the interview.`
-              : "No candidate visible in camera view. Please stay in frame.",
-          duration: 7000,
-        });
-      } else if (newWarningCount === 2) {
-        toast.error(`Warning 2 of ${maxWarnings}`, {
-          description:
-            violationType === "multiple_persons"
-              ? `Multiple persons still detected (${detectedCount} persons). You have 30 seconds to clear your room before termination.`
-              : "Camera feed inactive or no person visible. One more warning will terminate the session.",
+      if (newWarningCount < maxWarnings) {
+        toast.warning(`Warning ${newWarningCount} of ${maxWarnings}: ${modalTitle}`, {
+          description: `${modalMessage} (${maxWarnings - newWarningCount} warning(s) remaining).`,
           duration: 8000,
         });
-      } else if (newWarningCount >= maxWarnings) {
+      } else {
         isTerminatedRef.current = true;
         setProctorState((prev) => ({
           ...prev,
@@ -618,26 +645,79 @@ export function useInterviewProctor({
       violationLogs: [],
       errorMessage: null,
       loadingStepMessage: "Initializing AI Proctor",
+      activeWarningModal: null,
     });
   }, [stopProctoring, maxWarnings]);
 
-  // Handle Tab visibility change
+  // Handle Tab visibility change and window defocus
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        pauseProctoring();
-      } else {
-        if (proctorState.status === "paused" && !isTerminatedRef.current) {
-          resumeProctoring();
+    if (!proctoringEnabled || !tabSwitchWarningEnabled || isTerminatedRef.current) return;
+
+    const handleDefocus = () => {
+      isTabAwayRef.current = true;
+      tabAwayTimestampRef.current = Date.now();
+      pauseProctoring();
+    };
+
+    const handleRefocus = () => {
+      if (isTabAwayRef.current && !isTerminatedRef.current) {
+        isTabAwayRef.current = false;
+        const now = Date.now();
+        const durationAway = now - tabAwayTimestampRef.current;
+        const timeSinceLastWarning = now - lastTabSwitchTriggerRef.current;
+
+        // If user was away for at least 300ms and not within 2.5s debounce
+        if (durationAway >= 300 && timeSinceLastWarning >= 2500) {
+          lastTabSwitchTriggerRef.current = now;
+          triggerWarning("tab_switch", 0);
         }
+      }
+
+      if (proctorState.status === "paused" && !isTerminatedRef.current) {
+        resumeProctoring();
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        handleDefocus();
+      } else {
+        handleRefocus();
+      }
     };
-  }, [pauseProctoring, resumeProctoring, proctorState.status]);
+
+    const onWindowBlur = () => {
+      handleDefocus();
+    };
+
+    const onWindowFocus = () => {
+      handleRefocus();
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", onWindowBlur);
+    window.addEventListener("focus", onWindowFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onWindowBlur);
+      window.removeEventListener("focus", onWindowFocus);
+    };
+  }, [
+    proctoringEnabled,
+    tabSwitchWarningEnabled,
+    pauseProctoring,
+    resumeProctoring,
+    triggerWarning,
+    proctorState.status,
+  ]);
+
+  const dismissWarningModal = useCallback(() => {
+    setProctorState((prev) => ({
+      ...prev,
+      activeWarningModal: null,
+    }));
+  }, []);
 
   const destroyProctor = useCallback(() => {
     stopProctoring();
@@ -675,5 +755,6 @@ export function useInterviewProctor({
     isMinimised,
     setIsMinimised,
     isTerminated: proctorState.status === "terminated",
+    dismissWarningModal,
   };
 }

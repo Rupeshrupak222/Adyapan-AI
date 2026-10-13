@@ -13,7 +13,9 @@ import {
   Play,
   Rocket,
   FileText,
+  ArrowRight,
 } from "lucide-react";
+import { QuantumTechReactor } from "../shared/QuantumTechReactor";
 
 interface EngineLoadingProps {
   config: {
@@ -26,13 +28,26 @@ interface EngineLoadingProps {
   };
   onComplete: () => void;
   theme?: string;
+  isLaunching?: boolean;
 }
 
-const EngineLoading: React.FC<EngineLoadingProps> = ({ config, onComplete, theme: propTheme }) => {
+const EngineLoading: React.FC<EngineLoadingProps> = ({ config, onComplete, theme: propTheme, isLaunching }) => {
   const theme = propTheme || (typeof window !== "undefined" ? (localStorage.getItem("adyapan-theme") || "dark") : "dark");
   const [currentStep, setCurrentStep] = useState(-1);
   const [allComplete, setAllComplete] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  const onCompleteRef = React.useRef(onComplete);
+  React.useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  const hasTriggeredCompleteRef = React.useRef(false);
+  const triggerComplete = React.useCallback(() => {
+    if (hasTriggeredCompleteRef.current) return;
+    hasTriggeredCompleteRef.current = true;
+    onCompleteRef.current();
+  }, []);
 
   const isDark = theme === "dark";
 
@@ -88,7 +103,9 @@ const EngineLoading: React.FC<EngineLoadingProps> = ({ config, onComplete, theme
   useEffect(() => {
     if (currentStep >= totalSteps) {
       setAllComplete(true);
-      const t = setTimeout(() => onComplete(), 1200);
+      const t = setTimeout(() => {
+        triggerComplete();
+      }, 1000);
       return () => clearTimeout(t);
     }
 
@@ -103,10 +120,10 @@ const EngineLoading: React.FC<EngineLoadingProps> = ({ config, onComplete, theme
       } else {
         setCurrentStep(totalSteps);
       }
-    }, 1500);
+    }, 1300);
 
     return () => clearTimeout(t);
-  }, [currentStep, totalSteps, onComplete]);
+  }, [currentStep, totalSteps, triggerComplete]);
 
   useEffect(() => {
     if (currentStep < 0) {
@@ -169,51 +186,12 @@ const EngineLoading: React.FC<EngineLoadingProps> = ({ config, onComplete, theme
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center max-w-lg w-full px-6">
-        {/* Brain icon */}
-        <motion.div
-          className="relative mb-8"
-          animate={
-            allComplete
-              ? { scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] }
-              : { scale: [1, 1.08, 1] }
-          }
-          transition={
-            allComplete
-              ? { duration: 0.6, ease: "easeInOut" }
-              : { duration: 2, repeat: Infinity, ease: "easeInOut" }
-          }
-        >
-          <div
-            className="w-24 h-24 rounded-3xl flex items-center justify-center"
-            style={{
-              background: isDark
-                ? "linear-gradient(135deg, #6d28d9 0%, #3b82f6 100%)"
-                : "linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)",
-              boxShadow: allComplete
-                ? "0 0 60px rgba(109, 40, 217, 0.6), 0 0 120px rgba(59, 130, 246, 0.3)"
-                : "0 0 40px rgba(109, 40, 217, 0.4), 0 0 80px rgba(59, 130, 246, 0.2)",
-            }}
-          >
-            {allComplete ? (
-              <Check className="w-10 h-10 text-white" strokeWidth={3} />
-            ) : (
-              <Brain className="w-10 h-10 text-white" />
-            )}
-          </div>
-
-          {/* Rotating ring */}
-          {!allComplete && (
-            <motion.div
-              className="absolute -inset-3 rounded-[28px] border-2 border-transparent"
-              style={{
-                borderTopColor: "#8b5cf6",
-                borderRightColor: "rgba(139, 92, 246, 0.3)",
-              }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            />
-          )}
-        </motion.div>
+        {/* Futuristic Quantum Tech Reactor Animation */}
+        <QuantumTechReactor
+          allComplete={allComplete}
+          isDark={isDark}
+          iconType="code"
+        />
 
         {/* Title */}
         <motion.h1
@@ -408,6 +386,37 @@ const EngineLoading: React.FC<EngineLoadingProps> = ({ config, onComplete, theme
             </span>
           </div>
         </div>
+
+        {/* Enter Interview Room Action Button & Launch Status */}
+        {allComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: 12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="w-full mt-6 flex flex-col items-center gap-2"
+          >
+            <button
+              id="enter-interview-room-btn"
+              type="button"
+              onClick={() => {
+                triggerComplete();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl font-semibold text-sm text-white shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              style={{
+                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                boxShadow: "0 10px 25px -5px rgba(16, 185, 129, 0.4)",
+              }}
+            >
+              <span>{isLaunching ? "Connecting to Room..." : "Enter Interview Room"}</span>
+              <ArrowRight className="w-4 h-4 animate-pulse" />
+            </button>
+            <p className={`text-xs text-center ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+              {isLaunching
+                ? "Connecting with AI Interviewer..."
+                : "Redirecting to interview room... Click button if not redirected"}
+            </p>
+          </motion.div>
+        )}
       </div>
     </div>
   );

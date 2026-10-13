@@ -11,6 +11,7 @@ import {
   CheckCircle2, XCircle, Shield, PhoneOff, Volume2, Maximize2, Minimize2
 } from "lucide-react";
 import { toast } from "sonner";
+import { ProctorWarningModal, audioAlert, ActiveWarningInfo } from "@/components/interview-hub/proctoring";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -71,6 +72,10 @@ export default function InterviewRoomPage() {
   const [violations, setViolations] = useState(0);
   const proctorIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [tabSwitched, setTabSwitched] = useState(false);
+  const [activeWarning, setActiveWarning] = useState<ActiveWarningInfo | null>(null);
+  const wasTabHiddenRef = useRef(false);
+  const tabHiddenTimeRef = useRef(0);
+  const lastTabSwitchWarnRef = useRef(0);
 
   // Code editor
   const [showEditor, setShowEditor] = useState(false);
@@ -252,29 +257,106 @@ export default function InterviewRoomPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
-  // Tab switch detection proctoring
+  // Tab switch detection proctoring with blur and focus tracking
   useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (document.hidden && sessionId) {
-        setTabSwitched(true);
-        try {
-          await api.post(`/interview/${sessionId}/proctor`, {
+    if (!sessionId) return;
+
+    const handleDefocus = () => {
+      wasTabHiddenRef.current = true;
+      tabHiddenTimeRef.current = Date.now();
+    };
+
+    const handleRefocus = () => {
+      if (wasTabHiddenRef.current) {
+        wasTabHiddenRef.current = false;
+        const now = Date.now();
+        const durationAway = now - tabHiddenTimeRef.current;
+        const timeSinceLastWarning = now - lastTabSwitchWarnRef.current;
+
+        // If away for >= 300ms and not within 2.5s debounce
+        if (durationAway >= 300 && timeSinceLastWarning >= 2500) {
+          lastTabSwitchWarnRef.current = now;
+          setTabSwitched(true);
+          const threshold = session?.violationThreshold || 3;
+
+          setViolations((prevV) => {
+            const nextV = prevV + 1;
+            setViolationPoints((prevPts) => {
+              const nextPts = prevPts + 1;
+              const isTerm = nextPts >= threshold;
+
+              if (isTerm) {
+                audioAlert.playCriticalSound();
+                toast.error("Interview Terminated", {
+                  description: "Maximum proctoring violations reached. Submitting session...",
+                  duration: 8000,
+                });
+                setTimeout(() => {
+                  handleEndInterview();
+                }, 1500);
+              } else {
+                audioAlert.playWarningSound();
+                toast.warning(`Warning ${nextV} of ${threshold}: Tab Switching Detected`, {
+                  description: `Tab switching or window defocus detected. Please stay on this tab (${threshold - nextV} chance(s) left).`,
+                  duration: 8000,
+                });
+              }
+
+              setActiveWarning({
+                visible: true,
+                type: "tab_switch",
+                warningNumber: nextV,
+                maxWarnings: threshold,
+                title: "Tab Switching Detected",
+                message: "You switched browser tabs or minimized the interview window. Tab switching is strictly prohibited and logged.",
+                timestamp: now,
+              });
+
+              return nextPts;
+            });
+
+            return nextV;
+          });
+
+          // Report event to backend asynchronously
+          api.post(`/interview/${sessionId}/proctor`, {
             eventType: "tab_switch",
             category: "focus",
             description: "Candidate switched browser tab or minimized window",
             confidence: 0.95,
             severity: "warning",
             pointsDeducted: 1,
-          });
-          setViolationPoints(p => p + 1);
-          setViolations(v => v + 1);
-          toast.warning("⚠ Tab switching detected and logged!");
-        } catch { /* ignore */ }
+          }).catch(() => {});
+        }
       }
     };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [sessionId]);
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        handleDefocus();
+      } else {
+        handleRefocus();
+      }
+    };
+
+    const onWindowBlur = () => {
+      handleDefocus();
+    };
+
+    const onWindowFocus = () => {
+      handleRefocus();
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", onWindowBlur);
+    window.addEventListener("focus", onWindowFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onWindowBlur);
+      window.removeEventListener("focus", onWindowFocus);
+    };
+  }, [sessionId, session]);
 
   // Fullscreen proctoring (safeguarded for iOS / mobile touch devices)
   useEffect(() => {
@@ -293,24 +375,44 @@ export default function InterviewRoomPage() {
         !document.fullscreenElement &&
         sessionId
       ) {
-        try {
-          await api.post(`/interview/${sessionId}/proctor`, {
-            eventType: "fullscreen_exit",
-            category: "focus",
-            description: "Candidate exited fullscreen mode",
-            confidence: 0.9,
-            severity: "warning",
-            pointsDeducted: 1,
+        const threshold = session?.violationThreshold || 3;
+        audioAlert.playWarningSound();
+
+        setViolations((prevV) => {
+          const nextV = prevV + 1;
+          setViolationPoints((prevPts) => {
+            const nextPts = prevPts + 1;
+            setActiveWarning({
+              visible: true,
+              type: "fullscreen_exit",
+              warningNumber: nextV,
+              maxWarnings: threshold,
+              title: "Fullscreen Exited",
+              message: "You exited fullscreen mode. Please keep the interview window fullscreen at all times.",
+              timestamp: Date.now(),
+            });
+            return nextPts;
           });
-          setViolationPoints(p => p + 1);
-          setViolations(v => v + 1);
-          toast.warning("⚠ Fullscreen exit detected — please re-enter fullscreen.");
-        } catch { /* ignore */ }
+          return nextV;
+        });
+
+        toast.warning("⚠ Fullscreen exit detected — please re-enter fullscreen.", {
+          duration: 6000,
+        });
+
+        api.post(`/interview/${sessionId}/proctor`, {
+          eventType: "fullscreen_exit",
+          category: "focus",
+          description: "Candidate exited fullscreen mode",
+          confidence: 0.9,
+          severity: "warning",
+          pointsDeducted: 1,
+        }).catch(() => {});
       }
     };
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
-  }, [sessionId]);
+  }, [sessionId, session]);
 
   // Periodic proctoring poll
   useEffect(() => {
@@ -1007,6 +1109,13 @@ export default function InterviewRoomPage() {
           </div>
         </div>
       </div>
+
+      {/* Proctoring Warning Modal */}
+      <ProctorWarningModal
+        warning={activeWarning}
+        onDismiss={() => setActiveWarning(null)}
+        isTerminated={session ? violationPoints >= session.violationThreshold : false}
+      />
     </div>
   );
 }

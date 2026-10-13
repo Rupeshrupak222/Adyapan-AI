@@ -31,9 +31,9 @@ function getTransporter(): Transporter | null {
         user: config.user,
         pass: config.pass,
       },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 8000,
     });
   }
   return cachedTransporter;
@@ -358,9 +358,9 @@ export async function sendPasswordResetOtpEmail(email: string, otp: string): Pro
         port: 587,
         secure: false,
         auth: { user: config.user, pass: config.pass },
-        connectionTimeout: 8000,
-        greetingTimeout: 8000,
-        socketTimeout: 8000,
+        connectionTimeout: 4000,
+        greetingTimeout: 4000,
+        socketTimeout: 6000,
       });
       const info = await fallbackTransporter.sendMail(mailOptions);
       console.log(`[Mailer] Fallback port 587 OTP sent to ${email}. MessageId: ${info.messageId}`);

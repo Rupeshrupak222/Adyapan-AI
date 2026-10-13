@@ -950,6 +950,8 @@ export async function requestPasswordReset(email: string): Promise<{ devOtp?: st
     createdAt: new Date(),
   });
 
+  console.log(`🔐 [PasswordReset] OTP generated for ${normalizedEmail}: ${otp} (Valid for 10 mins)`);
+
   try {
     await sendPasswordResetOtpEmail(normalizedEmail, otp);
     console.log(`[PasswordReset] OTP email dispatched successfully to ${normalizedEmail}`);

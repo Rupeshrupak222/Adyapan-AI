@@ -74,7 +74,7 @@ export function Navbar({ forceWhiteText, hideThemeToggle }: { forceWhiteText?: b
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" suppressHydrationWarning>
 
           {/* Theme toggle */}
           {!hideThemeToggle && (
@@ -83,6 +83,7 @@ export function Navbar({ forceWhiteText, hideThemeToggle }: { forceWhiteText?: b
               aria-label="Toggle theme"
               className="flex h-9 w-9 items-center justify-center rounded-full transition-colors"
               style={{ background: loginBg, color: linkColor }}
+              suppressHydrationWarning
             >
               {theme === "dark" ? (
                 /* Sun icon */
@@ -134,8 +135,9 @@ export function Navbar({ forceWhiteText, hideThemeToggle }: { forceWhiteText?: b
             style={{ background: loginBg, color: logoColor }}
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Toggle menu"
+            suppressHydrationWarning
           >
-            <div className="flex flex-col gap-1 items-center justify-center">
+            <div className="flex flex-col gap-1 items-center justify-center" suppressHydrationWarning>
               <span
                 className="block h-0.5 w-4 rounded-full transition-all"
                 style={{

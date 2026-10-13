@@ -49,6 +49,7 @@ interface InterviewRoomUIProps {
   candidateVideoElement?: React.ReactNode;
   proctoringHUD?: React.ReactNode;
   proctoringPanel?: React.ReactNode;
+  warningModal?: React.ReactNode;
   customOverlayContent?: React.ReactNode;
   onPauseToggle: () => void;
   onEndInterview: () => void;
@@ -88,6 +89,7 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
   candidateVideoElement,
   proctoringHUD,
   proctoringPanel,
+  warningModal,
   customOverlayContent,
   onPauseToggle,
   onEndInterview,
@@ -599,6 +601,9 @@ export const InterviewRoomUI: React.FC<InterviewRoomUIProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Proctoring Security Warning Modal */}
+      {warningModal}
     </div>
   );
 };

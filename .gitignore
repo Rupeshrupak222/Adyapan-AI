@@ -1,4 +1,5 @@
 .aider*
+.opencode/
 
 # dependencies
 node_modules/

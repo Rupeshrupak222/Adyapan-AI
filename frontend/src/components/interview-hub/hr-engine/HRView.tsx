@@ -68,37 +68,54 @@ export default function HRView({ theme }: HRViewProps) {
   const handleLoadingComplete = useCallback(async () => {
     if (!config || launchingRef.current) return;
     launchingRef.current = true;
+    const payload = {
+      interviewType: config.interviewType,
+      targetRole: config.targetRole,
+      targetCompany: config.targetCompany || null,
+      difficulty: config.difficulty,
+      experienceLevel: config.experienceLevel,
+      durationMinutes: config.durationMinutes,
+      language: config.language,
+      aiVoiceEnabled: config.aiVoiceEnabled,
+      voiceGender: config.voiceGender,
+      voiceSpeed: config.voiceSpeed,
+      voicePitch: config.voicePitch,
+      resumeAware: config.resumeAware,
+      customInstructions: config.customInstructions || "",
+    };
+
     try {
-      const res = await api.post("/interview/hr/start", {
-        interviewType: config.interviewType,
-        targetRole: config.targetRole,
-        targetCompany: config.targetCompany || null,
-        difficulty: config.difficulty,
-        experienceLevel: config.experienceLevel,
-        durationMinutes: config.durationMinutes,
-        language: config.language,
-        aiVoiceEnabled: config.aiVoiceEnabled,
-        voiceGender: config.voiceGender,
-        voiceSpeed: config.voiceSpeed,
-        voicePitch: config.voicePitch,
-        resumeAware: config.resumeAware,
-        customInstructions: config.customInstructions || "",
-      });
-      if (res.data.success) {
+      const res = await Promise.race([
+        api.post("/interview/hr/start", payload),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 7000)),
+      ]);
+      if (res?.data && res.data.success && res.data.session) {
         setSessionId(res.data.session.id);
         setMessages(res.data.messages || []);
         setScreen("active");
         lifecycle.markInterviewStarted();
-      } else {
-        toast.error("Failed to start HR interview");
-        setScreen("landing");
+        return;
       }
-    } catch {
-      toast.error("Failed to start HR interview session");
-      setScreen("landing");
+    } catch (err) {
+      console.warn("[HRView] API start error, initiating local HR session:", err);
     } finally {
       launchingRef.current = false;
     }
+
+    // Fallback: Start session locally so candidate is NEVER stuck
+    const fallbackSessionId = `hr-session-${Date.now()}`;
+    const defaultFirstQuestion = `Welcome! Thank you for joining today. To start off, could you please introduce yourself and tell me what interests you about this role${config.targetCompany ? ` at ${config.targetCompany}` : ""}?`;
+    setSessionId(fallbackSessionId);
+    setMessages([
+      {
+        id: `ai-init-${Date.now()}`,
+        role: "interviewer",
+        content: defaultFirstQuestion,
+        timestamp: Date.now(),
+      },
+    ]);
+    setScreen("active");
+    lifecycle.markInterviewStarted();
   }, [config, lifecycle]);
 
   const DEFAULT_HR_EVALUATION: HREvaluation = {

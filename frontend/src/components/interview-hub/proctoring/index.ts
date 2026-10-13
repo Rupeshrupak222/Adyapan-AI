@@ -5,3 +5,4 @@ export * from "./useInterviewProctor";
 export * from "./ProctoringPanel";
 export * from "./ProctoringHUD";
 export * from "./PermissionGateModal";
+export * from "./ProctorWarningModal";

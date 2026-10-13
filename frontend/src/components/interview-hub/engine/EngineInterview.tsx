@@ -8,6 +8,7 @@ import {
   useInterviewProctor,
   ProctoringHUD,
   PermissionGateModal,
+  ProctorWarningModal,
 } from "@/components/interview-hub/proctoring";
 import {
   useConversationEngine,
@@ -98,7 +99,7 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
     }
   }, [onEnd]);
 
-  const { proctorState, videoRef, startProctoring, stopProctoring } =
+  const { proctorState, videoRef, startProctoring, stopProctoring, dismissWarningModal } =
     useInterviewProctor({
       onAutoSubmit: handleProctorAutoSubmit,
     });
@@ -250,6 +251,14 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
     <ProctoringHUD proctorState={proctorState} isDark={theme === "dark"} />
   );
 
+  const warningModalNode = (
+    <ProctorWarningModal
+      warning={proctorState.activeWarningModal}
+      onDismiss={dismissWarningModal}
+      isTerminated={proctorState.status === "terminated"}
+    />
+  );
+
   return (
     <InterviewRoomUI
       state={conversationEngine.state}
@@ -271,6 +280,7 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
       elapsedSeconds={elapsedSeconds}
       candidateVideoElement={candidateVideoNode}
       proctoringHUD={proctoringHUDNode}
+      warningModal={warningModalNode}
       onPauseToggle={() => {
         if (conversationEngine.isPaused) {
           conversationEngine.resumeConversation();

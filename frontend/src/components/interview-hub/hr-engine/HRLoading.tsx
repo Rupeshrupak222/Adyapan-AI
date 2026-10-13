@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  FileText, Target, Brain, Mic, Sparkles, Check, Loader2,
+  FileText, Target, Brain, Mic, Sparkles, Check, Loader2, ArrowRight,
 } from "lucide-react";
 import type { HRConfig } from "./HRTypes";
 
@@ -25,6 +25,19 @@ export default function HRLoading({ config, onComplete, theme: propTheme }: HRLo
   const theme = propTheme || (typeof window !== "undefined" ? (localStorage.getItem("adyapan-theme") || "dark") : "dark");
   const [activeStep, setActiveStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [allDone, setAllDone] = useState(false);
+
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  const hasTriggeredRef = useRef(false);
+  const triggerComplete = useCallback(() => {
+    if (hasTriggeredRef.current) return;
+    hasTriggeredRef.current = true;
+    onCompleteRef.current();
+  }, []);
 
   const isDark = theme === "dark";
 
@@ -41,11 +54,12 @@ export default function HRLoading({ config, onComplete, theme: propTheme }: HRLo
     timers.push(
       setTimeout(() => {
         setCompletedSteps((prev) => [...prev, LOADING_STEPS.length - 1]);
-        onComplete();
+        setAllDone(true);
+        triggerComplete();
       }, LOADING_STEPS.length * 900 + 500)
     );
     return () => timers.forEach(clearTimeout);
-  }, [onComplete]);
+  }, [triggerComplete]);
 
   return (
     <div
@@ -156,6 +170,34 @@ export default function HRLoading({ config, onComplete, theme: propTheme }: HRLo
             );
           })}
         </div>
+
+        {allDone && (
+          <motion.div
+            initial={{ opacity: 0, y: 12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="w-full mt-4 flex flex-col items-center gap-2"
+          >
+            <button
+              id="enter-hr-interview-room-btn"
+              type="button"
+              onClick={() => {
+                triggerComplete();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-semibold text-sm text-black shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              style={{
+                background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                boxShadow: "0 10px 25px -5px rgba(245, 158, 11, 0.4)",
+              }}
+            >
+              <span>Enter Interview Room</span>
+              <ArrowRight className="w-4 h-4 animate-pulse" />
+            </button>
+            <p className={`text-xs text-center ${isDark ? "text-amber-200/60" : "text-amber-800/60"}`}>
+              Redirecting... Click if you are not automatically redirected
+            </p>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

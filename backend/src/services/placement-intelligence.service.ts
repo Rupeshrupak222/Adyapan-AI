@@ -1,6 +1,7 @@
 import { getUserPrisma } from "../config/dynamicPrisma";
 import { DsaProgressService } from "./dsa-progress.service";
 import { detectDomainTrack, DomainTrack } from "../utils/domain-track";
+import { emitNotification } from "../lib/notificationEmitter";
 
 interface SubScores {
   coding: number;
@@ -740,6 +741,7 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
     if (now - lastCalculated < fiveMinutes) {
       const profile = await userPrisma.profile.findUnique({ where: { userId } }).catch(() => null);
       const domainTrack = detectDomainTrack(profile);
+      await checkAndSendPlacementReadinessNotification(userId, existing.placementScore, userPrisma);
       return {
         placementScore: existing.placementScore,
         subScores: existing.subScores as unknown as SubScores,
@@ -796,6 +798,9 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
         },
       });
     }
+
+    // Trigger targeted milestone notification if user reaches 85+ placement readiness score
+    await checkAndSendPlacementReadinessNotification(userId, intelligence.placementScore, userPrisma);
   } catch (dbErr) {
     console.warn("[PlacementIntelligence] DB persistence error, returning generated result directly:", dbErr);
   }
@@ -803,12 +808,77 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
   return { ...intelligence, cached: false };
 }
 
+/**
+ * Ensures that ONLY a particular user who reaches an 85+ Placement Readiness Score
+ * receives this exclusive milestone notification.
+ */
+async function checkAndSendPlacementReadinessNotification(userId: string, placementScore: number, userPrisma: any) {
+  if (!placementScore || placementScore < 85) return;
+  try {
+    const existingNotif = await userPrisma.notification.findFirst({
+      where: {
+        userId,
+        type: "placement_ready_85",
+      },
+    }).catch(() => null);
+
+    if (!existingNotif) {
+      const notif = await userPrisma.notification.create({
+        data: {
+          userId,
+          title: "🎉 Placement Ready: 85+ Score Milestone Achieved!",
+          message: `Outstanding achievement! Your Placement Readiness score reached ${placementScore}%. You have officially qualified for top-tier company recruitment drives.`,
+          type: "placement_ready_85",
+          link: "/dashboard/user/placement-hub",
+          read: false,
+        },
+      });
+
+      emitNotification(userId, {
+        id: notif.id,
+        type: notif.type,
+        title: notif.title,
+        message: notif.message,
+        link: notif.link,
+        read: false,
+        createdAt: notif.createdAt,
+      });
+    }
+  } catch (err) {
+    console.warn("[PlacementIntelligence] Milestone notification dispatch warning:", err);
+  }
+}
+
 export async function refreshPlacementIntelligence(userId: string): Promise<PlacementIntelligenceResult> {
   const userPrisma = await getUserPrisma(userId);
 
   await userPrisma.placementIntelligence.delete({ where: { userId } }).catch(() => {});
 
-  return generatePlacementIntelligence(userId);
+  const result = await generatePlacementIntelligence(userId);
+  try {
+    await userPrisma.placementIntelligence.create({
+      data: {
+        userId,
+        placementScore: result.placementScore,
+        subScores: result.subScores as any,
+        companyMatches: result.companyMatches as any,
+        skillWeights: result.skillWeights as any,
+        strengths: result.strengths as any,
+        weaknesses: result.weaknesses as any,
+        recommendations: result.recommendations as any,
+        highestImpactTask: result.highestImpactTask as any,
+        salaryEstimate: result.salaryEstimate as any,
+        readinessTimeline: result.readinessTimeline as any,
+        aiInsights: result.aiInsights as any,
+        lastCalculatedAt: new Date(),
+      },
+    });
+    await checkAndSendPlacementReadinessNotification(userId, result.placementScore, userPrisma);
+  } catch (dbErr) {
+    console.warn("[PlacementIntelligence] refresh save warning:", dbErr);
+  }
+
+  return result;
 }
 
 export async function getCompanyMatchDetails(userId: string, company: string): Promise<CompanyMatch | null> {
