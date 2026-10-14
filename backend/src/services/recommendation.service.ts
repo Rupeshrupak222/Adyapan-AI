@@ -107,35 +107,40 @@ export class RecommendationService {
    * Main recommendation pipeline
    */
   static async generateRecommendations(userId: string, prisma: any): Promise<RecommendationDashboardData> {
-    // 1. Gather all learning analytics & progress signals from DB
+    // 1. Gather required learning analytics & progress signals from DB
     const [
       analytics,
-      progress,
       weakTopics,
-      weakConcepts,
       topicProgressList,
       conceptMasteries,
       studyPlans,
-      revisions,
       streak,
       quizAttempts,
-      interviewSessions,
-      studySessions,
-      notes
     ] = await Promise.all([
-      prisma.learningAnalytics.findUnique({ where: { userId } }),
-      prisma.progressTracking.findUnique({ where: { userId } }),
-      prisma.weakTopic.findMany({ where: { userId } }),
-      prisma.weakConcept.findMany({ where: { userId } }),
-      prisma.topicProgress.findMany({ where: { userId } }),
-      prisma.conceptMastery.findMany({ where: { userId } }),
-      prisma.studyPlan.findMany({ where: { userId }, include: { tasks: true } }),
-      prisma.studyRevision.findMany({ where: { userId } }),
-      prisma.learningStreak.findUnique({ where: { userId } }),
-      prisma.quizAttempt.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10 }),
-      prisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }),
-      prisma.studySession.findMany({ where: { userId }, take: 10 }),
-      prisma.generatedNote.findMany({ where: { userId }, select: { topic: true, createdAt: true } }),
+      prisma.learningAnalytics.findUnique({ where: { userId }, select: { learningScore: true, examReadiness: true } }),
+      prisma.weakTopic.findMany({
+        where: { userId },
+        select: { topicName: true, riskLevel: true, lastStudied: true, revisionCount: true, strengthScore: true, studyTimeMinutes: true },
+      }),
+      prisma.topicProgress.findMany({
+        where: { userId },
+        select: { topicName: true, lastActivity: true, revisionStatus: true, questionsPracticed: true, masteryScore: true },
+      }),
+      prisma.conceptMastery.findMany({
+        where: { userId },
+        select: { topicName: true, conceptName: true, masteryScore: true, revisionCount: true, practiceCount: true },
+      }),
+      prisma.studyPlan.findMany({
+        where: { userId },
+        select: { id: true, tasks: { select: { status: true } } },
+      }),
+      prisma.learningStreak.findUnique({ where: { userId }, select: { currentStreak: true } }),
+      prisma.quizAttempt.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: { accuracy: true },
+      }),
     ]);
 
     // 2. Build profile inputs for AI

@@ -43,6 +43,7 @@ assignmentRouter.get("/history", async (req, res) => {
     const assignments = await userPrisma.assignment.findMany({
       where: { userId: req.user!.userId },
       orderBy: { createdAt: "desc" },
+      select: { id: true, topic: true, academicLevel: true, wordCount: true, createdAt: true },
     });
     res.json({ success: true, assignments });
   } catch (error) {

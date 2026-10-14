@@ -140,17 +140,17 @@ export class ProgressService {
     // ── 1. Fetch all raw data ──────────────────────────────────────────────
     const [docs, notes, quizzes, quizAttempts, flashcards, mindMaps, events, chatSessions, atsReports, interviewSessions, dbStudySessions] =
       await Promise.all([
-        prisma.uploadedDocument.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
-        prisma.generatedNote.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
-        prisma.quiz.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
-        prisma.quizAttempt.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
-        prisma.flashcard.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
-        prisma.mindMap.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
-        prisma.learningEvent.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
-        prisma.chatSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
-        prisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }).catch(() => []),
-        prisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }).catch(() => []),
-        prisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }).catch(() => []),
+        prisma.uploadedDocument.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, fileName: true, createdAt: true } }),
+        prisma.generatedNote.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, topic: true, type: true, createdAt: true } }),
+        prisma.quiz.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, topic: true, createdAt: true } }),
+        prisma.quizAttempt.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, quizId: true, score: true, total: true, accuracy: true, createdAt: true } }),
+        prisma.flashcard.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, topic: true, createdAt: true } }),
+        prisma.mindMap.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, topic: true, createdAt: true } }),
+        prisma.learningEvent.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, topic: true, eventType: true, createdAt: true } }),
+        prisma.chatSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true } }),
+        prisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, score: true, createdAt: true } }).catch(() => []),
+        prisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, type: true, overallScore: true, status: true, createdAt: true } }).catch(() => []),
+        prisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true } }).catch(() => []),
       ]);
 
     const totalAiGenerations = notes.length + quizzes.length + flashcards.length + mindMaps.length;

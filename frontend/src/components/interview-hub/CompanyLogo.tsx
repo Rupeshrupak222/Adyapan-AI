@@ -1222,8 +1222,10 @@ export function resolveCompanyInfo(rawName?: string, rawId?: string): { key: str
     }
   }
 
-  const fallbackDomain = strippedKey ? `${strippedKey}.com` : (nameKey ? `${nameKey}.com` : "");
-  return { key: strippedKey || nameKey || idKey, domain: fallbackDomain };
+  // No guessed `<key>.com`: favicon services answer 200 with a generic globe for
+  // unknown domains, so a guess renders as a blank tile. `/api/company-logo`
+  // probes real domains and returns a verified logo instead.
+  return { key: strippedKey || nameKey || idKey, domain: "" };
 }
 
 export default function CompanyLogo({
@@ -1271,6 +1273,8 @@ export default function CompanyLogo({
         // Purge entries cached from the sunset Clearbit API (dead links).
         if (cached && cached.includes("logo.clearbit.com")) {
           localStorage.removeItem(cacheKey);
+        } else if (cached === "none") {
+          return; // negative result cached — don't re-probe every mount
         } else if (cached) {
           setAutoLogo(cached);
           return;
@@ -1282,13 +1286,15 @@ export default function CompanyLogo({
     fetch(`/api/company-logo?name=${encodeURIComponent(name)}&key=${encodeURIComponent(key)}`)
       .then(res => res.json())
       .then(data => {
-        if (active && data?.logoUrl && !String(data.logoUrl).includes("logo.clearbit.com")) {
-          setAutoLogo(data.logoUrl);
-          try {
-            if (typeof window !== "undefined") {
-              localStorage.setItem(cacheKey, data.logoUrl);
-            }
-          } catch {}
+        if (!active) return;
+        const resolved = data?.logoUrl;
+        try {
+          if (typeof window !== "undefined") {
+            localStorage.setItem(cacheKey, resolved && !String(resolved).includes("logo.clearbit.com") ? resolved : "none");
+          }
+        } catch {}
+        if (resolved && !String(resolved).includes("logo.clearbit.com")) {
+          setAutoLogo(resolved);
         }
       })
       .catch(() => {});

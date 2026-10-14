@@ -1,23 +1,47 @@
 {
-  "generatedAt": "2026-10-08T11:07:31.862Z",
+  "generatedAt": "2026-10-14T07:49:26.439Z",
   "testNumber": 3,
   "targetSize": 30,
   "batchSize": 2,
   "throttleMs": 3000,
   "rebuild": false,
   "summary": {
-    "processed": 10,
-    "written": 300,
-    "created": 10,
+    "processed": 14,
+    "written": 420,
+    "created": 14,
     "toppedUp": 0,
     "skipped": 0,
     "short": 0,
     "noModel": 0,
     "exhausted": 0,
     "error": 0,
-    "collisions": 3712
+    "collisions": 3789
   },
   "collisions": [
+    {
+      "kind": "concept",
+      "question": "In Go, what is the exact execution behavior and safety guarantee of writing to a closed channel? ch := make(ch",
+      "alsoIn": "mcq:test-tech-go-1#test-tech-go-1-q46",
+      "testKey": "mcq:test-tech-go-3"
+    },
+    {
+      "kind": "exact",
+      "question": "In Swift, when dealing with actor isolation and asynchronous methods, what is the primary concurrency guarante",
+      "alsoIn": "mcq:test-apple-2#test-apple-2-q58",
+      "testKey": "mcq:test-apple-3"
+    },
+    {
+      "kind": "template",
+      "question": "In Swift, when dealing with actor isolation and asynchronous methods, what is the primary concurrency guarante",
+      "alsoIn": "mcq:test-apple-2#test-apple-2-q58",
+      "testKey": "mcq:test-apple-3"
+    },
+    {
+      "kind": "concept",
+      "question": "In Swift, when dealing with actor isolation and asynchronous methods, what is the primary concurrency guarante",
+      "alsoIn": "mcq:test-apple-2#test-apple-2-q58",
+      "testKey": "mcq:test-apple-3"
+    },
     {
       "kind": "concept",
       "question": "What is the output of the following C program snippet when executed on a standard 32-bit or 64-bit architectur",
@@ -34,6 +58,24 @@
       "kind": "concept",
       "question": "What is the result of the following C expression involving the comma operator and operator precedence? (x = 5,",
       "alsoIn": "mcq:test-tech-c-5#test-tech-c-5-q36",
+      "testKey": "mcq:test-tech-c-3"
+    },
+    {
+      "kind": "exact",
+      "question": "What is the result of evaluating the expression 'sizeof('a')' in standard C? size_t len = sizeof('a');",
+      "alsoIn": "mcq:test-tech-c-12#test-tech-c-12-q46",
+      "testKey": "mcq:test-tech-c-3"
+    },
+    {
+      "kind": "template",
+      "question": "What is the result of evaluating the expression 'sizeof('a')' in standard C? size_t len = sizeof('a');",
+      "alsoIn": "mcq:test-tech-c-12#test-tech-c-12-q46",
+      "testKey": "mcq:test-tech-c-3"
+    },
+    {
+      "kind": "concept",
+      "question": "What is the result of evaluating the expression 'sizeof('a')' in standard C? size_t len = sizeof('a');",
+      "alsoIn": "mcq:test-tech-c-12#test-tech-c-12-q46",
       "testKey": "mcq:test-tech-c-3"
     },
     {
@@ -2287,6 +2329,12 @@
       "testKey": "aptitude:cmus7pqba002kx8k4tdcz3l8g"
     },
     {
+      "kind": "exact",
+      "question": "A company's server deployments over consecutive fiscal years show: Year 1 = 427 units, Year 2 = 581 units. Wha",
+      "alsoIn": "aptitude:cmv234dtr00af01l89ack3hk7#db-pwc-t2-q25",
+      "testKey": "aptitude:cmus7pqba002kx8k4tdcz3l8g"
+    },
+    {
       "kind": "template",
       "question": "A company's server deployments over consecutive fiscal years show: Year 1 = 427 units, Year 2 = 581 units. Wha",
       "alsoIn": "aptitude:cmus7poux002cx8k42ko3nmnb#db-bar-graphs-t1-q1",
@@ -3957,13 +4005,13 @@
     {
       "kind": "template",
       "question": "An analyst spends 70% of their monthly income. If their income increases by 15% and expenditures increase by 1",
-      "alsoIn": "aptitude:cmus7p9070000x8k4crkzp6rq#db-percentages-t1-q1",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q1",
       "testKey": "aptitude:cmus7p9q50002x8k4gra4ey18"
     },
     {
       "kind": "concept",
       "question": "An analyst spends 70% of their monthly income. If their income increases by 15% and expenditures increase by 1",
-      "alsoIn": "aptitude:cmus7p9070000x8k4crkzp6rq#db-percentages-t1-q1",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q1",
       "testKey": "aptitude:cmus7p9q50002x8k4gra4ey18"
     },
     {
@@ -4053,25 +4101,25 @@
     {
       "kind": "template",
       "question": "An analyst spends 70% of their monthly income. If their income increases by 25% and expenditures increase by 1",
-      "alsoIn": "aptitude:cmus7p9070000x8k4crkzp6rq#db-percentages-t1-q1",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q1",
       "testKey": "aptitude:cmus7p9q50002x8k4gra4ey18"
     },
     {
       "kind": "concept",
       "question": "An analyst spends 70% of their monthly income. If their income increases by 25% and expenditures increase by 1",
-      "alsoIn": "aptitude:cmus7p9070000x8k4crkzp6rq#db-percentages-t1-q1",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q1",
       "testKey": "aptitude:cmus7p9q50002x8k4gra4ey18"
     },
     {
       "kind": "template",
       "question": "An analyst spends 70% of their monthly income. If their income increases by 15% and expenditures increase by 5",
-      "alsoIn": "aptitude:cmus7p9070000x8k4crkzp6rq#db-percentages-t1-q1",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q1",
       "testKey": "aptitude:cmus7p9q50002x8k4gra4ey18"
     },
     {
       "kind": "concept",
       "question": "An analyst spends 70% of their monthly income. If their income increases by 15% and expenditures increase by 5",
-      "alsoIn": "aptitude:cmus7p9070000x8k4crkzp6rq#db-percentages-t1-q1",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q1",
       "testKey": "aptitude:cmus7p9q50002x8k4gra4ey18"
     },
     {
@@ -4161,13 +4209,13 @@
     {
       "kind": "template",
       "question": "An analyst spends 70% of their monthly income. If their income increases by 25% and expenditures increase by 5",
-      "alsoIn": "aptitude:cmus7p9070000x8k4crkzp6rq#db-percentages-t1-q1",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q1",
       "testKey": "aptitude:cmus7p9q50002x8k4gra4ey18"
     },
     {
       "kind": "concept",
       "question": "An analyst spends 70% of their monthly income. If their income increases by 25% and expenditures increase by 5",
-      "alsoIn": "aptitude:cmus7p9070000x8k4crkzp6rq#db-percentages-t1-q1",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q1",
       "testKey": "aptitude:cmus7p9q50002x8k4gra4ey18"
     },
     {
@@ -5499,13 +5547,13 @@
     {
       "kind": "template",
       "question": "For a principal of ₹8,481 lent at 12% per annum, what is the difference between compound interest and simple i",
-      "alsoIn": "aptitude:cmus7pbk7000cx8k4slwqlm51#db-simple---compound-interest-t1-q5",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q5",
       "testKey": "aptitude:cmus7pbxk000ex8k4gf0f9gj6"
     },
     {
       "kind": "concept",
       "question": "For a principal of ₹8,481 lent at 12% per annum, what is the difference between compound interest and simple i",
-      "alsoIn": "aptitude:cmus7pbk7000cx8k4slwqlm51#db-simple---compound-interest-t1-q5",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q5",
       "testKey": "aptitude:cmus7pbxk000ex8k4gf0f9gj6"
     },
     {
@@ -5601,13 +5649,13 @@
     {
       "kind": "template",
       "question": "For a principal of ₹5,065 lent at 10% per annum, what is the difference between compound interest and simple i",
-      "alsoIn": "aptitude:cmus7pbk7000cx8k4slwqlm51#db-simple---compound-interest-t1-q5",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q5",
       "testKey": "aptitude:cmus7pbxk000ex8k4gf0f9gj6"
     },
     {
       "kind": "concept",
       "question": "For a principal of ₹5,065 lent at 10% per annum, what is the difference between compound interest and simple i",
-      "alsoIn": "aptitude:cmus7pbk7000cx8k4slwqlm51#db-simple---compound-interest-t1-q5",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q5",
       "testKey": "aptitude:cmus7pbxk000ex8k4gf0f9gj6"
     },
     {
@@ -5703,13 +5751,13 @@
     {
       "kind": "template",
       "question": "For a principal of ₹16,649 lent at 8% per annum, what is the difference between compound interest and simple i",
-      "alsoIn": "aptitude:cmus7pbk7000cx8k4slwqlm51#db-simple---compound-interest-t1-q5",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q5",
       "testKey": "aptitude:cmus7pbxk000ex8k4gf0f9gj6"
     },
     {
       "kind": "concept",
       "question": "For a principal of ₹16,649 lent at 8% per annum, what is the difference between compound interest and simple i",
-      "alsoIn": "aptitude:cmus7pbk7000cx8k4slwqlm51#db-simple---compound-interest-t1-q5",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q5",
       "testKey": "aptitude:cmus7pbxk000ex8k4gf0f9gj6"
     },
     {
@@ -5799,13 +5847,13 @@
     {
       "kind": "template",
       "question": "For a principal of ₹13,233 lent at 12% per annum, what is the difference between compound interest and simple ",
-      "alsoIn": "aptitude:cmus7pbk7000cx8k4slwqlm51#db-simple---compound-interest-t1-q5",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q5",
       "testKey": "aptitude:cmus7pbxk000ex8k4gf0f9gj6"
     },
     {
       "kind": "concept",
       "question": "For a principal of ₹13,233 lent at 12% per annum, what is the difference between compound interest and simple ",
-      "alsoIn": "aptitude:cmus7pbk7000cx8k4slwqlm51#db-simple---compound-interest-t1-q5",
+      "alsoIn": "aptitude:cmus7q0t50045x8k4fhg7h77z#db-microsoft-t1-q5",
       "testKey": "aptitude:cmus7pbxk000ex8k4gf0f9gj6"
     },
     {
@@ -7846,6 +7894,24 @@
       "kind": "concept",
       "question": "Six friends (Sneha, Meera, Dev, Aditya, Karan, Priya) sit around a circular table facing away from the center ",
       "alsoIn": "aptitude:cmuxojaf4003201o1yzz3you9#db-ey-t1-q16",
+      "testKey": "aptitude:cmus7pfsi000zx8k4unqnzil9"
+    },
+    {
+      "kind": "exact",
+      "question": "Six colleagues (Neha, Aarav, Karan, Priya, Meera, Pooja) sit around a circular conference table facing the cen",
+      "alsoIn": "aptitude:cmv234dtr00af01l89ack3hk7#db-pwc-t2-q13",
+      "testKey": "aptitude:cmus7pfsi000zx8k4unqnzil9"
+    },
+    {
+      "kind": "template",
+      "question": "Six colleagues (Neha, Aarav, Karan, Priya, Meera, Pooja) sit around a circular conference table facing the cen",
+      "alsoIn": "aptitude:cmv234dtr00af01l89ack3hk7#db-pwc-t2-q13",
+      "testKey": "aptitude:cmus7pfsi000zx8k4unqnzil9"
+    },
+    {
+      "kind": "concept",
+      "question": "Six colleagues (Neha, Aarav, Karan, Priya, Meera, Pooja) sit around a circular conference table facing the cen",
+      "alsoIn": "aptitude:cmv234dtr00af01l89ack3hk7#db-pwc-t2-q13",
       "testKey": "aptitude:cmus7pfsi000zx8k4unqnzil9"
     },
     {
@@ -18927,769 +18993,769 @@
     {
       "kind": "template",
       "question": "What is the remainder when 5^100 is divided by 101? (Note: 101 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^100 is divided by 101? (Note: 101 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 329x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 329x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when (22^62 + 3) is divided by 21?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q1",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q1",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when (22^62 + 3) is divided by 21?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q1",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q1",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the number 65x67 is divisible by 9, find the digit x.",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q2",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q2",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the number 65x67 is divisible by 9, find the digit x.",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q2",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q2",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "exact",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q3",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q3",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q3",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q3",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q3",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q3",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^52 is divided by 53? (Note: 53 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^52 is divided by 53? (Note: 53 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 328x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 328x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^72 is divided by 73? (Note: 73 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^72 is divided by 73? (Note: 73 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the number 85x67 is divisible by 9, find the digit x.",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q2",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q2",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the number 85x67 is divisible by 9, find the digit x.",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q2",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q2",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^28 is divided by 29? (Note: 29 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^28 is divided by 29? (Note: 29 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^30 is divided by 31? (Note: 31 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^30 is divided by 31? (Note: 31 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 327x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 327x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^12 is divided by 13? (Note: 13 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^12 is divided by 13? (Note: 13 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^16 is divided by 17? (Note: 17 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^16 is divided by 17? (Note: 17 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when (22^62 + 3) is divided by 21? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when (22^62 + 3) is divided by 21? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the number 65x67 is divisible by 9, find the digit x. (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the number 65x67 is divisible by 9, find the digit x. (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "exact",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^100 is divided by 101? (Note: 101 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^100 is divided by 101? (Note: 101 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 329x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 329x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when (22^62 + 3) is divided by 21? (Case 3)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when (22^62 + 3) is divided by 21? (Case 3)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the number 85x67 is divisible by 9, find the digit x. (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the number 85x67 is divisible by 9, find the digit x. (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "exact",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q20",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q20",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^52 is divided by 53? (Note: 53 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^52 is divided by 53? (Note: 53 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 328x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 328x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when (22^62 + 3) is divided by 21? (Case 4)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when (22^62 + 3) is divided by 21? (Case 4)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the number 65x67 is divisible by 9, find the digit x. (Case 3)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the number 65x67 is divisible by 9, find the digit x. (Case 3)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "exact",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q25",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q25",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^28 is divided by 29? (Note: 29 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^28 is divided by 29? (Note: 29 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 327x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 327x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when (22^62 + 3) is divided by 21? (Case 5)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when (22^62 + 3) is divided by 21? (Case 5)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7py32003qx8k4erxmpcgw"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^52 is divided by 53? (Note: 53 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^52 is divided by 53? (Note: 53 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 328x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 328x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when (17^47 + 3) is divided by 16?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q1",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q1",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when (17^47 + 3) is divided by 16?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q1",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q1",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the number 73x67 is divisible by 9, find the digit x.",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q2",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q2",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the number 73x67 is divisible by 9, find the digit x.",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q2",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q2",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "exact",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q3",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q3",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q3",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q3",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q3",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q3",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^28 is divided by 29? (Note: 29 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^28 is divided by 29? (Note: 29 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 327x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 327x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^30 is divided by 31? (Note: 31 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^30 is divided by 31? (Note: 31 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the number 53x67 is divisible by 9, find the digit x.",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q2",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q2",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the number 53x67 is divisible by 9, find the digit x.",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q2",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q2",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^12 is divided by 13? (Note: 13 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^12 is divided by 13? (Note: 13 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^16 is divided by 17? (Note: 17 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^16 is divided by 17? (Note: 17 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 329x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 329x4 is divisible by 11, what is the single-digit value of x?",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q5",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q5",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^72 is divided by 73? (Note: 73 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^72 is divided by 73? (Note: 73 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^100 is divided by 101? (Note: 101 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^100 is divided by 101? (Note: 101 is prime)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q4",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q4",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when (17^47 + 3) is divided by 16? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when (17^47 + 3) is divided by 16? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the number 73x67 is divisible by 9, find the digit x. (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the number 73x67 is divisible by 9, find the digit x. (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "exact",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^52 is divided by 53? (Note: 53 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^52 is divided by 53? (Note: 53 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 328x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 328x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when (17^47 + 3) is divided by 16? (Case 3)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when (17^47 + 3) is divided by 16? (Case 3)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the number 53x67 is divisible by 9, find the digit x. (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the number 53x67 is divisible by 9, find the digit x. (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "exact",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q20",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q20",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^28 is divided by 29? (Note: 29 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^28 is divided by 29? (Note: 29 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 327x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 327x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when (17^47 + 3) is divided by 16? (Case 4)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when (17^47 + 3) is divided by 16? (Case 4)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the number 73x67 is divisible by 9, find the digit x. (Case 3)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the number 73x67 is divisible by 9, find the digit x. (Case 3)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q14",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q14",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "exact",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q25",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q25",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "A number is divisible by 88 if and only if it is simultaneously divisible by which pair of co-prime numbers? (",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q15",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q15",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when 5^12 is divided by 13? (Note: 13 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when 5^12 is divided by 13? (Note: 13 is prime) (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q21",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q21",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "If the 5-digit number 329x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "If the 5-digit number 329x4 is divisible by 11, what is the single-digit value of x? (Case 2)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q17",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q17",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "template",
       "question": "What is the remainder when (17^47 + 3) is divided by 16? (Case 5)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
       "kind": "concept",
       "question": "What is the remainder when (17^47 + 3) is divided by 16? (Case 5)",
-      "alsoIn": "aptitude:cmus7pxq1003ox8k4hcxs67xx#db-divisibility-rules-t1-q18",
+      "alsoIn": "aptitude:cmus7py9j003rx8k4i12x07xr#db-remainder-theorem-t1-q18",
       "testKey": "aptitude:cmus7pymp003tx8k4gaa1dzvd"
     },
     {
@@ -22289,13 +22355,463 @@
       "question": "If all cryptographic hashes are one-way functions, and SHA-256 is a cryptographic hash, what conclusion necess",
       "alsoIn": "aptitude:cmus7pjcy001ix8k4rqki0cqr#db-statement---conclusion-t1-q8",
       "testKey": "aptitude:cmus7pjq1001kx8k4cm9bt8s1"
+    },
+    {
+      "kind": "template",
+      "question": "The average age of a team of 5 members is 38 years. If a member aged 54 leaves the team, what is the new avera",
+      "alsoIn": "aptitude:cmus7pdr9000ox8k4q8tpu5yu#db-averages-t1-q3",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "The average age of a team of 5 members is 38 years. If a member aged 54 leaves the team, what is the new avera",
+      "alsoIn": "aptitude:cmus7pdr9000ox8k4q8tpu5yu#db-averages-t1-q3",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Commodity X costs ₹150/kg and commodity Y costs ₹95/kg. In what ratio X and Y must be mixed so the blend is so",
+      "alsoIn": "aptitude:cmus7pebt000rx8k4jl6fgs97#db-mixture---alligation-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Commodity X costs ₹150/kg and commodity Y costs ₹95/kg. In what ratio X and Y must be mixed so the blend is so",
+      "alsoIn": "aptitude:cmus7pebt000rx8k4jl6fgs97#db-mixture---alligation-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "If the market price of cloud server instances increases by 20%, by what percentage should an engineering team ",
+      "alsoIn": "aptitude:cmus7p9070000x8k4crkzp6rq#db-percentages-t1-q7",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "If the market price of cloud server instances increases by 20%, by what percentage should an engineering team ",
+      "alsoIn": "aptitude:cmus7p9070000x8k4crkzp6rq#db-percentages-t1-q7",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "A merchant marks hardware products 45% above their cost price of ₹1553 and offers a trade discount of 12% on t",
+      "alsoIn": "aptitude:cmus7p9wy0003x8k4lerp9nt8#db-profit---loss-t1-q8",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "A merchant marks hardware products 45% above their cost price of ₹1553 and offers a trade discount of 12% on t",
+      "alsoIn": "aptitude:cmus7p9wy0003x8k4lerp9nt8#db-profit---loss-t1-q8",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Builder A can construct a security firewall in 12 days, while a continuous stress-testing simulator would take",
+      "alsoIn": "aptitude:cmus7pags0006x8k4pvhrthvw#db-time---work-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Builder A can construct a security firewall in 12 days, while a continuous stress-testing simulator would take",
+      "alsoIn": "aptitude:cmus7pags0006x8k4pvhrthvw#db-time---work-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "A cyber patrol detects an intruder accessing system files 325 meters ahead in a network simulator. The intrude",
+      "alsoIn": "aptitude:cmus7pb0j0009x8k4whoepyqw#db-time--speed---distance-t1-q2",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "A cyber patrol detects an intruder accessing system files 325 meters ahead in a network simulator. The intrude",
+      "alsoIn": "aptitude:cmus7pb0j0009x8k4whoepyqw#db-time--speed---distance-t1-q2",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "A sum of money at simple interest amounts to ₹14,060 in 2 years and ₹16,356 in 4 years. What is the original p",
+      "alsoIn": "aptitude:cmus7pbk7000cx8k4slwqlm51#db-simple---compound-interest-t1-q3",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "A sum of money at simple interest amounts to ₹14,060 in 2 years and ₹16,356 in 4 years. What is the original p",
+      "alsoIn": "aptitude:cmus7pbk7000cx8k4slwqlm51#db-simple---compound-interest-t1-q3",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "A sum of ₹2,177 is divided between two partners in the ratio 3:5. If the first partner then gives ₹683 to the ",
+      "alsoIn": "aptitude:cmus7pc45000fx8k4y1l8jyzg#db-ratio---proportion-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "A sum of ₹2,177 is divided between two partners in the ratio 3:5. If the first partner then gives ₹683 to the ",
+      "alsoIn": "aptitude:cmus7pc45000fx8k4y1l8jyzg#db-ratio---proportion-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Statements:\nI. Some clouds are secure.\nII. All secure networks are encrypted.\nConclusions:\n1. Some clouds are ",
+      "alsoIn": "aptitude:cmus7phpz0019x8k49hcevcfw#db-syllogisms-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Statements:\nI. Some clouds are secure.\nII. All secure networks are encrypted.\nConclusions:\n1. Some clouds are ",
+      "alsoIn": "aptitude:cmus7phpz0019x8k49hcevcfw#db-syllogisms-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Statements:\nI. Some clouds are secure.\nII. All secure networks are encrypted.\nConclusions:\n1. Some clouds are ",
+      "alsoIn": "aptitude:cmus7phpz0019x8k49hcevcfw#db-syllogisms-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "If every tech unicorn has scalable software, and no company without venture funding can become a unicorn, whic",
+      "alsoIn": "aptitude:cmus7pjcy001ix8k4rqki0cqr#db-statement---conclusion-t1-q5",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "If every tech unicorn has scalable software, and no company without venture funding can become a unicorn, whic",
+      "alsoIn": "aptitude:cmus7pjcy001ix8k4rqki0cqr#db-statement---conclusion-t1-q5",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "If every tech unicorn has scalable software, and no company without venture funding can become a unicorn, whic",
+      "alsoIn": "aptitude:cmus7pjcy001ix8k4rqki0cqr#db-statement---conclusion-t1-q5",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Premise 1: Whenever the build pipeline fails, alerts are dispatched. Premise 2: No alerts were dispatched toda",
+      "alsoIn": "aptitude:cmus7pjcy001ix8k4rqki0cqr#db-statement---conclusion-t1-q2",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Premise 1: Whenever the build pipeline fails, alerts are dispatched. Premise 2: No alerts were dispatched toda",
+      "alsoIn": "aptitude:cmus7pjcy001ix8k4rqki0cqr#db-statement---conclusion-t1-q2",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Premise 1: Whenever the build pipeline fails, alerts are dispatched. Premise 2: No alerts were dispatched toda",
+      "alsoIn": "aptitude:cmus7pjcy001ix8k4rqki0cqr#db-statement---conclusion-t1-q2",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "If 'BAT' is coded as 23 (2 + 1 + 20) and 'CAT' is coded as 24 (3 + 1 + 20), what is the numerical code for 'BA",
+      "alsoIn": "aptitude:cmus7pgio0013x8k4t4ikivyq#db-coding-decoding-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "If 'BAT' is coded as 23 (2 + 1 + 20) and 'CAT' is coded as 24 (3 + 1 + 20), what is the numerical code for 'BA",
+      "alsoIn": "aptitude:cmus7pgio0013x8k4t4ikivyq#db-coding-decoding-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "If 'BAT' is coded as 23 (2 + 1 + 20) and 'CAT' is coded as 24 (3 + 1 + 20), what is the numerical code for 'BA",
+      "alsoIn": "aptitude:cmus7pgio0013x8k4t4ikivyq#db-coding-decoding-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "An autonomous drone flies 5 meters North, turns 90° East and travels 12 meters. How far and in which compass d",
+      "alsoIn": "aptitude:cmus7ph690016x8k482ux2m1y#db-direction-sense-t1-q5",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "An autonomous drone flies 5 meters North, turns 90° East and travels 12 meters. How far and in which compass d",
+      "alsoIn": "aptitude:cmus7ph690016x8k482ux2m1y#db-direction-sense-t1-q5",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Complete the functional analogy: Firewall : Security :: Router : ?",
+      "alsoIn": "aptitude:cmus7pi9r001cx8k4rzvb94sx#db-number-series-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Complete the functional analogy: Firewall : Security :: Router : ?",
+      "alsoIn": "aptitude:cmus7pi9r001cx8k4rzvb94sx#db-number-series-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Complete the functional analogy: Firewall : Security :: Router : ?",
+      "alsoIn": "aptitude:cmus7pi9r001cx8k4rzvb94sx#db-number-series-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Choose the exact meaning of the idiom: 'To burn the candle at both ends'",
+      "alsoIn": "aptitude:cmus7pob00029x8k47f5tqdfm#db-idioms---phrases-t1-q3",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Choose the exact meaning of the idiom: 'To burn the candle at both ends'",
+      "alsoIn": "aptitude:cmus7pob00029x8k47f5tqdfm#db-idioms---phrases-t1-q3",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Choose the exact meaning of the idiom: 'To burn the candle at both ends'",
+      "alsoIn": "aptitude:cmus7pob00029x8k47f5tqdfm#db-idioms---phrases-t1-q3",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Rearrange the following jumbled parts to form a coherent sentence:\n\nP. to maintain low query latency\nQ. relati",
+      "alsoIn": "aptitude:cmus7pmnc0020x8k448vqxhxk#db-para-jumbles-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Rearrange the following jumbled parts to form a coherent sentence:\n\nP. to maintain low query latency\nQ. relati",
+      "alsoIn": "aptitude:cmus7pmnc0020x8k448vqxhxk#db-para-jumbles-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Rearrange the following jumbled parts to form a coherent sentence:\n\nP. to maintain low query latency\nQ. relati",
+      "alsoIn": "aptitude:cmus7pmnc0020x8k448vqxhxk#db-para-jumbles-t1-q4",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Read the passage below and answer the question:\n\n\"Quantum computing leverages superposition and entanglement t",
+      "alsoIn": "aptitude:cmus7pkga001ox8k4dpwzrusv#db-reading-comprehension-t1-q5",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Read the passage below and answer the question:\n\n\"Quantum computing leverages superposition and entanglement t",
+      "alsoIn": "aptitude:cmus7pkga001ox8k4dpwzrusv#db-reading-comprehension-t1-q5",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Read the passage below and answer the question:\n\n\"Quantum computing leverages superposition and entanglement t",
+      "alsoIn": "aptitude:cmus7pkga001ox8k4dpwzrusv#db-reading-comprehension-t1-q5",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Identify the correct use of correlative conjunctions:",
+      "alsoIn": "aptitude:cmus7pl03001rx8k48goxv513#db-grammar-t1-q6",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Identify the correct use of correlative conjunctions:",
+      "alsoIn": "aptitude:cmus7pl03001rx8k48goxv513#db-grammar-t1-q6",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Identify the correct use of correlative conjunctions:",
+      "alsoIn": "aptitude:cmus7pl03001rx8k48goxv513#db-grammar-t1-q6",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Choose the sentence with correct pronoun case:",
+      "alsoIn": "aptitude:cmus7pl03001rx8k48goxv513#db-grammar-t1-q7",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Choose the sentence with correct pronoun case:",
+      "alsoIn": "aptitude:cmus7pl03001rx8k48goxv513#db-grammar-t1-q7",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Choose the sentence with correct pronoun case:",
+      "alsoIn": "aptitude:cmus7pl03001rx8k48goxv513#db-grammar-t1-q7",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Complete the sentence with the most contextually fitting word:\n\"The QA lead was _______ about code formatting ",
+      "alsoIn": "aptitude:cmus7pljs001ux8k4nckb4ntg#db-vocabulary-t1-q8",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Complete the sentence with the most contextually fitting word:\n\"The QA lead was _______ about code formatting ",
+      "alsoIn": "aptitude:cmus7pljs001ux8k4nckb4ntg#db-vocabulary-t1-q8",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Complete the sentence with the most contextually fitting word:\n\"The QA lead was _______ about code formatting ",
+      "alsoIn": "aptitude:cmus7pljs001ux8k4nckb4ntg#db-vocabulary-t1-q8",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "In a corporate annual budget of ₹70 Crores, expenditure is distributed via a Pie Chart as: Marketing = 35%, R&",
+      "alsoIn": "aptitude:cmus7ppen002fx8k4spc9827n#db-pie-charts-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "In a corporate annual budget of ₹70 Crores, expenditure is distributed via a Pie Chart as: Marketing = 35%, R&",
+      "alsoIn": "aptitude:cmus7ppen002fx8k4spc9827n#db-pie-charts-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "In a performance evaluation table, Department A resolved 136 support tickets while Department B resolved 198 t",
+      "alsoIn": "aptitude:cmus7pqhw002lx8k4zjwv3uoc#db-tables-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "In a performance evaluation table, Department A resolved 136 support tickets while Department B resolved 198 t",
+      "alsoIn": "aptitude:cmus7pqhw002lx8k4zjwv3uoc#db-tables-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "A company's server deployments over consecutive fiscal years show: Year 1 = 412 units, Year 2 = 586 units. Wha",
+      "alsoIn": "aptitude:cmus7poux002cx8k42ko3nmnb#db-bar-graphs-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "A company's server deployments over consecutive fiscal years show: Year 1 = 412 units, Year 2 = 586 units. Wha",
+      "alsoIn": "aptitude:cmus7poux002cx8k42ko3nmnb#db-bar-graphs-t1-q1",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Statement: \"An e-commerce marketplace discovered that third-party merchant accounts were listing counterfeit p",
+      "alsoIn": "aptitude:cmus7pux50039x8k4epml6gf7#db-course-of-action-t1-q12",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Statement: \"An e-commerce marketplace discovered that third-party merchant accounts were listing counterfeit p",
+      "alsoIn": "aptitude:cmus7pux50039x8k4epml6gf7#db-course-of-action-t1-q12",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Statement: \"An e-commerce marketplace discovered that third-party merchant accounts were listing counterfeit p",
+      "alsoIn": "aptitude:cmus7pux50039x8k4epml6gf7#db-course-of-action-t1-q12",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Statement: \"The pharmaceutical regulator fast-tracked clinical evaluation of a novel monoclonal antibody vacci",
+      "alsoIn": "aptitude:cmus7pt9u0030x8k4x3yzimlj#db-statement-assumption-t1-q13",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Statement: \"The pharmaceutical regulator fast-tracked clinical evaluation of a novel monoclonal antibody vacci",
+      "alsoIn": "aptitude:cmus7pt9u0030x8k4x3yzimlj#db-statement-assumption-t1-q13",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Statement: \"The pharmaceutical regulator fast-tracked clinical evaluation of a novel monoclonal antibody vacci",
+      "alsoIn": "aptitude:cmus7pt9u0030x8k4x3yzimlj#db-statement-assumption-t1-q13",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "exact",
+      "question": "Statement: \"Replacing legacy magnetic hard drives with NVMe solid-state storage reduced server database query ",
+      "alsoIn": "aptitude:cmus7pttm0033x8k42lv0f0aa#db-statement-conclusion-t1-q14",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "template",
+      "question": "Statement: \"Replacing legacy magnetic hard drives with NVMe solid-state storage reduced server database query ",
+      "alsoIn": "aptitude:cmus7pttm0033x8k42lv0f0aa#db-statement-conclusion-t1-q14",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
+    },
+    {
+      "kind": "concept",
+      "question": "Statement: \"Replacing legacy magnetic hard drives with NVMe solid-state storage reduced server database query ",
+      "alsoIn": "aptitude:cmus7pttm0033x8k42lv0f0aa#db-statement-conclusion-t1-q14",
+      "testKey": "aptitude:cmv234eeb00ag01l80dfl83ax"
     }
   ],
   "results": [
     {
       "suite": "mcq",
-      "label": "Amazon (company)",
-      "testId": "test-amazon-3",
+      "label": "Startup & Entrepreneurship (technology)",
+      "testId": "test-tech-startup-3",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 16,
+      "diagnostics": {
+        "parseFailures": 1,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "mcq",
+      "label": "Stock Market (technology)",
+      "testId": "test-tech-stock-market-3",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 17,
+      "diagnostics": {
+        "parseFailures": 1,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 16,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "mcq",
+      "label": "TensorFlow (technology)",
+      "testId": "test-tech-tf-3",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 21,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 3,
+        "bankRejections": 0,
+        "validResponses": 18,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "mcq",
+      "label": "TypeScript (technology)",
+      "testId": "test-tech-ts-3",
       "before": 0,
       "requested": 30,
       "written": 30,
@@ -22312,8 +22828,8 @@
     },
     {
       "suite": "mcq",
-      "label": "Apple (company)",
-      "testId": "test-apple-3",
+      "label": "UI/UX (Design) (technology)",
+      "testId": "test-tech-ui-ux-3",
       "before": 0,
       "requested": 30,
       "written": 30,
@@ -22330,144 +22846,162 @@
     },
     {
       "suite": "mcq",
+      "label": "VLSI & Digital Electronics (technology)",
+      "testId": "test-tech-vlsi-3",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "mcq",
+      "label": "Vue (technology)",
+      "testId": "test-tech-vue-3",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 15,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 15,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Accenture (company)",
+      "testId": "cmv7saqy9006on0k4tmrww4em",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 28,
+      "diagnostics": {
+        "parseFailures": 0,
+        "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 28,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
       "label": "Capgemini (company)",
-      "testId": "test-capgemini-3",
+      "testId": "cmv7sevib007jn0k4uvhxxzbq",
       "before": 0,
       "requested": 30,
       "written": 30,
       "after": 30,
-      "attempts": 15,
+      "attempts": 28,
       "diagnostics": {
         "parseFailures": 0,
         "apiErrors": 0,
         "bankRejections": 0,
-        "validResponses": 15,
+        "validResponses": 28,
         "invalidCandidates": 0
       },
       "status": "created"
     },
     {
-      "suite": "mcq",
+      "suite": "aptitude",
       "label": "Cognizant (company)",
-      "testId": "test-cognizant-3",
+      "testId": "cmv7slllx008en0k4jfkmw6xh",
       "before": 0,
       "requested": 30,
       "written": 30,
       "after": 30,
-      "attempts": 16,
+      "attempts": 28,
       "diagnostics": {
         "parseFailures": 0,
         "apiErrors": 0,
-        "bankRejections": 1,
-        "validResponses": 16,
+        "bankRejections": 0,
+        "validResponses": 28,
         "invalidCandidates": 0
       },
       "status": "created"
     },
     {
-      "suite": "mcq",
+      "suite": "aptitude",
       "label": "Deloitte (company)",
-      "testId": "test-deloitte-3",
+      "testId": "cmv7ssl2o0099n0k4jub0c01q",
       "before": 0,
       "requested": 30,
       "written": 30,
       "after": 30,
-      "attempts": 15,
+      "attempts": 28,
       "diagnostics": {
         "parseFailures": 0,
         "apiErrors": 0,
         "bankRejections": 0,
-        "validResponses": 15,
+        "validResponses": 28,
         "invalidCandidates": 0
       },
       "status": "created"
     },
     {
-      "suite": "mcq",
-      "label": "IBM (company)",
-      "testId": "test-ibm-3",
-      "before": 0,
-      "requested": 30,
-      "written": 30,
-      "after": 30,
-      "attempts": 16,
-      "diagnostics": {
-        "parseFailures": 0,
-        "apiErrors": 0,
-        "bankRejections": 1,
-        "validResponses": 16,
-        "invalidCandidates": 0
-      },
-      "status": "created"
-    },
-    {
-      "suite": "mcq",
-      "label": "Infosys (company)",
-      "testId": "test-infosys-3",
-      "before": 0,
-      "requested": 30,
-      "written": 30,
-      "after": 30,
-      "attempts": 15,
-      "diagnostics": {
-        "parseFailures": 0,
-        "apiErrors": 0,
-        "bankRejections": 0,
-        "validResponses": 15,
-        "invalidCandidates": 0
-      },
-      "status": "created"
-    },
-    {
-      "suite": "mcq",
-      "label": "Meta (company)",
-      "testId": "test-meta-3",
-      "before": 0,
-      "requested": 30,
-      "written": 30,
-      "after": 30,
-      "attempts": 15,
-      "diagnostics": {
-        "parseFailures": 0,
-        "apiErrors": 0,
-        "bankRejections": 0,
-        "validResponses": 15,
-        "invalidCandidates": 0
-      },
-      "status": "created"
-    },
-    {
-      "suite": "mcq",
+      "suite": "aptitude",
       "label": "Microsoft (company)",
-      "testId": "test-microsoft-3",
+      "testId": "cmv7swsi900a4n0k4rmq2tl1d",
       "before": 0,
       "requested": 30,
       "written": 30,
       "after": 30,
-      "attempts": 15,
+      "attempts": 28,
       "diagnostics": {
         "parseFailures": 0,
         "apiErrors": 0,
         "bankRejections": 0,
-        "validResponses": 15,
+        "validResponses": 28,
         "invalidCandidates": 0
       },
       "status": "created"
     },
     {
-      "suite": "mcq",
-      "label": "NVIDIA (company)",
-      "testId": "test-nvidia-3",
+      "suite": "aptitude",
+      "label": "TCS (company)",
+      "testId": "cmv7t0pt300azn0k4guabe28q",
       "before": 0,
       "requested": 30,
       "written": 30,
       "after": 30,
-      "attempts": 16,
+      "attempts": 28,
       "diagnostics": {
         "parseFailures": 0,
         "apiErrors": 0,
+        "bankRejections": 0,
+        "validResponses": 28,
+        "invalidCandidates": 0
+      },
+      "status": "created"
+    },
+    {
+      "suite": "aptitude",
+      "label": "Wipro (company)",
+      "testId": "cmv7t6uuw00bun0k4raamlf3u",
+      "before": 0,
+      "requested": 30,
+      "written": 30,
+      "after": 30,
+      "attempts": 30,
+      "diagnostics": {
+        "parseFailures": 1,
+        "apiErrors": 0,
         "bankRejections": 1,
-        "validResponses": 16,
+        "validResponses": 29,
         "invalidCandidates": 0
       },
       "status": "created"

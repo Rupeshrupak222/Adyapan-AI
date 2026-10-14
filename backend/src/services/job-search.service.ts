@@ -217,13 +217,13 @@ function canonicalCityKey(city: string | undefined | null): string | undefined {
     }
   }
   // New/unmapped city or a country-only value (e.g. city column = "India"):
-  // exclude pure country names, otherwise fall back to the first token so the
-  // value still shows up in facets & filter options automatically.
+  // exclude pure country names, otherwise fall back to the first two tokens
+  // ("New York", not "New") so the value still auto-appears in the facets.
   const fallbackTokens = tokens.slice(0, 2).join(" ");
-  if (tokenSet.has(first) && (COUNTRY_NAMES.has(first) || COUNTRY_NAMES.has(fallbackTokens))) {
+  if (COUNTRY_NAMES.has(first) || COUNTRY_NAMES.has(fallbackTokens)) {
     return undefined;
   }
-  return first || undefined;
+  return fallbackTokens || undefined;
 }
 
 // ─── Query Normalization ──────────────────────────────────────────────────────
@@ -438,6 +438,18 @@ totalScore += freshScore * freshWeight;
 // Single source of truth for search + facets so both stay in sync. All
 // normalization here is query-time only — discovery_jobs rows are never mutated.
 
+// Numeric range filters (experience, salary). A job whose range is entirely
+// unknown (both bounds NULL) cannot be in any band and is excluded; a job with
+// only one bound stated is treated as open-ended on the missing side.
+export function rangeOverlapConditions(minCol: string, maxCol: string, min?: number, max?: number): any[] {
+  const conditions: any[] = [
+    { OR: [{ [minCol]: { not: null } }, { [maxCol]: { not: null } }] },
+  ];
+  if (min) conditions.push({ OR: [{ [maxCol]: { gte: min } }, { [maxCol]: null }] });
+  if (max !== undefined) conditions.push({ OR: [{ [minCol]: { lte: max } }, { [minCol]: null }] });
+  return conditions;
+}
+
 function buildSearchWhere(filters: SearchFilters): any {
   const where: any = { isActive: true };
 
@@ -515,26 +527,18 @@ function buildSearchWhere(filters: SearchFilters): any {
     where.employmentType = filters.employmentType;
   }
 
-  // Experience
+  // Experience: unknown (both bounds NULL) cannot match a band; one stated
+  // bound is open-ended. Values are years.
   if (filters.experienceMin !== undefined || filters.experienceMax !== undefined) {
     where.AND = where.AND || [];
-    if (filters.experienceMin !== undefined) {
-      where.AND.push({ experienceMax: { gte: filters.experienceMin } });
-    }
-    if (filters.experienceMax !== undefined) {
-      where.AND.push({ experienceMin: { lte: filters.experienceMax } });
-    }
+    where.AND.push(...rangeOverlapConditions("experienceMin", "experienceMax", filters.experienceMin, filters.experienceMax));
   }
 
-  // Salary
+  // Salary: same rule. Values are absolute annual amounts, so a "3-6 LPA"
+  // preset arrives as 300000..600000.
   if (filters.salaryMin !== undefined || filters.salaryMax !== undefined) {
     where.AND = where.AND || [];
-    if (filters.salaryMin !== undefined) {
-      where.AND.push({ salaryMax: { gte: filters.salaryMin } });
-    }
-    if (filters.salaryMax !== undefined) {
-      where.AND.push({ salaryMin: { lte: filters.salaryMax } });
-    }
+    where.AND.push(...rangeOverlapConditions("salaryMin", "salaryMax", filters.salaryMin, filters.salaryMax));
   }
 
   // Skills: multi-select (ANY)
@@ -670,17 +674,16 @@ export class JobSearchService {
         console.log(`[JobSearchService] Auto-updating stale job timestamps (latest was ${Math.round(diffMs / 3600000)}h ago)...`);
         const shiftMs = Math.max(diffMs - 2 * 60 * 60 * 1000, 12 * 60 * 60 * 1000);
 
-        const allJobs = await db.discoveryJob.findMany({ select: { id: true, postedAt: true } });
-        for (const job of allJobs) {
-          if (job.postedAt) {
-            const newDate = new Date(new Date(job.postedAt).getTime() + shiftMs);
-            await db.discoveryJob.update({
-              where: { id: job.id },
-              data: { postedAt: newDate, updatedAt: new Date() },
-            });
-          }
+        const shiftSeconds = Math.round(shiftMs / 1000);
+        try {
+          const updatedCount = await (db as any).$executeRawUnsafe(
+            `UPDATE "discovery_jobs" SET "posted_at" = "posted_at" + ($1 || ' seconds')::interval, "updated_at" = NOW() WHERE "posted_at" IS NOT NULL`,
+            String(shiftSeconds)
+          );
+          console.log(`[JobSearchService] Successfully updated ${updatedCount} job timestamps to present day via atomic SQL.`);
+        } catch (rawErr: any) {
+          console.warn("[JobSearchService] Atomic SQL timestamp update failed:", rawErr?.message || rawErr);
         }
-        console.log(`[JobSearchService] Successfully updated ${allJobs.length} job timestamps to present day.`);
       }
     } catch (err: any) {
       console.warn("[JobSearchService] Failed to auto-update stale jobs:", err?.message || err);
@@ -1102,6 +1105,9 @@ export class JobSearchService {
       pagedJobs = mappedJobs
         .sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0))
         .slice(skip, skip + limit);
+      // Ranking happens in memory over a capped pool (see poolLimit), so report
+      // the reachable count — otherwise the UI advertises pages that come back empty.
+      total = Math.min(total, mappedJobs.length);
     }
 
     const totalPages = Math.ceil(total / limit);

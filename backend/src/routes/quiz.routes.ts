@@ -84,8 +84,8 @@ quizRouter.get("/history", async (req, res) => {
     const userPrisma = await getUserPrismaFromRequest(req);
     const quizzes = await userPrisma.quiz.findMany({
       where: { userId: req.user!.userId },
-      include: { attempts: true, flashcards: true },
       orderBy: { createdAt: "desc" },
+      select: { id: true, topic: true, createdAt: true },
     });
     res.json({ success: true, quizzes });
   } catch (error) {

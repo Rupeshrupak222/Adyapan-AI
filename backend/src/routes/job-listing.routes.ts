@@ -87,11 +87,13 @@ jobListingRouter.get("/", async (req: Request, res: Response) => {
 
     if (salaryMin || salaryMax) {
       where.AND = where.AND || [];
+      // Unknown salary (both bounds NULL) is excluded; one stated bound is open-ended.
+      where.AND.push({ OR: [{ salaryMin: { not: null } }, { salaryMax: { not: null } }] });
       if (salaryMin) {
-        where.AND.push({ salaryMax: { gte: parseInt(salaryMin as string, 10) } });
+        where.AND.push({ OR: [{ salaryMax: { gte: parseInt(salaryMin as string, 10) } }, { salaryMax: null }] });
       }
       if (salaryMax) {
-        where.AND.push({ salaryMin: { lte: parseInt(salaryMax as string, 10) } });
+        where.AND.push({ OR: [{ salaryMin: { lte: parseInt(salaryMax as string, 10) } }, { salaryMin: null }] });
       }
     }
 

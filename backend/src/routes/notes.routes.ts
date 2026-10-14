@@ -58,6 +58,7 @@ notesRouter.get("/history", async (req, res) => {
     const notes = await userPrisma.generatedNote.findMany({
       where: { userId: req.user!.userId },
       orderBy: { createdAt: "desc" },
+      select: { id: true, topic: true, type: true, createdAt: true },
     });
     res.json({ success: true, notes });
   } catch (error) {

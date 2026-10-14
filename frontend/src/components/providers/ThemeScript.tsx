@@ -158,6 +158,7 @@ export default function ThemeScript() {
   return (
     <script
       id="theme-script"
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: script }}
     />
   );

@@ -149,7 +149,6 @@ export class WeakTopicsService {
       revisions,
       streakEvents,
       plannerTasks,
-      existingWeakTopics,
     ] = await Promise.all([
       prisma.generatedNote.findMany({ where: { userId }, select: { topic: true, createdAt: true } }),
       prisma.quiz.findMany({ where: { userId }, select: { topic: true, createdAt: true } }),
@@ -161,7 +160,6 @@ export class WeakTopicsService {
         where: { studyPlan: { userId } },
         select: { topicName: true, status: true, estimatedTime: true, completedAt: true, scheduledDate: true },
       }),
-      prisma.weakTopic.findMany({ where: { userId } }),
     ]);
 
     // 2. Build per-topic signal map
@@ -517,8 +515,15 @@ Each array item: { topic: string, reason: string }. Limit to 3 items per categor
   static async getDashboardData(userId: string, prisma: PrismaClient): Promise<WeakTopicsDashboard | null> {
     const [weakTopicsDb, weakConceptsDb, revisionQueueDb] = await Promise.all([
       prisma.weakTopic.findMany({ where: { userId }, orderBy: { strengthScore: "asc" } }),
-      prisma.weakConcept.findMany({ where: { userId } }),
-      prisma.revisionQueue.findMany({ where: { userId }, orderBy: { priority: "asc" } }),
+      prisma.weakConcept.findMany({
+        where: { userId },
+        select: { topicName: true, conceptName: true, masteryScore: true, riskLevel: true, recommendedAction: true },
+      }),
+      prisma.revisionQueue.findMany({
+        where: { userId },
+        orderBy: { priority: "asc" },
+        select: { topicName: true, priority: true, recommendedDate: true, reason: true, status: true },
+      }),
     ]);
 
     if (weakTopicsDb.length === 0) return null;

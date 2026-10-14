@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // In-memory cache for fast repeated resolution
-const logoCache = new Map<string, { logoUrl: string; domain: string }>();
+const logoCache = new Map<string, { logoUrl: string | null; domain: string }>();
 
 // Common top-level domain extensions to probe
 const TLD_CANDIDATES = [".com", ".io", ".ai", ".in", ".org", ".co", ".net", ".tech", ".app"];
@@ -136,14 +136,14 @@ export async function GET(req: NextRequest) {
       // Fallback to IconHorse or Google S2 without strict pre-flight
     }
 
-    // Default high-availability Google S2 Favicon URL
-    const defaultResult = {
-      logoUrl: `https://www.google.com/s2/favicons?domain=${primaryDomain}&sz=128`,
-      domain: primaryDomain
-    };
-    logoCache.set(cacheKey, defaultResult);
+    // No candidate domain responded to the probe: return no logo rather than a
+    // Google favicon for a domain that does not exist (that returns a generic
+    // globe with HTTP 200, which the UI cannot distinguish from a real logo).
+    // The caller then falls back to jsDelivr Simple Icons or the initials badge.
+    const emptyResult = { logoUrl: null, domain: "" };
+    logoCache.set(cacheKey, emptyResult);
 
-    return NextResponse.json({ success: true, ...defaultResult, source: "fallback_domain" });
+    return NextResponse.json({ success: true, ...emptyResult, source: "unresolved" });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Failed to resolve company logo" },

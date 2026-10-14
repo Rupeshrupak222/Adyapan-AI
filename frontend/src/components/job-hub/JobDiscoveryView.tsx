@@ -1349,7 +1349,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
             )}
             {(job.salaryMin || job.salaryMax || job.salary) && (
               <span className="text-[10px] font-bold flex items-center gap-1" style={{ color: "#10b981" }}>
-                <span className="font-extrabold text-[11px]">₹</span> {job.salary ? job.salary.replace("$", "₹") : formatSalary(job.salaryMin, job.salaryMax)}
+                {job.salary || formatSalary(job.salaryMin, job.salaryMax)}
               </span>
             )}
           </div>
@@ -1391,7 +1391,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
         <div className="flex flex-col items-end gap-2 shrink-0">
           {(job.salaryMin || job.salaryMax || job.salary) && (
             <span className="text-[11px] font-bold flex items-center gap-1" style={{ color: "#10b981" }}>
-              <span className="font-extrabold text-[11px]">₹</span> {job.salary ? job.salary.replace("$", "₹") : formatSalary(job.salaryMin, job.salaryMax)}
+              {job.salary || formatSalary(job.salaryMin, job.salaryMax)}
             </span>
           )}
           <span className="text-[9px] font-semibold" style={{ color: c.textMuted }}>{timeAgo(job.postedAt || (job as any).postedDate || (job as any).createdAt || (job as any).firstSeenAt)}</span>
@@ -1464,16 +1464,25 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                     <Code2 size={14} style={{ color: c.primary }} /> Top Skills
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {analytics.bySkill.slice(0, 12).map((skill: any, i: number) => (
-                      <span key={skill.name} className="px-2 py-1 rounded-md text-[10px] font-bold border cursor-pointer transition-all hover:scale-[1.03]"
-                        style={{
-                          background: i < 3 ? "rgba(245,158,11,0.08)" : c.surface,
-                          color: i < 3 ? c.primary : c.textMuted,
-                          borderColor: i < 3 ? "rgba(245,158,11,0.2)" : c.border,
-                        }} onClick={() => { if (!skillTags.includes(skill.name)) setSkillTags(prev => [...prev, skill.name]); }}>
-                        {skill.name} ({formatCap99(skill.count)})
-                      </span>
-                    ))}
+                    {analytics.bySkill.slice(0, 12).map((skill: any) => {
+                      const isSelected = skillTags.some(t => t.toLowerCase() === skill.name.toLowerCase());
+                      return (
+                        <span key={skill.name} className="px-2 py-1 rounded-md text-[10px] font-bold border cursor-pointer transition-all hover:scale-[1.03]"
+                          style={{
+                            background: isSelected ? "rgba(245,158,11,0.12)" : c.surface,
+                            color: isSelected ? c.primary : c.textMuted,
+                            borderColor: isSelected ? "rgba(245,158,11,0.25)" : c.border,
+                          }} onClick={() => {
+                            if (isSelected) {
+                              setSkillTags(prev => prev.filter(t => t.toLowerCase() !== skill.name.toLowerCase()));
+                            } else {
+                              setSkillTags(prev => [...prev, skill.name]);
+                            }
+                          }}>
+                          {skill.name} ({formatCap99(skill.count)})
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -2370,7 +2379,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
                           </div>
                           {(j.salary || j.salaryMin || j.salaryMax) && (
                             <div className="mt-1.5 text-[10px] font-bold flex items-center gap-1" style={{ color: "#10b981" }}>
-                              <span className="font-extrabold text-[11px]">₹</span> {j.salary || formatSalary(j.salaryMin, j.salaryMax)}
+                              {j.salary || formatSalary(j.salaryMin, j.salaryMax)}
                             </div>
                           )}
                         </div>

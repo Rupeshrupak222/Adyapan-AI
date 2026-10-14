@@ -32,22 +32,35 @@ import { ensureAdminTables } from "./scripts/ensure-admin-tables";
 import { hydrateTestStoreFromDb } from "./services/mcq.service";
 
 async function start() {
-  // The MCQ store hydrates from Postgres before the first request so a test
-  // generated at runtime survives a redeploy. Failure is non-fatal: the service
-  // falls back to its JSON cache.
-  try {
-    await hydrateTestStoreFromDb();
-  } catch (e: any) {
-    console.warn("MCQ store hydration skipped (non-fatal):", e?.message || e);
+  const isProd = process.env.NODE_ENV === "production";
+
+  // In development, the local JSON store (data/mcq-tests-store.json) is already populated
+  // and serves instantaneously. Skip downloading 17,229 questions (~40MB) on every dev reload.
+  if (isProd && process.env.ENABLE_DB_HYDRATION === "true") {
+    try {
+      await hydrateTestStoreFromDb();
+    } catch (e: any) {
+      console.warn("MCQ store hydration skipped (non-fatal):", e?.message || e);
+    }
+  } else {
+    console.log("[MCQ] Serving tests from local JSON store (0 KB Supabase egress).");
   }
 
   server.listen(env.port, "0.0.0.0", () => {
     console.log(`Backend server started on port ${env.port}`);
-    ensureAdminTables().catch((e) => {
-      console.warn("Admin tables sync skipped (non-fatal):", e?.message || e);
-    });
-    JobSchedulerService.start();
-    HourlyQuestionSchedulerService.start();
+
+    // Admin tables already exist — skip 275 SQL queries on every local reload unless requested
+    if (isProd || process.env.SYNC_ADMIN_TABLES === "true") {
+      ensureAdminTables().catch((e) => {
+        console.warn("Admin tables sync skipped (non-fatal):", e?.message || e);
+      });
+    }
+
+    // Background job scraping & question generation cron jobs run only in production or when enabled
+    if (isProd || process.env.ENABLE_SCHEDULERS === "true") {
+      JobSchedulerService.start();
+      HourlyQuestionSchedulerService.start();
+    }
   });
 }
 

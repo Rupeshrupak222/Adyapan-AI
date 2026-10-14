@@ -746,6 +746,7 @@ studyRouter.get("/sessions", async (req, res) => {
       where: { userId: req.user!.userId },
       include: { messages: true, documents: true },
       orderBy: { updatedAt: "desc" },
+      take: 20,
     });
     res.json({ success: true, sessions });
   } catch (error) {
@@ -758,7 +759,9 @@ studyRouter.get("/history", async (req, res) => {
     const userPrisma = await getUserPrismaFromRequest(req);
     const sessions = await userPrisma.studySession.findMany({
       where: { userId: req.user!.userId },
-      include: { messages: true },
+      select: { id: true, title: true, createdAt: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
     });
     res.json({ success: true, sessions });
   } catch (error) {

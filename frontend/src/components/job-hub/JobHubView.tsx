@@ -550,7 +550,7 @@ function JobCard({ job, c, onOpen, onSave }: {
           )}
           {job.salary && (
             <span className="text-[10px] font-bold flex items-center gap-1" style={{ color: "#10b981" }}>
-              <span className="font-extrabold text-[11px]">₹</span> {job.salary.replace("$", "₹")}
+              {job.salary}
             </span>
           )}
           {job.experience && (

@@ -78,6 +78,7 @@ mindMapRouter.get("/history", async (req, res) => {
     const mindmaps = await userPrisma.mindMap.findMany({
       where: { userId: req.user!.userId },
       orderBy: { createdAt: "desc" },
+      select: { id: true, topic: true, createdAt: true },
     }).catch(err => {
       console.warn("[MindMap.history] Failed to query database history:", err);
       return [];

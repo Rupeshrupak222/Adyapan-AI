@@ -579,14 +579,36 @@ function mapCompanySize(employees: number): string {
   return "10000+";
 }
 
-function parseSalary(raw: any, which: "min" | "max"): number | undefined {
+// Returns an absolute annual amount so stored values are comparable with the
+// salary range filters (which send rupees, e.g. "3-6 LPA" -> 300000..600000).
+// shortcut: currency is not converted, only the amount scale is normalised —
+// upgrade to a per-source currency map if non-INR salaries start being filtered.
+export function parseSalary(raw: any, which: "min" | "max"): number | undefined {
   if (!raw) return undefined;
-  const str = String(raw);
+  const str = String(raw).toLowerCase();
   const numbers = str.match(/[0-9]+(?:,[0-9]+)*(?:\.[0-9]+)?/g);
   if (!numbers || numbers.length === 0) return undefined;
   const cleaned = numbers.map((n) => parseFloat(n.replace(/,/g, "")));
-  if (which === "min") return Math.round(cleaned[0]);
-  return Math.round(cleaned.length > 1 ? cleaned[cleaned.length - 1] : cleaned[0]);
+  let value = which === "min" ? cleaned[0] : (cleaned.length > 1 ? cleaned[cleaned.length - 1] : cleaned[0]);
+
+  const perHour = /hours?|\bhrs?\b/.test(str);
+  const perMonth = /months?|\bmo\b/.test(str);
+  const hasK = /\d\s*k\b/.test(str); // "$130K - $175K"
+
+  if (/\b(cr|crore|crores)\b/.test(str)) {
+    value *= 10000000; // 1.2 Cr
+  } else if (/\b(lakh|lakhs|lac|lacs|lpa)\b/.test(str)) {
+    if (value < 1000) value *= 100000; // "10-15 Lacs PA" -> 1000000..1500000
+  } else if (hasK) {
+    value *= 1000;
+  } else if (!perHour && value < 100) {
+    value *= 100000; // bare "3-6" from sources that omit the unit
+  }
+
+  if (perHour) value *= 2080;
+  else if (perMonth) value *= 12;
+
+  return Math.round(value);
 }
 
 function parseExperience(seniority: string): number | undefined {

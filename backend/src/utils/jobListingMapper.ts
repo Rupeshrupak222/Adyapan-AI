@@ -6,29 +6,31 @@ import { autoResolveCompanyLogo } from "./companyLogoResolver";
  * frontend job hub. Kept in one place so both the job-listing routes and the
  * saved-jobs service return identical, fully formatted job objects.
  */
+const CURRENCY_SYMBOLS: Record<string, string> = { INR: "₹", USD: "$", GBP: "£", EUR: "€" };
+
+/**
+ * Amounts are stored as absolute annual figures; legacy rows may be in lakhs
+ * (<100) and scraped "130K" style values may still be bare thousands (<100000).
+ */
+function money(n: number, symbol: string): string {
+  if (n < 100) return `${symbol}${n}L`;
+  if (n < 1000) return `${symbol}${n}K`; // bare "130" means 130K
+  if (n < 100000) return `${symbol}${Math.round(n / 1000)}K`;
+  return `${symbol}${(n / 100000).toFixed(1)}L`;
+}
+
 export function mapDiscoveryJobToListing(job: any) {
   if (!job) return null;
   const salMin = job.salaryMin;
   const salMax = job.salaryMax;
-  let salaryStr = "Competitive";
+  const symbol = CURRENCY_SYMBOLS[String(job.salaryCurrency || "INR").toUpperCase()] || "₹";
+  let salaryStr = "";
   if (salMin && salMax) {
-    if (salMin < 100) {
-      salaryStr = `₹${salMin}L - ₹${salMax}L PA`;
-    } else {
-      salaryStr = `₹${(salMin / 100000).toFixed(1)}L - ₹${(salMax / 100000).toFixed(1)}L PA`;
-    }
+    salaryStr = `${money(salMin, symbol)} - ${money(salMax, symbol)} PA`;
   } else if (salMin) {
-    if (salMin < 100) {
-      salaryStr = `₹${salMin}L+ PA`;
-    } else {
-      salaryStr = `₹${(salMin / 100000).toFixed(1)}L+ PA`;
-    }
+    salaryStr = `${money(salMin, symbol)}+ PA`;
   } else if (salMax) {
-    if (salMax < 100) {
-      salaryStr = `Up to ₹${salMax}L PA`;
-    } else {
-      salaryStr = `Up to ₹${(salMax / 100000).toFixed(1)}L PA`;
-    }
+    salaryStr = `Up to ${money(salMax, symbol)} PA`;
   }
 
   let expStr = "";

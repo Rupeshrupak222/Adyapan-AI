@@ -138,7 +138,8 @@ export class StreakService {
             gte: new Date(todayStr + "T00:00:00Z"),
             lte: new Date(todayStr + "T23:59:59Z")
           }
-        }
+        },
+        select: { activityPoints: true }
       });
       const totalTime = todayEvents.reduce((sum, e) => sum + e.activityPoints, 0);
       qualifies = totalTime >= streak.timeRequirement;
@@ -302,7 +303,8 @@ export class StreakService {
     ];
 
     const unlocked = await prisma.streakAchievement.findMany({
-      where: { userId }
+      where: { userId },
+      select: { achievementType: true, unlockedAt: true }
     });
 
     return milestones.map(m => {
@@ -327,6 +329,7 @@ export class StreakService {
         userId,
         createdAt: { gte: since }
       },
+      select: { createdAt: true, activityPoints: true, eventType: true },
       orderBy: { createdAt: "asc" }
     });
 
@@ -444,7 +447,8 @@ export class StreakService {
         where: {
           userId,
           createdAt: { gte: monday }
-        }
+        },
+        select: { createdAt: true }
       }).catch(() => []);
 
       const activeDaysOfWeek = new Set<string>();
@@ -473,10 +477,12 @@ export class StreakService {
       const activeDaysCountInMonth = activeDaysOfMonth.length;
       const missedDays = Math.max(0, currentMonthTotalDaysPassed - activeDaysCountInMonth);
 
-      // Fetch all events for habit analytics
+      // Fetch recent events for habit analytics (bounded with projection)
       const allEvents = await prisma.streakEvent.findMany({
         where: { userId },
-        orderBy: { createdAt: "desc" }
+        select: { createdAt: true, activityPoints: true },
+        orderBy: { createdAt: "desc" },
+        take: 500
       }).catch(() => []);
 
       const hourCounts = { Morning: 0, Afternoon: 0, Evening: 0, Night: 0 };
@@ -645,6 +651,7 @@ export class StreakService {
     const streak = await prisma.learningStreak.findUnique({ where: { userId } });
     const events = await prisma.streakEvent.findMany({
       where: { userId },
+      select: { createdAt: true },
       orderBy: { createdAt: "desc" },
       take: 40
     });

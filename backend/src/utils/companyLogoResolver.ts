@@ -188,12 +188,37 @@ const BRAND_SVGS: Record<string, string> = {
   freshworks: "https://upload.wikimedia.org/wikipedia/commons/0/07/Freshworks_Logo.svg",
 };
 
+// Job boards and ATS platforms: their logo is the board's, not the employer's,
+// so it must never be used as (or derived into) a company logo.
+const AGGREGATOR_DOMAINS = [
+  "adyapan.ai", "linkedin.com", "indeed.com", "naukri.com", "glassdoor.com",
+  "internshala.com", "wellfound.com", "angel.co", "ziprecruiter.com", "dice.com",
+  "adzuna.com", "bebee.com", "builtin.com", "builtinnyc.com", "foundit.in",
+  "foundit.com", "monster.com", "clearancejobs.com", "welcometothejungle.com",
+  "simplyhired.com", "jooble.org", "talent.com", "careerjet.com", "timesjobs.com",
+  "shine.com", "cutshort.io", "instahyre.com", "remoteok.com", "jobrapido.com",
+  "myworkdayjobs.com", "oraclecloud.com", "icims.com", "taleo.net",
+  "successfactors.com", "greenhouse.io", "lever.co", "smartrecruiters.com",
+  "workable.com", "jobvite.com", "breezy.hr",
+];
+
+function isAggregatorHost(host: string): boolean {
+  const h = host.toLowerCase().replace(/^www\./, "");
+  return AGGREGATOR_DOMAINS.some((d) => h === d || h.endsWith(`.${d}`));
+}
+
 // Clearbit's logo API was sunset (Dec 2025) — every logo.clearbit.com URL is now
 // a dead link. Treat any stored Clearbit URL as missing so it gets re-resolved.
 const STALE_LOGO_HOSTS = ["logo.clearbit.com"];
 
 function isStaleLogoUrl(url: string): boolean {
-  return STALE_LOGO_HOSTS.some((host) => url.includes(host));
+  if (STALE_LOGO_HOSTS.some((host) => url.includes(host))) return true;
+  try {
+    // e.g. ".../s2/favicons?domain=wellfound.com" — a board's logo, not the company's
+    const domainParam = new URL(url).searchParams.get("domain");
+    if (domainParam && isAggregatorHost(domainParam)) return true;
+  } catch {}
+  return false;
 }
 
 function googleFavicon(domain: string): string {
@@ -224,9 +249,8 @@ export function autoResolveCompanyLogo(
       const parsedUrl = new URL(applyUrl.trim());
       let hostname = parsedUrl.hostname.toLowerCase();
       if (hostname.startsWith("www.")) hostname = hostname.slice(4);
-      // Exclude generic aggregator domains
-      const aggregators = ["adyapan.ai", "linkedin.com", "indeed.com", "naukri.com", "glassdoor.com", "internshala.com"];
-      if (!aggregators.some((ag) => hostname.includes(ag))) {
+      // Exclude generic job-board / ATS domains
+      if (!isAggregatorHost(hostname)) {
         applyDomain = hostname;
       }
     } catch {}
@@ -261,16 +285,19 @@ export function autoResolveCompanyLogo(
   let domain = COMPANY_DOMAINS[simpleKey] || COMPANY_DOMAINS[strippedKey] || applyDomain;
   if (!domain) {
     for (const k of Object.keys(COMPANY_DOMAINS)) {
-      if (strippedKey && (strippedKey.startsWith(k) || k.startsWith(strippedKey))) {
+      // length guard: short keys ("a", "au") otherwise match unrelated brands
+      if (strippedKey.length >= 4 && (strippedKey.startsWith(k) || k.startsWith(strippedKey))) {
         domain = COMPANY_DOMAINS[k];
         break;
       }
     }
   }
-  if (!domain && (strippedKey || simpleKey)) {
-    domain = `${strippedKey || simpleKey}.com`;
-  }
 
+  // Deliberately no `<name>.com` guess. A guessed domain is either dead (Google
+  // answers 404 with a generic image, which the UI can only treat as an error)
+  // or it belongs to a different company, returning 200 with a wrong logo that
+  // nothing downstream can detect. Only the apply host and known brands are
+  // trustworthy; "" lets the frontend try icon.horse/jsDelivr, then initials.
   if (domain) {
     return googleFavicon(domain);
   }
