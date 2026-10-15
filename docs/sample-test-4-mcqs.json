@@ -1,0 +1,72 @@
+{
+  "id": "test-sample-aptitude-technical-1",
+  "targetId": "sample",
+  "targetType": "practice",
+  "targetName": "Sample Mixed Practice",
+  "testNumber": 1,
+  "title": "Sample Test 1: Aptitude + Technical",
+  "description": "A 4-question mixed practice test: 2 aptitude and 2 technical MCQs.",
+  "difficulty": "Medium",
+  "questionCount": 4,
+  "durationMinutes": 8,
+  "questions": [
+    {
+      "id": "mcq-sample-t1-q1",
+      "question": "A laptop is sold at a 20% discount on its list price and still earns a profit of 20% on cost. The list price is what percent above the cost price?",
+      "category": "quantitative",
+      "topic": "Profit and Loss",
+      "difficulty": "Easy",
+      "options": ["40%", "44%", "50%", "56%"],
+      "correctAnswer": "50%",
+      "correctIdx": 2,
+      "explanation": "Let cost = 100. Selling price = 120 (20% profit). SP is 80% of list price, so list = 120 / 0.8 = 150. Markup over cost = 150 - 100 = 50%.",
+      "estimatedTimeSec": 60
+    },
+    {
+      "id": "mcq-sample-t1-q2",
+      "question": "A can finish a job alone in 12 days and B in 18 days. They work together for 4 days, after which A leaves. In how many more days will B alone finish the remaining work?",
+      "category": "quantitative",
+      "topic": "Time and Work",
+      "difficulty": "Easy",
+      "options": ["6 days", "7 days", "8 days", "9 days"],
+      "correctAnswer": "8 days",
+      "correctIdx": 2,
+      "explanation": "Combined rate = 1/12 + 1/18 = 5/36 of the job per day. In 4 days they finish 20/36 = 5/9. Remaining 4/9 at B's rate 1/18 per day takes (4/9) x 18 = 8 days.",
+      "estimatedTimeSec": 75
+    },
+    {
+      "id": "mcq-sample-t1-q3",
+      "question": "In a relational database, adding an index on a frequently filtered column has which primary trade-off?",
+      "technology": "Database",
+      "topic": "DBMS",
+      "difficulty": "Medium",
+      "options": [
+        "It slows down reads but speeds up writes and reduces total storage used.",
+        "It speeds up read queries on that column but increases storage use and slows down inserts, updates and deletes.",
+        "It guarantees ACID compliance for every transaction on the table.",
+        "It removes the need for a primary key on the table."
+      ],
+      "correctAnswer": "It speeds up read queries on that column but increases storage use and slows down inserts, updates and deletes.",
+      "correctIdx": 1,
+      "explanation": "An index is an extra sorted structure (usually a B-tree) that lets the engine find rows without a full scan, so reads on that column get faster. Every write must also maintain that structure, which costs time and extra storage.",
+      "estimatedTimeSec": 45
+    },
+    {
+      "id": "mcq-sample-t1-q4",
+      "question": "You find the middle node of a singly linked list with the slow/fast two-pointer technique. What are the time and extra-space complexities?",
+      "technology": "Data Structures",
+      "topic": "Linked List",
+      "difficulty": "Easy",
+      "options": [
+        "O(n) time, O(1) extra space",
+        "O(n) time, O(n) extra space",
+        "O(1) time, O(1) extra space",
+        "O(n log n) time, O(1) extra space"
+      ],
+      "correctAnswer": "O(n) time, O(1) extra space",
+      "correctIdx": 0,
+      "explanation": "The fast pointer moves two nodes for every one node the slow pointer moves, so the slow pointer lands on the middle after about n/2 steps. Only two pointers are kept, so extra space is constant.",
+      "estimatedTimeSec": 40
+    }
+  ]
+}

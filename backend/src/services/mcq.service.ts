@@ -1520,6 +1520,14 @@ export async function createNewTest(input: {
   return newTest;
 }
 
+/**
+ * Questions requested per AI call. Asking for the whole test in one call
+ * overran the provider output cap (4096 tokens for Gemini/OpenRouter-free) and
+ * came back as truncated JSON — "Unterminated string in JSON" — which parsed as
+ * zero questions and then threw QuestionPoolExhaustedError for every target.
+ */
+const QUESTIONS_PER_GENERATION_CALL = 5;
+
 export async function generateAITestWithAntiRepetition(input: {
   targetId: string;
   targetType: "technology" | "company";
@@ -1533,7 +1541,8 @@ export async function generateAITestWithAntiRepetition(input: {
 }): Promise<MCQTest> {
   const count = input.count || 15;
   const diff = input.difficulty || "Medium";
-  const maxAttempts = Math.max(1, input.maxAttempts ?? 4);
+  // Small batches need more calls to reach `count`; 4 was tuned for one-shot generation.
+  const maxAttempts = Math.max(1, input.maxAttempts ?? 12);
   const existingTests = await getTestsForTarget(input.targetId || input.targetName);
   const nextTestNum =
     existingTests.length > 0 ? Math.max(...existingTests.map((t) => t.testNumber)) + 1 : 1;
@@ -1557,7 +1566,10 @@ export async function generateAITestWithAntiRepetition(input: {
   let lastStructuralFailures = 0;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const needed = count - accepted.length;
+    const needed = Math.min(
+      QUESTIONS_PER_GENERATION_CALL,
+      count - accepted.length
+    );
     if (needed <= 0) break;
 
     const entropy = `${Date.now()}_${attempt}_${Math.random().toString(36).slice(2, 9)}`;

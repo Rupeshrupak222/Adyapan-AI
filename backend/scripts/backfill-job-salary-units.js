@@ -25,12 +25,15 @@ const USD_TO_INR = 85;
 const notBothNull = `(salary_min IS NOT NULL OR salary_max IS NOT NULL)`;
 // max < min means the source text could not be parsed (e.g. "600 - 1"); left alone.
 const saneRange = `(salary_min IS NULL OR salary_max IS NULL OR salary_min <= salary_max)`;
+// Only figures still in the source's printed units. Anything already absolute is
+// far above this bound, which also makes a second --apply run a no-op.
+const stillPrintedUnits = `(salary_min IS NULL OR salary_min < 100000) AND (salary_max IS NULL OR salary_max < 100000)`;
 
 const RULES = [
   {
     name: `wellfound: USD figures -> absolute INR (x${USD_TO_INR})`,
     select: `SELECT id, company, salary_min, salary_max FROM discovery_jobs
-              WHERE source = 'wellfound' AND ${notBothNull} AND ${saneRange}
+              WHERE source = 'wellfound' AND ${notBothNull} AND ${saneRange} AND ${stillPrintedUnits}
               ORDER BY salary_min ASC`,
     // The actor reports USD; "130" means $130K, but one row already holds an
     // absolute amount (92,820), so the scale is decided per row, not per column.
@@ -43,7 +46,7 @@ const RULES = [
   {
     name: "naukri: Lacs figures -> absolute rupees (x100000)",
     select: `SELECT id, company, salary_min, salary_max FROM discovery_jobs
-              WHERE source = 'naukri' AND ${notBothNull} AND ${saneRange}
+              WHERE source = 'naukri' AND ${notBothNull} AND ${saneRange} AND ${stillPrintedUnits}
               ORDER BY salary_min ASC`,
     convert: ({ salary_min: lo, salary_max: hi }) => ({
       min: lo === null ? null : lo * 100000,

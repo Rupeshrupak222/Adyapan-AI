@@ -222,6 +222,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     quizzes,
     flashcards,
     uploadedResumes,
+    existingPlacement,
   ] = await Promise.all([
     userPrisma.profile.findUnique({
       where: { userId },
@@ -264,6 +265,7 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     userPrisma.quiz.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20, select: { id: true } }).catch(() => []),
     userPrisma.flashcard.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50, select: { id: true } }).catch(() => []),
     userPrisma.uploadedResume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10, select: { id: true } }).catch(() => []),
+    userPrisma.placementIntelligence.findUnique({ where: { userId }, select: { placementScore: true, subScores: true } }).catch(() => null),
   ]);
 
   // ─── Compute Sub-Scores ──────────────────────────────────────
@@ -365,21 +367,25 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   ), 0, 100);
 
   const learningScore = clamp(Math.round(
-    Math.min(studySessions.length / 20, 1) * 25 +
-    Math.min(generatedNotes.length / 10, 1) * 15 +
-    Math.min(quizzes.length / 10, 1) * 15 +
-    Math.min(flashcards.length / 20, 1) * 10 +
-    Math.min(topicProgress.filter((t: any) => t.progressPercentage >= 80).length / 5, 1) * 20 +
-    (learningAnalytics?.learningScore || 0) * 0.15
+    Math.max(50,
+      Math.min(studySessions.length / 20, 1) * 25 +
+      Math.min(generatedNotes.length / 10, 1) * 15 +
+      Math.min(quizzes.length / 10, 1) * 15 +
+      Math.min(flashcards.length / 20, 1) * 10 +
+      Math.min(topicProgress.filter((t: any) => t.progressPercentage >= 80).length / 5, 1) * 20 +
+      (learningAnalytics?.learningScore || 0) * 0.15
+    )
   ), 0, 100);
 
   const latestLinkedinScore = linkedinReports.length > 0 ? Number(linkedinReports[0].score ?? linkedinReports[0].visibilityScore ?? 0) : 0;
   const softSkillsScore = clamp(Math.round(
-    latestLinkedinScore * 0.3 +
-    (coverLetters.length > 0 ? 20 : 0) +
-    (profile?.aboutMe ? 10 : 0) +
-    (completedInterviews.length > 0 ? 20 : 0) +
-    Math.min(studySessions.length / 15, 1) * 20
+    Math.max(50,
+      latestLinkedinScore * 0.3 +
+      (coverLetters.length > 0 ? 20 : 0) +
+      (profile?.aboutMe ? 10 : 0) +
+      (completedInterviews.length > 0 ? 20 : 0) +
+      Math.min(studySessions.length / 15, 1) * 20
+    )
   ), 0, 100);
 
   // ─── Domain-Adaptive Overall Placement Score ──────────────────
@@ -712,19 +718,32 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     mockTestResults.length > 0 ||
     studySessions.length > 0;
 
+  // High-Water Mark: placement score and sub-scores never drop below their historical best
+  const prevPlacement = existingPlacement as any;
+  const prevScore = Number(prevPlacement?.placementScore || 0);
+  const prevSub = (prevPlacement?.subScores as any) || {};
+
+  const finalCoding = Math.max(codingScore, Number(prevSub.coding || 0));
+  const finalAptitude = Math.max(aptitudeScore, Number(prevSub.aptitude || 0));
+  const finalInterview = Math.max(interviewScore, Number(prevSub.interview || 0));
+  const finalResume = Math.max(resumeScore, Number(prevSub.resume || 0));
+  const finalLearning = Math.max(learningScore, Number(prevSub.learning || 0));
+  const finalSoftSkills = Math.max(softSkillsScore, Number(prevSub.softSkills || 0));
+  const finalPlacementScore = clamp(Math.max(placementScore, prevScore), 0, 100);
+
   return {
-    placementScore,
+    placementScore: finalPlacementScore,
     subScores: {
-      coding: codingScore,
-      aptitude: aptitudeScore,
-      interview: interviewScore,
-      resume: resumeScore,
-      learning: learningScore,
-      softSkills: softSkillsScore,
+      coding: finalCoding,
+      aptitude: finalAptitude,
+      interview: finalInterview,
+      resume: finalResume,
+      learning: finalLearning,
+      softSkills: finalSoftSkills,
     },
     eligibility: computeEligibility(
-      placementScore,
-      { coding: codingScore, aptitude: aptitudeScore, interview: interviewScore, resume: resumeScore, learning: learningScore, softSkills: softSkillsScore },
+      finalPlacementScore,
+      { coding: finalCoding, aptitude: finalAptitude, interview: finalInterview, resume: finalResume, learning: finalLearning, softSkills: finalSoftSkills },
       hasActivity,
       highestImpactTask?.action || recommendations[0]?.action || "",
       domainTrack
@@ -865,27 +884,37 @@ async function checkAndSendPlacementReadinessNotification(userId: string, placem
 export async function refreshPlacementIntelligence(userId: string): Promise<PlacementIntelligenceResult> {
   const userPrisma = await getUserPrisma(userId);
 
-  await userPrisma.placementIntelligence.delete({ where: { userId } }).catch(() => {});
-
   const result = await generatePlacementIntelligence(userId);
   try {
-    await userPrisma.placementIntelligence.create({
-      data: {
-        userId,
-        placementScore: result.placementScore,
-        subScores: result.subScores as any,
-        companyMatches: result.companyMatches as any,
-        skillWeights: result.skillWeights as any,
-        strengths: result.strengths as any,
-        weaknesses: result.weaknesses as any,
-        recommendations: result.recommendations as any,
-        highestImpactTask: result.highestImpactTask as any,
-        salaryEstimate: result.salaryEstimate as any,
-        readinessTimeline: result.readinessTimeline as any,
-        aiInsights: result.aiInsights as any,
-        lastCalculatedAt: new Date(),
-      },
-    });
+    const existingRec = await userPrisma.placementIntelligence.findFirst({ where: { userId } }).catch(() => null);
+    const dataToSave = {
+      placementScore: result.placementScore,
+      subScores: result.subScores as any,
+      companyMatches: result.companyMatches as any,
+      skillWeights: result.skillWeights as any,
+      strengths: result.strengths as any,
+      weaknesses: result.weaknesses as any,
+      recommendations: result.recommendations as any,
+      highestImpactTask: result.highestImpactTask as any,
+      salaryEstimate: result.salaryEstimate as any,
+      readinessTimeline: result.readinessTimeline as any,
+      aiInsights: result.aiInsights as any,
+      lastCalculatedAt: new Date(),
+    };
+
+    if (existingRec) {
+      await userPrisma.placementIntelligence.update({
+        where: { id: existingRec.id },
+        data: dataToSave,
+      });
+    } else {
+      await userPrisma.placementIntelligence.create({
+        data: {
+          userId,
+          ...dataToSave,
+        },
+      });
+    }
     await checkAndSendPlacementReadinessNotification(userId, result.placementScore, userPrisma);
   } catch (dbErr) {
     console.warn("[PlacementIntelligence] refresh save warning:", dbErr);

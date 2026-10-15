@@ -1389,27 +1389,36 @@ function UserDashboardContent() {
             ))
           : (completedInterviews.length > 0 ? 50 : 0);
 
+        const effectiveLearning = Math.max(50, Number(currentSub.learning || 0));
+        const effectiveSoftSkills = Math.max(50, Number(currentSub.softSkills || 0));
+
         const updatedSub = {
           ...currentSub,
           interview: interviewForPlacement,
           coding: Number(currentSub.coding || 0),
           aptitude: Number(currentSub.aptitude || 0),
-          resume: Number(currentSub.resume || avgAtsScore || 0)
+          resume: Number(currentSub.resume || avgAtsScore || 0),
+          learning: effectiveLearning,
+          softSkills: effectiveSoftSkills
         };
 
-        let updatedPlacementScore = Number(rawPlacement?.placementScore || 0);
+        const computedFromPillars = Math.min(100, Math.round(
+          (updatedSub.coding * 0.25) +
+          (updatedSub.aptitude * 0.20) +
+          (interviewForPlacement * 0.20) +
+          ((updatedSub.resume || avgAtsScore) * 0.15) +
+          (effectiveLearning * 0.10) +
+          (effectiveSoftSkills * 0.10)
+        ));
+
+        let updatedPlacementScore = Math.max(
+          Number(rawPlacement?.placementScore || 0),
+          computedFromPillars
+        );
+
         if (updatedPlacementScore > 0 && oldInterviewSub !== interviewForPlacement) {
           const diff = Math.round((interviewForPlacement - oldInterviewSub) * 0.20);
-          updatedPlacementScore = Math.min(100, Math.max(0, updatedPlacementScore + diff));
-        } else if (updatedPlacementScore === 0 && (effectiveInterviewScore > 0 || avgAtsScore > 0)) {
-          updatedPlacementScore = Math.min(100, Math.round(
-            (updatedSub.coding * 0.25) +
-            (updatedSub.aptitude * 0.20) +
-            (interviewForPlacement * 0.20) +
-            ((updatedSub.resume || avgAtsScore) * 0.15) +
-            (Number(updatedSub.learning || 50) * 0.10) +
-            (Number(updatedSub.softSkills || 50) * 0.10)
-          ));
+          updatedPlacementScore = Math.max(updatedPlacementScore, computedFromPillars, Number(rawPlacement?.placementScore || 0) + diff);
         }
 
         setPlacementScore({
