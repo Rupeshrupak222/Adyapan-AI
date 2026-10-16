@@ -490,6 +490,28 @@ export async function getAdminUsers(req: Request, res: Response, next: NextFunct
       const plRec = placementMap.get(user.id);
       const rawSub = (plRec?.subScores as any) || {};
 
+      const candidateInterview = rawSub.interview && Number(rawSub.interview) > 0
+        ? Number(rawSub.interview)
+        : (interviewSessions > 0 ? (interviewSessions >= 10 ? 75 : 65) : 0);
+      const candidateCoding = rawSub.coding !== undefined ? Number(rawSub.coding) : Math.min(100, codingSessions * 10);
+      const candidateAptitude = rawSub.aptitude !== undefined ? Number(rawSub.aptitude) : (studySessions > 0 ? Math.min(90, 45 + studySessions * 3) : 0);
+      const candidateResume = rawSub.resume !== undefined ? Number(rawSub.resume) : (resumes > 0 ? 85 : 0);
+      const candidateLearning = Math.max(50, rawSub.learning !== undefined ? Number(rawSub.learning) : 50);
+      const candidateSoftSkills = Math.max(50, rawSub.softSkills !== undefined ? Number(rawSub.softSkills) : 50);
+
+      const computedPlScore = Math.min(100, Math.round(
+        (candidateCoding * 0.25) +
+        (candidateAptitude * 0.20) +
+        (candidateInterview * 0.20) +
+        (candidateResume * 0.15) +
+        (candidateLearning * 0.10) +
+        (candidateSoftSkills * 0.10)
+      ));
+
+      const finalPlScore = plRec?.placementScore && Number(plRec.placementScore) > 0
+        ? Math.max(Number(plRec.placementScore), computedPlScore)
+        : computedPlScore;
+
       return {
         ...user,
         storage: {
@@ -498,12 +520,12 @@ export async function getAdminUsers(req: Request, res: Response, next: NextFunct
           percentUsed: storagePercent,
         },
         placement: {
-          placementScore: plRec?.placementScore ?? (interviewSessions > 0 || codingSessions > 0 ? Math.min(95, 50 + interviewSessions * 2) : 0),
+          placementScore: finalPlScore,
           subScores: {
-            coding: rawSub.coding ?? Math.min(100, codingSessions * 10),
-            interview: rawSub.interview ?? (interviewSessions > 0 ? Math.min(95, 60 + interviewSessions * 2) : 0),
-            aptitude: rawSub.aptitude ?? (studySessions > 0 ? Math.min(90, 45 + studySessions * 3) : 0),
-            resume: rawSub.resume ?? (resumes > 0 ? 85 : 0),
+            coding: candidateCoding,
+            interview: candidateInterview,
+            aptitude: candidateAptitude,
+            resume: candidateResume,
           },
         },
         _count: {
@@ -2629,14 +2651,33 @@ export async function getAdminUsersProgressReports(req: Request, res: Response, 
       const plRec = placementMap.get(user.id);
       const rawSub = (plRec?.subScores as any) || {};
 
-      const finalOverallScore = plRec?.placementScore && Number(plRec.placementScore) > 0
-        ? Number(plRec.placementScore)
-        : overallProgress;
+      const candidateInterviewScore = rawSub.interview && Number(rawSub.interview) > 0
+        ? Number(rawSub.interview)
+        : (highestInterviewScore > 0
+            ? Math.min(100, Math.max(highestInterviewScore, Math.round(highestInterviewScore * 0.85 + (interviewsCount >= 10 ? 17 : interviewsCount > 0 ? 15 : 0))))
+            : (interviewsCount > 0 ? 50 : Math.round((interviewSub / 25) * 100)));
 
       const finalCodingScore = rawSub.coding !== undefined ? Number(rawSub.coding) : Math.round((codingSub / 25) * 100);
-      const finalInterviewScore = rawSub.interview !== undefined ? Number(rawSub.interview) : Math.round((interviewSub / 25) * 100);
+      const finalInterviewScore = candidateInterviewScore;
       const finalAptitudeScore = rawSub.aptitude !== undefined ? Number(rawSub.aptitude) : Math.round((testingSub / 25) * 100);
-      const finalResumeScore = rawSub.resume !== undefined ? Number(rawSub.resume) : (resumesCount > 0 ? (avgInterviewScore > 0 ? 85 : 75) : 0);
+      const finalResumeScore = rawSub.resume !== undefined ? Number(rawSub.resume) : (resumesCount > 0 ? (highestInterviewScore > 0 ? 90 : 80) : 0);
+      const finalLearningScore = Math.max(50, rawSub.learning !== undefined ? Number(rawSub.learning) : Math.round((learningSub / 25) * 100));
+      const finalSoftSkillsScore = Math.max(50, rawSub.softSkills !== undefined ? Number(rawSub.softSkills) : 50);
+
+      // Harmonized Placement Readiness score matching User Dashboard exact 6-pillar algorithm:
+      // Coding (25%), Aptitude (20%), Interview (20%), Resume (15%), Learning (10%), Soft Skills (10%)
+      const computedPlacementScore = Math.min(100, Math.round(
+        (finalCodingScore * 0.25) +
+        (finalAptitudeScore * 0.20) +
+        (finalInterviewScore * 0.20) +
+        (finalResumeScore * 0.15) +
+        (finalLearningScore * 0.10) +
+        (finalSoftSkillsScore * 0.10)
+      ));
+
+      const finalOverallScore = plRec?.placementScore && Number(plRec.placementScore) > 0
+        ? Math.max(Number(plRec.placementScore), computedPlacementScore)
+        : computedPlacementScore;
 
       let readinessStatus: "Job Ready" | "High Potential" | "Advancing" | "Getting Started" = "Getting Started";
       if (finalOverallScore >= 80) readinessStatus = "Job Ready";

@@ -248,7 +248,12 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
       where: { userId },
       orderBy: { createdAt: "desc" },
       take: 50,
-      select: { status: true, overallScore: true, evaluations: { select: { overallScore: true } } },
+      select: {
+        id: true,
+        status: true,
+        feedback: true,
+        evaluations: { select: { overallScore: true } },
+      },
     }).catch(() => []),
     userPrisma.topicProgress.findMany({
       where: { userId },
@@ -304,6 +309,8 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   completedInterviews.forEach((sess: any) => {
     const sc = Number(sess.evaluations?.[0]?.overallScore || sess.overallScore || 0);
     if (!isNaN(sc) && sc > 0) allInterviewScores.push(sc);
+    const fb = Number(sess.feedback?.overallScore ?? sess.feedback?.score ?? 0);
+    if (!isNaN(fb) && fb > 0) allInterviewScores.push(fb);
   });
   interviewSessions.forEach((sess: any) => {
     (sess.evaluations || []).forEach((ev: any) => {
@@ -313,23 +320,27 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     if (sess.overallScore && Number(sess.overallScore) > 0) {
       allInterviewScores.push(Number(sess.overallScore));
     }
+    const fb = Number(sess.feedback?.overallScore ?? sess.feedback?.score ?? 0);
+    if (!isNaN(fb) && fb > 0) allInterviewScores.push(fb);
   });
 
   const bestInterviewScore = allInterviewScores.length > 0 ? Math.max(...allInterviewScores) : 0;
   const avgInterviewScore = completedInterviews.length > 0
     ? Math.round(completedInterviews.reduce((s: number, sess: any) => {
         const eval_ = sess.evaluations?.[0];
-        return s + Number(eval_?.overallScore || sess.overallScore || 0);
+        const sc = Number(eval_?.overallScore || sess.overallScore || sess.feedback?.overallScore || sess.feedback?.score || 0);
+        return s + sc;
       }, 0) / completedInterviews.length)
     : 0;
 
   // Placement readiness interview score: counted using the candidate's BEST interview score,
   // matching how resume score is driven by the highest ATS score.
+  const interviewBonus = completedInterviews.length >= 10 ? 17 : (completedInterviews.length > 0 ? 15 : 0);
   const interviewScore = clamp(Math.round(
     bestInterviewScore > 0
       ? Math.max(
           bestInterviewScore,
-          Math.min(100, Math.round(bestInterviewScore * 0.85 + (completedInterviews.length > 0 ? 15 : 0)))
+          Math.min(100, Math.round(bestInterviewScore * 0.85 + interviewBonus))
         )
       : (completedInterviews.length > 0 ? 50 : 0)
   ), 0, 100);

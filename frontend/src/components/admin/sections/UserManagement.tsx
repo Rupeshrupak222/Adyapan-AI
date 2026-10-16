@@ -446,7 +446,7 @@ export default function UserManagement() {
             <table className="w-full text-left" style={{ minWidth: 900 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
-                  {["User", "Role", "Plan & Status", "Assigned Storage", "Hub Usage", "Created", "Actions"].map((h) => (
+                  {["User", "Role", "Plan & Status", "Placement Score", "Assigned Storage", "Hub Usage", "Created", "Actions"].map((h) => (
                     <th key={h} className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                       {h}
                     </th>
@@ -524,6 +524,27 @@ export default function UserManagement() {
                               </StatusBadge>
                             )}
                           </div>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {user.placement?.placementScore !== undefined && user.placement.placementScore > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="px-2 py-0.5 rounded-md font-extrabold text-xs"
+                                style={{
+                                  background: user.placement.placementScore >= 80 ? "rgba(16, 185, 129, 0.15)" : user.placement.placementScore >= 50 ? "rgba(245, 158, 11, 0.15)" : "rgba(6, 182, 212, 0.15)",
+                                  color: user.placement.placementScore >= 80 ? "#10b981" : user.placement.placementScore >= 50 ? "#f59e0b" : "#06b6d4",
+                                }}
+                              >
+                                {user.placement.placementScore}%
+                              </span>
+                              <span className="text-[10px] text-gray-500 dark:text-white/40">
+                                {user.placement.placementScore >= 80 ? "Top Tier" : user.placement.placementScore >= 60 ? "Ready" : "Foundation"}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
                         </td>
 
 
