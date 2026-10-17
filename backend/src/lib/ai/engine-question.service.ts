@@ -290,15 +290,101 @@ function computeAnswerQualityScore(history: Message[]): number {
   return Math.round(total / answers.length);
 }
 
-const FALLBACK_QUESTION = {
-  question: "Tell me about yourself and why you're interested in this role.",
-  category: "icebreaker",
-  difficulty: "easy",
-  expectedTopics: ["career journey", "motivation", "role alignment"],
-  followUpHint: "Probe deeper into specific career decisions",
-  timeEstimate: "2 minutes",
-  tips: ["Listen for career progression narrative", "Note self-awareness level"],
-};
+const ENGINE_FALLBACK_BANK: Array<{
+  category: string;
+  question: string;
+  expectedTopics: string[];
+  followUpHint: string;
+  timeEstimate: string;
+  tips: string[];
+}> = [
+  {
+    category: "icebreaker",
+    question: "Walk me through your professional background and the key engineering accomplishments that make you a strong candidate for this role.",
+    expectedTopics: ["career journey", "motivation", "role alignment", "impact"],
+    followUpHint: "Probe deeper into specific technical decisions",
+    timeEstimate: "2 minutes",
+    tips: ["Listen for career progression narrative", "Note self-awareness level"],
+  },
+  {
+    category: "technical-depth",
+    question: "Can you detail a complex technical architecture or feature you owned end-to-end? What were the trickiest architectural trade-offs you navigated?",
+    expectedTopics: ["architecture", "trade-offs", "scalability", "ownership"],
+    followUpHint: "Probe what failed or had to be refactored later.",
+    timeEstimate: "3 minutes",
+    tips: ["Assess depth of architectural ownership vs surface-level participation"],
+  },
+  {
+    category: "problem-solving",
+    question: "Describe a critical production bug, latency spike, or outage you investigated. What was your step-by-step diagnostic process to isolate and resolve the root cause?",
+    expectedTopics: ["root cause analysis", "debugging", "monitoring", "post-mortem"],
+    followUpHint: "Ask how they prevented recurrence with tests or guards.",
+    timeEstimate: "3 minutes",
+    tips: ["Look for methodical debugging rather than random guesswork"],
+  },
+  {
+    category: "collaboration",
+    question: "Tell me about a time you strongly disagreed with a product manager or team lead on a technical approach. How did you present your case and reach alignment?",
+    expectedTopics: ["disagree and commit", "consensus", "communication", "empathy"],
+    followUpHint: "Ask how the final outcome performed in production.",
+    timeEstimate: "3 minutes",
+    tips: ["Evaluate diplomatic communication and maturity under conflict"],
+  },
+  {
+    category: "performance-optimization",
+    question: "How do you evaluate performance bottlenecks in your applications? Walk me through how you optimize memory usage, database query plans, and network overhead.",
+    expectedTopics: ["profiling", "indexing", "caching", "asynchronous I/O"],
+    followUpHint: "Probe specific metrics they tracked before and after optimization.",
+    timeEstimate: "3 minutes",
+    tips: ["Verify they measure before optimizing rather than premature optimization"],
+  },
+  {
+    category: "system-design",
+    question: "How would you design a distributed, fault-tolerant job queue that ensures at-least-once execution and prevents duplicate processing during node restarts?",
+    expectedTopics: ["idempotency", "message queues", "acknowledgments", "dead letter queues"],
+    followUpHint: "Ask how idempotency keys or distributed deduplication locks work.",
+    timeEstimate: "3 minutes",
+    tips: ["Check understanding of distributed failure boundaries"],
+  },
+  {
+    category: "security-resilience",
+    question: "What security considerations and defensive coding patterns do you automatically implement when developing authentication flows and external webhook consumers?",
+    expectedTopics: ["CSRF", "rate limiting", "HMAC verification", "least privilege", "token rotation"],
+    followUpHint: "Ask how replay attacks are mitigated.",
+    timeEstimate: "3 minutes",
+    tips: ["Assess proactive security hygiene"],
+  },
+  {
+    category: "adaptability",
+    question: "Can you describe a scenario where requirements changed drastically mid-sprint or right before launch? How did you pivot your technical plan while maintaining quality?",
+    expectedTopics: ["agile adaptation", "scope negotiation", "decoupling", "resilience"],
+    followUpHint: "Ask how stakeholder expectations were managed.",
+    timeEstimate: "3 minutes",
+    tips: ["Look for adaptability and proactive communication"],
+  },
+];
+
+function getEngineFallbackQuestion(
+  role: string,
+  questionNumber: number,
+  previousQuestions: string[] = [],
+  difficulty = "medium"
+): EngineQuestion {
+  const prevLower = previousQuestions.map((q) => q.toLowerCase());
+  const unused = ENGINE_FALLBACK_BANK.filter(
+    (item) => !prevLower.some((prev) => prev.includes(item.question.slice(0, 30).toLowerCase()))
+  );
+  const pool = unused.length > 0 ? unused : ENGINE_FALLBACK_BANK;
+  const picked = pool[(questionNumber - 1) % pool.length];
+
+  return {
+    ...picked,
+    difficulty,
+    question: questionNumber === 1
+      ? `Welcome! To begin our conversation for the ${role || "engineering"} position: ${picked.question}`
+      : picked.question,
+  };
+}
 
 export async function generateEngineQuestion(
   config: RouteConfig
@@ -411,20 +497,22 @@ Candidate's latest answer:
 
 ${!lastWasFollowUp && questionNumber > 1 ? "Ask a penetrating COUNTER-QUESTION drilling deeper into what the candidate just claimed." : "Present the next fresh interview question on an untouched topic."}`;
 
+  const dynamicFallback = getEngineFallbackQuestion(config.role, questionNumber, previousQuestions, dynamicDifficulty);
+
   try {
     const result = await generateJSON<EngineQuestion>(
       systemPrompt,
       userPrompt,
-      { model: MODELS.BALANCED, temperature: 0.75, maxTokens: 2048 },
-      FALLBACK_QUESTION
+      { model: MODELS.BALANCED, temperature: 0.75, maxTokens: 2048, timeoutMs: 6000 },
+      dynamicFallback
     );
     console.log(`[Engine] Generated question ${questionNumber} for ${config.type} interview (${result.category})`);
-    return result.question;
+    return result?.question || dynamicFallback.question;
   } catch (error) {
-    console.error(`[Engine] Question generation failed, using fallback:`, error);
+    console.warn(`[Engine] Question generation error, using dynamic fallback:`, error);
     return !lastWasFollowUp && lastCandidateMsg
       ? "That's an interesting approach. Could you explain the key trade-offs and how you would handle edge cases or failure scenarios in that solution?"
-      : FALLBACK_QUESTION.question;
+      : dynamicFallback.question;
   }
 }
 

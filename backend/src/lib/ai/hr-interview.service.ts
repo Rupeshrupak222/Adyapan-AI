@@ -123,7 +123,8 @@ const COMPANY_HR_FOCUS: Record<string, string> = {
   deloitte: "Deloitte values analytics capability, strategic thinking, advisory mindset, and professional development.",
 };
 
-function getCompanyHRFocus(company: string): string {
+function getCompanyHRFocus(company?: string): string {
+  if (!company) return "";
   const key = company.toLowerCase().replace(/\s+/g, "");
   for (const [k, v] of Object.entries(COMPANY_HR_FOCUS)) {
     if (key.includes(k)) return v;
@@ -131,8 +132,8 @@ function getCompanyHRFocus(company: string): string {
   return "";
 }
 
-function getExperienceLevelGuidance(level: string): string {
-  switch (level) {
+function getExperienceLevelGuidance(level?: string): string {
+  switch ((level || "mid").toLowerCase()) {
     case "fresher":
       return "Focus on academic projects, learning potential, campus activities, internships, and raw enthusiasm. Accept less polished answers but look for self-awareness and drive.";
     case "entry":
@@ -149,7 +150,8 @@ function getExperienceLevelGuidance(level: string): string {
 }
 
 function getInterviewPhaseGuidance(questionNumber: number, totalQuestions: number): string {
-  const pct = questionNumber / totalQuestions;
+  const safeTotal = totalQuestions > 0 ? totalQuestions : 8;
+  const pct = questionNumber / safeTotal;
   if (pct <= 0.15) return "INTRODUCTION PHASE: Start with warm-up questions. Build rapport. Ask about background, motivation, and career aspirations. Keep tone friendly and encouraging.";
   if (pct <= 0.4) return "EARLY STAGE: Begin behavioral assessment. Use STAR-oriented questions. Explore past experiences, teamwork, and problem-solving. Start probing deeper.";
   if (pct <= 0.7) return "MID INTERVIEW: Deep behavioral assessment. Ask about challenging situations, conflicts, failures, and leadership moments. Push for specific examples and measurable outcomes.";
@@ -157,7 +159,7 @@ function getInterviewPhaseGuidance(questionNumber: number, totalQuestions: numbe
   return "CLOSING: Ask about questions they have, any final thoughts, and wrap up professionally. This is their chance to leave a final impression.";
 }
 
-function getRoleSpecificHRGuidance(role: string): string {
+function getRoleSpecificHRGuidance(role?: string): string {
   const normalized = (role || "").toLowerCase();
   if (
     normalized.includes("ui") ||
@@ -235,32 +237,155 @@ function getRoleSpecificHRGuidance(role: string): string {
   return "";
 }
 
-const HR_FALLBACK_QUESTION: HRQuestion = {
-  question: "Tell me about yourself and what motivated you to apply for this role.",
-  category: "tell_me_about_yourself",
-  competency: "communication",
-  difficulty: "easy",
-  isFollowUp: false,
-  expectedSTAR: false,
-  followUpHint: "Ask about specific career milestones that led to this application",
-  tips: ["Listen for a clear narrative arc", "Note self-awareness and enthusiasm"],
-};
+interface HRFallbackTemplate {
+  category: string;
+  competency: string;
+  difficulty: "easy" | "medium" | "hard";
+  expectedSTAR: boolean;
+  question: string;
+  followUpHint: string;
+  tips: string[];
+}
 
-function getHRFallbackQuestion(targetRole: string): HRQuestion {
-  const lower = (targetRole || "").toLowerCase();
-  if (lower.includes("ui") || lower.includes("ux") || lower.includes("design")) {
-    return {
-      question: "Could you tell me about yourself, your design journey, and what motivated you to pursue this UI/UX design role?",
-      category: "tell_me_about_yourself",
-      competency: "communication",
-      difficulty: "easy",
-      isFollowUp: false,
-      expectedSTAR: false,
-      followUpHint: "Ask about a specific design challenge or project where they championed the user experience",
-      tips: ["Listen for user empathy and design process awareness", "Observe how clearly they connect user needs with business goals"],
-    };
+const HR_FALLBACK_BANK: HRFallbackTemplate[] = [
+  {
+    category: "tell_me_about_yourself",
+    competency: "communication",
+    difficulty: "easy",
+    expectedSTAR: false,
+    question: "To kick things off, could you walk me through your background, your key projects, and what motivated you to apply for this role?",
+    followUpHint: "Listen for clear structure, relevance to the role, and narrative arc",
+    tips: ["Clear narrative arc", "Enthusiasm and self-awareness"],
+  },
+  {
+    category: "project_deepdive",
+    competency: "problem_solving",
+    difficulty: "medium",
+    expectedSTAR: true,
+    question: "Can you describe a significant project or challenging technical problem you tackled recently, what specific obstacles you encountered, and how you solved them?",
+    followUpHint: "Probe individual contribution versus team outcome",
+    tips: ["Check for STAR methodology", "Look for tangible impact"],
+  },
+  {
+    category: "conflict_resolution",
+    competency: "teamwork",
+    difficulty: "medium",
+    expectedSTAR: true,
+    question: "Tell me about a time you had a disagreement with a team member or stakeholder regarding a technical choice or project priority. How did you resolve it?",
+    followUpHint: "Check empathy, active listening, and constructive negotiation",
+    tips: ["Focus on common goals", "Professionalism under tension"],
+  },
+  {
+    category: "adaptability",
+    competency: "adaptability",
+    difficulty: "medium",
+    expectedSTAR: true,
+    question: "Could you walk me through a situation where project scope, priorities, or deadlines shifted unexpectedly? How did you adapt your workflow?",
+    followUpHint: "Probe composure and communication during changes",
+    tips: ["Demonstrates resilience", "Prioritization under pressure"],
+  },
+  {
+    category: "failure_recovery",
+    competency: "ownership",
+    difficulty: "hard",
+    expectedSTAR: true,
+    question: "We all make mistakes in our work. Can you share an example of a project or task that didn't go as planned, and what actionable lesson you took away?",
+    followUpHint: "Look for genuine accountability without finger-pointing",
+    tips: ["Honesty and vulnerability", "Concrete corrective actions taken"],
+  },
+  {
+    category: "leadership_ownership",
+    competency: "leadership",
+    difficulty: "medium",
+    expectedSTAR: true,
+    question: "Describe a scenario where you stepped up to take ownership of an ambiguous problem or helped a struggling teammate without being asked.",
+    followUpHint: "Evaluate proactivity and peer support",
+    tips: ["Self-starter attitude", "Peer support and initiative"],
+  },
+  {
+    category: "time_management",
+    competency: "professionalism",
+    difficulty: "medium",
+    expectedSTAR: true,
+    question: "When managing multiple competing tasks with tight deadlines, how do you decide what to prioritize and what trade-offs to communicate?",
+    followUpHint: "Assess stakeholder transparency and organization",
+    tips: ["Structured prioritization framework", "Clear boundary setting"],
+  },
+  {
+    category: "cultural_fit",
+    competency: "cultural_fit",
+    difficulty: "easy",
+    expectedSTAR: false,
+    question: "What kind of team environment and collaboration culture brings out your best performance and creative problem-solving?",
+    followUpHint: "Notice alignment with collaborative team values",
+    tips: ["Self-awareness of work style", "Team-oriented mindset"],
+  },
+  {
+    category: "learning_mindset",
+    competency: "motivation",
+    difficulty: "medium",
+    expectedSTAR: false,
+    question: "How do you stay up-to-date with emerging tools and industry practices, and what is one new skill or concept you adopted recently?",
+    followUpHint: "Check genuine curiosity and hands-on learning passion",
+    tips: ["Continuous learning habits", "Practical application"],
+  },
+  {
+    category: "career_goals",
+    competency: "motivation",
+    difficulty: "easy",
+    expectedSTAR: false,
+    question: "Looking ahead, where do you see yourself making the biggest impact in this role over the next couple of years, and what questions do you have for us?",
+    followUpHint: "Observe candidate engagement and forward-thinking curiosity",
+    tips: ["Long-term motivation", "Thoughtful questions for the interviewer"],
+  },
+];
+
+export function getHRFallbackQuestion(
+  targetRole: string = "",
+  questionNumber: number = 1,
+  previousQuestions: string[] = []
+): HRQuestion {
+  const normPrev = previousQuestions.map((q) => q.toLowerCase().replace(/[^a-z0-9]/g, ""));
+  const lowerRole = (targetRole || "").toLowerCase();
+
+  let pool = [...HR_FALLBACK_BANK];
+  if (lowerRole.includes("ui") || lowerRole.includes("ux") || lowerRole.includes("design")) {
+    pool = [
+      {
+        category: "tell_me_about_yourself",
+        competency: "communication",
+        difficulty: "easy",
+        expectedSTAR: false,
+        question: "Could you tell me about yourself, your design journey, and what motivated you to pursue this UI/UX design role?",
+        followUpHint: "Ask about a specific design challenge or project where they championed the user experience",
+        tips: ["Listen for user empathy and design process awareness", "Observe how clearly they connect user needs with business goals"],
+      },
+      {
+        category: "design_critique",
+        competency: "collaboration",
+        difficulty: "medium",
+        expectedSTAR: true,
+        question: "How do you handle situations where engineers or product managers push back on your design decisions due to technical constraints or tight deadlines?",
+        followUpHint: "Probe how they balance user advocacy with pragmatic engineering feasibility",
+        tips: ["Look for constructive collaboration", "Clear rationale communication"],
+      },
+      ...HR_FALLBACK_BANK.slice(1),
+    ];
   }
-  return HR_FALLBACK_QUESTION;
+
+  // Filter out questions that have already been asked in this session
+  const available = pool.filter((item) => {
+    const itemNorm = item.question.toLowerCase().replace(/[^a-z0-9]/g, "");
+    return !normPrev.some((p) => p.includes(itemNorm.slice(0, 30)) || itemNorm.includes(p.slice(0, 30)));
+  });
+
+  const candidates = available.length > 0 ? available : pool;
+  const picked = candidates[(Math.max(1, questionNumber) - 1) % candidates.length];
+
+  return {
+    ...picked,
+    isFollowUp: false,
+  };
 }
 
 export function ensureQuestionFormat(text: string, defaultType: string = "behavioral"): string {
@@ -290,33 +415,38 @@ export async function generateHRQuestion(
 ): Promise<HRQuestion> {
   const questionNumber = history.filter((m) => m.role === "interviewer").length + 1;
   const totalQuestions = Math.ceil((config.durationMinutes || 30) / 4);
-  const companyFocus = getCompanyHRFocus(config.targetCompany);
-  const experienceGuidance = getExperienceLevelGuidance(config.experienceLevel);
-  const phaseGuidance = getInterviewPhaseGuidance(questionNumber, totalQuestions);
-  const roleGuidance = getRoleSpecificHRGuidance(config.targetRole);
 
   const previousQuestions = history
     .filter((m) => m.role === "interviewer")
-    .map((m, i) => `${i + 1}. "${m.content.replace(/\s+/g, " ").trim()}"`);
+    .map((m) => m.content.replace(/\s+/g, " ").trim());
 
-  const conversationHistory = history
-    .filter((m) => m.role === "interviewer" || m.role === "candidate")
-    .map((m) => `[${m.role === "interviewer" ? "Interviewer" : "Candidate"}]: ${m.content}`)
-    .join("\n\n");
+  const fallbackQ = getHRFallbackQuestion(config.targetRole, questionNumber, previousQuestions);
 
-  const resumeSection = config.resumeContext && config.resumeContext !== "null"
-    ? `\nCANDIDATE RESUME CONTEXT:\n${config.resumeContext}\n`
-    : "";
+  try {
+    const companyFocus = getCompanyHRFocus(config.targetCompany);
+    const experienceGuidance = getExperienceLevelGuidance(config.experienceLevel);
+    const phaseGuidance = getInterviewPhaseGuidance(questionNumber, totalQuestions);
+    const roleGuidance = getRoleSpecificHRGuidance(config.targetRole);
 
-  const systemPrompt = `You are an experienced HR interviewer conducting a professional behavioral interview. You behave like a seasoned campus or corporate recruiter — warm but probing, professional but human.
+    const prevList = previousQuestions.map((q, i) => `${i + 1}. "${q}"`);
+    const conversationHistory = history
+      .filter((m) => m.role === "interviewer" || m.role === "candidate")
+      .map((m) => `[${m.role === "interviewer" ? "Interviewer" : "Candidate"}]: ${m.content}`)
+      .join("\n\n");
+
+    const resumeSection = config.resumeContext && config.resumeContext !== "null"
+      ? `\nCANDIDATE RESUME CONTEXT:\n${config.resumeContext}\n`
+      : "";
+
+    const systemPrompt = `You are an experienced HR interviewer conducting a professional behavioral interview. You behave like a seasoned campus or corporate recruiter — warm but probing, professional but human.
 
 INTERVIEW CONTEXT:
-- Type: ${config.interviewType}
-- Target Role: ${config.targetRole}
+- Type: ${config.interviewType || "hr"}
+- Target Role: ${config.targetRole || "Candidate"}
 - Target Company: ${config.targetCompany || "Not specified"}
-- Experience Level: ${config.experienceLevel}
-- Language: ${config.language}
-- Difficulty: ${config.difficulty}
+- Experience Level: ${config.experienceLevel || "mid"}
+- Language: ${config.language || "english"}
+- Difficulty: ${config.difficulty || "medium"}
 
 PHASE: ${phaseGuidance}
 
@@ -330,7 +460,7 @@ ${BEHAVIORAL_CATEGORIES.map((c) => `- ${c.replace(/_/g, " ")}`).join("\n")}
 
 CRITICAL ANTI-REPETITION MANDATE (ABSOLUTE RULE):
 The following questions have ALREADY BEEN ASKED in this interview:
-${previousQuestions.length > 0 ? previousQuestions.join("\n") : "(None yet - this is question 1)"}
+${prevList.length > 0 ? prevList.join("\n") : "(None yet - this is question 1)"}
 
 STRICT PROHIBITION: You MUST NEVER repeat, rephrase, or ask questions that overlap with any of the questions listed above! Choose an entirely distinct behavioral topic that has NOT been discussed yet.
 
@@ -359,26 +489,24 @@ Return the question as JSON with this exact structure:
   "tips": ["tip for evaluating this response"]
 }`;
 
-  const userPrompt = `Question ${questionNumber} of ${totalQuestions} | Role: ${config.targetRole} | Company: ${config.targetCompany || "Any"} | Type: ${config.interviewType}
+    const userPrompt = `Question ${questionNumber} of ${totalQuestions} | Role: ${config.targetRole || "Candidate"} | Company: ${config.targetCompany || "Any"} | Type: ${config.interviewType || "hr"}
 
 ${conversationHistory ? `Previous conversation:\n${conversationHistory}` : "This is the first question of the interview."}
 
 ${conversationHistory ? "First acknowledge their last response with 1 short sentence, then ask the next specific question ending with '?'." : "Generate the opening question."}`;
 
-  try {
-    const fallbackQ = getHRFallbackQuestion(config.targetRole);
     const result = await generateJSON<HRQuestion>(
       systemPrompt,
       userPrompt,
-      { model: MODELS.BALANCED, temperature: 0.8, maxTokens: 2048 },
+      { model: MODELS.BALANCED, temperature: 0.75, maxTokens: 1024, timeoutMs: 6000 },
       fallbackQ
     );
     result.question = ensureQuestionFormat(result.question, config.interviewType);
     console.log(`[HR Interview] Generated question ${questionNumber} — category: ${result.category}, competency: ${result.competency}`);
     return result;
   } catch (error) {
-    console.error(`[HR Interview] Question generation failed, using fallback:`, error);
-    return getHRFallbackQuestion(config.targetRole);
+    console.warn(`[HR Interview] Question generation failed, using dynamic non-repeating fallback:`, error);
+    return fallbackQ;
   }
 }
 
@@ -423,7 +551,7 @@ Return as JSON:
     const result = await generateJSON<STARAnalysis>(
       systemPrompt,
       `QUESTION: ${question}\n\nCANDIDATE ANSWER: ${answer}\n\nAnalyze this answer for STAR method elements. Be specific about what is present and what is missing.`,
-      { model: MODELS.FAST, temperature: 0.3, maxTokens: 1024 },
+      { model: MODELS.FAST, temperature: 0.3, maxTokens: 1024, timeoutMs: 4000 },
       fallback
     );
     result.score = Math.max(0, Math.min(100, Math.round(result.score)));
@@ -484,7 +612,7 @@ Return as JSON:
     const result = await generateJSON<CommunicationAnalysis>(
       systemPrompt,
       `QUESTION: ${question}\n\nCANDIDATE ANSWER: ${answer}\n\nEvaluate the communication quality of this response.`,
-      { model: MODELS.FAST, temperature: 0.3, maxTokens: 1024 },
+      { model: MODELS.FAST, temperature: 0.3, maxTokens: 1024, timeoutMs: 4000 },
       fallback
     );
     for (const key of ["clarity", "confidence", "fluency", "conciseness", "vocabulary", "professionalism", "answerStructure", "overallScore"] as const) {
@@ -536,17 +664,25 @@ CRITICAL OUTPUT RULES:
 
 Return ONLY the interviewer's spoken words, ending with a question mark ('?').`;
 
+  const FOLLOW_UP_POOL = [
+    "Thanks for explaining that. What was the biggest obstacle or pushback you faced while implementing that, and how did you overcome it?",
+    "That makes sense. What was the measurable result or key metric that proved your approach succeeded?",
+    "Understood. If you had the opportunity to tackle that same problem today, what would you do differently in hindsight?",
+    "I see your point. How did other team members or stakeholders react to your decision, and how did you resolve any friction?",
+    "Thank you for sharing. Could you walk me through your specific individual role in driving that forward versus the rest of the team?",
+  ];
+
   const fallback = starAnalysis.hasResult
-    ? "Thanks for explaining that. What was the biggest challenge or pushback you faced while implementing that, and how did you overcome it?"
+    ? FOLLOW_UP_POOL[0]
     : starAnalysis.hasAction
-      ? "That makes sense. What was the measurable result or key takeaway from your actions?"
-      : "Thank you for sharing. Could you walk me through a specific real-world example where you personally took ownership of this?";
+      ? FOLLOW_UP_POOL[1]
+      : FOLLOW_UP_POOL[4];
 
   try {
     const result = await generateText(
       systemPrompt,
       `Original question: ${question}\nCandidate answer: ${answer}\n\nGenerate an incisive counter-question directly challenging or probing their response, ending with '?'.`,
-      { model: MODELS.FAST, temperature: 0.75, maxTokens: 512 }
+      { model: MODELS.FAST, temperature: 0.75, maxTokens: 512, timeoutMs: 5000 }
     );
     const cleanFollowUp = ensureQuestionFormat(result.trim(), config.interviewType);
     return cleanFollowUp;

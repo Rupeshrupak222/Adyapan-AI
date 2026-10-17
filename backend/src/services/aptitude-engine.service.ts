@@ -613,7 +613,12 @@ CRITICAL RULES:
   try {
     const BATCH_SIZE = 5;
     const allGenerated: GeneratedQuestion[] = [];
-    let remaining = count;
+    // Over-generate by 50%. The dedup/filter passes below run AFTER this loop, so
+    // requesting exactly `count` left no slack: one collision with the topic's
+    // existing questions returned 29 of 30 and threw QuestionPoolExhaustedError,
+    // even though the topic was not remotely out of concepts. The surplus batch
+    // is dropped by the slice on return.
+    let remaining = count + Math.ceil(count * 0.5);
     let batchIndex = 0;
 
     const archetypesForTopic = TOPIC_ARCHETYPES[topic] || [];

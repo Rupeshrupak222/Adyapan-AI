@@ -159,11 +159,15 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
       setSending(true);
 
       try {
-        const res = (await api.post(`/interview/hr/${sessionId}/answer`, {
-          answer: transcript,
-          questionNumber,
-          requestId: `ans-hr-${sessionId}-${questionNumber}-${Date.now()}`,
-        })) as any;
+        const res = (await api.post(
+          `/interview/hr/${sessionId}/answer`,
+          {
+            answer: transcript,
+            questionNumber,
+            requestId: `ans-hr-${sessionId}-${questionNumber}-${Date.now()}`,
+          },
+          { timeout: 15000 }
+        )) as any;
 
         if (res.data) {
           if (res.data.isComplete) {
@@ -202,7 +206,16 @@ export const HRInterviewActive: React.FC<HRInterviewActiveProps> = ({
           }
         }
       } catch (err: any) {
-        const fallbackText = `Thank you for sharing that experience. How do you handle feedback and align with your team when priorities shift?`;
+        console.warn("[HR Interview] Answer submission network issue, rotating to next question:", err);
+        const FRONTEND_FALLBACK_POOL = [
+          "Thank you for explaining that. Can you describe a challenging project or technical problem you solved recently?",
+          "Thanks for sharing. Tell me about a time you had a disagreement with a team member or manager. How did you resolve it?",
+          "Understood. How do you handle situations where project priorities shift suddenly and deadlines are tight?",
+          "That makes sense. Can you share an example of a project or task that didn't go as planned, and what you learned from it?",
+          "Thank you. Describe a scenario where you stepped up to take ownership of an ambiguous issue without being asked?",
+          "Thanks for that insight. Where do you see yourself making the biggest impact in this role over the next couple of years?",
+        ];
+        const fallbackText = FRONTEND_FALLBACK_POOL[questionNumber % FRONTEND_FALLBACK_POOL.length];
         const aiMsg: HRMessage = {
           id: `ai-${Date.now()}`,
           role: "interviewer",

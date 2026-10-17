@@ -204,16 +204,119 @@ function computeAnswerQuality(history: Message[]): number {
   return Math.round(total / answers.length);
 }
 
-const FALLBACK_QUESTION: TechnicalQuestion = {
-  question: "Explain the difference between a stack and a queue, and give a real-world example of each.",
-  category: "data-structures",
-  difficulty: "easy",
-  isCodingChallenge: false,
-  expectedTopics: ["stack", "queue", "LIFO", "FIFO", "use cases"],
-  followUpHint: "Ask about time complexity of operations and when to prefer one over the other",
-  timeEstimate: "3 minutes",
-  tips: ["Listen for correct LIFO/FIFO explanation", "Note if they give practical examples"],
-};
+const TECHNICAL_FALLBACK_BANK: Array<{
+  category: string;
+  question: string;
+  expectedTopics: string[];
+  followUpHint: string;
+  timeEstimate: string;
+  tips: string[];
+}> = [
+  {
+    category: "data-structures",
+    question: "How would you design an efficient in-memory Least Recently Used (LRU) Cache? Walk me through the data structures you'd combine to guarantee O(1) time complexity for both get and put operations.",
+    expectedTopics: ["hash map", "doubly linked list", "O(1) lookups", "eviction policy"],
+    followUpHint: "Ask how they handle thread safety and concurrency bottlenecks.",
+    timeEstimate: "3 minutes",
+    tips: ["Verify understanding of why combining hash map with doubly linked list achieves O(1)"],
+  },
+  {
+    category: "system-design",
+    question: "When designing high-throughput REST or gRPC APIs, how do you handle rate-limiting and protect backend databases from the 'thundering herd' problem during cache misses?",
+    expectedTopics: ["token bucket", "leaky bucket", "mutex locking", "redis", "circuit breaker"],
+    followUpHint: "Probe how they distribute rate limits across multiple stateless servers.",
+    timeEstimate: "3 minutes",
+    tips: ["Listen for distributed locking or probabilistic early expiration strategies"],
+  },
+  {
+    category: "algorithms",
+    question: "Walk me through how you analyze and optimize an algorithm from O(N^2) to O(N log N) or O(N). Can you give an example from your experience where a change in data structure eliminated an asymptotic bottleneck?",
+    expectedTopics: ["hash sets", "two pointers", "sliding window", "sorting trade-offs", "divide and conquer"],
+    followUpHint: "Probe edge cases like memory overhead and hash collision degradation.",
+    timeEstimate: "3 minutes",
+    tips: ["Assess candidate's ability to trade space for time appropriately"],
+  },
+  {
+    category: "concurrency",
+    question: "How do you diagnose and prevent race conditions and deadlocks in multi-threaded or asynchronous systems? What primitives or patterns do you rely on?",
+    expectedTopics: ["locks", "mutexes", "semaphores", "actor model", "event loops", "atomic operations"],
+    followUpHint: "Ask how lock-ordering hierarchies prevent circular deadlock dependencies.",
+    timeEstimate: "3 minutes",
+    tips: ["Listen for practical experience with thread safety or async event queues"],
+  },
+  {
+    category: "database-design",
+    question: "Explain the internal difference between a B-Tree index and a Hash index in relational databases. Under what query patterns does an index fail to improve performance or actually slow down writes?",
+    expectedTopics: ["B-Tree", "clustered index", "range queries", "write overhead", "index selectivity"],
+    followUpHint: "Ask how composite index column ordering impacts prefix matching.",
+    timeEstimate: "3 minutes",
+    tips: ["Verify they understand index selectivity and write-amplification"],
+  },
+  {
+    category: "architecture",
+    question: "When breaking a monolithic application into microservices or modular components, how do you manage distributed transactions and maintain eventual data consistency without distributed two-phase locks?",
+    expectedTopics: ["Saga pattern", "outbox pattern", "idempotency", "event-driven architecture", "message queues"],
+    followUpHint: "Ask how compensating transactions recover from partial failures.",
+    timeEstimate: "3 minutes",
+    tips: ["Evaluate depth on real distributed systems trade-offs"],
+  },
+  {
+    category: "performance-optimization",
+    question: "Suppose a production service is experiencing sudden latency spikes at the 99th percentile (p99). What is your systematic debugging methodology to isolate whether the culprit is CPU throttling, garbage collection, slow DB queries, or network I/O?",
+    expectedTopics: ["APM metrics", "CPU profiling", "GC pauses", "slow query logs", "distributed tracing"],
+    followUpHint: "Ask which observability tools (Prometheus, OpenTelemetry, Jaeger) they use.",
+    timeEstimate: "3 minutes",
+    tips: ["Look for a calm, structured root-cause analysis methodology"],
+  },
+  {
+    category: "error-handling",
+    question: "How do you design robust resilience strategies for downstream third-party service dependencies? Explain how circuit breakers, retries with exponential backoff, and fallback responses work together.",
+    expectedTopics: ["circuit breaker", "jitter", "exponential backoff", "graceful degradation", "timeouts"],
+    followUpHint: "Ask what happens if thousands of retries trigger a cascade failure.",
+    timeEstimate: "3 minutes",
+    tips: ["Verify understanding of why jitter is critical in exponential backoff"],
+  },
+  {
+    category: "memory-management",
+    question: "How does memory management and garbage collection (or manual resource allocation) work in your primary programming language, and how do you prevent memory leaks in long-running services?",
+    expectedTopics: ["heap vs stack", "mark and sweep", "reference cycles", "unclosed streams", "profiling tools"],
+    followUpHint: "Ask how heap snapshots or memory dumps are analyzed.",
+    timeEstimate: "3 minutes",
+    tips: ["Check awareness of how unmanaged listeners or global state cause memory leaks"],
+  },
+  {
+    category: "api-design",
+    question: "What architectural patterns do you employ to ensure your API contracts remain backward-compatible when deploying frequent changes to mobile clients and external integrations?",
+    expectedTopics: ["semantic versioning", "additive schema evolution", "deprecation headers", "protobuf / GraphQL"],
+    followUpHint: "Ask how they handle breaking field removals gracefully.",
+    timeEstimate: "3 minutes",
+    tips: ["Look for clear deprecation lifecycles and contract-first API thinking"],
+  },
+];
+
+function getTechnicalFallbackQuestion(
+  topic: string,
+  questionNumber: number,
+  previousQuestions: string[] = []
+): TechnicalQuestion {
+  const prevLower = previousQuestions.map((q) => q.toLowerCase());
+  const unused = TECHNICAL_FALLBACK_BANK.filter(
+    (item) => !prevLower.some((prev) => prev.includes(item.question.slice(0, 30).toLowerCase()))
+  );
+  const pool = unused.length > 0 ? unused : TECHNICAL_FALLBACK_BANK;
+  const picked = pool[(questionNumber - 1) % pool.length];
+
+  return {
+    question: `In the context of ${topic || "software engineering"}: ${picked.question}`,
+    category: picked.category,
+    difficulty: "medium",
+    isCodingChallenge: false,
+    expectedTopics: [...picked.expectedTopics, topic],
+    followUpHint: picked.followUpHint,
+    timeEstimate: picked.timeEstimate,
+    tips: picked.tips,
+  };
+}
 
 export async function generateTechnicalQuestion(config: {
   topic: TechnicalTopic;
@@ -348,12 +451,14 @@ ${resumeSection}
 ${conversationHistory ? "Evaluate the candidate's latest answer in history, then ask the next question or follow-up." : "Generate the first technical interview question."}
 ${isCodingQuestion ? `\nREMINDER: You MUST generate a complete coding problem with starter code in ${codingLanguage}. isCodingChallenge MUST be true. codingProblem MUST NOT be null.` : ""}`;
 
+  const dynamicFallback = getTechnicalFallbackQuestion(topic, questionNumber, previousQuestions);
+
   try {
     const result = await generateJSON<TechnicalQuestion>(
       systemPrompt,
       userPrompt,
-      { model: MODELS.BALANCED, temperature: 0.8, maxTokens: 4000 },
-      FALLBACK_QUESTION
+      { model: MODELS.BALANCED, temperature: 0.8, maxTokens: 4000, timeoutMs: 6000 },
+      dynamicFallback
     );
 
     // Post-process: if this was supposed to be a coding challenge but AI failed to set it, fix it
@@ -371,19 +476,27 @@ ${isCodingQuestion ? `\nREMINDER: You MUST generate a complete coding problem wi
         result.question = `${result.question}\n\n**Problem: ${result.codingProblem.title}**\n${result.codingProblem.description}`;
       }
     } else if (!result.question || result.question.trim().length < 20) {
-      result.question = `Let's discuss ${topic}. Could you explain the core concepts and real-world trade-offs of ${topic}?`;
+      result.question = dynamicFallback.question;
     }
 
     console.log(`[TechnicalEngine] Generated Q${questionNumber} for ${topic} (${result.category}) | coding=${result.isCodingChallenge}`);
     return result;
   } catch (error) {
-    console.error(`[TechnicalEngine] Question generation failed:`, error);
-    return FALLBACK_QUESTION;
+    console.warn(`[TechnicalEngine] AI question generation error, returning dynamic fallback:`, error);
+    return dynamicFallback;
   }
 }
 
 
 // ─── Follow-up Question Generation ──────────────────────────────────────────
+
+const FOLLOW_UP_POOL = [
+  "Can you walk me through the asymptotic time and space complexity of that specific implementation?",
+  "How would your approach hold up if the input volume scaled 100x and no longer fit into single-instance RAM?",
+  "What is the most critical failure mode or edge case you would write an automated test for here?",
+  "If this logic were executed concurrently across multiple threads or distributed nodes, how would you prevent race conditions?",
+  "What trade-off did you make in this design, and what alternative pattern did you consider and reject?",
+];
 
 export async function generateFollowUp(params: {
   originalQuestion: string;
@@ -399,6 +512,8 @@ export async function generateFollowUp(params: {
     .slice(-4)
     .map((m) => `[${m.role === "interviewer" ? "Interviewer" : "Candidate"}]: ${m.content}`)
     .join("\n\n");
+
+  const fallbackFollowUp = FOLLOW_UP_POOL[history.length % FOLLOW_UP_POOL.length];
 
   const systemPrompt = `You are a senior technical interviewer. The candidate just answered a question. Generate a challenging follow-up question.
 
@@ -429,12 +544,12 @@ Generate a challenging follow-up question.`;
     const result = await generateJSON<{ question: string }>(
       systemPrompt,
       userPrompt,
-      { model: MODELS.FAST, temperature: 0.7, maxTokens: 500 },
-      { question: "Can you elaborate on the time and space complexity of your approach?" }
+      { model: MODELS.FAST, temperature: 0.7, maxTokens: 500, timeoutMs: 4000 },
+      { question: fallbackFollowUp }
     );
-    return result.question;
+    return result?.question || fallbackFollowUp;
   } catch {
-    return "Can you walk me through the time and space complexity of your approach?";
+    return fallbackFollowUp;
   }
 }
 

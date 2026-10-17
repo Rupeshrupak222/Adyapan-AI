@@ -166,7 +166,15 @@ export async function processAnswer(
     }
   } catch (error) {
     console.error("[InterviewSession] Failed to generate next question:", error);
-    nextQuestion = "Could you walk me through your thought process on that?";
+    const GENERAL_FALLBACK_POOL = [
+      "Could you walk me through your thought process and key decisions on that?",
+      "How did you measure the success or business impact of that specific initiative?",
+      "What was the most challenging technical hurdle you encountered, and how did you resolve it?",
+      "If you had the chance to redo that project from scratch today, what architectural choices would you alter?",
+      "How did you handle cross-functional communication and alignment with stakeholders during that phase?",
+    ];
+    const prevQCount = allMessages.filter((m) => m.role === "interviewer").length;
+    nextQuestion = GENERAL_FALLBACK_POOL[prevQCount % GENERAL_FALLBACK_POOL.length];
   }
 
   if (nextQuestion) {

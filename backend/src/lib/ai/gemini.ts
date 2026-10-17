@@ -1952,12 +1952,20 @@ ${!lastWasFollowUp ? "Ask a penetrating COUNTER-QUESTION drilling deeper into wh
     return await generateText(systemPrompt, userPrompt, {
       model: MODELS.BALANCED,
       temperature: 0.75,
+      timeoutMs: 6000,
     });
   } catch (error) {
     console.warn("[Gemini] generateInterviewQuestion failed, using fallback:", error);
+    const PROMPT_FALLBACK_POOL = [
+      `Could you describe a challenging problem you solved in your past work as a ${role}, and what made it difficult?`,
+      `How do you prioritize competing requirements and manage technical debt in high-pressure deliverables for ${role}?`,
+      `Tell me about a time you identified a critical flaw before deployment. What steps did you take to safeguard the system?`,
+      `What engineering principles or methodologies do you rely on most heavily when ramping up on an unfamiliar tech stack?`,
+    ];
+    const prevQCount = history.filter((m) => m.role === "interviewer").length;
     return !lastWasFollowUp && lastCandidateMessage
       ? "That's an interesting approach. Could you walk me through the trade-offs of that decision and how you would handle potential edge cases?"
-      : `Could you describe a challenging technical or system-level problem you solved in your past work as a ${role}?`;
+      : PROMPT_FALLBACK_POOL[prevQCount % PROMPT_FALLBACK_POOL.length];
   }
 }
 

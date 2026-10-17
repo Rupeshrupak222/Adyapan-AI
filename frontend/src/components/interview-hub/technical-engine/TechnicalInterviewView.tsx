@@ -307,14 +307,25 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
       setMessages((prev) => [...prev, candidateMsg]);
 
       try {
-        const res = (await api.post(`/technical-engine/${sessionId}/answer`, {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Answer submission timeout")), 15000)
+        );
+        const postPromise = api.post(`/technical-engine/${sessionId}/answer`, {
           answer: transcript,
           questionNumber,
           codeSubmitted: showCoding ? code : undefined,
           requestId: `ans-tech-${sessionId}-${questionNumber}-${Date.now()}`,
-        })) as any;
+          role: config.role,
+          targetRole: config.role,
+          company: config.company,
+          targetCompany: config.company,
+          topic: config.topic,
+          technology: config.topic,
+          difficulty: config.difficulty,
+        });
 
-        const data = res.data || {};
+        const res = (await Promise.race([postPromise, timeoutPromise])) as any;
+        const data = res?.data || {};
 
         if (data.isComplete) {
           toast.success("Technical interview complete! Generating report...");
@@ -347,8 +358,16 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
 
         conversationEngine.speak(aiMsg.content);
       } catch (err: any) {
-        // Fast Fallback Recovery
-        const fallbackText = `That is a solid foundation. Let's delve into optimization: how would you improve performance under edge cases in ${config.topic}?`;
+        // Fast Fallback Recovery with rotating question pool to prevent repetitive loops
+        const TECH_FALLBACK_POOL = [
+          `That is a solid foundation. Let's delve into optimization: how would you improve performance under edge cases in ${config.topic}?`,
+          `Good explanation. How would your design handle high concurrency and prevent race conditions in ${config.topic}?`,
+          `Interesting approach. How would you architect this solution if the dataset scaled 100x and could not fit in memory?`,
+          `Could you walk me through how you would write comprehensive unit and integration tests to validate error paths here?`,
+          `What trade-offs did you make between time complexity, memory utilization, and maintainability in that implementation?`,
+          `How would you monitor and debug latency spikes for this feature once deployed in production?`,
+        ];
+        const fallbackText = TECH_FALLBACK_POOL[questionNumber % TECH_FALLBACK_POOL.length];
         const aiMsg: EngineMessage = {
           id: `ai-${Date.now()}`,
           role: "interviewer",

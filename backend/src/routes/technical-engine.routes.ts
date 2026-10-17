@@ -149,6 +149,39 @@ technicalEngineRouter.post("/start", requireFeatureQuota(FeatureKey.TECHNICAL_IN
   }
 });
 
+async function getOrHealTechnicalSession(p: any, sessionId: string, userId: string, extraData?: any) {
+  let session = await p.interviewSession.findFirst({
+    where: { id: sessionId, userId },
+  });
+  if (!session) {
+    try {
+      session = await p.interviewSession.create({
+        data: {
+          id: sessionId,
+          userId,
+          type: "technical",
+          role: extraData?.targetRole || extraData?.role || "Software Engineer",
+          company: extraData?.targetCompany || extraData?.company || "",
+          technology: extraData?.topic || extraData?.technology || "dsa",
+          status: "in_progress",
+          difficulty: extraData?.difficulty || "medium",
+          durationMinutes: 45,
+          configuration: {
+            interviewType: "technical",
+            technology: extraData?.topic || extraData?.technology || "dsa",
+            targetRole: extraData?.targetRole || extraData?.role || "Software Engineer",
+          },
+        },
+      });
+    } catch {
+      session = await p.interviewSession.findFirst({
+        where: { id: sessionId },
+      });
+    }
+  }
+  return session;
+}
+
 // ─── Submit answer and get next question ────────────────────────────────────
 technicalEngineRouter.post("/:sessionId/answer", async (req, res) => {
   try {
@@ -163,9 +196,7 @@ technicalEngineRouter.post("/:sessionId/answer", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
-    const session = await p.interviewSession.findFirst({
-      where: { id: sessionId, userId: req.user!.userId },
-    });
+    const session = await getOrHealTechnicalSession(p, sessionId, req.user!.userId, req.body);
     if (!session) {
       res.status(404).json({ success: false, error: "Session not found" });
       return;
@@ -299,9 +330,7 @@ technicalEngineRouter.post("/:sessionId/followup", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
-    const session = await p.interviewSession.findFirst({
-      where: { id: sessionId, userId: req.user!.userId },
-    });
+    const session = await getOrHealTechnicalSession(p, sessionId, req.user!.userId, req.body);
     if (!session) {
       res.status(404).json({ success: false, error: "Session not found" });
       return;
@@ -384,9 +413,7 @@ technicalEngineRouter.post("/:sessionId/evaluate", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
-    const session = await p.interviewSession.findFirst({
-      where: { id: sessionId, userId: req.user!.userId },
-    });
+    const session = await getOrHealTechnicalSession(p, sessionId, req.user!.userId, req.body);
     if (!session) {
       res.status(404).json({ success: false, error: "Session not found" });
       return;
@@ -497,9 +524,7 @@ technicalEngineRouter.post("/:sessionId/end", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
-    const session = await p.interviewSession.findFirst({
-      where: { id: sessionId, userId: req.user!.userId },
-    });
+    const session = await getOrHealTechnicalSession(p, sessionId, req.user!.userId, req.body);
     if (!session) {
       res.status(404).json({ success: false, error: "Session not found" });
       return;

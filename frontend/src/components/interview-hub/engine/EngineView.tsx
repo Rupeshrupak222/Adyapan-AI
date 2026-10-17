@@ -91,11 +91,7 @@ export default function EngineView({ theme }: EngineViewProps) {
     };
 
     try {
-      // Race against 7s timeout so we never hang indefinitely on slow AI / network
-      const res = await Promise.race([
-        api.post("/engine/start", payload),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 7000)),
-      ]);
+      const res = await api.post("/engine/start", payload);
 
       if (res?.data && res.data.success && res.data.session) {
         setSessionId(res.data.session.id);

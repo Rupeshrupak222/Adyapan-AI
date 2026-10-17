@@ -151,13 +151,23 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
       setSending(true);
 
       try {
-        const res = (await api.post(`/engine/${sessionId}/answer`, {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Answer submission timeout")), 15000)
+        );
+        const postPromise = api.post(`/engine/${sessionId}/answer`, {
           answer: transcript,
           questionNumber,
+          targetRole: config.targetRole,
+          role: config.targetRole,
+          targetCompany: config.targetCompany,
+          company: config.targetCompany,
+          technology: config.technology,
+          difficulty: config.difficulty,
           requestId: `ans-${sessionId}-${questionNumber}-${Date.now()}`,
-        })) as any;
+        });
 
-        const data = res.data || {};
+        const res = (await Promise.race([postPromise, timeoutPromise])) as any;
+        const data = res?.data || {};
 
         if (data.isComplete) {
           toast.success("Interview complete! Generating report...");
@@ -186,8 +196,16 @@ export const EngineInterview: React.FC<EngineInterviewProps> = ({
 
         conversationEngine.speak(aiResponse.content);
       } catch (err: any) {
-        // Fast local recovery on true network failure
-        const fallbackText = `Thank you for detailing that. How do you approach problem-solving and collaboration for ${config.targetRole}?`;
+        // Fast local recovery on true network failure with non-repeating rotating pool
+        const ENGINE_FALLBACK_POOL = [
+          `Thank you for detailing that. How do you approach problem-solving and cross-functional collaboration for ${config.targetRole}?`,
+          `Could you give a specific example of when priorities shifted suddenly and how you adapted your technical deliverables?`,
+          `How do you handle critical feedback on your work, and how do you ensure team consensus when opinions differ?`,
+          `Describe a situation where you had to debug an elusive issue under tight deadlines for ${config.targetRole}.`,
+          `What key engineering best practices do you consider indispensable when building maintainable systems?`,
+          `Looking ahead, what technical area within ${config.targetRole} are you most motivated to master next?`,
+        ];
+        const fallbackText = ENGINE_FALLBACK_POOL[questionNumber % ENGINE_FALLBACK_POOL.length];
         const aiResponse: EngineMessage = {
           id: `ai-${Date.now()}`,
           role: "interviewer",

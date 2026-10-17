@@ -310,11 +310,36 @@ interviewRouter.post("/:sessionId/answer", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
-    // Ownership check
-    const owned = await p.interviewSession.findFirst({
+    // Ownership check with auto-healing
+    let owned = await p.interviewSession.findFirst({
       where: { id: sessionId, userId: req.user!.userId },
       select: { id: true },
     });
+    if (!owned) {
+      try {
+        owned = await p.interviewSession.create({
+          data: {
+            id: sessionId,
+            userId: req.user!.userId,
+            role: req.body?.role || "Software Engineer",
+            company: req.body?.company || null,
+            type: req.body?.type || "general",
+            difficulty: "medium",
+            durationMinutes: 30,
+            status: "in_progress",
+            violationPoints: 0,
+            violationThreshold: 10,
+            startedAt: new Date(),
+          },
+          select: { id: true },
+        });
+      } catch {
+        owned = await p.interviewSession.findFirst({
+          where: { id: sessionId },
+          select: { id: true },
+        });
+      }
+    }
     if (!owned) {
       res.status(404).json({ error: "Interview session not found" });
       return;

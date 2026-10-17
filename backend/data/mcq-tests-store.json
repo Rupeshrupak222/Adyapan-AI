@@ -436389,5 +436389,2784 @@
         "interviewTip": "Explain that P-systems are often chosen for administrative simplicity despite higher carrying costs."
       }
     ]
+  },
+  {
+    "id": "test-tech-hev-5",
+    "targetId": "tech-hev",
+    "targetType": "technology",
+    "targetName": "HEV - Hybrid Electric Vehicle",
+    "testNumber": 5,
+    "title": "HEV - Hybrid Electric Vehicle - Test 5: AI Generated Assessment",
+    "description": "AI-generated Test 5 for HEV - Hybrid Electric Vehicle with guaranteed anti-repetition.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-10-16T06:12:58.862Z",
+    "questions": [
+      {
+        "id": "ai-tech-hev-t5-q1-1792131178209",
+        "question": "In a typical HEV regenerative braking system, what percentage of the vehicle's kinetic energy can usually be recovered and stored in the battery under urban driving conditions?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "10-20%",
+          "30-40%",
+          "50-60%",
+          "70-80%"
+        ],
+        "correctAnswer": "30-40%",
+        "correctIdx": 1,
+        "explanation": "Regenerative braking in HEVs can recover roughly 30-40% of the kinetic energy during stop‑and‑go city driving; the rest is lost to heat, aerodynamic drag, and mechanical friction.",
+        "hint": "Think about typical urban drive cycles and the losses that prevent full energy recovery.",
+        "relatedConcept": "Regenerative braking efficiency",
+        "estimatedTime": "45 sec",
+        "interviewTip": "When discussing HEV efficiency, quantify regenerative recovery to show understanding of real‑world limitations."
+      },
+      {
+        "id": "ai-tech-hev-t5-q2-1792131178209",
+        "question": "Which component in the Toyota Hybrid System (THS) enables the power‑split operation that allows the engine to run at its most efficient point while delivering variable wheel torque?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "Continuously Variable Transmission (CVT)",
+          "Planetary gear set",
+          "Dual‑clutch transmission",
+          "Fixed‑ratio gearbox"
+        ],
+        "correctAnswer": "Planetary gear set",
+        "correctIdx": 1,
+        "explanation": "The THS uses a planetary gear set as a power‑split device, mechanically coupling the engine, motor/generator, and wheels so the engine can operate at optimal speed independent of vehicle speed.",
+        "hint": "Recall the THS architecture often described as an 'e‑CVT' that is not a traditional belt‑driven CVT.",
+        "relatedConcept": "Power‑split hybrid architecture",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Knowing the mechanical basis of the power‑split device distinguishes HEV designs from simple parallel hybrids."
+      },
+      {
+        "id": "ai-tech-hev-t5-q3-1792131178209",
+        "question": "What is a primary operational difference between a series HEV and a parallel HEV?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "In a series HEV the engine directly drives the wheels; in a parallel HEV it does not.",
+          "In a series HEV the engine only generates electricity; in a parallel HEV the engine can mechanically drive the wheels.",
+          "Series HEVs cannot use regenerative braking; parallel HEVs can.",
+          "Parallel HEVs require a larger battery pack than series HEVs."
+        ],
+        "correctAnswer": "In a series HEV the engine only generates electricity; in a parallel HEV the engine can mechanically drive the wheels.",
+        "correctIdx": 1,
+        "explanation": "Series HEVs use the engine solely as a generator to power the electric motor (which drives the wheels), whereas parallel HEVs allow both the engine and the electric motor to provide torque to the wheels, either independently or together.",
+        "hint": "Think about where the mechanical coupling to the wheels occurs in each architecture.",
+        "relatedConcept": "HEV architecture types",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Being able to contrast series vs. parallel operation shows grasp of hybrid fundamentals beyond memorizing component names."
+      },
+      {
+        "id": "ai-tech-hev-t5-q4-1792131178209",
+        "question": "During charge‑sustaining operation of an HEV, what is the main objective of the energy management strategy regarding the battery State of Charge (SOC)?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "Maximize SOC to store as much energy as possible for later use.",
+          "Minimize SOC to reduce battery weight and cost.",
+          "Keep SOC within a narrow band around a target value to balance fuel economy and battery life.",
+          "Allow SOC to fluctuate freely between 0% and 100% to capture all regenerative energy."
+        ],
+        "correctAnswer": "Keep SOC within a narrow band around a target value to balance fuel economy and battery life.",
+        "correctIdx": 2,
+        "explanation": "In charge‑sustaining mode the HEV aims to maintain the battery SOC near a reference (e.g., 60%) so that the engine can operate efficiently while the battery provides buffer for transients, avoiding deep discharges or overcharging that would degrade the battery.",
+        "hint": "Consider why HEVs do not try to fully charge or deplete the battery during normal driving.",
+        "relatedConcept": "Charge‑sustaining SOC control",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Explain SOC maintenance as a trade‑off between fuel efficiency and battery longevity."
+      },
+      {
+        "id": "ai-tech-hev-t5-q5-1792131178209",
+        "question": "Which of the following best describes why an HEV employs an engine start‑stop strategy during low‑load conditions (e.g., idling at a traffic light)?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "To reduce engine wear by preventing oil starvation.",
+          "To eliminate fuel consumption and emissions when the vehicle is stationary, using the battery to power auxiliaries.",
+          "To increase engine temperature for faster warm‑up.",
+          "To allow the transmission to shift into a higher gear for better efficiency."
+        ],
+        "correctAnswer": "To eliminate fuel consumption and emissions when the vehicle is stationary, using the battery to power auxiliaries.",
+        "correctIdx": 1,
+        "explanation": "When the vehicle is stopped or moving very slowly, the HEV can shut off the internal combustion engine and rely on the electric system to run accessories (e.g., HVAC, lights), thereby saving fuel and reducing tailpipe emissions that would otherwise occur during idle.",
+        "hint": "Think about the biggest source of wasted fuel in urban driving cycles.",
+        "relatedConcept": "Engine start‑stop (idle‑off) strategy",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Link start‑stop to real‑world fuel‑saving benefits and note the role of the battery in sustaining auxiliary loads."
+      },
+      {
+        "id": "ai-tech-hev-t5-q6-1792131178209",
+        "question": "In a parallel hybrid electric vehicle, which component allows both the internal combustion engine and the electric motor to deliver torque to the wheels simultaneously?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "Transmission",
+          "Differential",
+          "Flywheel",
+          "Alternator"
+        ],
+        "correctAnswer": "Transmission",
+        "correctIdx": 0,
+        "explanation": "In a parallel HEV, the ICE and electric motor are both coupled to the transmission, which combines their torques and delivers them to the drivetrain, enabling simultaneous operation.",
+        "hint": "Think about the mechanical path that combines power sources before reaching the wheels.",
+        "relatedConcept": "Parallel hybrid architecture",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Know the basic HEV topologies (series, parallel, series‑parallel) and where each power source connects."
+      },
+      {
+        "id": "ai-tech-hev-t5-q7-1792131178209",
+        "question": "What is the main reason regenerative braking effectiveness declines at very low vehicle speeds in an HEV?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "Battery state‑of‑charge is too high",
+          "The electric motor cannot produce sufficient torque to act as a generator",
+          "Brake pads overheat",
+          "DC‑DC converter efficiency drops"
+        ],
+        "correctAnswer": "The electric motor cannot produce sufficient torque to act as a generator",
+        "correctIdx": 1,
+        "explanation": "At low speeds the motor’s back‑EMF is low, limiting the torque it can apply as a generator, so less kinetic energy can be recovered.",
+        "hint": "Consider the relationship between speed, back‑EMF, and torque generation.",
+        "relatedConcept": "Regenerative braking limits",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Remember that regen braking is speed‑dependent; many HEVs blend friction brakes at low speeds."
+      },
+      {
+        "id": "ai-tech-hev-t5-q8-1792131178209",
+        "question": "Given the following Python snippet that estimates the change in state‑of‑charge (SOC) of an HEV battery after a regenerative braking event, what is the value of `soc_change` after execution?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "codeSnippet": "regen_kJ = 120.0          # energy recovered from brakes\nbattery_capacity_kWh = 1.5   # total usable capacity\nvoltage_nominal = 300.0    # nominal pack voltage\n# Convert kJ to kWh\nenergy_kWh = regen_kJ / 3600.0\n# SOC change (%)\nsoc_change = (energy_kWh / battery_capacity_kWh) * 100.0",
+        "language": "python",
+        "options": [
+          "0.22%",
+          "2.22%",
+          "22.22%",
+          "0.022%"
+        ],
+        "correctAnswer": "2.22%",
+        "correctIdx": 1,
+        "explanation": "120 kJ equals 0.0333 kWh. Dividing by the 1.5 kWh capacity gives 0.0222 (2.22%) SOC increase.",
+        "hint": "Remember to convert kilojoules to kilowatt‑hours before dividing by battery capacity.",
+        "relatedConcept": "Energy recovery and SOC calculation",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Always keep units consistent when estimating SOC changes from energy values."
+      },
+      {
+        "id": "ai-tech-hev-t5-q9-1792131178209",
+        "question": "Which cooling method is most commonly used to maintain the temperature of the inverter and DC‑DC converter in an HEV during extended electric‑only driving?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "Passive air cooling",
+          "Active liquid cooling with coolant loop",
+          "Phase‑change material packs",
+          "Heat pipe radiators"
+        ],
+        "correctAnswer": "Active liquid cooling with coolant loop",
+        "correctIdx": 1,
+        "explanation": "The power electronics generate significant heat; an active liquid‑cooling loop provides the necessary heat‑removal capacity for sustained operation.",
+        "hint": "Look for the method that can handle high, continuous power dissipation.",
+        "relatedConcept": "Thermal management of power electronics",
+        "estimatedTime": "45 sec",
+        "interviewTip": "In HEVs, the inverter and converter are usually liquid‑cooled, unlike the motor which may be air‑cooled."
+      },
+      {
+        "id": "ai-tech-hev-t5-q10-1792131178209",
+        "question": "In an HEV operating in stop‑and‑go city traffic, which driving mode typically yields the lowest fuel consumption?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "Engine‑only mode",
+          "Electric‑only mode at low speeds",
+          "Power‑split (charge‑sustaining) mode",
+          "Sport mode"
+        ],
+        "correctAnswer": "Electric‑only mode at low speeds",
+        "correctIdx": 1,
+        "explanation": "At low speeds the electric motor can propel the vehicle without engaging the ICE, avoiding inefficient engine operation and eliminating fuel use.",
+        "hint": "Consider where the ICE operates inefficiently.",
+        "relatedConcept": "City driving HEV strategy",
+        "estimatedTime": "45 sec",
+        "interviewTip": "HEVs maximize electric operation in urban cycles to improve fuel economy."
+      },
+      {
+        "id": "ai-tech-hev-t5-q11-1792131178209",
+        "question": "In a hybrid electric vehicle, which architecture allows the internal combustion engine to be decoupled from the wheels and run at its optimal efficiency point regardless of vehicle speed?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "Parallel hybrid",
+          "Series hybrid",
+          "Power-split hybrid",
+          "Mild hybrid"
+        ],
+        "correctAnswer": "Series hybrid",
+        "correctIdx": 1,
+        "explanation": "In a series hybrid, the engine drives a generator that supplies electricity to the motor; the mechanical connection to the wheels is via the motor only, letting the engine operate at its most efficient speed independent of vehicle speed.",
+        "hint": "Think about where the mechanical power path goes.",
+        "relatedConcept": "HEV architectures",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Know the three basic HEV topologies and their implications for engine operation."
+      },
+      {
+        "id": "ai-tech-hev-t5-q12-1792131178209",
+        "question": "A HEV's regenerative braking system recovers 20% of the kinetic energy that would otherwise be lost as heat. If a braking event dissipates 500 kJ of kinetic energy, how much energy is recovered and stored in the battery?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "50 kJ",
+          "100 kJ",
+          "250 kJ",
+          "1000 kJ"
+        ],
+        "correctAnswer": "100 kJ",
+        "correctIdx": 1,
+        "explanation": "20% of 500 kJ = 0.20 × 500 kJ = 100 kJ.",
+        "hint": "Calculate the percentage of the given energy.",
+        "relatedConcept": "Regenerative braking energy recovery",
+        "estimatedTime": "30 sec",
+        "interviewTip": "Quick percentage calculations are common in HEV energy‑flow assessments."
+      },
+      {
+        "id": "ai-tech-hev-t5-q13-1792131178209",
+        "question": "During steady highway cruising, a HEV frequently switches between EV mode and HEV mode, causing noticeable jerk. Which issue is most likely responsible?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "Overcharged high‑voltage battery",
+          "Malfunctioning torque sensor on the electric motor",
+          "Incorrectly calibrated engine start‑stop threshold",
+          "Excessive regenerative braking gain"
+        ],
+        "correctAnswer": "Incorrectly calibrated engine start‑stop threshold",
+        "correctIdx": 2,
+        "explanation": "If the threshold for starting the engine is too low, the controller will toggle the engine on and off repeatedly to maintain SOC, causing mode switches and jerk.",
+        "hint": "Consider what triggers the engine to start during cruising.",
+        "relatedConcept": "HEV mode‑transition control",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Faulty control thresholds often manifest as unwanted mode cycling."
+      },
+      {
+        "id": "ai-tech-hev-t5-q14-1792131178209",
+        "question": "Which energy‑management strategy provides the globally optimal fuel consumption for an HEV when the future driving cycle is known in advance?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "Rule‑based threshold control",
+          "Equivalent Consumption Minimization Strategy (ECMS)",
+          "Pontryagin's Minimum Principle",
+          "Proportional‑Integral‑Derivative (PID) control of battery SOC"
+        ],
+        "correctAnswer": "Pontryagin's Minimum Principle",
+        "correctIdx": 2,
+        "explanation": "Pontryagin's Minimum Principle (or dynamic programming) yields the global optimal solution when the entire future drive cycle is known, minimizing fuel use over the horizon.",
+        "hint": "Think about optimal control theory with known future inputs.",
+        "relatedConcept": "Optimal energy management in HEVs",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Distinguish between real‑time sub‑optimal strategies (ECMS, rule‑based) and theoretical global optimum."
+      },
+      {
+        "id": "ai-tech-hev-t5-q15-1792131178209",
+        "question": "In a parallel HEV, increasing the electric motor’s peak power while keeping the engine size unchanged primarily improves which vehicle characteristic?",
+        "technology": "HEV - Hybrid Electric Vehicle",
+        "difficulty": "Medium",
+        "options": [
+          "Fuel economy at low speeds",
+          "Maximum acceleration and gradeability",
+          "Battery charging efficiency during regen",
+          "Engine idle time percentage"
+        ],
+        "correctAnswer": "Maximum acceleration and gradeability",
+        "correctIdx": 1,
+        "explanation": "More motor power raises the tractive force available for launch and hill climbing, improving acceleration and gradeability, while engine size (and thus base fuel consumption) stays the same.",
+        "hint": "Consider what limits vehicle acceleration in a parallel layout.",
+        "relatedConcept": "Parallel HEV performance trade‑offs",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Know which component (motor vs. engine) dominates acceleration versus steady‑state fuel economy."
+      }
+    ]
+  },
+  {
+    "id": "test-tech-mech-product-5",
+    "targetId": "tech-mech-product",
+    "targetType": "technology",
+    "targetName": "Product Management (Mechanical)",
+    "testNumber": 5,
+    "title": "Product Management (Mechanical) - Test 5: AI Generated Assessment",
+    "description": "AI-generated Test 5 for Product Management (Mechanical) with guaranteed anti-repetition.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-10-16T06:14:19.696Z",
+    "questions": [
+      {
+        "id": "ai-tech-mech-product-t5-q1-1792131259120",
+        "question": "A cylindrical feature is nominally located at (50, 30) mm from datum axes with a true position tolerance of Ø0.2 mm. If the measured center is at (50.08, 30.06) mm, is the feature within tolerance?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "options": [
+          "Yes",
+          "No",
+          "Cannot be determined without knowing the tolerance zone shape",
+          "Only if the feature is a hole"
+        ],
+        "correctAnswer": "Yes",
+        "correctIdx": 0,
+        "explanation": "The offset from nominal is sqrt((0.08)^2 + (0.06)^2) = 0.1 mm. A Ø0.2 mm true position tolerance defines a circular tolerance zone with radius 0.1 mm. Since the offset equals the radius, the feature lies on the boundary and is considered acceptable (≤ tolerance).",
+        "hint": "Calculate the radial offset and compare it to the radius of the tolerance zone.",
+        "relatedConcept": "GD&T True Position",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Remember that true position tolerance is a diameter value; convert to radius when comparing to measured offset."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q2-1792131259120",
+        "question": "In an FMEA, a failure mode has Severity = 7, Occurrence = 4, Detection = 5. What is the Risk Priority Number (RPN) for this failure mode?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "options": [
+          "140",
+          "112",
+          "160",
+          "180"
+        ],
+        "correctAnswer": "140",
+        "correctIdx": 0,
+        "explanation": "RPN = Severity × Occurrence × Detection = 7 × 4 × 5 = 140.",
+        "hint": "Multiply the three rating values together.",
+        "relatedConcept": "FMEA RPN Calculation",
+        "estimatedTime": "30 sec",
+        "interviewTip": "Higher RPN indicates higher priority for corrective action; always verify the scale used (typically 1–10)."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q3-1792131259120",
+        "question": "Which statement best describes a 'BOM explosion' in product management?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "options": [
+          "It lists all sub-assemblies and raw materials required to produce one unit of the top-level item.",
+          "It identifies which higher-level assemblies use a given component.",
+          "It summarizes the total cost of all materials in a product line.",
+          "It generates a change request when a component becomes obsolete."
+        ],
+        "correctAnswer": "It lists all sub-assemblies and raw materials required to produce one unit of the top-level item.",
+        "correctIdx": 0,
+        "explanation": "BOM explosion expands the top-level bill of materials down to the lowest level, showing every part needed to build one unit of the final product.",
+        "hint": "Think of 'exploding' the BOM into its constituent parts.",
+        "relatedConcept": "BOM Explosion vs Implosion",
+        "estimatedTime": "40 sec",
+        "interviewTip": "BOM implosion does the opposite: it shows where a component is used across higher-level assemblies."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q4-1792131259120",
+        "question": "For an injection‑molded part with a vertical wall, what is the minimum draft angle typically recommended to facilitate ejection without damaging the part?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "options": [
+          "0.5°",
+          "1°",
+          "2°",
+          "5°"
+        ],
+        "correctAnswer": "1°",
+        "correctIdx": 1,
+        "explanation": "A draft angle of about 1° per side is a common rule‑of‑thumb for vertical walls in injection molding to reduce friction and allow smooth ejection.",
+        "hint": "Recall the typical draft guideline for unmolding vertical features.",
+        "relatedConcept": "DFM Draft Angle in Injection Molding",
+        "estimatedTime": "40 sec",
+        "interviewTip": "If the wall is textured or made of a stiff material, increase the draft angle accordingly (e.g., 2°–3°)."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q5-1792131259120",
+        "question": "A linear dimension is made up of three independent features, each with a tolerance of ±0.1 mm. Using a worst‑case tolerance stack‑up, what is the total tolerance for the dimension?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "options": [
+          "±0.1 mm",
+          "±0.2 mm",
+          "±0.3 mm",
+          "±0.05 mm"
+        ],
+        "correctAnswer": "±0.3 mm",
+        "correctIdx": 2,
+        "explanation": "In worst‑case stack‑up, tolerances add linearly: 0.1 + 0.1 + 0.1 = 0.3 mm, giving ±0.3 mm.",
+        "hint": "Add the absolute tolerance values together for worst‑case.",
+        "relatedConcept": "Tolerance Stack‑up (Worst‑Case)",
+        "estimatedTime": "45 sec",
+        "interviewTip": "For statistical (RSS) stack‑up you would use the root‑sum‑square, which yields a smaller tolerance."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q6-1792131259120",
+        "question": "In the context of New Product Introduction (NPI) for mechanical assemblies, what is the primary purpose of conducting a 'Tolerance Stack-up Analysis' using the Root Sum Square (RSS) method instead of Worst-Case Analysis?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "options": [
+          "To guarantee that the assembly fits perfectly even when every part is manufactured at its extreme limit.",
+          "To provide a statistically probable result that accounts for the low likelihood of all parts simultaneously hitting extreme tolerance limits.",
+          "To reduce the bill of materials (BOM) cost by eliminating redundant fasteners.",
+          "To identify the specific CNC machine calibration error causing a manufacturing defect."
+        ],
+        "correctAnswer": "To provide a statistically probable result that accounts for the low likelihood of all parts simultaneously hitting extreme tolerance limits.",
+        "correctIdx": 1,
+        "explanation": "Worst-Case Analysis assumes every component is at its tolerance limit simultaneously, which is rarely the case. RSS provides a more realistic statistical approach, preventing over-engineering and unnecessary manufacturing costs while maintaining functional quality.",
+        "hint": "Think about the statistical probability of independent variables all reaching their maximum deviation at the exact same time.",
+        "relatedConcept": "Tolerance Analysis",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Highlight your ability to balance technical precision with commercial viability/cost-optimization."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q7-1792131259120",
+        "question": "When managing a mechanical product lifecycle, what does a 'Design for Assembly' (DFA) index specifically aim to minimize?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "options": [
+          "The total number of raw materials used in the sub-assembly.",
+          "The time required for thermal dissipation in the final enclosure.",
+          "The theoretical minimum number of parts required to perform the product's primary function.",
+          "The ratio of assembly time to the total number of parts, emphasizing part consolidation."
+        ],
+        "correctAnswer": "The ratio of assembly time to the total number of parts, emphasizing part consolidation.",
+        "correctIdx": 3,
+        "explanation": "DFA focuses on reducing assembly time and cost by simplifying the design, often through part consolidation (reducing the total count of fasteners or brackets) to streamline the manufacturing process.",
+        "hint": "DFA is about efficiency in the assembly process, not just the raw material count.",
+        "relatedConcept": "Design for Manufacturing and Assembly (DFMA)",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Mentioning part count reduction is a great way to show you understand cost-saving in manufacturing."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q8-1792131259120",
+        "question": "In a mechanical product roadmap, what is the 'Engineering Change Order' (ECO) process primarily used for once a product is in mass production?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "options": [
+          "To authorize a supplier to change the color of the shipping packaging.",
+          "To document and approve modifications to a design, material, or process after the initial production release.",
+          "To request a temporary budget increase for marketing the product launch.",
+          "To perform a final quality check on the first batch of prototypes."
+        ],
+        "correctAnswer": "To document and approve modifications to a design, material, or process after the initial production release.",
+        "correctIdx": 1,
+        "explanation": "An ECO is a formal control mechanism used to manage changes to released documentation (drawings, BOMs) to ensure that downstream teams (supply chain, assembly) are aware of and have approved the impact of the change.",
+        "hint": "Think about version control for physical hardware.",
+        "relatedConcept": "Change Management",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Emphasize the importance of cross-functional alignment (e.g., procurement, quality) when an ECO is issued."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q9-1792131259120",
+        "question": "Which of the following describes the 'Fatigue Limit' of a material in the context of mechanical product reliability?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "options": [
+          "The maximum load a material can withstand before permanent deformation occurs.",
+          "The stress level below which a material can theoretically endure an infinite number of load cycles.",
+          "The temperature at which a polymer begins to lose its structural integrity.",
+          "The rate at which a metal corrodes when exposed to saltwater environments."
+        ],
+        "correctAnswer": "The stress level below which a material can theoretically endure an infinite number of load cycles.",
+        "correctIdx": 1,
+        "explanation": "Fatigue limit (or endurance limit) is critical for products subjected to cyclical loading. If the stress stays below this threshold, the component is expected to have an infinite life in that specific environment.",
+        "hint": "Consider the difference between static yield strength and cyclical loading.",
+        "relatedConcept": "Material Science / Reliability Engineering",
+        "estimatedTime": "55 sec",
+        "interviewTip": "Relate this to 'Product Longevity' or 'Warranty Costs' to show business-oriented thinking."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q10-1792131259120",
+        "question": "When selecting a manufacturing process for a complex plastic housing, why would a Product Manager choose 'Injection Molding' over '3D Printing' for a volume of 50,000 units?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "options": [
+          "Injection molding allows for faster design iterations in the initial prototyping phase.",
+          "Injection molding has a lower initial tooling cost compared to 3D printing.",
+          "Injection molding offers a significantly lower per-unit cost and higher material consistency at high volumes.",
+          "3D printing is physically unable to produce parts with internal hollow sections."
+        ],
+        "correctAnswer": "Injection molding offers a significantly lower per-unit cost and higher material consistency at high volumes.",
+        "correctIdx": 2,
+        "explanation": "While injection molding has a high upfront 'tooling' cost, the per-unit cost drops dramatically at scale, making it the standard for mass production, whereas 3D printing is typically reserved for low-volume or rapid prototyping.",
+        "hint": "Consider the trade-off between NRE (Non-Recurring Engineering) costs and variable manufacturing costs.",
+        "relatedConcept": "Manufacturing Economics",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Discussing the 'Break-even point' between additive and subtractive/molding processes demonstrates strong PM fundamentals."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q11-1792131259120",
+        "question": "In mechanical product development, what is the primary purpose of a Design Failure Modes and Effects Analysis (DFMEA)?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "To estimate production cost",
+          "To identify potential failure modes in design and assess their effects",
+          "To create a bill of materials",
+          "To define marketing positioning"
+        ],
+        "correctAnswer": "To identify potential failure modes in design and assess their effects",
+        "correctIdx": 1,
+        "explanation": "DFMEA is a systematic method for evaluating potential failure modes in a product's design, their effects on performance, and prioritizing actions to mitigate risk before production.",
+        "hint": "Think about risk assessment during design phase.",
+        "relatedConcept": "Design Failure Modes and Effects Analysis (DFMEA)",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Show familiarity with reliability tools like FMEA and how they feed into design reviews."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q12-1792131259120",
+        "question": "A GD&T drawing specifies a position tolerance of Ø0.5 mm at Maximum Material Condition (MMC) for a hole. If the hole is produced at Least Material Condition (LMC), what happens to the tolerance zone?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "The tolerance zone expands due to bonus tolerance",
+          "The tolerance zone contracts",
+          "The tolerance zone remains unchanged",
+          "The part is automatically rejected"
+        ],
+        "correctAnswer": "The tolerance zone expands due to bonus tolerance",
+        "correctIdx": 0,
+        "explanation": "When a feature of size is produced below MMC (i.e., toward LMC), the difference between its actual size and MMC is added as bonus tolerance, enlarging the allowable position zone.",
+        "hint": "Recall the MMC bonus tolerance rule.",
+        "relatedConcept": "GD&T MMC bonus tolerance",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Understand how MMC/LMC affect tolerance stack-up in mechanical drawings."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q13-1792131259120",
+        "question": "Which practice is most effective for reducing part count while preserving function in a mechanical assembly?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Increasing wall thickness",
+          "Applying Design for Assembly (DFA) principles",
+          "Specifying tighter tolerances",
+          "Outsourcing production to low-cost vendors"
+        ],
+        "correctAnswer": "Applying Design for Assembly (DFA) principles",
+        "correctIdx": 1,
+        "explanation": "DFA focuses on simplifying parts, minimizing fasteners, and designing for ease of assembly, which directly reduces part count.",
+        "hint": "Think about methodologies that target assembly efficiency.",
+        "relatedConcept": "Design for Assembly (DFA)",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Mention DFA tools like Boothroyd Dewhurst when discussing cost reduction."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q14-1792131259120",
+        "question": "According to Taylor's tool life equation (VT^n = C), what is the effect of increasing cutting speed (V) on tool life (T) in CNC machining?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Tool life increases",
+          "Tool life decreases",
+          "Tool life remains unchanged",
+          "Tool life first increases then decreases"
+        ],
+        "correctAnswer": "Tool life decreases",
+        "correctIdx": 1,
+        "explanation": "In the Taylor equation, tool life is inversely related to cutting speed; raising V reduces T exponentially.",
+        "hint": "Recall the negative exponent relationship between speed and tool life.",
+        "relatedConcept": "Taylor's tool life equation",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Be ready to discuss how speed, feed, and depth of cut influence tool wear and machining economics."
+      },
+      {
+        "id": "ai-tech-mech-product-t5-q15-1792131259120",
+        "question": "A product manager receives feedback that a handheld device feels too heavy. Which action best applies Value Engineering principles to address the weight issue?",
+        "technology": "Product Management (Mechanical)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Increase battery capacity for longer runtime",
+          "Replace the metal housing with a high‑strength polymer",
+          "Add additional features to justify the weight",
+          "Leave the design unchanged and market it as rugged"
+        ],
+        "correctAnswer": "Replace the metal housing with a high‑strength polymer",
+        "correctIdx": 1,
+        "explanation": "Value Engineering seeks to improve function or reduce cost without sacrificing performance; substituting a lighter material that meets strength requirements reduces weight while preserving function.",
+        "hint": "Focus on function‑preserving material substitution.",
+        "relatedConcept": "Value Engineering (material substitution)",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Highlight how VE balances performance, cost, and weight in product design."
+      }
+    ]
+  },
+  {
+    "id": "test-tech-psychology-5",
+    "targetId": "tech-psychology",
+    "targetType": "technology",
+    "targetName": "Psychology (Health Science)",
+    "testNumber": 5,
+    "title": "Psychology (Health Science) - Test 5: AI Generated Assessment",
+    "description": "AI-generated Test 5 for Psychology (Health Science) with guaranteed anti-repetition.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-10-16T06:18:08.511Z",
+    "questions": [
+      {
+        "id": "ai-tech-psychology-t5-q1-1792131487941",
+        "question": "According to DSM-5, which of the following is a required criterion for diagnosing Major Depressive Disorder?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Presence of manic episodes",
+          "Depressed mood or loss of interest/pleasure for at least two weeks",
+          "Hallucinations occurring in the absence of mood symptoms",
+          "Significant weight gain without dietary changes"
+        ],
+        "correctAnswer": "Depressed mood or loss of interest/pleasure for at least two weeks",
+        "correctIdx": 1,
+        "explanation": "DSM-5 requires either depressed mood or markedly diminished interest/pleasure in activities, persisting for at least two weeks, along with additional symptoms such as changes in weight, sleep, or concentration.",
+        "hint": "Think about the core affective symptoms that must be present for a minimum duration.",
+        "relatedConcept": "DSM-5 diagnostic criteria",
+        "estimatedTime": "45 sec",
+        "interviewTip": "When answering diagnostic questions, focus on duration, symptom clusters, and exclusion rules."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q2-1792131487941",
+        "question": "In the biopsychosocial model of health, which factor exemplifies the 'social' component?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Genetic predisposition to hypertension",
+          "Chronic activation of the HPA axis",
+          "Low socioeconomic status limiting access to healthcare",
+          "Dysregulation of serotonin neurotransmission"
+        ],
+        "correctAnswer": "Low socioeconomic status limiting access to healthcare",
+        "correctIdx": 2,
+        "explanation": "The social component includes socioeconomic status, culture, family, and interpersonal relationships that influence health outcomes.",
+        "hint": "Consider external, environmental influences rather than biological or psychological processes.",
+        "relatedConcept": "Biopsychosocial model",
+        "estimatedTime": "40 sec",
+        "interviewTip": "Remember the three pillars: biological (genes, physiology), psychological (thoughts, emotions), and social (environment, culture)."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q3-1792131487941",
+        "question": "Which statement best describes the role of serotonin in the central nervous system?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "It primarily mediates fast excitatory synaptic transmission.",
+          "It regulates mood, appetite, and sleep, and low levels are linked to depression.",
+          "It is the main neurotransmitter responsible for muscle contraction at the neuromuscular junction.",
+          "It functions mainly as a hormone that increases blood pressure."
+        ],
+        "correctAnswer": "It regulates mood, appetite, and sleep, and low levels are linked to depression.",
+        "correctIdx": 1,
+        "explanation": "Serotonin (5-HT) is a monoamine neurotransmitter involved in modulating mood, anxiety, appetite, sleep, and cognition; reduced serotonergic activity is implicated in depressive disorders.",
+        "hint": "Think about the monoamine hypothesis of depression and common antidepressant targets.",
+        "relatedConcept": "Neurotransmitter functions",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Link neurotransmitters to their behavioral/psychological effects and clinical relevance."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q4-1792131487941",
+        "question": "A psychological test yields consistent scores across repeated administrations but does not measure the construct it claims to assess. This scenario illustrates high:",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Validity",
+          "Reliability",
+          "Sensitivity",
+          "Specificity"
+        ],
+        "correctAnswer": "Reliability",
+        "correctIdx": 1,
+        "explanation": "Reliability refers to consistency of measurement over time or across items. Validity concerns whether the test actually measures the intended construct; high reliability does not guarantee validity.",
+        "hint": "Consistency vs. accuracy: reliability is about repeatability, validity about correctness.",
+        "relatedConcept": "Psychometrics",
+        "estimatedTime": "40 sec",
+        "interviewTip": "Distinguish reliability (precision) from validity (accuracy) when evaluating assessment tools."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q5-1792131487941",
+        "question": "In operant conditioning, which reinforcement schedule produces a high, steady rate of responding with minimal pauses after reinforcement?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Fixed-interval schedule",
+          "Variable-interval schedule",
+          "Fixed-ratio schedule",
+          "Variable-ratio schedule"
+        ],
+        "correctAnswer": "Variable-ratio schedule",
+        "correctIdx": 3,
+        "explanation": "Variable-ratio schedules reinforce after an unpredictable number of responses, generating high and steady response rates (e.g., gambling).",
+        "hint": "Think about schedules that produce the most resistant behavior to extinction.",
+        "relatedConcept": "Reinforcement schedules",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Recall that ratio schedules (based on response count) yield higher rates than interval schedules, and variable versions produce steadier responding."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q6-1792131487941",
+        "question": "Which of the following best describes the core premise of the biopsychosocial model in health psychology?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "options": [
+          "Health is determined solely by biological factors.",
+          "Psychological factors have no impact on physical disease.",
+          "Biological, psychological, and social factors interact to influence health and illness.",
+          "Social factors are irrelevant in the treatment of mental disorders."
+        ],
+        "correctAnswer": "Biological, psychological, and social factors interact to influence health and illness.",
+        "correctIdx": 2,
+        "explanation": "The biopsychosocial model posits that health and illness result from the interplay of biological (e.g., genetics, physiology), psychological (e.g., thoughts, emotions, behaviors), and social (e.g., socioeconomic status, culture, family) factors, rather than any single domain acting alone.",
+        "hint": "Think about an integrated approach that includes mind, body, and environment.",
+        "relatedConcept": "Biopsychosocial Model",
+        "estimatedTime": "45 sec",
+        "interviewTip": "When answering, explicitly name the three components and give a brief example of how they might interact (e.g., stress worsening hypertension)."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q7-1792131487941",
+        "question": "In the Health Belief Model, which construct refers to an individual's belief in the efficacy of the advised action to reduce risk or seriousness of impact?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "options": [
+          "Perceived susceptibility",
+          "Perceived severity",
+          "Perceived benefits",
+          "Cues to action"
+        ],
+        "correctAnswer": "Perceived benefits",
+        "correctIdx": 2,
+        "explanation": "Perceived benefits reflect the individual's belief that a particular health action will reduce the threat or severity of a condition. This construct motivates behavior change when the benefits outweigh perceived barriers.",
+        "hint": "It is about the positive outcome expected from taking the recommended health action.",
+        "relatedConcept": "Health Belief Model",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Distinguish 'perceived benefits' from 'perceived barriers'—the latter concerns obstacles to action, while the former concerns the advantages of acting."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q8-1792131487941",
+        "question": "Which neuropsychological screening tool is primarily used to assess global cognitive functioning and is especially sensitive to detecting dementia?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "options": [
+          "Beck Depression Inventory",
+          "Mini-Mental State Examination (MMSE)",
+          "Rorschach Inkblot Test",
+          "Minnesota Multiphasic Personality Inventory (MMPI)"
+        ],
+        "correctAnswer": "Mini-Mental State Examination (MMSE)",
+        "correctIdx": 1,
+        "explanation": "The MMSE is a brief 30-point questionnaire that evaluates orientation, memory, attention, language, and visuospatial skills. Scores below certain cutoffs suggest cognitive impairment and are widely used in dementia screening.",
+        "hint": "It is a short, bedside exam, not a projective test or personality inventory.",
+        "relatedConcept": "Mini-Mental State Examination",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Mention typical cutoff scores (e.g., <24 indicating possible dementia) and note that it is sensitive to education level."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q9-1792131487941",
+        "question": "Which brain imaging technique measures blood oxygen level dependent (BOLD) contrast to infer neural activity?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "options": [
+          "Electroencephalography (EEG)",
+          "Positron Emission Tomography (PET)",
+          "Functional Magnetic Resonance Imaging (fMRI)",
+          "Magnetoencephalography (MEG)"
+        ],
+        "correctAnswer": "Functional Magnetic Resonance Imaging (fMRI)",
+        "correctIdx": 2,
+        "explanation": "fMRI detects changes in the magnetic properties of blood as oxygen levels fluctuate (the BOLD signal), which correlates with neuronal activity. It provides high spatial resolution maps of brain function.",
+        "hint": "Think of the technique that uses a strong magnet and measures oxygenated vs. deoxygenated blood.",
+        "relatedConcept": "fMRI BOLD Contrast",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Clarify that fMRI does not measure electrical activity directly (unlike EEG/MEG) but rather hemodynamic changes secondary to neural firing."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q10-1792131487941",
+        "question": "In epidemiology, what term describes the proportion of a population found to have a condition at a specific point in time?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "options": [
+          "Incidence",
+          "Prevalence",
+          "Mortality rate",
+          "Attack rate"
+        ],
+        "correctAnswer": "Prevalence",
+        "correctIdx": 1,
+        "explanation": "Prevalence quantifies the total number of existing cases (both new and pre-existing) divided by the population at risk at a given time. It reflects the burden of disease, whereas incidence measures new cases over a period.",
+        "hint": "Think of a 'snapshot' of how widespread a condition is right now.",
+        "relatedConcept": "Prevalence vs Incidence",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Remember that prevalence is influenced by both incidence and duration of the condition; a chronic disease can have high prevalence even with low incidence."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q11-1792131487941",
+        "question": "In the context of E-Health clinical decision support systems, what is the 'automation bias' phenomenon when a clinician interacts with a diagnostic algorithm?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "The tendency to manually double-check every algorithm output regardless of its confidence score.",
+          "The propensity for humans to favor suggestions from automated systems and ignore contradictory information from other sources.",
+          "The process of automating patient data entry to reduce clerical errors in Electronic Health Records (EHR).",
+          "The physiological stress response triggered by high-frequency alerts from clinical monitoring hardware."
+        ],
+        "correctAnswer": "The propensity for humans to favor suggestions from automated systems and ignore contradictory information from other sources.",
+        "correctIdx": 1,
+        "explanation": "Automation bias occurs when users over-rely on automated decision aids, often leading them to accept the system's suggestion even when it conflicts with their own observations or patient history.",
+        "hint": "Think about the human tendency to trust 'computer-generated' results over manual judgment.",
+        "relatedConcept": "Human-Computer Interaction (HCI) in Healthcare",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Discussing the balance between algorithmic assistance and clinical oversight is crucial for Health Tech roles."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q12-1792131487941",
+        "question": "When designing a mobile health (mHealth) application for cognitive behavioral therapy, why is 'variable ratio reinforcement' often utilized in gamification features?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "language": "javascript",
+        "options": [
+          "To ensure the user receives a reward after a fixed number of successful task completions.",
+          "To create the most resistant-to-extinction behavioral pattern by providing rewards at unpredictable intervals.",
+          "To minimize the battery consumption of the mobile application by reducing real-time server pings.",
+          "To strictly limit the amount of screen time a user spends on the application per day."
+        ],
+        "correctAnswer": "To create the most resistant-to-extinction behavioral pattern by providing rewards at unpredictable intervals.",
+        "correctIdx": 1,
+        "explanation": "Variable ratio reinforcement is a schedule where a response is reinforced after an unpredictable number of responses, making the behavior highly persistent and resistant to extinction.",
+        "hint": "Consider the psychological principle behind why slot machines are so addictive.",
+        "relatedConcept": "Operant Conditioning in User Engagement",
+        "estimatedTime": "75 sec",
+        "interviewTip": "Understand the ethics of applying behavioral psychology to app design."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q13-1792131487941",
+        "question": "In a digital health dashboard, what is the primary risk of 'choice architecture' (Nudging) when presenting patient risk scores to providers?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "codeSnippet": "function displayRisk(score) {\n  return score > 0.7 ? 'HIGH RISK' : 'LOW RISK';\n}",
+        "language": "javascript",
+        "options": [
+          "It forces the system to perform unnecessary floating-point arithmetic at the edge.",
+          "It creates an arbitrary cognitive threshold that may lead to 'binary bias', ignoring the nuance of borderline cases.",
+          "It prevents the system from being compliant with HIPAA standards regarding data encryption.",
+          "It increases the latency of the UI rendering by forcing a re-calculation of the risk score."
+        ],
+        "correctAnswer": "It creates an arbitrary cognitive threshold that may lead to 'binary bias', ignoring the nuance of borderline cases.",
+        "correctIdx": 1,
+        "explanation": "Binary thresholds (like 0.7) can cause clinicians to ignore the clinical context of patients who fall slightly below the threshold, a known psychological pitfall in decision-making.",
+        "hint": "Think about how presenting data in 'buckets' affects human perception of risk.",
+        "relatedConcept": "Cognitive Biases in Medical Informatics",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Mentioning 'clinical context' shows you understand the domain, not just the code."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q14-1792131487941",
+        "question": "What is the psychological rationale for implementing 'interleaved practice' in an adaptive learning platform for medical students?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "To present all questions of the same topic together to improve short-term recall speed.",
+          "To force the brain to constantly retrieve information from different categories, enhancing long-term retention and discrimination.",
+          "To minimize the amount of data stored in the user's session state by keeping topics grouped.",
+          "To ensure the student finishes one module completely before moving to the next, maintaining a linear learning path."
+        ],
+        "correctAnswer": "To force the brain to constantly retrieve information from different categories, enhancing long-term retention and discrimination.",
+        "correctIdx": 1,
+        "explanation": "Interleaving involves mixing different topics or types of problems, which forces the brain to distinguish between them and retrieve the correct strategy, leading to better long-term learning compared to 'blocking'.",
+        "hint": "Compare 'blocked' vs 'interleaved' learning strategies.",
+        "relatedConcept": "Cognitive Psychology in Learning Systems",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Highlight that effective learning software should prioritize 'desirable difficulties'."
+      },
+      {
+        "id": "ai-tech-psychology-t5-q15-1792131487941",
+        "question": "In a mental health tracking app, what is the 'Hawthorne Effect' and how must developers account for it when analyzing user-reported sentiment data?",
+        "technology": "Psychology (Health Science)",
+        "difficulty": "Medium",
+        "language": "sql",
+        "options": [
+          "Users report higher levels of happiness because they know their logs are being reviewed by an automated sentiment engine.",
+          "Users experience a decrease in symptoms because the app's color scheme is psychologically calming.",
+          "The app's database performance degrades as the number of concurrent users increases during peak hours.",
+          "The system automatically deletes user data after 30 days to comply with privacy regulations."
+        ],
+        "correctAnswer": "Users report higher levels of happiness because they know their logs are being reviewed by an automated sentiment engine.",
+        "correctIdx": 0,
+        "explanation": "The Hawthorne Effect is the alteration of behavior by the subjects of a study due to their awareness of being observed. In health apps, users might provide biased data if they feel they are being 'monitored'.",
+        "hint": "The effect relates to the observer effect in social science.",
+        "relatedConcept": "Data Validity in Digital Phenotyping",
+        "estimatedTime": "70 sec",
+        "interviewTip": "Always acknowledge data bias when building analytics for health-related user behavior."
+      }
+    ]
+  },
+  {
+    "id": "test-tech-medical-coding-5",
+    "targetId": "tech-medical-coding",
+    "targetType": "technology",
+    "targetName": "Medical Coding (Pharma)",
+    "testNumber": 5,
+    "title": "Medical Coding (Pharma) - Test 5: AI Generated Assessment",
+    "description": "AI-generated Test 5 for Medical Coding (Pharma) with guaranteed anti-repetition.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-10-16T06:19:56.431Z",
+    "questions": [
+      {
+        "id": "ai-tech-medical-coding-t5-q1-1792131595737",
+        "question": "In the context of MedDRA (Medical Dictionary for Regulatory Activities) hierarchy, which level is specifically designed to facilitate data retrieval and presentation of clinical trial safety data?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "language": "sql",
+        "options": [
+          "System Organ Class (SOC)",
+          "High Level Term (HLT)",
+          "Preferred Term (PT)",
+          "Lowest Level Term (LLT)"
+        ],
+        "correctAnswer": "Preferred Term (PT)",
+        "correctIdx": 2,
+        "explanation": "The Preferred Term (PT) is the distinct descriptor for a symptom, sign, disease, diagnosis, or therapeutic indication, and it is the primary level used for reporting and analyzing safety data in clinical trials.",
+        "hint": "Think about which level is the standard for analysis and 'preferred' for summarizing clinical findings.",
+        "relatedConcept": "MedDRA Hierarchy Structure",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Understand that while SOC is for broad categorization, PT is the workhorse for regulatory reporting."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q2-1792131595737",
+        "question": "When normalizing raw verbatim adverse event terms from a clinical study against a dictionary, what is the 'Primary Path' in MedDRA?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "language": "sql",
+        "options": [
+          "The alphanumeric sequence of the dictionary versioning code.",
+          "The unique link between an LLT and its single designated SOC.",
+          "The logic used by the Auto-Coder to ignore stop-words.",
+          "The hierarchical path that maps a PT to all its parent SOCs."
+        ],
+        "correctAnswer": "The unique link between an LLT and its single designated SOC.",
+        "correctIdx": 1,
+        "explanation": "MedDRA is multi-axial, meaning a PT can belong to multiple SOCs. The 'Primary Path' is the single, pre-defined SOC assigned to a term to prevent double-counting when calculating frequencies of events across different systems.",
+        "hint": "Focus on the problem of multi-axiality in reporting statistics.",
+        "relatedConcept": "Multi-axiality and Primary SOC",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Highlighting the importance of 'Primary SOC' shows you understand statistical reporting requirements."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q3-1792131595737",
+        "question": "Considering WHODrug dictionary coding, what is the primary distinction between an 'ATC' code and a 'Drug Record Number' (DRN)?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "language": "sql",
+        "options": [
+          "ATC is for therapeutic classification, while DRN identifies a specific product formulation.",
+          "DRN is for active ingredients, while ATC is for clinical trial site identification.",
+          "ATC is mandatory for all drugs, whereas DRN is optional for biologics.",
+          "They are identical; both are used interchangeably in pharmacovigilance."
+        ],
+        "correctAnswer": "ATC is for therapeutic classification, while DRN identifies a specific product formulation.",
+        "correctIdx": 0,
+        "explanation": "ATC (Anatomical Therapeutic Chemical) classifies drugs based on the organ/system they act upon, while the Drug Record Number (DRN) is a unique identifier assigned to a specific brand or generic drug product in the WHODrug dictionary.",
+        "hint": "Think about classification vs. unique identification.",
+        "relatedConcept": "WHODrug Coding Standards",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Be prepared to discuss how these are used in signal detection."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q4-1792131595737",
+        "question": "In a coding scenario, if a verbatim term is 'Severe headache unresponsive to medication', why might an auto-coder fail to assign a high-confidence code?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "codeSnippet": "verbatim = 'Severe headache unresponsive to medication'\n# Logic: mapping to MedDRA PT 'Headache'",
+        "language": "python",
+        "options": [
+          "The term 'unresponsive' is a medical modifier that requires manual review to ensure it isn't a separate AE.",
+          "The string length exceeds the standard 80-character field limit for MedDRA.",
+          "Auto-coders cannot process terms that include the word 'medication'.",
+          "The term 'Severe' is a prohibited word in dictionary coding."
+        ],
+        "correctAnswer": "The term 'unresponsive' is a medical modifier that requires manual review to ensure it isn't a separate AE.",
+        "correctIdx": 0,
+        "explanation": "Modifiers like 'unresponsive', 'refractory', or 'worsening' often change the clinical meaning or intensity. Coding guidelines usually require a coder to verify if the modifier describes the severity of the primary event or a secondary medical phenomenon.",
+        "hint": "Consider the impact of adjectives on clinical coding accuracy.",
+        "relatedConcept": "Coding Guidelines and Modifiers",
+        "estimatedTime": "70 sec",
+        "interviewTip": "Emphasize the 'human-in-the-loop' aspect for complex verbatim terms."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q5-1792131595737",
+        "question": "Which of the following describes the 'Synonym List' approach in dictionary coding systems?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "language": "sql",
+        "options": [
+          "A database table containing common misspellings linked to their correct dictionary codes.",
+          "A feature that translates verbatim terms into multiple languages automatically.",
+          "A method of using only the SOC level to speed up the coding process.",
+          "A process of grouping all drugs with the same chemical structure regardless of brand."
+        ],
+        "correctAnswer": "A database table containing common misspellings linked to their correct dictionary codes.",
+        "correctIdx": 0,
+        "explanation": "The Synonym List (or Knowledge Base) is an essential component of auto-coding tools. It maps non-standard or misspelled verbatim terms to the correct dictionary code to improve the hit rate without manual intervention.",
+        "hint": "Think about improving the efficiency of the auto-coding engine.",
+        "relatedConcept": "Auto-coding Optimization",
+        "estimatedTime": "40 sec",
+        "interviewTip": "Mentioning the maintenance of synonym lists shows you understand the operational side of coding teams."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q6-1792131595737",
+        "question": "In the context of processing pharmaceutical clinical trial data, which data structure approach minimizes memory overhead when mapping thousands of unique Drug Identifier (DI) codes to their corresponding FDA-regulated therapeutic class indices?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Using a standard Python dictionary with string keys for all identifiers",
+          "Using a perfect hash function with a statically allocated bit-array",
+          "Storing identifiers in a nested list of objects and performing linear search",
+          "Serializing the entire dataset into a JSON blob for O(1) attribute access"
+        ],
+        "correctAnswer": "Using a perfect hash function with a statically allocated bit-array",
+        "correctIdx": 1,
+        "explanation": "For high-performance medical coding systems where the set of Drug Identifiers is known and static, a perfect hash function eliminates collisions and bit-arrays minimize memory footprint compared to the overhead of dictionary objects.",
+        "hint": "Consider the memory footprint of object pointers in a dictionary versus primitive bit manipulation.",
+        "relatedConcept": "Perfect Hashing and Memory Optimization",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Discuss how memory constraints in high-throughput coding engines often favor primitive structures over high-level abstractions."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q7-1792131595737",
+        "question": "When normalizing unstructured physician notes into SNOMED CT codes, what is the primary risk associated with using a Levenshtein distance-based fuzzy matching algorithm on short, abbreviated medication names?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "language": "javascript",
+        "options": [
+          "The algorithm ignores the character case of the medication input",
+          "It cannot handle multi-word clinical phrases efficiently",
+          "It may incorrectly map 'HCTZ' to 'HCZ' due to high edit similarity despite different clinical safety profiles",
+          "It requires a GPU to perform the matrix calculation for strings longer than 5 characters"
+        ],
+        "correctAnswer": "It may incorrectly map 'HCTZ' to 'HCZ' due to high edit similarity despite different clinical safety profiles",
+        "correctIdx": 2,
+        "explanation": "Fuzzy matching algorithms based on edit distance are sensitive to small character differences; in pharma coding, a one-letter difference can represent entirely different chemical compounds, leading to dangerous clinical miscoding.",
+        "hint": "Think about the clinical consequences of a 'near-miss' in string similarity.",
+        "relatedConcept": "Fuzzy String Matching Risks",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Emphasize that in healthcare, domain-specific semantic mapping is superior to generic string similarity metrics."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q8-1792131595737",
+        "question": "Analyze the following Python snippet intended to filter out expired pharmaceutical lot numbers. Why is this implementation inefficient for a dataset containing 10 million records?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "codeSnippet": "def get_active_lots(lots, cutoff_date):\n    active = []\n    for lot in lots:\n        if lot.expiry > cutoff_date:\n            active.append(lot)\n    return active",
+        "language": "python",
+        "options": [
+          "The append operation causes an O(N^2) complexity due to list resizing",
+          "The function lacks a return type annotation for high-performance compilation",
+          "The list-based approach requires full memory allocation for the result set; a generator would be more memory-efficient",
+          "The loop iterates over the object attributes which triggers a garbage collection cycle"
+        ],
+        "correctAnswer": "The list-based approach requires full memory allocation for the result set; a generator would be more memory-efficient",
+        "correctIdx": 2,
+        "explanation": "For massive pharmaceutical datasets, creating a list of 10 million objects consumes significant RAM. A generator expression or yield statement processes items lazily, keeping memory usage constant.",
+        "hint": "Consider the difference between eager evaluation and lazy evaluation in Python.",
+        "relatedConcept": "Memory-Efficient Iteration",
+        "estimatedTime": "55 sec",
+        "interviewTip": "Always mention memory-bound constraints when dealing with large-scale medical data processing."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q9-1792131595737",
+        "question": "In a SQL-based Pharma coding database, which index strategy best optimizes a query that filters by 'Drug_Category' and sorts by 'Timestamp_Encoded'?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "codeSnippet": "SELECT * FROM Med_Coding_Logs WHERE Drug_Category = 'Oncology' ORDER BY Timestamp_Encoded DESC;",
+        "language": "sql",
+        "options": [
+          "Create a separate index on Drug_Category and another on Timestamp_Encoded",
+          "Create a composite index on (Drug_Category, Timestamp_Encoded)",
+          "Create a hash index on the Primary Key",
+          "Use a clustered index on the Timestamp_Encoded column only"
+        ],
+        "correctAnswer": "Create a composite index on (Drug_Category, Timestamp_Encoded)",
+        "correctIdx": 1,
+        "explanation": "A composite index allows the database to locate the category and immediately navigate the sorted timestamp values, preventing an expensive 'filesort' operation.",
+        "hint": "How do composite indexes interact with the WHERE and ORDER BY clauses?",
+        "relatedConcept": "Database Indexing Optimization",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Explain the 'Prefix Rule' of composite indexes in relational databases."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q10-1792131595737",
+        "question": "When developing a service to map ICD-10 codes to RxNorm identifiers, why is it critical to implement an idempotent API interface?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "language": "javascript",
+        "options": [
+          "To ensure that concurrent requests do not block the thread pool",
+          "To prevent duplicate billing or redundant record creation during network retries in clinical environments",
+          "To allow the server to cache responses in the browser's local storage",
+          "To reduce the computational complexity of the mapping algorithm from O(N log N) to O(1)"
+        ],
+        "correctAnswer": "To prevent duplicate billing or redundant record creation during network retries in clinical environments",
+        "correctIdx": 1,
+        "explanation": "In medical coding pipelines, network instability is common. Idempotency ensures that if a client retries a request due to a timeout, the server does not create a duplicate entry in the patient record.",
+        "hint": "Think about the consequences of network failure during a state-changing operation.",
+        "relatedConcept": "Idempotent API Design",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Relate API design principles directly to the reliability requirements of healthcare infrastructure."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q11-1792131595737",
+        "question": "In the context of processing pharmaceutical drug nomenclature within a coding pipeline, why is the utilization of a Canonical SMILES string representation preferred over a standard IUPAC name for database indexing?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "IUPAC names are not human-readable, whereas SMILES strings are.",
+          "SMILES strings provide a unique, deterministic mapping for a molecular structure, whereas IUPAC names can be ambiguous or non-unique.",
+          "IUPAC names require significantly more storage memory than SMILES strings.",
+          "SMILES strings are inherently encrypted, ensuring compliance with HIPAA/GDPR data protection standards."
+        ],
+        "correctAnswer": "SMILES strings provide a unique, deterministic mapping for a molecular structure, whereas IUPAC names can be ambiguous or non-unique.",
+        "correctIdx": 1,
+        "explanation": "IUPAC naming conventions allow for multiple valid names for the same chemical structure due to different numbering strategies. Canonical SMILES (Simplified Molecular Input Line Entry System) uses a graph-based algorithm to produce a single, unique string for a given molecule, making it ideal for database deduplication.",
+        "hint": "Consider the problem of mapping synonyms to a single master identifier in a drug database.",
+        "relatedConcept": "Cheminformatics Data Normalization",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Focus on the 'deterministic' nature of the data structure rather than just the storage size."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q12-1792131595737",
+        "question": "When parsing a HL7 FHIR 'MedicationRequest' resource for drug dosage frequency, which JSON structure best ensures strict compliance with SNOMED CT terminology binding for 'once daily'?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "codeSnippet": "{\n  \"dosageInstruction\": [{\n    \"timing\": {\n      \"repeat\": {\n        \"frequency\": 1,\n        \"period\": 1,\n        \"periodUnit\": \"d\"\n      }\n    }\n  }]\n}",
+        "language": "json",
+        "options": [
+          "Replacing 'periodUnit' with a direct reference to a SNOMED CT Code (e.g., 229797004) in a 'code' element.",
+          "Using the 'text' field to describe the frequency as a string.",
+          "Storing the frequency as a calculated integer in a custom extension field.",
+          "None; HL7 FHIR does not support SNOMED CT bindings for timing."
+        ],
+        "correctAnswer": "Replacing 'periodUnit' with a direct reference to a SNOMED CT Code (e.g., 229797004) in a 'code' element.",
+        "correctIdx": 0,
+        "explanation": "In FHIR, to bind to specific clinical terminologies like SNOMED CT, you should utilize the 'code' element within the Timing.repeat structure to provide a machine-readable, standardized concept identifier rather than relying on loose strings.",
+        "hint": "Look for the element designed for terminology bindings in the FHIR specification.",
+        "relatedConcept": "HL7 FHIR Terminology Binding",
+        "estimatedTime": "75 sec",
+        "interviewTip": "Mentioning the importance of 'machine-readability' over 'human-readability' scores well in healthcare integration roles."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q13-1792131595737",
+        "question": "In an automated drug-drug interaction (DDI) checking algorithm, what is the primary risk of using a 'fuzzy matching' library on ICD-10-CM diagnosis codes?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "Fuzzy matching is too slow for real-time prescription processing.",
+          "ICD-10-CM codes are strictly hierarchical; fuzzy matching can lead to 'clinical misclassification' by mapping a code to a similar-looking but clinically distinct diagnosis.",
+          "Fuzzy matching libraries cannot handle the alphanumeric structure of ICD-10-CM.",
+          "The library will automatically flag all codes as potential errors, causing a bottleneck."
+        ],
+        "correctAnswer": "ICD-10-CM codes are strictly hierarchical; fuzzy matching can lead to 'clinical misclassification' by mapping a code to a similar-looking but clinically distinct diagnosis.",
+        "correctIdx": 1,
+        "explanation": "ICD-10-CM codes are precise. A slight string variance (e.g., J45.909 vs J45.901) represents different clinical conditions. Fuzzy matching, which ignores semantic context in favor of character distance, is dangerous for medical coding because it lacks clinical validation.",
+        "hint": "Think about the consequences of mapping a 'mild' condition code to a 'severe' one due to character similarity.",
+        "relatedConcept": "Clinical Coding Accuracy",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Emphasize that in healthcare, data integrity is more critical than search flexibility."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q14-1792131595737",
+        "question": "What happens to the 'Drug Enforcement Administration (DEA) Schedule' attribute when a medication's classification is updated in a master drug file that uses a 'Slowly Changing Dimension (SCD) Type 2' approach?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "language": "sql",
+        "options": [
+          "The existing record is overwritten with the new schedule, and historical data is lost.",
+          "The existing record is marked as inactive, and a new record is created with the updated schedule, maintaining a historical audit trail.",
+          "The schedule is updated in a separate, linked table, leaving the original drug record unchanged.",
+          "The system throws an error because SCD Type 2 is incompatible with pharmaceutical regulatory data."
+        ],
+        "correctAnswer": "The existing record is marked as inactive, and a new record is created with the updated schedule, maintaining a historical audit trail.",
+        "correctIdx": 1,
+        "explanation": "SCD Type 2 is the standard for tracking historical changes. By setting an 'end_date' or 'is_active' flag on the old record and inserting a new row, you ensure that past prescriptions are linked to the drug's status at the time of the transaction.",
+        "hint": "SCD Type 2 is about history preservation.",
+        "relatedConcept": "Data Warehousing (SCD)",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Highlight the importance of audit trails in pharma for FDA compliance."
+      },
+      {
+        "id": "ai-tech-medical-coding-t5-q15-1792131595737",
+        "question": "In a Python-based pharmacovigilance pipeline, why is 'Generator-based lazy evaluation' preferred when processing millions of adverse event reports stored in a large CSV file?",
+        "technology": "Medical Coding (Pharma)",
+        "difficulty": "Medium",
+        "codeSnippet": "def process_reports(file_path):\n    with open(file_path, 'r') as f:\n        for line in f:\n            yield transform_to_meddra(line)",
+        "language": "python",
+        "options": [
+          "It allows the code to run on multiple CPU cores simultaneously without the GIL.",
+          "It reduces memory overhead by processing one record at a time instead of loading the entire dataset into RAM.",
+          "It automatically validates the MedDRA coding format against the latest dictionary.",
+          "It forces the system to use disk-based caching, which is faster than RAM-based processing."
+        ],
+        "correctAnswer": "It reduces memory overhead by processing one record at a time instead of loading the entire dataset into RAM.",
+        "correctIdx": 1,
+        "explanation": "Pharmacovigilance datasets are often massive. Using generators (yield) ensures that only one row is held in memory at a time, preventing 'MemoryError' crashes on large-scale data ingestion tasks.",
+        "hint": "What is the memory impact of a list comprehension vs. a generator for a 10GB file?",
+        "relatedConcept": "Memory Management in Data Pipelines",
+        "estimatedTime": "55 sec",
+        "interviewTip": "When discussing big data, always lead with memory efficiency before execution speed."
+      }
+    ]
+  },
+  {
+    "id": "test-tech-genetic-engineering-5",
+    "targetId": "tech-genetic-engineering",
+    "targetType": "technology",
+    "targetName": "Genetic Engineering",
+    "testNumber": 5,
+    "title": "Genetic Engineering - Test 5: AI Generated Assessment",
+    "description": "AI-generated Test 5 for Genetic Engineering with guaranteed anti-repetition.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-10-16T06:26:15.893Z",
+    "questions": [
+      {
+        "id": "ai-tech-genetic-engineering-t5-q1-1792131975156",
+        "question": "Which phenomenon describes the unintended modification of genomic sites that share high sequence homology with the intended target site during CRISPR-mediated editing?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "language": "c",
+        "options": [
+          "Off-target effects",
+          "Mosaicism",
+          "Epigenetic silencing",
+          "Insertional mutagenesis"
+        ],
+        "correctAnswer": "Off-target effects",
+        "correctIdx": 0,
+        "explanation": "Off-target effects occur when the guide RNA (gRNA) binds to unintended genomic locations that are sufficiently similar to the target sequence, leading to unwanted double-strand breaks and potential mutations.",
+        "hint": "The term implies that the 'target' was missed or supplemented by another site.",
+        "relatedConcept": "Genomic Specificity",
+        "estimatedTime": "40 sec",
+        "interviewTip": "Off-target effects are a major hurdle in clinical therapeutic applications of gene editing."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q2-1792131975156",
+        "question": "In the context of gene therapy using viral vectors, what is the primary limitation of using Adeno-Associated Virus (AAV) vectors for repeat administration?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "language": "c",
+        "options": [
+          "AAV vectors integrate randomly into the host genome, risking oncogenesis.",
+          "The viral capsid size is too small to carry complex promoter sequences.",
+          "Pre-existing neutralizing antibodies in the host can neutralize the vector upon subsequent doses.",
+          "AAV vectors are inherently cytotoxic to the target cells upon entry."
+        ],
+        "correctAnswer": "Pre-existing neutralizing antibodies in the host can neutralize the vector upon subsequent doses.",
+        "correctIdx": 2,
+        "explanation": "Many humans have been naturally exposed to AAVs, leading to the development of neutralizing antibodies. These antibodies recognize the viral capsid and can rapidly clear the vector before it reaches the target tissue in repeat administration scenarios.",
+        "hint": "Think about the human immune system's memory response.",
+        "relatedConcept": "Viral Vector Immunology",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Be prepared to discuss the balance between vector efficiency and host immunogenicity."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q3-1792131975156",
+        "question": "Which of the following best describes the principle of 'Golden Gate Assembly' in synthetic biology?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "language": "c",
+        "options": [
+          "Using homologous recombination to stitch overlapping DNA fragments in yeast.",
+          "Utilizing Type IIS restriction enzymes to create unique, non-palindromic overhangs for seamless cloning.",
+          "Employing DNA polymerase to extend primers across a circular plasmid template.",
+          "Using light-activated chemical crosslinking to bind DNA fragments to a substrate."
+        ],
+        "correctAnswer": "Utilizing Type IIS restriction enzymes to create unique, non-palindromic overhangs for seamless cloning.",
+        "correctIdx": 1,
+        "explanation": "Golden Gate Assembly uses Type IIS restriction enzymes, which cut outside their recognition sequence. This allows for the creation of standardized, user-defined overhangs that can be ligated in a specific order without leaving restriction sites behind.",
+        "hint": "Look for the unique property of Type IIS enzymes regarding where they cut.",
+        "relatedConcept": "DNA Assembly Methods",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Golden Gate is favored over traditional restriction cloning because it is 'scarless' and allows for multi-fragment assembly."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q4-1792131975156",
+        "question": "What is the primary objective of using a 'Reporter Gene' (such as GFP or Luciferase) in a genetic circuit design?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "language": "c",
+        "options": [
+          "To increase the metabolic efficiency of the host cell.",
+          "To physically stabilize the plasmid during replication.",
+          "To provide a quantifiable readout of gene expression or promoter activity.",
+          "To act as a selectable marker to ensure only transformed cells survive antibiotic treatment."
+        ],
+        "correctAnswer": "To provide a quantifiable readout of gene expression or promoter activity.",
+        "correctIdx": 2,
+        "explanation": "Reporter genes encode proteins that are easily measured (e.g., fluorescence or light emission). They are fused to regulatory sequences to study how those sequences respond to different environmental conditions or internal genetic states.",
+        "hint": "The name 'reporter' implies it is conveying information about the status of the cell.",
+        "relatedConcept": "Genetic Circuitry",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Distinguish between 'selectable markers' (for survival) and 'reporter genes' (for observation)."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q5-1792131975156",
+        "question": "In the context of Agrobacterium-mediated transformation, what is the functional significance of the 'vir' (virulence) operon located on the Ti plasmid?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "language": "c",
+        "options": [
+          "It encodes the enzymes required for the biosynthesis of opines used by the bacterium.",
+          "It facilitates the excision and transfer of the T-DNA strand into the host plant cell nucleus.",
+          "It acts as a selectable marker to identify transformed plant cells via antibiotic resistance.",
+          "It provides the origin of replication required for the plasmid to remain stable in the plant cytoplasm."
+        ],
+        "correctAnswer": "It facilitates the excision and transfer of the T-DNA strand into the host plant cell nucleus.",
+        "correctIdx": 1,
+        "explanation": "The vir operon genes encode proteins that form a Type IV secretion system, which processes the T-DNA from the Ti plasmid and exports it into the host cell, where it eventually integrates into the plant genome.",
+        "hint": "Think about the mechanism of DNA movement between species.",
+        "relatedConcept": "Agrobacterium tumefaciens transformation",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Understand the difference between the T-DNA region and the machinery (vir genes) required to move it."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q6-1792131975156",
+        "question": "When designing a synthetic gene construct for expression in E. coli, what is the primary consequence of failing to account for 'codon bias'?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "language": "c",
+        "options": [
+          "The mRNA will be immediately degraded by the host's RNase E enzymes.",
+          "The protein will be secreted into the periplasmic space instead of the cytoplasm.",
+          "Low translational efficiency due to the depletion of rare tRNA isoacceptors in the host.",
+          "The start codon will be misidentified, leading to a frame-shift mutation."
+        ],
+        "correctAnswer": "Low translational efficiency due to the depletion of rare tRNA isoacceptors in the host.",
+        "correctIdx": 2,
+        "explanation": "Codon bias refers to the non-random usage of synonymous codons. If a heterologous gene uses codons that are rare in the host organism, the scarcity of corresponding tRNAs slows or stalls translation.",
+        "hint": "Consider the relationship between mRNA codons and tRNA availability.",
+        "relatedConcept": "Codon Optimization",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Discuss how synonymous mutations are not always 'silent' in practice."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q7-1792131975156",
+        "question": "In the context of RNA interference (RNAi) for gene silencing, what is the specific function of the Dicer enzyme complex?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "language": "c",
+        "options": [
+          "It unwinds the double-stranded siRNA to allow loading onto the RISC complex.",
+          "It catalyzes the cleavage of long double-stranded RNA into short interfering RNA (siRNA) duplexes.",
+          "It transcribes the target mRNA into complementary antisense RNA within the nucleus.",
+          "It methylates the promoter region of the target gene to prevent transcriptional initiation."
+        ],
+        "correctAnswer": "It catalyzes the cleavage of long double-stranded RNA into short interfering RNA (siRNA) duplexes.",
+        "correctIdx": 1,
+        "explanation": "Dicer is an RNase III-type enzyme that recognizes and cleaves long dsRNA precursors into short fragments (typically 21-23 nucleotides) which are then used by the RNA-induced silencing complex (RISC).",
+        "hint": "Think about the 'processing' step of the RNAi pathway.",
+        "relatedConcept": "Post-transcriptional gene silencing",
+        "estimatedTime": "55 sec",
+        "interviewTip": "Be prepared to distinguish between Dicer (processing) and RISC (effector)."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q8-1792131975156",
+        "question": "What is the primary purpose of using a 'Reporter Gene' (e.g., GFP or Luciferase) in a genetic construct during promoter analysis?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "language": "c",
+        "options": [
+          "To increase the overall stability of the plasmid within the host cell.",
+          "To provide a physical handle for affinity purification of the expressed mRNA.",
+          "To quantify the transcriptional activity of a specific regulatory sequence under varying conditions.",
+          "To act as a negative control to ensure no endogenous protein interference occurs."
+        ],
+        "correctAnswer": "To quantify the transcriptional activity of a specific regulatory sequence under varying conditions.",
+        "correctIdx": 2,
+        "explanation": "Reporter genes are used to measure the strength and regulation of a promoter; by fusing the promoter to a reporter, the amount of reporter protein produced serves as a proxy for the promoter's activity.",
+        "hint": "It acts as a 'read-out' for an upstream regulatory event.",
+        "relatedConcept": "Promoter-Reporter Fusion",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Distinguish between selectable markers (survival) and reporter genes (measurement)."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q9-1792131975156",
+        "question": "In site-directed mutagenesis using the QuikChange method, why is the methylated template DNA typically digested with the DpnI restriction enzyme?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "language": "c",
+        "options": [
+          "To increase the efficiency of the PCR amplification by removing competitive template strands.",
+          "To eliminate the non-mutated parental DNA, which is methylated, leaving only the newly synthesized mutated strands.",
+          "To induce a conformational change in the plasmid that promotes higher transformation rates.",
+          "To prevent the formation of concatemerized plasmids during the ligation phase."
+        ],
+        "correctAnswer": "To eliminate the non-mutated parental DNA, which is methylated, leaving only the newly synthesized mutated strands.",
+        "correctIdx": 1,
+        "explanation": "DpnI specifically cleaves methylated DNA (Dam-methylated). Since the PCR-synthesized mutant strands are not methylated, they remain intact, while the parental template is degraded, reducing background transformants.",
+        "hint": "Consider the methylation status of DNA isolated from E. coli versus DNA synthesized in vitro.",
+        "relatedConcept": "Site-Directed Mutagenesis",
+        "estimatedTime": "65 sec",
+        "interviewTip": "Explain how this step drastically reduces the 'false positive' rate in cloning."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q10-1792131975156",
+        "question": "In the context of Agrobacterium-mediated transformation, what is the specific function of the 'vir' (virulence) operon genes located on the Ti plasmid?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "options": [
+          "They encode the enzymes required for the biosynthesis of opines in the host plant.",
+          "They facilitate the excision, transport, and integration of the T-DNA into the plant genome.",
+          "They act as a selectable marker to identify transformed plant cells using antibiotic resistance.",
+          "They serve as the origin of replication to ensure the Ti plasmid persists in the bacterial host."
+        ],
+        "correctAnswer": "They facilitate the excision, transport, and integration of the T-DNA into the plant genome.",
+        "correctIdx": 1,
+        "explanation": "The vir genes are essential for the transfer process; they encode proteins that excise the T-DNA from the Ti plasmid, form a T-complex with the DNA, and mediate its transport into the plant cell nucleus and integration into the host genome.",
+        "hint": "Think about the mechanism of DNA movement between species.",
+        "relatedConcept": "Agrobacterium tumefaciens transformation",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Understand the distinction between the T-DNA region and the machinery required to move it."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q11-1792131975156",
+        "question": "When designing a synthetic metabolic pathway using Golden Gate Assembly, why is the use of Type IIS restriction enzymes superior to traditional Type IIP enzymes?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "options": [
+          "Type IIS enzymes create blunt ends, which are more efficient for ligation than sticky ends.",
+          "Type IIS enzymes cleave outside their non-palindromic recognition sites, allowing for scarless, directional assembly.",
+          "Type IIS enzymes are exclusively found in eukaryotic organisms, reducing bacterial contamination.",
+          "Type IIS enzymes require high concentrations of ATP, making them better for precise enzymatic control."
+        ],
+        "correctAnswer": "Type IIS enzymes cleave outside their non-palindromic recognition sites, allowing for scarless, directional assembly.",
+        "correctIdx": 1,
+        "explanation": "Type IIS enzymes allow for the removal of the recognition site itself during cleavage, enabling multiple DNA fragments to be assembled in a specific orientation without leaving unwanted sequences behind.",
+        "hint": "Consider the location of the cleavage site relative to the recognition site.",
+        "relatedConcept": "Synthetic Biology Assembly Standards",
+        "estimatedTime": "75 sec",
+        "interviewTip": "Mentioning 'scarless assembly' is a key differentiator in synthetic biology interviews."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q12-1792131975156",
+        "question": "In the context of RNA interference (RNAi) as a tool for gene silencing, what is the role of the Dicer enzyme?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "options": [
+          "It unwinds the double-stranded RNA into single strands before loading onto the RISC complex.",
+          "It catalyzes the cleavage of long double-stranded RNA into short interfering RNAs (siRNAs).",
+          "It binds to the target mRNA, preventing ribosomal translation through steric hindrance.",
+          "It facilitates the degradation of the antisense strand after the siRNA is loaded into the RISC complex."
+        ],
+        "correctAnswer": "It catalyzes the cleavage of long double-stranded RNA into short interfering RNAs (siRNAs).",
+        "correctIdx": 1,
+        "explanation": "Dicer is an RNase III-type enzyme that processes long dsRNA or pre-miRNA into short (approx. 21-23 nucleotide) fragments, which are then incorporated into the RNA-induced silencing complex (RISC).",
+        "hint": "The name 'Dicer' refers to its enzymatic action on the RNA substrate.",
+        "relatedConcept": "RNA interference pathway",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Be prepared to distinguish the roles of Dicer (processing) vs. RISC (targeting/cleaving)."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q13-1792131975156",
+        "question": "In protein engineering, what is the primary advantage of 'Directed Evolution' using error-prone PCR over rational design?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "options": [
+          "It requires a high-resolution 3D crystal structure of the protein to be successful.",
+          "It focuses exclusively on the active site residues to increase catalytic efficiency.",
+          "It bypasses the need for an exhaustive mechanistic understanding of the protein's folding and structure-function relationship.",
+          "It guarantees the identification of the global fitness optimum in a single generation."
+        ],
+        "correctAnswer": "It bypasses the need for an exhaustive mechanistic understanding of the protein's folding and structure-function relationship.",
+        "correctIdx": 2,
+        "explanation": "Directed evolution mimics natural selection by creating a library of variants and screening them, which is useful when the physical principles governing protein function are too complex to model accurately.",
+        "hint": "Consider what you need to know about the protein before starting the experiment.",
+        "relatedConcept": "Directed Evolution",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Highlight the 'blind' nature of directed evolution compared to the 'knowledge-based' approach of rational design."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q14-1792131975156",
+        "question": "Which of the following describes the 'shuttle vector' concept in genetic engineering of yeast (Saccharomyces cerevisiae)?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "options": [
+          "A vector that contains origins of replication for both E. coli and yeast, allowing propagation in both hosts.",
+          "A vector designed specifically to shuttle genes from the nucleus to the mitochondria.",
+          "A vector that uses viral packaging to move DNA between different species of fungi.",
+          "A vector that integrates into the yeast genome through homologous recombination rather than replicating autonomously."
+        ],
+        "correctAnswer": "A vector that contains origins of replication for both E. coli and yeast, allowing propagation in both hosts.",
+        "correctIdx": 0,
+        "explanation": "Shuttle vectors allow researchers to clone and manipulate DNA in E. coli (which is faster and easier) and then transfer the vector into yeast for functional expression or analysis.",
+        "hint": "Think about the logistical advantage of using two different host organisms.",
+        "relatedConcept": "Cloning Vectors",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Shuttle vectors are a staple in yeast genetics—be ready to explain why E. coli is preferred for the initial cloning steps."
+      },
+      {
+        "id": "ai-tech-genetic-engineering-t5-q15-1792131975156",
+        "question": "In the context of Agrobacterium-mediated transformation, what is the primary role of the virA and virG genes located on the Ti plasmid when the bacterium encounters phenolic compounds exuded by wounded plant cells?",
+        "technology": "Genetic Engineering",
+        "difficulty": "Medium",
+        "language": "python",
+        "options": [
+          "They encode the enzymes responsible for the direct integration of T-DNA into the host plant's nuclear genome.",
+          "They act as a two-component regulatory system that senses host signals and triggers the transcriptional activation of other vir operons.",
+          "They facilitate the physical formation of the pilus structure required for the secretion of the bacterial chromosome.",
+          "They function as chaperones to protect the T-strand from degradation by plant-derived cytoplasmic nucleases during transit."
+        ],
+        "correctAnswer": "They act as a two-component regulatory system that senses host signals and triggers the transcriptional activation of other vir operons.",
+        "correctIdx": 1,
+        "explanation": "VirA is a transmembrane sensor kinase that detects phenolic compounds (like acetosyringone) released by wounded plants. Upon activation, VirA autophosphorylates and transfers the phosphate to the response regulator VirG. Phosphorylated VirG then binds to the promoters of other vir operons (e.g., virB, virC, virD) to initiate the expression of proteins necessary for T-DNA processing and transfer.",
+        "hint": "Think about how bacterial cells signal to each other or sense their environment using two-component systems.",
+        "relatedConcept": "Agrobacterium tumefaciens pathogenesis",
+        "estimatedTime": "90 sec",
+        "interviewTip": "When discussing plant transformation, emphasize the distinction between the machinery required for T-DNA processing versus the signaling pathways that initiate the process."
+      }
+    ]
+  },
+  {
+    "id": "test-tech-civil-project-5",
+    "targetId": "tech-civil-project",
+    "targetType": "technology",
+    "targetName": "Project Management (Civil)",
+    "testNumber": 5,
+    "title": "Project Management (Civil) - Test 5: AI Generated Assessment",
+    "description": "AI-generated Test 5 for Project Management (Civil) with guaranteed anti-repetition.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-10-16T06:26:22.768Z",
+    "questions": [
+      {
+        "id": "ai-tech-civil-project-t5-q1-1792131982499",
+        "question": "A construction project has the following activities: Activity A (3 days, no predecessor), Activity B (4 days, predecessor A), Activity C (2 days, predecessor A), Activity D (5 days, predecessors B and C). What is the total float (in days) for Activity C?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "options": [
+          "0 days",
+          "1 day",
+          "2 days",
+          "3 days"
+        ],
+        "correctAnswer": "2 days",
+        "correctIdx": 2,
+        "explanation": "First compute early start (ES) and early finish (EF): A ES=0, EF=3; B ES=3, EF=7; C ES=3, EF=5; D ES=max(EF B, EF C)=7, EF=12. Project duration =12 days. Then compute late finish (LF) and late start (LS) backward: D LF=12, LS=7; B LF=LS of D=7, LS=3; C LF=LS of D=7, LS=5; A LF=min(LS B, LS C)=3, LS=0. Total float = LS - ES = 5 - 3 = 2 days (or LF - EF = 7 - 5 = 2).",
+        "hint": "Calculate ES/EF forward, then LS/LF backward; float is the difference between late and early times.",
+        "relatedConcept": "Critical Path Method (CPM) – Total Float",
+        "estimatedTime": "2 min",
+        "interviewTip": "Show the forward and backward pass calculations clearly; partial credit is often given for correct methodology even if the final number is off."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q2-1792131982499",
+        "question": "During a project's monitoring phase, the following earned value data are recorded: Planned Value (PV) = $50,000, Earned Value (EV) = $45,000, Actual Cost (AC) = $55,000. What is the Cost Performance Index (CPI) and what does it indicate about the project's budget status?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "options": [
+          "CPI ≈ 0.91 – on budget",
+          "CPI ≈ 0.82 – over budget",
+          "CPI ≈ 1.09 – under budget",
+          "CPI ≈ 1.20 – under budget"
+        ],
+        "correctAnswer": "CPI ≈ 0.82 – over budget",
+        "correctIdx": 1,
+        "explanation": "CPI = EV / AC = 45,000 / 55,000 ≈ 0.818 ≈ 0.82. A CPI below 1.0 indicates the project is earning less value per dollar spent than planned, i.e., it is over budget.",
+        "hint": "Recall CPI = EV/AC; values <1 signal cost overrun, >1 signal underrun.",
+        "relatedConcept": "Earned Value Management – Cost Performance Index",
+        "estimatedTime": "2 min",
+        "interviewTip": "State the formula, plug in the numbers, and interpret the result in plain language; interviewers look for both calculation and understanding."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q3-1792131982499",
+        "question": "Which type of construction contract generally places the greatest risk on the contractor?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "options": [
+          "Lump sum",
+          "Unit price",
+          "Cost‑plus fixed fee",
+          "Cost‑plus percentage fee"
+        ],
+        "correctAnswer": "Lump sum",
+        "correctIdx": 0,
+        "explanation": "In a lump sum (fixed‑price) contract the contractor agrees to complete the work for a set price; any cost overruns due to underestimated quantities, price changes, or unforeseen conditions are borne by the contractor, making it the riskiest contract type for them.",
+        "hint": "Consider who bears the cost of quantity or price variations.",
+        "relatedConcept": "Contract Types – Risk Allocation",
+        "estimatedTime": "1 min 30 sec",
+        "interviewTip": "Briefly justify why other options shift risk to the owner or share it; clarity of reasoning matters."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q4-1792131982499",
+        "question": "Which statement best describes resource leveling in construction project scheduling?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "options": [
+          "It adjusts activity start and finish dates within their available float to eliminate over‑allocation without extending the project duration.",
+          "It shortens the project duration by adding extra resources to critical activities.",
+          "It only applies to non‑critical activities and leaves critical‑activity dates unchanged.",
+          "It removes all float from the schedule to create a tightly packed timeline."
+        ],
+        "correctAnswer": "It adjusts activity start and finish dates within their available float to eliminate over‑allocation without extending the project duration.",
+        "correctIdx": 0,
+        "explanation": "Resource leveling resolves overallocations by shifting activities within their slack (float) limits. It does not change the overall project duration unless no sufficient float exists, in which case the schedule may be extended.",
+        "hint": "Think about using existing slack rather than adding resources or changing the critical path.",
+        "relatedConcept": "Resource Management – Leveling vs. Smoothing",
+        "estimatedTime": "1 min 45 sec",
+        "interviewTip": "Contrast leveling with smoothing and crashing; being able to differentiate them shows deeper scheduling knowledge."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q5-1792131982499",
+        "question": "Which schedule compression technique is least likely to increase direct project costs?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "options": [
+          "Crashing",
+          "Fast‑tracking",
+          "Resource leveling",
+          "Scope reduction"
+        ],
+        "correctAnswer": "Fast‑tracking",
+        "correctIdx": 1,
+        "explanation": "Fast‑tracking performs activities in parallel that were originally sequential, which generally does not add direct costs (though it may increase risk). Crashing adds resources to shorten duration and raises costs; resource leveling and scope reduction are not compression techniques.",
+        "hint": "Identify which technique changes logic rather than adding resources.",
+        "relatedConcept": "Schedule Compression – Crashing vs. Fast‑tracking",
+        "estimatedTime": "1 min 30 sec",
+        "interviewTip": "Explain the trade‑off: fast‑tracking saves time but can increase rework risk; crashing saves time at a definite cost increase."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q6-1792131982499",
+        "question": "In the Critical Path Method (CPM), what does the term \"critical path\" refer to?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "codeSnippet": "# Critical path detection (pseudo)\n# slack = LS - ES\n# if slack == 0: critical",
+        "language": "python",
+        "options": [
+          "A) The sequence of activities with the lowest total cost",
+          "B) The longest sequence of dependent activities that determines the minimum project duration",
+          "C) The path with the most number of activities",
+          "D) The path that can be delayed without affecting the project finish date"
+        ],
+        "correctAnswer": "B) The longest sequence of dependent activities that determines the minimum project duration",
+        "correctIdx": 1,
+        "explanation": "The critical path is the longest path through the project network diagram; any delay on this path directly delays the project completion date because it has zero slack.",
+        "hint": "Think about which path has zero float or slack.",
+        "relatedConcept": "Critical Path Method",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Remember that managing critical path activities is crucial; they have zero float, so any delay impacts the overall schedule."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q7-1792131982499",
+        "question": "In Earned Value Management (EVM), a Cost Performance Index (CPI) of 0.8 indicates:",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "codeSnippet": "CPI = EV / AC\nif CPI < 1:\n    print('Over budget')",
+        "language": "python",
+        "options": [
+          "A) The project is under budget by 20%",
+          "B) The project is over budget by 20%",
+          "C) The project is ahead of schedule by 20%",
+          "D) The project is behind schedule by 20%"
+        ],
+        "correctAnswer": "B) The project is over budget by 20%",
+        "correctIdx": 1,
+        "explanation": "CPI = EV / AC. A CPI less than 1 means actual cost exceeds earned value, indicating the project is over budget; at 0.8, for every $1 budgeted only $0.80 worth of work is accomplished.",
+        "hint": "Recall the CPI formula and what values less than 1 signify.",
+        "relatedConcept": "Earned Value Management",
+        "estimatedTime": "45 sec",
+        "interviewTip": "CPI together with SPI (Schedule Performance Index) gives a quick health check: CPI<1 = cost overrun, SPI<1 = schedule delay."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q8-1792131982499",
+        "question": "Which type of construction contract typically places the greatest risk on the contractor?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "codeSnippet": "# Lump-sum contract risk\ncontractor_risk = 'high' if contract_type == 'lump_sum' else 'low'",
+        "language": "python",
+        "options": [
+          "A) Cost-plus contract",
+          "B) Unit price contract",
+          "C) Lump-sum (fixed-price) contract",
+          "D) Design-build contract"
+        ],
+        "correctAnswer": "C) Lump-sum (fixed-price) contract",
+        "correctIdx": 2,
+        "explanation": "In a lump-sum contract, the contractor agrees to complete the project for a predetermined price. Any cost overruns are absorbed by the contractor, thus bearing the majority of the risk.",
+        "hint": "Consider who bears the financial impact of unexpected cost increases.",
+        "relatedConcept": "Contract Types",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Lump-sum contracts incentivize contractors to control costs tightly but increase their exposure to cost variability."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q9-1792131982499",
+        "question": "What is the primary purpose of a toolbox talk on a construction site?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "codeSnippet": "# Toolbox talk safety check\nif meeting_type == 'toolbox':\n    discuss_hazards()",
+        "language": "python",
+        "options": [
+          "A) To assign daily work tasks to crews",
+          "B) To review the project budget and financial status",
+          "C) To discuss site-specific safety hazards and safe work procedures before starting work",
+          "D) To conduct performance evaluations of workers"
+        ],
+        "correctAnswer": "C) To discuss site-specific safety hazards and safe work procedures before starting work",
+        "correctIdx": 2,
+        "explanation": "Toolbox talks are brief safety meetings focused on the specific hazards and safe work practices relevant to the day's tasks, aiming to prevent accidents before work begins.",
+        "hint": "Think about a short, informal safety meeting held at the start of a shift.",
+        "relatedConcept": "Site Safety Management",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Effective toolbox talks improve safety awareness and can significantly reduce incident rates on site."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q10-1792131982499",
+        "question": "In project scheduling, what is the main objective of resource leveling?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "codeSnippet": "# Resource leveling using float\nif float > 0:\n    adjust_start_date(activity, delay)",
+        "language": "python",
+        "options": [
+          "A) To compress the project schedule by adding overtime",
+          "B) To identify the critical path activities",
+          "C) To resolve overallocation of resources by adjusting non-critical activities within their float",
+          "D) To reduce the number of resources required on the project"
+        ],
+        "correctAnswer": "C) To resolve overallocation of resources by adjusting non-critical activities within their float",
+        "correctIdx": 2,
+        "explanation": "Resource leveling adjusts the start and finish dates of non-critical tasks (those with available float) to balance resource demand and eliminate overallocation without necessarily extending the project duration.",
+        "hint": "Consider how float or slack can be used to shift tasks in time.",
+        "relatedConcept": "Resource Management",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Use resource leveling to create a smoother resource histogram, reducing peaks and valleys in labor or equipment usage."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q11-1792131982499",
+        "question": "A construction project consists of the following activities and durations: Activity A (3 days) has no predecessors; Activity B (4 days) follows A; Activity C (2 days) follows A; Activity D (5 days) follows both B and C; Activity E (2 days) follows D. What is the total duration of the critical path?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "options": [
+          "12 days",
+          "13 days",
+          "14 days",
+          "15 days"
+        ],
+        "correctAnswer": "14 days",
+        "correctIdx": 2,
+        "explanation": "The critical path is the longest sequence of dependent activities. Paths: A-B-D-E = 3+4+5+2 = 14 days; A-C-D-E = 3+2+5+2 = 12 days. The longest path is A-B-D-E with a duration of 14 days.",
+        "hint": "List all paths from start to finish and sum their durations.",
+        "relatedConcept": "Critical Path Method",
+        "estimatedTime": "90 sec",
+        "interviewTip": "Show each path calculation clearly to demonstrate your understanding of dependency analysis."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q12-1792131982499",
+        "question": "During a project status review, the following earned value data are available: Planned Value (PV) = $50,000, Earned Value (EV) = $45,000, Actual Cost (AC) = $55,000. Which statement correctly interprets the Cost Performance Index (CPI) and Schedule Performance Index (SPI)?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "options": [
+          "CPI = 0.82, SPI = 0.90 → project is under budget and ahead of schedule",
+          "CPI = 0.82, SPI = 0.90 → project is over budget and behind schedule",
+          "CPI = 1.22, SPI = 1.10 → project is under budget and ahead of schedule",
+          "CPI = 1.22, SPI = 1.10 → project is over budget and behind schedule"
+        ],
+        "correctAnswer": "CPI = 0.82, SPI = 0.90 → project is over budget and behind schedule",
+        "correctIdx": 1,
+        "explanation": "CPI = EV/AC = 45,000/55,000 ≈ 0.82 (<1 indicates over budget). SPI = EV/PV = 45,000/50,000 = 0.90 (<1 indicates behind schedule).",
+        "hint": "Calculate CPI and SPI first, then recall what values less than 1 signify.",
+        "relatedConcept": "Earned Value Management",
+        "estimatedTime": "90 sec",
+        "interviewTip": "Remember that CPI < 1 means spending more than planned, and SPI < 1 means progressing slower than planned."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q13-1792131982499",
+        "question": "What is the primary purpose of maintaining a risk register in a civil engineering project?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "options": [
+          "To allocate labor resources to activities",
+          "To document identified risks, their analysis, and planned responses",
+          "To track daily equipment utilization",
+          "To compute the project's earned value metrics"
+        ],
+        "correctAnswer": "To document identified risks, their analysis, and planned responses",
+        "correctIdx": 1,
+        "explanation": "A risk register is a living record that captures each identified risk, its likelihood, impact, priority, and the mitigation or contingency plans. It supports proactive risk management throughout the project lifecycle.",
+        "hint": "Think of the risk register as the central repository for risk information, not a scheduling or costing tool.",
+        "relatedConcept": "Risk Register",
+        "estimatedTime": "90 sec",
+        "interviewTip": "Explain how the risk register feeds into risk review meetings and updates."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q14-1792131982499",
+        "question": "What is the main objective of resource leveling in project scheduling for a civil works project?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "options": [
+          "To shorten the overall project duration as much as possible",
+          "To balance resource demand with availability, avoiding overallocation",
+          "To increase the total project cost by adding extra resources",
+          "To eliminate the critical path from the schedule"
+        ],
+        "correctAnswer": "To balance resource demand with availability, avoiding overallocation",
+        "correctIdx": 1,
+        "explanation": "Resource leveling adjusts the start and finish dates of activities (within their float) to resolve conflicts where resource demand exceeds availability, thereby smoothing resource usage without necessarily changing the project duration.",
+        "hint": "Consider what happens when two tasks require the same crew at the same time.",
+        "relatedConcept": "Resource Leveling",
+        "estimatedTime": "90 sec",
+        "interviewTip": "Mention that resource leveling may shift non‑critical activities and use slack to resolve overloads."
+      },
+      {
+        "id": "ai-tech-civil-project-t5-q15-1792131982499",
+        "question": "In a civil construction project's Quality Management Plan, what is the primary focus of the Quality Assurance (QA) component?",
+        "technology": "Project Management (Civil)",
+        "difficulty": "Medium",
+        "options": [
+          "A) Conducting inspections and tests on completed work",
+          "B) Implementing process-oriented activities to prevent defects",
+          "C) Performing corrective actions after defects are identified",
+          "D) Obtaining final acceptance from the client"
+        ],
+        "correctAnswer": "B) Implementing process-oriented activities to prevent defects",
+        "correctIdx": 1,
+        "explanation": "Quality Assurance is proactive and focuses on improving processes to prevent defects, whereas Quality Control (QC) involves inspecting and testing the finished product.",
+        "hint": "Think about whether the activity is preventive or detective.",
+        "relatedConcept": "Quality Assurance vs Quality Control",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Distinguish QA (process-focused) from QC (product-focused) when answering quality management questions."
+      }
+    ]
+  },
+  {
+    "id": "test-tech-ui-ux-5",
+    "targetId": "tech-ui-ux",
+    "targetType": "technology",
+    "targetName": "UI/UX (Design)",
+    "testNumber": 5,
+    "title": "UI/UX (Design) - Test 5: AI Generated Assessment",
+    "description": "AI-generated Test 5 for UI/UX (Design) with guaranteed anti-repetition.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-10-16T06:27:36.748Z",
+    "questions": [
+      {
+        "id": "ai-tech-ui-ux-t5-q1-1792132056541",
+        "question": "In the context of Fitts's Law, when designing a target element (e.g., a 'Submit' button) in a high-latency interface where the user is using a precision pointing device, what is the most significant consequence of increasing the target's width while keeping distance constant?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "The movement time increases linearly with the target width.",
+          "The Index of Difficulty (ID) decreases, leading to faster acquisition time.",
+          "The error rate becomes independent of the target size.",
+          "The target becomes harder to hit due to the increased spatial resolution required."
+        ],
+        "correctAnswer": "The Index of Difficulty (ID) decreases, leading to faster acquisition time.",
+        "correctIdx": 1,
+        "explanation": "Fitts's Law states that the time to acquire a target is a function of the distance to the target and the size of the target. Mathematically, ID = log2(2D/W). Increasing W (width) decreases the ID, which reduces the movement time (MT = a + b * ID).",
+        "hint": "Recall the formula: ID = log2(2D/W).",
+        "relatedConcept": "Fitts's Law",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Mentioning Fitts's Law in UI design interviews demonstrates a scientific approach to layout optimization."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q2-1792132056541",
+        "question": "Which of the following describes a 'dark pattern' specifically classified as 'Confirmshaming' in a web interface?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "Automatically subscribing a user to a newsletter without an opt-in checkbox.",
+          "Hiding the 'unsubscribe' button in a sub-menu with low contrast.",
+          "Labeling a 'No' option as 'No thanks, I prefer to pay full price' to make the user feel guilty.",
+          "Using a countdown timer that resets upon page refresh to pressure a purchase."
+        ],
+        "correctAnswer": "Labeling a 'No' option as 'No thanks, I prefer to pay full price' to make the user feel guilty.",
+        "correctIdx": 2,
+        "explanation": "Confirmshaming is a design technique that uses guilt to influence a user's decision, usually by phrasing the rejection of an offer in a way that insults or disparages the user.",
+        "hint": "Think about emotional manipulation in UI copy.",
+        "relatedConcept": "Dark Patterns",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Be prepared to discuss the ethics of UI/UX and why dark patterns are generally discouraged in long-term user retention strategies."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q3-1792132056541",
+        "question": "When implementing a progressive disclosure pattern in a complex dashboard, what is the primary cognitive benefit being leveraged?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "Reducing the total number of clicks required for power users.",
+          "Minimizing cognitive load by presenting only necessary information at a specific point in the task flow.",
+          "Increasing the visual hierarchy by using more negative space.",
+          "Ensuring that all features of the application are visible on the initial screen."
+        ],
+        "correctAnswer": "Minimizing cognitive load by presenting only necessary information at a specific point in the task flow.",
+        "correctIdx": 1,
+        "explanation": "Progressive disclosure keeps interfaces clean and usable by showing only the information required for the current stage of the user's workflow, preventing users from being overwhelmed by too much data at once.",
+        "hint": "Consider the limitations of short-term memory.",
+        "relatedConcept": "Cognitive Load Theory",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Explain how progressive disclosure is a key tool for balancing 'simplicity' vs 'functionality'."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q4-1792132056541",
+        "question": "In the context of heuristic evaluation, what is the primary difference between a 'severity rating' and a 'usability problem frequency'?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "Severity is based on the impact of the problem on the user's task completion, whereas frequency is how often the problem occurs.",
+          "Severity is a quantitative metric, while frequency is a qualitative one.",
+          "They are identical terms used interchangeably in UX research.",
+          "Severity only applies to accessibility issues, while frequency applies to design aesthetics."
+        ],
+        "correctAnswer": "Severity is based on the impact of the problem on the user's task completion, whereas frequency is how often the problem occurs.",
+        "correctIdx": 0,
+        "explanation": "Nielsen's severity rating (0-4 scale) evaluates the impact (task failure, annoyance, etc.), while frequency measures how many users encounter the issue. A low-frequency issue can still have a high severity rating if it prevents a critical task.",
+        "hint": "Think about the consequences of a bug vs how many people hit it.",
+        "relatedConcept": "Heuristic Evaluation",
+        "estimatedTime": "55 sec",
+        "interviewTip": "Always prioritize fixing high-severity issues, even if they affect a smaller segment of the user base."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q5-1792132056541",
+        "question": "Which of the following CSS/Layout techniques best supports the 'Responsive Design' principle of fluid grids?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "codeSnippet": "/* Scenario: Designing a layout that must adapt to various screen widths */\n.container {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));\n}",
+        "language": "css",
+        "options": [
+          "Using absolute pixel widths for all child elements to ensure consistent spacing.",
+          "Using '1fr' units which distribute available space relative to other tracks.",
+          "Using fixed media queries for every possible device resolution.",
+          "Using 'float: left' to ensure elements wrap correctly on all screens."
+        ],
+        "correctAnswer": "Using '1fr' units which distribute available space relative to other tracks.",
+        "correctIdx": 1,
+        "explanation": "The '1fr' unit represents a fraction of the available space in the grid container. Combined with 'auto-fit' and 'minmax', it allows the grid to automatically wrap and resize items based on the container size, which is the definition of a fluid grid.",
+        "hint": "Look for the unit that dynamically calculates space.",
+        "relatedConcept": "CSS Grid Layout",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Discussing CSS Grid vs Flexbox shows you understand modern layout strategies."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q6-1792132056541",
+        "question": "In the context of Fitts's Law applied to UI design, what is the 'Index of Difficulty' (ID) primarily influenced by?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "The total number of interactive elements on the screen.",
+          "The ratio of the distance to the target and the width of the target.",
+          "The latency between user input and visual feedback.",
+          "The visual weight and color contrast of the target element."
+        ],
+        "correctAnswer": "The ratio of the distance to the target and the width of the target.",
+        "correctIdx": 1,
+        "explanation": "Fitts's Law states that the time required to move to a target is a function of the distance to the target (D) and the size of the target (W). The Index of Difficulty is defined as log2(2D/W).",
+        "hint": "Think about the relationship between how far away something is and how big it is.",
+        "relatedConcept": "Fitts's Law",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Mentioning Fitts's Law in interviews demonstrates a scientific approach to UI layout optimization."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q7-1792132056541",
+        "question": "When designing for accessibility (WCAG 2.1), what is the specific consequence of violating the 'Target Size' criteria (Success Criterion 2.5.5)?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "Users with motor impairments may struggle to hit interactive elements accurately.",
+          "Screen readers will fail to announce the label of the interactive component.",
+          "The application will fail to meet contrast ratios required for low-vision users.",
+          "Keyboard-only navigation will skip the element entirely during tab order."
+        ],
+        "correctAnswer": "Users with motor impairments may struggle to hit interactive elements accurately.",
+        "correctIdx": 0,
+        "explanation": "WCAG 2.5.5 requires that the size of the target for pointer inputs be at least 44 by 44 CSS pixels to ensure users with limited dexterity can successfully interact with the UI.",
+        "hint": "Consider the physical interaction of a user's finger or mouse pointer.",
+        "relatedConcept": "WCAG Accessibility Standards",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Always advocate for inclusive design as a core requirement, not an afterthought."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q8-1792132056541",
+        "question": "Which of the following best describes the 'Von Restorff Effect' when applied to a call-to-action (CTA) button in a dashboard?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "Aligning the button with the 'Rule of Thirds' to create visual harmony.",
+          "Using a high-contrast color that differs from the surrounding elements to increase recall.",
+          "Placing the button in the 'F-pattern' scanning path to ensure visibility.",
+          "Reducing the number of buttons on the screen to prevent 'Analysis Paralysis'."
+        ],
+        "correctAnswer": "Using a high-contrast color that differs from the surrounding elements to increase recall.",
+        "correctIdx": 1,
+        "explanation": "The Von Restorff Effect (or isolation effect) predicts that an item that 'stands out like a sore thumb' is more likely to be remembered than other items.",
+        "hint": "Think about visual distinction and memory.",
+        "relatedConcept": "Gestalt Principles",
+        "estimatedTime": "40 sec",
+        "interviewTip": "Use psychological principles to justify your design decisions during a portfolio review."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q9-1792132056541",
+        "question": "In a design system using 'Atomic Design', what differentiates a 'Molecule' from an 'Organism'?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "Molecules are static assets; Organisms are interactive components.",
+          "Molecules consist of multiple atoms working together; Organisms are groups of molecules forming distinct sections of an interface.",
+          "Organisms must be responsive; Molecules are designed only for mobile views.",
+          "Molecules are atomic-level code snippets; Organisms are high-fidelity design mockups."
+        ],
+        "correctAnswer": "Molecules consist of multiple atoms working together; Organisms are groups of molecules forming distinct sections of an interface.",
+        "correctIdx": 1,
+        "explanation": "Atomic Design methodology categorizes components as Atoms (base), Molecules (groups of atoms), Organisms (groups of molecules), Templates, and Pages.",
+        "hint": "Think about the hierarchy of complexity in UI components.",
+        "relatedConcept": "Atomic Design",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Discussing design systems shows you understand scalability and maintainability."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q10-1792132056541",
+        "question": "What is the primary objective of implementing 'Progressive Disclosure' in a complex data-entry form?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "To force the user to read all terms and conditions before proceeding.",
+          "To minimize cognitive load by showing only necessary information at the current stage.",
+          "To increase the total time spent on the page for SEO metrics.",
+          "To reduce the number of API calls made to the backend server."
+        ],
+        "correctAnswer": "To minimize cognitive load by showing only necessary information at the current stage.",
+        "correctIdx": 1,
+        "explanation": "Progressive disclosure helps manage complexity by sequencing information so that users are not overwhelmed by unnecessary options early in the process.",
+        "hint": "Think about how to keep a user's mental focus on the immediate task.",
+        "relatedConcept": "Cognitive Load Management",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Highlighting cognitive load reduction shows empathy for the end-user's experience."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q11-1792132056541",
+        "question": "When implementing a 'Progressive Disclosure' pattern in a complex data-entry form, what is the most significant trade-off regarding user cognitive load?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "It eliminates the need for user validation entirely.",
+          "It reduces immediate cognitive load but may increase the 'interaction cost' due to hidden state.",
+          "It forces the user to complete all steps sequentially, preventing non-linear workflows.",
+          "It always improves conversion rates regardless of the complexity of the task."
+        ],
+        "correctAnswer": "It reduces immediate cognitive load but may increase the 'interaction cost' due to hidden state.",
+        "correctIdx": 1,
+        "explanation": "Progressive disclosure helps manage complexity by hiding secondary details, but it creates a 'hidden state' where users may not know what lies ahead, potentially increasing the total number of clicks or navigation steps (interaction cost).",
+        "hint": "Think about the balance between simplicity and the user's need for system visibility.",
+        "relatedConcept": "Progressive Disclosure",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Mention that while it reduces cognitive load, it should never hide critical information that users need to see to make an informed decision."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q12-1792132056541",
+        "question": "In a design system using a 4pt grid, why is it considered a best practice to define spacing and sizing based on multiples of 4?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "It ensures that all assets are compatible with 16-bit color displays.",
+          "It maximizes integer divisibility across common screen pixel densities (1x, 1.5x, 2x, 3x).",
+          "It reduces the file size of exported SVG icons by 25%.",
+          "It guarantees that all text elements will automatically align to the baseline grid."
+        ],
+        "correctAnswer": "It maximizes integer divisibility across common screen pixel densities (1x, 1.5x, 2x, 3x).",
+        "correctIdx": 1,
+        "explanation": "Using 4 as a base ensures that when designs are scaled for high-density displays (like 1.5x or 3x), the resulting pixel values remain integers, preventing sub-pixel rendering artifacts and 'blurry' edges.",
+        "hint": "Think about what happens when you multiply a non-integer value by a scale factor like 1.5.",
+        "relatedConcept": "Design Systems / Grid Scaling",
+        "estimatedTime": "55 sec",
+        "interviewTip": "Always highlight the technical benefit of avoiding sub-pixel rendering when justifying grid systems to developers."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q13-1792132056541",
+        "question": "When designing for 'Dark Mode' (system-level dark theme), what is the primary functional concern regarding the application of 'elevation' using shadows?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "Shadows become invisible on dark backgrounds, requiring surface color 'tinting' or lighter overlays to indicate depth.",
+          "Shadows must be replaced by high-contrast borders to meet WCAG accessibility standards.",
+          "Shadows require a significant increase in blur radius to prevent the UI from appearing 'flat'.",
+          "Elevation is irrelevant in Dark Mode because depth is only perceived through light-source simulation."
+        ],
+        "correctAnswer": "Shadows become invisible on dark backgrounds, requiring surface color 'tinting' or lighter overlays to indicate depth.",
+        "correctIdx": 0,
+        "explanation": "On a dark background, traditional drop shadows are ineffective. Design systems (like Material Design) suggest using lighter-colored surface tints (adding white to the background color) to convey elevation.",
+        "hint": "Think about the visibility of a black shadow on a dark gray or black surface.",
+        "relatedConcept": "Dark Mode Design",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Discussing surface tinting shows you understand the practical implementation challenges of dark mode beyond just changing colors."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q14-1792132056541",
+        "question": "In the context of 'Progressive Disclosure' in UI design, which of the following scenarios best exemplifies a violation of the principle when designing a complex data-entry form?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "Presenting all possible configuration options on a single, long-scrolling page to allow 'power users' to see the full scope of settings.",
+          "Using a stepper component to break a 50-field registration process into five distinct, logical sections.",
+          "Hiding advanced technical settings behind an 'Advanced' toggle that requires an explicit user action to reveal.",
+          "Disabling the 'Next' button until the user has successfully validated the current section's inputs."
+        ],
+        "correctAnswer": "Presenting all possible configuration options on a single, long-scrolling page to allow 'power users' to see the full scope of settings.",
+        "correctIdx": 0,
+        "explanation": "Progressive Disclosure is the strategy of showing only the most relevant information to the user at a given moment to reduce cognitive load. Presenting all options at once forces the user to process unnecessary information, which is a classic violation of this principle, regardless of whether the user is a 'power user'.",
+        "hint": "Think about cognitive load and the goal of minimizing information density for the initial interaction.",
+        "relatedConcept": "Cognitive Load Management",
+        "estimatedTime": "60 sec",
+        "interviewTip": "When discussing UI patterns, always link your choices back to the specific user goal rather than just aesthetic preference."
+      },
+      {
+        "id": "ai-tech-ui-ux-t5-q15-1792132056541",
+        "question": "When designing for accessibility (A11y) using the WCAG 2.1 criteria, why is it considered a 'fail' to rely solely on color changes (e.g., changing a border from gray to red) to indicate an input error in a form?",
+        "technology": "UI/UX (Design)",
+        "difficulty": "Medium",
+        "options": [
+          "Because screen readers cannot interpret the CSS 'border-color' property during the DOM inspection phase.",
+          "Because individuals with color vision deficiency (color blindness) may be unable to distinguish between the two states.",
+          "Because the browser's default focus ring will override the red border, rendering the error state invisible.",
+          "Because WCAG standards require error messages to be delivered via an audio cue rather than a visual change."
+        ],
+        "correctAnswer": "Because individuals with color vision deficiency (color blindness) may be unable to distinguish between the two states.",
+        "correctIdx": 1,
+        "explanation": "WCAG Success Criterion 1.4.1 (Use of Color) states that color should not be used as the sole visual means of conveying information, indicating an action, prompting a response, or distinguishing a visual element. Relying only on color excludes users with various types of color blindness.",
+        "hint": "Consider the inclusivity of the design for users with visual impairments.",
+        "relatedConcept": "WCAG 2.1 Compliance",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Mentioning 'multi-modal feedback' (like adding an icon or text label alongside color) is a great way to demonstrate maturity in design thinking."
+      }
+    ]
+  },
+  {
+    "id": "test-tech-nanotechnology-5",
+    "targetId": "tech-nanotechnology",
+    "targetType": "technology",
+    "targetName": "Nanotechnology (Pharma/ECE)",
+    "testNumber": 5,
+    "title": "Nanotechnology (Pharma/ECE) - Test 5: AI Generated Assessment",
+    "description": "AI-generated Test 5 for Nanotechnology (Pharma/ECE) with guaranteed anti-repetition.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-10-16T06:27:52.164Z",
+    "questions": [
+      {
+        "id": "ai-tech-nanotechnology-t5-q1-1792132067108",
+        "question": "In drug delivery systems, which type of nanoparticle is most suitable for encapsulating hydrophilic drugs due to its ability to form an aqueous core surrounded by a lipid bilayer?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "Liposomes",
+          "Polymeric nanoparticles",
+          "Dendrimers",
+          "Gold nanoparticles"
+        ],
+        "correctAnswer": "Liposomes",
+        "correctIdx": 0,
+        "explanation": "Liposomes have an aqueous interior that can encapsulate hydrophilic drugs, while the lipid bilayer can incorporate hydrophobic agents.",
+        "hint": "Think about the structure that mimics biological membranes.",
+        "relatedConcept": "Liposome-based drug delivery",
+        "estimatedTime": "45 sec",
+        "interviewTip": "When discussing nanocarriers, start with the simplest system (liposomes) before moving to complex polymeric designs."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q2-1792132067108",
+        "question": "Quantum dots (QDs) exhibit size-tunable fluorescence. As the diameter of a CdSe quantum dot decreases, what happens to its emission wavelength?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "Shifts to longer wavelengths (red shift)",
+          "Shifts to shorter wavelengths (blue shift)",
+          "Remains unchanged",
+          "Becomes broadband"
+        ],
+        "correctAnswer": "Shifts to shorter wavelengths (blue shift)",
+        "correctIdx": 1,
+        "explanation": "Quantum confinement leads to increased bandgap energy with smaller size, resulting in higher energy (shorter wavelength) emission.",
+        "hint": "Recall the particle-in-a-box model.",
+        "relatedConcept": "Quantum confinement effect",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Link size changes to optical properties when discussing QDs for bioimaging."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q3-1792132067108",
+        "question": "A researcher observes that a freshly prepared nanoparticle suspension aggregates rapidly when diluted in phosphate-buffered saline (PBS). Which of the following is the most likely cause?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "Excessive surface charge leading to electrostatic repulsion",
+          "Insufficient steric stabilization (e.g., lack of PEG coating)",
+          "Low ionic strength of PBS preventing charge screening",
+          "High temperature causing increased Brownian motion"
+        ],
+        "correctAnswer": "Insufficient steric stabilization (e.g., lack of PEG coating)",
+        "correctIdx": 1,
+        "explanation": "Without steric stabilizers like PEG, van der Waals attraction dominates in physiological ionic strength, causing aggregation.",
+        "hint": "Consider what prevents nanoparticles from sticking together in salty environments.",
+        "relatedConcept": "Nanoparticle stability in biological media",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Always mention steric vs electrostatic stabilization when discussing formulation challenges."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q4-1792132067108",
+        "question": "For active targeting of cancer cells that overexpress folate receptors, which ligand is most commonly conjugated to nanoparticles?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "Transferrin",
+          "RGD peptide",
+          "Folic acid",
+          "LDL"
+        ],
+        "correctAnswer": "Folic acid",
+        "correctIdx": 2,
+        "explanation": "Folic acid binds with high affinity to folate receptors, which are upregulated in many tumor cells, enabling receptor-mediated endocytosis.",
+        "hint": "Think of vitamin analogs used in cancer targeting.",
+        "relatedConcept": "Ligand-receptor mediated targeting",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Know the classic ligand-receptor pairs: folate-folate receptor, transferrin-transferrin receptor, RGD-integrin."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q5-1792132067108",
+        "question": "In nanoelectronics, which nanomaterial exhibits the highest intrinsic carrier mobility, making it attractive for high-frequency transistor applications?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "Silicon nanowires",
+          "Carbon nanotubes",
+          "Graphene",
+          "Molybdenum disulfide (MoS2)"
+        ],
+        "correctAnswer": "Graphene",
+        "correctIdx": 2,
+        "explanation": "Graphene's charge carriers behave as massless Dirac fermions, giving mobilities exceeding 200,000 cm²/V·s at room temperature, far surpassing other nanomaterials.",
+        "hint": "Consider the linear dispersion relation near the Dirac point.",
+        "relatedConcept": "Carrier mobility in 2D materials",
+        "estimatedTime": "45 sec",
+        "interviewTip": "When comparing nanomaterials for electronics, highlight graphene's exceptional mobility despite challenges with bandgap."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q6-1792132067108",
+        "question": "In the context of carbon nanotube (CNT) field-effect transistors (FETs), what is the primary mechanism that causes 'ambipolar behavior' in devices with Schottky barrier contacts?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "Tunneling of both electrons and holes through the Schottky barriers at the metal-nanotube interface",
+          "The presence of high-density surface states on the silicon dioxide gate dielectric",
+          "Excessive phonon scattering due to the 1D confinement of the carbon lattice",
+          "The formation of a depletion region within the channel that prevents carrier recombination"
+        ],
+        "correctAnswer": "Tunneling of both electrons and holes through the Schottky barriers at the metal-nanotube interface",
+        "correctIdx": 0,
+        "explanation": "Ambipolar behavior in CNT-FETs occurs because the Schottky barriers at the contacts can be thinned by the gate field, allowing both electrons and holes to tunnel through the barrier at different gate bias polarities, leading to both n-type and p-type conduction.",
+        "hint": "Think about the energy band diagram at the metal-semiconductor junction.",
+        "relatedConcept": "Schottky Barrier Tunneling",
+        "estimatedTime": "60 sec",
+        "interviewTip": "When discussing nano-electronics, always distinguish between bulk semiconductor physics and the unique interface physics of low-dimensional materials."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q7-1792132067108",
+        "question": "When designing a lipid-based nanoparticle (LNP) for siRNA delivery, why is the pKa of the ionizable lipid a critical parameter for endosomal escape?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "It ensures the lipid is neutral at physiological pH (7.4) and becomes positively charged in the acidic endosome (pH ~5-6)",
+          "It dictates the melting temperature of the lipid bilayer, preventing premature drug leakage in the bloodstream",
+          "It acts as a targeting ligand that binds specifically to the LDL receptors on the surface of hepatocytes",
+          "It prevents the formation of micelles during the microfluidic mixing process with the aqueous phase"
+        ],
+        "correctAnswer": "It ensures the lipid is neutral at physiological pH (7.4) and becomes positively charged in the acidic endosome (pH ~5-6)",
+        "correctIdx": 0,
+        "explanation": "Ionizable lipids are designed to be neutral at pH 7.4 to minimize systemic toxicity and clearance. Once endocytosed, the acidic environment of the endosome protonates the lipid, which then facilitates membrane fusion with the endosomal membrane, releasing the cargo into the cytoplasm.",
+        "hint": "Consider the pH difference between the blood and the endosomal lumen.",
+        "relatedConcept": "Endosomal Escape Mechanism",
+        "estimatedTime": "60 sec",
+        "interviewTip": "If asked about drug delivery, emphasize the 'endosomal escape' hurdle as it is the most common failure point for nucleic acid therapeutics."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q8-1792132067108",
+        "question": "In the fabrication of nano-electro-mechanical systems (NEMS) using top-down lithography, what is the 'stiction' phenomenon and how is it typically mitigated?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "Capillary forces causing suspended structures to adhere to the substrate during drying; mitigated by supercritical CO2 drying",
+          "Thermal expansion coefficient mismatch causing structural warping; mitigated by annealing in vacuum",
+          "Ion implantation damage to the lattice; mitigated by laser-assisted recrystallization",
+          "Electromagnetic interference between nanorods; mitigated by applying a conductive thin-film shield"
+        ],
+        "correctAnswer": "Capillary forces causing suspended structures to adhere to the substrate during drying; mitigated by supercritical CO2 drying",
+        "correctIdx": 0,
+        "explanation": "Stiction is a major failure mode in NEMS where surface tension forces from liquid etchants or rinses pull delicate, high-aspect-ratio structures onto the substrate. Supercritical drying bypasses the liquid-vapor interface, eliminating capillary force.",
+        "hint": "Think about the meniscus force that acts when a liquid evaporates from a tiny gap.",
+        "relatedConcept": "NEMS Fabrication",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Stiction is a classic 'gotcha' in MEMS/NEMS interviews. Always mention supercritical drying as the industry-standard solution."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q9-1792132067108",
+        "question": "Which of the following best describes the 'Quantum Confinement' effect as it relates to the optical properties of semiconductor quantum dots?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "As the crystal size decreases below the Bohr exciton radius, the bandgap increases, leading to a blue shift in emission",
+          "As the crystal size decreases, the surface-to-volume ratio decreases, leading to higher quantum yields",
+          "As the crystal size decreases, the electron effective mass increases, leading to a red shift in absorption",
+          "As the crystal size decreases, the Coulomb interaction between electrons and holes becomes negligible"
+        ],
+        "correctAnswer": "As the crystal size decreases below the Bohr exciton radius, the bandgap increases, leading to a blue shift in emission",
+        "correctIdx": 0,
+        "explanation": "When a semiconductor particle size is reduced to the nanometer scale (less than the Bohr exciton radius), the energy levels become discrete rather than continuous bands. This 'particle-in-a-box' effect widens the bandgap, causing the emission wavelength to shift toward the blue end of the spectrum.",
+        "hint": "Think of the particle as a quantum well in three dimensions.",
+        "relatedConcept": "Quantum Confinement",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Be prepared to explain why this is useful for bio-imaging (e.g., tunable fluorescence)."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q10-1792132067108",
+        "question": "In the context of nanophotonics, what is the role of a Plasmonic Nano-Antenna in enhancing the fluorescence of a nearby quantum emitter?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "It concentrates the incident electromagnetic field into a sub-wavelength volume, increasing the excitation rate (Purcell effect)",
+          "It acts as a high-pass filter that blocks background noise from the surrounding biological medium",
+          "It converts the incident light into a surface acoustic wave to induce vibration-based luminescence",
+          "It provides a chemical substrate that prevents the quantum emitter from blinking during prolonged imaging"
+        ],
+        "correctAnswer": "It concentrates the incident electromagnetic field into a sub-wavelength volume, increasing the excitation rate (Purcell effect)",
+        "correctIdx": 0,
+        "explanation": "Plasmonic antennas exploit surface plasmon resonances to create 'hot spots' of localized electromagnetic fields. This not only increases the excitation rate but also modifies the spontaneous emission rate of the emitter, a phenomenon known as the Purcell effect.",
+        "hint": "Think about the coupling between light and collective electron oscillations in metal nanostructures.",
+        "relatedConcept": "Plasmonics",
+        "estimatedTime": "55 sec",
+        "interviewTip": "Mentioning the 'Purcell effect' shows deep domain knowledge in light-matter interaction at the nanoscale."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q11-1792132067108",
+        "question": "In the context of targeted drug delivery using gold nanoparticles, what is the primary physical phenomenon responsible for the 'Enhanced Permeability and Retention' (EPR) effect?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "Quantum tunneling through the cellular lipid bilayer",
+          "Leaky vasculature and impaired lymphatic drainage in tumor tissues",
+          "Surface Plasmon Resonance (SPR) induced hyperthermia",
+          "Van der Waals attraction exceeding Brownian motion forces"
+        ],
+        "correctAnswer": "Leaky vasculature and impaired lymphatic drainage in tumor tissues",
+        "correctIdx": 1,
+        "explanation": "The EPR effect is a physiological phenomenon where nanoparticles (typically 10-200 nm) preferentially accumulate in tumor tissues due to the disorganized, leaky blood vessels and poor lymphatic clearance characteristic of solid tumors, allowing drugs to penetrate and stay in the tumor microenvironment longer.",
+        "hint": "Think about why nanoparticles can exit the bloodstream specifically in tumor sites but not healthy tissue.",
+        "relatedConcept": "Passive Targeting",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Distinguish between passive targeting (EPR) and active targeting (ligand-receptor binding) in drug delivery."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q12-1792132067108",
+        "question": "When designing a CMOS-compatible NEMS (Nano-Electro-Mechanical System) switch, what is the 'Pull-in Voltage' (Vpi) phenomenon primarily caused by?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "The transition from laminar to turbulent airflow at the nanoscale",
+          "The non-linear relationship between electrostatic force and mechanical restoring force",
+          "Thermal noise fluctuations exceeding the gate threshold voltage",
+          "Quantum confinement leading to variable Schottky barrier heights"
+        ],
+        "correctAnswer": "The non-linear relationship between electrostatic force and mechanical restoring force",
+        "correctIdx": 1,
+        "explanation": "As the gap between the NEMS switch electrodes decreases, the attractive electrostatic force (which increases with the square of the displacement) grows faster than the linear mechanical restoring force of the suspension beam, causing the beam to collapse suddenly at the pull-in voltage.",
+        "hint": "Consider the instability that occurs when the force gradient of the actuator exceeds the stiffness of the spring.",
+        "relatedConcept": "Electromechanical Instability",
+        "estimatedTime": "75 sec",
+        "interviewTip": "Understand that NEMS switches suffer from stiction and pull-in instability, which are critical design constraints."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q13-1792132067108",
+        "question": "In the synthesis of lipid-polymer hybrid nanoparticles, how does the 'PEGylation' of the surface affect the pharmacokinetic profile?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "It promotes rapid opsonization by serum proteins for faster uptake",
+          "It increases the zeta potential to prevent particle aggregation",
+          "It creates a hydrophilic hydration layer that reduces mononuclear phagocyte system (MPS) recognition",
+          "It acts as a catalyst to increase the rate of drug degradation inside the lysosome"
+        ],
+        "correctAnswer": "It creates a hydrophilic hydration layer that reduces mononuclear phagocyte system (MPS) recognition",
+        "correctIdx": 2,
+        "explanation": "PEGylation involves attaching Polyethylene Glycol chains to the nanoparticle surface. This creates a 'stealth' layer that prevents opsonization (the binding of serum proteins), thereby delaying clearance by the liver and spleen (MPS) and extending circulation time.",
+        "hint": "Think about how to make a particle 'invisible' to the body's immune system.",
+        "relatedConcept": "Stealth Nanocarriers",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Mentioning 'stealth properties' and 'reduced opsonization' is key when discussing drug delivery vehicle design."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q14-1792132067108",
+        "question": "Which specific electrical characterization technique is most suitable for identifying the bandgap of individual carbon nanotubes (CNTs) within a heterogeneous sample?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "Scanning Tunneling Spectroscopy (STS)",
+          "Four-point probe resistivity measurement",
+          "Cyclic Voltammetry",
+          "Time-Domain Reflectometry"
+        ],
+        "correctAnswer": "Scanning Tunneling Spectroscopy (STS)",
+        "correctIdx": 0,
+        "explanation": "Scanning Tunneling Spectroscopy measures the differential conductance (dI/dV) as a function of bias voltage. Since dI/dV is proportional to the local density of states (LDOS), the energy range where the conductance is zero directly corresponds to the electronic bandgap of the CNT.",
+        "hint": "Look for a technique that measures local electronic density of states at the atomic scale.",
+        "relatedConcept": "Nano-characterization",
+        "estimatedTime": "70 sec",
+        "interviewTip": "Differentiate between bulk characterization techniques like Raman spectroscopy and local techniques like STS."
+      },
+      {
+        "id": "ai-tech-nanotechnology-t5-q15-1792132067108",
+        "question": "What is the primary function of a 'nanofluidic diode' implemented using a single nanopore in a charged membrane?",
+        "technology": "Nanotechnology (Pharma/ECE)",
+        "difficulty": "Medium",
+        "options": [
+          "To convert optical signals into mechanical vibrations",
+          "To rectify ionic current flow based on the surface charge of the pore walls",
+          "To increase the diffusion rate of neutral molecules through a concentration gradient",
+          "To act as a high-pass filter for nanoparticle sizing based on Brownian motion"
+        ],
+        "correctAnswer": "To rectify ionic current flow based on the surface charge of the pore walls",
+        "correctIdx": 1,
+        "explanation": "A nanofluidic diode works by creating an asymmetric surface charge distribution (e.g., a conical nanopore). Under an applied electric field, the ion concentration and transport efficiency differ depending on the polarity, leading to current rectification (higher conductance in one direction than the other).",
+        "hint": "Think about how semiconductor diodes rectify current, but apply it to ions in a solution.",
+        "relatedConcept": "Nanofluidics",
+        "estimatedTime": "65 sec",
+        "interviewTip": "Nanofluidic diodes are the building blocks for bio-inspired artificial ion channels."
+      }
+    ]
+  },
+  {
+    "id": "test-tech-graphic-design-5",
+    "targetId": "tech-graphic-design",
+    "targetType": "technology",
+    "targetName": "Graphic Design",
+    "testNumber": 5,
+    "title": "Graphic Design - Test 5: AI Generated Assessment",
+    "description": "AI-generated Test 5 for Graphic Design with guaranteed anti-repetition.",
+    "difficulty": "Medium",
+    "questionCount": 15,
+    "durationMinutes": 30,
+    "isPublished": true,
+    "createdAt": "2026-10-16T06:27:52.881Z",
+    "questions": [
+      {
+        "id": "ai-tech-graphic-design-t5-q1-1792132072008",
+        "question": "In the context of color management workflows, what is the primary technical consequence of assigning an incorrect ICC profile to an image intended for sRGB web display?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "language": "none",
+        "options": [
+          "The file size will increase exponentially due to metadata overhead",
+          "The color transformation values are re-interpreted, leading to unintended shifts in hue and saturation",
+          "The image resolution is automatically downsampled to match the profile's DPI constraints",
+          "The layer transparency data is stripped to maintain compatibility with the target color space"
+        ],
+        "correctAnswer": "The color transformation values are re-interpreted, leading to unintended shifts in hue and saturation",
+        "correctIdx": 1,
+        "explanation": "ICC profiles provide the mathematical mapping between device-independent color spaces and device-dependent ones. If the wrong profile is assigned, the software treats the pixel values as if they belong to a different coordinate system, causing color distortion.",
+        "hint": "Think about how software interprets raw numerical pixel values based on a reference color space.",
+        "relatedConcept": "Color Space Management",
+        "estimatedTime": "60 sec",
+        "interviewTip": "Understand the difference between 'Assigning' a profile vs. 'Converting' to a profile."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q2-1792132072008",
+        "question": "When designing vector paths in PostScript-based formats, which specific mathematical property of the Bézier curve prevents the path from passing through its off-curve control points?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "language": "none",
+        "options": [
+          "The curve is constrained by the Convex Hull property",
+          "The curve is calculated using linear interpolation between the start and end anchors",
+          "The curve uses a piecewise polynomial that ignores control point tangents",
+          "The curve is limited by the sampling frequency of the rasterization engine"
+        ],
+        "correctAnswer": "The curve is constrained by the Convex Hull property",
+        "correctIdx": 0,
+        "explanation": "The convex hull property dictates that a Bézier curve must lie entirely within the convex hull defined by its control points, ensuring the curve is influenced by, but does not necessarily touch, the control points.",
+        "hint": "What geometric shape encloses the control points?",
+        "relatedConcept": "Vector Mathematics",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Be prepared to explain how Bézier handles curvature vs. straight lines."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q3-1792132072008",
+        "question": "In typography, how does the 'Optical Size' axis in Variable Fonts fundamentally differ from simple global scaling of a font file?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "language": "none",
+        "options": [
+          "It modifies the stroke contrast and x-height proportions specifically for the intended display size",
+          "It automatically converts the font to vector outlines to ensure infinite scalability",
+          "It adjusts the kerning pairs based on the user's screen resolution settings",
+          "It changes the font's encoding to support extended Unicode character sets"
+        ],
+        "correctAnswer": "It modifies the stroke contrast and x-height proportions specifically for the intended display size",
+        "correctIdx": 0,
+        "explanation": "Optical sizing adjusts glyph design—such as increasing stroke thickness for small sizes or refining serifs for large sizes—to maintain legibility, unlike uniform scaling which preserves the original proportions.",
+        "hint": "Think about how typography changes when read on a billboard vs. a business card.",
+        "relatedConcept": "Typography / Variable Fonts",
+        "estimatedTime": "55 sec",
+        "interviewTip": "Mentioning 'legibility' and 'readability' is key when discussing optical sizes."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q4-1792132072008",
+        "question": "Which specific architectural limitation of the JPEG compression algorithm makes it unsuitable for professional-grade graphic assets containing sharp text or fine line art?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "language": "none",
+        "options": [
+          "It utilizes lossless compression that requires too much storage space",
+          "It relies on Discrete Cosine Transform (DCT) blocks which cause ringing artifacts at high-contrast edges",
+          "It lacks support for alpha channel transparency in the baseline standard",
+          "It forces a fixed bit-depth of 8-bits per channel, causing banding in gradients"
+        ],
+        "correctAnswer": "It relies on Discrete Cosine Transform (DCT) blocks which cause ringing artifacts at high-contrast edges",
+        "correctIdx": 1,
+        "explanation": "JPEG's use of 8x8 DCT blocks causes 'blocking' or 'ringing' artifacts at sharp transitions, which are highly visible in text or vector-like line art.",
+        "hint": "What happens at the border of two colors with very high contrast in a DCT-based format?",
+        "relatedConcept": "Lossy Compression Artifacts",
+        "estimatedTime": "65 sec",
+        "interviewTip": "Know when to choose PNG/WebP over JPEG."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q5-1792132072008",
+        "question": "What is the primary technical risk when using 'Overprint' settings in CMYK print production without proper trapping?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "language": "none",
+        "options": [
+          "The output device will fail to render the transparency effects",
+          "The underlying colors may show through or create unintended color mixtures if registration is not perfect",
+          "The file will be rejected by the RIP (Raster Image Processor) for exceeding ink limits",
+          "The document will be automatically converted to RGB, losing color accuracy"
+        ],
+        "correctAnswer": "The underlying colors may show through or create unintended color mixtures if registration is not perfect",
+        "correctIdx": 1,
+        "explanation": "Overprinting allows one color to print directly on top of another. If the printing plates are slightly misaligned (registration error), gaps appear; if overprinting is used incorrectly, the colors blend in unwanted ways.",
+        "hint": "Think about what happens if the plates don't align perfectly.",
+        "relatedConcept": "Print Production / Prepress",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Mention 'Registration' and 'Knockout' as related concepts."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q6-1792132072008",
+        "question": "In color theory for digital displays, what is the primary reason for using the sRGB color space as the standard 'web-safe' gamut, despite it being smaller than Adobe RGB?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "language": "none",
+        "options": [
+          "It represents the exact physical limitations of modern OLED pixel diodes",
+          "It provides a predictable baseline for devices that lack color management systems",
+          "It enables lossless conversion between CMYK and RGB color models",
+          "It automatically corrects white point drift on high-refresh-rate monitors"
+        ],
+        "correctAnswer": "It provides a predictable baseline for devices that lack color management systems",
+        "correctIdx": 1,
+        "explanation": "sRGB is the default color space for the web because it ensures consistency across devices that do not use ICC profiles. It acts as a least-common-denominator to prevent drastic color shifts on uncalibrated hardware.",
+        "hint": "Consider the lack of color profile support in older browsers or mobile devices.",
+        "relatedConcept": "Color Management Systems (CMS)",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Discussing color spaces shows you understand the technical constraints of cross-platform display consistency."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q7-1792132072008",
+        "question": "When exporting a vector logo for professional print, why is it considered best practice to 'outline' all text objects rather than embedding the font file?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "language": "none",
+        "options": [
+          "To increase the DPI resolution of the individual characters",
+          "To prevent font substitution errors if the print shop lacks the specific typeface file",
+          "To allow the printer to automatically apply a bleed margin to the text",
+          "To convert the vector paths into a raster-based bitmap for faster processing"
+        ],
+        "correctAnswer": "To prevent font substitution errors if the print shop lacks the specific typeface file",
+        "correctIdx": 1,
+        "explanation": "Outlining converts text into geometric shapes (paths). This removes the dependency on the font file, ensuring the visual appearance remains identical regardless of the software or environment used by the service provider.",
+        "hint": "Think about what happens when a file is opened on a computer that doesn't have the creator's installed fonts.",
+        "relatedConcept": "Pre-press file preparation",
+        "estimatedTime": "40 sec",
+        "interviewTip": "Mentioning 'outlining' demonstrates practical experience in print-ready workflows."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q8-1792132072008",
+        "question": "In the context of Bézier curves used in vector software (like Adobe Illustrator or Inkscape), what is the mathematical effect of moving a 'handle' while holding the 'Alt/Option' key?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "language": "none",
+        "options": [
+          "It scales the anchor point relative to the center of the artboard",
+          "It breaks the tangent symmetry, allowing one control handle to move independently of the other",
+          "It locks the handle to 45-degree increments only",
+          "It converts the smooth point into a corner point by deleting the opposing handle"
+        ],
+        "correctAnswer": "It breaks the tangent symmetry, allowing one control handle to move independently of the other",
+        "correctIdx": 1,
+        "explanation": "By default, handles move in tandem to maintain a smooth curve (G1 continuity). The modifier key breaks this link (cusp point), allowing for sharp changes in direction at the anchor point.",
+        "hint": "Consider the difference between a smooth curve and a sharp corner in vector drawing.",
+        "relatedConcept": "Bézier Curve Geometry",
+        "estimatedTime": "50 sec",
+        "interviewTip": "This tests your deep knowledge of vector tools beyond just clicking and dragging."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q9-1792132072008",
+        "question": "What is the technical consequence of applying a 'Multiply' blending mode in a design software layer stack?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "language": "none",
+        "options": [
+          "The pixel values are inverted, and then multiplied by the base layer",
+          "The color values of the top layer are multiplied by the base layer and divided by 255 to darken the result",
+          "The luminosity of the top layer is added to the base layer, increasing brightness",
+          "The software ignores the alpha channel of the top layer and only uses its grayscale intensity"
+        ],
+        "correctAnswer": "The color values of the top layer are multiplied by the base layer and divided by 255 to darken the result",
+        "correctIdx": 1,
+        "explanation": "The Multiply blend mode multiplies the color values of the top and base layers. Since colors are normalized (0-1), multiplying two numbers less than 1 results in a smaller number, effectively darkening the image.",
+        "hint": "Think about the result of multiplying numbers between 0 and 1.",
+        "relatedConcept": "Digital Image Blending Modes",
+        "estimatedTime": "50 sec",
+        "interviewTip": "Understand the math behind blending modes to explain why certain effects work the way they do."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q10-1792132072008",
+        "question": "Which of the following describes the 'Moiré pattern' phenomenon as it relates to digital image production?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "language": "none",
+        "options": [
+          "An unwanted artifact caused by the interference between two overlapping fine patterns or grids",
+          "The loss of color saturation when converting from RGB to CMYK",
+          "The jagged edges appearing on vector paths when zoomed in beyond 1600%",
+          "A blurring effect that occurs when applying Gaussian blur to text objects"
+        ],
+        "correctAnswer": "An unwanted artifact caused by the interference between two overlapping fine patterns or grids",
+        "correctIdx": 0,
+        "explanation": "Moiré patterns occur when a fine repeating pattern (like a screen mesh or digital sensor grid) interferes with another fine pattern (like the halftone dots in a printed image), resulting in visual distortion.",
+        "hint": "Look for the term related to 'interference' and 'patterns'.",
+        "relatedConcept": "Aliasing and Sampling",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Mentioning Moiré shows you understand the limitations of physical printing vs. digital grids."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q11-1792132072008",
+        "question": "In color theory for digital displays, what is the primary reason for using the 'sRGB' color space as the standard for web-based graphic design?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "options": [
+          "It represents the widest possible gamut of colors achievable by physical ink printing.",
+          "It provides a predictable, device-independent baseline that matches the characteristics of standard CRT and LCD monitors.",
+          "It is the only color space that supports 16-bit depth per channel, preventing banding in gradients.",
+          "It automatically converts CMYK files into RGB without requiring profile embedding."
+        ],
+        "correctAnswer": "It provides a predictable, device-independent baseline that matches the characteristics of standard CRT and LCD monitors.",
+        "correctIdx": 1,
+        "explanation": "sRGB was created by HP and Microsoft to serve as a 'safe' color space. Because most monitors were calibrated similarly to the original CRT standards, sRGB ensures that colors remain consistent across different browsers and hardware displays.",
+        "hint": "Think about why web browsers need a common standard for rendering colors across millions of different monitor models.",
+        "relatedConcept": "Color Spaces and Gamut",
+        "estimatedTime": "45 sec",
+        "interviewTip": "When discussing color spaces, emphasize that 'wider' isn't always 'better' for web design; consistency across user hardware is the priority."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q12-1792132072008",
+        "question": "When exporting a vector logo for screen usage, why is it considered a best practice to 'outline' all typography (convert text to paths) before final delivery?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "options": [
+          "It enables the vector file to be rendered in 3D space by the web browser's GPU.",
+          "It prevents font substitution issues if the end-user or developer does not have the specific typeface installed.",
+          "It reduces the file size of the SVG by removing metadata related to character spacing and kerning.",
+          "It allows the SVG to be animated using CSS keyframes without requiring a web font loader."
+        ],
+        "correctAnswer": "It prevents font substitution issues if the end-user or developer does not have the specific typeface installed.",
+        "correctIdx": 1,
+        "explanation": "Outlining turns text into geometric shapes (paths). Once converted, the text is no longer editable as a font but is permanently locked into its visual form, ensuring it looks identical regardless of the viewer's system fonts.",
+        "hint": "Consider what happens if a computer tries to display a document using a font that isn't saved on that machine.",
+        "relatedConcept": "Vector Graphics and Typography",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Mention that while outlining solves compatibility, it makes text uneditable—always keep a 'live' source file as a backup."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q13-1792132072008",
+        "question": "In the context of non-destructive image editing, what is the specific function of an 'Adjustment Layer' in software like Photoshop compared to applying a direct image filter?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "options": [
+          "It creates a separate file on the hard drive to save memory space.",
+          "It applies the effect to the pixel data permanently, allowing for faster rendering during export.",
+          "It applies effects to all layers beneath it without altering the original pixel data, allowing for live parameter modification.",
+          "It forces the rendering engine to use the CPU instead of the GPU for higher precision color calculations."
+        ],
+        "correctAnswer": "It applies effects to all layers beneath it without altering the original pixel data, allowing for live parameter modification.",
+        "correctIdx": 2,
+        "explanation": "Adjustment layers are non-destructive because they act as a separate layer that modifies the appearance of the layers below it. You can change settings at any time without the original image pixels ever being changed.",
+        "hint": "Think of it as a transparent filter placed over a stack of photos rather than drawing directly on the photos themselves.",
+        "relatedConcept": "Non-destructive Workflow",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Emphasize non-destructive workflows; it's a hallmark of professional-grade design efficiency."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q14-1792132072008",
+        "question": "What is the primary technical reason for using a 'clipping mask' in a complex UI design composition?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "options": [
+          "To restrict the visibility of an object to the shape of another object underneath it.",
+          "To automatically apply a drop shadow to an object based on the background layer.",
+          "To increase the bit-depth of an image for better quality color gradients.",
+          "To convert a high-resolution raster image into a scalable vector path."
+        ],
+        "correctAnswer": "To restrict the visibility of an object to the shape of another object underneath it.",
+        "correctIdx": 0,
+        "explanation": "A clipping mask uses the content of one layer to define the bounds of another. It is essential for fitting images into specific geometric frames (like circular profile pictures) without physically cropping the image.",
+        "hint": "Focus on the word 'masking' and how it relates to controlling visibility.",
+        "relatedConcept": "Layer Masking",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Clipping masks are essential for UI design; mention how they simplify 'placing' assets into design components."
+      },
+      {
+        "id": "ai-tech-graphic-design-t5-q15-1792132072008",
+        "question": "Which of the following describes the 'kerning' adjustment in typography and why is it technically significant?",
+        "technology": "Graphic Design",
+        "difficulty": "Medium",
+        "options": [
+          "The adjustment of the overall horizontal space between all characters in a block of text.",
+          "The vertical distance between two lines of text, determining legibility.",
+          "The specific adjustment of space between two individual characters to correct visual balance.",
+          "The process of converting a typeface into paths for print production."
+        ],
+        "correctAnswer": "The specific adjustment of space between two individual characters to correct visual balance.",
+        "correctIdx": 2,
+        "explanation": "Kerning is the process of adjusting the space between two specific characters. It is distinct from tracking, which adjusts the spacing of an entire word or block of text.",
+        "hint": "Think about pairs of letters like 'AV' or 'To', where standard spacing often leaves an awkward gap.",
+        "relatedConcept": "Typography Mechanics",
+        "estimatedTime": "45 sec",
+        "interviewTip": "Knowing the difference between kerning and tracking is a standard 'litmus test' for a professional graphic designer."
+      }
+    ]
   }
 ]

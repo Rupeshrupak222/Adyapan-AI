@@ -8,6 +8,8 @@ import {
   analyzeSTAR,
   analyzeCommunication,
   ensureQuestionFormat,
+  STARAnalysis,
+  CommunicationAnalysis,
 } from "../lib/ai/hr-interview.service";
 import { handleRouteError } from "../utils/routeError";
 import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
@@ -144,6 +146,34 @@ hrInterviewRouter.post("/start", requireFeatureQuota(FeatureKey.HR_INTERVIEW), a
   }
 });
 
+async function getOrHealSession(p: any, sessionId: string, userId: string, extraData?: any) {
+  let session = await p.interviewSession.findFirst({
+    where: { id: sessionId, userId },
+  });
+  if (!session) {
+    try {
+      session = await p.interviewSession.create({
+        data: {
+          id: sessionId,
+          userId,
+          type: "hr",
+          role: extraData?.targetRole || extraData?.role || "Candidate",
+          company: extraData?.targetCompany || extraData?.company || "",
+          status: "in-progress",
+          difficulty: "medium",
+          durationMinutes: 30,
+          configuration: { interviewType: "hr" },
+        },
+      });
+    } catch {
+      session = await p.interviewSession.findFirst({
+        where: { id: sessionId },
+      });
+    }
+  }
+  return session;
+}
+
 // ─── Submit answer, get follow-up or next question ──────────────────────
 hrInterviewRouter.post("/:sessionId/answer", async (req, res) => {
   try {
@@ -158,9 +188,7 @@ hrInterviewRouter.post("/:sessionId/answer", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
-    const session = await p.interviewSession.findFirst({
-      where: { id: sessionId, userId: req.user!.userId },
-    });
+    const session = await getOrHealSession(p, sessionId, req.user!.userId, req.body);
     if (!session) {
       res.status(404).json({ success: false, error: "HR interview session not found" });
       return;
@@ -218,7 +246,7 @@ hrInterviewRouter.post("/:sessionId/answer", async (req, res) => {
 
     const hrConfig = {
       interviewType: config.interviewType || "hr",
-      targetRole: session.role,
+      targetRole: session.role || "Candidate",
       targetCompany: session.company || "",
       difficulty: session.difficulty || "medium",
       experienceLevel: config.experienceLevel || "mid",
@@ -229,38 +257,44 @@ hrInterviewRouter.post("/:sessionId/answer", async (req, res) => {
     };
 
     const lastQuestion = allMessages.filter((m: any) => m.role === "interviewer").pop();
-    const starAnalysis = lastQuestion
-      ? await analyzeSTAR(lastQuestion.content, answer, hrConfig)
-      : { hasSituation: false, hasTask: false, hasAction: false, hasResult: false, score: 50, feedback: "", missingElements: [] };
-
     const lastContent = lastQuestion?.content || "";
     const lastWasFollowUp = /(follow[- ]?up|elaborate|clarify|can you explain why|why did you|what if|how did you handle|walk me through|trade-off|pushback|conflict|outcome|metric|what was your specific role|specific example|what would you do differently)/i.test(lastContent);
 
     // If candidate answered an initial question (not already a counter-question), probe deeper before switching topics
     const shouldFollowUp = !lastWasFollowUp && questionCount < 14;
 
-    let nextContent: string;
-    let questionMeta: any;
+    const wordCount = answer.trim().split(/\s+/).length;
+    const initialStar: STARAnalysis = {
+      hasSituation: wordCount > 15,
+      hasTask: wordCount > 25,
+      hasAction: /(i |my |we |built|created|designed|implemented|resolved|led|analyzed|managed|fixed|improved|tested|negotiated|wrote)/i.test(answer),
+      hasResult: /(result|outcome|impact|percent|%|reduced|increased|saved|achieved|delivered|metric|gain|success)/i.test(answer),
+      score: Math.min(95, Math.max(30, Math.round(wordCount * 1.2))),
+      feedback: "Answer received and recorded.",
+      missingElements: [],
+    };
 
-    if (shouldFollowUp) {
-      nextContent = await generateHRFollowUp(
-        lastQuestion?.content || "",
-        answer,
-        hrConfig,
-        starAnalysis
-      );
-      questionMeta = { isFollowUp: true, category: "counter_question", competency: "communication", expectedSTAR: true };
-    } else {
-      const nextQ = await generateHRQuestion(hrConfig, history, false);
-      nextContent = nextQ.question;
-      questionMeta = {
-        isFollowUp: false,
-        category: nextQ.category,
-        competency: nextQ.competency,
-        expectedSTAR: nextQ.expectedSTAR,
-      };
-    }
+    let questionMeta: any = { isFollowUp: shouldFollowUp, category: "behavioral", competency: "communication", expectedSTAR: true };
 
+    const questionPromise = shouldFollowUp
+      ? generateHRFollowUp(lastContent, answer, hrConfig, initialStar)
+      : generateHRQuestion(hrConfig, history, false).then((nextQ) => {
+          questionMeta = {
+            isFollowUp: false,
+            category: nextQ.category,
+            competency: nextQ.competency,
+            expectedSTAR: nextQ.expectedSTAR,
+          };
+          return nextQ.question;
+        });
+
+    // Run live analysis concurrently so question generation is never blocked
+    const liveAnalysisPromise = Promise.allSettled([
+      analyzeSTAR(lastContent, answer, hrConfig),
+      analyzeCommunication(lastContent, answer, hrConfig),
+    ]);
+
+    let nextContent = await questionPromise;
     nextContent = ensureQuestionFormat(nextContent, hrConfig.interviewType);
 
     await p.interviewMessage.create({
@@ -273,10 +307,34 @@ hrInterviewRouter.post("/:sessionId/answer", async (req, res) => {
       select: { id: true, role: true, content: true, createdAt: true },
     });
 
-    const [starResult, commResult] = await Promise.all([
-      analyzeSTAR(lastQuestion?.content || "", answer, hrConfig),
-      analyzeCommunication(lastQuestion?.content || "", answer, hrConfig),
+    // Race live analysis with a 3.5s timeout so turn response is never delayed
+    const analysisResults = await Promise.race([
+      liveAnalysisPromise,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500)),
     ]);
+
+    let starResult: STARAnalysis = initialStar;
+    let commResult: CommunicationAnalysis = {
+      clarity: Math.min(95, Math.max(45, Math.round(wordCount * 1.1))),
+      confidence: 75,
+      fluency: 75,
+      conciseness: wordCount > 150 ? 65 : 85,
+      vocabulary: 75,
+      professionalism: 80,
+      answerStructure: initialStar.score,
+      fillerWordDetected: false,
+      overallScore: initialStar.score,
+      feedback: "Answer received and recorded.",
+    };
+
+    if (analysisResults && Array.isArray(analysisResults)) {
+      if (analysisResults[0]?.status === "fulfilled" && analysisResults[0].value) {
+        starResult = analysisResults[0].value;
+      }
+      if (analysisResults[1]?.status === "fulfilled" && analysisResults[1].value) {
+        commResult = analysisResults[1].value;
+      }
+    }
 
     res.json({
       success: true,
@@ -304,9 +362,7 @@ hrInterviewRouter.post("/:sessionId/evaluate", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
-    const session = await p.interviewSession.findFirst({
-      where: { id: sessionId, userId: req.user!.userId },
-    });
+    const session = await getOrHealSession(p, sessionId, req.user!.userId, req.body);
     if (!session) {
       res.status(404).json({ success: false, error: "HR interview session not found" });
       return;
@@ -480,9 +536,7 @@ hrInterviewRouter.post("/:sessionId/end", async (req, res) => {
     const prisma = await getUserPrismaFromRequest(req);
     const p = prisma as any;
 
-    const session = await p.interviewSession.findFirst({
-      where: { id: sessionId, userId: req.user!.userId },
-    });
+    const session = await getOrHealSession(p, sessionId, req.user!.userId, req.body);
     if (!session) {
       res.status(404).json({ success: false, error: "Session not found" });
       return;

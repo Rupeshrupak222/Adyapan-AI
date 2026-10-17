@@ -12,6 +12,7 @@ export interface OpenRouterOptions {
   maxTokens?: number;
   responseFormat?: { type: "json_object" | "text" };
   skipCache?: boolean;
+  timeoutMs?: number;
 }
 
 // Gemini model fallback chain.
@@ -173,7 +174,26 @@ export async function callAIRobust(
     });
   }
 
-  // 2. Add OpenRouter if key exists (secondary).
+  // 2. Add Groq with fallback models (secondary) — ultrafast inference (<1s)
+  if (env.groqApiKey) {
+    const modelLower = options.model?.toLowerCase() ?? "";
+    const isMiniOrFast = (modelLower.includes("mini") && !modelLower.includes("gemini")) ||
+                         (modelLower.includes("fast") && !modelLower.includes("flash")) ||
+                         modelLower.includes("cheap");
+    const groqChain = isMiniOrFast ? GROQ_MODEL_FALLBACKS_FAST : GROQ_MODEL_FALLBACKS_STRONG;
+
+    for (const m of groqChain) {
+      providers.push({
+        name: `Groq (${m})`,
+        url: "https://api.groq.com/openai/v1/chat/completions",
+        key: env.groqApiKey,
+        model: m,
+        cooldownKey: `groq-${m}`,
+      });
+    }
+  }
+
+  // 3. Add OpenRouter if key exists (tertiary).
   //    The free ids are tried before the paid resolved model: with a zero
   //    balance the paid id can only answer HTTP 402, so leading with it just
   //    burns a round trip and a cooldown on every single request.
@@ -195,25 +215,6 @@ export async function callAIRobust(
       model: isKimiRequested ? "moonshotai/kimi-k2" : resolveOpenRouterModel(options.model),
       cooldownKey: "openrouter",
     });
-  }
-
-  // 3. Add Groq with fallback models (tertiary) — ultrafast inference
-  if (env.groqApiKey) {
-    const modelLower = options.model?.toLowerCase() ?? "";
-    const isMiniOrFast = (modelLower.includes("mini") && !modelLower.includes("gemini")) ||
-                         (modelLower.includes("fast") && !modelLower.includes("flash")) ||
-                         modelLower.includes("cheap");
-    const groqChain = isMiniOrFast ? GROQ_MODEL_FALLBACKS_FAST : GROQ_MODEL_FALLBACKS_STRONG;
-
-    for (const m of groqChain) {
-      providers.push({
-        name: `Groq (${m})`,
-        url: "https://api.groq.com/openai/v1/chat/completions",
-        key: env.groqApiKey,
-        model: m,
-        cooldownKey: `groq-${m}`,
-      });
-    }
   }
 
   // 4. NVIDIA NIM (quaternary) — restores the 5 keys in NVIDIA_API_KEY[_2..5].
@@ -305,7 +306,10 @@ export async function callAIRobust(
       // NVIDIA NIM legitimately needs 60-200s for a full 4k-token JSON payload,
       // so it carries its own budget; without that it was aborted mid-generation
       // and was misread as the endpoint being dead.
-      const fetchTimeoutMs = provider.timeoutMs ?? 45000;
+      const defaultTimeout = provider.timeoutMs ?? 45000;
+      const fetchTimeoutMs = options.timeoutMs
+        ? Math.min(defaultTimeout, options.timeoutMs)
+        : defaultTimeout;
       const requestHeaders = {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -335,6 +339,10 @@ export async function callAIRobust(
         if (isAbort) {
           console.warn(`[AI Engine] ${provider.name} timed out after ${fetchTimeoutMs}ms — failing over immediately...`);
           providerCooldownUntil.set(provider.cooldownKey, Date.now() + 30000);
+          throw fetchErr;
+        }
+        if (options.timeoutMs && options.timeoutMs <= 10000) {
+          // Fast conversational mode: fail over immediately to next provider without sleeping
           throw fetchErr;
         }
         // Connection-level failures (ECONNRESET / "fetch failed") are transient on
