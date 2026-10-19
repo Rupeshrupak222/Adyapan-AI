@@ -38,7 +38,7 @@
     "meshoptimizer": "^1.2.0",
     "next": "^16.3.0",
     "ogl": "^1.0.11",
-    "pdfjs-dist": "^4.10.38",
+    "pdfjs-dist": "^6.3.289",
     "postprocessing": "^6.39.4",
     "raw-loader": "^4.0.2",
     "react": "19.2.4",
