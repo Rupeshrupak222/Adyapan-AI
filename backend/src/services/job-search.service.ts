@@ -841,8 +841,12 @@ export class JobSearchService {
       orderBy = { [validSortFields[sortField]]: sortOrder };
     }
 
-    // For recommendation/match sorting, fetch a candidate pool and rank in memory.
-    const poolLimit = isMatchSort ? Math.min(Math.max(limit * 3, 60), 150) : limit;
+    // For recommendation/match sorting, score a rich candidate pool in memory for top pages,
+    // and paginate directly from database beyond the pool so all jobs are accessible.
+    const poolSize = 500;
+    const usePool = isMatchSort && skip < poolSize;
+    const querySkip = usePool ? 0 : skip;
+    const queryTake = usePool ? poolSize : limit;
 
     // ─── Database Query ───────────────────────────────────────────────
     let total = 0;
@@ -853,8 +857,8 @@ export class JobSearchService {
         db.discoveryJob.findMany({
           where,
           orderBy,
-          skip: isMatchSort ? 0 : skip,
-          take: poolLimit,
+          skip: querySkip,
+          take: queryTake,
         }),
       ]);
     } catch (dbErr: any) {
@@ -1101,13 +1105,10 @@ export class JobSearchService {
 
     // ─── Rank + page for recommendation/match sorts ───────────────────
     let pagedJobs = mappedJobs;
-    if (isMatchSort) {
+    if (usePool) {
       pagedJobs = mappedJobs
         .sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0))
         .slice(skip, skip + limit);
-      // Ranking happens in memory over a capped pool (see poolLimit), so report
-      // the reachable count — otherwise the UI advertises pages that come back empty.
-      total = Math.min(total, mappedJobs.length);
     }
 
     const totalPages = Math.ceil(total / limit);

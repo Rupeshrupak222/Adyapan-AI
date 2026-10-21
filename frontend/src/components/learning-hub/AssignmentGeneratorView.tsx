@@ -765,7 +765,7 @@ export function AssignmentGeneratorView() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
                     { step: "01", title: "Outline Topic", desc: "State the research assignment questions and specify academic degree level.", icon: <PenTool size={18} style={{ color: c.amber }} /> },
-                    { step: "02", title: "Process Context", desc: "AI references publications, writes cohesive paragraphs, and matches styles.", icon: <Brain size={18} style={{ color: "#a78bfa" }} /> },
+                    { step: "02", title: "Process Context", desc: "References academic publications, structures sections, and validates formatting.", icon: <Brain size={18} style={{ color: "#a78bfa" }} /> },
                     { step: "03", title: "Export Outputs", desc: "Review the full essay draft, copy sections, or download formatted documents.", icon: <Sparkles size={18} style={{ color: "#22d3ee" }} /> }
                   ].map((item, i) => (
                     <motion.div key={item.step} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }} className="p-5 rounded-2xl relative overflow-hidden group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>

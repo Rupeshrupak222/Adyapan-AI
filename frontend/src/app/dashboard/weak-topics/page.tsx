@@ -123,7 +123,7 @@ export default function WeakTopicsPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-sm text-white/40 mt-1.5"
           >
-            Identify weak topics, track knowledge decay, prioritize revisions, and get AI-powered coaching to close learning gaps faster.
+            Identify weak topics, track knowledge decay, prioritize revisions, and access targeted practice to close learning gaps faster.
           </motion.p>
         </div>
       </div>

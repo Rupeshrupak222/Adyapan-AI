@@ -19,7 +19,7 @@ const EngineView = dynamic(
             </svg>
           </div>
           <h2 className="text-white text-lg font-bold">Loading Interview Engine...</h2>
-          <p className="text-white/40 text-sm">Preparing your AI-powered interview experience</p>
+          <p className="text-white/40 text-sm">Initializing interactive interview session</p>
         </div>
       </div>
     )

@@ -79,7 +79,7 @@ export function DocumentUploadZone({ c, isDragging, onDragOver, onDragLeave, onD
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
             { step: "01", title: "Upload Source", desc: "Drop any study material — lecture notes, textbooks, or presentation slides.", icon: <Upload size={18} style={{ color: c.amber }} /> },
-            { step: "02", title: "Extract Schema", desc: "AI engine extracts text context and maps complex syllabus structures automatically.", icon: <Brain size={18} style={{ color: "#a78bfa" }} /> },
+            { step: "02", title: "Extract Schema", desc: "Text parser extracts document context and structures complex syllabus topics automatically.", icon: <Brain size={18} style={{ color: "#a78bfa" }} /> },
             { step: "03", title: "Generate Insights", desc: "Instantly get core concept lists, exam prep summaries, keywords, and quick revision.", icon: <Sparkles size={18} style={{ color: "#22d3ee" }} /> }
           ].map((item, i) => (
             <PremiumCard
@@ -109,7 +109,7 @@ export function DocumentUploadZone({ c, isDragging, onDragOver, onDragLeave, onD
           <Star size={14} style={{ color: c.amber }} /> Core Accelerator Capabilities
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {["Topic Detection", "AI Summary", "Key Points", "Quick Revision", "Smart Search", "Multi-format Support", "Copy Summary", "Export PDF", "Export DOCX"].map((feat, i) => (
+          {["Topic Detection", "Executive Summary", "Key Points", "Quick Revision", "Smart Search", "Multi-format Support", "Copy Summary", "Export PDF", "Export DOCX"].map((feat, i) => (
             <div key={feat} className="flex items-center gap-2 text-xs text-slate-600 dark:text-gray-400 font-medium">
               <CheckCircle2 size={13} style={{ color: c.amber }} className="shrink-0" />
               <span>{feat}</span>

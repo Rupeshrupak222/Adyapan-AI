@@ -39,10 +39,10 @@ export default function ContentManagement() {
       setSections([
         { id: "resumes", title: "Resumes & ATS Templates", icon: <FileText size={16} />, itemCount: m.resume?.resumes ?? 0, lastUpdated: "Updated live", status: "Published", description: "User resumes and ATS check templates" },
         { id: "announcements", title: "Platform Announcements", icon: <Megaphone size={16} />, itemCount: banner ? 1 : 0, lastUpdated: "Updated live", status: banner ? "Published" : "Draft", description: "Active system announcement banner" },
-        { id: "notes", title: "Learning Notes & Quizzes", icon: <Layout size={16} />, itemCount: (m.learning?.notes ?? 0) + (m.learning?.quizzes ?? 0), lastUpdated: "Updated live", status: "Published", description: "AI generated study notes and quizzes" },
+        { id: "notes", title: "Learning Notes & Quizzes", icon: <Layout size={16} />, itemCount: (m.learning?.notes ?? 0) + (m.learning?.quizzes ?? 0), lastUpdated: "Updated live", status: "Published", description: "Interactive study notes, topics, and quiz sessions" },
         { id: "coding", title: "Coding Problems & Submissions", icon: <Images size={16} />, itemCount: (m.coding?.submissions ?? 0) + (m.coding?.challenges ?? 0), lastUpdated: "Updated live", status: "Published", description: "Curated DSA problems & student submissions" },
-        { id: "interviews", title: "Interview Practice Sessions", icon: <MessageSquare size={16} />, itemCount: m.interview?.sessions ?? 0, lastUpdated: "Updated live", status: "Published", description: "AI interview mock sessions" },
-        { id: "chat", title: "Ady AI Chat Transcripts", icon: <HelpCircle size={16} />, itemCount: m.chat?.sessions ?? 0, lastUpdated: "Updated live", status: "Published", description: "AI learning chat conversations" },
+        { id: "interviews", title: "Interview Practice Sessions", icon: <MessageSquare size={16} />, itemCount: m.interview?.sessions ?? 0, lastUpdated: "Updated live", status: "Published", description: "Technical, HR, and behavioral interview sessions" },
+        { id: "chat", title: "Ady Chat Transcripts", icon: <HelpCircle size={16} />, itemCount: m.chat?.sessions ?? 0, lastUpdated: "Updated live", status: "Published", description: "Student learning chat and tutoring sessions" },
       ]);
     } catch {
       toast.error("Failed to load content telemetry");

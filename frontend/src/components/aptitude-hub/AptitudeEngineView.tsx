@@ -795,7 +795,7 @@ export function AptitudeEngineView({ setView, activeModule = "aptitude-engine", 
                   </motion.div>
                   <h2 className="text-lg font-black" style={{ color: c.text }}>AI Aptitude Engine</h2>
                   <p className="text-xs mt-1 max-w-md mx-auto" style={{ color: c.textSec }}>
-                    Master placement aptitude with AI-powered personalized practice, company-specific tests, and adaptive learning.
+                    Prepare for top recruiter assessments with company-specific test series, timed practice, and detailed performance analytics.
                   </p>
                 </motion.div>
 

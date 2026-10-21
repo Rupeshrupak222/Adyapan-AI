@@ -18,7 +18,7 @@ const HRView = dynamic(
             </svg>
           </div>
           <h2 className="text-white text-lg font-bold">Loading HR Interview Engine...</h2>
-          <p className="text-white/40 text-sm">Preparing your AI-powered HR interview experience</p>
+          <p className="text-white/40 text-sm">Preparing behavioral interview session</p>
         </div>
       </div>
     )

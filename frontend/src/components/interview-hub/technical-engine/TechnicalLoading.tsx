@@ -112,7 +112,7 @@ export const TechnicalLoading: React.FC<TechnicalLoadingProps> = ({
         ? 4
         : 3,
       label: "Starting Session",
-      description: "AI Technical Recruiter connected",
+      description: "Technical interview environment ready",
       icon: <Rocket className="w-4 h-4" />,
     },
   ];

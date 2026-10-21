@@ -1912,7 +1912,7 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
           <h3 className="text-sm font-bold" style={{ color: c.text }}>New Referral Request</h3>
         </div>
         <p className="text-[11px]" style={{ color: c.textMuted }}>
-          Request a referral and get an AI-generated outreach message to send to potential referrers.
+          Request a referral and generate a tailored outreach message to send to potential referrers.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-1.5">
@@ -2000,7 +2000,7 @@ export function JobHubView({ setView, activeModule }: JobHubProps) {
                   {ref.outreachMessage && (
                     <div className="rounded-xl p-4 border relative group" style={{ background: "rgba(245,158,11,0.03)", borderColor: "rgba(245,158,11,0.1)" }}>
                       <p className="text-[9px] font-bold uppercase tracking-wider mb-2" style={{ color: c.primary }}>
-                        <Sparkles size={9} className="inline mr-1" /> AI Generated Outreach Message
+                        <Sparkles size={9} className="inline mr-1" /> Tailored Outreach Message
                       </p>
                       <p className="text-[11px] leading-relaxed whitespace-pre-wrap" style={{ color: c.textSec }}>
                         {ref.outreachMessage}

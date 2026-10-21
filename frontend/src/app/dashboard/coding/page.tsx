@@ -968,11 +968,11 @@ function CodingHubContent() {
                       ) : (
                         <div className="flex flex-col items-center justify-center py-10 border border-dashed border-[var(--border-color)] rounded-xl">
                           <Sparkles size={28} className="text-amber-500/30 mb-2 animate-pulse" />
-                          <p className="text-xs text-[var(--text-primary)] font-bold">Need AI problem explanation & coaching?</p>
-                          <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 mb-4">Instant analysis powered by Gemini.</p>
+                          <p className="text-xs text-[var(--text-primary)] font-bold">Need a step-by-step approach & complexity breakdown?</p>
+                          <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 mb-4">Instant algorithmic analysis and edge case suggestions.</p>
                           
                           <PremiumButton variant="glow" onClick={handleGenerateAIAnalysis} loading={generatingAnalysis} icon={<Sparkles size={12} />}>
-                            Generate AI Explanation
+                            Generate Solution Breakdown
                           </PremiumButton>
                         </div>
                       )}

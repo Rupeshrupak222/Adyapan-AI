@@ -866,11 +866,11 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
       <div className="flex-1 min-w-0">
         <motion.h1 initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
           className="text-base font-extrabold leading-tight" style={{ color: c.text, fontFamily: "var(--font-sans)" }}>
-          AI Cover Letter Intelligence
+          Cover Letter Studio
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
           className="text-xs leading-tight" style={{ color: c.textMuted }}>
-          Personalized, ATS-optimized cover letters powered by AI analysis.
+          Personalized, ATS-aligned cover letters formatted to match target job postings.
         </motion.p>
       </div>
       {screen === "configure" && (
@@ -1411,8 +1411,8 @@ export function CoverLetterView({ setView }: CoverLetterViewProps) {
 
   const renderEmptyState = () => (
     <EmptyState
-      title="AI Cover Letter Intelligence Engine"
-      description="Upload a resume and paste a job description to generate a personalized AI cover letter that feels genuinely written for that company, role, and candidate."
+      title="Cover Letter Studio"
+      description="Select a resume and paste a job description to generate a tailored cover letter customized for your target company, role, and qualifications."
       illustration={<FileText size={32} />}
     />
   );

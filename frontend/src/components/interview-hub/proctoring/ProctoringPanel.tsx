@@ -76,7 +76,7 @@ export const ProctoringPanel: React.FC<ProctoringPanelProps> = ({
       };
     }
     return {
-      label: "AI Monitoring",
+      label: "Live Proctoring",
       bg: isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5",
       color: isDark ? "#34d399" : "#059669",
       border: isDark ? "rgba(16, 185, 129, 0.3)" : "#a7f3d0",

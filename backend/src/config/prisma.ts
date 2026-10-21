@@ -7,9 +7,7 @@ const pool = new Pool({
   // In development use the direct (non-pooler) Neon host — it is more reliable
   // from remote networks with high latency. The pooler host is optimised for
   // production where Railway and Neon are in the same AWS region.
-  connectionString: env.nodeEnv === "development" && env.directUrl
-    ? env.directUrl
-    : env.databaseUrl,
+  connectionString: env.databaseUrl || env.directUrl,
   ssl: { rejectUnauthorized: false },
   max: 10,
   connectionTimeoutMillis: 30_000,

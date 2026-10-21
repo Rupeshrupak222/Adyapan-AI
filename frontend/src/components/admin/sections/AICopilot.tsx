@@ -451,7 +451,7 @@ export default function AICopilot({ isDrawer = false }: AICopilotProps) {
               }}
             >
               <Sparkles size={12} />
-              Powered by AI
+              Admin Copilot
             </span>
           </div>
         }

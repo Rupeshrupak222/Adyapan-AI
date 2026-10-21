@@ -277,13 +277,13 @@ export function StudyPlannerDashboard() {
         setLoadingStage(6);
         setTimeout(async () => {
           clearInterval(timer);
-          toast.success("AI Study Plan generated successfully!");
+          toast.success("Study plan generated successfully!");
           await fetchActivePlan();
           setGenerating(false);
         }, 1200);
       } else {
         clearInterval(timer);
-        toast.error(res.data.error || "AI Plan generation failed. Please try again.");
+        toast.error(res.data.error || "Plan generation failed. Please try again.");
         setGenerating(false);
       }
     } catch (error) {
@@ -668,8 +668,8 @@ export function StudyPlannerDashboard() {
                   <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text }}><Zap size={15} style={{ color: c.amber }} /> How It Works</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { step: "01", title: "Configure", desc: "Set your exam goal, study hours, and upload material for AI analysis.", icon: <BookOpen size={18} style={{ color: c.amber }} /> },
-                      { step: "02", title: "AI Schedules", desc: "Our engine creates a spaced repetition plan with smart workload balancing.", icon: <CalendarIcon size={18} style={{ color: "#a78bfa" }} /> },
+                      { step: "01", title: "Configure", desc: "Set your exam goal, study hours, and syllabus topics.", icon: <BookOpen size={18} style={{ color: c.amber }} /> },
+                      { step: "02", title: "Smart Scheduling", desc: "Our engine creates a spaced repetition schedule with balanced daily workloads.", icon: <CalendarIcon size={18} style={{ color: "#a78bfa" }} /> },
                       { step: "03", title: "Track & Adapt", desc: "Complete tasks, get revision reminders, and reschedule with one click.", icon: <Sparkles size={18} style={{ color: "#22d3ee" }} /> }
                     ].map((item, i) => (
                       <motion.div key={item.step} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }} className="p-5 rounded-2xl relative overflow-hidden group transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
@@ -687,7 +687,7 @@ export function StudyPlannerDashboard() {
                 <motion.div variants={fadeUp} custom={3} initial="hidden" animate="visible" className="p-5 rounded-2xl" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>
                   <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: c.text }}><Star size={14} style={{ color: c.amber }} /> Features</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-                    {["Spaced Repetition", "Smart Rescheduling", "Calendar Overview", "Today's Tasks", "AI Recommendations", "Progress Tracking"].map((feat, i) => (
+                    {["Spaced Repetition", "Smart Rescheduling", "Calendar Overview", "Today's Tasks", "Targeted Recommendations", "Progress Tracking"].map((feat, i) => (
                       <motion.div key={feat} custom={i} variants={scaleIn} initial="hidden" animate="visible" className="flex items-center gap-2 text-sm" style={{ color: c.textSec }}>
                         <CheckCircle size={14} style={{ color: c.amber }} className="shrink-0" />
                         <span>{feat}</span>

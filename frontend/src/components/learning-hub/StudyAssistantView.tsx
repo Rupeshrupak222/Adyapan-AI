@@ -515,7 +515,7 @@ export function StudyAssistantView({ onViewLesson, lessonToView }: {
           <ChevronRight size={14} className="rotate-180" /> Back to Study Assistant
         </button>
         <div className="inline-flex gap-1.5 items-center text-[10px] uppercase font-extrabold tracking-wider" style={{ color: c.amber }}>
-          Adaptive Lesson Generated ({lessonToView.duration} &bull; {lessonToView.level})
+          Structured Lesson Module ({lessonToView.duration} &bull; {lessonToView.level})
         </div>
       </div>
 

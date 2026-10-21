@@ -19,7 +19,7 @@ const TechnicalInterviewView = dynamic(
             </svg>
           </div>
           <h2 className="text-white text-lg font-bold">Loading Technical Interview...</h2>
-          <p className="text-white/40 text-sm">Preparing AI-powered technical interview experience</p>
+          <p className="text-white/40 text-sm">Preparing technical interview environment</p>
         </div>
       </div>
     )

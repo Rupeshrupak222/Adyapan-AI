@@ -448,7 +448,7 @@ export default function AIAvatar({
               fontSize: size === "lg" ? "15px" : "12px",
             }}
           >
-            {companyName ? `${companyName} AI Interviewer` : "AI Interviewer"}
+            {companyName ? `${companyName} Mock Interviewer` : "Mock Interviewer"}
           </span>
           <motion.span
             key={aiStatus}

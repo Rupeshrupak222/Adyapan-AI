@@ -223,6 +223,8 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     flashcards,
     uploadedResumes,
     existingPlacement,
+    solvedQuestionProgress,
+    directDsaProgress,
   ] = await Promise.all([
     userPrisma.profile.findUnique({
       where: { userId },
@@ -271,22 +273,35 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     userPrisma.flashcard.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50, select: { id: true } }).catch(() => []),
     userPrisma.uploadedResume.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 10, select: { id: true } }).catch(() => []),
     userPrisma.placementIntelligence.findUnique({ where: { userId }, select: { placementScore: true, subScores: true } }).catch(() => null),
+    userPrisma.userQuestionProgress.findMany({
+      where: { userId, OR: [{ solved: true }, { status: { in: ["solved", "Solved", "SOLVED", "Accepted", "accepted"] } }] },
+      select: { questionId: true },
+    }).catch(() => []),
+    userPrisma.dSAProgress.findFirst({ where: { userId } }).catch(() => null),
   ]);
 
   // ─── Compute Sub-Scores ──────────────────────────────────────
   const solvedSubmissions = submissions.filter((s: any) =>
     s.status === "Accepted" || s.status === "solved" || s.status === "accepted"
   );
-  const dsaSolved = dsaProgress?.solved || 0;
-  const dsaAccuracy = dsaProgress?.accuracy || 0;
-  const normalizedDsaAccuracy = dsaAccuracy > 1 ? dsaAccuracy / 100 : dsaAccuracy;
+  const totalDsaSolved = Math.max(
+    dsaProgress?.solved || 0,
+    Number(directDsaProgress?.solved || 0),
+    solvedQuestionProgress?.length || 0,
+    solvedSubmissions.length
+  );
+  const dsaSolved = totalDsaSolved;
+  const rawDsaAcc = dsaProgress?.accuracy || directDsaProgress?.accuracy || 0;
+  const dsaAccuracy = rawDsaAcc > 1 ? rawDsaAcc / 100 : rawDsaAcc;
+  const normalizedDsaAccuracy = dsaAccuracy > 0 ? dsaAccuracy : (totalDsaSolved > 0 ? 0.75 : 0);
+  const hasGithub = Boolean(githubProfile || (profile?.github && profile.github.trim()));
 
   const codingScore = clamp(Math.round(
-    Math.min(dsaSolved / 100, 1) * 35 +
+    Math.min(totalDsaSolved / 25, 1) * 45 +
     normalizedDsaAccuracy * 25 +
-    Math.min(challengeSubmissions.length / 10, 1) * 20 +
-    Math.min(codingSessions.length / 20, 1) * 10 +
-    Math.min(solvedSubmissions.length / 30, 1) * 10
+    Math.min(challengeSubmissions.length / 5, 1) * 15 +
+    Math.min(codingSessions.length / 10, 1) * 10 +
+    (hasGithub ? 5 : 0)
   ), 0, 100);
 
   const avgAptitudeSessionAcc = aptitudeSessions.length > 0
@@ -360,7 +375,6 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
     : (candidateProfile?.strengthScore || 0);
 
   const totalResumes = resumes.length + (uploadedResumes?.length || 0);
-  const hasGithub = Boolean(githubProfile || (profile?.github && profile.github.trim()));
 
   const portfolioBonus =
     (coverLetters.length > 0 ? 10 : 0) +
@@ -734,12 +748,18 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   const prevScore = Number(prevPlacement?.placementScore || 0);
   const prevSub = (prevPlacement?.subScores as any) || {};
 
-  const finalCoding = Math.max(codingScore, Number(prevSub.coding || 0));
   const finalAptitude = Math.max(aptitudeScore, Number(prevSub.aptitude || 0));
   const finalInterview = Math.max(interviewScore, Number(prevSub.interview || 0));
   const finalResume = Math.max(resumeScore, Number(prevSub.resume || 0));
   const finalLearning = Math.max(learningScore, Number(prevSub.learning || 0));
   const finalSoftSkills = Math.max(softSkillsScore, Number(prevSub.softSkills || 0));
+
+  let finalCoding = Math.max(codingScore, Number(prevSub.coding || 0));
+  if (domainTrack === "management") {
+    finalCoding = Math.max(finalCoding, finalAptitude, finalLearning, 75);
+  } else if (domainTrack === "core_engineering") {
+    finalCoding = Math.max(finalCoding, finalAptitude, 70);
+  }
   const finalPlacementScore = clamp(Math.max(placementScore, prevScore), 0, 100);
 
   return {
@@ -780,8 +800,10 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
     const lastCalculated = new Date(existing.lastCalculatedAt).getTime();
     const now = Date.now();
     const fiveMinutes = 5 * 60 * 1000;
+    const existingSub = (existing.subScores as any) || {};
+    const isZeroed = (Number(existingSub.coding || 0) === 0 && Number(existingSub.interview || 0) === 0 && Number(existingSub.resume || 0) === 0);
 
-    if (now - lastCalculated < fiveMinutes) {
+    if (now - lastCalculated < fiveMinutes && !isZeroed) {
       const profile = await userPrisma.profile.findUnique({ where: { userId } }).catch(() => null);
       const domainTrack = detectDomainTrack(profile);
       await checkAndSendPlacementReadinessNotification(userId, existing.placementScore, userPrisma);

@@ -706,7 +706,7 @@ export function PlacementIntelligenceWidget({
                 <Sparkles size={18} className="text-amber-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-xs font-extrabold text-amber-500 uppercase tracking-wider mb-2">AI Assessment</h3>
+                <h3 className="text-xs font-extrabold text-amber-500 uppercase tracking-wider mb-2">Readiness Assessment</h3>
                 <p className="text-sm leading-relaxed" style={{ color: tc.text }}>{data.aiInsights.overallAssessment}</p>
                 <div className="flex flex-wrap gap-3 mt-3">
                   <div className="text-center">

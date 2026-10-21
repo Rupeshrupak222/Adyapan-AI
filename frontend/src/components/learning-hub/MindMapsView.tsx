@@ -1053,7 +1053,7 @@ export function MindMapsView() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
                     { step: "01", title: "Input Topic", desc: "State the topic to map as a knowledge graph.", icon: <Network size={18} style={{ color: c.amber }} /> },
-                    { step: "02", title: "AI Builds Graph", desc: "AI identifies concepts and creates relationships.", icon: <Brain size={18} style={{ color: "#a78bfa" }} /> },
+                    { step: "02", title: "Build Concept Graph", desc: "Extracts key concepts and establishes hierarchical links.", icon: <Brain size={18} style={{ color: "#a78bfa" }} /> },
                     { step: "03", title: "Explore & Export", desc: "Interact with nodes, expand, and share.", icon: <Sparkles size={18} style={{ color: "#22d3ee" }} /> },
                   ].map((item, i) => (
                     <motion.div key={item.step} custom={i} variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, scale: 1.01 }} className="p-5 rounded-2xl transition-all" style={{ background: c.cardBg, border: `1px solid ${c.border}` }}>

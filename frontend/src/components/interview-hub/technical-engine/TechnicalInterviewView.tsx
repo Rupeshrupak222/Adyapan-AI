@@ -360,7 +360,7 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
       } catch (err: any) {
         // Fast Fallback Recovery with rotating question pool to prevent repetitive loops
         const TECH_FALLBACK_POOL = [
-          `That is a solid foundation. Let's delve into optimization: how would you improve performance under edge cases in ${config.topic}?`,
+          `Good foundation. Let's focus on optimization: how would you improve performance under edge cases in ${config.topic}?`,
           `Good explanation. How would your design handle high concurrency and prevent race conditions in ${config.topic}?`,
           `Interesting approach. How would you architect this solution if the dataset scaled 100x and could not fit in memory?`,
           `Could you walk me through how you would write comprehensive unit and integration tests to validate error paths here?`,
@@ -424,7 +424,7 @@ export const TechnicalInterviewActive: React.FC<TechnicalInterviewActiveProps> =
         passed: true,
       });
       setReviewResult(res.data.review);
-      toast.success("AI Code review generated!");
+      toast.success("Code evaluation ready!");
     } catch {
       toast.error("Failed to get code review");
     }

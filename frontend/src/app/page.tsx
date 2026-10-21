@@ -1073,7 +1073,7 @@ export default function LandingPage() {
               Live Platform Statistics
             </motion.h2>
             <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base leading-relaxed">
-              A comprehensive platform built with cutting-edge AI technology.
+              Real-time platform activity and verified preparation metrics across all learning hubs.
             </motion.p>
           </motion.div>
 
@@ -1477,7 +1477,7 @@ export default function LandingPage() {
 
           <motion.h2 variants={staggerItem} className="text-4xl md:text-6xl font-bold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
             Your Learning. Your Skills.<br />
-            <span className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 bg-clip-text text-transparent">Your Future. Powered by AI.</span>
+            <span className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 bg-clip-text text-transparent">Engineered For Your Career.</span>
           </motion.h2>
 
           <motion.p variants={staggerItem} className="text-gray-400 text-sm md:text-base max-w-xl mx-auto leading-relaxed">

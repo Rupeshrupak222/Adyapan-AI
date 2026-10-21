@@ -82,7 +82,7 @@ export function TopicLearningForm({ c, inputTopic, setInputTopic, duration, setD
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { id: "beginner" as const, label: "Beginner", icon: BookOpen, desc: "Understand from scratch with simple terms & analogies", color: "amber" },
-                  { id: "intermediate" as const, label: "Intermediate", icon: Layers, desc: "Dive into practical details, mechanics, and design", color: "amber" },
+                  { id: "intermediate" as const, label: "Intermediate", icon: Layers, desc: "Practical implementation details, mechanics, and design", color: "amber" },
                   { id: "interview" as const, label: "Interview", icon: Award, desc: "Prepare for placements, trade-offs, and traps", color: "amber" },
                   { id: "revision" as const, label: "Quick Revision", icon: Zap, desc: "Refresh knowledge with condensed sheets", color: "amber" }
                 ].map(m => {

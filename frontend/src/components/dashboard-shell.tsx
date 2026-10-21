@@ -80,12 +80,12 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { label: "Resume Builder", viewId: "resume-builder", category: "Resume Hub", subtitle: "Professional ATS-friendly CV builder", keywords: ["resume", "cv", "curriculum vitae", "maker", "builder", "latex", "template", "format"] },
   { label: "Resume Upload & Parse", viewId: "resume-upload", category: "Resume Hub", subtitle: "Import and analyze PDF resume", keywords: ["upload cv", "parse resume", "import resume", "pdf resume", "extract"] },
   { label: "ATS Score Checker", viewId: "ats-checker", category: "Resume Hub", subtitle: "Audit resume against job descriptions", keywords: ["ats", "ats score", "resume checker", "resume score", "resume review", "job scan", "keywords match"] },
-  { label: "Cover Letter Generator", viewId: "cover-letter", category: "Resume Hub", subtitle: "AI tailored application letters", keywords: ["cover letter", "application letter", "job letter", "motivation letter", "formal letter"] },
+  { label: "Cover Letter Generator", viewId: "cover-letter", category: "Resume Hub", subtitle: "Targeted job application letters", keywords: ["cover letter", "application letter", "job letter", "motivation letter", "formal letter"] },
 
   // ── Interview Hub ──
   { label: "AI HR Interview", viewId: "interview-hr", category: "Interview Hub", subtitle: "Behavioral & cultural fit mock", keywords: ["hr interview", "behavioral", "mock interview", "hr questions", "soft skills", "star method"] },
   { label: "AI Technical Interview", viewId: "interview-technical", category: "Interview Hub", subtitle: "Live technical screening mock", keywords: ["technical interview", "coding interview", "system design", "tech mock", "cs fundamentals"] },
-  { label: "Interview Engine", viewId: "interview-engine", category: "Interview Hub", subtitle: "Voice & AI interactive interview", keywords: ["interview engine", "voice interview", "ai mock", "live interview", "simulator"] },
+  { label: "Interview Engine", viewId: "interview-engine", category: "Interview Hub", subtitle: "Interactive voice interview simulator", keywords: ["interview engine", "voice interview", "ai mock", "live interview", "simulator"] },
   { label: "Interview Hub", viewId: "interview-hub", category: "Interview Hub", subtitle: "All interview practice modes", keywords: ["interview", "mock", "practice interview", "hiring questions", "role play"] },
   { label: "Interview Analytics", viewId: "analytics-interview", category: "Interview Hub", subtitle: "Speech, clarity & answer scoring", keywords: ["interview scores", "feedback", "transcript", "confidence score"] },
 
@@ -95,6 +95,9 @@ export const SEARCH_INDEX: SearchEntry[] = [
 
   // ── Job & Placement Hub ──
   { label: "Job Discovery", viewId: "job-discovery", category: "Job Hub", subtitle: "Search & filter opportunities", keywords: ["jobs", "careers", "internships", "vacancies", "openings", "hiring", "apply", "work", "remote"] },
+  { label: "Business Hub", viewId: "business-hub", category: "Business Hub", subtitle: "BBA/MBA prep: MCQs, DI, HR, cases, jobs", keywords: ["business hub", "bba", "mba", "finance", "marketing", "hr", "operations", "business analytics", "consulting", "case studies"] },
+  { label: "Business MCQs", viewId: "business-mcqs", category: "Business Hub", subtitle: "Finance, Marketing, HR, Ops, Analytics", keywords: ["business mcqs", "finance mcqs", "marketing mcqs", "hr mcqs", "operations mcqs", "mba mcqs"] },
+  { label: "Business Aptitude", viewId: "business-aptitude", category: "Business Hub", subtitle: "DI, analytical & verbal for business", keywords: ["business aptitude", "di", "data interpretation", "mba aptitude", "bba aptitude"] },
   { label: "Placement Intelligence", viewId: "placement-intelligence", category: "Placement Hub", subtitle: "Readiness score & company match", keywords: ["placement readiness", "readiness score", "company eligibility", "hiring chance", "match"] },
   { label: "AI Aptitude Engine", viewId: "aptitude-engine", category: "Placement Hub", subtitle: "Timed test simulator & analytics", keywords: ["aptitude test", "online test", "mock test", "timed test", "company test"] },
   { label: "Aptitude Practice", viewId: "placement-hub", category: "Placement Hub", subtitle: "Quant, logical & verbal practice", keywords: ["aptitude", "quantitative", "logical reasoning", "verbal", "placement preparation", "maths"] },
@@ -103,7 +106,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
   // ── Productivity & Writing ──
   { label: "Email Writer", viewId: "prod-email", category: "Productivity", subtitle: "Cold emails & outreach drafts", keywords: ["email", "cold email", "follow up", "networking email", "draft", "mailer"] },
   { label: "SOP Generator", viewId: "prod-sop", category: "Productivity", subtitle: "Statement of purpose for universities", keywords: ["sop", "statement of purpose", "admission", "masters", "university essay", "grad school"] },
-  { label: "LinkedIn Post Generator", viewId: "prod-linkedin", category: "Productivity", subtitle: "Viral professional post drafts", keywords: ["linkedin", "post", "social media", "networking", "personal brand", "career update"] },
+  { label: "LinkedIn Post Generator", viewId: "prod-linkedin", category: "Productivity", subtitle: "Professional networking & post drafts", keywords: ["linkedin", "post", "social media", "networking", "personal brand", "career update"] },
   { label: "Content Writer", viewId: "prod-content", category: "Productivity", subtitle: "Articles, blogs & copywriting", keywords: ["content", "article", "blog writing", "copywriting", "essay", "creative writing"] },
 
   // ── Community ──
@@ -175,6 +178,15 @@ export const sidebarItems: SidebarItem[] = [
       { label: "Placement Score", href: "/dashboard/user?view=placement-intelligence" },
       { label: "AI Aptitude Engine", href: "/dashboard/user?view=placement-aptitude" },
       { label: "Technical MCQs", href: "/dashboard/user?view=placement-mcqs" },
+    ],
+  },
+  {
+    id: "business", label: "Business Hub", icon: <Briefcase size={18} />,
+    submenu: [
+      { label: "Business Hub", href: "/dashboard/user?view=business-hub" },
+      { label: "Business MCQs", href: "/dashboard/user?view=business-mcqs" },
+      { label: "Business Aptitude", href: "/dashboard/user?view=business-aptitude" },
+      { label: "Business Jobs", href: "/dashboard/user?view=job-discovery" },
     ],
   },
   {

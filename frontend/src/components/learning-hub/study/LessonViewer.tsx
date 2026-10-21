@@ -36,7 +36,7 @@ export function LessonViewer({ c, lessonData, currentTopic, duration, isScratchp
         style={{ background: c.surface, border: `1px solid ${c.border}` }}>
         <div className="space-y-1">
           <div className="inline-flex gap-1.5 items-center text-[10px] uppercase font-extrabold tracking-wider" style={{ color: c.amber }}>
-            <Sparkles size={10} /> Adaptive Lesson Generated ({duration} &bull; {lessonData && currentTopic ? "" : ""})
+            <Sparkles size={10} /> Interactive Lesson Module ({duration} &bull; {lessonData && currentTopic ? "" : ""})
           </div>
           <h2 className="text-xl font-black tracking-tight" style={{ color: c.text }}>{currentTopic}</h2>
         </div>

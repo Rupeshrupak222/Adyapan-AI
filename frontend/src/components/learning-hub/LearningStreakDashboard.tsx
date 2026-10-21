@@ -435,7 +435,7 @@ export function LearningStreakDashboard() {
 
     ctx.font = "bold 10px Inter, sans-serif";
     ctx.fillStyle = isLight ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.4)";
-    ctx.fillText("AI ACCELERATOR ENGINE", 40, 68);
+    ctx.fillText("LEARNING ACCELERATOR", 40, 68);
 
     // Flame Circle
     ctx.beginPath();

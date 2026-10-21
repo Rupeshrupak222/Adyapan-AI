@@ -576,7 +576,7 @@ interviewRouter.get("/history", async (req, res) => {
     const sessions = await p.interviewSession.findMany({
       where: { userId: req.user!.userId },
       include: {
-        evaluations: { take: 1 },
+        evaluations: { orderBy: { overallScore: "desc" } },
         violations: { orderBy: { createdAt: "asc" }, select: { createdAt: true, eventType: true, severity: true, description: true } },
         messages: { orderBy: { createdAt: "asc" }, select: { createdAt: true } },
       },
@@ -605,7 +605,9 @@ interviewRouter.get("/history", async (req, res) => {
       const calcDuration = s.endedAt
         ? Math.round((new Date(s.endedAt).getTime() - new Date(s.createdAt).getTime()) / 60000)
         : (s.durationMinutes || 0);
-      const computedScore = s.evaluations?.[0]?.overallScore ?? s.overallScore ?? (s.messages?.length > 0 ? 70 : 0);
+      const evalScores = (s.evaluations || []).map((e: any) => Number(e.overallScore || 0)).filter((n: number) => !isNaN(n) && n > 0);
+      const bestEvalScore = evalScores.length > 0 ? Math.max(...evalScores) : 0;
+      const computedScore = bestEvalScore > 0 ? bestEvalScore : (s.overallScore ?? (s.messages?.length > 0 ? 70 : 0));
 
       const isOld = (Date.now() - new Date(s.createdAt).getTime()) > 2 * 60 * 1000;
       const status = (s.status === "completed" || s.status === "completed_with_feedback" || isOld)

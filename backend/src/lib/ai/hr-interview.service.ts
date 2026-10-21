@@ -121,6 +121,14 @@ const COMPANY_HR_FOCUS: Record<string, string> = {
   wipro: "Wipro evaluates technical fundamentals, problem-solving approach, communication skills, and client orientation.",
   capgemini: "Capgemini looks for business acumen, technical skills, delivery focus, and team collaboration.",
   deloitte: "Deloitte values analytics capability, strategic thinking, advisory mindset, and professional development.",
+  mckinsey: "McKinsey evaluates against the Personal Experience Interview (PEI) pillars: Personal Impact, Inclusive Leadership, and Entrepreneurial Drive. Require deep STAR answers on true leadership moments.",
+  bcg: "BCG evaluates learning curiosity, structured empathy, handling ambiguity, and collaborative client rapport.",
+  bain: "Bain looks for passion, humility, 80/20 pragmatic prioritization, and high team cohesion ('A Bainie never lets another Bainie fail').",
+  goldmansachs: "Goldman Sachs looks for integrity, extreme attention to detail, composure under intense deadlines, and teamwork in high-stakes environments.",
+  jpmorgan: "J.P. Morgan evaluates risk consciousness, ethical decision-making, client dedication, and operational discipline.",
+  hul: "HUL probes for genuine grassroots consumer empathy, resilience under adversity, personal ethics, and demonstrated ownership of results.",
+  pg: "P&G rigorously tests for Peak Performance: leading teams, solving complex problems with data, initiating change, and influencing peers.",
+  tas: "TAS evaluates long-term ethical stewardship, multi-industry adaptability, humility, and nation-building purpose.",
 };
 
 function getCompanyHRFocus(company?: string): string {

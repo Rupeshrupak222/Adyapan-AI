@@ -167,6 +167,8 @@ type MCQView = "home" | "topic_select" | "tests_screen" | "active_session" | "se
 interface TechnicalMCQsModuleViewProps {
   setView?: (v: string) => void;
   theme?: string;
+  initialCategory?: string;
+  initialEntityId?: string;
 }
 
 // ─── Tech Icon Resolver ───────────────────────────────────────────────────
@@ -585,7 +587,7 @@ export function generateLocalDomainQuestions(
 // ─── Main Component ───────────────────────────────────────────────────────
 
 
-export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: TechnicalMCQsModuleViewProps) {
+export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark", initialCategory = "All", initialEntityId }: TechnicalMCQsModuleViewProps) {
   const isDark = theme === "dark";
   const quota = useFeatureQuota("TECHNICAL_MCQS");
 
@@ -620,7 +622,7 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
 
   // ── Filters ──
   // ── Filters ──
-  const [selectedDomain, setSelectedDomain] = useState("All");
+  const [selectedDomain, setSelectedDomain] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
 
@@ -875,6 +877,20 @@ export function TechnicalMCQsModuleView({ setView: _setView, theme = "dark" }: T
 
     setViewState("tests_screen");
   };
+
+  // Auto-open a specific target when a caller links straight to it (e.g. Business Hub companies).
+  useEffect(() => {
+    if (!initialEntityId) return;
+    const t = DEFAULT_TECHNOLOGIES.find((x) => x.id === initialEntityId);
+    const co = DEFAULT_COMPANIES.find((x) => x.id === initialEntityId);
+    const found = t
+      ? { id: t.id, name: t.name, type: "technology" as const, iconName: t.iconName, category: t.category, description: t.description, difficulty: t.difficulty, avgPackage: "" }
+      : co
+        ? { id: co.id, name: co.name, type: "company" as const, iconName: "", category: "", description: co.description, difficulty: co.difficulty, avgPackage: co.avgPackage }
+        : null;
+    if (found) void handleOpenEntityScreen(found);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEntityId]);
 
   // ── Start Direct Dynamic Test (15 Qs, 30 Mins) ──
   const startTestSession = useCallback(async (test: MCQTest) => {

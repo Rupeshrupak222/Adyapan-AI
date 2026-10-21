@@ -819,27 +819,29 @@ export async function engineAnalyticsHandler(req: Request, res: Response, _next:
     const sessions = await p.interviewSession.findMany({
       where: { userId: req.user!.userId },
       include: {
-        evaluations: { take: 1 },
+        evaluations: true,
       },
       orderBy: { createdAt: "desc" },
       take: 200,
     });
 
-    const completed = sessions.filter((s: any) => s.evaluations?.[0]);
+    const getSessionScore = (s: any) => {
+      const scores = (s.evaluations || [])
+        .map((ev: any) => Number(ev.overallScore || 0))
+        .filter((sc: number) => !isNaN(sc) && sc > 0);
+      return scores.length > 0 ? Math.max(...scores) : Number(s.overallScore || 0);
+    };
 
+    const completed = sessions.filter((s: any) => (s.evaluations && s.evaluations.length > 0) || (s.overallScore && s.overallScore > 0));
     const totalInterviews = completed.length;
-    const bestScore = completed.length
-      ? Math.max(
-          ...completed.map((s: any) => s.evaluations?.[0]?.overallScore || 0),
-        )
-      : 0;
-    const averageScore = completed.length
-      ? Math.round(
-          completed.reduce(
-            (a: number, s: any) => a + (s.evaluations?.[0]?.overallScore || 0),
-            0,
-          ) / completed.length,
-        )
+
+    const allEvalScores = completed.flatMap((s: any) =>
+      (s.evaluations || []).map((e: any) => Number(e.overallScore || 0)).filter((n: number) => !isNaN(n) && n > 0)
+    );
+    const bestScore = allEvalScores.length ? Math.max(...allEvalScores) : 0;
+    const sessionScores = completed.map(getSessionScore).filter((n: number) => n > 0);
+    const averageScore = sessionScores.length
+      ? Math.round(sessionScores.reduce((a: number, b: number) => a + b, 0) / sessionScores.length)
       : 0;
     const totalHours = Math.round(
       sessions.reduce((a: number, s: any) => a + (s.durationMinutes || 0), 0) / 60,

@@ -34,7 +34,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
   onProceed,
   onCancel,
   isDark = true,
-  interviewTitle = "AI Interview Session",
+  interviewTitle = "Mock Interview Session",
 }) => {
   const [loading, setLoading] = useState(false);
   const [showHelp, setShowHelp] = useState(false);

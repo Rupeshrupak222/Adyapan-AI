@@ -389,7 +389,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
     }
 
     setAiGenerating(true);
-    toast.info("AI is generating custom logical reasoning questions...");
+    toast.info("Generating customized reasoning questions...");
     try {
       const res = await api.post("/reasoning/generate", { prompt: pText });
       if (res.data?.success && Array.isArray(res.data.questions) && res.data.questions.length > 0) {
@@ -399,12 +399,12 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
         setSubmittedAnswer(false);
         setShowHint(false);
         setShowExplanation(false);
-        toast.success(`Generated ${res.data.questions.length} AI reasoning questions!`);
+        toast.success(`Generated ${res.data.questions.length} practice questions!`);
         setAiPromptInput("");
         setIsPracticing(true);
       }
     } catch {
-      toast.error("AI Generation failed. Displaying featured placement questions.");
+      toast.error("Generation failed. Displaying standard placement questions.");
     } finally {
       setAiGenerating(false);
     }
@@ -643,7 +643,7 @@ export function LogicalReasoningModuleView({ setView, theme = "dark" }: LogicalR
                     onClick={() => setShowExplanation(!showExplanation)}
                     className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center gap-1.5 transition-all"
                   >
-                    <Sparkles size={14} /> {showExplanation ? "Hide Explanation" : "AI Explain"}
+                    <Sparkles size={14} /> {showExplanation ? "Hide Explanation" : "Step Explanation"}
                   </button>
                 )}
               </div>

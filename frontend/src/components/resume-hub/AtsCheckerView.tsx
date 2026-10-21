@@ -646,7 +646,7 @@ export function AtsCheckerView({ setView }: Props) {
                     { icon: <BarChart3 size={10} />, label: "ATS Score", cl: "#f59e0b" },
                     { icon: <Search size={10} />, label: "Keyword Analysis", cl: "#3b82f6" },
                     { icon: <Users size={10} />, label: "Recruiter View", cl: "#8b5cf6" },
-                    { icon: <Lightbulb size={10} />, label: "AI Insights", cl: "#10b981" },
+                    { icon: <Lightbulb size={10} />, label: "Smart Fixes", cl: "#10b981" },
                   ].map((f, i) => (
                     <motion.span
                       key={f.label}
@@ -849,7 +849,7 @@ export function AtsCheckerView({ setView }: Props) {
                   {[
                     { icon: <Search size={16} />, title: "Keyword Analysis", desc: "Find missing technical & soft skills", cl: "#3b82f6" },
                     { icon: <Users size={16} />, title: "Recruiter View", desc: "See what recruiters notice first", cl: "#8b5cf6" },
-                    { icon: <Lightbulb size={16} />, title: "AI Improvements", desc: "Get actionable fix recommendations", cl: "#10b981" },
+                    { icon: <Lightbulb size={16} />, title: "Fix Suggestions", desc: "Actionable recommendations to boost score", cl: "#10b981" },
                   ].map((f, i) => (
                     <motion.div
                       key={f.title}

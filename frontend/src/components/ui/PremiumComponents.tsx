@@ -483,8 +483,8 @@ export function AIThinkingScreen({
     "Polishing Visual Worksheets"
   ],
   currentStep = 0,
-  title = "AI Engine is Synthesizing Insights...",
-  subtitle = "Structuring cognitive parameters dynamically",
+  title = "Processing and Synthesizing Insights...",
+  subtitle = "Compiling syllabus data and learning metrics",
 }: {
   steps?: string[];
   currentStep: number;

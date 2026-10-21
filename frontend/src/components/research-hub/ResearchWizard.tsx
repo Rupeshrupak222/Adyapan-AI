@@ -519,12 +519,12 @@ export function ResearchWizard({ onCancel, onFinish, c }: ResearchWizardProps) {
             </div>
 
             <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center gap-2">
-              <CheckCircle2 size={18} /> Paper content generated successfully! Refine using AI tools below:
+              <CheckCircle2 size={18} /> Paper draft compiled successfully. Refine using the editing tools below:
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {[
-                { id: "academic_tone", name: "Academic Tone", desc: "Elevate vocabulary and formal style" },
+                { id: "academic_tone", name: "Academic Tone", desc: "Refine formal terminology and research style" },
                 { id: "grammar", name: "Grammar Repair", desc: "Fix typos, syntax, and punctuation" },
                 { id: "plagiarism_reduction", name: "Paraphrase", desc: "Reduce similarity index score" },
                 { id: "humanize", name: "Humanize Text", desc: "Remove repetitive AI patterns" },

@@ -8,7 +8,7 @@ export function normalizeApiBaseUrl(raw?: string): string {
     const hostname = window.location.hostname;
     if (hostname === "localhost" || hostname === "127.0.0.1") {
       if (!raw || raw.includes("localhost") || raw.includes("127.0.0.1")) {
-        return "http://localhost:5000/api";
+        return "http://localhost:5005/api";
       }
     }
   }
@@ -33,8 +33,10 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-    config.baseURL = isLocal && (!process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL.includes("localhost") || process.env.NEXT_PUBLIC_API_URL.includes("127.0.0.1"))
-      ? "http://localhost:5000/api"
+    config.baseURL = isLocal
+      ? (process.env.NEXT_PUBLIC_API_URL && (process.env.NEXT_PUBLIC_API_URL.includes("localhost") || process.env.NEXT_PUBLIC_API_URL.includes("127.0.0.1"))
+          ? process.env.NEXT_PUBLIC_API_URL
+          : "http://localhost:5005/api")
       : API_BASE_URL;
     const token = sessionStorage.getItem("adyapan-token") || localStorage.getItem("adyapan-token");
     if (token) config.headers.Authorization = `Bearer ${token}`;

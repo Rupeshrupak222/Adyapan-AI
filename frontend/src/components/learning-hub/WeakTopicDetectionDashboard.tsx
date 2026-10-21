@@ -268,7 +268,7 @@ function LoadingScreen({ step }: { step: number }) {
       <AIThinkingScreen
         steps={LOADING_STEPS.slice(0, -1)}
         currentStep={step}
-        title="AI Diagnostic Engine..."
+        title="Diagnostic Assessment Engine..."
         subtitle="Scanning your learning data..."
       />
     </div>
@@ -939,7 +939,7 @@ export function WeakTopicDetectionDashboard() {
             <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black text-violet-300"
               style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.2)" }}>
               <Sparkles size={10} />
-              AI Generated
+              Live Assessment
             </div>
           </div>
 

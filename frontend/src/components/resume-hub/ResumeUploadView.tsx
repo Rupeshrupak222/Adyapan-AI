@@ -30,7 +30,7 @@ const PARSING_STEPS = [
   { label: "Uploading Resume", desc: "Securely transferring file to cloud storage", icon: <Upload size={14} /> },
   { label: "Extracting Content", desc: "Reading and parsing document text", icon: <FileText size={14} /> },
   { label: "Analyzing Structure", desc: "Identifying sections and formatting", icon: <BarChart3 size={14} /> },
-  { label: "AI Profile Extraction", desc: "Extracting structured career data", icon: <Sparkles size={14} /> },
+  { label: "Career Data Extraction", desc: "Extracting structured profile data", icon: <Sparkles size={14} /> },
   { label: "Building Candidate Profile", desc: "Organizing extracted information", icon: <UserCircle size={14} /> },
   { label: "Calculating Scores", desc: "Generating completeness and strength metrics", icon: <Target size={14} /> },
   { label: "Profile Ready", desc: "Your career intelligence is ready", icon: <Check size={14} /> },
@@ -305,7 +305,7 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
                   {parsingStep >= PARSING_STEPS.length - 1 ? "Profile Ready!" : "Analyzing Your Resume"}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: c.textMuted }}>
-                  {parsingStep >= PARSING_STEPS.length - 1 ? "Your career intelligence profile has been created" : "AI is extracting and structuring your career data"}
+                  {parsingStep >= PARSING_STEPS.length - 1 ? "Your career intelligence profile has been created" : "Extracting and structuring your career data"}
                 </p>
               </div>
 
@@ -404,7 +404,7 @@ export function ResumeUploadView({ setView }: ResumeUploadViewProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {[
                         { step: "01", title: "Upload Resume", desc: "Drop your PDF or DOCX resume file", icon: <Upload size={18} style={{ color: col }} /> },
-                        { step: "02", title: "AI Extraction", desc: "AI parses and extracts structured career data", icon: <Sparkles size={18} style={{ color: c.purple }} /> },
+                        { step: "02", title: "Data Extraction", desc: "Parses sections and extracts structured candidate data", icon: <Sparkles size={18} style={{ color: c.purple }} /> },
                         { step: "03", title: "Career Profile", desc: "Get scores, insights, and improvement tips", icon: <Target size={18} style={{ color: c.cyan }} /> },
                       ].map((item, i) => (
                         <motion.div key={item.step} variants={fadeUp} custom={i} initial="hidden" animate="visible"

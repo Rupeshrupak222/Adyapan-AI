@@ -339,7 +339,7 @@ export function ProgressDashboard() {
               <Section title="Learning Journey Timeline" icon={Clock} iconColor="text-teal-400" id="timeline">
                 <LearningTimeline events={data!.timeline} />
               </Section>
-              <Section title="AI Insights & Recommendations" icon={Sparkles} iconColor="text-violet-400" id="insights">
+              <Section title="Performance Insights & Recommendations" icon={Sparkles} iconColor="text-violet-400" id="insights">
                 <AIInsightsPanel insights={data!.insights} recommendations={data!.recommendations} />
               </Section>
             </div>

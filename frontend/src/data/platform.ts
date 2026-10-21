@@ -81,7 +81,7 @@ export const landingFAQs = [
   },
   {
     question: "What AI models does Adyapan support?",
-    answer: "Adyapan integrates with multiple cutting-edge AI models including GPT-4o, Claude, Gemini, DeepSeek, Llama 3.3, and Mistral Large. Premium users get access to all models with higher rate limits.",
+    answer: "Adyapan integrates with leading AI models including GPT-4o, Claude, Gemini, DeepSeek, Llama 3.3, and Mistral Large. Premium users get access to all models with higher rate limits.",
   },
   {
     question: "How does the Pro subscription billing work?",

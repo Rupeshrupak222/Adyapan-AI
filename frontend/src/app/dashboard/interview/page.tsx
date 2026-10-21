@@ -75,7 +75,7 @@ const INTERVIEW_TYPES = [
     color: "#8b5cf6",
     bg: "rgba(139,92,246,0.08)",
     border: "rgba(139,92,246,0.2)",
-    tags: ["Full-Spectrum", "Domain Ready", "Adaptive AI"],
+    tags: ["Full-Spectrum", "Domain Ready", "Interactive Voice"],
     route: "/dashboard/interview/engine",
   },
 ];

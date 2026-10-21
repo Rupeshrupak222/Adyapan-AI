@@ -266,6 +266,21 @@ export class ProgressService {
       "Data Structures": ["Arrays", "Linked Lists", "Trees", "Graphs", "Dynamic Programming"],
       "Computer Networks": ["OSI Model", "TCP/IP", "DNS", "HTTP", "Subnetting"],
       "Algorithms": ["Sorting", "Searching", "Recursion", "Greedy", "Backtracking"],
+      // Management & Business Disciplines
+      "Finance": ["DCF Valuation", "Working Capital", "Capital Budgeting", "Financial Ratios", "WACC & CAPM"],
+      "Investment Banking": ["M&A Due Diligence", "LBO Modeling", "Trading Comps", "Debt Syndication", "Pitchbooks"],
+      "Investment Banking & Finance": ["M&A Due Diligence", "LBO Modeling", "Trading Comps", "Debt Syndication", "Pitchbooks"],
+      "Digital Marketing": ["CAC & LTV", "Conversion Funnels", "SEO & SEM", "Attribution Modeling", "Paid Ads ROI"],
+      "Product Management": ["PRD Writing", "RICE Prioritization", "Agile & Scrum", "User Personas", "Sprint Planning"],
+      "Product & Project Management": ["PRD Writing", "RICE Prioritization", "Agile & Scrum", "User Personas", "Sprint Planning"],
+      "Operations & Supply Chain": ["EOQ & JIT", "Bullwhip Effect", "Logistics & Procurement", "Six Sigma", "Inventory Control"],
+      "Supply Chain": ["EOQ & JIT", "Bullwhip Effect", "Logistics & Procurement", "Six Sigma", "Inventory Control"],
+      "HRM": ["OKR & KPI Appraisals", "Talent Acquisition", "Compensation & Benefits", "Labor Compliance", "Conflict Resolution"],
+      "HRM – Human Resource Management": ["OKR & KPI Appraisals", "Talent Acquisition", "Compensation & Benefits", "Labor Compliance", "Conflict Resolution"],
+      "Stock Market": ["Derivatives & Options", "Technical Indicators", "Candlestick Patterns", "Risk & Beta", "Portfolio Rebalancing"],
+      "Startup & Entrepreneurship": ["Cap Tables & Equity", "Burn Rate & Runway", "Product-Market Fit", "Seed to Series A", "Pitch Decks"],
+      "Business Analytics": ["Data Interpretation", "Cohort Analysis", "KPI Metric Trees", "Executive Dashboards", "Statistical Modeling"],
+      "Consulting": ["MECE Issue Trees", "Profitability Framework", "Market Entry & GTM", "M&A Due Diligence", "Guesstimates"],
     };
 
     for (const topic of uniqueTopics) {

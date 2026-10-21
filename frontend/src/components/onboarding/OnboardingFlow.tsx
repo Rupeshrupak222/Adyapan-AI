@@ -18,7 +18,7 @@ const INTERESTS = [
   { id: "internship", label: "Internships", icon: Briefcase, desc: "Finder, tracker, recommendations" },
   { id: "job", label: "Job Search", icon: Target, desc: "Matching, referrals, JD analysis" },
   { id: "placement", label: "Placement Prep", icon: Trophy, desc: "Aptitude, reasoning, mock tests" },
-  { id: "productivity", label: "AI Productivity", icon: Wand2, desc: "Email, SOP, content writing" },
+  { id: "productivity", label: "Career Writing Hub", icon: Wand2, desc: "Email, SOP, content writing" },
 ];
 
 const GOALS = [

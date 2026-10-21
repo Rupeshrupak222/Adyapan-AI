@@ -147,6 +147,8 @@ const TOPIC_FOCUS: Record<string, string> = {
   "supply-chain": "Focus on Operations & Supply Chain: inventory management (EOQ, Safety Stock, JIT), Bullwhip effect mitigation, logistics & freight optimization, supplier negotiation, warehousing automation, and Six Sigma / Lean manufacturing.",
   "startup-entrepreneurship": "Focus on Startup & Entrepreneurship: MVP validation, product-market fit discovery, pitch deck development, cap table management, runway & burn rate control, investor due diligence, and scalable go-to-market execution.",
   "sales-business-dev": "Focus on Sales & Business Development: consultative enterprise selling, B2B pipeline generation, SPIN/Challenger sales methodologies, objection handling, CRM hygiene, contract negotiation, and customer relationship expansion.",
+  consulting: "Focus on Management Consulting & Case Interviews: MECE problem breakdown, profitability diagnosis (Revenue vs Cost branches), market entry frameworks, M&A due diligence, pricing strategies, market sizing guesstimates, and top-down executive synthesis.",
+  "case-interview": "Focus on Management Consulting & Case Interviews: MECE problem breakdown, profitability diagnosis (Revenue vs Cost branches), market entry frameworks, M&A due diligence, pricing strategies, market sizing guesstimates, and top-down executive synthesis.",
   // ── Core Engineering (Mechanical, Civil, Automotive) ──
   "autocad-mechanical": "Focus on Mechanical Design & AutoCAD: 2D orthographic drafting, 3D modeling in SolidWorks/AutoCAD, GD&T (ASME Y14.5), tolerance stack-up analysis, finite element analysis (FEA), stress-strain mechanics, and material selection.",
   hev: "Focus on Hybrid & Electric Vehicles (HEV): electric powertrain architecture, Battery Management Systems (BMS), cell balancing, thermal runaway prevention, regenerative braking algorithms, inverter motor control, and high-voltage DC safety.",
@@ -185,6 +187,18 @@ const COMPANY_FOCUS: Record<string, string> = {
   infosys: "Infosys-style: foundational knowledge, process orientation, SDLC understanding, and client focus.",
   accenture: "Accenture-style: consulting mindset, analytics, business process understanding, and delivery excellence.",
   capgemini: "Capgemini-style: business technology, delivery methodology, and enterprise solutions.",
+  deloitte: "Deloitte-style: business process transformation, technology advisory, operating model design, and digital roadmap execution.",
+  mckinsey: "McKinsey-style: MECE structuring, hypothesis-driven issue trees, quantitative rigor, top-down synthesis, and Personal Experience Interview (PEI) leadership impact.",
+  bcg: "BCG-style: creative business growth hypotheses, Casey chatbot case simulation, unit economics, and client-ready turnaround strategy.",
+  bain: "Bain-style: 80/20 commercial due diligence, private equity investment thesis, operational cost-out, and actionable recommendations.",
+  "goldman-sachs": "Goldman Sachs-style: three-statement financial modeling, DCF valuation, M&A pitchbooks, capital market pricing, and macroeconomic risk.",
+  jpmorgan: "J.P. Morgan-style: corporate finance, debt syndication, treasury cash management, credit appraisal, and risk underwriting.",
+  "morgan-stanley": "Morgan Stanley-style: equity research modeling, DCF, EBITDA multiples, portfolio rebalancing, and equity market dynamics.",
+  hul: "HUL-style: brand P&L ownership, consumer insights, rural distribution channels, trade marketing, and commercial execution.",
+  pg: "P&G-style: peak performance mindset, situational leadership, consumer-first branding, and global supply logistics.",
+  itc: "ITC-style: FMCG trade marketing, rural distribution networks, cost optimization, and supply chain execution.",
+  tas: "TAS-style: Tata group synergy, general management ethics, cross-industry leadership, and strategic problem solving.",
+  flipkart: "Flipkart-style: e-commerce unit economics, GMV growth, marketplace analytics, and high-velocity supply chain.",
 };
 
 // ─── Question Generation ────────────────────────────────────────────────────

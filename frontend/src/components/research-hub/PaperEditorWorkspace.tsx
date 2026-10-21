@@ -40,7 +40,7 @@ export function PaperEditorWorkspace({
 
   // Chat Assistant State
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([
-    { role: "assistant", text: "Hello! I am your AI Research Co-Author. I can help refine sections, check citations, or rephrase content to elevate academic tone." }
+    { role: "assistant", text: "Hello! I am your research assistant. I can help organize sections, format citations, and refine your manuscript drafts." }
   ]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);

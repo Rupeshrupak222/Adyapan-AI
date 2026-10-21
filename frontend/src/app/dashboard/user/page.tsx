@@ -130,6 +130,10 @@ const PlacementIntelligenceView = dynamic(() => import("@/components/placement-h
 const AptitudeEngineView = dynamic(() => import("@/components/aptitude-hub/AptitudeEngineView").then(m => m.AptitudeEngineView), {
   loading: () => <DashboardWidgetSkeleton title="AI Aptitude Engine" />
 });
+const BusinessHubView = dynamic(() => import("@/components/business-hub/BusinessHubView").then(m => m.BusinessHubView), {
+  loading: () => <DashboardWidgetSkeleton title="Business Hub" />,
+  ssr: false,
+});
 const ProductivityHubView = dynamic(() => import("@/components/productivity-hub/ProductivityHubView").then(m => m.ProductivityHubView), {
   loading: () => <DashboardWidgetSkeleton title="Productivity Workspace" />
 });
@@ -534,10 +538,11 @@ function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resume
   );
 }
 function CrossModuleAnalytics({
-  aptitude, interview, streak, placement, weakTopics, onViewTool,
+  aptitude, interview, streak, placement, weakTopics, onViewTool, stats,
 }: {
   aptitude?: any; interview?: any; streak?: any; placement?: any; weakTopics?: any;
   onViewTool?: (v: string) => void;
+  stats?: any;
 }) {
   const router = useRouter();
 
@@ -590,7 +595,13 @@ function CrossModuleAnalytics({
   const aptitudeAcc = Math.round(Number(aptitude?.overallAccuracy || aptitude?.placementReadiness || 0));
   const interviewAvg = Math.round(Number(interview?.averageScore || 0));
   const interviewBest = Math.round(Number(interview?.bestScore || 0));
-  const displayInterviewScore = interviewBest > 0 ? interviewBest : (interviewAvg > 0 ? interviewAvg : 0);
+  const rawInterviewDisplay = interviewBest > 0 ? interviewBest : (interviewAvg > 0 ? interviewAvg : 0);
+
+  const subScores = placement?.subScores || {};
+  const displayCodingScore = Number(subScores.coding ?? 0);
+  const displayInterviewScoreFinal = Math.max(Number(subScores.interview || 0), rawInterviewDisplay);
+  const displayAptitudeScore = Number(subScores.aptitude || aptitudeAcc || 0);
+  const displayResumeScore = Number(subScores.resume || stats?.avgAtsScore || stats?.highestAtsScore || 0);
 
   return (
     <div style={{ marginTop: "1.5rem", marginBottom: "1.5rem" }}>
@@ -631,10 +642,10 @@ function CrossModuleAnalytics({
             </div>
             <ProgressBar value={placementScoreVal} color="#10b981" />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginTop: "0.8rem", fontSize: "0.73rem", color: "var(--text-secondary)" }}>
-              <span>Coding: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.coding ?? 0}%</strong></span>
-              <span>Interview: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.interview ?? displayInterviewScore}%</strong></span>
-              <span>Aptitude: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.aptitude ?? 0}%</strong></span>
-              <span>Resume: <strong style={{ color: "var(--text-primary)" }}>{placement?.subScores?.resume ?? 0}%</strong></span>
+              <span>Coding: <strong style={{ color: "var(--text-primary)" }}>{displayCodingScore}%</strong></span>
+              <span>Interview: <strong style={{ color: "var(--text-primary)" }}>{displayInterviewScoreFinal}%</strong></span>
+              <span>Aptitude: <strong style={{ color: "var(--text-primary)" }}>{displayAptitudeScore}%</strong></span>
+              <span>Resume: <strong style={{ color: "var(--text-primary)" }}>{displayResumeScore}%</strong></span>
             </div>
           </div>
           <div style={{ marginTop: "0.85rem", borderTop: "1px solid var(--border-color)", paddingTop: "0.6rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -692,7 +703,7 @@ function CrossModuleAnalytics({
                 </span>
                 <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem", marginTop: 2 }}>
                   <span style={{ fontSize: "1.6rem", fontWeight: 800, color: "#f43f5e" }}>
-                    {displayInterviewScore > 0 ? `${displayInterviewScore}%` : "Not Started"}
+                    {displayInterviewScoreFinal > 0 ? `${displayInterviewScoreFinal}%` : "Not Started"}
                   </span>
                   <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
                     {interviewBest > 0 && interviewAvg > 0 && interviewBest !== interviewAvg
@@ -705,7 +716,7 @@ function CrossModuleAnalytics({
                 <Mic size={18} />
               </div>
             </div>
-            <ProgressBar value={displayInterviewScore} color="#f43f5e" />
+            <ProgressBar value={displayInterviewScoreFinal} color="#f43f5e" />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginTop: "0.8rem", fontSize: "0.73rem", color: "var(--text-secondary)" }}>
               <span>Completed: <strong style={{ color: "var(--text-primary)" }}>{interview?.totalInterviews ?? 0}</strong></span>
               <span>Practice Time: <strong style={{ color: "var(--text-primary)" }}>{interview?.totalHours ?? 0}h</strong></span>
@@ -1338,7 +1349,11 @@ function UserDashboardContent() {
       
       const allInterviewScores: number[] = [];
       interviewSessions.forEach((s: any) => {
-        const sc = Number(s.evaluation?.overallScore ?? s.evaluations?.[0]?.overallScore ?? s.overallScore ?? 0);
+        (s.evaluations || []).forEach((ev: any) => {
+          const sc = Number(ev.overallScore || 0);
+          if (!isNaN(sc) && sc > 0) allInterviewScores.push(sc);
+        });
+        const sc = Number(s.evaluation?.overallScore ?? s.evaluations?.[0]?.overallScore ?? s.overallScore ?? s.score ?? 0);
         if (!isNaN(sc) && sc > 0) {
           allInterviewScores.push(sc);
         }
@@ -1365,38 +1380,50 @@ function UserDashboardContent() {
         if (aData.weakTopics) setWeakTopicsData(aData.weakTopics);
       }
 
+      // Recompute and calibrate Placement Readiness using the candidate's BEST interview score
+      const rawPlacement = (analyticsRes.status === "fulfilled" && analyticsRes.value.data?.success) ? analyticsRes.value.data.placement : null;
+      const rawPlacementSubInterview = Number(rawPlacement?.subScores?.interview || 0);
+
+      // Candidates are evaluated on their BEST interview score
+      const interviewForPlacement = effectiveInterviewScore > 0
+        ? Math.min(100, Math.max(
+            rawPlacementSubInterview,
+            effectiveInterviewScore,
+            Math.min(100, Math.round(effectiveInterviewScore * 0.85 + (completedInterviews.length > 0 ? 15 : 0)))
+          ))
+        : (rawPlacementSubInterview > 0 ? rawPlacementSubInterview : (completedInterviews.length > 0 ? 50 : 0));
+
       // Update interview analytics with accurate best score
-      if (analyticsInterview || effectiveInterviewScore > 0) {
+      if (analyticsInterview || effectiveInterviewScore > 0 || interviewForPlacement > 0) {
         setInterviewAnalytics({
           ...(analyticsInterview || {}),
           averageScore: avgInterviewScore,
-          bestScore: effectiveInterviewScore,
+          bestScore: Math.max(effectiveInterviewScore, interviewForPlacement),
           totalInterviews: interviewsCount
         });
       }
 
-      // Recompute and calibrate Placement Readiness using the candidate's BEST interview score
-      const rawPlacement = (analyticsRes.status === "fulfilled" && analyticsRes.value.data?.success) ? analyticsRes.value.data.placement : null;
       if (rawPlacement || effectiveInterviewScore > 0) {
         const currentSub = rawPlacement?.subScores || {};
         const oldInterviewSub = Number(currentSub.interview || 0);
 
-        // Candidates are evaluated on their BEST interview score
-        const interviewForPlacement = effectiveInterviewScore > 0
-          ? Math.min(100, Math.max(
-              effectiveInterviewScore,
-              Math.min(100, Math.round(effectiveInterviewScore * 0.85 + (completedInterviews.length > 0 ? 15 : 0)))
-            ))
-          : (completedInterviews.length > 0 ? 50 : 0);
-
         const effectiveLearning = Math.max(50, Number(currentSub.learning || 0));
         const effectiveSoftSkills = Math.max(50, Number(currentSub.softSkills || 0));
+
+        const dsaSolved = Number(dsaProgress?.solved || 0);
+        const dsaAcc = Number(dsaProgress?.accuracy || 0);
+        const normDsaAcc = dsaAcc > 1 ? dsaAcc / 100 : dsaAcc;
+        const dsaScoreFallback = dsaSolved > 0
+          ? Math.min(100, Math.round(Math.min(dsaSolved / 25, 1) * 55 + (normDsaAcc || 0.75) * 30 + Math.min(codingSessions.length / 5, 1) * 15))
+          : (codingSessions.length > 0 ? Math.min(60, codingSessions.length * 15) : 0);
+
+        const aptitudeReadiness = Number(analyticsRes.status === "fulfilled" ? (analyticsRes.value.data?.aptitude?.placementReadiness || analyticsRes.value.data?.aptitude?.overallAccuracy) : 0);
 
         const updatedSub = {
           ...currentSub,
           interview: interviewForPlacement,
-          coding: Number(currentSub.coding || 0),
-          aptitude: Number(currentSub.aptitude || 0),
+          coding: Number(currentSub.coding || dsaScoreFallback || 0),
+          aptitude: Number(currentSub.aptitude || aptitudeReadiness || 0),
           resume: Number(currentSub.resume || avgAtsScore || 0),
           learning: effectiveLearning,
           softSkills: effectiveSoftSkills
@@ -1432,7 +1459,7 @@ function UserDashboardContent() {
         resumesCount: resumes.length,
         avgAtsScore,
         avgInterviewScore,
-        bestInterviewScore: effectiveInterviewScore,
+        bestInterviewScore: Math.max(effectiveInterviewScore, interviewForPlacement),
         interviewsCount,
         avgLinkedinScore,
         coverLettersCount: coverLetters.length,
@@ -1685,6 +1712,8 @@ function UserDashboardContent() {
             <HubErrorBoundary><InterviewHubView setView={navigateTo} activeModule={activeView} theme={theme} /></HubErrorBoundary>
           ) : activeView === "job-discovery" ? (
             <HubErrorBoundary><JobDiscoveryView /></HubErrorBoundary>
+          ) : activeView === "business-hub" || activeView === "business-mcqs" || activeView === "business-aptitude" || activeView === "business-interviews" || activeView === "business-cases" || activeView === "business-jobs" ? (
+            <HubErrorBoundary><BusinessHubView setView={navigateTo} activeModule={activeView} theme={theme} /></HubErrorBoundary>
           ) : activeView === "aptitude-engine" || activeView === "aptitude-engine-analytics" ? (
             <HubErrorBoundary><AptitudeEngineView setView={navigateTo} activeModule={activeView} theme={theme} /></HubErrorBoundary>
           ) : activeView === "placement-hub" || activeView === "placement-aptitude" || activeView === "placement-reasoning" || activeView === "placement-mcqs" || activeView === "placement-mocks" || activeView === "placement-readiness" ? (
@@ -1742,6 +1771,7 @@ function UserDashboardContent() {
                   placement={placementScore}
                   weakTopics={weakTopicsData}
                   onViewTool={navigateTo}
+                  stats={dashboardStats}
                 />
               </>
             )

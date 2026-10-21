@@ -331,7 +331,7 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
   const handleAISummary = async () => {
     pushUndo();
     setGeneratingAI(true);
-    try { const res = await api.post("/resume/generate-summary", { personalInfo, education, experience, skills }); if (res.data.success && res.data.summary) setSummary(res.data.summary); showToast("Summary generated!"); } catch { showToast("AI generation failed"); } finally { setGeneratingAI(false); }
+    try { const res = await api.post("/resume/generate-summary", { personalInfo, education, experience, skills }); if (res.data.success && res.data.summary) setSummary(res.data.summary); showToast("Summary generated!"); } catch { showToast("Summary generation failed"); } finally { setGeneratingAI(false); }
   };
   const handleAIExperience = async (index: number) => {
     pushUndo();
@@ -550,7 +550,7 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
 
           <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={handleAIOptimizeCompany} disabled={generatingAI}
             style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "0.3rem 0.65rem", borderRadius: 7, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)", color: col, fontSize: "0.68rem", fontWeight: 700, cursor: "pointer" }}>
-            <Zap size={11} /> {generatingAI ? "..." : "AI Optimize"}
+            <Zap size={11} /> {generatingAI ? "..." : "Optimize ATS"}
           </motion.button>
           <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={handleSaveDraft} disabled={saving}
             style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "0.3rem 0.65rem", borderRadius: 7, background: c.surface, border: `1px solid ${c.border}`, color: c.textSecondary, fontSize: "0.68rem", fontWeight: 700, cursor: "pointer" }}>
@@ -648,7 +648,7 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
                       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
                         <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={handleAISummary} disabled={generatingAI}
                           style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "0.25rem 0.6rem", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 6, color: col, fontSize: "0.65rem", fontWeight: 700, cursor: "pointer" }}>
-                          <Sparkles size={10} /> {generatingAI ? "..." : "AI Generate"}
+                          <Sparkles size={10} /> {generatingAI ? "..." : "Auto Draft"}
                         </motion.button>
                       </div>
                       <textarea value={summary} onChange={e => setSummary(e.target.value)} placeholder="Summarize your professional experience, key skills, and career objectives..."
@@ -1019,7 +1019,7 @@ export function ResumeBuilderView({ setView, selectedTemplate }: ResumeBuilderVi
                 {genStep >= 4 ? <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}><Check size={26} style={{ color: "#10b981" }} /></motion.div> : <Loader2 size={26} style={{ color: col }} />}
               </motion.div>
               <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: c.text, margin: 0 }}>{genStep >= 4 ? "Resume Generated!" : "Crafting Your Resume"}</h2>
-              <p style={{ fontSize: "0.8rem", color: c.textMuted, margin: "0.25rem 0 0" }}>{genStep >= 4 ? "Your ATS-optimized resume is ready for review" : "AI is analyzing and optimizing your profile"}</p>
+              <p style={{ fontSize: "0.8rem", color: c.textMuted, margin: "0.25rem 0 0" }}>{genStep >= 4 ? "Your ATS-optimized resume is ready for review" : "Analyzing profile and formatting resume structure"}</p>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: "1.25rem", textAlign: "left" }}>
                 {genSteps.map((step, i) => (
