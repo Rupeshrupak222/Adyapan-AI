@@ -296,11 +296,19 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   const normalizedDsaAccuracy = dsaAccuracy > 0 ? dsaAccuracy : (totalDsaSolved > 0 ? 0.75 : 0);
   const hasGithub = Boolean(githubProfile || (profile?.github && profile.github.trim()));
 
+  // Progressive DSA volume scaling: 0-25 -> up to 35 pts, 26-75 -> up to 25 pts, 76-150 -> up to 15 pts (max 75 pts from volume)
+  const dsaVolumeScore = Math.min(totalDsaSolved, 25) * (35 / 25)
+    + Math.max(0, Math.min(totalDsaSolved - 25, 50)) * (25 / 50)
+    + Math.max(0, Math.min(totalDsaSolved - 75, 75)) * (15 / 75);
+  const dsaStreak = Number(dsaProgress?.streak || directDsaProgress?.streak || 0);
+  const dsaStreakBonus = Math.min(5, Math.round(dsaStreak * 0.75));
+
   const codingScore = clamp(Math.round(
-    Math.min(totalDsaSolved / 25, 1) * 45 +
-    normalizedDsaAccuracy * 25 +
-    Math.min(challengeSubmissions.length / 5, 1) * 15 +
-    Math.min(codingSessions.length / 10, 1) * 10 +
+    dsaVolumeScore +
+    normalizedDsaAccuracy * 20 +
+    dsaStreakBonus +
+    Math.min(challengeSubmissions.length / 5, 1) * 10 +
+    Math.min(codingSessions.length / 10, 1) * 5 +
     (hasGithub ? 5 : 0)
   ), 0, 100);
 
@@ -760,7 +768,18 @@ export async function generatePlacementIntelligence(userId: string): Promise<Pla
   } else if (domainTrack === "core_engineering") {
     finalCoding = Math.max(finalCoding, finalAptitude, 70);
   }
-  const finalPlacementScore = clamp(Math.max(placementScore, prevScore), 0, 100);
+
+  // Ensure placement score directly benefits when sub-scores improve (e.g. higher coding or aptitude)
+  const computedFromFinalSubScores = clamp(Math.round(
+    finalCoding * 0.25 +
+    finalAptitude * 0.20 +
+    finalInterview * 0.20 +
+    finalResume * 0.15 +
+    finalLearning * 0.10 +
+    finalSoftSkills * 0.10
+  ), 0, 100);
+
+  const finalPlacementScore = clamp(Math.max(placementScore, computedFromFinalSubScores, prevScore), 0, 100);
 
   return {
     placementScore: finalPlacementScore,
@@ -804,30 +823,35 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
     const isZeroed = (Number(existingSub.coding || 0) === 0 && Number(existingSub.interview || 0) === 0 && Number(existingSub.resume || 0) === 0);
 
     if (now - lastCalculated < fiveMinutes && !isZeroed) {
-      const profile = await userPrisma.profile.findUnique({ where: { userId } }).catch(() => null);
-      const domainTrack = detectDomainTrack(profile);
-      await checkAndSendPlacementReadinessNotification(userId, existing.placementScore, userPrisma);
-      return {
-        placementScore: existing.placementScore,
-        subScores: existing.subScores as unknown as SubScores,
-        eligibility: computeEligibility(
-          existing.placementScore,
-          existing.subScores as unknown as SubScores,
-          existing.placementScore > 0,
-          (existing.highestImpactTask as unknown as HighestImpactTask | null)?.action || "",
-          domainTrack
-        ),
-        companyMatches: existing.companyMatches as unknown as CompanyMatch[],
-        skillWeights: existing.skillWeights as unknown as SkillWeight[],
-        strengths: existing.strengths as unknown as string[],
-        weaknesses: existing.weaknesses as unknown as string[],
-        recommendations: existing.recommendations as unknown as PlacementRecommendation[],
-        highestImpactTask: existing.highestImpactTask as unknown as HighestImpactTask | null,
-        salaryEstimate: existing.salaryEstimate as unknown as SalaryEstimate,
-        readinessTimeline: existing.readinessTimeline as unknown as ReadinessTimelineEntry[],
-        aiInsights: existing.aiInsights,
-        cached: true,
-      };
+      // Invalidate cache early if student has newer DSA activity since last calculation
+      const recentDsa = await userPrisma.dSAProgress.findFirst({ where: { userId }, select: { updatedAt: true } }).catch(() => null);
+      const dsaUpdated = recentDsa?.updatedAt ? new Date(recentDsa.updatedAt).getTime() : 0;
+      if (dsaUpdated <= lastCalculated) {
+        const profile = await userPrisma.profile.findUnique({ where: { userId } }).catch(() => null);
+        const domainTrack = detectDomainTrack(profile);
+        await checkAndSendPlacementReadinessNotification(userId, existing.placementScore, userPrisma);
+        return {
+          placementScore: existing.placementScore,
+          subScores: existing.subScores as unknown as SubScores,
+          eligibility: computeEligibility(
+            existing.placementScore,
+            existing.subScores as unknown as SubScores,
+            existing.placementScore > 0,
+            (existing.highestImpactTask as unknown as HighestImpactTask | null)?.action || "",
+            domainTrack
+          ),
+          companyMatches: existing.companyMatches as unknown as CompanyMatch[],
+          skillWeights: existing.skillWeights as unknown as SkillWeight[],
+          strengths: existing.strengths as unknown as string[],
+          weaknesses: existing.weaknesses as unknown as string[],
+          recommendations: existing.recommendations as unknown as PlacementRecommendation[],
+          highestImpactTask: existing.highestImpactTask as unknown as HighestImpactTask | null,
+          salaryEstimate: existing.salaryEstimate as unknown as SalaryEstimate,
+          readinessTimeline: existing.readinessTimeline as unknown as ReadinessTimelineEntry[],
+          aiInsights: existing.aiInsights as any,
+          cached: true,
+        };
+      }
     }
   }
 

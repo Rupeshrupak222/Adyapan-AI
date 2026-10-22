@@ -1538,8 +1538,13 @@ function UserDashboardContent() {
         const dsaSolved = Number(dsaProgress?.solved || 0);
         const dsaAcc = Number(dsaProgress?.accuracy || 0);
         const normDsaAcc = dsaAcc > 1 ? dsaAcc / 100 : dsaAcc;
+        const dsaVolume = Math.min(dsaSolved, 25) * (35 / 25)
+          + Math.max(0, Math.min(dsaSolved - 25, 50)) * (25 / 50)
+          + Math.max(0, Math.min(dsaSolved - 75, 75)) * (15 / 75);
+        const dsaStreak = Number(dsaProgress?.streak || 0);
+        const dsaStreakBonus = Math.min(5, Math.round(dsaStreak * 0.75));
         const dsaScoreFallback = dsaSolved > 0
-          ? Math.min(100, Math.round(Math.min(dsaSolved / 25, 1) * 55 + (normDsaAcc || 0.75) * 30 + Math.min(codingSessions.length / 5, 1) * 15))
+          ? Math.min(100, Math.round(dsaVolume + (normDsaAcc || 0.75) * 20 + dsaStreakBonus + Math.min(codingSessions.length / 5, 1) * 10))
           : (codingSessions.length > 0 ? Math.min(60, codingSessions.length * 15) : 0);
 
         const aptitudeReadiness = Number(analyticsRes.status === "fulfilled" ? (analyticsRes.value.data?.aptitude?.placementReadiness || analyticsRes.value.data?.aptitude?.overallAccuracy) : 0);
@@ -1547,7 +1552,7 @@ function UserDashboardContent() {
         const updatedSub = {
           ...currentSub,
           interview: interviewForPlacement,
-          coding: Number(currentSub.coding || dsaScoreFallback || 0),
+          coding: Math.max(Number(currentSub.coding || 0), dsaScoreFallback),
           aptitude: Number(currentSub.aptitude || aptitudeReadiness || 0),
           resume: Number(currentSub.resume || avgAtsScore || 0),
           learning: effectiveLearning,
