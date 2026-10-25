@@ -61,13 +61,14 @@ export async function getProfile(userId: string) {
 }
 
 import { autoRegisterOrgFromProfile } from "./organization.service";
+import { calculateProfileCompletion } from "../utils/profileCompletion";
 
 export async function upsertProfile(userId: string, input: ProfileInput) {
   if (input.college) {
     autoRegisterOrgFromProfile(input.college).catch(() => {});
   }
 
-  const data = {
+  const rawData = {
     username: input.username,
     phone: input.phone,
     location: input.location,
@@ -87,6 +88,13 @@ export async function upsertProfile(userId: string, input: ProfileInput) {
     portfolio: input.portfolio,
     ...(input.resumeUrl !== undefined && { resumeUrl: input.resumeUrl }),
     ...(input.resumeName !== undefined && { resumeName: input.resumeName }),
+  };
+
+  const profileCompletion = calculateProfileCompletion(rawData as any);
+
+  const data = {
+    ...rawData,
+    profileCompletion,
   };
 
   return prisma.profile.upsert({

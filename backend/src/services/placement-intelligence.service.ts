@@ -818,15 +818,27 @@ export async function getOrGeneratePlacementIntelligence(userId: string): Promis
   if (existing) {
     const lastCalculated = new Date(existing.lastCalculatedAt).getTime();
     const now = Date.now();
-    const fiveMinutes = 5 * 60 * 1000;
+    const cacheTtlMs = 30 * 1000;
     const existingSub = (existing.subScores as any) || {};
     const isZeroed = (Number(existingSub.coding || 0) === 0 && Number(existingSub.interview || 0) === 0 && Number(existingSub.resume || 0) === 0);
 
-    if (now - lastCalculated < fiveMinutes && !isZeroed) {
-      // Invalidate cache early if student has newer DSA activity since last calculation
-      const recentDsa = await userPrisma.dSAProgress.findFirst({ where: { userId }, select: { updatedAt: true } }).catch(() => null);
+    if (now - lastCalculated < cacheTtlMs && !isZeroed) {
+      // Invalidate cache immediately if student has newer activity across any module
+      const [recentDsa, recentInterview, recentAptitude, recentAts] = await Promise.all([
+        userPrisma.dSAProgress.findFirst({ where: { userId }, select: { updatedAt: true } }).catch(() => null),
+        userPrisma.interviewSession.findFirst({ where: { userId }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }).catch(() => null),
+        userPrisma.aptitudeSession.findFirst({ where: { userId }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }).catch(() => null),
+        userPrisma.aTSReport.findFirst({ where: { userId }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }).catch(() => null),
+      ]);
+
       const dsaUpdated = recentDsa?.updatedAt ? new Date(recentDsa.updatedAt).getTime() : 0;
-      if (dsaUpdated <= lastCalculated) {
+      const interviewCreated = recentInterview?.createdAt ? new Date(recentInterview.createdAt).getTime() : 0;
+      const aptitudeCreated = recentAptitude?.createdAt ? new Date(recentAptitude.createdAt).getTime() : 0;
+      const atsCreated = recentAts?.createdAt ? new Date(recentAts.createdAt).getTime() : 0;
+
+      const hasNewActivity = dsaUpdated > lastCalculated || interviewCreated > lastCalculated || aptitudeCreated > lastCalculated || atsCreated > lastCalculated;
+
+      if (!hasNewActivity) {
         const profile = await userPrisma.profile.findUnique({ where: { userId } }).catch(() => null);
         const domainTrack = detectDomainTrack(profile);
         await checkAndSendPlacementReadinessNotification(userId, existing.placementScore, userPrisma);

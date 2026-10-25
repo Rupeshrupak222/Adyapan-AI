@@ -134,8 +134,8 @@ function formatCap99(val: number | string | undefined | null): string {
 const WORK_MODES = ["Remote", "Hybrid", "On-site"];
 const TOP_CITIES = ["Bangalore", "Hyderabad", "Pune", "Gurgaon", "Noida", "Mumbai", "Chennai", "Delhi NCR", "Remote"];
 const DEPARTMENTS = [
-  "Software Development", "Data Science", "Product Management", "DevOps",
-  "QA / Testing", "System Design", "Analytics", "HR", "Marketing", "Finance"
+  "Strategy & Consulting", "Finance & Banking", "Brand & Marketing", "Product Management",
+  "Operations & Supply Chain", "HR & Talent", "Software Development", "Data Science", "Analytics", "DevOps"
 ];
 const EXPERIENCE_PRESETS = [
   { label: "Freshers (0 yrs)", min: "0", max: "0" },
@@ -153,7 +153,7 @@ const SALARY_PRESETS = [
   { label: "25+ LPA", min: "2500000", max: "10000000" },
 ];
 const EDUCATION_PRESETS = [
-  "B.Tech / B.E.", "M.Tech / M.E.", "BCA / MCA", "B.Sc / M.Sc", "Any Graduate"
+  "BBA / MBA", "B.Tech / B.E.", "M.Tech / M.E.", "BCA / MCA", "B.Com / M.Com", "B.Sc / M.Sc", "Any Graduate"
 ];
 const EMPLOYMENT_TYPES = ["Full-Time", "Part-Time", "Contract", "Internship", "Freelance"];
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"];
@@ -168,12 +168,12 @@ const POSTED_WITHIN = [
 ];
 
 const SORT_OPTIONS = [
-  { value: "recommended", label: "Recommended for You" },
-  { value: "postedAt", label: "Newest" },
-  { value: "matchScore", label: "Best Match Score" },
-  { value: "salaryMax", label: "Salary High-Low" },
-  { value: "experienceMin", label: "Experience" },
-  { value: "company", label: "Company" },
+  { value: "recommended", defaultOrder: "desc" as const, label: "Recommended for You" },
+  { value: "postedAt", defaultOrder: "desc" as const, label: "Newest First" },
+  { value: "matchScore", defaultOrder: "desc" as const, label: "Best Match Score" },
+  { value: "salaryMax", defaultOrder: "desc" as const, label: "Highest Salary" },
+  { value: "experienceMin", defaultOrder: "asc" as const, label: "Lowest Experience" },
+  { value: "company", defaultOrder: "asc" as const, label: "Company (A-Z)" },
 ];
 
 const SOURCE_COLORS: Record<string, { bg: string; text: string }> = {
@@ -538,6 +538,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     const salMin = sp.get("salaryMin") || "";
     const salMax = sp.get("salaryMax") || "";
     const sort = sp.get("sortBy") || "";
+    const order = sp.get("sortOrder") || "";
 
     if (q) { setSearchQuery(q); setDebouncedQuery(q); }
     if (loc.length || wm || et || src || sk || pw || comp || ind || expMin || expMax || salMin || salMax) {
@@ -558,6 +559,7 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     }
     if (sk) setSkillTags(sk.split(",").filter(Boolean));
     if (sort) setSortBy(sort);
+    if (order === "asc" || order === "desc") setSortOrder(order);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -831,10 +833,11 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
     sync("salaryMax", filters.salaryMax);
     sync("skills", skillTags.join(","));
     sync("sortBy", sortBy !== "recommended" ? sortBy : "");
+    sync("sortOrder", sortOrder !== "desc" ? sortOrder : "");
     const qs = sp.toString();
     const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     window.history.replaceState(null, "", newUrl);
-  }, [debouncedQuery, filters, skillTags, sortBy]);
+  }, [debouncedQuery, filters, skillTags, sortBy, sortOrder]);
 
   useEffect(() => { fetchSavedJobs(); }, [fetchSavedJobs]);
   useEffect(() => { if (savedPage === "saved") fetchSavedJobs(); }, [savedPage]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -2292,19 +2295,19 @@ export default function JobDiscoveryView({ setView }: JobDiscoveryViewProps) {
           </button>
 
           <CustomSelect
-            value={`${sortBy}:${sortOrder}`}
+            value={sortBy}
             options={SORT_OPTIONS.map(opt => ({
-              value: `${opt.value}:${sortOrder}`,
-              label: `${opt.label} ${sortOrder === "desc" ? "↓" : "↑"}`,
+              value: opt.value,
+              label: `${opt.label} ${sortBy === opt.value ? (sortOrder === "desc" ? "↓" : "↑") : ""}`,
             }))}
             onChange={val => {
-              const [newSort, newOrder] = val.split(":");
-              setSortBy(newSort);
-              setSortOrder(newOrder as "asc" | "desc");
+              setSortBy(val);
+              const matched = SORT_OPTIONS.find(o => o.value === val);
+              if (matched) setSortOrder(matched.defaultOrder);
             }}
             c={c}
             isDark={isDark}
-            className="w-44 shrink-0"
+            className="w-48 shrink-0"
           />
 
           <button onClick={toggleSortOrder} className="p-3 rounded-xl border transition-all hover:scale-105"

@@ -444,13 +444,26 @@ function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resume
       <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
         <PanelCard title="Learning Hub Performance">
           <div style={{ marginBottom: "0.8rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem", color: "var(--text-secondary)", marginBottom: 4 }}>
-              <span>Learning Progress</span>
-              <span style={{ color: "var(--primary)", fontWeight: 700 }}>
-                {stats.studySessionsCount > 0 ? "Active" : "Not Started"}
-              </span>
-            </div>
-            <ProgressBar value={stats.studySessionsCount > 0 ? 100 : 0} color="#8b5cf6" />
+            {(() => {
+              const learningProgressPercent = Math.min(100, Math.round(
+                Math.min(stats.studySessionsCount, 10) * 4 +
+                Math.min(stats.notesCount, 10) * 3 +
+                Math.min(stats.quizzesCount, 10) * 3 +
+                Math.min(stats.assignmentsCount, 5) * 3 +
+                Math.min(stats.mindmapsCount, 5) * 3
+              ));
+              return (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem", color: "var(--text-secondary)", marginBottom: 4 }}>
+                    <span>Learning Progress</span>
+                    <span style={{ color: "var(--primary)", fontWeight: 700 }}>
+                      {learningProgressPercent > 0 ? `${learningProgressPercent}%` : "Not Started"}
+                    </span>
+                  </div>
+                  <ProgressBar value={learningProgressPercent} color="#8b5cf6" />
+                </>
+              );
+            })()}
           </div>
           <div style={{ marginTop: "0.9rem" }}>
             <CompactItem label="Study Sessions" value={stats.studySessionsCount} />
@@ -467,7 +480,8 @@ function PanelGrid({ stats, onViewTool }: { stats: { avgAtsScore: number; resume
         <PanelCard title="Coding Hub Performance">
           <div style={{ marginBottom: "0.8rem" }}>
             {(() => {
-              const dsaAccuracyPercent = Math.min(100, Math.max(0, Math.round(stats.dsaAccuracy > 1 ? stats.dsaAccuracy : stats.dsaAccuracy * 100)));
+              const rawDsaAcc = stats.dsaAccuracy > 1 ? stats.dsaAccuracy : stats.dsaAccuracy * 100;
+              const dsaAccuracyPercent = rawDsaAcc > 0 ? Math.min(100, Math.round(rawDsaAcc)) : (stats.dsaSolved > 0 ? 80 : 0);
               return (
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem", color: "var(--text-secondary)", marginBottom: 4 }}>
@@ -1318,7 +1332,7 @@ function UserDashboardContent() {
       ]);
 
       const profileData = profileRes.status === "fulfilled" ? profileRes.value.data.profile : null;
-      const completion = profileData ? calcCompletion(profileData) : 0;
+      const completion = profileData ? Math.max(calcCompletion(profileData), Number(profileData.profileCompletion || 0)) : 0;
       const targetRole = profileData?.targetRole || "";
 
       const resumes = resumesRes.status === "fulfilled" ? (resumesRes.value.data.resumes || []) : [];

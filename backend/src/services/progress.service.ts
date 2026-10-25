@@ -138,7 +138,7 @@ export class ProgressService {
    */
   static async calculateProgress(userId: string, prisma: PrismaClient): Promise<ProgressDashboardPayload> {
     // ── 1. Fetch all raw data ──────────────────────────────────────────────
-    const [docs, notes, quizzes, quizAttempts, flashcards, mindMaps, events, chatSessions, atsReports, interviewSessions, dbStudySessions] =
+    const [docs, notes, quizzes, quizAttempts, flashcards, mindMaps, events, chatSessions, atsReports, interviewSessions, dbStudySessions, dsaProgressRecord, aptitudeSessions, dsaSubmissions] =
       await Promise.all([
         prisma.uploadedDocument.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, fileName: true, createdAt: true } }),
         prisma.generatedNote.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, topic: true, type: true, createdAt: true } }),
@@ -150,9 +150,13 @@ export class ProgressService {
         prisma.chatSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true } }),
         prisma.aTSReport.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, score: true, createdAt: true } }).catch(() => []),
         prisma.interviewSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, type: true, overallScore: true, status: true, createdAt: true } }).catch(() => []),
-        prisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true } }).catch(() => []),
+        prisma.studySession.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, createdAt: true } }).catch(() => []),
+        prisma.dSAProgress.findFirst({ where: { userId } }).catch(() => null),
+        prisma.aptitudeSession.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { id: true, topic: true, totalQuestions: true, accuracy: true, score: true, createdAt: true } }).catch(() => []),
+        prisma.submission.findMany({ where: { userId, status: { in: ["Accepted", "solved", "accepted", "Completed", "completed"] } }, select: { problemId: true, createdAt: true } }).catch(() => []),
       ]);
 
+    const dsaSolvedCount = Math.max(dsaProgressRecord?.solved || 0, dsaSubmissions.length);
     const totalAiGenerations = notes.length + quizzes.length + flashcards.length + mindMaps.length;
 
     // ── 2. Build topic map ────────────────────────────────────────────────
@@ -189,7 +193,6 @@ export class ProgressService {
     quizzes.forEach((q) => {
       const t = ensureTopic(q.topic, q.createdAt);
       topicMap[t].quizzes++;
-      // count matching quiz attempts
       const attempts = quizAttempts.filter((a) => a.quizId === q.id);
       topicMap[t].quizAttemptCount += attempts.length;
       if (attempts.length > 0) {
@@ -213,6 +216,24 @@ export class ProgressService {
         const t = ensureTopic(e.topic, e.createdAt);
         topicMap[t].events++;
       }
+    });
+
+    // Seed cross-hub topics so practicing coding, interviews, or aptitude raises learning progress
+    if (dsaSolvedCount > 0) {
+      const latestDsaDate = dsaSubmissions[dsaSubmissions.length - 1]?.createdAt || new Date();
+      const t = ensureTopic("Data Structures", latestDsaDate);
+      topicMap[t].events += dsaSolvedCount;
+    }
+    if (interviewSessions.length > 0) {
+      const latestIntDate = interviewSessions[interviewSessions.length - 1]?.createdAt || new Date();
+      const t = ensureTopic("Interview Preparation", latestIntDate);
+      topicMap[t].events += interviewSessions.length;
+    }
+    aptitudeSessions.forEach((a) => {
+      const t = ensureTopic(a.topic || "Quantitative Aptitude", a.createdAt);
+      topicMap[t].quizAttemptCount += 1;
+      const acc = Number(a.accuracy ?? 0);
+      topicMap[t].avgQuizAccuracy = acc > 1 ? acc / 100 : acc;
     });
 
     const uniqueTopics = Object.keys(topicMap);
@@ -308,35 +329,42 @@ export class ProgressService {
     }
 
     // ── 5. Overall progress score (weighted) ──────────────────────────────
-    // Documents: 20%
-    const docScore = Math.min(100, Math.round((docs.length / 5) * 100));
-    // Concept coverage: 25% (topics studied / 5 target)
-    const conceptScore = Math.min(100, Math.round((uniqueTopics.length / 5) * 100));
-    // Revision activity: 20%
-    const revisionNotes = notes.filter((n) => n.type === "revision" || n.type === "short").length;
-    const revisionScore = Math.min(100, Math.round((revisionNotes / 3) * 100));
-    // Question practice: 20%
-    const practiceScore = Math.min(100, Math.round(
-      (quizAttempts.length / 4) * 60 + (flashcards.length / 10) * 40
+    // Study and documents score: 25%
+    const docScore = Math.min(100, Math.round(
+      (docs.length / 3) * 50 + (notes.length / 5) * 30 + (dbStudySessions.length / 3) * 20
     ));
-    // Learning consistency: 15% (active days last 30)
+    // Concept coverage: 25% (topics studied / 4 target)
+    const conceptScore = Math.min(100, Math.round((uniqueTopics.length / 4) * 100));
+    // Question & problem practice: 25% (quizzes, flashcards, DSA solves, aptitude tests)
+    const practiceScore = Math.min(100, Math.round(
+      (quizAttempts.length / 3) * 30 +
+      (flashcards.length / 10) * 15 +
+      Math.min(dsaSolvedCount / 10, 1) * 35 +
+      Math.min(aptitudeSessions.length / 3, 1) * 20
+    ));
+    // Real-world prep: 10% (interviews and ATS resume checks)
+    const prepScore = Math.min(100, Math.round(
+      Math.min(interviewSessions.length / 2, 1) * 60 +
+      Math.min(atsReports.length / 1, 1) * 40
+    ));
+    // Learning consistency: 15% (active days last 30 across all activities)
     const allDates = new Set<string>();
-    [...notes, ...quizAttempts, ...events].forEach((item) =>
+    [...notes, ...quizAttempts, ...events, ...aptitudeSessions, ...interviewSessions, ...dsaSubmissions, ...dbStudySessions].forEach((item) =>
       allDates.add(item.createdAt.toISOString().split("T")[0])
     );
     const activeDays30 = Array.from(allDates).filter((d) => {
       const diff = (Date.now() - new Date(d).getTime()) / (1000 * 60 * 60 * 24);
       return diff <= 30;
     }).length;
-    const consistencyScore = Math.min(100, Math.round((activeDays30 / 12) * 100));
+    const consistencyScore = Math.min(100, Math.round((activeDays30 / 10) * 100));
 
-    const overallProgress = Math.round(
-      docScore * 0.20 +
+    const overallProgress = Math.min(100, Math.round(
+      docScore * 0.25 +
       conceptScore * 0.25 +
-      revisionScore * 0.20 +
-      practiceScore * 0.20 +
+      practiceScore * 0.25 +
+      prepScore * 0.10 +
       consistencyScore * 0.15
-    );
+    ));
 
     // ── 6. Mastery score ──────────────────────────────────────────────────
     const avgConceptMastery = conceptMasteryItems.length > 0
@@ -365,7 +393,8 @@ export class ProgressService {
     const masteryGrade = getMasteryGrade(avgConceptMastery);
 
     // ── 9. Total questions practiced ─────────────────────────────────────
-    const totalQuestionsPracticed = quizAttempts.reduce((s, a) => s + a.total, 0);
+    const aptitudeQuestions = aptitudeSessions.reduce((s: number, a: any) => s + (a.totalQuestions || 0), 0);
+    const totalQuestionsPracticed = quizAttempts.reduce((s, a) => s + a.total, 0) + aptitudeQuestions + dsaSolvedCount;
 
     // ── 10. Milestones ────────────────────────────────────────────────────
     const milestones = ProgressService.buildMilestones({
@@ -836,7 +865,9 @@ export class ProgressService {
 
   static async getDashboard(userId: string, prisma: PrismaClient): Promise<ProgressDashboardPayload> {
     const existing = await prisma.progressTracking.findUnique({ where: { userId } });
-    if (!existing) {
+    const now = Date.now();
+    const isStale = !existing || (now - new Date(existing.updatedAt).getTime() > 60 * 1000);
+    if (isStale) {
       return ProgressService.calculateProgress(userId, prisma);
     }
 

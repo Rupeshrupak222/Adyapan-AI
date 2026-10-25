@@ -18,6 +18,9 @@ const TechnicalMCQsModuleView = lazy(() =>
 const AptitudeEngineView = lazy(() =>
   import("@/components/aptitude-hub/AptitudeEngineView").then(m => ({ default: m.AptitudeEngineView }))
 );
+const JobDiscoveryView = lazy(() =>
+  import("@/components/job-hub/JobDiscoveryView")
+);
 
 interface BusinessHubViewProps {
   setView?: (v: string) => void;
@@ -1314,26 +1317,40 @@ export function BusinessHubView({ setView, activeModule = "business-hub", theme 
             )}
 
             {/* ═════════ 7. BUSINESS JOBS TAB ═════════ */}
+            {/* ═════════ 7. BUSINESS JOBS TAB ═════════ */}
             {tab === "jobs" && (
-              <motion.div key="jobs" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4">
+              <motion.div key="jobs" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-6">
                 <div>
-                  <h2 className="text-base font-extrabold" style={{ color: c.text }}>Management & Corporate Job Channels</h2>
-                  <p className="text-xs" style={{ color: c.textSec }}>Curated opportunities filtered specifically for business, management, and consulting profiles.</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-500">Corporate Openings</span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border border-amber-500/30 text-amber-500 bg-amber-500/10">BBA & MBA Filter Active</span>
+                  </div>
+                  <h2 className="text-base font-extrabold mt-1" style={{ color: c.text }}>BBA & MBA Career Opportunities</h2>
+                  <p className="text-xs" style={{ color: c.textSec }}>Verified opportunities from top recruiters filtered specifically for management, consulting, finance, marketing, and leadership profiles.</p>
                 </div>
 
+                {/* Direct Filter Shortcuts for BBA/MBA Candidates */}
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {[
-                    { title: "Management Trainee / Leadership", count: "120+ Openings", desc: "Fast-track corporate leadership programs across conglomerates and FMCG." },
-                    { title: "Associate Consultant / Strategy", count: "85+ Openings", desc: "Top consulting and corporate strategy analyst vacancies." },
-                    { title: "Investment Banking & Equity Research", count: "65+ Openings", desc: "Valuation, deals advisory, and financial research analyst roles." },
-                    { title: "Brand Marketing & Growth", count: "140+ Openings", desc: "Performance marketing, brand management, and consumer research." },
-                    { title: "Associate Product Manager (APM)", count: "90+ Openings", desc: "Tech product management entry points for graduates." },
-                    { title: "Supply Chain & Operations Analyst", count: "110+ Openings", desc: "Logistics, procurement, warehouse, and fulfillment planning." },
+                    { title: "Management Trainee / Leadership", count: "120+ Openings", desc: "Corporate leadership and general management fast-track programs.", q: "Management Trainee MBA" },
+                    { title: "Associate Consultant / Strategy", count: "85+ Openings", desc: "McKinsey, BCG, Bain, and Big 4 strategy advisory analyst roles.", q: "Consultant Strategy BBA MBA" },
+                    { title: "Investment Banking & Valuation", count: "65+ Openings", desc: "Goldman Sachs, J.P. Morgan, and financial research analyst roles.", q: "Investment Banking Finance MBA" },
+                    { title: "Brand Marketing & Growth", count: "140+ Openings", desc: "Brand management, consumer insights, and performance growth.", q: "Brand Manager Marketing MBA" },
+                    { title: "Associate Product Manager (APM)", count: "90+ Openings", desc: "Tech product management entry points for graduates.", q: "Associate Product Manager APM" },
+                    { title: "Supply Chain & Operations Analyst", count: "110+ Openings", desc: "Logistics, fulfillment, and corporate operations planning.", q: "Operations Supply Chain MBA" },
                   ].map((cat, idx) => (
                     <motion.div
                       key={idx}
                       whileHover={{ y: -2 }}
-                      {...cardA11y(() => (setView ? setView("job-discovery") : router.push("/dashboard/user?view=job-discovery")))}
+                      {...cardA11y(() => {
+                        const url = `/dashboard/user?view=job-discovery&q=${encodeURIComponent(cat.q)}`;
+                        if (setView) {
+                          window.history.pushState(null, "", url);
+                          setView("job-discovery");
+                        } else {
+                          router.push(url);
+                        }
+                      })}
                       className="p-4 border rounded-2xl cursor-pointer transition-all flex flex-col justify-between gap-2"
                       style={{ background: c.cardBg, borderColor: c.border }}
                     >
@@ -1345,24 +1362,30 @@ export function BusinessHubView({ setView, activeModule = "business-hub", theme 
                         <p className="text-xs" style={{ color: c.textSec }}>{cat.desc}</p>
                       </div>
                       <div className="flex items-center gap-1 text-xs font-bold text-amber-500 pt-2">
-                        <span>Explore Roles in Job Discovery</span>
+                        <span>Search "{cat.q}" in Discovery</span>
                         <ChevronRight size={13} />
                       </div>
                     </motion.div>
                   ))}
                 </div>
 
-                <div className="p-4 border rounded-2xl text-center flex flex-col items-center gap-2" style={{ background: c.cardBg, borderColor: c.border }}>
-                  <Briefcase size={22} className="text-amber-500" />
-                  <h3 className="text-sm font-extrabold" style={{ color: c.text }}>Looking for verified campus placements?</h3>
-                  <p className="text-xs max-w-md" style={{ color: c.textSec }}>Access the full job search discovery tool with personalized ATS resume matching and company fit scores.</p>
-                  <button
-                    onClick={() => (setView ? setView("job-discovery") : router.push("/dashboard/user?view=job-discovery"))}
-                    className="mt-1 px-4 py-2 rounded-full text-xs font-bold"
-                    style={{ background: c.primary, color: "#000000" }}
-                  >
-                    Open Job Discovery Hub
-                  </button>
+                {/* Live Embedded Job Discovery */}
+                <div className="border-t pt-6" style={{ borderColor: c.border }}>
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-extrabold flex items-center gap-2" style={{ color: c.text }}>
+                        <Briefcase size={16} className="text-amber-500" /> Live Discovery Engine
+                      </h3>
+                      <p className="text-xs mt-0.5" style={{ color: c.textSec }}>Explore all corporate vacancies with instant ATS matching and multi-attribute filters.</p>
+                    </div>
+                  </div>
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center p-12 text-xs font-bold text-amber-500 gap-2">
+                      <Clock size={16} className="animate-spin" /> Loading Business Job Discovery...
+                    </div>
+                  }>
+                    <JobDiscoveryView setView={setView} />
+                  </Suspense>
                 </div>
               </motion.div>
             )}

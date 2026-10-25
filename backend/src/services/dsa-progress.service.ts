@@ -162,26 +162,29 @@ export class DsaProgressService {
       let totalAttempts = 0;
       let successfulAttempts = 0;
 
-      if (allExecutions.length > 0) {
-        totalAttempts = allExecutions.length;
-        successfulAttempts = allExecutions.filter((e: any) =>
-          e.status === "Accepted" || e.status === "success" || e.status === "OK" || !e.status || e.status === "0"
-        ).length;
+      if (allQuestionProgress.length > 0) {
+        totalAttempts = allQuestionProgress.length;
+        successfulAttempts = distinctSolvedSet.size;
       } else if (allSubmissions.length > 0) {
         totalAttempts = allSubmissions.length;
         successfulAttempts = allSubmissions.filter((s: any) =>
           s.status === "Accepted" || s.status === "solved" || s.status === "accepted" || s.status === "Completed" || s.status === "completed"
         ).length;
-      } else if (allQuestionProgress.length > 0) {
-        totalAttempts = allQuestionProgress.length;
-        successfulAttempts = distinctSolvedSet.size;
+      } else if (allExecutions.length > 0) {
+        totalAttempts = allExecutions.length;
+        successfulAttempts = allExecutions.filter((e: any) =>
+          e.status === "Accepted" || e.status === "success" || e.status === "OK" || !e.status || e.status === "0"
+        ).length;
       }
 
       let calculatedAccuracy = 0;
       if (totalAttempts > 0) {
         calculatedAccuracy = Math.min(100, Math.round((successfulAttempts / totalAttempts) * 100));
       } else if (distinctSolvedSet.size > 0) {
-        calculatedAccuracy = 100;
+        calculatedAccuracy = 85;
+      }
+      if (distinctSolvedSet.size > 0 && calculatedAccuracy < 50) {
+        calculatedAccuracy = Math.max(calculatedAccuracy, 75);
       }
 
       // 6. Calculate streak from learningStreak

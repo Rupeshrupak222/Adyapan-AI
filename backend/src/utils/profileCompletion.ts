@@ -35,23 +35,13 @@ const STRING_FIELDS: ReadonlyArray<keyof ProfileCompletionInput> = [
   "year",
   "degree",
   "graduationYear",
-  "country",
-  "state",
-  "city",
-  "department",
-  "course",
-  "semester",
-  "studentId",
-  "referralCode",
-  "photoUrl",
-  "github",
-  "linkedin",
-  "portfolio",
-  "careerGoal",
-  "targetRole",
-  "aboutMe",
-  "careerObjective",
   "location",
+  "aboutMe",
+  "targetRole",
+  "careerObjective",
+  "linkedin",
+  "github",
+  "portfolio",
 ];
 
 export function calculateProfileCompletion(profile: ProfileCompletionInput): number {
@@ -66,5 +56,5 @@ export function calculateProfileCompletion(profile: ProfileCompletionInput): num
   if (Array.isArray(profile.skills) && profile.skills.length > 0) filled += 1;
   if (Array.isArray(profile.interestedDomains) && profile.interestedDomains.length > 0) filled += 1;
 
-  return Math.round((filled / total) * 100);
+  return Math.min(100, Math.round((filled / total) * 100));
 }
