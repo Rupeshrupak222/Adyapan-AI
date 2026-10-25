@@ -242,7 +242,7 @@ let cachedRuntimes: { endpoint: string; runtimes: RuntimeInfo[] } | null = null;
 let lastRuntimesFetch = 0;
 
 function getApiBase(): string {
-  const envUrl = process.env.PISTON_URL || "http://localhost:2000";
+  const envUrl = process.env.PISTON_URL || "http://35.154.57.164:2000";
   const url = envUrl.replace(/\/+$/, "");
   if (url.includes("emkc.org")) {
     return `${url}/api/v2/piston`;
@@ -258,8 +258,6 @@ function getCandidateEndpoints(): string[] {
   const candidates = [
     primary,
     "http://35.154.57.164:2000/api/v2",
-    "http://localhost:2000/api/v2",
-    "http://127.0.0.1:2000/api/v2",
     "https://emkc.org/api/v2/piston",
     "https://piston.engineering/api/v2"
   ];

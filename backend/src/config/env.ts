@@ -2,10 +2,10 @@ import "dotenv/config";
 import { createHmac } from "crypto";
 
 export const env = {
-  port: Number(process.env.PORT ?? 5000),
-  databaseUrl: process.env.DATABASE_URL ?? "postgresql://postgres:password@localhost:5432/adyapan_ai",
-  directUrl: process.env.DIRECT_URL ?? "",
-  frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:3000",
+  port: Number(process.env.PORT ?? 5005),
+  databaseUrl: process.env.DATABASE_URL ?? "postgresql://postgres.pyxhmsvmjzlvibhhjygd:wwAfpRjEfPfUkuvS@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres",
+  directUrl: process.env.DIRECT_URL ?? "postgresql://postgres.pyxhmsvmjzlvibhhjygd:wwAfpRjEfPfUkuvS@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres",
+  frontendUrl: process.env.FRONTEND_URL ?? "https://ai.adyapan.com",
   // Comma-separated allowlist of extra CORS origins (beyond the defaults in app.ts).
   corsOrigins: (process.env.CORS_ORIGINS ?? "")
     .split(",")
@@ -104,20 +104,20 @@ export const env = {
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID ?? "",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-    callbackUrl: process.env.GOOGLE_CALLBACK_URL ?? "http://localhost:5000/api/auth/google/callback",
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL ?? "https://ai.adyapan.com/api/auth/google/callback",
   },
   codeforces: {
     apiKey: process.env.CODEFORCES_API_KEY ?? "",
     apiSecret: process.env.CODEFORCES_API_SECRET ?? "",
   },
-  pistonUrl: process.env.PISTON_URL ?? "http://localhost:2000",
+  pistonUrl: process.env.PISTON_URL ?? "http://35.154.57.164:2000",
   apifyApiKey: process.env.APIFY_API_KEY ?? process.env.APIFY_TOKEN ?? "",
   scrapflyApiKey: process.env.SCRAPFLY_API_KEY ?? "",
   tinyfishApiKey: process.env.TINYFISH_API_KEY ?? "",
   lanoxApiKey: process.env.LANOX_API_KEY ?? process.env.KANOX_API_KEY ?? "",
   kanoxApiKey: process.env.LANOX_API_KEY ?? process.env.KANOX_API_KEY ?? "",
   nodeEnv: process.env.NODE_ENV ?? "development",
-  masterDatabaseUrl: process.env.MASTER_DATABASE_URL ?? process.env.DATABASE_URL ?? "",
+  masterDatabaseUrl: process.env.MASTER_DATABASE_URL ?? process.env.DATABASE_URL ?? "postgresql://postgres.pyxhmsvmjzlvibhhjygd:wwAfpRjEfPfUkuvS@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres",
   // Registration workflow: when "true", a verification email is queued/attempted
   // on registration. No SMTP provider is bundled today, so delivery is recorded
   // in the activity log but never blocks or fails the registration.
