@@ -14,6 +14,10 @@ import {
 import { handleRouteError } from "../utils/routeError";
 import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import { FeatureKey } from "../services/feature-keys";
+import { StreakService } from "../services/streak.service";
+import { getTimezone } from "../utils/request";
+import { refreshPlacementIntelligence } from "../services/placement-intelligence.service";
+import { ProgressService } from "../services/progress.service";
 
 export const hrInterviewRouter = Router();
 
@@ -510,7 +514,10 @@ hrInterviewRouter.post("/:sessionId/evaluate", async (req, res) => {
       data: {
         status: "completed",
         endedAt,
-        feedback: evaluation.summary || "",
+        feedback: {
+          overallScore: evaluation.overallScore || 0,
+          summary: evaluation.summary || "",
+        },
       },
     });
 
@@ -518,6 +525,20 @@ hrInterviewRouter.post("/:sessionId/evaluate", async (req, res) => {
       where: { sessionId },
       orderBy: { createdAt: "desc" },
     });
+
+    // Sync streak, placement intelligence, and progress dashboard
+    const tz = getTimezone(req);
+    StreakService.trackActivity(
+      req.user!.userId,
+      "COMPLETE_INTERVIEW",
+      "hr_interview",
+      sessionId,
+      50,
+      tz,
+      prisma
+    ).catch(() => {});
+    refreshPlacementIntelligence(req.user!.userId).catch(() => {});
+    ProgressService.calculateProgress(req.user!.userId, prisma).catch(() => {});
 
     res.json({
       success: true,
@@ -553,6 +574,8 @@ hrInterviewRouter.post("/:sessionId/end", async (req, res) => {
     });
 
     if (existingEvaluation) {
+      refreshPlacementIntelligence(req.user!.userId).catch(() => {});
+      ProgressService.calculateProgress(req.user!.userId, prisma).catch(() => {});
       res.json({ success: true, evaluation: existingEvaluation });
       return;
     }
@@ -622,8 +645,27 @@ hrInterviewRouter.post("/:sessionId/end", async (req, res) => {
 
     await p.interviewSession.update({
       where: { id: sessionId },
-      data: { feedback: evaluation.summary || "" },
+      data: {
+        feedback: {
+          overallScore: evaluation.overallScore || 0,
+          summary: evaluation.summary || "Interview session concluded.",
+        },
+      },
     });
+
+    // Sync streak, placement intelligence, and progress dashboard
+    const tz = getTimezone(req);
+    StreakService.trackActivity(
+      req.user!.userId,
+      "COMPLETE_INTERVIEW",
+      "hr_interview",
+      sessionId,
+      50,
+      tz,
+      prisma
+    ).catch(() => {});
+    refreshPlacementIntelligence(req.user!.userId).catch(() => {});
+    ProgressService.calculateProgress(req.user!.userId, prisma).catch(() => {});
 
     res.json({ success: true, evaluation: savedEvaluation });
   } catch (error) {

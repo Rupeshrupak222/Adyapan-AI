@@ -14,6 +14,10 @@ import {
 import { generateIntelligenceLayer } from "../lib/ai/intelligence.service";
 import { requireFeatureQuota } from "../middleware/requireFeatureQuota";
 import { FeatureKey } from "../services/feature-keys";
+import { StreakService } from "../services/streak.service";
+import { getTimezone } from "../utils/request";
+import { refreshPlacementIntelligence } from "../services/placement-intelligence.service";
+import { ProgressService } from "../services/progress.service";
 
 export const technicalEngineRouter = Router();
 technicalEngineRouter.use(requireAuth);
@@ -502,13 +506,34 @@ technicalEngineRouter.post("/:sessionId/evaluate", async (req, res) => {
 
     const updatedSession = await p.interviewSession.update({
       where: { id: sessionId },
-      data: { status: "completed", endedAt: new Date(), feedback: evaluation.summary || "" },
+      data: {
+        status: "completed",
+        endedAt: new Date(),
+        feedback: {
+          overallScore: evaluation.overallScore || 0,
+          summary: evaluation.summary || "",
+        },
+      },
     });
 
     const savedEvaluation = await p.interviewEvaluation.findFirst({
       where: { sessionId },
       orderBy: { createdAt: "desc" },
     });
+
+    // Sync streak, placement intelligence, and progress dashboard
+    const tz = getTimezone(req);
+    StreakService.trackActivity(
+      req.user!.userId,
+      "COMPLETE_INTERVIEW",
+      "technical_interview",
+      sessionId,
+      50,
+      tz,
+      prisma
+    ).catch(() => {});
+    refreshPlacementIntelligence(req.user!.userId).catch(() => {});
+    ProgressService.calculateProgress(req.user!.userId, prisma).catch(() => {});
 
     res.json({ success: true, evaluation: formatTechnicalEvaluation(savedEvaluation), session: updatedSession });
   } catch (error) {
@@ -541,6 +566,8 @@ technicalEngineRouter.post("/:sessionId/end", async (req, res) => {
     });
 
     if (existingEvaluation) {
+      refreshPlacementIntelligence(req.user!.userId).catch(() => {});
+      ProgressService.calculateProgress(req.user!.userId, prisma).catch(() => {});
       res.json({
         success: true,
         session: updatedSession,
@@ -604,7 +631,31 @@ technicalEngineRouter.post("/:sessionId/end", async (req, res) => {
         },
       });
       evaluation = formatTechnicalEvaluation(savedEval);
+
+      await p.interviewSession.update({
+        where: { id: sessionId },
+        data: {
+          feedback: {
+            overallScore: partialEvaluation.overallScore || 0,
+            summary: partialEvaluation.summary || "Interview ended early.",
+          },
+        },
+      });
     }
+
+    // Sync streak, placement intelligence, and progress dashboard
+    const tz = getTimezone(req);
+    StreakService.trackActivity(
+      req.user!.userId,
+      "COMPLETE_INTERVIEW",
+      "technical_interview",
+      sessionId,
+      50,
+      tz,
+      prisma
+    ).catch(() => {});
+    refreshPlacementIntelligence(req.user!.userId).catch(() => {});
+    ProgressService.calculateProgress(req.user!.userId, prisma).catch(() => {});
 
     res.json({ success: true, session: updatedSession, evaluation });
   } catch (error) {

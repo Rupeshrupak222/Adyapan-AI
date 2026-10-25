@@ -503,6 +503,7 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [submittedQuestions, setSubmittedQuestions] = useState<Record<number, boolean>>({});
   const [quizResult, setQuizResult] = useState<QuizResultData | null>(null);
+  const [currentQuizId, setCurrentQuizId] = useState<string | null>(null);
 
   // Derived
   const accent = getModeAccent(mode);
@@ -545,6 +546,9 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
       timers.forEach(clearTimeout);
       quota.onSuccess();
       const data = res.data;
+      if (data.id) {
+        setCurrentQuizId(data.id);
+      }
       if (data.quiz) {
         setQuizData(data.quiz);
         setPhase("active");
@@ -629,6 +633,15 @@ export function QuizGeneratorView({ onViewTool }: { onViewTool?: (tool: string) 
       completedAt: new Date().toISOString(),
     });
     setPhase("results");
+
+    // Persist attempt to database to update questions practiced, streak, and scores
+    api.post("/quiz/attempt", {
+      quizId: currentQuizId,
+      topic: quizData.topic,
+      score: correct,
+      total: quizData.questions.length,
+      accuracy: score,
+    }).catch(err => console.warn("Failed to save quiz attempt:", err));
   };
 
   const handleTimeUp = () => {

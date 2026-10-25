@@ -2,6 +2,7 @@ import { StreakService } from "./streak.service";
 import { getTimezone } from "../utils/request";
 import { prisma as masterPrisma } from "../config/prisma";
 import { refreshPlacementIntelligence } from "./placement-intelligence.service";
+import { ProgressService } from "./progress.service";
 
 export interface CalculatedDsaProgress {
   solved: number;
@@ -316,10 +317,11 @@ export class DsaProgressService {
       // 3. Recalculate and synchronize dSAProgress
       const progress = await this.calculateAndSyncProgress(userId, userPrisma);
 
-      // 4. Trigger placement intelligence recalculation so placement readiness bar updates immediately
+      // 4. Trigger placement intelligence & progress dashboard recalculation so bars update immediately
       refreshPlacementIntelligence(userId).catch((piErr) => {
         console.warn("[DsaProgressService.recordSolved] Placement intelligence refresh warning:", piErr?.message || piErr);
       });
+      ProgressService.calculateProgress(userId, userPrisma).catch(() => {});
 
       return progress;
     } catch (err) {

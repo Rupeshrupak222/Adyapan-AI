@@ -6,6 +6,8 @@ import {
   generateInterviewFeedback,
 } from "../lib/ai/gemini";
 import { generateComprehensiveEvaluation } from "../lib/ai/evaluation";
+import { refreshPlacementIntelligence } from "./placement-intelligence.service";
+import { ProgressService } from "./progress.service";
 
 export interface InterviewConfig {
   role: string;
@@ -341,6 +343,21 @@ export async function endInterviewSession(
       });
     } catch {}
   }
+
+  if (savedEvaluation) {
+    await prisma.interviewSession.update({
+      where: { id: sessionId },
+      data: {
+        feedback: {
+          overallScore: savedEvaluation.overallScore || 0,
+          summary: savedEvaluation.summary || "",
+        },
+      },
+    }).catch(() => {});
+  }
+
+  refreshPlacementIntelligence(session.userId).catch(() => {});
+  ProgressService.calculateProgress(session.userId, prisma).catch(() => {});
 
   return { session: updatedSession, evaluation: savedEvaluation };
 }

@@ -1,7 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 import { httpError } from "../utils/httpError";
 import { getUserPrismaFromRequest } from "../utils/prisma";
-import { requireUserId } from "../utils/request";
+import { requireUserId, getTimezone } from "../utils/request";
+import { StreakService } from "../services/streak.service";
+import { refreshPlacementIntelligence } from "../services/placement-intelligence.service";
+import { ProgressService } from "../services/progress.service";
 import {
   dedupeQuestions,
 } from "../lib/questions/question-fingerprint";
@@ -686,6 +689,20 @@ export async function completeSession(req: Request, res: Response, next: NextFun
       // Review generation is optional
     }
 
+    // Sync streak, placement intelligence, and progress dashboard
+    const tz = getTimezone(req);
+    StreakService.trackActivity(
+      userId,
+      "PRACTICE_QUESTIONS",
+      "aptitude_test",
+      updatedSession.id,
+      25,
+      tz,
+      userPrisma
+    ).catch(() => {});
+    refreshPlacementIntelligence(userId).catch(() => {});
+    ProgressService.calculateProgress(userId, userPrisma).catch(() => {});
+
     res.json({
       success: true,
       sessionId: updatedSession.id,
@@ -1322,6 +1339,20 @@ export async function submitSessionAnswers(req: Request, res: Response, next: Ne
     } catch {
       // Review generation is optional
     }
+
+    // Sync streak, placement intelligence, and progress dashboard
+    const tz = getTimezone(req);
+    StreakService.trackActivity(
+      userId,
+      "PRACTICE_QUESTIONS",
+      "aptitude_test",
+      updatedSession.id,
+      25,
+      tz,
+      userPrisma
+    ).catch(() => {});
+    refreshPlacementIntelligence(userId).catch(() => {});
+    ProgressService.calculateProgress(userId, userPrisma).catch(() => {});
 
     res.json({
       success: true,

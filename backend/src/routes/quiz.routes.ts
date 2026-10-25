@@ -6,6 +6,8 @@ import { getUserPrismaFromRequest } from "../utils/prisma";
 import { StreakService } from "../services/streak.service";
 import { handleRouteError } from "../utils/routeError";
 import { getTimezone } from "../utils/request";
+import { refreshPlacementIntelligence } from "../services/placement-intelligence.service";
+import { ProgressService } from "../services/progress.service";
 
 export const quizRouter = Router();
 
@@ -90,5 +92,70 @@ quizRouter.get("/history", async (req, res) => {
     res.json({ success: true, quizzes });
   } catch (error) {
     handleRouteError(res, error, "Quiz.history", "Failed to fetch history");
+  }
+});
+
+quizRouter.post("/attempt", async (req, res) => {
+  try {
+    const { quizId, topic, score, total, accuracy, weakTopics = [], strongTopics = [] } = req.body;
+    const userPrisma = await getUserPrismaFromRequest(req);
+    const userId = req.user!.userId;
+
+    let targetQuizId = quizId;
+    if (!targetQuizId) {
+      const latestQuiz = await userPrisma.quiz.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      });
+      targetQuizId = latestQuiz?.id;
+    }
+
+    if (!targetQuizId) {
+      const fallbackQuiz = await userPrisma.quiz.create({
+        data: {
+          userId,
+          topic: topic || "Practice Quiz",
+          difficulty: "medium",
+          questions: [],
+        },
+      });
+      targetQuizId = fallbackQuiz.id;
+    }
+
+    const numericTotal = Math.max(1, Math.round(Number(total) || 1));
+    const numericScore = Math.max(0, Math.round(Number(score) || 0));
+    const calculatedAccuracy = typeof accuracy === "number" ? accuracy : Math.round((numericScore / numericTotal) * 100);
+
+    const attempt = await userPrisma.quizAttempt.create({
+      data: {
+        userId,
+        quizId: targetQuizId,
+        score: numericScore,
+        total: numericTotal,
+        accuracy: calculatedAccuracy,
+        weakTopics: Array.isArray(weakTopics) ? weakTopics : [],
+        strongTopics: Array.isArray(strongTopics) ? strongTopics : [],
+      },
+    });
+
+    // Track streak activity & update progress and placement intelligence
+    const tz = getTimezone(req);
+    StreakService.trackActivity(
+      userId,
+      "PRACTICE_QUESTIONS",
+      "quiz_practice",
+      attempt.id,
+      25,
+      tz,
+      userPrisma
+    ).catch(() => {});
+
+    refreshPlacementIntelligence(userId).catch(() => {});
+    ProgressService.calculateProgress(userId, userPrisma).catch(() => {});
+
+    res.json({ success: true, attempt });
+  } catch (error) {
+    handleRouteError(res, error, "Quiz.attempt", "Failed to record quiz attempt");
   }
 });
